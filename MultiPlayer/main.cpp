@@ -148,7 +148,7 @@ public:
 		DrawScrText("TEST text 0", mBottomPos, 0.33f, 0, Color, true, true);
 
 		mBottomPos.y *= 0;
-		DrawScrText(u8"Here text 1 - это текст!", mBottomPos, 0.33f, 0, Color, true, true);
+		DrawScrText(u8"Here text 1 - СЌС‚Рѕ С‚РµРєСЃС‚!", mBottomPos, 0.33f, 0, Color, true, true);
 	}
 
 
@@ -362,7 +362,7 @@ class InputHandler2 : public IGameEventInput
 public:
 	void keyUp(KEY keyCode) override
 	{
-		//показать курсор и не возвращать назад(поверх окна)
+		//РїРѕРєР°Р·Р°С‚СЊ РєСѓСЂСЃРѕСЂ Рё РЅРµ РІРѕР·РІСЂР°С‰Р°С‚СЊ РЅР°Р·Р°Рґ(РїРѕРІРµСЂС… РѕРєРЅР°)
 		if (keyCode == KeyCode::F2)
 		{
 			static bool retCursorBack = false;
@@ -370,7 +370,7 @@ public:
 			GameCursorPointer::setNotReturnBack(retCursorBack);
 		}
 
-		//просто показать курсор внутри игры
+		//РїСЂРѕСЃС‚Рѕ РїРѕРєР°Р·Р°С‚СЊ РєСѓСЂСЃРѕСЂ РІРЅСѓС‚СЂРё РёРіСЂС‹
 		else if (keyCode == KeyCode::F1)
 		{
 			static bool showCursor = false;
@@ -378,7 +378,7 @@ public:
 			GameCursorPointer::show(showCursor);
 		}
 
-		//выйти из игры
+		//РІС‹Р№С‚Рё РёР· РёРіСЂС‹
 		else if (keyCode == KeyCode::F3)
 		{
 			GameExit::Exit();

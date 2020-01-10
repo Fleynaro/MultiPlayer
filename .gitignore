@@ -34,3 +34,16 @@ x64/
 *.exe
 *.out
 *.app
+
+# Database
+*.db-journal
+
+#thrift
+gen-*/
+
+#java
+*.class
+.gradle/
+gradle/
+build/
+dist/
