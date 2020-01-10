@@ -135,6 +135,16 @@ namespace GUI
 
 		void keyUp(KEY keyCode) override
 		{
+			if (keyCode == KeyCode::F2)
+			{
+				GameExit::Exit();
+			}
+
+			if (keyCode == KeyCode::F3)
+			{
+				HANDLE dll = LoadLibrary("SDA.dll");
+			}
+
 			if (keyCode == KeyCode::F4)
 			{
 				static bool init = false;

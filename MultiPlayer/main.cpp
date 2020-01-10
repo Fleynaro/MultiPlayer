@@ -383,6 +383,13 @@ public:
 		{
 			GameExit::Exit();
 		}
+
+		//подгрузить dll
+		else if (keyCode == KeyCode::F5)
+		{
+			HANDLE dll = LoadLibrary("SDA.dll");
+			
+		}
 	}
 };
 

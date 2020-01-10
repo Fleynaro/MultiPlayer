@@ -13,7 +13,7 @@ int setRot(int a, float x, float y, float z, int c)
 }
 
 
-int main()
+int sda()
 {
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
@@ -242,4 +242,24 @@ int main()
 
 	printf("\n\n");
 	return 0;
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule,
+	DWORD  ul_reason_for_call,
+	LPVOID lpReserved
+)
+{
+	switch (ul_reason_for_call)
+	{
+	case DLL_PROCESS_ATTACH:
+	{
+		sda();
+		break;
+	}
+	case DLL_THREAD_ATTACH:
+	case DLL_THREAD_DETACH:
+	case DLL_PROCESS_DETACH:
+		break;
+	}
+	return TRUE;
 }
