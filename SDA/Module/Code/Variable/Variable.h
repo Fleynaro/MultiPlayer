@@ -1,5 +1,7 @@
 #pragma once
-#include "../Type/Type.h"
+#include "../Type/AbstractType.h"
+#include "../Type/Pointer.h"
+#include "../Type/Array.h"
 
 namespace CE
 {

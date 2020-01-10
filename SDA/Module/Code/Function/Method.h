@@ -3,6 +3,10 @@
 
 namespace CE
 {
+	namespace Type {
+		class Class;
+	};
+
 	namespace Function
 	{
 		class Method : public Function

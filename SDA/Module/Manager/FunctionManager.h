@@ -1,7 +1,9 @@
 #pragma once
 #include "AbstractManager.h"
+#include "GVarManager.h"
 #include <Code/Function/Method.h>
 #include <CallGraph/CallGraph.h>
+#include <Utils/BitStream.h>
 
 namespace CE
 {

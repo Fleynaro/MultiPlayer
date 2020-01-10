@@ -1,7 +1,5 @@
 #pragma once
-#include "../Type/Type.h"
 #include "../Variable/Variable.h"
-#include <Trigger/Trigger.h>
 
 namespace CE
 {

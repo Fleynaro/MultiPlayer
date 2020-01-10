@@ -164,7 +164,10 @@
     <ClCompile Include="..\Shared\Utility\FileWrapper.cpp" />
     <ClCompile Include="..\Shared\Utility\Generic.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
+    <ClCompile Include="Module\Code\Function\Function.cpp" />
+    <ClCompile Include="Module\Code\Type\Type.cpp" />
     <ClCompile Include="Module\DynHook\DynHook.cpp" />
+    <ClCompile Include="Module\GhidraSync\GhidraSync.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\DataTypeManagerService.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\datatype_constants.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\datatype_types.cpp" />
@@ -175,10 +178,12 @@
     <ClCompile Include="Module\GhidraSync\Ghidra\include\ghidra_types.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_constants.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_types.cpp" />
+    <ClCompile Include="Module\Manager\Manager.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\Analyser.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\avx.cpp" />
-    <ClCompile Include="sda.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Module\Statistic\Statistic.cpp" />
+    <ClCompile Include="Module\Trigger\Trigger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h" />

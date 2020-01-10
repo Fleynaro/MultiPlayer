@@ -1,6 +1,8 @@
 #pragma once
 #include "UserType.h"
+#include "SystemType.h"
 #include "../Function/Method.h"
+#include "../VTable/VTable.h"
 
 namespace CE
 {
