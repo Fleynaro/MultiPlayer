@@ -110,7 +110,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)..\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -150,7 +150,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <Optimization>Disabled</Optimization>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)..\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -161,26 +161,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DynHOOK\Assembly.cpp" />
-    <ClCompile Include="AVX\Analyser.cpp" />
-    <ClCompile Include="AVX\avx.cpp" />
-    <ClCompile Include="DynHOOK\dynhook.cpp" />
-    <ClCompile Include="Modules\Assembler\Assembler.cpp" />
-    <ClCompile Include="Modules\DynHook\DynHook.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\DataTypeManagerService.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\DataTypeManagerService_server.skeleton.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\datatype_constants.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\datatype_types.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\FunctionManagerService.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\FunctionManagerService_server.skeleton.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\function_constants.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\function_types.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\ghidra_constants.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\ghidra_types.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\shared_constants.cpp" />
-    <ClCompile Include="Modules\GhidraSync\Ghidra\include\shared_types.cpp" />
-    <ClCompile Include="Modules\MemoryAnalyzer\AVX\Analyser.cpp" />
-    <ClCompile Include="Modules\MemoryAnalyzer\AVX\avx.cpp" />
+    <ClCompile Include="..\Shared\Utility\FileWrapper.cpp" />
+    <ClCompile Include="..\Shared\Utility\Generic.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\DynHook\DynHook.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\DataTypeManagerService.cpp" />
@@ -193,91 +175,35 @@
     <ClCompile Include="Module\GhidraSync\Ghidra\include\ghidra_types.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_constants.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_types.cpp" />
-    <ClCompile Include="Module\MemoryAnalyzer\AVX\Analyser.cpp" />
-    <ClCompile Include="Module\MemoryAnalyzer\AVX\avx.cpp" />
+    <ClCompile Include="Module\MemoryAnalyser\AVX\Analyser.cpp" />
+    <ClCompile Include="Module\MemoryAnalyser\AVX\avx.cpp" />
     <ClCompile Include="sda.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\DataTypeManagerService.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\datatype_constants.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\datatype_types.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\FunctionManagerService.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\function_constants.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\function_types.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\ghidra_constants.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\ghidra_types.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\shared_constants.cpp" />
-    <ClCompile Include="SDA\Ghidra\include\shared_types.cpp" />
-    <ClCompile Include="SDA\sda.cpp" />
-    <ClCompile Include="SDA\Utility\FileWrapper.cpp" />
-    <ClCompile Include="SDA\Utility\Generic.cpp" />
-    <ClCompile Include="SqLite\sqlite.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Thrift\thrift.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DynHOOK\Assembly.h" />
-    <ClInclude Include="AVX\Analyser.h" />
-    <ClInclude Include="AVX\avx.h" />
-    <ClInclude Include="DynHOOK\dynhook.h" />
-    <ClInclude Include="DynHOOK\ZycoreExportConfig.h" />
-    <ClInclude Include="DynHOOK\Zycore\Allocator.h" />
-    <ClInclude Include="DynHOOK\Zycore\API\Memory.h" />
-    <ClInclude Include="DynHOOK\Zycore\API\Synchronization.h" />
-    <ClInclude Include="DynHOOK\Zycore\API\Terminal.h" />
-    <ClInclude Include="DynHOOK\Zycore\API\Thread.h" />
-    <ClInclude Include="DynHOOK\Zycore\ArgParse.h" />
-    <ClInclude Include="DynHOOK\Zycore\Bitset.h" />
-    <ClInclude Include="DynHOOK\Zycore\Comparison.h" />
-    <ClInclude Include="DynHOOK\Zycore\Defines.h" />
-    <ClInclude Include="DynHOOK\Zycore\Format.h" />
-    <ClInclude Include="DynHOOK\Zycore\LibC.h" />
-    <ClInclude Include="DynHOOK\Zycore\List.h" />
-    <ClInclude Include="DynHOOK\Zycore\Object.h" />
-    <ClInclude Include="DynHOOK\Zycore\Status.h" />
-    <ClInclude Include="DynHOOK\Zycore\String.h" />
-    <ClInclude Include="DynHOOK\Zycore\Types.h" />
-    <ClInclude Include="DynHOOK\Zycore\Vector.h" />
-    <ClInclude Include="DynHOOK\Zycore\Zycore.h" />
-    <ClInclude Include="DynHOOK\ZydisExportConfig.h" />
-    <ClInclude Include="DynHOOK\Zydis\Decoder.h" />
-    <ClInclude Include="DynHOOK\Zydis\DecoderTypes.h" />
-    <ClInclude Include="DynHOOK\Zydis\Formatter.h" />
-    <ClInclude Include="DynHOOK\Zydis\FormatterBuffer.h" />
-    <ClInclude Include="DynHOOK\Zydis\Generated\EnumInstructionCategory.h" />
-    <ClInclude Include="DynHOOK\Zydis\Generated\EnumISAExt.h" />
-    <ClInclude Include="DynHOOK\Zydis\Generated\EnumISASet.h" />
-    <ClInclude Include="DynHOOK\Zydis\Generated\EnumMnemonic.h" />
-    <ClInclude Include="DynHOOK\Zydis\Generated\EnumRegister.h" />
-    <ClInclude Include="DynHOOK\Zydis\Internal\DecoderData.h" />
-    <ClInclude Include="DynHOOK\Zydis\Internal\FormatterATT.h" />
-    <ClInclude Include="DynHOOK\Zydis\Internal\FormatterBase.h" />
-    <ClInclude Include="DynHOOK\Zydis\Internal\FormatterIntel.h" />
-    <ClInclude Include="DynHOOK\Zydis\Internal\SharedData.h" />
-    <ClInclude Include="DynHOOK\Zydis\Internal\String.h" />
-    <ClInclude Include="DynHOOK\Zydis\MetaInfo.h" />
-    <ClInclude Include="DynHOOK\Zydis\Mnemonic.h" />
-    <ClInclude Include="DynHOOK\Zydis\Register.h" />
-    <ClInclude Include="DynHOOK\Zydis\SharedTypes.h" />
-    <ClInclude Include="DynHOOK\Zydis\ShortString.h" />
-    <ClInclude Include="DynHOOK\Zydis\Status.h" />
-    <ClInclude Include="DynHOOK\Zydis\Utils.h" />
-    <ClInclude Include="DynHOOK\Zydis\Zydis.h" />
     <ClInclude Include="main.h" />
-    <ClInclude Include="Modules\Assembler\Assembler.h" />
-    <ClInclude Include="Modules\DynHook\DynHook.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\DataTypeManagerService.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\datatype_constants.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\datatype_types.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\FunctionManagerService.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\function_constants.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\function_types.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\ghidra_constants.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\ghidra_types.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\shared_constants.h" />
-    <ClInclude Include="Modules\GhidraSync\Ghidra\include\shared_types.h" />
-    <ClInclude Include="Modules\MemoryAnalyzer\AVX\Analyser.h" />
-    <ClInclude Include="Modules\MemoryAnalyzer\AVX\avx.h" />
     <ClInclude Include="Module\Assembler\Assembler.h" />
+    <ClInclude Include="Module\CallGraph\CallGraph.h" />
+    <ClInclude Include="Module\Code\Code.h" />
+    <ClInclude Include="Module\Code\Function\Function.h" />
+    <ClInclude Include="Module\Code\Function\Method.h" />
+    <ClInclude Include="Module\Code\Shared.h" />
+    <ClInclude Include="Module\Code\Type\Array.h" />
+    <ClInclude Include="Module\Code\Type\Class.h" />
+    <ClInclude Include="Module\Code\Type\Enum.h" />
+    <ClInclude Include="Module\Code\Type\Pointer.h" />
+    <ClInclude Include="Module\Code\Type\SystemType.h" />
+    <ClInclude Include="Module\Code\Type\AbstractType.h" />
+    <ClInclude Include="Module\Code\Type\Type.h" />
+    <ClInclude Include="Module\Code\Type\Typedef.h" />
+    <ClInclude Include="Module\Code\Type\UserType.h" />
+    <ClInclude Include="Module\Code\Variable\Variable.h" />
+    <ClInclude Include="Module\Code\VTable\VTable.h" />
     <ClInclude Include="Module\DynHook\DynHook.h" />
+    <ClInclude Include="Module\GhidraSync\AbstractManager.h" />
+    <ClInclude Include="Module\GhidraSync\DataTypeManager.h" />
+    <ClInclude Include="Module\GhidraSync\FunctionManager.h" />
+    <ClInclude Include="Module\GhidraSync\GhidraSync.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\DataTypeManagerService.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\datatype_constants.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\datatype_types.h" />
@@ -288,64 +214,80 @@
     <ClInclude Include="Module\GhidraSync\Ghidra\include\ghidra_types.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\shared_constants.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\shared_types.h" />
-    <ClInclude Include="Module\MemoryAnalyzer\AVX\Analyser.h" />
-    <ClInclude Include="Module\MemoryAnalyzer\AVX\avx.h" />
-    <ClInclude Include="sda.h" />
-    <ClInclude Include="SDA\Ghidra\compiler\gen-cpp\DataTypeManager.h" />
-    <ClInclude Include="SDA\Ghidra\compiler\gen-cpp\ghidra_constants.h" />
-    <ClInclude Include="SDA\Ghidra\compiler\gen-cpp\ghidra_types.h" />
-    <ClInclude Include="SDA\Ghidra\include\DataTypeManagerService.h" />
-    <ClInclude Include="SDA\Ghidra\include\datatype_constants.h" />
-    <ClInclude Include="SDA\Ghidra\include\datatype_types.h" />
-    <ClInclude Include="SDA\Ghidra\include\FunctionManagerService.h" />
-    <ClInclude Include="SDA\Ghidra\include\function_constants.h" />
-    <ClInclude Include="SDA\Ghidra\include\function_types.h" />
-    <ClInclude Include="SDA\Ghidra\include\ghidra_constants.h" />
-    <ClInclude Include="SDA\Ghidra\include\ghidra_types.h" />
-    <ClInclude Include="SDA\Ghidra\include\shared_constants.h" />
-    <ClInclude Include="SDA\Ghidra\include\shared_types.h" />
-    <ClInclude Include="SDA\sda.h" />
-    <ClInclude Include="SDA\Utility\FileWrapper.h" />
-    <ClInclude Include="SDA\Utility\Generic.h" />
+    <ClInclude Include="Module\Manager\AbstractManager.h" />
+    <ClInclude Include="Module\Manager\FunctionManager.h" />
+    <ClInclude Include="Module\Manager\GVarManager.h" />
+    <ClInclude Include="Module\Manager\Manager.h" />
+    <ClInclude Include="Module\Manager\SDA.h" />
+    <ClInclude Include="Module\Manager\StatManager.h" />
+    <ClInclude Include="Module\Manager\TriggerManager.h" />
+    <ClInclude Include="Module\Manager\TypeManager.h" />
+    <ClInclude Include="Module\Manager\VTableManager.h" />
+    <ClInclude Include="Module\MemoryAnalyser\AVX\Analyser.h" />
+    <ClInclude Include="Module\MemoryAnalyser\AVX\avx.h" />
+    <ClInclude Include="Module\Statistic\Analyser.h" />
+    <ClInclude Include="Module\Statistic\Function.h" />
+    <ClInclude Include="Module\Statistic\Statistic.h" />
+    <ClInclude Include="Module\Trigger\Filter.h" />
+    <ClInclude Include="Module\Trigger\Trigger.h" />
     <ClInclude Include="SpeedTest.h" />
-    <ClInclude Include="SqLite\sqlite.h" />
-    <ClInclude Include="SqLite\sqlite3\sqlite3.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\Assertion.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\Backup.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\Column.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\Database.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\Exception.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\ExecuteMany.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\Assertion.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\Backup.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\Column.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\Database.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\Exception.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\ExecuteMany.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\SQLiteCpp.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\Statement.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\Transaction.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\Utils.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\include\SQLiteCpp\VariadicBind.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\SQLiteCpp.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\Statement.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\Transaction.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\Utils.h" />
-    <ClInclude Include="SqLite\SQLiteCpp\VariadicBind.h" />
-    <ClInclude Include="Thrift\thrift.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\.gradle\5.2.1\executionHistory\executionHistory.bin" />
-    <None Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\.gradle\5.2.1\fileChanges\last-build.bin" />
-    <None Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\.gradle\5.2.1\fileHashes\fileHashes.bin" />
-    <None Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\.gradle\5.2.1\fileHashes\resourceHashesCache.bin" />
-    <None Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\.gradle\5.2.1\javaCompile\classAnalysis.bin" />
-    <None Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\.gradle\5.2.1\javaCompile\jarAnalysis.bin" />
-    <None Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\.gradle\5.2.1\javaCompile\taskHistory.bin" />
-    <None Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\.gradle\buildOutputCleanup\outputFiles.bin" />
-  </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="Modules\GhidraSync\Ghidra\ghidra-plugin-sda\Module.manifest" />
+    <ClInclude Include="Utils\BitStream.h" />
+    <ClInclude Include="Utils\ObjectHash.h" />
+    <ClInclude Include="Vendor\SQliteCpp\sqlite3\sqlite3.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Assertion.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Backup.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Column.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Database.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Exception.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\ExecuteMany.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\SQLiteCpp.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Statement.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Transaction.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Utils.h" />
+    <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\VariadicBind.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\ZycoreExportConfig.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Allocator.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\API\Memory.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\API\Synchronization.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\API\Terminal.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\API\Thread.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\ArgParse.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Bitset.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Comparison.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Defines.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Format.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\LibC.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\List.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Object.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Status.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\String.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Types.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Vector.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zycore\Zycore.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\ZydisExportConfig.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Decoder.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\DecoderTypes.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Formatter.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\FormatterBuffer.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Generated\EnumInstructionCategory.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Generated\EnumISAExt.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Generated\EnumISASet.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Generated\EnumMnemonic.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Generated\EnumRegister.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Internal\DecoderData.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Internal\FormatterATT.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Internal\FormatterBase.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Internal\FormatterIntel.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Internal\SharedData.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Internal\String.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\MetaInfo.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Mnemonic.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Register.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\SharedTypes.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\ShortString.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Status.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Utils.h" />
+    <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Zydis.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

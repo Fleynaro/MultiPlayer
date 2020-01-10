@@ -1,5 +1,5 @@
 ﻿
-#include <MemoryAnalyzer/AVX/avx.h>
+#include <MemoryAnalyser/AVX/avx.h>
 #include <sda.h>
 
 int main()

@@ -1,4 +1,5 @@
-#include "sda.h"
+#include <Manager/Manager.h>
+#include <GhidraSync/GhidraSync.h>
 
 CE::Type::SystemType::Types CE::Type::SystemType::GetBasicTypeOf(Type* type)
 {
@@ -248,9 +249,9 @@ void module_sda()
 	analyser.doAnalyse();
 	return;*/
 
-	SDA* sda = new SDA(GetModuleHandle(NULL), FS::Directory("SDA\\database"));
+	SDA* sda = new SDA(GetModuleHandle(NULL), FS::Directory("Databases"));
 	try {
-		sda->initDataBase("SDA//database//database.db");
+		sda->initDataBase("Databases//database.db");
 		sda->initManagers();
 		sda->load();
 
