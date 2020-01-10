@@ -1,3 +1,7 @@
+#folders
+.vs/
+x64/
+
 # Prerequisites
 *.d
 
@@ -24,7 +28,7 @@
 *.lai
 *.la
 *.a
-*.lib
+#*.lib
 
 # Executables
 *.exe
