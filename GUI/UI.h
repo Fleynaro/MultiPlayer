@@ -4,6 +4,7 @@
 #include "GUI/Items/StyleThemes.h"
 #include "GUI/Items/IWindow.h"
 #include "GUI/Items/IWidget.h"
+#include "TestWindows.h"
 
 using namespace GUI::Window;
 
@@ -18,6 +19,11 @@ public:
 	class WinManager
 	{
 	public:
+		static void registerWindows() {
+			//UI::WinManager::addWindow(new PhysicControl);
+			UI::WinManager::addWindow(new ProjectCreating);
+		}
+
 		static void addWindow(GUI::Window::IWindow* window) {
 			window->setCloseEvent(
 				new GUI::Events::EventUI(

@@ -5,7 +5,7 @@
 #include "Game/DirectX/Direct3D11.h"
 #include "Game/GameInput.h"
 
-#include "Items/StyleThemes.h"
+#include <GUI/Items/StyleThemes.h>
 #include "Windows/ContextManagerWin.h"
 #include "Widgets/PopupContextWindow.h"
 

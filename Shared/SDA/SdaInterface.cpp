@@ -8,10 +8,10 @@ SdaInterface* GetSdaInterface()
 
 void SdaInterfaceImpl::start()
 {
-
+	g_program->start();
 }
 
-void SdaInterfaceImpl::execute_d3d_present(IDXGISwapChain* pSwapChain)
+void SdaInterfaceImpl::render(IDXGISwapChain* pSwapChain)
 {
-
+	g_program->getUI()->render();
 }

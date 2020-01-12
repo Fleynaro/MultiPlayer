@@ -166,6 +166,15 @@
     <ClInclude Include="GUI\Items\IWidget.h" />
     <ClInclude Include="GUI\Items\IWindow.h" />
     <ClInclude Include="GUI\Items\StyleThemes.h" />
+    <ClInclude Include="GUI\Widgets\CodeEditor\CodeEditor.h" />
+    <ClInclude Include="GUI\Widgets\CodeEditor\TextEditor.h" />
+    <ClInclude Include="GUI\Widgets\FileBrowserTree.h" />
+    <ClInclude Include="GUI\Widgets\ILoadContent.h" />
+    <ClInclude Include="GUI\Widgets\PageNavigation.h" />
+    <ClInclude Include="GUI\Widgets\PopupContextWindow.h" />
+    <ClInclude Include="GUI\Widgets\Template\CategoryListSearch.h" />
+    <ClInclude Include="GUI\Widgets\Template\CategoryListSearchWithPageNav.h" />
+    <ClInclude Include="GUI\Windows\Templates\ManagerWin.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
@@ -183,6 +192,7 @@
   <ItemGroup>
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="GUI\Items\Items.cpp" />
+    <ClCompile Include="GUI\Widgets\CodeEditor\TextEditor.cpp" />
     <ClCompile Include="Vendor\imgui\imgui.cpp" />
     <ClCompile Include="Vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="Vendor\imgui\imgui_draw.cpp" />

@@ -4,7 +4,6 @@
 #include "framework.h"
 #include "GUI.h"
 #include "UI.h"
-#include "TestWindows.h"
 
 #define MAX_LOADSTRING 100
 
@@ -154,9 +153,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	m_pImmediateContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
 
 
-
+	UI::WinManager::registerWindows();
 	userInterface.init(hWnd, m_pd3dDevice, m_pImmediateContext);
-	UI::WinManager::addWindow(new PhysicControl);
 
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_GUI));
@@ -258,7 +256,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, HWND& hWnd)
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam)) {
+		return 0;
+	}
 
     switch (message)
     {

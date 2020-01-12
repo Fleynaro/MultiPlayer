@@ -6,7 +6,7 @@ class SdaInterface
 {
 public:
 	virtual void start() = 0;
-	virtual void execute_d3d_present(IDXGISwapChain* pSwapChain) = 0;
+	virtual void render(IDXGISwapChain* pSwapChain) = 0;
 };
 
 #ifdef SDA_DLL_EXPORTS 
@@ -14,7 +14,7 @@ class SdaInterfaceImpl : public SdaInterface
 {
 public:
 	void start() override;
-	void execute_d3d_present(IDXGISwapChain* pSwapChain) override;
+	void render(IDXGISwapChain* pSwapChain) override;
 };
 
 extern "C"

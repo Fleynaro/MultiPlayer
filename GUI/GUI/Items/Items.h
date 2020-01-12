@@ -1250,6 +1250,11 @@ namespace GUI
 					popWidthParam();
 				}
 
+				Text* setInputValue(const std::string& inputText) {
+					m_inputValue = inputText;
+					return this;
+				}
+
 				std::string getInputValue() {
 					return m_inputValue.c_str();
 				}

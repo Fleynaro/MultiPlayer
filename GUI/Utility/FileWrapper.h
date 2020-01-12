@@ -1,9 +1,9 @@
 #pragma once
 
 
-#include "main.h"
+#include <main.h>
 #include <filesystem>
-#include "Utility/Generic.h"
+#include <Utility/Generic.h>
 
 //File System
 namespace FS
