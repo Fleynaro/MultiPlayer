@@ -22,8 +22,9 @@ public:
 	inline static Memory::Function<void()> DisableSpawnVehicle;
 private:
 	class Init : public IGameEventUpdate {
-		void OnInit() override {
+		bool OnInit() override {
 			GameRemoveSingleElements::DisableSpawnVehicle();
+			return true;
 		}
 	};
 

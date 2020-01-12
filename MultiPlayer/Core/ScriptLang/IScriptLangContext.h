@@ -13,7 +13,7 @@ class ContextUpdateMessage : public IGameEventMessage
 public:
 	IGameScriptContext* m_context;
 	ContextUpdateMessage(IGameScriptContext* context)
-		: m_context(context), IGameEventMessage(GameEventMessage::CONTEXT_UPDATER)
+		: m_context(context), IGameEventMessage(GameEventMessageId::CONTEXT_UPDATER)
 	{}
 };
 
@@ -76,13 +76,13 @@ namespace ScriptContextCallback
 	};
 
 	template<typename T>
-	class IScriptLangContextCallback : public GameEventHandlerProxy<T>, public DoCallback
+	class IScriptLangContextCallback : public GameEventProxyHandler<T>, public DoCallback
 	{
 	public:
 		IScriptLangContextCallback(IScriptLangContext* scriptContext, void* externalPtr)
 			: DoCallback(scriptContext, externalPtr)
 		{
-			GameEventHandlerProxy<T>::setProxyNode(scriptContext);
+			GameEventProxyHandler<T>::setProxyMessageAgregator(scriptContext->getProxyAgregator());
 		}
 	};
 
@@ -164,7 +164,7 @@ namespace ScriptContextCallback
 		{}
 
 		bool filter(IGameEventMessage::Type& message) override {
-			if (message->getMessage() != GameEventMessage::CONTEXT_UPDATER)
+			if (message->getMessageId() != GameEventMessageId::CONTEXT_UPDATER)
 				return false;
 			if (((ContextUpdateMessage*)message.get())->m_context != getScriptContext())
 				return false;
@@ -172,7 +172,7 @@ namespace ScriptContextCallback
 			return true;
 		}
 
-		void callback(IGameEventMessage::Type& message) override
+		void callback(IGameEventMessage::Type& message, bool& result, bool& doContinue) override
 		{
 			if (!filter(message))
 				return;

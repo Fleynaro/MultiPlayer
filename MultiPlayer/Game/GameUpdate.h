@@ -19,13 +19,13 @@
 class GameEventUpdateMessage : public IGameEventMessage
 {
 public:
-	GameEventUpdateMessage() : IGameEventMessage(GameEventMessage::GAME_UPDATE) {}
+	GameEventUpdateMessage() : IGameEventMessage(GameEventMessageId::GAME_UPDATE) {}
 };
 
 class GameEventInitMessage : public IGameEventMessage
 {
 public:
-	GameEventInitMessage() : IGameEventMessage(GameEventMessage::GAME_INIT) {}
+	GameEventInitMessage() : IGameEventMessage(GameEventMessageId::GAME_INIT) {}
 };
 
 class IGameEventUpdate : public IGameEventHandler
@@ -34,22 +34,22 @@ public:
 	IGameEventUpdate() = default;
 
 	bool filter(IGameEventMessage::Type &message) override {
-		if (message->getMessage() == GameEventMessage::GAME_INIT || message->getMessage() == GameEventMessage::GAME_UPDATE)
+		if (message->getMessageId() == GameEventMessageId::GAME_INIT || message->getMessageId() == GameEventMessageId::GAME_UPDATE)
 			return true;
 		return false;
 	}
 
-	void callback(IGameEventMessage::Type &message) override
+	void callback(IGameEventMessage::Type &message, bool& result, bool& doContinue) override
 	{
 		if (!filter(message))
 			return;
-		if (message->getMessage() == GameEventMessage::GAME_INIT)
-			OnInit();
+		if (message->getMessageId() == GameEventMessageId::GAME_INIT)
+			doContinue = OnInit();
 		
-		OnUpdate();
+		doContinue = OnUpdate();
 	}
-	virtual void OnUpdate() {};
-	virtual void OnInit() {};
+	virtual bool OnUpdate() { return true; };
+	virtual bool OnInit() { return true; };
 };
 
 

@@ -1,24 +1,9 @@
 #pragma once
-
-
-
 #include "main.h"
 #include <bitset>
-#include "Game/GameException.h"
-
-//need to stop next executing of the game event
-class GameEventException : public IGameException
-{
-public:
-	GameEventException(bool result)
-		: IGameException(""), m_result(result)
-	{};
-
-	bool m_result;
-};
 
 //All callback messages
-enum GameEventMessage
+enum GameEventMessageId
 {
 	GAME_UPDATE,
 	GAME_INIT,
@@ -37,15 +22,15 @@ class IGameEventMessage
 {
 public:
 	using Type = std::shared_ptr<IGameEventMessage>;
-	IGameEventMessage(GameEventMessage message)
+	IGameEventMessage(GameEventMessageId message)
 		: m_message(message)
 	{}
 
-	GameEventMessage getMessage() {
+	GameEventMessageId getMessageId() {
 		return m_message;
 	}
 private:
-	GameEventMessage m_message;
+	GameEventMessageId m_message;
 };
 
 //Game event message handler and filter interface
@@ -63,12 +48,8 @@ public:
 	IGameEventHandler() = default;
 
 	//filter
-	virtual void callback(IGameEventMessage::Type &message) = 0;
+	virtual void callback(IGameEventMessage::Type &message, bool& result, bool& doContinue) = 0;
 	virtual bool filter(IGameEventMessage::Type &message) = 0;
-
-	void breakListener(bool result = true) {
-		throw GameEventException(result);
-	}
 
 	void setPriority(Priority priority) {
 		m_priority = priority;
@@ -84,13 +65,14 @@ private:
 
 class IGameEventHandlerProxy;
 //proxy message
-class IGameEventMessageProxy
+class GameEventProxyMessage
 {
 public:
-	IGameEventMessageProxy(IGameEventHandlerProxy *proxy, IGameEventMessage::Type &message)
+	GameEventProxyMessage(IGameEventHandlerProxy *proxy, IGameEventMessage::Type &message)
 		: m_proxy(proxy), m_message(message)
 	{}
-	IGameEventHandlerProxy* getProxy() {
+
+	IGameEventHandlerProxy* getProxyHandler() {
 		return m_proxy;
 	}
 
@@ -103,87 +85,121 @@ private:
 };
 
 
-class IGameEventHandlerProxyNode;
+class GameEventProxyMessageAgregator;
 //Game event message handler proxy
 class IGameEventHandlerProxy
 {
+	friend class GameEventProxyMessageAgregator;
 public:
-	IGameEventHandlerProxy(IGameEventHandlerProxyNode* proxyNode = nullptr) {
-		setProxyNode(proxyNode);
+	IGameEventHandlerProxy(GameEventProxyMessageAgregator* proxyAgregator = nullptr) {
+		setProxyMessageAgregator(proxyAgregator);
 	};
 
-	void setProxyNode(IGameEventHandlerProxyNode *proxyNode) {
-		m_proxyNode = proxyNode;
+	void setProxyMessageAgregator(GameEventProxyMessageAgregator *proxyNode) {
+		m_proxyAgregator = proxyNode;
+	}
+
+	GameEventProxyMessageAgregator* getProxyMessageAgregator() {
+		return m_proxyAgregator;
 	}
 
 	bool hasProxy() {
-		return m_proxyNode != nullptr;
+		return getProxyMessageAgregator() != nullptr;
 	}
-
-	IGameEventHandlerProxyNode* getProxy() {
-		return m_proxyNode;
-	}
-
-	virtual void callback_orig(IGameEventMessage::Type &message) = 0;
 protected:
-	IGameEventHandlerProxyNode *m_proxyNode = nullptr;
+	virtual void callback_orig(IGameEventMessage::Type& message, bool& result, bool& doContinue) = 0;
+private:
+	GameEventProxyMessageAgregator *m_proxyAgregator = nullptr;
 };
 
 
-//Game event message handler proxy node the messages should be sent through
-class IGameEventHandlerProxyNode
+//It storages recieved messages of DIFFERENT type.
+//Should call <sendMessages> which calls a special handler for each message.
+class GameEventProxyMessageAgregator
 {
 public:
-	void recieveMessage(IGameEventMessageProxy* message) {
-		m_messages.push_back(message);
-	}
-protected:
-	IGameEventHandlerProxyNode() = default;
-	~IGameEventHandlerProxyNode() {
+	GameEventProxyMessageAgregator() = default;
+	~GameEventProxyMessageAgregator() {
 		for (auto it : m_messages)
 			delete it;
 	}
 
+	//save the message to handle it later
+	void recieveMessage(GameEventProxyMessage* message) {
+		m_messages.push_back(message);
+	}
+
+	//handle all storaged messages calling original handlers for each message(messaged of various types)
 	void sendMessages() {
-		for (auto it : m_messages) {
-			sendMessage(it);
+		for (auto& it : m_messages) {
+			if (it == nullptr)
+				continue;
+
+			bool result;
+			bool doContinue;
+			sendMessage(it, result, doContinue);
+
+			if (!doContinue) {
+				//removeMessagesByType(it->getMessage()->getMessageId());
+			}
+
 			delete it;
+			it = nullptr;
 		}
 		m_messages.clear();
 	}
 
-	virtual void sendMessage(IGameEventMessageProxy* it) {
+	void removeMessagesByType(GameEventMessageId id) {
+		for (auto& it : m_messages) {
+			if (it == nullptr)
+				continue;
+
+			if (it->getMessage()->getMessageId() == id) {
+				delete it;
+				it = nullptr;
+			}
+		}
+	}
+
+	void clear() {
+		m_messages.clear();
+	}
+private:
+	//messages have to be handled later
+	std::list<GameEventProxyMessage*> m_messages;
+
+	virtual void sendMessage(GameEventProxyMessage* it, bool& result, bool& doContinue) {
 		auto mes = it->getMessage();
-		it->getProxy()->callback_orig(
-			mes
+		it->getProxyHandler()->callback_orig(
+			mes, result, doContinue
 		);
 	}
-protected:
-	std::list<IGameEventMessageProxy*> m_messages;
 };
 
 
 template<typename T = IGameEventHandler>
-class GameEventHandlerProxy : public T, public IGameEventHandlerProxy
+class GameEventProxyHandler : public T, public IGameEventHandlerProxy
 {
 public:
-	using IGameEventHandlerProxy::IGameEventHandlerProxy;
-
-	void callback(IGameEventMessage::Type &message) override {
+	//message interception from an ordinary handler(it is T)
+	void callback(IGameEventMessage::Type &message, bool& result, bool& doContinue) override {
 		if (!T::filter(message))
 			return;
 		sendMessage(message);
 	}
 
-	void callback_orig(IGameEventMessage::Type &message) override {
-		T::callback(message);
+private:
+	//call the original handler
+	void callback_orig(IGameEventMessage::Type &message, bool& result, bool& doContinue) override {
+		T::callback(message, result, doContinue);
 	}
 
+	//save the message to handle it later
 	void sendMessage(IGameEventMessage::Type &message) {
 		if (!hasProxy())
 			return;
-		m_proxyNode->recieveMessage(
-			new IGameEventMessageProxy(this, message)
+		getProxyMessageAgregator()->recieveMessage(
+			new GameEventProxyMessage(this, message)
 		);
 	}
 };
@@ -213,13 +229,13 @@ public:
 
 	static bool sendEventToAll(IGameEventMessage::Type &message)
 	{
-		try {
-			for (auto handler : m_eventHandlers) {
-				handler->callback(message);
+		for (auto handler : m_eventHandlers) {
+			bool doContinue = true;
+			bool result = true;
+			handler->callback(message, result, doContinue);
+			if (!doContinue) {
+				return result;
 			}
-		}
-		catch (GameEventException ex) {
-			return ex.m_result;
 		}
 		return true;
 	}

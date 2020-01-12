@@ -27,14 +27,14 @@ public:
 	UINT m_SyncInterval;
 	UINT m_Flags;
 	GameEventD3DPresentMessage(UINT SyncInterval, UINT Flags) :
-		m_SyncInterval(SyncInterval), m_Flags(Flags), IGameEventMessage(GameEventMessage::GAME_D3D_PRESENT) {}
+		m_SyncInterval(SyncInterval), m_Flags(Flags), IGameEventMessage(GameEventMessageId::GAME_D3D_PRESENT) {}
 };
 
 //Init message
 class GameEventD3DInitMessage : public IGameEventMessage
 {
 public:
-	GameEventD3DInitMessage() : IGameEventMessage(GameEventMessage::GAME_D3D_INIT) {}
+	GameEventD3DInitMessage() : IGameEventMessage(GameEventMessageId::GAME_D3D_INIT) {}
 };
 
 //D3D event interface
@@ -44,16 +44,16 @@ public:
 	IGameEventD3D_Present() = default;
 
 	bool filter(IGameEventMessage::Type &message) override {
-		if (message->getMessage() == GameEventMessage::GAME_D3D_INIT || message->getMessage() == GameEventMessage::GAME_D3D_PRESENT)
+		if (message->getMessageId() == GameEventMessageId::GAME_D3D_INIT || message->getMessageId() == GameEventMessageId::GAME_D3D_PRESENT)
 			return true;
 		return false;
 	}
 
-	void callback(IGameEventMessage::Type &message) override
+	void callback(IGameEventMessage::Type &message, bool& result, bool& doContinue) override
 	{
 		if (!filter(message))
 			return;
-		if (message->getMessage() == GameEventMessage::GAME_D3D_INIT)
+		if (message->getMessageId() == GameEventMessageId::GAME_D3D_INIT)
 			OnInit();
 
 		auto mes = (GameEventD3DPresentMessage*)message.get();

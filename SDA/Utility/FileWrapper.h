@@ -257,9 +257,8 @@ namespace FS
 			inline static bool m_cutted = false;
 		};
 	};
-	
 
-	/*template<typename T>
+	template<typename T>
 	class FileDescriptor
 	{
 	public:
@@ -301,5 +300,25 @@ namespace FS
 		void setData(const std::string& data) override {
 			m_desc << data;
 		}
-	};*/
+	};
+
+	class JsonFileDesc : public FileDescriptor<json>
+	{
+	public:
+		JsonFileDesc(File file, int Mode = std::ios::in)
+			: FileDescriptor<json>(file, Mode)
+		{}
+
+		json getData() override {
+			std::string data(
+				(std::istreambuf_iterator<char>(m_desc)),
+				std::istreambuf_iterator<char>()
+			);
+			return json::parse(data);
+		}
+
+		void setData(const json& data) override {
+			m_desc << data.dump(4).data();
+		}
+	};
 };

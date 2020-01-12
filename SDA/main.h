@@ -18,3 +18,9 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <immintrin.h>
+
+#include <d3d11.h>
+
+
+#include <Vendor/json/json.hpp>
+using json = nlohmann::json;

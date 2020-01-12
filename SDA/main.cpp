@@ -1,5 +1,6 @@
 ﻿#include <Manager/Manager.h>
 #include <GhidraSync/GhidraSync.h>
+#include <Utility/DebugView.h>
 
 
 float gVar = 0;
@@ -12,28 +13,35 @@ int setRot(int a, float x, float y, float z, int c)
 	return result;
 }
 
+void changeGvar() {
+	gVar = 2.0;
+}
+
+#include <SdaInterface.h>
+
+void d3dHook()
+{
+	
+}
+
 
 int sda()
 {
+	DebugOutput_Console = false;
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 	printf("SDA module executing\n\n");
 	using namespace CE;
 
-	//setRot(10, 11, 12);
+	d3dHook();
+	
+	std::thread t(changeGvar);
+	t.join();
 
-	/*Stat::Analyser analyser;
-	analyser.addValue(1.2);
-	analyser.addValue(1.0);
-	analyser.addValue(0.0);
-	analyser.addValue(7);
 
-	analyser.doAnalyse();
-	return;*/
-
-	SDA* sda = new SDA(GetModuleHandle(NULL), FS::Directory("Databases"));
+	SDA* sda = new SDA(GetModuleHandle(NULL), FS::Directory("R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases"));
 	try {
-		sda->initDataBase("Databases//database.db");
+		sda->initDataBase("database.db");
 		sda->initManagers();
 		sda->load();
 
@@ -100,7 +108,7 @@ int sda()
 				//dataTypeManager.updateStructures();
 			}
 			catch (TException& tx) {
-				std::cout << "ERROR: " << tx.what() << std::endl;
+				DebugOutput("exception: " + std::string(tx.what()));
 			}
 
 			return 0;
@@ -124,7 +132,7 @@ int sda()
 				int a = 5;
 			}
 			catch (TException& tx) {
-				std::cout << "ERROR: " << tx.what() << std::endl;
+				DebugOutput("exception: " + std::string(tx.what()));
 			}
 			return 0;
 		}
@@ -214,7 +222,7 @@ int sda()
 		printf("%s | %s\n", method->getSigName().c_str(), sda->getTypeManager()->getTypeById(11)->getName());
 	}
 	catch (std::exception& e) {
-		std::cout << "exception: " << e.what() << std::endl;
+		DebugOutput("exception: " + std::string(e.what()));
 	}
 
 
@@ -244,6 +252,9 @@ int sda()
 	return 0;
 }
 
+#include <Program.h>
+Program* g_program = nullptr;
+
 BOOL APIENTRY DllMain(HMODULE hModule,
 	DWORD  ul_reason_for_call,
 	LPVOID lpReserved
@@ -253,7 +264,9 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	{
 	case DLL_PROCESS_ATTACH:
 	{
-		sda();
+		DebugOutput("sda.dll loaded successfully!");
+		g_program = new Program(hModule);
+		//sda();
 		break;
 	}
 	case DLL_THREAD_ATTACH:

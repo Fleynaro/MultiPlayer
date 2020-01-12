@@ -22,7 +22,7 @@ public:
 	LPARAM m_lParam;
 	GameEventInputMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		: m_hwnd(hwnd), m_uMsg(uMsg), m_wParam(wParam), m_lParam(lParam),
-		IGameEventMessage(GameEventMessage::GAME_INPUT)
+		IGameEventMessage(GameEventMessageId::GAME_INPUT)
 	{}
 };
 
@@ -34,18 +34,18 @@ public:
 	IGameEventInput() = default;
 
 	bool filter(IGameEventMessage::Type &message) override {
-		if (message->getMessage() == GameEventMessage::GAME_INPUT)
+		if (message->getMessageId() == GameEventMessageId::GAME_INPUT)
 			return true;
 		return false;
 	}
 
-	void callback(IGameEventMessage::Type &message) override
+	void callback(IGameEventMessage::Type &message, bool& result, bool& doContinue) override
 	{
 		if (!filter(message))
 			return;
 
 		auto mes = (GameEventInputMessage*)message.get();
-		anyBefore(mes->m_hwnd, mes->m_uMsg, mes->m_wParam, mes->m_lParam);
+		result = anyBefore(mes->m_hwnd, mes->m_uMsg, mes->m_wParam, mes->m_lParam, doContinue);
 		m_extended = (mes->m_lParam & (1 << 24)) != 0;
 
 		switch (mes->m_uMsg)
@@ -117,7 +117,7 @@ public:
 		}
 		}
 
-		anyAfter(mes->m_hwnd, mes->m_uMsg, mes->m_wParam, mes->m_lParam);
+		result = anyAfter(mes->m_hwnd, mes->m_uMsg, mes->m_wParam, mes->m_lParam, doContinue);
 	}
 	virtual void keyUp(KEY keyCode) {}
 	virtual void keyDown(KEY keyCode) {}
@@ -131,8 +131,8 @@ public:
 	virtual void mRightBtnUp() {}
 	virtual void mMove(short x, short y) {}
 	virtual void mWheel(short delta) {}
-	virtual void anyBefore(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {}
-	virtual void anyAfter(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {}
+	virtual bool anyBefore(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool& doContinue) { return true; }
+	virtual bool anyAfter(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool& doContinue) { return true; }
 protected:
 	bool m_lAltPressed = false;
 	bool m_lCtrlPressed = false;

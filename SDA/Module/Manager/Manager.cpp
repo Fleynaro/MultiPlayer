@@ -21,9 +21,9 @@ void CE::SDA::initManagers()
 	m_statManager = new StatManager(this);
 }
 
-void CE::SDA::initDataBase(std::string filename)
+void CE::SDA::initDataBase(std::string relPath)
 {
-	m_db = new SQLite::Database(filename, SQLite::OPEN_READWRITE);
+	m_db = new SQLite::Database(FS::File(getDirectory(), relPath).getFilename(), SQLite::OPEN_READWRITE);
 }
 
 void CE::TypeManager::loadInfoForClass(Type::Class* Class)

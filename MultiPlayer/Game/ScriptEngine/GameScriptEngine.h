@@ -43,7 +43,7 @@
 class GameEventScriptExeMessage : public IGameEventMessage
 {
 public:
-	GameEventScriptExeMessage() : IGameEventMessage(GameEventMessage::GAME_SCRIPT_EXECUTE) {}
+	GameEventScriptExeMessage() : IGameEventMessage(GameEventMessageId::GAME_SCRIPT_EXECUTE) {}
 };
 
 class IGameEventScriptExecute : public IGameEventHandler
@@ -52,12 +52,12 @@ public:
 	IGameEventScriptExecute() = default;
 
 	bool filter(IGameEventMessage::Type &message) override {
-		if (message->getMessage() == GameEventMessage::GAME_SCRIPT_EXECUTE)
+		if (message->getMessageId() == GameEventMessageId::GAME_SCRIPT_EXECUTE)
 			return true;
 		return false;
 	}
 
-	void callback(IGameEventMessage::Type &message) override
+	void callback(IGameEventMessage::Type &message, bool& result, bool& doContinue) override
 	{
 		if (!filter(message))
 			return;
@@ -69,7 +69,7 @@ public:
 
 //class where you can execute game scripts(spawn vehicles, peds, play audio, ...)
 class IGameScriptContext
-	: public IGameEventScriptExecute, public IGameEventHandlerProxyNode
+	: public IGameEventScriptExecute
 {
 protected:
 	//place your script code here
@@ -85,10 +85,12 @@ protected:
 	//it is a fiber and through it any message go to you
 	void ExecuteFiber() {
 		if (!m_init) {
+			m_proxyAgregator = new GameEventProxyMessageAgregator;
+
 			OnInit();
 			m_init = true;
 		}
-		sendMessages();
+		getProxyAgregator()->sendMessages();
 		OnTick();
 		switchToMainFiber();
 	}
@@ -96,6 +98,7 @@ private:
 	bool m_init = false;
 	LPVOID m_fiber = nullptr;
 	std::size_t m_wakeAt = 0;
+	GameEventProxyMessageAgregator* m_proxyAgregator = nullptr;
 
 	//entry point called when the next game script executing iteration begins
 	void Main() override
@@ -109,7 +112,7 @@ private:
 				execute();
 			}
 			else {
-				m_messages.clear();
+				getProxyAgregator()->clear();
 			}
 		}
 	}
@@ -163,6 +166,10 @@ public:
 	struct : Stat::Id
 	{
 	} m_info;
+
+	GameEventProxyMessageAgregator* getProxyAgregator() {
+		return m_proxyAgregator;
+	}
 
 	//get the main context
 	static HANDLE getMainFiber() {
@@ -365,11 +372,12 @@ class GameScriptEngineHook_Gen : public IGameHook, public ISingleton<GameScriptE
 {
 private:
 	class Init : public IGameEventUpdate {
-		void OnInit() override {
+		bool OnInit() override {
 			//GameScriptEngine::Sleep = 0x4EDE34FBADD967A6_handler;
 			GameScriptEngine::Sleep = 0x4EDE34FBADD967A6_handler;
 			GameScriptEngine::Sleep.setFunctionHook(GameScriptEngine::SleepHook);
 			GameScriptEngine::Sleep.hook();
+			return true;
 		}
 	};
 public:

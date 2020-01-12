@@ -46,12 +46,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\chromium\7.3.16\include;$(ProjectDir);$(ProjectDir)Vendor\minhook\include;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(ProjectDir)Vendor\lua\include;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\date;$(IncludePath)</IncludePath>
+    <IncludePath>C:\chromium\7.3.16\include;$(ProjectDir);$(ProjectDir)Vendor\minhook\include;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(ProjectDir)Vendor\lua\include;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\date;$(IncludePath);$(ProjectDir)..\Shared</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\minhook\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;C:\chromium\7.3.16\out.gn\x64_4.release\obj\third_party\icu;C:\chromium\7.3.16\out.gn\x64_4.release\obj\src\inspector;C:\chromium\7.3.16\out.gn\x64_4.release\obj;$(ProjectDir)Vendor\lua;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\chromium\7.3.16\include;$(ProjectDir);$(ProjectDir)Vendor\minhook\include;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(ProjectDir)Vendor\lua\include;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\date;$(ProjectDir)Vendor\glm;$(IncludePath)</IncludePath>
+    <IncludePath>C:\chromium\7.3.16\include;$(ProjectDir);$(ProjectDir)Vendor\minhook\include;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(ProjectDir)Vendor\lua\include;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\date;$(ProjectDir)Vendor\glm;$(IncludePath);$(ProjectDir)..\Shared</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\minhook\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;C:\chromium\7.3.16\out.gn\x64_4.release\obj\third_party\icu;C:\chromium\7.3.16\out.gn\x64_4.release\obj\src\inspector;C:\chromium\7.3.16\out.gn\x64_4.release\obj;$(ProjectDir)Vendor\lua;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -66,6 +66,7 @@
       </PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/std:c++17 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\Shared\SDA;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -89,6 +90,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\Shared\SDA;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

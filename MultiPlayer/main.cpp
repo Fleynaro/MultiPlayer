@@ -124,7 +124,7 @@ public:
 		set_status_text("~b~SCRIPT ENGINE INIT");
 
 		auto input = new InputHandler1;
-		input->setProxyNode(this);
+		input->setProxyMessageAgregator(this->getProxyAgregator());
 		GameInput::addEventHandler(input);
 		
 		auto d3d = new D3D_Present2;
@@ -181,11 +181,12 @@ public:
 		set_status_text("teleported");
 	}
 
-	class D3D_Present1 : public GameEventHandlerProxy<IGameEventD3D_Present>
+	class D3D_Present1 : public GameEventProxyHandler<IGameEventD3D_Present>
 	{
 	public:
 		Update1* getScriptContext() {
-			return (Update1*)getProxy();
+			//return (Update1*)getprox();
+			return nullptr;
 		}
 
 		void OnPresent(UINT SyncInterval, UINT Flags) override
@@ -211,12 +212,12 @@ public:
 		}
 	};
 
-	class InputHandler1 : public GameEventHandlerProxy<IGameEventInput>, public ISingleton<InputHandler1>
+	class InputHandler1 : public GameEventProxyHandler<IGameEventInput>, public ISingleton<InputHandler1>
 	{
 	public:
-		using GameEventHandlerProxy<IGameEventInput>::GameEventHandlerProxy;
 		Update1* getScriptContext() {
-			return (Update1*)getProxy();
+			//return (Update1*)getProxy();
+			return nullptr;
 		}
 
 		void keyUp(KEY keyCode) override
@@ -416,6 +417,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		
 		new GameAppInfo(hModule);
 		new Core;
+		DebugOutput("MultiPlayer started!");
 		break;
 	}
     case DLL_THREAD_ATTACH:
