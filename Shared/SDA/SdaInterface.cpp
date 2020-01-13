@@ -8,10 +8,19 @@ SdaInterface* GetSdaInterface()
 
 void SdaInterfaceImpl::start()
 {
-	g_program->start();
+	getProgram()->start();
 }
 
-void SdaInterfaceImpl::render(IDXGISwapChain* pSwapChain)
+void SdaInterfaceImpl::render()
 {
-	g_program->getUI()->render();
+	getProgram()->getUI()->render();
+}
+
+void SdaInterfaceImpl::setWindow(void* hwnd)
+{
+	getProgram()->getUI()->setWindow((HWND)hwnd);
+}
+
+void SdaInterfaceImpl::setSwapChain(IDXGISwapChain* pSwapChain) {
+	getProgram()->getUI()->setSwapChain(pSwapChain);
 }

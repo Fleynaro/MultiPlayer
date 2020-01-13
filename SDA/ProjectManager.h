@@ -67,12 +67,12 @@ public:
 	{}
 
 	void loadProjects() {
-		if (!m_projectsFile.exists()) {
+		if (!getProjectsFile().exists()) {
 			createProjectsFile();
 			return;
 		}
 
-		FS::JsonFileDesc projectsFile(m_projectsFile);
+		FS::JsonFileDesc projectsFile(getProjectsFile());
 		if (projectsFile.isOpen()) {
 			json data = projectsFile.getData();
 			if (!data["projects"].is_array()) {
@@ -91,11 +91,11 @@ public:
 	}
 
 	void saveProjects() {
-		if (!m_projectsFile.exists()) {
+		if (!getProjectsFile().exists()) {
 			return;
 		}
 
-		FS::JsonFileDesc projectsFile(m_projectsFile);
+		FS::JsonFileDesc projectsFile(getProjectsFile());
 		if (projectsFile.isOpen()) {
 			json data;
 			int idx = 0;
@@ -120,13 +120,21 @@ public:
 	Project* getCurrentProject() {
 		return m_currentProject;
 	}
+
+	FS::File& getProjectsFile() {
+		return m_projectsFile;
+	}
+
+	FS::Directory& getDefaultDirectory() {
+		return getProjectsFile().getDirectory();
+	}
 private:
 	FS::File m_projectsFile;
 	Project* m_currentProject = nullptr;
 	std::list<Project*> m_projects;
 
 	void createProjectsFile() {
-		FS::JsonFileDesc projectsFile(m_projectsFile, std::ios::out);
+		FS::JsonFileDesc projectsFile(getProjectsFile(), std::ios::out);
 
 		if (projectsFile.isOpen()) {
 			json data;

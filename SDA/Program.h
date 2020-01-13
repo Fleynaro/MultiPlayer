@@ -16,7 +16,7 @@ public:
 
 	void start() {
 		getProjectManager()->loadProjects();
-		getUI()->getWindowManager()->addWindow(new GUI::Window::ProjectManager);
+		getUI()->getWindowManager()->addWindow(new GUI::Window::ProjectManager(getProjectManager()));
 	}
 
 	FS::Directory& getProgramDirectory() {
@@ -38,3 +38,6 @@ private:
 };
 
 extern Program* g_program;
+static Program* getProgram() {
+	return g_program;
+}

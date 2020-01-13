@@ -126,7 +126,7 @@ namespace GUI
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 			if (sda != nullptr) {
-				sda->execute_d3d_present(Direct3D11::getSwapChain());
+				sda->render();
 			}
 		}
 	};
@@ -159,6 +159,8 @@ namespace GUI
 				if (dll != NULL) {
 					sda = getSdaInterface(dll);
 					if (sda != nullptr) {
+						sda->setWindow(GameInput::m_hWindow);
+						sda->setSwapChain(Direct3D11::getSwapChain());
 						sda->start();
 					}
 				}

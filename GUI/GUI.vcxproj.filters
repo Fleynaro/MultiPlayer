@@ -30,27 +30,6 @@
     <ClInclude Include="UI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Items\Attribute.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Items\Events.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Items\Items.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Items\IWidget.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Items\IWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\Items\StyleThemes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GUI\imgui_include.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -81,41 +60,56 @@
     <ClInclude Include="TestWindows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Widgets\CodeEditor\CodeEditor.h">
+    <ClInclude Include="Shared\GUI\Items\Attribute.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Widgets\CodeEditor\TextEditor.h">
+    <ClInclude Include="Shared\GUI\Items\Events.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Widgets\Template\CategoryListSearch.h">
+    <ClInclude Include="Shared\GUI\Items\Items.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Widgets\Template\CategoryListSearchWithPageNav.h">
+    <ClInclude Include="Shared\GUI\Items\IWidget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Widgets\FileBrowserTree.h">
+    <ClInclude Include="Shared\GUI\Items\IWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Widgets\ILoadContent.h">
+    <ClInclude Include="Shared\GUI\Items\StyleThemes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Widgets\PageNavigation.h">
+    <ClInclude Include="Shared\GUI\Widgets\CodeEditor\CodeEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Widgets\PopupContextWindow.h">
+    <ClInclude Include="Shared\GUI\Widgets\CodeEditor\TextEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GUI\Windows\Templates\ManagerWin.h">
+    <ClInclude Include="Shared\GUI\Widgets\Template\CategoryListSearch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\GUI\Widgets\Template\CategoryListSearchWithPageNav.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\GUI\Widgets\FileBrowserTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\GUI\Widgets\ILoadContent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\GUI\Widgets\PageNavigation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\GUI\Widgets\PopupContextWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\GUI\Windows\Templates\ManagerWin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared\GUI\imgui_include.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GUI.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI\Items\Items.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Vendor\imgui\imgui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -134,7 +128,7 @@
     <ClCompile Include="Vendor\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GUI\Widgets\CodeEditor\TextEditor.cpp">
+    <ClCompile Include="Shared\GUI\Items\Items.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

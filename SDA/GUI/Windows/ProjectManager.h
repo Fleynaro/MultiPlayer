@@ -1,17 +1,24 @@
 #pragma once
 #include "GUI/Items/IWindow.h"
-#include <ProjectManager.h>
+#include <Program.h>
 
 namespace GUI::Window
 {
-class ProjectCreating : public IWindow
-{
+	class ProjectCreating : public IWindow
+	{
 	public:
-		ProjectCreating()
-			: IWindow("Create a project")
+		::ProjectManager* m_projectManager;
+		std::string m_projectName;
+		std::string m_projectDir;
+
+		ProjectCreating(::ProjectManager* projectManager)
+			: IWindow("Create a project"), m_projectManager(projectManager)
 		{
 			setWidth(350);
 			setHeight(130);
+
+			m_projectName = "MyProject";
+			m_projectDir = m_projectManager->getDefaultDirectory().next("MyProject").getPath();
 
 			getMainContainer()
 				.text("Enter your project name:")
@@ -20,10 +27,10 @@ class ProjectCreating : public IWindow
 						"##input1",
 						50,
 						new Events::EventUI(EVENT_LAMBDA(info) {
-
+							
 						})
 					))
-					->setInputValue("lol")
+					->setInputValue(m_projectName)
 				)
 				.text("Enter your project location:")
 				.addItem(
@@ -34,7 +41,16 @@ class ProjectCreating : public IWindow
 
 						})
 					))
-					->setInputValue("lol")
+					->setInputValue(m_projectDir)
+				)
+				.newLine()
+				.addItem(
+					new GUI::Elements::Button::ButtonStd(
+						"Create",
+						new Events::EventUI(EVENT_LAMBDA(info) {
+							
+						})
+					)
 				);
 		}
 	};
@@ -45,9 +61,10 @@ class ProjectCreating : public IWindow
 		Elements::List::ListBoxDyn* m_projectsList = nullptr;
 		Container* m_projectListBlock = nullptr;
 		Container* m_noOneProjectCreated = nullptr;
+		::ProjectManager* m_projectManager;
 
-		ProjectManager()
-			: IWindow("Project manager")
+		ProjectManager(::ProjectManager* projectManager)
+			: IWindow("Project manager"), m_projectManager(projectManager)
 		{
 			setWidth(400);
 			setHeight(200);
@@ -60,7 +77,7 @@ class ProjectCreating : public IWindow
 					(
 						(new Elements::List::ListBoxDyn("", 0,
 							new Events::EventUI(EVENT_LAMBDA(info) {
-						
+								//info->getSender()
 							})
 						))
 						->setWidth(400)
@@ -78,15 +95,18 @@ class ProjectCreating : public IWindow
 					new GUI::Elements::Button::ButtonStd(
 						"create a project",
 						new Events::EventUI(EVENT_LAMBDA(info) {
-
+							addWindow(new ProjectCreating(m_projectManager));
 						})
 					)
 				);
 
-			m_projectsList->addItem("MyProject1", nullptr);
-			m_projectsList->addItem("MyProject2", nullptr);
-			m_projectListBlock->setDisplay(true);
-			m_noOneProjectCreated->setDisplay(false);
+			for(auto& project : m_projectManager->getProjects()) {
+				m_projectsList->addItem(project->getName(), project);
+			}
+
+			bool hasProject = !m_projectManager->getProjects().empty();
+			m_projectListBlock->setDisplay(hasProject);
+			m_noOneProjectCreated->setDisplay(!hasProject);
 		}
 	};
 };

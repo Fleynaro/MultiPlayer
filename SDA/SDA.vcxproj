@@ -70,7 +70,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI\Shared;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugExe|x64'">
@@ -138,8 +138,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\GUI\GUI\Items\Items.cpp" />
-    <ClCompile Include="..\GUI\GUI\Widgets\FileBrowserTree.cpp" />
+    <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
+    <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
     <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\Code\Function\Function.cpp" />

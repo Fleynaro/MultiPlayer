@@ -6,7 +6,9 @@ class SdaInterface
 {
 public:
 	virtual void start() = 0;
-	virtual void render(IDXGISwapChain* pSwapChain) = 0;
+	virtual void render() = 0;
+	virtual void setWindow(void* hwnd) = 0;
+	virtual void setSwapChain(IDXGISwapChain* swapChain) = 0;
 };
 
 #ifdef SDA_DLL_EXPORTS 
@@ -14,7 +16,9 @@ class SdaInterfaceImpl : public SdaInterface
 {
 public:
 	void start() override;
-	void render(IDXGISwapChain* pSwapChain) override;
+	void render() override;
+	void setWindow(void* hwnd) override;
+	void setSwapChain(IDXGISwapChain* pSwapChain) override;
 };
 
 extern "C"

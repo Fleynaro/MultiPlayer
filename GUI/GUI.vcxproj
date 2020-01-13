@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Vendor\imgui;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Vendor\imgui;$(ProjectDir)..\GUI\Shared;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -159,24 +159,24 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="GUI.h" />
-    <ClInclude Include="GUI\imgui_include.h" />
-    <ClInclude Include="GUI\Items\Attribute.h" />
-    <ClInclude Include="GUI\Items\Events.h" />
-    <ClInclude Include="GUI\Items\Items.h" />
-    <ClInclude Include="GUI\Items\IWidget.h" />
-    <ClInclude Include="GUI\Items\IWindow.h" />
-    <ClInclude Include="GUI\Items\StyleThemes.h" />
-    <ClInclude Include="GUI\Widgets\CodeEditor\CodeEditor.h" />
-    <ClInclude Include="GUI\Widgets\CodeEditor\TextEditor.h" />
-    <ClInclude Include="GUI\Widgets\FileBrowserTree.h" />
-    <ClInclude Include="GUI\Widgets\ILoadContent.h" />
-    <ClInclude Include="GUI\Widgets\PageNavigation.h" />
-    <ClInclude Include="GUI\Widgets\PopupContextWindow.h" />
-    <ClInclude Include="GUI\Widgets\Template\CategoryListSearch.h" />
-    <ClInclude Include="GUI\Widgets\Template\CategoryListSearchWithPageNav.h" />
-    <ClInclude Include="GUI\Windows\Templates\ManagerWin.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="Shared\GUI\imgui_include.h" />
+    <ClInclude Include="Shared\GUI\Items\Attribute.h" />
+    <ClInclude Include="Shared\GUI\Items\Events.h" />
+    <ClInclude Include="Shared\GUI\Items\Items.h" />
+    <ClInclude Include="Shared\GUI\Items\IWidget.h" />
+    <ClInclude Include="Shared\GUI\Items\IWindow.h" />
+    <ClInclude Include="Shared\GUI\Items\StyleThemes.h" />
+    <ClInclude Include="Shared\GUI\Widgets\CodeEditor\CodeEditor.h" />
+    <ClInclude Include="Shared\GUI\Widgets\CodeEditor\TextEditor.h" />
+    <ClInclude Include="Shared\GUI\Widgets\FileBrowserTree.h" />
+    <ClInclude Include="Shared\GUI\Widgets\ILoadContent.h" />
+    <ClInclude Include="Shared\GUI\Widgets\PageNavigation.h" />
+    <ClInclude Include="Shared\GUI\Widgets\PopupContextWindow.h" />
+    <ClInclude Include="Shared\GUI\Widgets\Template\CategoryListSearch.h" />
+    <ClInclude Include="Shared\GUI\Widgets\Template\CategoryListSearchWithPageNav.h" />
+    <ClInclude Include="Shared\GUI\Windows\Templates\ManagerWin.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TestWindows.h" />
     <ClInclude Include="UI.h" />
@@ -191,8 +191,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GUI.cpp" />
-    <ClCompile Include="GUI\Items\Items.cpp" />
-    <ClCompile Include="GUI\Widgets\CodeEditor\TextEditor.cpp" />
+    <ClCompile Include="Shared\GUI\Items\Items.cpp" />
     <ClCompile Include="Vendor\imgui\imgui.cpp" />
     <ClCompile Include="Vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="Vendor\imgui\imgui_draw.cpp" />
