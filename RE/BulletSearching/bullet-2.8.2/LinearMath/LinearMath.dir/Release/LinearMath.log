@@ -1,0 +1,19 @@
+﻿M:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V110\Microsoft.CppBuild.targets(346,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+  Building Custom Rule C:/Bullet/bullet3-2.82/src/LinearMath/CMakeLists.txt
+  CMake does not need to re-run because C:/Bullet/bullet3-2.82/build10/src/LinearMath/CMakeFiles/generate.stamp is up-to-date.
+  btAlignedAllocator.cpp
+  btConvexHull.cpp
+  btConvexHullComputer.cpp
+  btGeometryUtil.cpp
+  btPolarDecomposition.cpp
+  btQuickprof.cpp
+  btSerializer.cpp
+  btVector3.cpp
+C:\Bullet\bullet3-2.82\src\LinearMath\btVector3.cpp(179): warning C4267: '=' : conversion from 'size_t' to 'long', possible loss of data
+C:\Bullet\bullet3-2.82\src\LinearMath\btVector3.cpp(184): warning C4267: '-=' : conversion from 'size_t' to 'unsigned long', possible loss of data
+C:\Bullet\bullet3-2.82\src\LinearMath\btVector3.cpp(427): warning C4267: '=' : conversion from 'size_t' to 'long', possible loss of data
+C:\Bullet\bullet3-2.82\src\LinearMath\btVector3.cpp(564): warning C4267: '=' : conversion from 'size_t' to 'long', possible loss of data
+C:\Bullet\bullet3-2.82\src\LinearMath\btVector3.cpp(569): warning C4267: '-=' : conversion from 'size_t' to 'unsigned long', possible loss of data
+C:\Bullet\bullet3-2.82\src\LinearMath\btVector3.cpp(815): warning C4267: '=' : conversion from 'size_t' to 'long', possible loss of data
+  Generating Code...
+  LinearMath.vcxproj -> M:\Users\user\source\repos\StdLivCompiling2012\bullet-2.8.2\LinearMath\..\..\bullet_release\LinearMath282.lib

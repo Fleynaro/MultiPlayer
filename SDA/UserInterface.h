@@ -9,45 +9,32 @@ using namespace GUI::Window;
 class WindowManager
 {
 public:
-	WindowManager()
-	{}
-
-	void addWindow(GUI::Window::IWindow* window) {
-		window->setCloseEvent(
-			new GUI::Events::EventUI(EVENT_LAMBDA(info) {
-				auto win = (GUI::Window::IWindow*)info->getSender();
-				removeWindow(win);
-				delete win;
-			})
-		);
-		m_windows.push_back(window);
+	WindowManager() {
+		m_mainWindow = new InvisibleWindow("WindowManager");
+		setVisible(true);
 	}
 
-	void removeWindow(GUI::Window::IWindow* window) {
-		m_windows.remove(window);
-		if (m_windows.size() == 0) {
-			setVisibleForAll(false);
-		}
+	void addWindow(IWindow* window) {
+		m_mainWindow->addWindow(window);
 	}
 
-	void setVisibleForAll(bool state) {
-		m_shown = state;
+	void removeWindow(IWindow* window) {
+		m_mainWindow->removeWindow(window);
+	}
+
+	void setVisible(bool state) {
+		m_mainWindow->setDisplay(state);
 	}
 
 	bool isVisible() {
-		return m_shown;
+		return m_mainWindow->isShown();
 	}
 
 	void render() {
-		if (!m_shown)
-			return;
-		for (auto it : m_windows) {
-			it->show();
-		}
+		m_mainWindow->show();
 	}
 private:
-	std::list<GUI::Window::IWindow*> m_windows;
-	bool m_shown = true;
+	GUI::Window::InvisibleWindow* m_mainWindow;
 };
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

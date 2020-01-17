@@ -16,7 +16,7 @@ public:
 
 	void start() {
 		getProjectManager()->loadProjects();
-		getUI()->getWindowManager()->addWindow(new GUI::Window::ProjectManager(getProjectManager()));
+		getUI()->getWindowManager()->addWindow(new GUI::Window::ProjectManagerWin(getProjectManager()));
 	}
 
 	FS::Directory& getProgramDirectory() {

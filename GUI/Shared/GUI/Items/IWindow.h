@@ -116,6 +116,10 @@ namespace GUI::Window
 			return ImGui::GetWindowSize().y;
 		}
 
+		IWindow* getParent() {
+			return (IWindow*)Item::getParent();
+		}
+
 		IWindow& addWindow(IWindow* window) {
 			m_childs.push_back(window);
 			window->setParent(this);
@@ -134,6 +138,13 @@ namespace GUI::Window
 		IWindow& removeWindow(IWindow* window) {
 			m_childs.remove(window);
 			return *this;
+		}
+
+		void close() {
+			if (getParent() != nullptr) {
+				getParent()->removeWindow(this);
+			}
+			delete this;
 		}
 	protected:
 		bool m_open = true;
@@ -182,5 +193,18 @@ namespace GUI::Window
 		}
 	protected:
 		Container* m_menu;
+	};
+
+	class InvisibleWindow : public IWindow
+	{
+	public:
+		InvisibleWindow(std::string name)
+			: IWindow("Invisible window: " + name)
+		{}
+
+		void render() override {
+			pushParams();
+			renderChildWindows();
+		}
 	};
 };

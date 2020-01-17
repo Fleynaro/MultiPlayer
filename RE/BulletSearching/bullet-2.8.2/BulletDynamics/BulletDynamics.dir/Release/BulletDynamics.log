@@ -1,0 +1,2 @@
+﻿M:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V110\Microsoft.CppBuild.targets(346,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+  BulletDynamics.vcxproj -> M:\Users\user\source\repos\StdLivCompiling2012\bullet-2.8.2\BulletDynamics\..\..\bullet_release\BulletDynamics282.lib
