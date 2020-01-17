@@ -6,7 +6,7 @@ namespace CE
 {
 	namespace Ghidra
 	{
-		class DataTypeManager : public IManager
+		class DataTypeManager : public AbstractManager
 		{
 		public:
 			using HashMap = std::map<datatype::Id, datatype::Hash>; //todo: 1) по lastUpdatedDate  2) сделать глобальным и изменять его при изменении типов
@@ -14,7 +14,7 @@ namespace CE
 			DataTypeManager(TypeManager* typeManager, Client* client)
 				:
 				m_typeManager(typeManager),
-				IManager(client),
+				AbstractManager(client),
 				m_client(std::shared_ptr<TMultiplexedProtocol>(new TMultiplexedProtocol(getClient()->m_protocol, "DataTypeManager")))
 			{}
 
@@ -38,12 +38,12 @@ namespace CE
 			}
 
 			Type::Type* getType(const shared::STypeUnit& typeUnitDesc) {
-				return m_typeManager->getType(findTypeById(typeUnitDesc.typeId), typeUnitDesc.pointerLvl, typeUnitDesc.arraySize);
+				return m_typeManager->getType(findTypeById(typeUnitDesc.typeId)->getType(), typeUnitDesc.pointerLvl, typeUnitDesc.arraySize);
 			}
 
-			Type::Type* findTypeById(datatype::Id id, bool returnDefType = true) {
+			API::Type::Type* findTypeById(datatype::Id id, bool returnDefType = true) {
 				for (auto& it : m_typeManager->getTypes()) {
-					if (getId(it.second, false) == id) {
+					if (getId(it.second->getType(), false) == id) {
 						return it.second;
 					}
 				}
@@ -172,7 +172,7 @@ namespace CE
 					auto& baseClass = structDesc.fields[curField];
 					if (baseClass.type.pointerLvl == 0 && baseClass.type.arraySize == 0) {
 						if (baseClass.comment.find("{base class}") != std::string::npos) {
-							auto type = findTypeById(baseClass.type.typeId);
+							auto type = findTypeById(baseClass.type.typeId)->getType();
 							if (type->getGroup() == Type::Type::Class) {
 								Class->setBaseClass((Type::Class*)type);
 								curField++;
@@ -235,13 +235,13 @@ namespace CE
 				return result;
 			}
 
-			Type::Type* changeOrCreate(const datatype::SDataType& dataType) {
-				Type::Type* type = findTypeById(dataType.id, false);
+			API::Type::Type* changeOrCreate(const datatype::SDataType& dataType) {
+				auto type = findTypeById(dataType.id, false);
 				if (type == nullptr) {
 					switch (dataType.group)
 					{
 					case datatype::DataTypeGroup::Typedef:
-						type = m_typeManager->createTypedef(m_typeManager->getDefaultType(), dataType.name, dataType.desc);
+						type = m_typeManager->createTypedef(m_typeManager->getDefaultType()->getType(), dataType.name, dataType.desc);
 						break;
 					case datatype::DataTypeGroup::Enum:
 						type = m_typeManager->createEnum(dataType.name, dataType.desc);
@@ -252,8 +252,10 @@ namespace CE
 					}
 				}
 				else {
-					if (type->isUserDefined() && (int)type->getGroup() == (int)dataType.group) {
-						change((Type::UserType*)type, dataType);
+					if (type->getType()->isUserDefined() && (int)type->getType()->getGroup() == (int)dataType.group) {
+						type->change([&] {
+							change((Type::UserType*)type->getType(), dataType);
+						});
 					}
 					else {
 						type = nullptr;
@@ -262,27 +264,33 @@ namespace CE
 				return type;
 			}
 
-			Type::Typedef* changeOrCreate(const datatype::SDataTypeTypedef& Typedef) {
-				auto type = (Type::Typedef*)changeOrCreate(Typedef.type);
+			API::Type::Typedef* changeOrCreate(const datatype::SDataTypeTypedef& Typedef) {
+				auto type = (API::Type::Typedef*)changeOrCreate(Typedef.type);
 				if (type == nullptr)
 					return nullptr;
-				change(type, Typedef);
+				type->change([&] {
+					change(type->getTypedef(), Typedef);
+				});
 				return type;
 			}
 
-			Type::Enum* changeOrCreate(const datatype::SDataTypeEnum& enumeration) {
-				auto type = (Type::Enum*)changeOrCreate(enumeration.type);
+			API::Type::Enum* changeOrCreate(const datatype::SDataTypeEnum& enumeration) {
+				auto type = (API::Type::Enum*)changeOrCreate(enumeration.type);
 				if (type == nullptr)
 					return nullptr;
-				change(type, enumeration);
+				type->change([&] {
+					change(type->getEnum(), enumeration);
+				});
 				return type;
 			}
 
-			Type::Class* changeOrCreate(const datatype::SDataTypeStructure& structure) {
-				auto type = (Type::Class*)changeOrCreate(structure.type);
+			API::Type::Class* changeOrCreate(const datatype::SDataTypeStructure& structure) {
+				auto type = (API::Type::Class*)changeOrCreate(structure.type);
 				if (type == nullptr)
 					return nullptr;
-				change(type, structure);
+				type->change([&] {
+					change(type->getClass(), structure);
+				});
 				return type;
 			}
 
@@ -376,8 +384,8 @@ namespace CE
 			HashMap generateHashMap() {
 				HashMap hashmap;
 				for (auto& it : m_typeManager->getTypes()) {
-					if (it.second->isUserDefined()) {
-						auto type = (Type::UserType*)it.second;
+					if (it.second->getType()->isUserDefined()) {
+						auto type = (Type::UserType*)it.second->getType();
 						if (type->isGhidraUnit()) {
 							hashmap.insert(std::make_pair(getId(type), getHash(type)));
 						}

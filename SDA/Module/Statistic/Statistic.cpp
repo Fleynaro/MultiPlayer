@@ -1,21 +1,21 @@
 #include "Statistic.h"
 #include <Trigger/Trigger.h>
 
-void CE::Stat::Function::Args::Garbager::add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+void CE::Stat::Function::Args::Collector::add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
 {
 	m_bufferMutex.lock();
 	m_buffers.push(Buffer(hook, trigger));
 	m_bufferMutex.unlock();
 }
 
-void CE::Stat::Function::Ret::Garbager::add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+void CE::Stat::Function::Ret::Collector::add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
 {
 	m_bufferMutex.lock();
 	m_buffers.push(Buffer(hook, trigger));
 	m_bufferMutex.unlock();
 }
 
-void CE::Stat::Function::Args::Garbager::send(Buffer& buffer)
+void CE::Stat::Function::Args::Collector::send(Buffer& buffer)
 {
 	try {
 		SQLite::Database& db = getDB();
@@ -58,7 +58,7 @@ void CE::Stat::Function::Args::Garbager::send(Buffer& buffer)
 	}
 }
 
-void CE::Stat::Function::Ret::Garbager::send(Buffer& buffer)
+void CE::Stat::Function::Ret::Collector::send(Buffer& buffer)
 {
 	try {
 		SQLite::Database& db = getDB();

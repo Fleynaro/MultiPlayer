@@ -37,8 +37,13 @@ public:
 		saveProjectFile();
 	}
 
-	bool isValid() {
-		return getProjectFile().exists();
+	void create() {
+		createProjectFile();
+		auto moduleDir = getDirectory().next("Exe");
+		moduleDir.createIfNotExists();
+		
+		m_programExe = new CE::ProgramExe(GetModuleHandle(NULL), moduleDir);
+		load();
 	}
 
 	void load() {
@@ -46,6 +51,20 @@ public:
 			return;
 		}
 
+		try {
+			getProgramExe()->initDataBase("general.db");
+			getProgramExe()->initGhidraClient();
+			getProgramExe()->initManagers();
+			getProgramExe()->load();
+
+		}
+		catch (std::exception & e) {
+			DebugOutput("exception: " + std::string(e.what()));
+		}
+	}
+	
+	bool isValid() {
+		return getProjectFile().exists();
 	}
 
 	FS::File getProjectFile() {
@@ -63,10 +82,16 @@ public:
 	std::string& getDesc() {
 		return m_name;
 	}
+
+	CE::ProgramExe* getProgramExe() {
+		return m_programExe;
+	}
 private:
 	std::string m_name;
 	std::string m_desc;
 	FS::Directory m_dir;
+
+	CE::ProgramExe* m_programExe = nullptr;
 };
 
 #include <Utility/FileWrapper.h>
@@ -94,7 +119,7 @@ public:
 				if (!projectInfo.is_object() || !projectInfo["name"].is_string() || !projectInfo["dir"].is_string())
 					continue;
 				auto projectDir = FS::Directory(projectInfo["dir"]);
-				if (projectDir.exists()) {
+				if (doesProjectExists(projectDir)) {
 					createProject(projectInfo["name"], projectDir);
 				}
 			}
@@ -130,8 +155,16 @@ public:
 		return project;
 	}
 
+	void setCurrentProject(Project* project) {
+		m_currentProject = project;
+	}
+
 	Project* getCurrentProject() {
 		return m_currentProject;
+	}
+
+	bool isAnyProjectActive() {
+		return getCurrentProject() != nullptr;
 	}
 
 	FS::File& getProjectsFile() {

@@ -4,19 +4,19 @@
 
 namespace CE
 {
-	class TriggerManager : public IManager
+	class TriggerManager : public AbstractManager
 	{
 	public:
 		using TriggerDict = std::map<int, Trigger::ITrigger*>;
 
-		TriggerManager(SDA* sda)
-			: IManager(sda)
+		TriggerManager(ProgramModule* sda)
+			: AbstractManager(sda)
 		{}
 
 		void saveTrigger(Trigger::ITrigger* trigger) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 
 			{
 				SQLite::Statement query(db, "REPLACE INTO sda_triggers(id, type, name, desc) VALUES(?1, ?2, ?3, ?4)");
@@ -35,7 +35,7 @@ namespace CE
 		void saveFiltersForFuncTrigger(Trigger::Function::Trigger* trigger) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Transaction transaction(db);
 
 			{
@@ -65,7 +65,7 @@ namespace CE
 			using namespace SQLite;
 			using namespace Trigger::Function::Filter;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT filter_id,data FROM sda_func_trigger_filters WHERE trigger_id=?1");
 			query.bind(1, trigger->getId());
 
@@ -102,7 +102,7 @@ namespace CE
 		void removeTrigger(Trigger::ITrigger* trigger) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "DELETE FROM sda_triggers WHERE id=?1");
 			query.bind(1, trigger->getId());
 			query.exec();
@@ -131,7 +131,7 @@ namespace CE
 		{
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT * FROM sda_triggers");
 
 			while (query.executeStep())

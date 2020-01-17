@@ -4,53 +4,55 @@
 
 namespace CE
 {
-	class StatManager : public IManager
+	class StatManager : public AbstractManager
 	{
 	public:
-		StatManager(SDA* sda)
-			: IManager(sda)
+		StatManager(ProgramModule* sda)
+			: AbstractManager(sda)
 		{
 			m_funcArgManager = new Stat::Function::Args::Manager;
 			m_funcRetManager = new Stat::Function::Ret::Manager;
 			initGeneralDB();
-			initGarbagers(1);
+			initCollectors(1);
 		}
 
-		void initGarbagers(int amount) {
+		void initCollectors(int amount) {
+			auto collectorDir = getProgramModule()->getDirectory().next("collectors");
+			collectorDir.createIfNotExists();
+
 			for (int i = 1; i <= amount; i++)
 			{
 				{
-					auto garbager = new Stat::Function::Args::Garbager(this);
-					garbager->initDataBase(
+					auto collector = new Stat::Function::Args::Collector(this);
+					collector->initDataBase(openOrCreate_callBeforeDb(
 						FS::File(
-							getSDA()->getDirectory().next("garbagers"),
+							collectorDir,
 							"call_before" + std::to_string(i) + ".db"
 						)
-					);
-					//garbager->clear();
-					garbager->start();
-					getFuncArgManager()->addGarbager(garbager);
+					));
+					//collector->clear();
+					collector->start();
+					getFuncArgManager()->addCollector(collector);
 				}
 
 				{
-					auto garbager = new Stat::Function::Ret::Garbager(this);
-					garbager->initDataBase(
+					auto collector = new Stat::Function::Ret::Collector(this);
+					collector->initDataBase(openOrCreate_callAfterDb(
 						FS::File(
-							getSDA()->getDirectory().next("garbagers"),
+							collectorDir,
 							"call_after" + std::to_string(i) + ".db"
 						)
-					);
-					//garbager->clear();
-					garbager->start();
-					getFuncRetManager()->addGarbager(garbager);
+					));
+					//collector->clear();
+					collector->start();
+					getFuncRetManager()->addCollector(collector);
 				}
 			}
 		}
 
-		void initGeneralDB()
-		{
-			m_general_db = new SQLite::Database(FS::File(getSDA()->getDirectory(), "general_stat.db").getFilename(), SQLite::OPEN_READWRITE);
-		}
+		SQLite::Database* openOrCreate_callBeforeDb(FS::File file);
+		SQLite::Database* openOrCreate_callAfterDb(FS::File file);
+		void initGeneralDB();
 
 		void updateGeneralDB()
 		{

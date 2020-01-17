@@ -17,6 +17,7 @@ namespace GUI::Window
 		{
 			setWidth(350);
 			setHeight(150);
+			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
 			getMainContainer()
 				.text("Enter your project name:")
@@ -72,8 +73,8 @@ namespace GUI::Window
 		ProjectManagerWin(::ProjectManager* projectManager)
 			: IWindow("Project manager"), m_projectManager(projectManager)
 		{
-			setWidth(400);
-			setHeight(200);
+			setWidth(550);
+			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
 			getMainContainer()
 				.beginContainer((Container**)& m_projectListBlock)
@@ -96,9 +97,12 @@ namespace GUI::Window
 						new GUI::Elements::Button::ButtonStd(
 							"open",
 							new Events::EventUI(EVENT_LAMBDA(info) {
+								if (m_projectManager->isAnyProjectActive())
+									return;
+
 								auto project = (Project*)m_projectsList->getSelectedItemPtr();
 								project->load();
-
+								m_projectManager->setCurrentProject(project);
 								close();
 							})
 						)
@@ -108,7 +112,7 @@ namespace GUI::Window
 					.newLine()
 				.end()
 				.beginContainer((Container**)& m_noOneProjectCreated)
-					.text("No project has been created yet.")
+					.text("<No project has been created yet.>")
 					.newLine()
 				.end()
 				.text("You can create a new project")

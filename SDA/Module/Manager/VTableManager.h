@@ -4,23 +4,23 @@
 
 namespace CE
 {
-	class VtableManager : public IManager
+	class VtableManager : public AbstractManager
 	{
 	public:
 		using VTableDict = std::map<int, Function::VTable*>;
 
-		VtableManager(SDA* sda)
-			: IManager(sda)
+		VtableManager(ProgramModule* sda)
+			: AbstractManager(sda)
 		{}
 
 		void saveVTable(Function::VTable* vtable) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "REPLACE INTO sda_vtables (id, name, offset, desc) VALUES(?1, ?2, ?3, ?4)");
 			query.bind(1, vtable->getId());
 			query.bind(2, vtable->getName());
-			query.bind(3, getSDA()->toRelAddr(vtable->getAddress()));
+			query.bind(3, getProgramModule()->toRelAddr(vtable->getAddress()));
 			query.bind(4, vtable->getDesc());
 			query.exec();
 		}
@@ -28,7 +28,7 @@ namespace CE
 		void saveFunctionsForVTable(Function::VTable* vtable) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Transaction transaction(db);
 
 			{
@@ -55,7 +55,7 @@ namespace CE
 		void removeVTable(Function::VTable* vtable) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "DELETE FROM sda_vtables WHERE id=?1");
 			query.bind(1, vtable->getId());
 			query.exec();
@@ -84,13 +84,13 @@ namespace CE
 		{
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT * FROM sda_vtables");
 
 			while (query.executeStep())
 			{
 				Function::VTable* vtable = new Function::VTable(
-					getSDA()->toAbsAddr(query.getColumn("offset")),
+					getProgramModule()->toAbsAddr(query.getColumn("offset")),
 					query.getColumn("id"),
 					query.getColumn("name"),
 					query.getColumn("desc")
@@ -105,15 +105,15 @@ namespace CE
 		{
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT function_id FROM sda_vtable_funcs WHERE vtable_id=?1 GROUP BY id");
 			query.bind(1, vtable->getId());
 
 			while (query.executeStep())
 			{
-				Function::Function* function = getSDA()->getFunctionManager()->getFunctionById(query.getColumn("function_id"));
-				if (function != nullptr && function->isMethod()) {
-					vtable->addMethod((Function::Method*)function);
+				auto function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("function_id"));
+				if (function != nullptr && function->getFunction()->isMethod()) {
+					vtable->addMethod((Function::Method*)function->getFunction());
 				}
 			}
 		}

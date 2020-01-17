@@ -9,7 +9,8 @@ void GUI::Window::ProjectCreating::CALLBACK_createProject(const GUI::Events::Eve
 		projectDir.createIfNotExists();
 		auto project = m_projectManager->createProject(m_projectNameText->getInputValue(), projectDir);
 		m_projectManager->saveProjects();
-		project->createProjectFile();
+		project->create();
+		m_projectManager->setCurrentProject(project);
 		((ProjectManagerWin*)getParent())->updateProjectList();
 		close();
 	}

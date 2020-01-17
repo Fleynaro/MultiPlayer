@@ -14,7 +14,7 @@ using namespace apache::thrift::transport;
 
 namespace CE
 {
-	class SDA;
+	class ProgramModule;
 
 	namespace Ghidra
 	{
@@ -32,8 +32,8 @@ namespace CE
 			DataTypeManager* m_dataTypeManager = nullptr;
 			FunctionManager* m_functionManager = nullptr;
 
-			Client(SDA* sda)
-				: m_sda(sda)
+			Client(ProgramModule* module)
+				: m_module(module)
 			{
 				m_socket = std::shared_ptr<TTransport>(new TSocket("localhost", m_port));
 				m_transport = std::shared_ptr<TTransport>(new TBufferedTransport(m_socket));
@@ -43,11 +43,11 @@ namespace CE
 
 			void initManagers();
 
-			SDA* getSDA() {
-				return m_sda;
+			ProgramModule* getProgramModule() {
+				return m_module;
 			}
 		private:
-			SDA* m_sda = nullptr;
+			ProgramModule* m_module = nullptr;
 
 			std::shared_ptr<TTransport> m_socket;
 			std::shared_ptr<TTransport> m_transport;
@@ -55,10 +55,10 @@ namespace CE
 			int m_port = 9090;
 		};
 
-		class IManager
+		class AbstractManager
 		{
 		public:
-			IManager(Client* client)
+			AbstractManager(Client* client)
 				: m_client(client)
 			{}
 		protected:

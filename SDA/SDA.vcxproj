@@ -145,6 +145,7 @@
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\Code\Function\Function.cpp" />
     <ClCompile Include="Module\Code\Type\Type.cpp" />
+    <ClCompile Include="Module\Disassembler\Disassembler.cpp" />
     <ClCompile Include="Module\DynHook\DynHook.cpp" />
     <ClCompile Include="Module\GhidraSync\GhidraSync.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\DataTypeManagerService.cpp" />
@@ -157,7 +158,10 @@
     <ClCompile Include="Module\GhidraSync\Ghidra\include\ghidra_types.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_constants.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_types.cpp" />
+    <ClCompile Include="Module\Manager\FunctionManager.cpp" />
     <ClCompile Include="Module\Manager\Manager.cpp" />
+    <ClCompile Include="Module\Manager\StatManager.cpp" />
+    <ClCompile Include="Module\Manager\TypeManager.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\Analyser.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\avx.cpp" />
     <ClCompile Include="main.cpp" />
@@ -192,6 +196,7 @@
     <ClInclude Include="Module\Code\Type\UserType.h" />
     <ClInclude Include="Module\Code\Variable\Variable.h" />
     <ClInclude Include="Module\Code\VTable\VTable.h" />
+    <ClInclude Include="Module\Disassembler\Disassembler.h" />
     <ClInclude Include="Module\DynHook\DynHook.h" />
     <ClInclude Include="Module\GhidraSync\AbstractManager.h" />
     <ClInclude Include="Module\GhidraSync\DataTypeManager.h" />
@@ -225,11 +230,13 @@
     <ClInclude Include="Module\Trigger\Trigger.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="ProjectManager.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SpeedTest.h" />
     <ClInclude Include="UserInterface.h" />
     <ClInclude Include="Utility\DebugView.h" />
     <ClInclude Include="Utility\FileWrapper.h" />
     <ClInclude Include="Utility\Generic.h" />
+    <ClInclude Include="Utility\Resource.h" />
     <ClInclude Include="Utils\BitStream.h" />
     <ClInclude Include="Utils\ObjectHash.h" />
     <ClInclude Include="Vendor\imgui\imconfig.h" />
@@ -295,6 +302,12 @@
     <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Status.h" />
     <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Utils.h" />
     <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Zydis.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SDA.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SQL\create_general_db.sql" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

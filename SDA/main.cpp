@@ -39,7 +39,7 @@ int sda()
 	t.join();
 
 
-	SDA* sda = new SDA(GetModuleHandle(NULL), FS::Directory("R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases"));
+	ProgramExe* sda = new ProgramExe(GetModuleHandle(NULL), FS::Directory("R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases"));
 	try {
 		sda->initDataBase("database.db");
 		sda->initManagers();
@@ -50,18 +50,18 @@ int sda()
 			Ghidra::DataTypeManager& dataTypeManager = *client.m_dataTypeManager;
 			Ghidra::FunctionManager& funcManager = *client.m_functionManager;
 
-			auto EntityPosClass = sda->getTypeManager()->createClass("EntityPos", "");
+			auto EntityPosClass = sda->getTypeManager()->createClass("EntityPos", "")->getClass();
 			EntityPosClass->addField(0x0, "x", new Type::Float);
 			EntityPosClass->addField(0x4, "y", new Type::Float);
 			EntityPosClass->addField(0x8, "z", new Type::Float);
 
-			auto EntityClass = sda->getTypeManager()->createClass("Entity", "EntityClass");
+			auto EntityClass = sda->getTypeManager()->createClass("Entity", "EntityClass")->getClass();
 			EntityClass->addField(20, "position", EntityPosClass, "pos of entity");
 			EntityClass->addField(35, "arr", new Type::Array(new Type::Int32, 3), "some arr");
 			EntityClass->addField(60, "val2", new Type::Float, "some value");
 			EntityClass->resize(0);
 
-			auto PedClass = sda->getTypeManager()->createClass("Ped", "PedClass");
+			auto PedClass = sda->getTypeManager()->createClass("Ped", "PedClass")->getClass();
 			PedClass->setBaseClass(EntityClass);
 			PedClass->addField(30, "arr", new Type::Array(new Type::Int32, 40), "some big arr");
 
@@ -88,7 +88,7 @@ int sda()
 				funcManager.update(funcManager.generateHashMap());
 
 				if (false) {
-					auto func = sda->getFunctionManager()->getFunctionById(4);
+					auto func = sda->getFunctionManager()->getFunctionById(4)->getFunction();
 					func->setName("AllocateMemory");
 					func->getSignature().setReturnType(new Type::Pointer(new Type::Void));
 					func->deleteAllArguments();
@@ -112,7 +112,7 @@ int sda()
 			}
 
 			return 0;
-			auto enumeration = sda->getTypeManager()->createEnum("EntityType", "lolldlsaldlas 2020!");
+			auto enumeration = sda->getTypeManager()->createEnum("EntityType", "lolldlsaldlas 2020!")->getEnum();
 			enumeration->addField("PED", 1);
 			enumeration->addField("CAR", 130);
 			enumeration->addField("VEHICLE", 0x93522223);
@@ -137,12 +137,16 @@ int sda()
 			return 0;
 		}
 
-		auto function = sda->getFunctionManager()->createFunction(&setRot, { Function::Function::Range(&setRot, 50) }, "setRot", "get rot of entity");
-		function->addArgument(new Type::Int32, "a");
-		function->addArgument(new Type::Float, "x");
-		function->addArgument(new Type::Float, "y");
-		function->addArgument(new Type::Float, "z");
-		function->addArgument(new Type::Int32, "c");
+		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::Function::Range(&setRot, 50) }, "setRot", "get rot of entity");
+		auto function = functiondb->getFunction();
+		functiondb->change([&] {
+			function->addArgument(new Type::Int32, "a");
+			function->addArgument(new Type::Float, "x");
+			function->addArgument(new Type::Float, "y");
+			function->addArgument(new Type::Float, "z");
+			function->addArgument(new Type::Int32, "c");
+		});
+
 		auto hook = function->createHook();
 		hook->getDynHook()->setArgCount(5);
 		hook->getDynHook()->setMethod(new CE::Hook::Method::Method2<CE::Trigger::Function::TriggerState>(hook->getDynHook()));
@@ -219,7 +223,7 @@ int sda()
 		auto method = sda->getFunctionManager()->getFunctionById(3);
 
 
-		printf("%s | %s\n", method->getSigName().c_str(), sda->getTypeManager()->getTypeById(11)->getName());
+		printf("%s | %s\n", method->getFunction()->getSigName().c_str(), sda->getTypeManager()->getTypeById(11)->getType()->getName());
 	}
 	catch (std::exception& e) {
 		DebugOutput("exception: " + std::string(e.what()));

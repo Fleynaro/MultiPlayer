@@ -4,32 +4,115 @@
 
 namespace CE
 {
-	class TypeManager : public IManager
+	namespace Ghidra
+	{
+		class DataTypeManager;
+	};
+
+	namespace API::Type
+	{
+		class AbstractType : public ItemDB
+		{
+		public:
+			AbstractType(TypeManager* typeManager)
+				: m_typeManager(typeManager)
+			{}
+
+			TypeManager* getTypeManager() {
+				return m_typeManager;
+			}
+		private:
+			TypeManager* m_typeManager;
+		};
+
+		class Type : public AbstractType
+		{
+		public:
+			Type(TypeManager* typeManager, CE::Type::Type* type)
+				: AbstractType(typeManager), m_type(type)
+			{}
+
+			virtual void pushToGhidra() {}
+
+			void save() override;
+
+			CE::Type::Type* getType() {
+				return m_type;
+			}
+		private:
+			CE::Type::Type* m_type;
+		};
+
+		class Typedef : public Type
+		{
+		public:
+			Typedef(TypeManager* typeManager, CE::Type::Typedef* typeDef)
+				: Type(typeManager, typeDef)
+			{}
+
+			void pushToGhidra() override;
+
+			CE::Type::Typedef* getTypedef() {
+				return (CE::Type::Typedef*)getType();
+			}
+		private:
+			CE::Type::Typedef* m_typeDef;
+		};
+
+		class Enum : public Type
+		{
+		public:
+			Enum(TypeManager* typeManager, CE::Type::Enum* Enum)
+				: Type(typeManager, Enum)
+			{}
+
+			void pushToGhidra() override;
+
+			CE::Type::Enum* getEnum() {
+				return (CE::Type::Enum*)getType();
+			}
+		private:
+			CE::Type::Enum* m_enum;
+		};
+
+		class Class : public Type
+		{
+		public:
+			Class(TypeManager* typeManager, CE::Type::Class* Class)
+				: Type(typeManager, Class)
+			{}
+
+			void pushToGhidra() override;
+
+			CE::Type::Class* getClass() {
+				return (CE::Type::Class*)getType();
+			}
+		private:
+			CE::Type::Class* m_enum;
+		};
+	};
+
+	class TypeManager : public AbstractManager
 	{
 	public:
-		using TypeDict = std::map<int, Type::Type*>;
+		using TypeDict = std::map<int, API::Type::Type*>;
 
-		TypeManager(SDA* sda)
-			: IManager(sda)
-		{
-			addSystemTypes();
-			addGhidraSystemTypes();
-		}
+		TypeManager(ProgramModule* module);
 
 	private:
 		void addSystemTypes() {
-			addType(new CE::Type::Void);
-			addType(new CE::Type::Bool);
-			addType(new CE::Type::Byte);
-			addType(new CE::Type::Int8);
-			addType(new CE::Type::Int16);
-			addType(new CE::Type::Int32);
-			addType(new CE::Type::Int64);
-			addType(new CE::Type::UInt16);
-			addType(new CE::Type::UInt32);
-			addType(new CE::Type::UInt64);
-			addType(new CE::Type::Float);
-			addType(new CE::Type::Double);
+			addType(new API::Type::Type(this, new CE::Type::Void));
+			addType(new API::Type::Type(this, new CE::Type::Bool));
+			addType(new API::Type::Type(this, new CE::Type::Byte));
+			addType(new API::Type::Type(this, new CE::Type::Int8));
+			addType(new API::Type::Type(this, new CE::Type::Int16));
+			addType(new API::Type::Type(this, new CE::Type::Int32));
+			addType(new API::Type::Type(this, new CE::Type::Int64));
+			addType(new API::Type::Type(this, new CE::Type::UInt16));
+			addType(new API::Type::Type(this, new CE::Type::UInt32));
+			addType(new API::Type::Type(this, new CE::Type::UInt64));
+			addType(new API::Type::Type(this, new CE::Type::Float));
+			addType(new API::Type::Type(this, new CE::Type::Double));
 		}
 
 		inline static std::vector<std::pair<std::string, Type::Type*>> ghidraTypes = {
@@ -78,7 +161,7 @@ namespace CE
 					return it.first;
 				}
 			}
-			return getGhidraName(getDefaultType());
+			return getGhidraName(getDefaultType()->getType());
 		}
 
 		void saveType(Type::Type* type) {
@@ -88,7 +171,7 @@ namespace CE
 
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			{
 				SQLite::Statement query(db, "REPLACE INTO sda_types (id, `group`, name, desc) VALUES(?1, ?2, ?3, ?4)");
 				query.bind(1, type->getId());
@@ -121,7 +204,7 @@ namespace CE
 		void removeType(Type::Type* type) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 
 			{
 				SQLite::Statement query(db, "DELETE FROM sda_types WHERE id=?1");
@@ -153,23 +236,23 @@ namespace CE
 			return id;
 		}
 
-		Type::Typedef* createTypedef(Type::Type* refType, std::string name, std::string desc = "") {
+		API::Type::Typedef* createTypedef(Type::Type* refType, std::string name, std::string desc = "") {
 			int id = getNewId();
-			auto type = new Type::Typedef(refType, id, name, desc);
+			auto type = new API::Type::Typedef(this, new Type::Typedef(refType, id, name, desc));
 			m_types[id] = type;
 			return type;
 		}
 
-		Type::Enum* createEnum(std::string name, std::string desc = "") {
+		API::Type::Enum* createEnum(std::string name, std::string desc = "") {
 			int id = getNewId();
-			auto type = new Type::Enum(id, name, desc);
+			auto type = new API::Type::Enum(this, new Type::Enum(id, name, desc));
 			m_types[id] = type;
 			return type;
 		}
 
-		Type::Class* createClass(std::string name, std::string desc = "") {
+		API::Type::Class* createClass(std::string name, std::string desc = "") {
 			int id = getNewId();
-			auto type = new Type::Class(id, name, desc);
+			auto type = new API::Type::Class(this, new Type::Class(id, name, desc));
 			m_types[id] = type;
 			return type;
 		}
@@ -177,7 +260,7 @@ namespace CE
 		void saveEnumFields(Type::Enum* Enum) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Transaction transaction(db);
 
 			{
@@ -202,7 +285,7 @@ namespace CE
 		void saveClassFields(Type::Class* Class) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Transaction transaction(db);
 
 			{
@@ -230,7 +313,7 @@ namespace CE
 		void saveClassMethods(Type::Class* Class) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Transaction transaction(db);
 
 			{
@@ -254,7 +337,7 @@ namespace CE
 		void loadTypes() {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT * FROM sda_types");
 
 			while (query.executeStep())
@@ -267,11 +350,12 @@ namespace CE
 				case Type::Type::Group::Typedef:
 				{
 					type = new Type::Typedef(
-						getTypeById(Type::SystemType::Byte),
+						getTypeById(Type::SystemType::Byte)->getType(),
 						query.getColumn("id"),
 						query.getColumn("name"),
 						query.getColumn("desc")
 					);
+					addType(new API::Type::Typedef(this, (Type::Typedef*)type));
 					break;
 				}
 
@@ -283,6 +367,7 @@ namespace CE
 						query.getColumn("desc")
 					);
 					loadFieldsForEnum((Type::Enum*)type);
+					addType(new API::Type::Enum(this, (Type::Enum*)type));
 					break;
 				}
 
@@ -293,12 +378,9 @@ namespace CE
 						query.getColumn("name"),
 						query.getColumn("desc")
 					);
+					addType(new API::Type::Class(this, (Type::Class*)type));
 					break;
 				}
-				}
-
-				if (type != nullptr) {
-					addType(type);
 				}
 			}
 		}
@@ -306,13 +388,13 @@ namespace CE
 		void loadTypedefs() {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT * FROM sda_typedefs");
 
 			while (query.executeStep())
 			{
 				auto type = getTypeById(query.getColumn("type_id"));
-				if (type->getGroup() == Type::Type::Group::Typedef) {
+				if (type->getType()->getGroup() == Type::Type::Group::Typedef) {
 					auto Typedef = (Type::Typedef*)type;
 					auto refType = getType(query.getColumn("ref_type_id"), query.getColumn("pointer_lvl"), query.getColumn("array_size"));
 					if (refType != nullptr)
@@ -324,7 +406,7 @@ namespace CE
 		void loadFieldsForEnum(Type::Enum* Enum) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT name,value FROM sda_enum_fields WHERE enum_id=?1 GROUP BY value");
 			query.bind(1, Enum->getId());
 
@@ -337,7 +419,7 @@ namespace CE
 		void loadClasses()
 		{
 			for (auto it : m_types) {
-				if (it.second->getGroup() == Type::Type::Group::Class) {
+				if (it.second->getType()->getGroup() == Type::Type::Group::Class) {
 					auto Class = (Type::Class*)it.second;
 					loadInfoForClass(Class);
 					loadMethodsForClass(Class);
@@ -352,26 +434,26 @@ namespace CE
 		void loadFieldsForClass(Type::Class* Class) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT * FROM sda_class_fields WHERE class_id=?1 GROUP BY rel_offset");
 			query.bind(1, Class->getId());
 
 			while (query.executeStep())
 			{
-				Type::Type* type = getSDA()->getTypeManager()->getType(
+				Type::Type* type = getProgramModule()->getTypeManager()->getType(
 					query.getColumn("type_id"),
 					query.getColumn("pointer_lvl"),
 					query.getColumn("array_size")
 				);
 
 				if (type == nullptr) {
-					type = getSDA()->getTypeManager()->getTypeById(Type::SystemType::Byte);
+					type = getProgramModule()->getTypeManager()->getTypeById(Type::SystemType::Byte)->getType();
 				}
 				Class->addField(query.getColumn("rel_offset"), query.getColumn("name"), type);
 			}
 		}
 
-		Type::Type* getDefaultType() {
+		API::Type::Type* getDefaultType() {
 			return getTypeById(Type::SystemType::Byte);
 		}
 
@@ -379,11 +461,11 @@ namespace CE
 			return m_types;
 		}
 
-		void addType(Type::Type* type) {
-			m_types.insert(std::make_pair(type->getId(), type));
+		void addType(API::Type::Type* type) {
+			m_types.insert(std::make_pair(type->getType()->getId(), type));
 		}
 
-		inline Type::Type* getTypeById(int type_id) {
+		inline API::Type::Type* getTypeById(int type_id) {
 			if (m_types.find(type_id) == m_types.end())
 				return nullptr;
 			return m_types[type_id];
@@ -403,13 +485,22 @@ namespace CE
 		}
 
 		Type::Type* getType(int type_id, int pointer_lvl = 0, int array_size = 0) {
-			Type::Type* type = getTypeById(type_id);
+			Type::Type* type = getTypeById(type_id)->getType();
 			if (type != nullptr) {
 				type = getType(type, pointer_lvl, array_size);
 			}
 			return type;
 		}
+
+		Ghidra::DataTypeManager* getGhidraManager() {
+			return m_ghidraManager;
+		}
+
+		bool isGhidraManagerWorking() {
+			return getGhidraManager() != nullptr;
+		}
 	private:
 		TypeDict m_types;
+		Ghidra::DataTypeManager* m_ghidraManager;
 	};
 };

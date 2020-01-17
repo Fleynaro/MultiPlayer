@@ -1,6 +1,7 @@
 #include "Manager.h"
+#include <GhidraSync/GhidraSync.h>
 
-void CE::SDA::load()
+void CE::ProgramModule::load()
 {
 	getTypeManager()->loadTypes();
 	getTypeManager()->loadTypedefs();
@@ -11,7 +12,7 @@ void CE::SDA::load()
 	getTypeManager()->loadClasses();
 }
 
-void CE::SDA::initManagers()
+void CE::ProgramModule::initManagers()
 {
 	m_typeManager = new TypeManager(this);
 	m_functionManager = new FunctionManager(this);
@@ -21,21 +22,46 @@ void CE::SDA::initManagers()
 	m_statManager = new StatManager(this);
 }
 
-void CE::SDA::initDataBase(std::string relPath)
+void CE::ProgramModule::initGhidraClient()
 {
-	m_db = new SQLite::Database(FS::File(getDirectory(), relPath).getFilename(), SQLite::OPEN_READWRITE);
+	m_client = new Ghidra::Client(this);
+}
+
+#include <Utility/Resource.h>
+#include <Program.h>
+void createGeneralDataBase(SQLite::Database& db)
+{
+	using namespace SQLite;
+	
+	SQL_Res res("SQL_CREATE_GEN_DB", getProgram()->getModule());
+	res.load();
+	if (!res.isLoaded()) {
+		//throw ex
+		return;
+	}
+	db.exec(res.getData());
+}
+
+void CE::ProgramModule::initDataBase(std::string relPath)
+{
+	auto filedb = FS::File(getDirectory(), relPath);
+	bool filedbExisting = filedb.exists();
+	m_db = new SQLite::Database(filedb.getFilename(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+	if (!filedbExisting) {
+		createGeneralDataBase(*m_db);
+	}
 }
 
 void CE::TypeManager::loadInfoForClass(Type::Class* Class)
 {
 	using namespace SQLite;
 
-	SQLite::Database& db = getSDA()->getDB();
+	SQLite::Database& db = getProgramModule()->getDB();
 	SQLite::Statement query(db, "SELECT * FROM sda_classes WHERE class_id=?1");
 	query.bind(1, Class->getId());
 	query.executeStep();
 
-	Function::VTable* vtable = getSDA()->getVTableManager()->getVTableById(query.getColumn("vtable_id"));
+	Function::VTable* vtable = getProgramModule()->getVTableManager()->getVTableById(query.getColumn("vtable_id"));
 	if (vtable != nullptr) {
 		Class->setVtable(vtable);
 	}
@@ -49,15 +75,15 @@ void CE::TypeManager::loadInfoForClass(Type::Class* Class)
 void CE::TypeManager::loadMethodsForClass(Type::Class* Class) {
 	using namespace SQLite;
 
-	SQLite::Database& db = getSDA()->getDB();
+	SQLite::Database& db = getProgramModule()->getDB();
 	SQLite::Statement query(db, "SELECT function_id FROM sda_class_methods WHERE class_id=?1");
 	query.bind(1, Class->getId());
 
 	while (query.executeStep())
 	{
-		Function::Function* function = getSDA()->getFunctionManager()->getFunctionById(query.getColumn("function_id"));
-		if (function != nullptr && function->isMethod()) {
-			Class->addMethod((Function::Method*)function);
+		auto function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("function_id"));
+		if (function != nullptr && function->getFunction()->isMethod()) {
+			Class->addMethod((Function::Method*)function->getFunction());
 		}
 	}
 }

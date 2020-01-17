@@ -1,26 +1,26 @@
 #pragma once
 #include "AbstractManager.h"
-#include <Code/Variable/Variable.h>
+#include "TypeManager.h"
 
 namespace CE
 {
-	class GVarManager : public IManager
+	class GVarManager : public AbstractManager
 	{
 	public:
 		using GVarDict = std::map<int, Variable::Global*>;
 
-		GVarManager(SDA* sda)
-			: IManager(sda)
+		GVarManager(ProgramModule* sda)
+			: AbstractManager(sda)
 		{}
 
 		void saveGVar(Variable::Global* gVar) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "REPLACE INTO sda_gvars (id, name, offset, type_id, pointer_lvl, array_size, desc) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");
 			query.bind(1, gVar->getId());
 			query.bind(2, gVar->getName());
-			query.bind(3, getSDA()->toRelAddr(gVar->getAddress()));
+			query.bind(3, getProgramModule()->toRelAddr(gVar->getAddress()));
 			query.bind(4, gVar->getType()->getId());
 			query.bind(5, gVar->getType()->getPointerLvl());
 			query.bind(6, gVar->getType()->getArraySize());
@@ -31,7 +31,7 @@ namespace CE
 		void removeGVar(Variable::Global* gVar) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "DELETE FROM sda_gvars WHERE id=?1");
 			query.bind(1, gVar->getId());
 			query.exec();
@@ -59,24 +59,24 @@ namespace CE
 		void loadGVars() {
 			using namespace SQLite;
 
-			SQLite::Database& db = getSDA()->getDB();
+			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT * FROM sda_gvars");
 
 			while (query.executeStep())
 			{
-				Type::Type* type = getSDA()->getTypeManager()->getType(
+				Type::Type* type = getProgramModule()->getTypeManager()->getType(
 					query.getColumn("type_id"),
 					query.getColumn("pointer_lvl"),
 					query.getColumn("array_size")
 				);
 
 				if (type == nullptr) {
-					type = getSDA()->getTypeManager()->getTypeById(Type::SystemType::Byte);
+					type = getProgramModule()->getTypeManager()->getDefaultType()->getType();
 				}
 
 				Variable::Global* gvar = new Variable::Global(
 					type,
-					getSDA()->toAbsAddr(query.getColumn("offset")),
+					getProgramModule()->toAbsAddr(query.getColumn("offset")),
 					query.getColumn("id"),
 					query.getColumn("name"),
 					query.getColumn("desc")

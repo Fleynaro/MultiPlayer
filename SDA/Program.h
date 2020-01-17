@@ -30,6 +30,10 @@ public:
 	UserInterface* getUI() {
 		return m_userInterface;
 	}
+
+	HMODULE getModule() {
+		return m_hModule;
+	}
 private:
 	HMODULE m_hModule;
 	FS::Directory m_dir;

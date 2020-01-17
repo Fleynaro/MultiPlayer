@@ -13,15 +13,26 @@ namespace CE
 	class TriggerManager;
 	class StatManager;
 
-	class SDA
+	namespace Ghidra
+	{
+		class Client;
+	};
+
+	class ProgramModule
 	{
 	public:
-		SDA(void* addr, FS::Directory dir)
+		ProgramModule(void* addr, FS::Directory dir)
 			: m_baseAddr((std::uintptr_t)addr), m_dir(dir)
 		{}
 
+		virtual bool isExe() = 0;
+		bool isDll() {
+			return !isExe();
+		}
+
 		void load();
 		void initManagers();
+		void initGhidraClient();
 		void initDataBase(std::string filename);
 
 		inline SQLite::Database& getDB() {
@@ -67,6 +78,10 @@ namespace CE
 		FS::Directory& getDirectory() {
 			return m_dir;
 		}
+
+		Ghidra::Client* getGhidraClient() {
+			return m_client;
+		}
 	private:
 		SQLite::Database* m_db = nullptr;
 		std::uintptr_t m_baseAddr;
@@ -78,5 +93,40 @@ namespace CE
 		VtableManager* m_vtableManager = nullptr;
 		TriggerManager* m_triggerManager = nullptr;
 		StatManager* m_statManager = nullptr;
+		Ghidra::Client* m_client = nullptr;
+	};
+
+	class ProgramDll : public ProgramModule
+	{
+	public:
+		ProgramDll(void* addr, FS::Directory dir)
+			: ProgramModule(addr, dir)
+		{}
+
+		bool isExe() override {
+			return false;
+		}
+	};
+
+	class ProgramExe : public ProgramModule
+	{
+	public:
+		ProgramExe(void* addr, FS::Directory dir)
+			: ProgramModule(addr, dir)
+		{}
+
+		bool isExe() override {
+			return true;
+		}
+
+		void addDll(ProgramDll* dll) {
+			m_dlls.push_back(dll);
+		}
+
+		std::vector<ProgramDll*>& getDlls() {
+			return m_dlls;
+		}
+	private:
+		std::vector<ProgramDll*> m_dlls;
 	};
 };

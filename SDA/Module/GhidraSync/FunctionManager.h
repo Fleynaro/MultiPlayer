@@ -1,12 +1,13 @@
 #pragma once
 #include "AbstractManager.h"
 #include <Manager/FunctionManager.h>
+#include "DataTypeManager.h"
 
 namespace CE
 {
 	namespace Ghidra
 	{
-		class FunctionManager : public IManager
+		class FunctionManager : public AbstractManager
 		{
 		public:
 			using HashMap = std::map<function::Id, function::Hash>;
@@ -14,7 +15,7 @@ namespace CE
 			FunctionManager(CE::FunctionManager* functionManager, Client* client)
 				:
 				m_functionManager(functionManager),
-				IManager(client),
+				AbstractManager(client),
 				m_client(std::shared_ptr<TMultiplexedProtocol>(new TMultiplexedProtocol(getClient()->m_protocol, "FunctionManager")))
 			{}
 
@@ -25,9 +26,9 @@ namespace CE
 				return m_functionManager->getFunctionOffset(function);
 			}
 
-			Function::Function* findFunctionById(function::Id id, bool returnDefType = true) {
+			API::Function::Function* findFunctionById(function::Id id, bool returnDefType = true) {
 				for (auto& it : m_functionManager->getFunctions()) {
-					if (getId(it.second) == id) {
+					if (getId(it.second->getFunction()) == id) {
 						return it.second;
 					}
 				}
@@ -71,8 +72,8 @@ namespace CE
 
 				for (auto& range : function->getRangeList()) {
 					function::SFunctionRange rangeDesc;
-					rangeDesc.__set_minOffset(getClient()->getSDA()->toRelAddr(range.getMinAddress()));
-					rangeDesc.__set_maxOffset(getClient()->getSDA()->toRelAddr(range.getMaxAddress()));
+					rangeDesc.__set_minOffset(getClient()->getProgramModule()->toRelAddr(range.getMinAddress()));
+					rangeDesc.__set_maxOffset(getClient()->getProgramModule()->toRelAddr(range.getMaxAddress()));
 					funcDesc.ranges.push_back(rangeDesc);
 				}
 
@@ -95,8 +96,8 @@ namespace CE
 				Function::Function::RangeList ranges;
 				for (auto& range : rangeDescs) {
 					ranges.push_back(Function::Function::Range(
-						getClient()->getSDA()->toAbsAddr(range.minOffset),
-						getClient()->getSDA()->toAbsAddr(range.maxOffset)
+						getClient()->getProgramModule()->toAbsAddr(range.minOffset),
+						getClient()->getProgramModule()->toAbsAddr(range.maxOffset)
 					));
 				}
 				return ranges;
@@ -121,13 +122,15 @@ namespace CE
 				function->getRangeList() = getFunctionRanges(funcDesc.ranges);
 			}
 
-			Function::Function* changeOrCreate(const function::SFunction& funcDesc) {
-				Function::Function* function = findFunctionById(funcDesc.id, false);
+			API::Function::Function* changeOrCreate(const function::SFunction& funcDesc) {
+				API::Function::Function* function = findFunctionById(funcDesc.id, false);
 				if (function == nullptr) {
-					function = m_functionManager->createFunction(getClient()->getSDA()->toAbsAddr(funcDesc.ranges[0].minOffset), {}, "", "");
+					function = m_functionManager->createFunction(getClient()->getProgramModule()->toAbsAddr(funcDesc.ranges[0].minOffset), {}, "", "");
 				}
 
-				change(function, funcDesc);
+				function->change([&]{
+					change(function->getFunction(), funcDesc);
+				});
 				return function;
 			}
 
@@ -169,7 +172,7 @@ namespace CE
 			HashMap generateHashMap() {
 				HashMap hashmap;
 				for (auto& it : m_functionManager->getFunctions()) {
-					auto function = it.second;
+					auto function = it.second->getFunction();
 					if (function->isGhidraUnit()) {
 						hashmap.insert(std::make_pair(getId(function), getHash(function)));
 					}

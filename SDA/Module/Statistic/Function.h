@@ -19,30 +19,30 @@ namespace CE
 	namespace Stat::Function
 	{
 			template<typename T>
-			class IGarbager
+			class ICollector
 			{
 			public:
-				IGarbager(StatManager* statManager = nullptr)
+				ICollector(StatManager* statManager = nullptr)
 					: m_statManager(statManager)
 				{}
 
-				~IGarbager() {
+				~ICollector() {
 					if (m_db != nullptr) {
 						delete m_db;
 					}
 				}
 
 				void start() {
-					m_thread = std::thread(&IGarbager<T>::handler, this);
+					m_thread = std::thread(&ICollector<T>::handler, this);
 					m_thread.detach();
 				}
 
-				void initDataBase(FS::File file)
+				void initDataBase(SQLite::Database* db)
 				{
 					if (m_db != nullptr) {
 						delete m_db;
 					}
-					m_db = new SQLite::Database(file.getFilename(), SQLite::OPEN_READWRITE);
+					m_db = db;
 				}
 
 				virtual void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook) = 0;
@@ -69,8 +69,8 @@ namespace CE
 				SQLite::Database* m_db = nullptr;
 			};
 
-			template<typename B, typename G = IGarbager<B>>
-			class IManager
+			template<typename B, typename G = ICollector<B>>
+			class AbstractManager
 			{
 			public:
 				inline void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
@@ -79,10 +79,10 @@ namespace CE
 					//m_counter++;
 				}
 
-				IGarbager<B>* selectGarbager1() {
-					IGarbager<B>* result = nullptr;
+				ICollector<B>* selectGarbager1() {
+					ICollector<B>* result = nullptr;
 					int size = INT_MAX;
-					for (IGarbager<B>* garbager : m_garbagers) {
+					for (ICollector<B>* garbager : m_garbagers) {
 						if (garbager->getSize() < size) {
 							result = garbager;
 							size = garbager->getSize();
@@ -91,7 +91,7 @@ namespace CE
 					return result;
 				}
 
-				IGarbager<B>* selectGarbager2() {
+				ICollector<B>* selectGarbager2() {
 					return m_garbagers[m_counter % m_garbagers.size()];
 				}
 
@@ -103,12 +103,12 @@ namespace CE
 					}
 				}
 
-				void addGarbager(IGarbager<B>* garbager)
+				void addCollector(ICollector<B>* garbager)
 				{
 					m_garbagers.push_back(garbager);
 				}
 			protected:
-				std::vector<IGarbager<B>*> m_garbagers;
+				std::vector<ICollector<B>*> m_garbagers;
 				std::atomic<uint64_t> m_counter = 0;
 			};
 
@@ -143,11 +143,11 @@ namespace CE
 					}
 				};
 
-				class Garbager : public IGarbager<Buffer>
+				class Collector : public ICollector<Buffer>
 				{
 				public:
-					Garbager(StatManager* statManager)
-						: IGarbager<Buffer>(statManager)
+					Collector(StatManager* statManager)
+						: ICollector<Buffer>(statManager)
 					{}
 
 					void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook) override;
@@ -230,7 +230,7 @@ namespace CE
 					void send(Buffer& buffer);
 				};
 
-				class Manager : public IManager<Buffer, Garbager> {};
+				class Manager : public AbstractManager<Buffer, Collector> {};
 			};
 
 			namespace Ret
@@ -258,11 +258,11 @@ namespace CE
 					}
 				};
 
-				class Garbager : public IGarbager<Buffer>
+				class Collector : public ICollector<Buffer>
 				{
 				public:
-					Garbager(StatManager* statManager)
-						: IGarbager<Buffer>(statManager)
+					Collector(StatManager* statManager)
+						: ICollector<Buffer>(statManager)
 					{}
 
 					void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook) override;
@@ -334,7 +334,7 @@ namespace CE
 					void send(Buffer& buffer);
 				};
 
-				class Manager : public IManager<Buffer, Garbager> {};
+				class Manager : public AbstractManager<Buffer, Collector> {};
 			};
 
 			class StatInfo
