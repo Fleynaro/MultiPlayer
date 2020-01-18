@@ -39,9 +39,12 @@ public:
 
 	void create() {
 		createProjectFile();
+		open();
+	}
+
+	void open() {
 		auto moduleDir = getDirectory().next("Exe");
 		moduleDir.createIfNotExists();
-		
 		m_programExe = new CE::ProgramExe(GetModuleHandle(NULL), moduleDir);
 		load();
 	}
@@ -53,9 +56,15 @@ public:
 
 		try {
 			getProgramExe()->initDataBase("general.db");
-			getProgramExe()->initGhidraClient();
 			getProgramExe()->initManagers();
+			getProgramExe()->initGhidraClient();
 			getProgramExe()->load();
+
+			getProgramExe()->getTypeManager()->getGhidraManager()->updateAll();
+			getProgramExe()->getFunctionManager()->getGhidraManager()->update(
+				getProgramExe()->getFunctionManager()->getGhidraManager()->generateHashMap()
+			);
+			getProgramExe()->getFunctionManager()->buildFunctionBodies();
 
 		}
 		catch (std::exception & e) {

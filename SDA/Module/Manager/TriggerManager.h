@@ -46,13 +46,13 @@ namespace CE
 
 			{
 				for (const auto& filter : trigger->getFilters()) {
-					BitStream bt;
-					filter->serialize(bt);
+					BitStream bs;
+					filter->serialize(bs);
 
 					SQLite::Statement query(db, "INSERT INTO sda_func_trigger_filters (trigger_id, filter_id, data) VALUES(?1, ?2, ?3)");
 					query.bind(1, trigger->getId());
 					query.bind(2, (int)filter->getId());
-					query.bind(3, bt.getData(), bt.getSize());
+					query.bind(3, bs.getData(), bs.getSize());
 					query.exec();
 				}
 			}
@@ -90,10 +90,10 @@ namespace CE
 					break;
 				}
 
-				BitStream bt;
-				bt.write(query.getColumn("data").getBlob(), query.getColumn("data").getBytes());
-				bt.resetPointer();
-				filter->deserialize(bt);
+				BitStream bs;
+				bs.write(query.getColumn("data").getBlob(), query.getColumn("data").getBytes());
+				bs.resetPointer();
+				filter->deserialize(bs);
 
 				trigger->addFilter(filter);
 			}

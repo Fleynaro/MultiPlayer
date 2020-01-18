@@ -101,7 +101,7 @@ namespace GUI::Window
 									return;
 
 								auto project = (Project*)m_projectsList->getSelectedItemPtr();
-								project->load();
+								project->open();
 								m_projectManager->setCurrentProject(project);
 								close();
 							})

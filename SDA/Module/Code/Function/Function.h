@@ -122,6 +122,9 @@ namespace CE
 			}
 
 			void setBody(CallGraph::FunctionBody* body) {
+				if (m_funcBody != nullptr) {
+					delete m_funcBody;
+				}
 				m_funcBody = body;
 			}
 

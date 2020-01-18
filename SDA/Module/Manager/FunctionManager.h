@@ -4,6 +4,7 @@
 #include <Code/Function/Method.h>
 #include <CallGraph/CallGraph.h>
 #include <Utils/BitStream.h>
+#include <Disassembler/Disassembler.h>
 
 namespace CE
 {
@@ -71,6 +72,7 @@ namespace CE
 		API::Function::Function* m_defFunction = nullptr;
 		void createDefaultFunction() {
 			m_defFunction = createFunction(nullptr, {}, "DefaultFunction", "This function created automatically.");
+			getFunctions().erase(m_defFunction->getFunction()->getId());
 		}
 
 
@@ -103,13 +105,18 @@ namespace CE
 					switch (node->getGroup())
 					{
 					case CallGraph::Type::Function:
-						item_id = static_cast<CallGraph::FunctionNode*>(node)->getFunction()->getId();
+					{
+						auto funcNode = static_cast<CallGraph::FunctionNode*>(node);
+						item_id = funcNode->getFunction()->getId();
+						bs.write(getProgramModule()->toRelAddr(funcNode->getAddressLocation()));
 						break;
+					}
 					case CallGraph::Type::GlobalVar:
 					{
 						auto gvarNode = static_cast<CallGraph::GlobalVarNode*>(node);
 						item_id = gvarNode->getGVar()->getId();
 						bs.writeBit(gvarNode->getUse());
+						bs.write(getProgramModule()->toRelAddr(gvarNode->getAddressLocation()));
 						break;
 					}
 					case CallGraph::Type::NodeGroup:
@@ -123,7 +130,7 @@ namespace CE
 					}
 
 					query.bind(4, item_id);
-					query.bind(5, extra);
+					query.bind(5, bs.getData(), bs.getSize());
 				}
 
 				if (nodeGroup->getGroup() >= CallGraph::Type::NodeGroup) {
@@ -380,8 +387,8 @@ namespace CE
 				BitStream bs;
 				bool goToParentNode = false;
 				{
-					int extra = query.getColumn("extra");
-					bs.setData((BYTE*)& extra, sizeof(extra));
+					bs.write(query.getColumn("extra").getBlob(), query.getColumn("extra").getBytes());
+					bs.resetPointer();
 					goToParentNode = bs.readBit();
 				}
 				CallGraph::Node* node = nullptr;
@@ -392,7 +399,7 @@ namespace CE
 				{
 					Function::Function* function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("item_id"))->getFunction();
 					if (function != nullptr) {
-						node = new CallGraph::FunctionNode(function);
+						node = new CallGraph::FunctionNode(function, getProgramModule()->toAbsAddr(bs.read<int>()));
 					}
 					break;
 				}
@@ -401,7 +408,7 @@ namespace CE
 				{
 					Variable::Global* gvar = getProgramModule()->getGVarManager()->getGVarById(query.getColumn("item_id"));
 					if (gvar != nullptr) {
-						node = new CallGraph::GlobalVarNode(gvar, (CallGraph::GlobalVarNode::Use)bs.readBit());
+						node = new CallGraph::GlobalVarNode(gvar, (CallGraph::GlobalVarNode::Use)bs.readBit(), getProgramModule()->toAbsAddr(bs.read<int>()));
 					}
 					break;
 				}
@@ -438,6 +445,17 @@ namespace CE
 			}
 		}
 
+		void buildFunctionBodies();
+
+		API::Function::Function* getFunctionAt(void* addr) {
+			for (auto& it : getFunctions()) {
+				if (it.second->getFunction()->isContainingAddress(addr)) {
+					return it.second;
+				}
+			}
+			return nullptr;
+		}
+
 		FunctionDict& getFunctions() {
 			return m_functions;
 		}
@@ -456,6 +474,10 @@ namespace CE
 			return getProgramModule()->toRelAddr(function->getAddress());
 		}
 
+		void setGhidraManager(Ghidra::FunctionManager* ghidraManager) {
+			m_ghidraManager = ghidraManager;
+		}
+
 		Ghidra::FunctionManager* getGhidraManager() {
 			return m_ghidraManager;
 		}
@@ -466,5 +488,88 @@ namespace CE
 	private:
 		FunctionDict m_functions;
 		Ghidra::FunctionManager* m_ghidraManager;
+	};
+
+	namespace CallGraph
+	{
+		class FunctionBodyBuilder
+		{
+		public:
+			FunctionBodyBuilder(API::Function::Function* function)
+				: m_function(function)
+			{}
+
+			void build()
+			{
+				m_funcBody = new FunctionBody;
+				for (auto& range : m_function->getFunction()->getRangeList()) {
+					build(range);
+				}
+			}
+
+			FunctionBody* getFunctionBody() {
+				return m_funcBody;
+			}
+		private:
+			FunctionBody* m_funcBody = nullptr;
+			API::Function::Function* m_function;
+
+			void build(Function::Function::Range& range)
+			{
+				using namespace CE::Disassembler;
+				auto nodeGroup = getFunctionBody();
+
+				Decoder decoder(range.getMinAddress(), range.getSize());
+				decoder.decode([&](Code::Instruction& instruction)
+				{
+					void* curAddr = (void*)decoder.getCurrentAddress();
+
+					if (instruction.isGeneric()) {
+						auto& instr = (Code::Instructions::Generic&)instruction;
+						auto addr = instr.getAbsoluteAddr();
+						if (addr != nullptr) {
+							nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Read, curAddr));
+						}
+					}
+					else if (instruction.isBasicManipulating()) {
+						auto& instr = (Code::Instructions::BasicManipulation&)instruction;
+						if (instr.getOperand(0).isCalculatedAddress()) {
+							nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Write, curAddr));
+						}
+						else if (instr.getOperand(1).isCalculatedAddress()) {
+							nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Read, curAddr));
+						}
+					} 
+					else if (instruction.isJumping()) {
+						auto& instr = (Code::Instructions::JumpInstruction&)instruction;
+						if (instr.hasAbsoluteAddr()) {
+							auto calledFunc = m_function->getFunctionManager()->getFunctionAt(instr.getAbsoluteAddr());
+							
+							if (instruction.getMnemonicId() != ZYDIS_MNEMONIC_CALL) {
+								if (calledFunc != nullptr) {
+									if (calledFunc->getFunction() == m_function->getFunction()) {
+										calledFunc = nullptr;
+									}
+								}
+							}
+							else {
+								if (calledFunc == nullptr) {
+									nodeGroup->addNode(new FunctionNode(curAddr));
+								}
+							}
+
+							if (calledFunc != nullptr) {
+								nodeGroup->addNode(new FunctionNode(calledFunc->getFunction(), curAddr));
+							}
+						}
+						else if (instruction.getMnemonicId() == ZYDIS_MNEMONIC_CALL) {
+							nodeGroup->addNode(new FunctionNode(curAddr));
+						}
+					}
+
+					return true;
+				});
+			}
+		};
 	};
 };

@@ -68,11 +68,11 @@ namespace CE
 		}
 
 		void* toAbsAddr(int offset) {
-			return (void*)(getBaseAddr() + (std::uintptr_t)offset);
+			return offset == 0 ? nullptr : (void*)(getBaseAddr() + (std::uintptr_t)offset);
 		}
 
 		int toRelAddr(void* addr) {
-			return (std::uintptr_t)addr - getBaseAddr();
+			return addr == nullptr ? 0 : (std::uintptr_t)addr - getBaseAddr();
 		}
 
 		FS::Directory& getDirectory() {

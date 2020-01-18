@@ -54,7 +54,7 @@ public class FunctionManager extends AbstractManager {
         for(SFunctionRange range : rangeDescs) {
             ranges.add(new AddressRangeImpl(
                     getAddress(range.getMinOffset()),
-                    getAddress(range.getMaxOffset())
+                    getAddress(range.getMaxOffset() - 1)
             ));
         }
         return ranges;
@@ -158,7 +158,7 @@ public class FunctionManager extends AbstractManager {
             AddressRange range = ranges.next();
             SFunctionRange rangeDesc = new SFunctionRange();
             rangeDesc.setMinOffset((int)getOffset(range.getMinAddress()));
-            rangeDesc.setMaxOffset((int)getOffset(range.getMaxAddress()));
+            rangeDesc.setMaxOffset((int)getOffset(range.getMaxAddress()) + 1);
             funcDesc.addToRanges(rangeDesc);
         }
 

@@ -2,39 +2,22 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7bae5816-17b9-4347-b96d-8676e3b58136" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../compiler/test.thrift" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../database/database.db" beforeDir="false" afterPath="$PROJECT_DIR$/../../database/database.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../sda.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../sda.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../sda.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../sda.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../TestProject.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../../TestProject.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../TestProject.vcxproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../../TestProject.vcxproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../TestProject.vcxproj.filters" beforeDir="false" afterPath="$PROJECT_DIR$/../../../TestProject.vcxproj.filters" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/gen/client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Thrift/gen/client.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/Module.manifest" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/extension.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/ghidra-plugin-sda.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/ghidra-plugin-sda.ipr" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/ghidra-plugin-sda.iws" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/ghidra-plugin-sda.main.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/ghidra-plugin-sda.test.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/gradlew" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/gradlew.bat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/commons-codec-1.11.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/commons-logging-1.2.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/httpclient-4.5.10.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/httpcore-4.4.12.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/javax.annotation-api-1.3.2.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/libthrift-0.14.0-SNAPSHOT.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/log4j-1.2.17.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/slf4j-api-1.7.28.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/slf4j-log4j12-1.7.28.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/tomcat-annotations-api-8.5.46.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/lib/tomcat-embed-core-8.5.46.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/src/main/java/org/cs/testService/testService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/src/main/java/sda/SdaPlugin.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Thrift/ghidra-plugin-sda/src/main/java/sda/util/DebugConsole.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../main.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../main.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../MultiPlayer.sln" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../MultiPlayer.sln" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../CallGraph/CallGraph.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../CallGraph/CallGraph.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Code/Function/Function.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Code/Function/Function.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Disassembler/Disassembler.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Disassembler/Disassembler.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/extension.properties" beforeDir="false" afterPath="$PROJECT_DIR$/extension.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.ipr" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.ipr" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.iws" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.iws" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.main.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.test.iml" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.test.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/sda/managers/FunctionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sda/managers/FunctionManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Manager/FunctionManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Manager/FunctionManager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Manager/FunctionManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Manager/FunctionManager.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Manager/SDA.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Manager/SDA.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Manager/TriggerManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Manager/TriggerManager.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../ProjectManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../ProjectManager.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../main.cpp" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -111,11 +94,6 @@
                 <item name="Tasks" type="e4a08cd1:TasksNode" />
                 <item name="other" type="c8890929:TasksNode$1" />
               </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="ghidra-plugin-sda" type="f1a62948:ProjectNode" />
-                <item name="Run Configurations" type="7b0102dc:RunConfigurationsNode" />
-              </path>
             </expand>
             <select />
           </tree_state>
@@ -131,7 +109,7 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../../.." />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../../../.." />
   </component>
   <component name="ModuleEditorState">
     <option name="LAST_EDITED_MODULE_NAME" />
@@ -169,7 +147,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Remote.Debug">
+  <component name="RunManager" selected="Gradle.ghidra-plugin-sda [buildExtension]">
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
       <Host>localhost</Host>
       <Port>5050</Port>
@@ -321,6 +299,7 @@
       <workItem from="1578463927161" duration="483000" />
       <workItem from="1578464662875" duration="18128000" />
       <workItem from="1578582548840" duration="10551000" />
+      <workItem from="1579372742533" duration="922000" />
     </task>
     <servers />
   </component>

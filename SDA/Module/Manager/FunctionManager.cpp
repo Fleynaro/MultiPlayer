@@ -5,9 +5,17 @@
 using namespace CE;
 
 FunctionManager::FunctionManager(ProgramModule* module)
-	: AbstractManager(module), m_ghidraManager(new Ghidra::FunctionManager(this, getProgramModule()->getGhidraClient()))
+	: AbstractManager(module)
 {
 	createDefaultFunction();
+}
+
+void CE::FunctionManager::buildFunctionBodies() {
+	for (auto it : m_functions) {
+		CallGraph::FunctionBodyBuilder bodyBuilder(it.second);
+		bodyBuilder.build();
+		it.second->getFunction()->setBody(bodyBuilder.getFunctionBody());
+	}
 }
 
 void API::Function::Function::save() {

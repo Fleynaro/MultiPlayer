@@ -25,6 +25,8 @@ void CE::ProgramModule::initManagers()
 void CE::ProgramModule::initGhidraClient()
 {
 	m_client = new Ghidra::Client(this);
+	getFunctionManager()->setGhidraManager(m_client->m_functionManager);
+	getTypeManager()->setGhidraManager(m_client->m_dataTypeManager);
 }
 
 #include <Utility/Resource.h>

@@ -56,25 +56,47 @@ namespace CE
 			nodeList m_nodes;
 		};
 
-		class FunctionNode : public Node
+		class AbstractNode : public Node
 		{
 		public:
-			FunctionNode(Function::Function* function)
-				: m_function(function)
+			AbstractNode(void* addr)
+				: m_addr(addr)
+			{}
+
+			void* getAddressLocation() {
+				return m_addr;
+			}
+		private:
+			void* m_addr;
+		};
+
+		class FunctionNode : public AbstractNode
+		{
+		public:
+			FunctionNode(Function::Function* function, void* addr)
+				: m_function(function), AbstractNode(addr)
+			{}
+
+			FunctionNode(void* addr)
+				: AbstractNode(addr)
 			{}
 
 			Type getGroup() override {
 				return Type::Function;
 			}
 
+			bool isNotCalculated() {
+				return getFunction() == nullptr;
+			}
+
 			Function::Function* getFunction() {
 				return m_function;
 			}
 		private:
-			Function::Function* m_function;
+			Function::Function* m_function = nullptr;
 		};
 
-		class GlobalVarNode : public Node
+		class GlobalVarNode : public AbstractNode
 		{
 		public:
 			enum Use {
@@ -82,8 +104,8 @@ namespace CE
 				Write
 			};
 
-			GlobalVarNode(Variable::Global* gVar, Use use)
-				: m_gVar(gVar), m_use(use)
+			GlobalVarNode(Variable::Global* gVar, Use use, void* addr)
+				: m_gVar(gVar), m_use(use), AbstractNode(addr)
 			{}
 
 			Type getGroup() override {

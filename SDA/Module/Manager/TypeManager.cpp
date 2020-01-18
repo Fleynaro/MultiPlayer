@@ -5,7 +5,7 @@
 using namespace CE;
 
 TypeManager::TypeManager(ProgramModule* module)
-	: AbstractManager(module), m_ghidraManager(new Ghidra::DataTypeManager(this, getProgramModule()->getGhidraClient()))
+	: AbstractManager(module)
 {
 	addSystemTypes();
 	addGhidraSystemTypes();

@@ -21,7 +21,8 @@ namespace CE
 				enum Type {
 					Register,
 					Constant,
-					Pointer
+					Pointer,
+					AbsAddress
 				};
 
 				Operand() = default;
@@ -32,20 +33,32 @@ namespace CE
 					m_type = Register;
 				}
 
-				Operand(ZydisRegister reg, uint64_t offset)
-					: m_register(reg), m_offset(offset)
+				Operand(ZydisRegister reg_base, uint64_t offset)
+					: m_register(reg_base), m_offset(offset)
 				{
 					m_type = Pointer;
 				}
 
-				Operand(uint64_t value)
+				Operand(uint64_t base, int offset)
+					: m_offset(base + offset)
+				{
+					m_type = Pointer;
+				}
+
+				Operand(uint64_t value, bool isAddr = false)
 					: m_offset(value)
 				{
-					m_type = Constant;
+					if (isAddr)
+						m_type = AbsAddress;
+					else m_type = Constant;
 				}
 
 				Type getType() {
 					return m_type;
+				}
+
+				bool isCalculatedAddress() {
+					return getType() == AbsAddress || (getType() == Pointer && getRegister() == ZYDIS_REGISTER_NONE);
 				}
 
 				void* getLocationAddress() {
@@ -69,7 +82,16 @@ namespace CE
 			{
 			public:
 				virtual ZydisMnemonic_ getMnemonicId() = 0;
+
 				virtual bool isGeneric() {
+					return false;
+				}
+
+				virtual bool isJumping() {
+					return false;
+				}
+
+				virtual bool isBasicManipulating() {
 					return false;
 				}
 			};
@@ -93,24 +115,98 @@ namespace CE
 					Operand m_operands[operandCount];
 				};
 
-				class Call : public Instruction, public AbstractInstructionWithOperands<1>
+				class JumpInstruction : public Instruction, public AbstractInstructionWithOperands<1>
 				{
 				public:
-					Call(Operand location)
+					JumpInstruction(Operand location)
 					{
 						setOperand(0, location);
 					}
 
-					ZydisMnemonic_ getMnemonicId() override {
-						return ZYDIS_MNEMONIC_CALL;
+					bool isJumping() override {
+						return true;
 					}
 
 					bool hasAbsoluteAddr() {
-						return getOperand(0).getType() == Code::Operand::Constant;
+						return getOperand(0).isCalculatedAddress();
 					}
 
 					void* getAbsoluteAddr() {
 						return getOperand(0).getLocationAddress();
+					}
+				};
+
+				class Call : public JumpInstruction
+				{
+				public:
+					Call(Operand location)
+						: JumpInstruction(location)
+					{}
+
+					ZydisMnemonic_ getMnemonicId() override {
+						return ZYDIS_MNEMONIC_CALL;
+					}
+				};
+
+				class Jmp : public JumpInstruction
+				{
+				public:
+					Jmp(Operand location)
+						: JumpInstruction(location)
+					{}
+
+					ZydisMnemonic_ getMnemonicId() override {
+						return ZYDIS_MNEMONIC_JMP;
+					}
+				};
+
+				class BasicManipulation : public Instruction, public AbstractInstructionWithOperands<2>
+				{
+				public:
+					BasicManipulation(Operand op1, Operand op2)
+					{
+						setOperand(0, op1);
+						setOperand(1, op2);
+					}
+
+					bool isBasicManipulating() override {
+						return true;
+					}
+				};
+
+				class Mov : public BasicManipulation
+				{
+				public:
+					Mov(Operand op1, Operand op2)
+						: BasicManipulation(op1, op2)
+					{}
+
+					ZydisMnemonic_ getMnemonicId() override {
+						return ZYDIS_MNEMONIC_MOV;
+					}
+				};
+
+				class Add : public BasicManipulation
+				{
+				public:
+					Add(Operand op1, Operand op2)
+						: BasicManipulation(op1, op2)
+					{}
+
+					ZydisMnemonic_ getMnemonicId() override {
+						return ZYDIS_MNEMONIC_ADD;
+					}
+				};
+
+				class Sub : public BasicManipulation
+				{
+				public:
+					Sub(Operand op1, Operand op2)
+						: BasicManipulation(op1, op2)
+					{}
+
+					ZydisMnemonic_ getMnemonicId() override {
+						return ZYDIS_MNEMONIC_SUB;
 					}
 				};
 
@@ -145,7 +241,7 @@ namespace CE
 
 					void* getAbsoluteAddr() override {
 						for (int i = 0; i < m_operandCount; i++) {
-							if (getOperand(i).getType() == Code::Operand::Constant) {
+							if (getOperand(i).isCalculatedAddress()) {
 								return getOperand(i).getLocationAddress();
 							}
 						}
@@ -170,34 +266,68 @@ namespace CE
 				ZydisDecoder decoder;
 				ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
 
-				ZyanUSize offset = 0;
-				ZyanU64 runtime_address = (ZyanU64)m_startAddr;
+				ZyanUSize size = getSize();
+				m_runtime_address = (ZyanU64)m_startAddr;
 				ZydisDecodedInstruction instruction;
-				while (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, (void*)runtime_address, getSize() - offset,
+				while (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, (void*)m_runtime_address, size,
 					&instruction)))
 				{
-					offset += instruction.length;
-					runtime_address += instruction.length;
+					m_instr_length = instruction.length;
 
-					doCallback(instruction, callback, runtime_address);
+					doCallback(instruction, callback);
+
+					size -= instruction.length;
+					m_runtime_address += instruction.length;
 				}
 			}
 
 			int getSize() {
 				return m_size;
 			}
+
+			ZyanU64 getCurrentAddress() {
+				return m_runtime_address;
+			}
+
+			ZyanU8 getCurrentLength() {
+				return m_instr_length;
+			}
 		private:
 			void* m_startAddr;
 			int m_size;
+			ZyanU64 m_runtime_address;
+			ZyanU8 m_instr_length;
 
-			void doCallback(const ZydisDecodedInstruction& instruction, const std::function<bool(Code::Instruction&)>& callback, ZyanU64 runtime_address)
+			void doCallback(const ZydisDecodedInstruction& instruction, const std::function<bool(Code::Instruction&)>& callback)
 			{
 				switch(instruction.mnemonic)
 				{
-				case ZYDIS_MNEMONIC_CALL:
-					Code::Instructions::Call instr(getOperand(0, instruction, runtime_address));
+				case ZYDIS_MNEMONIC_CALL: {
+					Code::Instructions::Call instr(getOperand(0, instruction));
 					callback(instr);
 					return;
+				}
+				case ZYDIS_MNEMONIC_JMP: {
+					Code::Instructions::Jmp instr(getOperand(0, instruction));
+					callback(instr);
+					return;
+				}
+
+				case ZYDIS_MNEMONIC_MOV: {
+					Code::Instructions::Mov instr(getOperand(0, instruction), getOperand(1, instruction));
+					callback(instr);
+					return;
+				}
+				case ZYDIS_MNEMONIC_ADD: {
+					Code::Instructions::Add instr(getOperand(0, instruction), getOperand(1, instruction));
+					callback(instr);
+					return;
+				}
+				case ZYDIS_MNEMONIC_SUB: {
+					Code::Instructions::Sub instr(getOperand(0, instruction), getOperand(1, instruction));
+					callback(instr);
+					return;
+				}
 				}
 
 				if (instruction.operand_count == 0) {
@@ -207,13 +337,13 @@ namespace CE
 				else if (instruction.operand_count <= 2) {
 					Code::Instructions::GenericWithOperands instr(instruction.mnemonic, instruction.operand_count);
 					for (int i = 0; i < instruction.operand_count; i++) {
-						instr.setOperand(i, getOperand(i, instruction, runtime_address));
+						instr.setOperand(i, getOperand(i, instruction));
 					}
 					callback(instr);
 				}
 			}
 
-			Code::Operand getOperand(int idx, const ZydisDecodedInstruction& instruction, ZyanU64 runtime_address)
+			Code::Operand getOperand(int idx, const ZydisDecodedInstruction& instruction)
 			{
 				auto& operand = instruction.operands[idx];
 
@@ -222,13 +352,13 @@ namespace CE
 				}
 				else if(operand.mem.base != ZYDIS_REGISTER_NONE) {
 					if (operand.mem.base == ZYDIS_REGISTER_RIP) {
-						return Code::Operand(runtime_address + operand.mem.disp.value);
+						return Code::Operand(getCurrentAddress() + getCurrentLength(), (int)operand.mem.disp.value);
 					}
 					return Code::Operand(operand.mem.base, operand.mem.disp.value);
 				}
 				else {
 					if (operand.imm.is_relative) {
-						return Code::Operand(runtime_address + operand.imm.value.u);
+						return Code::Operand(getCurrentAddress() + getCurrentLength() + operand.imm.value.u, true);
 					}
 				}
 

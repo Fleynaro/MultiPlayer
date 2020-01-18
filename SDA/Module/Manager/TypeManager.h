@@ -490,6 +490,10 @@ namespace CE
 			return type;
 		}
 
+		void setGhidraManager(Ghidra::DataTypeManager* ghidraManager) {
+			m_ghidraManager = ghidraManager;
+		}
+
 		Ghidra::DataTypeManager* getGhidraManager() {
 			return m_ghidraManager;
 		}

@@ -55,6 +55,11 @@ void dissasm()
 			}
 		}
 
+		if (instruction.getMnemonicId() == ZYDIS_MNEMONIC_MOV) {
+			auto& instr = (Code::Instructions::Mov&)instruction;
+			int a = 5;
+		}
+
 		if (instruction.isGeneric()) {
 			auto& instr = (Code::Instructions::Generic&)instruction;
 			addr = instr.getAbsoluteAddr();
@@ -138,6 +143,7 @@ public:
 };
 
 auto g_someClass = new SomeClass;
+int g_IntegerVal = 4;
 
 float gVar = 0;
 void changeGvar() {
@@ -146,6 +152,7 @@ void changeGvar() {
 
 int setRot(int a, float x, float y, float z, int c)
 {
+	g_IntegerVal = 100;
 	float result = x + y + z + a + c + g_someClass->getValue();
 	result = pow(result, 1);
 	gVar = rand() % 10;
@@ -161,8 +168,8 @@ int main()
 	printf("SDA module executing\n\n");
 	using namespace CE;
 
-	dissasm();
-	return 0;
+	/*dissasm();
+	return 0;*/
 
 	ProgramExe* sda = new ProgramExe(GetModuleHandle(NULL), FS::Directory("R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases"));
 	try {
@@ -264,8 +271,12 @@ int main()
 			return 0;
 		}
 
-		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::Function::Range(&setRot, 50) }, "setRot", "get rot of entity");
+		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::Function::Range(&setRot, 200) }, "setRot", "get rot of entity");
 		auto function = functiondb->getFunction();
+
+		CallGraph::FunctionBodyBuilder bodyBuilder(functiondb);
+		bodyBuilder.build();
+		function->setBody(bodyBuilder.getFunctionBody());
 		
 		functiondb->change([&] {
 			function->addArgument(new Type::Int32, "a");
