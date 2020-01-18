@@ -174,7 +174,7 @@ namespace CE
 						if (baseClass.comment.find("{base class}") != std::string::npos) {
 							auto type = findTypeById(baseClass.type.typeId)->getType();
 							if (type->getGroup() == Type::Type::Class) {
-								Class->setBaseClass((Type::Class*)type);
+								Class->setBaseClass(static_cast<Type::Class*>(type));
 								curField++;
 							}
 						}
@@ -254,7 +254,7 @@ namespace CE
 				else {
 					if (type->getType()->isUserDefined() && (int)type->getType()->getGroup() == (int)dataType.group) {
 						type->change([&] {
-							change((Type::UserType*)type->getType(), dataType);
+							change(static_cast<Type::UserType*>(type->getType()), dataType);
 						});
 					}
 					else {
@@ -265,7 +265,7 @@ namespace CE
 			}
 
 			API::Type::Typedef* changeOrCreate(const datatype::SDataTypeTypedef& Typedef) {
-				auto type = (API::Type::Typedef*)changeOrCreate(Typedef.type);
+				auto type = static_cast<API::Type::Typedef*>(changeOrCreate(Typedef.type));
 				if (type == nullptr)
 					return nullptr;
 				type->change([&] {
@@ -275,7 +275,7 @@ namespace CE
 			}
 
 			API::Type::Enum* changeOrCreate(const datatype::SDataTypeEnum& enumeration) {
-				auto type = (API::Type::Enum*)changeOrCreate(enumeration.type);
+				auto type = static_cast<API::Type::Enum*>(changeOrCreate(enumeration.type));
 				if (type == nullptr)
 					return nullptr;
 				type->change([&] {
@@ -285,7 +285,7 @@ namespace CE
 			}
 
 			API::Type::Class* changeOrCreate(const datatype::SDataTypeStructure& structure) {
-				auto type = (API::Type::Class*)changeOrCreate(structure.type);
+				auto type = static_cast<API::Type::Class*>(changeOrCreate(structure.type));
 				if (type == nullptr)
 					return nullptr;
 				type->change([&] {
@@ -372,11 +372,11 @@ namespace CE
 				switch (type->getGroup())
 				{
 				case Type::Type::Typedef:
-					return getHash(buildDesc((Type::Typedef*)type)).getHash();
+					return getHash(buildDesc(static_cast<Type::Typedef*>(type))).getHash();
 				case Type::Type::Enum:
-					return getHash(buildDesc((Type::Enum*)type)).getHash();
+					return getHash(buildDesc(static_cast<Type::Enum*>(type))).getHash();
 				case Type::Type::Class:
-					return getHash(buildDesc((Type::Class*)type)).getHash();
+					return getHash(buildDesc(static_cast<Type::Class*>(type))).getHash();
 				}
 				return 0;
 			}
@@ -385,7 +385,7 @@ namespace CE
 				HashMap hashmap;
 				for (auto& it : m_typeManager->getTypes()) {
 					if (it.second->getType()->isUserDefined()) {
-						auto type = (Type::UserType*)it.second->getType();
+						auto type = static_cast<Type::UserType*>(it.second->getType());
 						if (type->isGhidraUnit()) {
 							hashmap.insert(std::make_pair(getId(type), getHash(type)));
 						}

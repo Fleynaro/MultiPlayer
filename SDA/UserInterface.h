@@ -1,8 +1,8 @@
 #pragma once
-#include "GUI/Items/Items.h"
-#include "GUI/Items/StyleThemes.h"
-#include "GUI/Items/IWindow.h"
-#include "GUI/Items/IWidget.h"
+#include "Shared/GUI/Items/Items.h"
+#include "Shared/GUI/Items/StyleThemes.h"
+#include "Shared/GUI/Items/IWindow.h"
+#include "Shared/GUI/Items/IWidget.h"
 
 using namespace GUI::Window;
 

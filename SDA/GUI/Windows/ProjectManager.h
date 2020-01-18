@@ -1,5 +1,5 @@
 #pragma once
-#include "GUI/Items/IWindow.h"
+#include "Shared/GUI/Items/IWindow.h"
 #include <ProjectManager.h>
 
 namespace GUI::Window

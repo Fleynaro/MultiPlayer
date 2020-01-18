@@ -52,7 +52,7 @@ namespace CE
 			{}
 
 			CE::Function::Method* getMethod() {
-				return (CE::Function::Method*)getFunction();
+				return static_cast<CE::Function::Method*>(getFunction());
 			}
 		};
 	};
@@ -103,11 +103,11 @@ namespace CE
 					switch (node->getGroup())
 					{
 					case CallGraph::Type::Function:
-						item_id = ((CallGraph::FunctionNode*)node)->getFunction()->getId();
+						item_id = static_cast<CallGraph::FunctionNode*>(node)->getFunction()->getId();
 						break;
 					case CallGraph::Type::GlobalVar:
 					{
-						auto gvarNode = (CallGraph::GlobalVarNode*)node;
+						auto gvarNode = static_cast<CallGraph::GlobalVarNode*>(node);
 						item_id = gvarNode->getGVar()->getId();
 						bs.writeBit(gvarNode->getUse());
 						break;
@@ -262,7 +262,7 @@ namespace CE
 		API::Function::Function* createFunction(void* addr, Function::Function::RangeList ranges, std::string name, std::string desc = "") {
 			int id = getNewId();
 			auto func = m_functions[id] = new API::Function::Function(this, new Function::Function(addr, ranges, id, name, desc));
-			func->getFunction()->getSignature().setReturnType(getProgramModule()->getTypeManager()->getTypeById(Type::SystemType::Void)->getType());
+			func->getFunction()->getSignature().setReturnType(getProgramModule()->getTypeManager()->getDefaultReturnType()->getType());
 			return m_functions[id];
 		}
 
@@ -274,7 +274,7 @@ namespace CE
 			int id = getNewId();
 			auto method = new API::Function::Method(this, new Function::Method(addr, size, id, name, desc));
 			m_functions[id] = method;
-			method->getFunction()->getSignature().setReturnType(getProgramModule()->getTypeManager()->getTypeById(Type::SystemType::Void)->getType());
+			method->getFunction()->getSignature().setReturnType(getProgramModule()->getTypeManager()->getDefaultReturnType()->getType());
 			Class->addMethod(method->getMethod());
 			return method;
 		}
@@ -306,7 +306,7 @@ namespace CE
 						query.getColumn("name"),
 						query.getColumn("desc")
 					);
-					addFunction(new API::Function::Method(this, (Function::Method*)function));
+					addFunction(new API::Function::Method(this, static_cast<Function::Method*>(function)));
 				}
 
 				Type::Type* type = getProgramModule()->getTypeManager()->getType(
@@ -315,7 +315,7 @@ namespace CE
 					query.getColumn("ret_array_size")
 				);
 				if (type == nullptr) {
-					type = getProgramModule()->getTypeManager()->getTypeById(Type::SystemType::Void)->getType();
+					type = getProgramModule()->getTypeManager()->getDefaultReturnType()->getType();
 				}
 				function->getSignature().setReturnType(type);
 
@@ -426,7 +426,7 @@ namespace CE
 					}
 					nodeGroup->addNode(node);
 					if (node->getGroup() >= CallGraph::Type::NodeGroup) {
-						nodeGroup = (CallGraph::NodeGroup*)node;
+						nodeGroup = static_cast<CallGraph::NodeGroup*>(node);
 					}
 				}
 			}

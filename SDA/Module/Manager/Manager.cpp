@@ -59,15 +59,16 @@ void CE::TypeManager::loadInfoForClass(Type::Class* Class)
 	SQLite::Database& db = getProgramModule()->getDB();
 	SQLite::Statement query(db, "SELECT * FROM sda_classes WHERE class_id=?1");
 	query.bind(1, Class->getId());
-	query.executeStep();
+	if (!query.executeStep())
+		return;
 
 	Function::VTable* vtable = getProgramModule()->getVTableManager()->getVTableById(query.getColumn("vtable_id"));
 	if (vtable != nullptr) {
 		Class->setVtable(vtable);
 	}
-	Type::Class* baseClass = (Type::Class*)getTypeById(query.getColumn("base_class_id"));
+	auto baseClass = getTypeById(query.getColumn("base_class_id"));
 	if (baseClass != nullptr) {
-		Class->setBaseClass(baseClass);
+		Class->setBaseClass(static_cast<Type::Class*>(baseClass->getType()));
 	}
 	Class->resize(query.getColumn("size"));
 }
@@ -83,7 +84,7 @@ void CE::TypeManager::loadMethodsForClass(Type::Class* Class) {
 	{
 		auto function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("function_id"));
 		if (function != nullptr && function->getFunction()->isMethod()) {
-			Class->addMethod((Function::Method*)function->getFunction());
+			Class->addMethod(static_cast<Function::Method*>(function->getFunction()));
 		}
 	}
 }

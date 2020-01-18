@@ -28,7 +28,7 @@ namespace CE
 			}
 
 			if (trigger->getType() == Trigger::FunctionTrigger) {
-				saveFiltersForFuncTrigger((Trigger::Function::Trigger*)trigger);
+				saveFiltersForFuncTrigger(static_cast<Trigger::Function::Trigger*>(trigger));
 			}
 		}
 
@@ -147,7 +147,7 @@ namespace CE
 						query.getColumn("name"),
 						query.getColumn("desc")
 					);
-					loadFiltersForFuncTrigger((Trigger::Function::Trigger*)trigger);
+					loadFiltersForFuncTrigger(static_cast<Trigger::Function::Trigger*>(trigger));
 					break;
 				}
 

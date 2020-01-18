@@ -113,7 +113,7 @@ namespace CE
 			{
 				auto function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("function_id"));
 				if (function != nullptr && function->getFunction()->isMethod()) {
-					vtable->addMethod((Function::Method*)function->getFunction());
+					vtable->addMethod(static_cast<Function::Method*>(function->getFunction()));
 				}
 			}
 		}

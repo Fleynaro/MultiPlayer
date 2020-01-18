@@ -53,10 +53,8 @@ namespace CE
 			void pushToGhidra() override;
 
 			CE::Type::Typedef* getTypedef() {
-				return (CE::Type::Typedef*)getType();
+				return static_cast<CE::Type::Typedef*>(getType());
 			}
-		private:
-			CE::Type::Typedef* m_typeDef;
 		};
 
 		class Enum : public Type
@@ -69,10 +67,8 @@ namespace CE
 			void pushToGhidra() override;
 
 			CE::Type::Enum* getEnum() {
-				return (CE::Type::Enum*)getType();
+				return static_cast<CE::Type::Enum*>(getType());
 			}
-		private:
-			CE::Type::Enum* m_enum;
 		};
 
 		class Class : public Type
@@ -85,10 +81,8 @@ namespace CE
 			void pushToGhidra() override;
 
 			CE::Type::Class* getClass() {
-				return (CE::Type::Class*)getType();
+				return static_cast<CE::Type::Class*>(getType());
 			}
-		private:
-			CE::Type::Class* m_enum;
 		};
 	};
 
@@ -181,7 +175,7 @@ namespace CE
 				query.exec();
 			}
 			if (type->getGroup() == Type::Type::Class) {
-				auto Class = (Type::Class*)type;
+				auto Class = static_cast<Type::Class*>(type);
 				SQLite::Statement query(db, "REPLACE INTO sda_classes (class_id, base_class_id, size, vtable_id) VALUES(?1, ?2, ?3, ?4)");
 				query.bind(1, Class->getId());
 				query.bind(2, Class->getBaseClass() != nullptr ? Class->getBaseClass()->getId() : 0);
@@ -191,7 +185,7 @@ namespace CE
 				query.exec();
 			}
 			else if (type->getGroup() == Type::Type::Typedef) {
-				auto Typedef = (Type::Typedef*)type;
+				auto Typedef = static_cast<Type::Typedef*>(type);
 				SQLite::Statement query(db, "REPLACE INTO sda_typedefs (type_id, ref_type_id, pointer_lvl, array_size) VALUES(?1, ?2, ?3, ?4)");
 				query.bind(1, Typedef->getId());
 				query.bind(2, Typedef->getRefType()->getId());
@@ -350,12 +344,12 @@ namespace CE
 				case Type::Type::Group::Typedef:
 				{
 					type = new Type::Typedef(
-						getTypeById(Type::SystemType::Byte)->getType(),
+						getDefaultType()->getType(),
 						query.getColumn("id"),
 						query.getColumn("name"),
 						query.getColumn("desc")
 					);
-					addType(new API::Type::Typedef(this, (Type::Typedef*)type));
+					addType(new API::Type::Typedef(this, static_cast<Type::Typedef*>(type)));
 					break;
 				}
 
@@ -366,8 +360,8 @@ namespace CE
 						query.getColumn("name"),
 						query.getColumn("desc")
 					);
-					loadFieldsForEnum((Type::Enum*)type);
-					addType(new API::Type::Enum(this, (Type::Enum*)type));
+					loadFieldsForEnum(static_cast<Type::Enum*>(type));
+					addType(new API::Type::Enum(this, static_cast<Type::Enum*>(type)));
 					break;
 				}
 
@@ -378,7 +372,7 @@ namespace CE
 						query.getColumn("name"),
 						query.getColumn("desc")
 					);
-					addType(new API::Type::Class(this, (Type::Class*)type));
+					addType(new API::Type::Class(this, static_cast<Type::Class*>(type)));
 					break;
 				}
 				}
@@ -394,8 +388,8 @@ namespace CE
 			while (query.executeStep())
 			{
 				auto type = getTypeById(query.getColumn("type_id"));
-				if (type->getType()->getGroup() == Type::Type::Group::Typedef) {
-					auto Typedef = (Type::Typedef*)type;
+				if (type != nullptr && type->getType()->getGroup() == Type::Type::Group::Typedef) {
+					auto Typedef = static_cast<Type::Typedef*>(type->getType());
 					auto refType = getType(query.getColumn("ref_type_id"), query.getColumn("pointer_lvl"), query.getColumn("array_size"));
 					if (refType != nullptr)
 						Typedef->setRefType(refType);
@@ -420,7 +414,7 @@ namespace CE
 		{
 			for (auto it : m_types) {
 				if (it.second->getType()->getGroup() == Type::Type::Group::Class) {
-					auto Class = (Type::Class*)it.second;
+					auto Class = static_cast<Type::Class*>(it.second->getType());
 					loadInfoForClass(Class);
 					loadMethodsForClass(Class);
 					loadFieldsForClass(Class);
@@ -447,7 +441,7 @@ namespace CE
 				);
 
 				if (type == nullptr) {
-					type = getProgramModule()->getTypeManager()->getTypeById(Type::SystemType::Byte)->getType();
+					type = getProgramModule()->getTypeManager()->getDefaultType()->getType();
 				}
 				Class->addField(query.getColumn("rel_offset"), query.getColumn("name"), type);
 			}
@@ -455,6 +449,10 @@ namespace CE
 
 		API::Type::Type* getDefaultType() {
 			return getTypeById(Type::SystemType::Byte);
+		}
+
+		API::Type::Type* getDefaultReturnType() {
+			return getTypeById(Type::SystemType::Void);
 		}
 
 		TypeDict& getTypes() {

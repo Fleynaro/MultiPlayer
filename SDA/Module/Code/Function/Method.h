@@ -31,7 +31,9 @@ namespace CE
 			void setClass(Type::Class* Class);
 
 			Type::Class* getClass() {
-				return (Type::Class*)(((Type::Pointer*)getSignature().getArgList()[0])->getType());
+				return (Type::Class*)(
+					static_cast<Type::Pointer*>(getSignature().getArgList()[0])->getType()
+				);
 			}
 
 			bool isConstructor() {

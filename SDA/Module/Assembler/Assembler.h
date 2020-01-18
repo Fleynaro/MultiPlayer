@@ -588,12 +588,12 @@ namespace CE
 						if (getFirstOperand().isRegister() && getSecondOperand().isPointer()) {
 							cmd_id += symmetry;
 
-							reg = (Register*)getFirstOperandPtr();
-							ptr = (Pointer*)getSecondOperandPtr();
+							reg = static_cast<Register*>(getFirstOperandPtr());
+							ptr = static_cast<Pointer*>(getSecondOperandPtr());
 						}
 						else {
-							ptr = (Pointer*)getFirstOperandPtr();
-							reg = (Register*)getSecondOperandPtr();
+							ptr = static_cast<Pointer*>(getFirstOperandPtr());
+							reg = static_cast<Register*>(getSecondOperandPtr());
 						}
 
 						if (ptr->getBase().isRegister() && ptr->getOffset().isConstant())
