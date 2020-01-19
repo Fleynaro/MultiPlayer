@@ -189,6 +189,13 @@ MenuContainer& Container::beginMenu(std::string name, MenuContainer** ptr)
 	return **ptr;
 }
 
+ImGuiContainer& GUI::Container::beginImGui(const std::function<void()> renderFunction)
+{
+	auto ptr = new ImGuiContainer(renderFunction);
+	addItem(ptr);
+	return *ptr;
+}
+
 Container& Container::end() {
 	return *(Container*)getParent();
 }

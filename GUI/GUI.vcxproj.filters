@@ -108,6 +108,9 @@
     <ClInclude Include="Shared\GUI\imgui_include.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Shared\GUI\Windows\Templates\ItemList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vendor\imgui\imgui.cpp">
@@ -129,6 +132,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Shared\GUI\Items\Items.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

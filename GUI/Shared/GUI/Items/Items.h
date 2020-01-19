@@ -225,6 +225,7 @@ namespace GUI
 		class TR;
 	};
 
+	class ImGuiContainer;
 	class MenuContainer;
 	class ColContainer;
 	class TreeNode;
@@ -269,6 +270,7 @@ namespace GUI
 		TreeNode& beginTreeNode(std::string name, TreeNode** ptr);
 		MenuContainer& beginMenu(std::string name);
 		MenuContainer& beginMenu(std::string name, MenuContainer** ptr);
+		ImGuiContainer& beginImGui(const std::function<void()> renderFunction);
 		Container& end();
 		Table::TR& endTD();
 
@@ -459,10 +461,17 @@ namespace GUI
 		{}
 
 		void render() override {
-			if (ImGui::CollapsingHeader(getName().c_str(), &m_open)) {
+			if (ImGui::CollapsingHeader(getName().c_str(), m_closeBtn ? &m_open : nullptr)) {
 				Container::render();
 			}
 		}
+
+		ColContainer& setCloseBtn(bool toggle) {
+			m_closeBtn = toggle;
+			return *this;
+		}
+	private:
+		bool m_closeBtn = false;
 	};
 
 
@@ -528,6 +537,21 @@ namespace GUI
 				ImGui::EndMenu();
 			}
 		}
+	};
+
+
+	class ImGuiContainer : public Container
+	{
+	public:
+		ImGuiContainer(const std::function<void()>& renderFunction)
+			: m_renderFunction(renderFunction)
+		{}
+
+		void render() override {
+			m_renderFunction();
+		}
+	private:
+		std::function<void()> m_renderFunction;
 	};
 
 
@@ -1639,9 +1663,82 @@ namespace GUI
 
 				void render() override
 				{
+					pushWidthParam();
 					if (ImGui::Combo(getName().c_str(), &m_selected, &m_items[0], (int)m_items.size(), m_height)) {
 						sendSpecialEvent();
 					}
+					popWidthParam();
+				}
+			};
+
+			class MultiCombo
+				: public Elem,
+				public Events::OnSpecial,
+				public Attribute::Name<MultiCombo>,
+				public Attribute::Width<MultiCombo>,
+				public Attribute::Flags<
+				MultiCombo,
+				ImGuiSelectableFlags_,
+				ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups
+				>
+			{
+				struct ComboItem {
+					std::string m_name = "";
+					bool m_selected = false;
+					void* m_userPtr = nullptr;
+				};
+			public:
+				MultiCombo(std::string name, Events::Event* event = nullptr)
+					: Attribute::Name<MultiCombo>(name), Events::OnSpecial(event)
+				{}
+
+				void render() override
+				{
+					pushWidthParam();
+					if (ImGui::BeginCombo(getName().c_str(), getSelectedCategories().c_str())) {
+
+						for (auto& item : m_items) {
+							if (ImGui::Selectable(item.m_name.c_str(), &item.m_selected, getFlags())) {
+								sendSpecialEvent();
+							}
+						}
+
+						ImGui::EndCombo();
+					}
+					popWidthParam();
+				}
+
+				void addSelectable(const std::string& name, bool selected = false, void* userPtr = nullptr) {
+					ComboItem item;
+					item.m_name = name;
+					item.m_selected = selected;
+					item.m_userPtr = userPtr;
+					m_items.push_back(item);
+				}
+
+				std::vector<ComboItem>& getSelectedItems() {
+					return m_items;
+				}
+
+				ComboItem& getItem(int itemIdx) {
+					return m_items[itemIdx];
+				}
+
+				bool isSelected(int itemIdx) {
+					return getItem(itemIdx).m_selected;
+				}
+			private:
+				std::vector<ComboItem> m_items;
+
+				std::string getSelectedCategories() {
+					std::string categories = "";
+					for (auto& item : m_items) {
+						if (item.m_selected)
+							categories += item.m_name + ",";
+					}
+					if (m_items.size() > 0)
+						categories.pop_back();
+					return categories;
 				}
 			};
 		};

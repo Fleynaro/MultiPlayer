@@ -25,7 +25,7 @@ namespace GUI::Window::Template
 				.setColor(ImGuiCol_Separator, ColorRGBA(0x0))
 				.setColor(ImGuiCol_SeparatorActive, ColorRGBA(0x0))
 				.setColor(ImGuiCol_SeparatorHovered, ColorRGBA(0x0))
-				.addItem(new Elements::Generic::Separator)
+				.separator()
 				.beginTable().setBorder(false)
 					.beginHeader()
 						.beginTD(m_divLeft + 10)

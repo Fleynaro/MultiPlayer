@@ -16,12 +16,43 @@ public:
 	
 	}
 
+	class WindowTest : public IWindow
+	{
+	public:
+		//bool m_selected
+		
+		WindowTest()
+			: IWindow("ImGui window for test")
+		{
+			getMainContainer()
+				.beginImGui([]() {
+					if (ImGui::BeginCombo("Categories", "Here info")) {
+
+						if (ImGui::Selectable("Simple", true, ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups)) {
+							int a = 5;
+						}
+
+						if (ImGui::Selectable("Enum", true, ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups)) {
+
+						}
+
+						if (ImGui::Selectable("2222", false, ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups)) {
+
+						}
+
+						ImGui::EndCombo();
+					}
+
+
+				});
+		}
+	};
+
 	class WinManager
 	{
 	public:
 		static void registerWindows() {
-			//UI::WinManager::addWindow(new PhysicControl);
-			UI::WinManager::addWindow(new ProjectCreating);
+			UI::WinManager::addWindow(new WindowTest);
 		}
 
 		static void addWindow(GUI::Window::IWindow* window) {

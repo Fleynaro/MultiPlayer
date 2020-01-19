@@ -1632,6 +1632,76 @@ namespace GUI
 					}
 				}
 			};
+
+
+			class MultiCombo
+				: public Elem,
+				public Events::OnSpecial,
+				public Attribute::Name<MultiCombo>,
+				public Attribute::Width<MultiCombo>,
+				public Attribute::Flags<
+					MultiCombo,
+					ImGuiSelectableFlags_,
+					ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups
+				>
+			{
+				struct ComboItem {
+					std::string m_name = "";
+					bool m_selected = false;
+					void* m_userPtr = nullptr;
+				};
+			public:
+				MultiCombo(std::string name, Events::Event* event = nullptr)
+					: Attribute::Name<MultiCombo>(name), Events::OnSpecial(event)
+				{}
+
+				void render() override
+				{
+					if (ImGui::BeginCombo(getName().c_str(), getSelectedCategories().c_str())) {
+
+						for (auto& item : m_items) {
+							if (ImGui::Selectable(item.m_name.c_str(), &item.m_selected, getFlags())) {
+								sendSpecialEvent();
+							}
+						}
+
+						ImGui::EndCombo();
+					}
+				}
+
+				void addSelectable(const std::string& name, bool selected = false, void* userPtr = nullptr) {
+					ComboItem item;
+					item.m_name = name;
+					item.m_selected = selected;
+					item.m_userPtr = userPtr;
+					m_items.push_back(item);
+				}
+
+				std::vector<ComboItem>& getSelectedItems() {
+					return m_items;
+				}
+
+				ComboItem& getItem(int itemIdx) {
+					return m_items[itemIdx];
+				}
+
+				bool isSelected(int itemIdx) {
+					return getItem(itemIdx).m_selected;
+				}
+			private:
+				std::vector<ComboItem> m_items;
+
+				std::string getSelectedCategories() {
+					std::string categories = "";
+					for (auto& item : m_items) {
+						if (item.m_selected)
+							categories += item.m_name + ",";
+					}
+					if (m_items.size() > 0)
+						categories.pop_back();
+					return categories;
+				}
+			};
 		};
 
 

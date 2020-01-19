@@ -177,6 +177,8 @@
     <ClCompile Include="Vendor\imgui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GUI\Windows\ItemLists\DataTypeList.h" />
+    <ClInclude Include="GUI\Windows\ItemLists\FunctionList.h" />
     <ClInclude Include="GUI\Windows\ProjectManager.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Module\Assembler\Assembler.h" />

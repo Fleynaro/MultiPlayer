@@ -32,6 +32,7 @@ namespace GUI::Window
 			pushParams();
 			if (ImGui::Begin(getName().c_str(), &m_open, m_flags))
 			{
+				calculateActualInfo();
 				onRender();
 				checkIfFocused();
 				getMainContainer().show();
@@ -40,6 +41,17 @@ namespace GUI::Window
 			renderChildWindows();
 
 			checkToClose();
+		}
+
+	private:
+		void calculateActualInfo() {
+			auto posVec = ImGui::GetWindowPos();
+			m_actualX = posVec.x;
+			m_actualY = posVec.y;
+
+			auto sizeVec = ImGui::GetWindowSize();
+			m_actualWidth = sizeVec.x;
+			m_actualHeight = sizeVec.y;
 		}
 	protected:
 		virtual void onRender() {}
@@ -51,11 +63,28 @@ namespace GUI::Window
 		}
 
 		virtual void pushParams() {
-			if (m_x != -1.f) {
+			if (m_x != -1.f && isFlags(ImGuiWindowFlags_NoMove)) {
 				ImGui::SetNextWindowPos(ImVec2(m_x, m_y));
 			}
-			if (m_width != -1.f) {
-				ImGui::SetNextWindowSize(ImVec2(m_width, m_height));
+
+			float width = m_width;
+			float height = m_height;
+			if (width != 0 || height != 0) {
+				if (!isFlags(ImGuiWindowFlags_NoResize)) {
+					if (width != 0) {
+						if (width > m_actualWidth) {
+							m_actualWidth = width;
+						}
+						width = m_actualWidth;
+					}
+					if (height != 0) {
+						if (height > m_actualHeight) {
+							m_actualHeight = height;
+						}
+						height = m_actualHeight;
+					}
+				}
+				ImGui::SetNextWindowSize(ImVec2(width, height));
 			}
 		}
 
@@ -69,6 +98,10 @@ namespace GUI::Window
 			m_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 		}
 	public:
+		bool isFlags(ImGuiWindowFlags flags) {
+			return m_flags & flags != 0;
+		}
+
 		IWindow& setFlags(ImGuiWindowFlags flags) {
 			m_flags |= flags;
 			return *this;
@@ -109,11 +142,11 @@ namespace GUI::Window
 		}
 
 		float getX() {
-			return ImGui::GetWindowSize().x;
+			return m_actualX;
 		}
 
 		float getY() {
-			return ImGui::GetWindowSize().y;
+			return m_actualY;
 		}
 
 		IWindow* getParent() {
@@ -153,10 +186,15 @@ namespace GUI::Window
 		ImGuiWindowFlags m_flags = ImGuiWindowFlags_None;
 		std::list<IWindow*> m_childs;
 
-		float m_width = -1.f;
-		float m_height = -1.f;
+		float m_width = 0.0;
+		float m_height = 0.0;
 		float m_x = -1.f;
 		float m_y = -1.f;
+
+		float m_actualWidth = 0.0;
+		float m_actualHeight = 0.0;
+		float m_actualX = 0.0;
+		float m_actualY = 0.0;
 	};
 
 

@@ -11,7 +11,7 @@ void GUI::Window::ProjectCreating::CALLBACK_createProject(const GUI::Events::Eve
 		m_projectManager->saveProjects();
 		project->create();
 		m_projectManager->setCurrentProject(project);
-		((ProjectManagerWin*)getParent())->updateProjectList();
+		static_cast<ProjectManagerWin*>(getParent())->updateProjectList();
 		close();
 	}
 }

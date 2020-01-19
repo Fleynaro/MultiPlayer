@@ -1,6 +1,8 @@
 #pragma once
 #include "Shared/GUI/Items/IWindow.h"
 #include <ProjectManager.h>
+#include "GUI/Windows/ItemLists/DataTypeList.h"
+#include "GUI/Windows/ItemLists/FunctionList.h"
 
 namespace GUI::Window
 {
@@ -103,6 +105,15 @@ namespace GUI::Window
 								auto project = (Project*)m_projectsList->getSelectedItemPtr();
 								project->open();
 								m_projectManager->setCurrentProject(project);
+
+								static_cast<ProjectManagerWin*>(getParent())->addWindow(
+									new Window::DataTypeList(
+										project->getProgramExe()->getTypeManager())
+								);
+								static_cast<ProjectManagerWin*>(getParent())->addWindow(
+									new Window::FunctionList(
+										project->getProgramExe()->getFunctionManager())
+								);
 								close();
 							})
 						)
