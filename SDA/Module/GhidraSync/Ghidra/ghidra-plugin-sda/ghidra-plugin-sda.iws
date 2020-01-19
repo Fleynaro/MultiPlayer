@@ -2,22 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7bae5816-17b9-4347-b96d-8676e3b58136" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../../../../../MultiPlayer.sln" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../MultiPlayer.sln" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../CallGraph/CallGraph.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../CallGraph/CallGraph.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../GUI/Signature.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../GUI/Type.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../GUI/Windows/ItemLists/DataTypeList.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../GUI/Windows/ItemLists/DataTypeList.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../GUI/Windows/ItemLists/FunctionList.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../GUI/Windows/ItemLists/FunctionList.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../../Code/Function/Function.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Code/Function/Function.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Disassembler/Disassembler.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Disassembler/Disassembler.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/extension.properties" beforeDir="false" afterPath="$PROJECT_DIR$/extension.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.ipr" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.ipr" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.iws" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.iws" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.main.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.test.iml" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.test.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/sda/managers/FunctionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/sda/managers/FunctionManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Manager/FunctionManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Manager/FunctionManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Manager/FunctionManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Manager/FunctionManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Manager/SDA.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Manager/SDA.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Manager/TriggerManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Manager/TriggerManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../../ProjectManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../ProjectManager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../../main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../SDA.vcxproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../SDA.vcxproj" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -299,7 +289,7 @@
       <workItem from="1578463927161" duration="483000" />
       <workItem from="1578464662875" duration="18128000" />
       <workItem from="1578582548840" duration="10551000" />
-      <workItem from="1579372742533" duration="1540000" />
+      <workItem from="1579372742533" duration="2140000" />
     </task>
     <servers />
   </component>

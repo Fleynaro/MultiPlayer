@@ -1,5 +1,6 @@
 #pragma once
 #include "Shared/GUI/Windows/Templates/ItemList.h"
+#include "GUI/Type.h"
 #include <Manager/FunctionManager.h>
 
 using namespace CE;
@@ -96,7 +97,7 @@ namespace GUI::Window
 			{
 				setHeader(type->getType()->getName());
 				beginBody()
-					.text(type->getType()->getDesc());
+					.text(GUI::Units::Type::getTooltipDesc(type->getType(), false));
 			}
 		};
 

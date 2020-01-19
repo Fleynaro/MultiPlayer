@@ -86,11 +86,11 @@ namespace CE
 			{}
 
 			virtual std::string getSigName() {
-				std::string name = getSignature().getReturnType()->getName() + " " + getName() + "(";
+				std::string name = getSignature().getReturnType()->getDisplayName() + " " + getName() + "(";
 
 				auto& argList = getSignature().getArgList();
 				for (int i = 0; i < argList.size(); i++) {
-					name += argList[i]->getName() + " " + getArgNameList()[i] + ", ";
+					name += argList[i]->getDisplayName() + " " + getArgNameList()[i] + ", ";
 				}
 				if (argList.size() > 0) {
 					name.pop_back();

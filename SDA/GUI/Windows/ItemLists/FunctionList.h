@@ -1,5 +1,6 @@
 #pragma once
 #include "Shared/GUI/Windows/Templates/ItemList.h"
+#include "GUI/Signature.h"
 #include <Manager/FunctionManager.h>
 
 using namespace CE;
@@ -59,8 +60,27 @@ namespace GUI::Window
 			{
 				setHeader(function->getFunction()->getSigName());
 				beginBody()
-					.text(function->getFunction()->getDesc());
+					.addItem(
+						new Units::Signature(function,
+							new Events::EventUI(EVENT_LAMBDA(info) {
+								
+							}),
+							new Events::EventUI(EVENT_LAMBDA(info) {
+
+							}),
+							new Events::EventUI(EVENT_LAMBDA(info) {
+								auto argId = m_signautre->m_argumentSelectedIdx;
+
+							})
+						),
+						(GUI::Item**)& m_signautre
+					)
+					.newLine()
+					.newLine();
 			}
+
+		private:
+			Units::Signature* m_signautre;
 		};
 
 		FunctionList(FunctionManager* funcManager, const StyleSettings& style = StyleSettings())
