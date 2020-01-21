@@ -2,15 +2,19 @@
 #include "AbstractManager.h"
 #include "GVarManager.h"
 #include <Code/Function/Method.h>
-#include <CallGraph/CallGraph.h>
 #include <Utils/BitStream.h>
-#include <Disassembler/Disassembler.h>
 
 namespace CE
 {
 	namespace Ghidra
 	{
 		class FunctionManager;
+	};
+
+	namespace CallGraph::Unit
+	{
+		class FunctionBody;
+		class NodeGroup;
 	};
 
 	namespace API::Function
@@ -38,11 +42,21 @@ namespace CE
 
 			void save() override;
 
+			CallGraph::Unit::FunctionBody* getBody();
+
+			void setBody(CallGraph::Unit::FunctionBody* body) {
+				if (m_funcBody != nullptr) {
+					delete m_funcBody;
+				}
+				m_funcBody = body;
+			}
+
 			CE::Function::Function* getFunction() {
 				return m_function;
 			}
 		private:
 			CE::Function::Function* m_function;
+			CallGraph::Unit::FunctionBody* m_funcBody = nullptr;
 		};
 
 		class Method : public Function
@@ -76,86 +90,9 @@ namespace CE
 		}
 
 
-		void saveFunctionNodeGroup(Function::Function* function, CallGraph::NodeGroup* nodeGroup, int& id) {
-			using namespace SQLite;
-
-			SQLite::Database& db = getProgramModule()->getDB();
-			bool goToParent = false;
-
-			for (auto node : nodeGroup->getNodeList())
-			{
-				{
-					SQLite::Statement query(db, "INSERT INTO sda_callnodes (function_id, id, item_group, item_id, extra) VALUES (?1, ?2, ?3, ?4, ?5)");
-					query.bind(1, function->getId());
-					query.bind(2, id++);
-					query.bind(3, (int)node->getGroup());
-
-					int extra = 0;
-					int item_id = 0;
-					BitStream bs((BYTE*)& extra, sizeof(int));
-
-					if (goToParent) {
-						bs.writeBit(1);
-						goToParent = false;
-					}
-					else {
-						bs.writeBit(0);
-					}
-
-					switch (node->getGroup())
-					{
-					case CallGraph::Type::Function:
-					{
-						auto funcNode = static_cast<CallGraph::FunctionNode*>(node);
-						item_id = funcNode->getFunction()->getId();
-						bs.write(getProgramModule()->toRelAddr(funcNode->getAddressLocation()));
-						break;
-					}
-					case CallGraph::Type::GlobalVar:
-					{
-						auto gvarNode = static_cast<CallGraph::GlobalVarNode*>(node);
-						item_id = gvarNode->getGVar()->getId();
-						bs.writeBit(gvarNode->getUse());
-						bs.write(getProgramModule()->toRelAddr(gvarNode->getAddressLocation()));
-						break;
-					}
-					case CallGraph::Type::NodeGroup:
-						break;
-					case CallGraph::Type::Cycle:
-						break;
-					case CallGraph::Type::Condition:
-						break;
-					case CallGraph::Type::FunctionBody:
-						break;
-					}
-
-					query.bind(4, item_id);
-					query.bind(5, bs.getData(), bs.getSize());
-				}
-
-				if (nodeGroup->getGroup() >= CallGraph::Type::NodeGroup) {
-					goToParent = true;
-					saveFunctionNodeGroup(function, nodeGroup, id);
-				}
-			}
-		}
+		void saveFunctionNodeGroup(Function::Function* function, CallGraph::Unit::NodeGroup* nodeGroup, int& id);
 	public:
-		void saveFunctionBody(Function::Function* function) {
-			using namespace SQLite;
-
-			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Transaction transaction(db);
-
-			{
-				SQLite::Statement query(db, "DELETE FROM sda_callnodes WHERE function_id=?1");
-				query.bind(1, function->getId());
-				query.exec();
-			}
-
-			int id = 0;
-			saveFunctionNodeGroup(function, function->getBody(), id);
-			transaction.commit();
-		}
+		void saveFunctionBody(API::Function::Function* function);
 
 		void saveFunctionArguments(Function::Function* function) {
 			using namespace SQLite;
@@ -371,77 +308,11 @@ namespace CE
 			}
 		}
 
-		void loadFunctionBody(Function::Function* function) {
-			using namespace SQLite;
-
-			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "SELECT * FROM sda_callnodes WHERE function_id=?1 GROUP BY id");
-			query.bind(1, function->getId());
-
-			CallGraph::FunctionBody* body = new CallGraph::FunctionBody;
-			function->setBody(body);
-
-			CallGraph::NodeGroup* nodeGroup = body;
-			while (query.executeStep())
-			{
-				BitStream bs;
-				bool goToParentNode = false;
-				{
-					bs.write(query.getColumn("extra").getBlob(), query.getColumn("extra").getBytes());
-					bs.resetPointer();
-					goToParentNode = bs.readBit();
-				}
-				CallGraph::Node* node = nullptr;
-
-				switch ((CallGraph::Type)(int)query.getColumn("item_group"))
-				{
-				case CallGraph::Type::Function:
-				{
-					Function::Function* function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("item_id"))->getFunction();
-					if (function != nullptr) {
-						node = new CallGraph::FunctionNode(function, getProgramModule()->toAbsAddr(bs.read<int>()));
-					}
-					break;
-				}
-
-				case CallGraph::Type::GlobalVar:
-				{
-					Variable::Global* gvar = getProgramModule()->getGVarManager()->getGVarById(query.getColumn("item_id"));
-					if (gvar != nullptr) {
-						node = new CallGraph::GlobalVarNode(gvar, (CallGraph::GlobalVarNode::Use)bs.readBit(), getProgramModule()->toAbsAddr(bs.read<int>()));
-					}
-					break;
-				}
-
-				case CallGraph::Type::NodeGroup:
-					node = new CallGraph::NodeGroup;
-					break;
-				case CallGraph::Type::Cycle:
-					node = new CallGraph::Cycle;
-					break;
-				case CallGraph::Type::Condition:
-					node = new CallGraph::Condition;
-					break;
-				case CallGraph::Type::FunctionBody:
-					node = new CallGraph::FunctionBody;
-					break;
-				}
-
-				if (node != nullptr) {
-					if (goToParentNode) {
-						nodeGroup = nodeGroup->getParent();
-					}
-					nodeGroup->addNode(node);
-					if (node->getGroup() >= CallGraph::Type::NodeGroup) {
-						nodeGroup = static_cast<CallGraph::NodeGroup*>(node);
-					}
-				}
-			}
-		}
+		void loadFunctionBody(API::Function::Function* function);
 
 		void loadFunctionBodies() {
 			for (auto it : m_functions) {
-				loadFunctionBody(it.second->getFunction());
+				loadFunctionBody(it.second);
 			}
 		}
 
@@ -488,88 +359,5 @@ namespace CE
 	private:
 		FunctionDict m_functions;
 		Ghidra::FunctionManager* m_ghidraManager;
-	};
-
-	namespace CallGraph
-	{
-		class FunctionBodyBuilder
-		{
-		public:
-			FunctionBodyBuilder(API::Function::Function* function)
-				: m_function(function)
-			{}
-
-			void build()
-			{
-				m_funcBody = new FunctionBody;
-				for (auto& range : m_function->getFunction()->getRangeList()) {
-					build(range);
-				}
-			}
-
-			FunctionBody* getFunctionBody() {
-				return m_funcBody;
-			}
-		private:
-			FunctionBody* m_funcBody = nullptr;
-			API::Function::Function* m_function;
-
-			void build(Function::Function::Range& range)
-			{
-				using namespace CE::Disassembler;
-				auto nodeGroup = getFunctionBody();
-
-				Decoder decoder(range.getMinAddress(), range.getSize());
-				decoder.decode([&](Code::Instruction& instruction)
-				{
-					void* curAddr = (void*)decoder.getCurrentAddress();
-
-					if (instruction.isGeneric()) {
-						auto& instr = (Code::Instructions::Generic&)instruction;
-						auto addr = instr.getAbsoluteAddr();
-						if (addr != nullptr) {
-							nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Read, curAddr));
-						}
-					}
-					else if (instruction.isBasicManipulating()) {
-						auto& instr = (Code::Instructions::BasicManipulation&)instruction;
-						if (instr.getOperand(0).isCalculatedAddress()) {
-							nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Write, curAddr));
-						}
-						else if (instr.getOperand(1).isCalculatedAddress()) {
-							nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Read, curAddr));
-						}
-					} 
-					else if (instruction.isJumping()) {
-						auto& instr = (Code::Instructions::JumpInstruction&)instruction;
-						if (instr.hasAbsoluteAddr()) {
-							auto calledFunc = m_function->getFunctionManager()->getFunctionAt(instr.getAbsoluteAddr());
-							
-							if (instruction.getMnemonicId() != ZYDIS_MNEMONIC_CALL) {
-								if (calledFunc != nullptr) {
-									if (calledFunc->getFunction() == m_function->getFunction()) {
-										calledFunc = nullptr;
-									}
-								}
-							}
-							else {
-								if (calledFunc == nullptr) {
-									nodeGroup->addNode(new FunctionNode(curAddr));
-								}
-							}
-
-							if (calledFunc != nullptr) {
-								nodeGroup->addNode(new FunctionNode(calledFunc->getFunction(), curAddr));
-							}
-						}
-						else if (instruction.getMnemonicId() == ZYDIS_MNEMONIC_CALL) {
-							nodeGroup->addNode(new FunctionNode(curAddr));
-						}
-					}
-
-					return true;
-				});
-			}
-		};
 	};
 };

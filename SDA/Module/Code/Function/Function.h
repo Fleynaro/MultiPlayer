@@ -3,11 +3,6 @@
 
 namespace CE
 {
-	namespace CallGraph
-	{
-		class FunctionBody;
-	};
-
 	namespace Trigger::Function
 	{
 		class Hook;
@@ -117,17 +112,6 @@ namespace CE
 				return m_ranges;
 			}
 
-			CallGraph::FunctionBody* getBody() {
-				return m_funcBody;
-			}
-
-			void setBody(CallGraph::FunctionBody* body) {
-				if (m_funcBody != nullptr) {
-					delete m_funcBody;
-				}
-				m_funcBody = body;
-			}
-
 			inline ArgNameList& getArgNameList() {
 				return m_argNames;
 			}
@@ -194,7 +178,6 @@ namespace CE
 			Signature m_signature;
 			ArgNameList m_argNames;
 			Trigger::Function::Hook* m_hook = nullptr;
-			CallGraph::FunctionBody* m_funcBody = nullptr;
 			bool m_ghidraUnit = true;
 		};
 	};

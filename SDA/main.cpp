@@ -1,5 +1,6 @@
 ﻿#include <Program.h>
 #include <SdaInterface.h>
+#include <CallGraph/CallGraph.h>
 Program* g_program = nullptr;
 
 
@@ -276,7 +277,9 @@ int main()
 
 		CallGraph::FunctionBodyBuilder bodyBuilder(functiondb);
 		bodyBuilder.build();
-		function->setBody(bodyBuilder.getFunctionBody());
+		functiondb->setBody(bodyBuilder.getFunctionBody());
+		CallGraph::Analyser::Generic analysis(functiondb);
+		analysis.doAnalyse();
 		
 		functiondb->change([&] {
 			function->addArgument(new Type::Int32, "a");

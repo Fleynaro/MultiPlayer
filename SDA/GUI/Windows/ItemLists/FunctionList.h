@@ -97,10 +97,13 @@ namespace GUI::Window
 		void onSearch(const std::string& value) override
 		{
 			clear();
+			int maxCount = 300;
 			for (auto& it : m_funcManager->getFunctions()) {
 				if (checkOnInputValue(it.second, value) && checkAllFilters(it.second)) {
 					add(new FunctionItem(it.second));
 				}
+				if (--maxCount == 0)
+					break;
 			}
 		}
 
