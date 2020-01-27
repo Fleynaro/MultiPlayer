@@ -7,9 +7,12 @@ void CallGraph::Unit::NodeGroup::addNode(Node* node) {
 	node->setParent(this);
 
 	if (node->getGroup() == Type::Function) {
-		static_cast<FunctionNode*>(node)->getFunction()->getBody()->addReferenceTo(
-			static_cast<FunctionBody*>(getFunctionBody())
-		);
+		auto funcNode = static_cast<FunctionNode*>(node);
+		if (!funcNode->isNotCalculated()) {
+			funcNode->getFunction()->getBody()->addReferenceTo(
+				static_cast<FunctionBody*>(getFunctionBody())
+			);
+		}
 	}
 	else if (node->getGroup() == Type::GlobalVar) {
 

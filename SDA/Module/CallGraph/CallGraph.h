@@ -11,6 +11,7 @@ namespace CE
 			enum class Type
 			{
 				Function = 1,
+				VMethod,
 				GlobalVar,
 				NodeGroup = 11,
 				Cycle,
@@ -32,6 +33,10 @@ namespace CE
 
 				bool isFunction() {
 					return getGroup() == Type::Function;
+				}
+
+				bool isVMethod() {
+					return getGroup() == Type::VMethod;
 				}
 
 				bool isGlobalVar() {
@@ -118,6 +123,32 @@ namespace CE
 				}
 			private:
 				API::Function::Function* m_function = nullptr;
+			};
+
+			class VMethodNode : public AbstractNode
+			{
+			public:
+				VMethodNode(Function::MethodDecl* decl, void* addr)
+					: m_decl(decl), AbstractNode(addr)
+				{}
+
+				VMethodNode(void* addr)
+					: AbstractNode(addr)
+				{}
+
+				Type getGroup() override {
+					return Type::VMethod;
+				}
+
+				bool isNotCalculated() {
+					return getDeclaration() == nullptr;
+				}
+
+				Function::MethodDecl* getDeclaration() {
+					return m_decl;
+				}
+			private:
+				Function::MethodDecl* m_decl = nullptr;
 			};
 
 			class GlobalVarNode : public AbstractNode
@@ -216,7 +247,7 @@ namespace CE
 				m_stack.push(body);
 			}
 
-			Unit::FunctionBody* pop() {
+			void pop() {
 				m_stack.pop();
 			}
 
@@ -260,6 +291,8 @@ namespace CE
 					}
 					callback(node, stack);
 				});
+
+				stack.pop();
 			}
 
 		public:
@@ -312,18 +345,38 @@ namespace CE
 							m_stat.funcCount++;
 						}
 
+						if (node->isVMethod()) {
+							m_stat.vMethodCount++;
+						}
+
 						if (node->isGlobalVar()) {
 							m_stat.gVarCount++;
+							auto varNode = static_cast<Unit::GlobalVarNode*>(node);
+							if (varNode->getUse() == Unit::GlobalVarNode::Write) {
+								m_stat.gVarWriteCount++;
+							}
 						}
 					});
+				}
+
+				bool isLeaf() {
+					return m_stat.funcCount == 0 && m_stat.vMethodCount == 0;
+				}
+
+				bool isReentrant() {
+					return m_stat.gVarCount == 0;
 				}
 			private:
 				Unit::FunctionBody* m_funcBody;
 				struct {
 					int funcCount = 0;
+					int vMethodCount = 0;
 					int gVarCount = 0;
+					int gVarWriteCount = 0;
 				} m_stat;
 			};
+
+			
 		};
 
 		class FunctionBodyBuilder
@@ -359,9 +412,14 @@ namespace CE
 
 					if (instruction.isGeneric()) {
 						auto& instr = (Code::Instructions::Generic&)instruction;
-						auto addr = instr.getAbsoluteAddr();
-						if (addr != nullptr) {
-							nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Read, curAddr));
+						if (instr.getOperandCount() > 0) {
+							auto& instr = (Code::Instructions::GenericWithOperands&)instruction;
+							if (instr.getOperand(0).isCalculatedAddress()) {
+								nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Write, curAddr));
+							}
+							else if (instr.getOperand(1).isCalculatedAddress()) {
+								nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Read, curAddr));
+							}
 						}
 					}
 					else if (instruction.isBasicManipulating()) {
@@ -396,7 +454,7 @@ namespace CE
 							}
 						}
 						else if (instruction.getMnemonicId() == ZYDIS_MNEMONIC_CALL) {
-							nodeGroup->addNode(new FunctionNode(curAddr));
+							nodeGroup->addNode(new VMethodNode(curAddr));
 						}
 					}
 

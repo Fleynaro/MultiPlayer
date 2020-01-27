@@ -9,11 +9,51 @@ namespace CE
 
 	namespace Function
 	{
+		class MethodDecl : public FunctionDecl
+		{
+		public:
+			MethodDecl(Type::Class* Class, int id, std::string name, std::string desc = "")
+				: m_class(Class), FunctionDecl(id, name, desc)
+			{}
+
+			MethodDecl(int id, std::string name, std::string desc = "")
+				: MethodDecl(nullptr, id, name, desc)
+			{}
+
+			std::string getSigName() override {
+				return (isVirtual() ? "virtual " : "") + FunctionDecl::getSigName();
+			}
+
+			std::string getName() override;
+
+			void setClass(Type::Class* Class);
+
+			Type::Class* getClass() {
+				return m_class;
+			}
+
+			bool isConstructor() {
+				return m_constructor;
+			}
+
+			bool isVirtual() {
+				return m_virtual;
+			}
+		private:
+			Type::Class* m_class;
+			bool m_constructor = false;
+			bool m_virtual = false;
+		};
+
 		class Method : public Function
 		{
 		public:
-			Method(void* addr, RangeList size, int id, std::string name, std::string desc = "")
-				: Function(addr, size, id, name, desc)
+			Method(void* addr, RangeList ranges, int func_id, MethodDecl* decl)
+				: Function(addr, ranges, func_id, decl)
+			{}
+
+			Method(void* addr, RangeList ranges, int func_id, std::string name, std::string desc = "")
+				: Method(addr, ranges, func_id, new MethodDecl(func_id, name, desc))
 			{}
 
 			bool isMethod() override {
@@ -22,26 +62,16 @@ namespace CE
 
 			virtual void call(ArgList args) {}
 
-			std::string getSigName() override {
-				return (isVirtual() ? "virtual " : "") + Function::getSigName();
+			inline MethodDecl& getDeclaration() {
+				return static_cast<MethodDecl&>(Function::getDeclaration());
 			}
 
-			std::string getName() override;
-
-			void setClass(Type::Class* Class);
-
-			Type::Class* getClass() {
-				return (Type::Class*)(
-					static_cast<Type::Pointer*>(getSignature().getArgList()[0])->getType()
-				);
+			inline Type::Class* getClass() {
+				return getDeclaration().getClass();
 			}
 
-			bool isConstructor() {
-				return m_virtual;
-			}
-
-			bool isVirtual() {
-				return m_virtual;
+			inline void setClass(Type::Class* Class) {
+				return getDeclaration().setClass(Class);
 			}
 
 			Function* getFunctionBasedOn() {
@@ -51,9 +81,40 @@ namespace CE
 				func->getSignature().setReturnType(getSignature().getReturnType());
 				return func;
 			}
-		private:
-			bool m_constructor = false;
-			bool m_virtual = false;
 		};
+
+		/*class VirtualMethodDecl : public Desc
+		{
+		public:
+			VirtualMethodDecl(Type::Class* Class, std::string name, std::string desc = "")
+				: m_class(Class), Desc(0, name, desc)
+			{}
+
+			inline Signature& getSignature() {
+				return m_signature;
+			}
+
+			inline ArgNameList& getArgNameList() {
+				return m_argNames;
+			}
+		private:
+			Signature m_signature;
+			ArgNameList m_argNames;
+			Type::Class* m_class;
+		};
+
+		class VMethod : public Method
+		{
+		public:
+			VMethod(VirtualMethodDecl* decl, void* addr, RangeList ranges, int id, std::string desc = "")
+				: m_decl(decl), Method(addr, ranges, id, "<virtual>", desc)
+			{}
+
+			std::string getName() override {
+				return m_decl->getName();
+			}
+		private:
+			VirtualMethodDecl* m_decl;
+		};*/
 	};
 };

@@ -6,135 +6,6 @@ Program* g_program = nullptr;
 
 int setRot(int a, float x, float y, float z, int c);
 
-
-static const char* const TOKEN_TYPES[] =
-{
-	"INVALID          ",
-	"WHITESPACE       ",
-	"DELIMITER        ",
-	"PARENTHESIS_OPEN ",
-	"PARENTHESIS_CLOSE",
-	"PREFIX           ",
-	"MNEMONIC         ",
-	"REGISTER         ",
-	"ADDRESS_ABS      ",
-	"ADDRESS_REL      ",
-	"DISPLACEMENT     ",
-	"IMMEDIATE        ",
-	"TYPECAST         ",
-	"DECORATOR        ",
-	"SYMBOL           "
-};
-
-
-ZydisFormatterFunc default_print_address_absolute;
-
-static ZyanStatus ZydisFormatterPrintAddressAbsolute(const ZydisFormatter* formatter,
-	ZydisFormatterBuffer* buffer, ZydisFormatterContext* context)
-{
-	ZyanU64 address;
-	ZYAN_CHECK(ZydisCalcAbsoluteAddress(context->instruction, context->operand,
-		context->runtime_address, &address));
-
-	
-	return default_print_address_absolute(formatter, buffer, context);
-}
-
-#include <Disassembler/Disassembler.h>
-
-void dissasm()
-{
-	using namespace CE::Disassembler;
-	Decoder decoder_(&setRot, 200);
-	decoder_.decode([&](Code::Instruction& instruction) {
-		void* addr = nullptr;
-
-		if (instruction.getMnemonicId() == ZYDIS_MNEMONIC_CALL) {
-			auto& instr = (Code::Instructions::Call&)instruction;
-			if (instr.hasAbsoluteAddr()) {
-				addr = instr.getAbsoluteAddr();
-			}
-		}
-
-		if (instruction.getMnemonicId() == ZYDIS_MNEMONIC_MOV) {
-			auto& instr = (Code::Instructions::Mov&)instruction;
-			int a = 5;
-		}
-
-		if (instruction.isGeneric()) {
-			auto& instr = (Code::Instructions::Generic&)instruction;
-			addr = instr.getAbsoluteAddr();
-		}
-
-		if (addr != nullptr) {
-			int a = 5;
-		}
-
-		return true;
-	});
-
-
-	int size = 140;
-	ZyanUSize offset = 0;
-
-	ZydisFormatter formatter;
-	ZydisDecoder decoder;
-	ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
-	ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
-	char buffer[256];
-
-	default_print_address_absolute = (ZydisFormatterFunc)&ZydisFormatterPrintAddressAbsolute;
-	ZydisFormatterSetHook(&formatter, ZYDIS_FORMATTER_FUNC_PRINT_ADDRESS_ABS,
-		(const void**)&default_print_address_absolute);
-
-	ZyanU64 runtime_address = (ZyanU64)&setRot;
-
-	ZydisDecodedInstruction instruction;
-	while (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, (void*)((ZyanU64)&setRot + offset), size - offset,
-		&instruction)))
-	{
-		ZydisFormatterFormatInstruction(&formatter, &instruction, &buffer[0], sizeof(buffer),
-			runtime_address);
-		runtime_address += instruction.length;
-		ZYAN_PRINTF(" %s\n", &buffer[0]);
-
-		if (instruction.mnemonic == ZYDIS_MNEMONIC_CALL || instruction.mnemonic == ZYDIS_MNEMONIC_JMP) {
-			
-			auto op1 = instruction.operands[0].imm.value.s + runtime_address;
-			auto op2 = instruction.operands[0].mem.disp.value + runtime_address;
-			auto reg = instruction.operands[0].mem.base;
-			if (instruction.operands[0].mem.disp.has_displacement) {
-
-			}
-
-			int a = 5;
-		}
-
-		/*const ZydisFormatterToken* token;
-		if (ZYAN_SUCCESS(ZydisFormatterTokenizeInstruction(&formatter, &instruction, &buffer[0],
-			sizeof(buffer), 0, &token)))
-		{
-			ZydisTokenType token_type;
-			ZyanConstCharPointer token_value = nullptr;
-			while (token)
-			{
-				ZydisFormatterTokenGetValue(token, &token_type, &token_value);
-				printf("ZYDIS_TOKEN_%17s (%02X): \"%s\"\n", TOKEN_TYPES[token_type], token_type,
-					token_value);
-				if (!ZYAN_SUCCESS(ZydisFormatterTokenNext(&token)))
-				{
-					token = nullptr;
-				}
-			}
-		}*/
-
-		offset += instruction.length;
-		if (offset >= size) {
-			break;
-		}
-	}
-}
-
 class SomeClass
 {
 public:
@@ -157,6 +28,7 @@ int setRot(int a, float x, float y, float z, int c)
 	float result = x + y + z + a + c + g_someClass->getValue();
 	result = pow(result, 1);
 	gVar = rand() % 10;
+	changeGvar();
 	return result;
 }
 
@@ -175,8 +47,8 @@ int main()
 	ProgramExe* sda = new ProgramExe(GetModuleHandle(NULL), FS::Directory("R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases"));
 	try {
 		sda->initDataBase("database.db");
-		sda->initGhidraClient();
 		sda->initManagers();
+		sda->initGhidraClient();
 		sda->load();
 
 		if(false)
@@ -224,11 +96,11 @@ int main()
 
 				if (false) {
 					auto func = sda->getFunctionManager()->getFunctionById(4)->getFunction();
-					func->setName("AllocateMemory");
+					func->getDeclaration().setName("AllocateMemory");
 					func->getSignature().setReturnType(new Type::Pointer(new Type::Void));
-					func->deleteAllArguments();
-					func->addArgument(new Type::Pointer(new Type::Void), "addr");
-					func->setDesc("this allocate memory\nlol");
+					func->getDeclaration().deleteAllArguments();
+					func->getDeclaration().addArgument(new Type::Pointer(new Type::Void), "addr");
+					func->getDeclaration().setDesc("this allocate memory\nlol");
 
 					funcManager.push({
 						funcManager.buildDesc(func)
@@ -273,20 +145,20 @@ int main()
 		}
 
 		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::Function::Range(&setRot, 200) }, "setRot", "get rot of entity");
+		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::Function::Range(&changeGvar, 50) }, "changeGvar", "");
 		auto function = functiondb->getFunction();
 
-		CallGraph::FunctionBodyBuilder bodyBuilder(functiondb);
-		bodyBuilder.build();
-		functiondb->setBody(bodyBuilder.getFunctionBody());
+		sda->getFunctionManager()->buildFunctionBodies();
+		
 		CallGraph::Analyser::Generic analysis(functiondb);
 		analysis.doAnalyse();
 		
 		functiondb->change([&] {
-			function->addArgument(new Type::Int32, "a");
-			function->addArgument(new Type::Float, "x");
-			function->addArgument(new Type::Float, "y");
-			function->addArgument(new Type::Float, "z");
-			function->addArgument(new Type::Int32, "c");
+			function->getDeclaration().addArgument(new Type::Int32, "a");
+			function->getDeclaration().addArgument(new Type::Float, "x");
+			function->getDeclaration().addArgument(new Type::Float, "y");
+			function->getDeclaration().addArgument(new Type::Float, "z");
+			function->getDeclaration().addArgument(new Type::Int32, "c");
 		});
 
 		auto hook = function->createHook();

@@ -146,6 +146,7 @@
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\CallGraph\CallGraph.cpp" />
     <ClCompile Include="Module\Code\Function\Function.cpp" />
+    <ClCompile Include="Module\Code\Function\Method.cpp" />
     <ClCompile Include="Module\Code\Type\Type.cpp" />
     <ClCompile Include="Module\Disassembler\Disassembler.cpp" />
     <ClCompile Include="Module\DynHook\DynHook.cpp" />

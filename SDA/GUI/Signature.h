@@ -38,7 +38,7 @@ namespace GUI::Units
 		void buildName()
 		{
 			(*this)
-				.text(" " + getFunction()->Desc::getName())
+				.text(" " + getFunction()->getDeclaration().Desc::getName())
 				.beginImGui([&] {
 					m_leftMouseClickOnFuncName.sendLeftMouseClickEvent();
 				})

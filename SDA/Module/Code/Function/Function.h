@@ -36,12 +36,74 @@ namespace CE
 			Type::Type* m_returnType = nullptr;
 		};
 
+		using ArgNameList = std::vector<std::string>;
+
+		class FunctionDecl : public Desc
+		{
+		public:
+			FunctionDecl(int id, std::string name, std::string desc = "")
+				: Desc(id, name, desc)
+			{}
+
+			virtual std::string getSigName() {
+				std::string name = getSignature().getReturnType()->getDisplayName() + " " + getName() + "(";
+
+				auto& argList = getSignature().getArgList();
+				for (int i = 0; i < argList.size(); i++) {
+					name += argList[i]->getDisplayName() + " " + getArgNameList()[i] + ", ";
+				}
+				if (argList.size() > 0) {
+					name.pop_back();
+					name.pop_back();
+				}
+				return name + ")";
+			}
+
+			inline Signature& getSignature() {
+				return m_signature;
+			}
+
+			inline ArgNameList& getArgNameList() {
+				return m_argNames;
+			}
+
+			void addArgument(Type::Type* type, std::string name) {
+				getSignature().getArgList().push_back(type);
+				getArgNameList().push_back(name);
+			}
+
+			void changeArgument(int id, Type::Type* type, std::string name = "") {
+				getSignature().getArgList()[id]->free();
+				getSignature().getArgList()[id] = type;
+				if (name.length() > 0) {
+					m_argNames[id] = name;
+				}
+			}
+
+			void removeLastArgument() {
+				getSignature().getArgList().pop_back();
+				m_argNames.pop_back();
+			}
+
+			void deleteAllArguments() {
+				getSignature().getArgList().clear();
+				getArgNameList().clear();
+			}
+
+			bool m_argumentsChanged = false;
+		private:
+			Signature m_signature;
+			ArgNameList m_argNames;
+		};
+
+
+
+
 		class Method;
-		class Function : public Desc, public IGhidraUnit
+		class Function : public IGhidraUnit
 		{
 		public:
 			using ArgList = std::vector<Variable::Param>;
-			using ArgNameList = std::vector<std::string>;
 
 			class Range
 			{
@@ -76,26 +138,40 @@ namespace CE
 
 			using RangeList = std::vector<Range>;
 
-			Function(void* addr, RangeList ranges, int id, std::string name, std::string desc = "")
-				: m_addr(addr), m_ranges(ranges), Desc(id, name, desc)
+			Function(void* addr, RangeList ranges, int func_id, FunctionDecl* decl)
+				: m_addr(addr), m_ranges(ranges), m_id(func_id), m_decl(decl)
 			{}
 
-			virtual std::string getSigName() {
-				std::string name = getSignature().getReturnType()->getDisplayName() + " " + getName() + "(";
+			Function(void* addr, RangeList ranges, int func_id, std::string name, std::string desc = "")
+				: Function(addr, ranges, func_id, new FunctionDecl(func_id, name, desc))
+			{}
 
-				auto& argList = getSignature().getArgList();
-				for (int i = 0; i < argList.size(); i++) {
-					name += argList[i]->getDisplayName() + " " + getArgNameList()[i] + ", ";
-				}
-				if (argList.size() > 0) {
-					name.pop_back();
-					name.pop_back();
-				}
-				return name + ")";
+			inline FunctionDecl& getDeclaration() {
+				return *m_decl;
 			}
 
 			inline Signature& getSignature() {
-				return m_signature;
+				return getDeclaration().getSignature();
+			}
+
+			inline ArgNameList& getArgNameList() {
+				return getDeclaration().getArgNameList();
+			}
+
+			int getId() {
+				return m_id;
+			}
+
+			inline std::string getName() {
+				return getDeclaration().getName();
+			}
+
+			inline std::string getDesc() {
+				return getDeclaration().getDesc();
+			}
+
+			inline std::string getSigName() {
+				return getDeclaration().getSigName();
 			}
 
 			virtual bool isMethod() {
@@ -112,10 +188,6 @@ namespace CE
 				return m_ranges;
 			}
 
-			inline ArgNameList& getArgNameList() {
-				return m_argNames;
-			}
-
 			void addRange(Range range) {
 				m_ranges.push_back(range);
 			}
@@ -129,32 +201,6 @@ namespace CE
 				return false;
 			}
 
-			void addArgument(Type::Type* type, std::string name) {
-				getSignature().getArgList().push_back(type);
-				getArgNameList().push_back(name);
-				m_argumentsChanged = true;
-			}
-
-			void changeArgument(int id, Type::Type* type, std::string name = "") {
-				getSignature().getArgList()[id]->free();
-				getSignature().getArgList()[id] = type;
-				if (name.length() > 0) {
-					m_argNames[id] = name;
-				}
-				m_argumentsChanged = true;
-			}
-
-			void removeLastArgument() {
-				getSignature().getArgList().pop_back();
-				m_argNames.pop_back();
-				m_argumentsChanged = true;
-			}
-
-			void deleteAllArguments() {
-				getSignature().getArgList().clear();
-				getArgNameList().clear();
-			}
-
 			Method* getMethodBasedOn();
 
 			inline Trigger::Function::Hook* getHook() {
@@ -162,8 +208,6 @@ namespace CE
 			}
 
 			Trigger::Function::Hook* createHook();
-
-			bool m_argumentsChanged = false;
 
 			bool isGhidraUnit() override {
 				return m_ghidraUnit;
@@ -173,10 +217,10 @@ namespace CE
 				m_ghidraUnit = toggle;
 			}
 		protected:
+			int m_id;
 			void* m_addr;
 			RangeList m_ranges;
-			Signature m_signature;
-			ArgNameList m_argNames;
+			FunctionDecl* m_decl;
 			Trigger::Function::Hook* m_hook = nullptr;
 			bool m_ghidraUnit = true;
 		};

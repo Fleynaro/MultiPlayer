@@ -104,18 +104,18 @@ namespace CE
 			}
 
 			void change(Function::Function* function, const function::SFunction& funcDesc) {
-				function->setName(funcDesc.name);
-				function->setDesc(funcDesc.comment);
+				function->getDeclaration().setName(funcDesc.name);
+				function->getDeclaration().setDesc(funcDesc.comment);
 
 				auto& signature = function->getSignature();
 				signature.setReturnType(
 					getClient()->m_dataTypeManager->getType(funcDesc.signature.returnType)
 				);
 
-				function->deleteAllArguments();
+				function->getDeclaration().deleteAllArguments();
 				auto& args = funcDesc.signature.arguments;
 				for (int i = 0; i < args.size(); i++) {
-					function->addArgument(getClient()->m_dataTypeManager->getType(args[i]), funcDesc.argumentNames[i]);
+					function->getDeclaration().addArgument(getClient()->m_dataTypeManager->getType(args[i]), funcDesc.argumentNames[i]);
 				}
 
 				function->getRangeList().clear();

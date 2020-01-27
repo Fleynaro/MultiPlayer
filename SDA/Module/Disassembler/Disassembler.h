@@ -228,6 +228,10 @@ namespace CE
 					virtual void* getAbsoluteAddr() {
 						return nullptr;
 					}
+
+					virtual int getOperandCount() {
+						return 0;
+					}
 				private:
 					ZydisMnemonic_ m_mnemonicId;
 				};
@@ -248,6 +252,9 @@ namespace CE
 						return nullptr;
 					}
 
+					int getOperandCount() override {
+						return m_operandCount;
+					}
 				private:
 					int m_operandCount;
 				};

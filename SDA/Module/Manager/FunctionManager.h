@@ -176,7 +176,7 @@ namespace CE
 				auto func = it.second->getFunction();
 				saveFunction(func);
 				saveFunctionRanges(func);
-				if (func->m_argumentsChanged) {
+				if (func->getDeclaration().m_argumentsChanged) {
 					saveFunctionArguments(func);
 				}
 			}
@@ -227,45 +227,74 @@ namespace CE
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "SELECT * FROM sda_functions");
+			SQLite::Statement query(db, "SELECT * FROM sda_functions AS f INNER JOIN sda_func_decls AS d ON f.decl_id = d.decl_id");
 
+			Function::FunctionDecl* decl = nullptr;
+			Function::Function* function = nullptr;
 			while (query.executeStep())
 			{
-				Function::Function* function;
-				if ((int)query.getColumn("method") == 0) {
+				bool isMethod = (int)query.getColumn("method");
+				int func_id = query.getColumn("id");
+				int func_offset = query.getColumn("offset");
+				int decl_id = query.getColumn("decl_id");
+				bool isPrevDecl = decl != nullptr && decl->getId() == decl_id;
+
+				if (!isPrevDecl)
+				{
+					std::string decl_name = query.getColumn("name");
+					std::string decl_desc = query.getColumn("desc");
+					if (isMethod) {
+						decl = new Function::FunctionDecl(
+							decl_id,
+							decl_name,
+							decl_desc
+						);
+					}
+					else {
+						decl = new Function::MethodDecl(
+							decl_id,
+							decl_name,
+							decl_desc
+						);
+					}
+				}
+
+				if (isMethod) {
 					function = new Function::Function(
-						getProgramModule()->toAbsAddr(query.getColumn("offset")),
+						getProgramModule()->toAbsAddr(func_offset),
 						Function::Function::RangeList(),
-						query.getColumn("id"),
-						query.getColumn("name"),
-						query.getColumn("desc")
+						func_id,
+						decl
 					);
 					addFunction(new API::Function::Function(this, function));
 				}
 				else {
 					function = new Function::Method(
-						getProgramModule()->toAbsAddr(query.getColumn("offset")),
+						getProgramModule()->toAbsAddr(func_offset),
 						Function::Function::RangeList(),
-						query.getColumn("id"),
-						query.getColumn("name"),
-						query.getColumn("desc")
+						func_id,
+						static_cast<Function::MethodDecl*>(decl)
 					);
 					addFunction(new API::Function::Method(this, static_cast<Function::Method*>(function)));
 				}
 
-				Type::Type* type = getProgramModule()->getTypeManager()->getType(
-					query.getColumn("ret_type_id"),
-					query.getColumn("ret_pointer_lvl"),
-					query.getColumn("ret_array_size")
-				);
-				if (type == nullptr) {
-					type = getProgramModule()->getTypeManager()->getDefaultReturnType()->getType();
-				}
-				function->getSignature().setReturnType(type);
-
 				loadFunctionRanges(function);
-				loadFunctionArguments(function);
-				function->m_argumentsChanged = false;
+
+				if (!isPrevDecl) {
+					Type::Type* type = getProgramModule()->getTypeManager()->getType(
+						query.getColumn("ret_type_id"),
+						query.getColumn("ret_pointer_lvl"),
+						query.getColumn("ret_array_size")
+					);
+
+					if (type == nullptr) {
+						type = getProgramModule()->getTypeManager()->getDefaultReturnType()->getType();
+					}
+					decl->getSignature().setReturnType(type);
+					loadFunctionDeclArguments(decl);
+
+					decl->m_argumentsChanged = false;
+				}
 			}
 		}
 
@@ -285,12 +314,12 @@ namespace CE
 			}
 		}
 
-		void loadFunctionArguments(Function::Function* function) {
+		void loadFunctionDeclArguments(Function::FunctionDecl* decl) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "SELECT * FROM sda_func_arguments WHERE function_id=?1 GROUP BY id");
-			query.bind(1, function->getId());
+			SQLite::Statement query(db, "SELECT * FROM sda_func_arguments WHERE decl_id=?1 GROUP BY id");
+			query.bind(1, decl->getId());
 
 			while (query.executeStep())
 			{
@@ -304,7 +333,7 @@ namespace CE
 					type = getProgramModule()->getTypeManager()->getDefaultType()->getType();
 				}
 
-				function->addArgument(type, query.getColumn("name"));
+				decl->addArgument(type, query.getColumn("name"));
 			}
 		}
 
@@ -318,15 +347,6 @@ namespace CE
 
 		void buildFunctionBodies();
 
-		API::Function::Function* getFunctionAt(void* addr) {
-			for (auto& it : getFunctions()) {
-				if (it.second->getFunction()->isContainingAddress(addr)) {
-					return it.second;
-				}
-			}
-			return nullptr;
-		}
-
 		FunctionDict& getFunctions() {
 			return m_functions;
 		}
@@ -339,6 +359,24 @@ namespace CE
 			if (m_functions.find(id) == m_functions.end())
 				return nullptr;
 			return m_functions[id];
+		}
+
+		Function::FunctionDecl* getFunctionDeclById(int decl_id) {
+			for (auto& it : getFunctions()) {
+				if (it.second->getFunction()->getDeclaration().getId() == decl_id) {
+					return (Function::FunctionDecl*&)it.second->getFunction()->getDeclaration();
+				}
+			}
+			return nullptr;
+		}
+
+		API::Function::Function* getFunctionAt(void* addr) {
+			for (auto& it : getFunctions()) {
+				if (it.second->getFunction()->isContainingAddress(addr)) {
+					return it.second;
+				}
+			}
+			return nullptr;
 		}
 
 		int getFunctionOffset(Function::Function* function) {
