@@ -2,12 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7bae5816-17b9-4347-b96d-8676e3b58136" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../../../../GUI/Signature.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../../../GUI/Type.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../../GUI/Windows/ItemLists/DataTypeList.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../GUI/Windows/ItemLists/DataTypeList.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../../GUI/Windows/ItemLists/FunctionList.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../GUI/Windows/ItemLists/FunctionList.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../Code/Function/Function.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Code/Function/Function.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../../SDA.vcxproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../SDA.vcxproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.iws" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.iws" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.main.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ghidra-plugin-sda.test.iml" beforeDir="false" afterPath="$PROJECT_DIR$/ghidra-plugin-sda.test.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradlew" beforeDir="false" afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -119,7 +117,7 @@
     <property name="MemberChooser.sorted" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="R:/Program Files (x86)/Ghidra/ghidra_9.1_PUBLIC/Ghidra/Framework/Generic/lib/Generic-src.zip!/" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/lib/tomcat-embed-core-8.5.46.jar!/" />
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
@@ -290,6 +288,8 @@
       <workItem from="1578464662875" duration="18128000" />
       <workItem from="1578582548840" duration="10551000" />
       <workItem from="1579372742533" duration="2140000" />
+      <workItem from="1579768242440" duration="217000" />
+      <workItem from="1579769317585" duration="1254000" />
     </task>
     <servers />
   </component>
@@ -314,6 +314,7 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$/../../.." />
       <path value="$PROJECT_DIR$/../../../.." />
+      <path value="$PROJECT_DIR$/../../../../.." />
     </ignored-roots>
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
   </component>

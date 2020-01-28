@@ -44,7 +44,15 @@ int main()
 	/*dissasm();
 	return 0;*/
 
-	ProgramExe* sda = new ProgramExe(GetModuleHandle(NULL), FS::Directory("R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases"));
+	std::string pathh;
+	if (true) {
+		pathh = "D:\\MultiPlayer\\MultiPlayer\\SDA\\Databases";
+	}
+	else {
+		pathh = "R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases";
+	}
+
+	ProgramExe* sda = new ProgramExe(GetModuleHandle(NULL), FS::Directory(pathh));
 	try {
 		sda->initDataBase("database.db");
 		sda->initManagers();

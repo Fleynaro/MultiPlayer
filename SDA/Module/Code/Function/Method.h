@@ -32,6 +32,10 @@ namespace CE
 				return m_class;
 			}
 
+			bool isMethod() override {
+				return true;
+			}
+
 			bool isConstructor() {
 				return m_constructor;
 			}
@@ -56,10 +60,6 @@ namespace CE
 				: Method(addr, ranges, func_id, new MethodDecl(func_id, name, desc))
 			{}
 
-			bool isMethod() override {
-				return true;
-			}
-
 			virtual void call(ArgList args) {}
 
 			inline MethodDecl& getDeclaration() {
@@ -82,39 +82,5 @@ namespace CE
 				return func;
 			}
 		};
-
-		/*class VirtualMethodDecl : public Desc
-		{
-		public:
-			VirtualMethodDecl(Type::Class* Class, std::string name, std::string desc = "")
-				: m_class(Class), Desc(0, name, desc)
-			{}
-
-			inline Signature& getSignature() {
-				return m_signature;
-			}
-
-			inline ArgNameList& getArgNameList() {
-				return m_argNames;
-			}
-		private:
-			Signature m_signature;
-			ArgNameList m_argNames;
-			Type::Class* m_class;
-		};
-
-		class VMethod : public Method
-		{
-		public:
-			VMethod(VirtualMethodDecl* decl, void* addr, RangeList ranges, int id, std::string desc = "")
-				: m_decl(decl), Method(addr, ranges, id, "<virtual>", desc)
-			{}
-
-			std::string getName() override {
-				return m_decl->getName();
-			}
-		private:
-			VirtualMethodDecl* m_decl;
-		};*/
 	};
 };

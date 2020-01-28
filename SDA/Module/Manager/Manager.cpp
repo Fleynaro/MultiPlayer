@@ -6,6 +6,7 @@ void CE::ProgramModule::load()
 	getTypeManager()->loadTypes();
 	getTypeManager()->loadTypedefs();
 	getGVarManager()->loadGVars();
+	getFunctionManager()->loadFunctionDecls();
 	getFunctionManager()->loadFunctions();
 	getFunctionManager()->loadFunctionBodies();
 	getVTableManager()->loadVTables();
@@ -79,7 +80,7 @@ void CE::TypeManager::loadMethodsForClass(Type::Class* Class) {
 	using namespace SQLite;
 
 	SQLite::Database& db = getProgramModule()->getDB();
-	SQLite::Statement query(db, "SELECT function_id FROM sda_class_methods WHERE class_id=?1");
+	SQLite::Statement query(db, "SELECT decl_id FROM sda_class_methods WHERE class_id=?1");
 	query.bind(1, Class->getId());
 
 	while (query.executeStep())

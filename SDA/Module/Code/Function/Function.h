@@ -67,6 +67,10 @@ namespace CE
 				return m_argNames;
 			}
 
+			virtual bool isMethod() {
+				return false;
+			}
+
 			void addArgument(Type::Type* type, std::string name) {
 				getSignature().getArgList().push_back(type);
 				getArgNameList().push_back(name);
@@ -174,8 +178,8 @@ namespace CE
 				return getDeclaration().getSigName();
 			}
 
-			virtual bool isMethod() {
-				return false;
+			inline bool isMethod() {
+				return getDeclaration().isMethod();
 			}
 
 			virtual void call(ArgList args) {}
