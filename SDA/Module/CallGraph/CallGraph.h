@@ -223,6 +223,10 @@ namespace CE
 				Type getGroup() override {
 					return Type::FunctionBody;
 				}
+
+				API::Function::Function* getFunction() {
+					return m_function;
+				}
 			private:
 				API::Function::Function* m_function;
 			};
@@ -244,18 +248,31 @@ namespace CE
 			CallStack() = default;
 
 			void push(Unit::FunctionBody* body) {
-				m_stack.push(body);
+				m_stack.push_front(body);
 			}
 
 			void pop() {
-				m_stack.pop();
+				m_stack.pop_front();
 			}
 
 			bool empty() {
 				return m_stack.empty();
 			}
+
+			int size() {
+				return m_stack.size();
+			}
+
+			bool has(Unit::FunctionBody* body) {
+				for (auto it : m_stack) {
+					if (it == body) {
+						return true;
+					}
+				}
+				return false;
+			}
 		private:
-			std::stack<Unit::FunctionBody*> m_stack;
+			std::list<Unit::FunctionBody*> m_stack;
 		};
 
 		class FunctionIterator
@@ -269,27 +286,32 @@ namespace CE
 				: m_funcBody(funcBody)
 			{}
 
-			void iterateCallStack(const std::function<void(Unit::Node*, CallStack&)>& callback)
+			template<bool isLeft = true>
+			void iterateCallStack(const std::function<bool(Unit::Node*, CallStack&)>& callback)
 			{
 				CallStack stack;
-				iterateCallStack(callback, m_funcBody, stack);
+				iterateCallStack<isLeft>(callback, m_funcBody, stack);
 			}
 
 		private:
-			void iterateCallStack(const std::function<void(Unit::Node*, CallStack&)>& callback, Unit::FunctionBody* body, CallStack& stack)
+			template<bool isLeft = true>
+			void iterateCallStack(const std::function<bool(Unit::Node*, CallStack&)>& callback, Unit::FunctionBody* body, CallStack& stack)
 			{
 				stack.push(body);
 
 				FunctionIterator pass(body);
-				pass.iterateFunctionBody([&](Unit::Node* node)
+				pass.iterateFunctionBody<isLeft>([&](Unit::Node* node)
 				{
 					if (node->isFunction()) {
 						auto functionNode = static_cast<Unit::FunctionNode*>(node);
 						if (!functionNode->isNotCalculated()) {
-							iterateCallStack(callback, functionNode->getFunction()->getBody(), stack);
+							auto body = functionNode->getFunction()->getBody();
+							if (!stack.has(body)) {
+								iterateCallStack(callback, body, stack);
+							}
 						}
 					}
-					callback(node, stack);
+					return callback(node, stack);
 				});
 
 				stack.pop();
@@ -297,16 +319,17 @@ namespace CE
 
 		public:
 			template<bool isLeft = true>
-			void iterateFunctionBody(const std::function<void(Unit::Node*)>& callback)
+			void iterateFunctionBody(const std::function<bool(Unit::Node*)>& callback)
 			{
 				IterateNodeGroup<isLeft>(callback, m_funcBody);
 			}
 
 			template<bool isLeft = true>
-			static void IterateNodeGroup(const std::function<void(Unit::Node*)>& callback, Unit::Node* node)
+			static void IterateNodeGroup(const std::function<bool(Unit::Node*)>& callback, Unit::Node* node)
 			{
 				if constexpr (isLeft) {
-					callback(node);
+					if (!callback(node))
+						return;
 				}
 
 				if (node->isGroup()) {
@@ -317,11 +340,49 @@ namespace CE
 				}
 				
 				if constexpr (!isLeft) {
-					callback(node);
+					if (!callback(node))
+						return;
 				}
 			}
 		private:
 			Unit::FunctionBody* m_funcBody;
+		};
+
+		class CallGraphIterator
+		{
+		public:
+			CallGraphIterator(FunctionManager* funcManager)
+				: m_funcManager(funcManager)
+			{}
+
+			template<bool isLeft = true>
+			void iterate(const std::function<bool(Unit::Node*, CallStack&)>& callback)
+			{
+				for (auto it : m_funcManager->getFunctions())
+				{
+					if (it.second->getBody()->getFunctionsReferTo().size() == 0)
+					{
+						FunctionIterator pass(it.second);
+						pass.iterateCallStack<isLeft>([&](Unit::Node* node, CallStack& stack)
+						{
+							if (node->isFunctionBody()) {
+								auto funcBody = static_cast<Unit::FunctionBody*>(node);
+								auto def_id = funcBody->getFunction()->getDefinition().getId();
+								if (m_passedFunctions.find(def_id) == m_passedFunctions.end()) {
+									m_passedFunctions.insert(def_id);
+								}
+								else {
+									return false;
+								}
+							}
+							return callback(node, stack);
+						});
+					}
+				}
+			}
+		private:
+			std::set<int> m_passedFunctions;
+			FunctionManager* m_funcManager;
 		};
 
 		namespace Analyser
@@ -356,6 +417,7 @@ namespace CE
 								m_stat.gVarWriteCount++;
 							}
 						}
+						return true;
 					});
 				}
 

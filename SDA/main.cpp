@@ -154,13 +154,47 @@ int main()
 
 		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::FunctionDefinition::Range(&setRot, 200) }, sda->getFunctionManager()->createFunctionDecl("setRot", "get rot of entity"));
 		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::FunctionDefinition::Range(&changeGvar, 50) }, sda->getFunctionManager()->createFunctionDecl("changeGvar", ""));
+		auto functiondb3 = sda->getFunctionManager()->createFunction(&rand, { Function::FunctionDefinition::Range(&rand, 300) }, sda->getFunctionManager()->createFunctionDecl("rand", ""));
 		auto function = functiondb->getFunction();
 
 		sda->getFunctionManager()->buildFunctionBodies();
 		
 		CallGraph::Analyser::Generic analysis(functiondb);
 		analysis.doAnalyse();
-		
+
+		{
+			using namespace CallGraph;
+			CallGraphIterator iter(sda->getFunctionManager());
+			iter.iterate<true>([&](Unit::Node* node, CallStack& stack)
+			{
+				if (!node->isFunctionBody() && !node->isVMethod() && !node->isGlobalVar())
+					return true;
+
+				std::string line = "";
+				for (int i = 0; i < stack.size(); i++)
+					line += "-";
+				line += " ";
+
+				if (node->isFunctionBody()) {
+					if (stack.size() == 1) {
+						line += ">>> ";
+					}
+					auto funcBody = static_cast<Unit::FunctionBody*>(node);
+					line += funcBody->getFunction()->getFunction()->getName();
+				}
+				if (node->isGlobalVar()) {
+					line += "gVar";
+				}
+				if (node->isVMethod()) {
+					line += "vMethod";
+				}
+
+				line += "\n";
+				printf(line.c_str());
+				return true;
+			});
+		}
+
 		functiondb->change([&] {
 			function->getDeclaration().addArgument(new Type::Int32, "a");
 			function->getDeclaration().addArgument(new Type::Float, "x");
