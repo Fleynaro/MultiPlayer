@@ -388,7 +388,7 @@ namespace CE
 
 			void build()
 			{
-				for (auto& range : m_function->getFunction()->getRangeList()) {
+				for (auto& range : m_function->getDefinition().getRangeList()) {
 					build(range);
 				}
 			}
@@ -399,7 +399,7 @@ namespace CE
 		private:
 			API::Function::Function* m_function;
 
-			void build(Function::Function::Range& range)
+			void build(Function::FunctionDefinition::Range& range)
 			{
 				using namespace CE::Disassembler;
 				using namespace Unit;

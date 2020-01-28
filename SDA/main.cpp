@@ -45,7 +45,7 @@ int main()
 	return 0;*/
 
 	std::string pathh;
-	if (true) {
+	if (false) {
 		pathh = "D:\\MultiPlayer\\MultiPlayer\\SDA\\Databases";
 	}
 	else {
@@ -152,8 +152,8 @@ int main()
 			return 0;
 		}
 
-		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::Function::Range(&setRot, 200) }, "setRot", "get rot of entity");
-		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::Function::Range(&changeGvar, 50) }, "changeGvar", "");
+		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::FunctionDefinition::Range(&setRot, 200) }, sda->getFunctionManager()->createFunctionDecl("setRot", "get rot of entity"));
+		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::FunctionDefinition::Range(&changeGvar, 50) }, sda->getFunctionManager()->createFunctionDecl("changeGvar", ""));
 		auto function = functiondb->getFunction();
 
 		sda->getFunctionManager()->buildFunctionBodies();
@@ -169,7 +169,7 @@ int main()
 			function->getDeclaration().addArgument(new Type::Int32, "c");
 		});
 
-		auto hook = function->createHook();
+		auto hook = function->getDefinition().createHook();
 		hook->getDynHook()->setArgCount(5);
 		hook->getDynHook()->setMethod(new CE::Hook::Method::Method2<CE::Trigger::Function::TriggerState>(hook->getDynHook()));
 		hook->getDynHook()->hook();

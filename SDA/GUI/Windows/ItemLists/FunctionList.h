@@ -32,10 +32,10 @@ namespace GUI::Window
 			}
 
 			bool checkFilter(API::Function::Function* function) override {
-				if (!function->getFunction()->isMethod())
+				if (function->isFunction())
 					return false;
 
-				auto method = static_cast<Function::Method*>(function->getFunction());
+				auto method = function->getMethod();
 				if (method->getClass()->getId() != m_class->getClass()->getId())
 					return false;
 

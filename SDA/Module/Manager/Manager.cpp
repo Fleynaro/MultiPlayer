@@ -80,14 +80,24 @@ void CE::TypeManager::loadMethodsForClass(Type::Class* Class) {
 	using namespace SQLite;
 
 	SQLite::Database& db = getProgramModule()->getDB();
-	SQLite::Statement query(db, "SELECT decl_id FROM sda_class_methods WHERE class_id=?1");
+	SQLite::Statement query(db, "SELECT decl_id,def_id FROM sda_class_methods  WHERE class_id=?1");
 	query.bind(1, Class->getId());
 
 	while (query.executeStep())
 	{
-		auto function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("function_id"));
-		if (function != nullptr && function->getFunction()->isMethod()) {
-			Class->addMethod(static_cast<Function::Method*>(function->getFunction()));
+		int def_id = query.getColumn("def_id");
+		if (def_id != 0) {
+			auto function = getProgramModule()->getFunctionManager()->getFunctionById(def_id);
+			if (function != nullptr && !function->getFunction()->isFunction()) {
+				Class->addMethod(function->getMethod());
+			}
+		}
+		else {
+			int decl_id = query.getColumn("decl_id");
+			auto decl = getProgramModule()->getFunctionManager()->getFunctionDeclById(decl_id);
+			if (decl != nullptr && !decl->getFunctionDecl()->isFunction()) {
+				Class->addMethod(new Function::Method(decl->getMethodDecl()));
+			}
 		}
 	}
 }

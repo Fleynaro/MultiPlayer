@@ -41,8 +41,7 @@ namespace CE
 
 			using FieldDict = std::map<int, Field>;
 			using MethodList = std::list<Function::Method*>;
-			using VMethodDeclList = std::list<Function::MethodDecl*>;
-
+			
 			Class(int id, std::string name, std::string desc = "")
 				: UserType(id, name, desc)
 			{}
@@ -75,10 +74,6 @@ namespace CE
 				return m_methods;
 			}
 
-			VMethodDeclList& getVMethodDeclList() {
-				return m_vMethodDecls;
-			}
-
 			FieldDict& getFieldDict() {
 				return m_fields;
 			}
@@ -86,11 +81,6 @@ namespace CE
 			void addMethod(Function::Method* method) {
 				getMethodList().push_back(method);
 				method->setClass(this);
-			}
-
-			void addVMethodDecl(Function::MethodDecl* vmethod) {
-				getVMethodDeclList().push_back(vmethod);
-				vmethod->setClass(this);
 			}
 
 			void iterateClasses(std::function<void(Class*)> callback)
@@ -238,7 +228,6 @@ namespace CE
 			Class* m_base = nullptr;
 			FieldDict m_fields;
 			MethodList m_methods;
-			VMethodDeclList m_vMethodDecls;
 		};
 	};
 };

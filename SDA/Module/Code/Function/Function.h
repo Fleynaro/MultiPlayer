@@ -41,6 +41,17 @@ namespace CE
 		class FunctionDecl : public Desc
 		{
 		public:
+			enum class Role
+			{
+				Function,
+				Method,
+				StaticMethod,
+				VirtualMethod,
+				Constructor,
+				Destructor,
+				VirtualDestructor
+			};
+
 			FunctionDecl(int id, std::string name, std::string desc = "")
 				: Desc(id, name, desc)
 			{}
@@ -67,8 +78,16 @@ namespace CE
 				return m_argNames;
 			}
 
-			virtual bool isMethod() {
-				return false;
+			virtual Role getRole() {
+				return Role::Function;
+			}
+
+			bool isFunction() {
+				return isFunction(getRole());
+			}
+
+			static bool isFunction(Role role) {
+				return role == Role::Function;
 			}
 
 			void addArgument(Type::Type* type, std::string name) {
@@ -100,11 +119,8 @@ namespace CE
 			ArgNameList m_argNames;
 		};
 
-
-
-
-		class Method;
-		class Function : public IGhidraUnit
+		//class Method;
+		class FunctionDefinition
 		{
 		public:
 			using ArgList = std::vector<Variable::Param>;
@@ -142,44 +158,12 @@ namespace CE
 
 			using RangeList = std::vector<Range>;
 
-			Function(void* addr, RangeList ranges, int func_id, FunctionDecl* decl)
-				: m_addr(addr), m_ranges(ranges), m_id(func_id), m_decl(decl)
+			FunctionDefinition(void* addr, RangeList ranges, int def_id, FunctionDecl* decl)
+				: m_addr(addr), m_ranges(ranges), m_id(def_id), m_decl(decl)
 			{}
-
-			Function(void* addr, RangeList ranges, int func_id, std::string name, std::string desc = "")
-				: Function(addr, ranges, func_id, new FunctionDecl(func_id, name, desc))
-			{}
-
-			inline FunctionDecl& getDeclaration() {
-				return *m_decl;
-			}
-
-			inline Signature& getSignature() {
-				return getDeclaration().getSignature();
-			}
-
-			inline ArgNameList& getArgNameList() {
-				return getDeclaration().getArgNameList();
-			}
 
 			int getId() {
 				return m_id;
-			}
-
-			inline std::string getName() {
-				return getDeclaration().getName();
-			}
-
-			inline std::string getDesc() {
-				return getDeclaration().getDesc();
-			}
-
-			inline std::string getSigName() {
-				return getDeclaration().getSigName();
-			}
-
-			inline bool isMethod() {
-				return getDeclaration().isMethod();
 			}
 
 			virtual void call(ArgList args) {}
@@ -205,13 +189,87 @@ namespace CE
 				return false;
 			}
 
-			Method* getMethodBasedOn();
+			//Method* getMethodBasedOn();
 
 			inline Trigger::Function::Hook* getHook() {
 				return m_hook;
 			}
 
 			Trigger::Function::Hook* createHook();
+
+			inline FunctionDecl* getDeclarationPtr() {
+				return m_decl;
+			}
+
+			inline FunctionDecl& getDeclaration() {
+				return *getDeclarationPtr();
+			}
+		protected:
+			int m_id;
+			void* m_addr;
+			RangeList m_ranges;
+			Trigger::Function::Hook* m_hook = nullptr;
+			FunctionDecl* m_decl;
+		};
+
+		class Function : public IGhidraUnit
+		{
+		public:
+			Function(FunctionDecl* decl, FunctionDefinition* def = nullptr)
+				: m_decl(decl), m_def(def)
+			{}
+
+			Function(FunctionDefinition* def)
+				: m_def(def), m_decl(def->getDeclarationPtr())
+			{}
+
+			inline FunctionDecl& getDeclaration() {
+				return *m_decl;
+			}
+
+			inline FunctionDefinition& getDefinition() {
+				return *m_def;
+			}
+
+			bool hasDefinition() {
+				return m_def != nullptr;
+			}
+
+			inline int getId() {
+				if (!hasDefinition())
+					0;
+				return getDefinition().getId();
+			}
+
+			inline void* getAddress() {
+				if (!hasDefinition())
+					nullptr;
+				return getDefinition().getAddress();
+			}
+
+			inline Signature& getSignature() {
+				return getDeclaration().getSignature();
+			}
+
+			inline ArgNameList& getArgNameList() {
+				return getDeclaration().getArgNameList();
+			}
+
+			inline std::string getName() {
+				return getDeclaration().getName();
+			}
+
+			inline std::string getDesc() {
+				return getDeclaration().getDesc();
+			}
+
+			inline std::string getSigName() {
+				return getDeclaration().getSigName();
+			}
+
+			inline bool isFunction() {
+				return getDeclaration().isFunction();
+			}
 
 			bool isGhidraUnit() override {
 				return m_ghidraUnit;
@@ -221,11 +279,8 @@ namespace CE
 				m_ghidraUnit = toggle;
 			}
 		protected:
-			int m_id;
-			void* m_addr;
-			RangeList m_ranges;
 			FunctionDecl* m_decl;
-			Trigger::Function::Hook* m_hook = nullptr;
+			FunctionDefinition* m_def;
 			bool m_ghidraUnit = true;
 		};
 	};

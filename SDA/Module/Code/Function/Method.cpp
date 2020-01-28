@@ -16,10 +16,10 @@ void CE::Function::MethodDecl::setClass(Type::Class* Class)
 	}
 }
 
-CE::Function::Method* CE::Function::Function::getMethodBasedOn() {
+/*CE::Function::Method* CE::Function::Function::getMethodBasedOn() {
 	auto method = new Method(m_addr, m_ranges, getId(), getName(), getDesc());
 	method->getArgNameList().swap(getArgNameList());
 	method->getSignature().getArgList().swap(getSignature().getArgList());
 	method->getSignature().setReturnType(getSignature().getReturnType());
 	return method;
-}
+}*/

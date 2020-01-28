@@ -106,14 +106,14 @@ namespace CE
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "SELECT function_id FROM sda_vtable_funcs WHERE vtable_id=?1 GROUP BY id");
+			SQLite::Statement query(db, "SELECT def_id FROM sda_vtable_funcs WHERE vtable_id=?1 GROUP BY id");
 			query.bind(1, vtable->getId());
 
 			while (query.executeStep())
 			{
-				auto function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("function_id"));
-				if (function != nullptr && function->getFunction()->isMethod()) {
-					vtable->addMethod(static_cast<Function::Method*>(function->getFunction()));
+				auto function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("def_id"));
+				if (function != nullptr && !function->getFunction()->isFunction()) {
+					vtable->addMethod(function->getMethod());
 				}
 			}
 		}

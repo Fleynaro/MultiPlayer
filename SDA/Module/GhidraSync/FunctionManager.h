@@ -70,7 +70,7 @@ namespace CE
 					funcDesc.argumentNames.push_back(argName);
 				}
 
-				for (auto& range : function->getRangeList()) {
+				for (auto& range : function->getDefinition().getRangeList()) {
 					function::SFunctionRange rangeDesc;
 					rangeDesc.__set_minOffset(getClient()->getProgramModule()->toRelAddr(range.getMinAddress()));
 					rangeDesc.__set_maxOffset(getClient()->getProgramModule()->toRelAddr(range.getMaxAddress()));
@@ -92,10 +92,10 @@ namespace CE
 				return result;
 			}
 
-			Function::Function::RangeList getFunctionRanges(const std::vector<function::SFunctionRange>& rangeDescs) {
-				Function::Function::RangeList ranges;
+			Function::FunctionDefinition::RangeList getFunctionRanges(const std::vector<function::SFunctionRange>& rangeDescs) {
+				Function::FunctionDefinition::RangeList ranges;
 				for (auto& range : rangeDescs) {
-					ranges.push_back(Function::Function::Range(
+					ranges.push_back(Function::FunctionDefinition::Range(
 						getClient()->getProgramModule()->toAbsAddr(range.minOffset),
 						getClient()->getProgramModule()->toAbsAddr(range.maxOffset)
 					));
@@ -118,14 +118,14 @@ namespace CE
 					function->getDeclaration().addArgument(getClient()->m_dataTypeManager->getType(args[i]), funcDesc.argumentNames[i]);
 				}
 
-				function->getRangeList().clear();
-				function->getRangeList() = getFunctionRanges(funcDesc.ranges);
+				function->getDefinition().getRangeList().clear();
+				function->getDefinition().getRangeList() = getFunctionRanges(funcDesc.ranges);
 			}
 
 			API::Function::Function* changeOrCreate(const function::SFunction& funcDesc) {
 				API::Function::Function* function = findFunctionById(funcDesc.id, false);
 				if (function == nullptr) {
-					function = m_functionManager->createFunction(getClient()->getProgramModule()->toAbsAddr(funcDesc.ranges[0].minOffset), {}, "", "");
+					function = m_functionManager->createFunction(getClient()->getProgramModule()->toAbsAddr(funcDesc.ranges[0].minOffset), {}, m_functionManager->createFunctionDecl("", ""));
 				}
 
 				function->change([&]{

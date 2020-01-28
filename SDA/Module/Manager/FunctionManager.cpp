@@ -11,7 +11,7 @@ FunctionManager::FunctionManager(ProgramModule* module)
 	createDefaultFunction();
 }
 
-void FunctionManager::saveFunctionNodeGroup(Function::Function* function, CallGraph::Unit::NodeGroup* nodeGroup, int& id) {
+void FunctionManager::saveFunctionNodeGroup(Function::FunctionDefinition& definition, CallGraph::Unit::NodeGroup* nodeGroup, int& id) {
 	using namespace SQLite;
 	using namespace CallGraph;
 
@@ -21,8 +21,8 @@ void FunctionManager::saveFunctionNodeGroup(Function::Function* function, CallGr
 	for (auto node : nodeGroup->getNodeList())
 	{
 		{
-			SQLite::Statement query(db, "INSERT INTO sda_callnodes (function_id, id, item_group, item_id, extra) VALUES (?1, ?2, ?3, ?4, ?5)");
-			query.bind(1, function->getId());
+			SQLite::Statement query(db, "INSERT INTO sda_callnodes (def_id, id, item_group, item_id, extra) VALUES (?1, ?2, ?3, ?4, ?5)");
+			query.bind(1, definition.getId());
 			query.bind(2, id++);
 			query.bind(3, (int)node->getGroup());
 
@@ -71,7 +71,7 @@ void FunctionManager::saveFunctionNodeGroup(Function::Function* function, CallGr
 
 		if (nodeGroup->getGroup() >= Unit::Type::NodeGroup) {
 			goToParent = true;
-			saveFunctionNodeGroup(function, nodeGroup, id);
+			saveFunctionNodeGroup(definition, nodeGroup, id);
 		}
 	}
 }
@@ -83,13 +83,13 @@ void FunctionManager::saveFunctionBody(API::Function::Function* function) {
 	SQLite::Transaction transaction(db);
 
 	{
-		SQLite::Statement query(db, "DELETE FROM sda_callnodes WHERE function_id=?1");
-		query.bind(1, function->getFunction()->getId());
+		SQLite::Statement query(db, "DELETE FROM sda_callnodes WHERE def_id=?1");
+		query.bind(1, function->getDefinition().getId());
 		query.exec();
 	}
 
 	int id = 0;
-	saveFunctionNodeGroup(function->getFunction(), function->getBody(), id);
+	saveFunctionNodeGroup(function->getDefinition(), function->getBody(), id);
 	transaction.commit();
 }
 
@@ -98,8 +98,8 @@ void FunctionManager::loadFunctionBody(API::Function::Function* function) {
 	using namespace CallGraph;
 
 	SQLite::Database& db = getProgramModule()->getDB();
-	SQLite::Statement query(db, "SELECT * FROM sda_callnodes WHERE function_id=?1 GROUP BY id");
-	query.bind(1, function->getFunction()->getId());
+	SQLite::Statement query(db, "SELECT * FROM sda_callnodes WHERE def_id=?1 GROUP BY id");
+	query.bind(1, function->getDefinition().getId());
 
 	auto body = function->getBody();
 	
@@ -169,7 +169,7 @@ void CE::FunctionManager::buildFunctionBodies() {
 void API::Function::Function::save() {
 	lock();
 
-	getFunctionManager()->saveFunction(getFunction());
+	getFunctionManager()->saveFunction(*getFunction());
 	if (getFunctionManager()->isGhidraManagerWorking()) {
 		getFunctionManager()->getGhidraManager()->push({
 			getFunctionManager()->getGhidraManager()->buildDesc(getFunction())

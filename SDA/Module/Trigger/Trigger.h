@@ -34,7 +34,7 @@ namespace CE
 			class Hook
 			{
 			public:
-				Hook(CE::Function::Function* func);
+				Hook(CE::Function::FunctionDefinition* definition);
 
 				inline std::list<Trigger*>& getTriggers() {
 					return m_triggers;
@@ -156,7 +156,7 @@ namespace CE
 
 			static bool callback_before(CE::Hook::DynHook* hook)
 			{
-				auto func = (CE::Function::Function*)hook->getUserPtr();
+				auto func = (CE::Function::FunctionDefinition*)hook->getUserPtr();
 				bool exectute = true;
 				for (auto trigger : func->getHook()->getTriggers()) {
 					exectute &= trigger->actionBefore(hook);
@@ -172,7 +172,7 @@ namespace CE
 
 			static void callback_after(CE::Hook::DynHook* hook)
 			{
-				auto func = (CE::Function::Function*)hook->getUserPtr();
+				auto func = (CE::Function::FunctionDefinition*)hook->getUserPtr();
 				for (auto trigger : func->getHook()->getTriggers()) {
 					trigger->actionAfter(hook);
 				}

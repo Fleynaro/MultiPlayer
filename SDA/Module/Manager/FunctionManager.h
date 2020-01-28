@@ -19,26 +19,16 @@ namespace CE
 
 	namespace API::Function
 	{
-		class AbstractFunction : public ItemDB
+		class FunctionDecl : public ItemDB
 		{
 		public:
-			AbstractFunction(FunctionManager* funcManager)
-				: m_funcManager(funcManager)
+			FunctionDecl(FunctionManager* funcManager, CE::Function::FunctionDecl* decl)
+				: m_funcManager(funcManager), m_decl(decl)
 			{}
 
 			FunctionManager* getFunctionManager() {
 				return m_funcManager;
 			}
-		private:
-			FunctionManager* m_funcManager;
-		};
-
-		class FunctionDecl : public AbstractFunction
-		{
-		public:
-			FunctionDecl(FunctionManager* funcManager, CE::Function::FunctionDecl* decl)
-				: AbstractFunction(funcManager), m_decl(decl)
-			{}
 
 			void save() override {
 
@@ -49,18 +39,23 @@ namespace CE
 			}
 
 			CE::Function::MethodDecl* getMethodDecl() {
-				return (CE::Function::MethodDecl*)getFunctionDecl();
+				return static_cast<CE::Function::MethodDecl*>(getFunctionDecl());
 			}
 		private:
+			FunctionManager* m_funcManager;
 			CE::Function::FunctionDecl* m_decl;
 		};
 
-		class Function : public AbstractFunction
+		class Function : public ItemDB
 		{
 		public:
 			Function(FunctionManager* funcManager, CE::Function::Function* function, API::Function::FunctionDecl* decl)
-				: AbstractFunction(funcManager), m_function(function), m_decl(decl)
+				: m_funcManager(funcManager), m_function(function), m_decl(decl)
 			{}
+
+			FunctionManager* getFunctionManager() {
+				return m_funcManager;
+			}
 
 			void save() override;
 
@@ -73,25 +68,31 @@ namespace CE
 				m_funcBody = body;
 			}
 
+			API::Function::FunctionDecl* getDeclaration() {
+				return m_decl;
+			}
+
+			CE::Function::FunctionDefinition& getDefinition() {
+				return getFunction()->getDefinition();
+			}
+
+			bool isFunction() {
+				return getFunction()->isFunction();
+			}
+
 			CE::Function::Function* getFunction() {
 				return m_function;
 			}
-		private:
-			CE::Function::Function* m_function;
-			API::Function::FunctionDecl* m_decl;
-			CallGraph::Unit::FunctionBody* m_funcBody = nullptr;
-		};
-
-		class Method : public Function
-		{
-		public:
-			Method(FunctionManager* funcManager, CE::Function::Method* method, API::Function::FunctionDecl* decl)
-				: Function(funcManager, method, decl)
-			{}
 
 			CE::Function::Method* getMethod() {
 				return static_cast<CE::Function::Method*>(getFunction());
 			}
+		private:
+			API::Function::FunctionDecl* m_decl;
+			CallGraph::Unit::FunctionBody* m_funcBody = nullptr;
+			FunctionManager* m_funcManager;
+		protected:
+			CE::Function::Function* m_function;
 		};
 	};
 
@@ -109,35 +110,36 @@ namespace CE
 	private:
 		API::Function::Function* m_defFunction = nullptr;
 		void createDefaultFunction() {
-			m_defFunction = createFunction(nullptr, {}, "DefaultFunction", "This function created automatically.");
-			getFunctions().erase(m_defFunction->getFunction()->getId());
+			m_defFunction = createFunction(nullptr, {}, createFunctionDecl("DefaultFunction", "This function created automatically."));
+			getFunctions().erase(m_defFunction->getDefinition().getId());
+			getFunctionDecls().erase(m_defFunction->getDeclaration()->getFunctionDecl()->getId());
 		}
 
 
-		void saveFunctionNodeGroup(Function::Function* function, CallGraph::Unit::NodeGroup* nodeGroup, int& id);
+		void saveFunctionNodeGroup(Function::FunctionDefinition& definition, CallGraph::Unit::NodeGroup* nodeGroup, int& id);
 	public:
 		void saveFunctionBody(API::Function::Function* function);
 
-		void saveFunctionArguments(Function::Function* function) {
+		void saveFunctionDeclArguments(Function::FunctionDecl& decl) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Transaction transaction(db);
 
 			{
-				SQLite::Statement query(db, "DELETE FROM sda_func_arguments WHERE function_id=?1");
-				query.bind(1, function->getId());
+				SQLite::Statement query(db, "DELETE FROM sda_func_arguments WHERE decl_id=?1");
+				query.bind(1, decl.getId());
 				query.exec();
 			}
 
 			{
 				int id = 0;
-				for (auto type : function->getSignature().getArgList()) {
-					SQLite::Statement query(db, "INSERT INTO sda_func_arguments (function_id, id, name, type_id, pointer_lvl, array_size) \
+				for (auto type : decl.getSignature().getArgList()) {
+					SQLite::Statement query(db, "INSERT INTO sda_func_arguments (decl_id, id, name, type_id, pointer_lvl, array_size) \
 					VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
-					query.bind(1, function->getId());
+					query.bind(1, decl.getId());
 					query.bind(2, id);
-					query.bind(3, function->getArgNameList()[id]);
+					query.bind(3, decl.getArgNameList()[id]);
 					query.bind(4, type->getId());
 					query.bind(5, type->getPointerLvl());
 					query.bind(6, type->getArraySize());
@@ -149,7 +151,7 @@ namespace CE
 			transaction.commit();
 		}
 
-		void saveFunctionRanges(Function::Function* function) {
+		void saveFunctionRanges(Function::FunctionDefinition& definition) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
@@ -157,16 +159,16 @@ namespace CE
 
 			{
 				SQLite::Statement query(db, "DELETE FROM sda_func_ranges WHERE function_id=?1");
-				query.bind(1, function->getId());
+				query.bind(1, definition.getId());
 				query.exec();
 			}
 
 			{
 				int order_id = 0;
-				for (auto& range : function->getRangeList()) {
-					SQLite::Statement query(db, "INSERT INTO sda_func_ranges (function_id, order_id, min_offset, max_offset) \
+				for (auto& range : definition.getRangeList()) {
+					SQLite::Statement query(db, "INSERT INTO sda_func_ranges (def_id, order_id, min_offset, max_offset) \
 					VALUES(?1, ?2, ?3, ?4)");
-					query.bind(1, function->getId());
+					query.bind(1, definition.getId());
 					query.bind(2, order_id);
 					query.bind(3, getProgramModule()->toRelAddr(range.getMinAddress()));
 					query.bind(4, getProgramModule()->toRelAddr(range.getMaxAddress()));
@@ -178,62 +180,88 @@ namespace CE
 			transaction.commit();
 		}
 
-		void saveFunctionDecl(Function::FunctionDecl* decl) {
+		void saveFunctionDecl(Function::FunctionDecl& decl) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "REPLACE INTO sda_func_decls (decl_id, name, method, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
+			SQLite::Statement query(db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
 				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");
-			query.bind(1, decl->getId());
-			query.bind(2, decl->getName());
-			query.bind(3, decl->isMethod());
-			query.bind(4, decl->getSignature().getReturnType()->getId());
-			query.bind(5, decl->getSignature().getReturnType()->getPointerLvl());
-			query.bind(6, decl->getSignature().getReturnType()->getArraySize());
-			query.bind(7, decl->getDesc());
+			query.bind(1, decl.getId());
+			query.bind(2, decl.getName());
+			query.bind(3, (int)decl.getRole());
+			query.bind(4, decl.getSignature().getReturnType()->getId());
+			query.bind(5, decl.getSignature().getReturnType()->getPointerLvl());
+			query.bind(6, decl.getSignature().getReturnType()->getArraySize());
+			query.bind(7, decl.getDesc());
 			query.exec();
 		}
 
-		void saveFunction(Function::Function* function) {
+		void saveFunctionDefinition(Function::FunctionDefinition& definition) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "REPLACE INTO sda_functions (id, decl_id, offset)\
 				VALUES(?1, ?2, ?3)");
-			query.bind(1, function->getId());
-			query.bind(2, function->getDeclaration().getId());
-			query.bind(3, getProgramModule()->toRelAddr(function->getAddress()));
+			query.bind(1, definition.getId());
+			query.bind(2, definition.getDeclaration().getId());
+			query.bind(3, getProgramModule()->toRelAddr(definition.getAddress()));
 			query.exec();
+		}
 
-			saveFunctionDecl((Function::FunctionDecl*&)function->getDeclaration());
+		void saveFunction(Function::Function& function) {
+			saveFunctionDecl(function.getDeclaration());
+			if (function.getDeclaration().m_argumentsChanged) {
+				saveFunctionDeclArguments(function.getDeclaration());
+			}
+			if (function.hasDefinition()) {
+				saveFunctionDefinition(function.getDefinition());
+				saveFunctionRanges(function.getDefinition());
+			}
 		}
 
 		void saveFunctions() {
 			for (auto it : m_functions) {
 				auto func = it.second->getFunction();
-				saveFunction(func);
-				saveFunctionRanges(func);
-				if (func->getDeclaration().m_argumentsChanged) {
-					saveFunctionArguments(func);
-				}
+				saveFunction(*func);
 			}
 		}
 
-		void removeFunction(Function::Function* function) {
+		void removeFunctionDecl(Function::FunctionDecl& decl) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "DELETE FROM sda_functions WHERE id=?1");
-			query.bind(1, function->getId());
+			SQLite::Statement query(db, "DELETE FROM sda_func_decls WHERE decl_id=?1");
+			query.bind(1, decl.getId());
 			query.exec();
 
-			auto it = m_functions.find(function->getId());
+			auto it = m_decls.find(decl.getId());
+			if (it != m_decls.end()) {
+				m_decls.erase(it);
+			}
+		}
+
+		void removeFunctionDefinition(Function::FunctionDefinition& definition) {
+			using namespace SQLite;
+
+			SQLite::Database& db = getProgramModule()->getDB();
+			SQLite::Statement query(db, "DELETE FROM sda_func_defs WHERE def_id=?1");
+			query.bind(1, definition.getId());
+			query.exec();
+
+			auto it = m_functions.find(definition.getId());
 			if (it != m_functions.end()) {
 				m_functions.erase(it);
 			}
 		}
 
-		int getNewId() {
+		void removeFunction(Function::Function& function) {
+			removeFunctionDecl(function.getDeclaration());
+			if (function.hasDefinition()) {
+				removeFunctionDefinition(function.getDefinition());
+			}
+		}
+
+		int getNewFuncId() {
 			int id = 1;
 			while (m_functions.find(id) != m_functions.end())
 				id++;
@@ -242,31 +270,27 @@ namespace CE
 
 		int getNewFuncDeclId() {
 			int id = 1;
-			while (m_functions.find(id) != m_functions.end())
+			while (m_decls.find(id) != m_decls.end())
 				id++;
 			return id;
 		}
 
-		API::Function::Function* createFunction(void* addr, Function::Function::RangeList ranges, std::string name, std::string desc = "", API::Function::FunctionDecl* decl = nullptr) {
-			int id = getNewId();
+		API::Function::Function* createFunction(void* addr, Function::FunctionDefinition::RangeList ranges, API::Function::FunctionDecl* decl = nullptr) {
+			int id = getNewFuncId();
+			auto dd = decl->getFunctionDecl();
 			auto func = m_functions[id] = new API::Function::Function(
-				this, new Function::Function(addr, ranges, id, name, desc), decl == nullptr ? createFunctionDecl(name, desc) : decl);
+				this,
+				new CE::Function::Function(
+					new CE::Function::FunctionDefinition(addr, ranges, id, decl->getFunctionDecl())
+				),
+				decl
+			);
 			func->getFunction()->getSignature().setReturnType(getProgramModule()->getTypeManager()->getDefaultReturnType()->getType());
 			return m_functions[id];
 		}
 
-		API::Function::Function* createFunction(Function::Function::RangeList ranges, std::string name, std::string desc = "") {
-			return createFunction(ranges[0].getMinAddress(), ranges, name, desc);
-		}
-
-		API::Function::Method* createMethod(Type::Class* Class, void* addr, Function::Function::RangeList ranges, std::string name, std::string desc = "", API::Function::FunctionDecl* decl = nullptr) {
-			int id = getNewId();
-			auto method = new API::Function::Method(
-				this, new Function::Method(addr, ranges, id, name, desc), decl == nullptr ? createMethodDecl(name, desc) : decl);
-			m_functions[id] = method;
-			method->getFunction()->getSignature().setReturnType(getProgramModule()->getTypeManager()->getDefaultReturnType()->getType());
-			Class->addMethod(method->getMethod());
-			return method;
+		API::Function::Function* createFunction(Function::FunctionDefinition::RangeList ranges, API::Function::FunctionDecl* decl = nullptr) {
+			return createFunction(ranges[0].getMinAddress(), ranges, decl);
 		}
 
 		API::Function::FunctionDecl* createFunctionDecl(std::string name, std::string desc = "") {
@@ -292,12 +316,12 @@ namespace CE
 			while (query.executeStep())
 			{
 				Function::FunctionDecl* decl;
-				bool isMethod = (int)query.getColumn("method");
+				Function::FunctionDecl::Role decl_role = (Function::FunctionDecl::Role)(int)query.getColumn("role");
 				int decl_id = query.getColumn("decl_id");
 				std::string decl_name = query.getColumn("name");
 				std::string decl_desc = query.getColumn("desc");
 
-				if (isMethod) {
+				if (Function::FunctionDecl::isFunction(decl_role)) {
 					decl = new Function::FunctionDecl(
 						decl_id,
 						decl_name,
@@ -310,6 +334,7 @@ namespace CE
 						decl_name,
 						decl_desc
 					);
+					static_cast<Function::MethodDecl*>(decl)->setRole((Function::MethodDecl::Role)(int)query.getColumn("role"));
 				}
 
 				Type::Type* type = getProgramModule()->getTypeManager()->getType(
@@ -322,19 +347,19 @@ namespace CE
 					type = getProgramModule()->getTypeManager()->getDefaultReturnType()->getType();
 				}
 				decl->getSignature().setReturnType(type);
-				loadFunctionDeclArguments(decl);
+				loadFunctionDeclArguments(*decl);
 
 				decl->m_argumentsChanged = false;
 				addFunctionDecl(new API::Function::FunctionDecl(this, decl));
 			}
 		}
 
-		void loadFunctionDeclArguments(Function::FunctionDecl* decl) {
+		void loadFunctionDeclArguments(Function::FunctionDecl& decl) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT * FROM sda_func_arguments WHERE decl_id=?1 GROUP BY id");
-			query.bind(1, decl->getId());
+			query.bind(1, decl.getId());
 
 			while (query.executeStep())
 			{
@@ -348,7 +373,7 @@ namespace CE
 					type = getProgramModule()->getTypeManager()->getDefaultType()->getType();
 				}
 
-				decl->addArgument(type, query.getColumn("name"));
+				decl.addArgument(type, query.getColumn("name"));
 			}
 		}
 
@@ -356,50 +381,44 @@ namespace CE
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "SELECT * FROM sda_functions");
+			SQLite::Statement query(db, "SELECT * FROM sda_func_defs");
 
-			Function::Function* function = nullptr;
 			while (query.executeStep())
 			{
-				int func_id = query.getColumn("id");
-				int func_offset = query.getColumn("offset");
+				int def_id = query.getColumn("def_id");
+				int def_offset = query.getColumn("offset");
 				int decl_id = query.getColumn("decl_id");
 
 				auto decl = getFunctionDeclById(decl_id);
-				
-				if (decl->getFunctionDecl()->isMethod()) {
-					function = new Function::Function(
-						getProgramModule()->toAbsAddr(func_offset),
-						Function::Function::RangeList(),
-						func_id,
+				if (decl == nullptr)
+					continue;
+
+				auto definition =
+					new Function::FunctionDefinition(
+						getProgramModule()->toAbsAddr(def_offset),
+						Function::FunctionDefinition::RangeList(),
+						def_id,
 						decl->getFunctionDecl()
 					);
-					addFunction(new API::Function::Function(this, function, decl));
-				}
-				else {
-					function = new Function::Method(
-						getProgramModule()->toAbsAddr(func_offset),
-						Function::Function::RangeList(),
-						func_id,
-						decl->getMethodDecl()
-					);
-					addFunction(new API::Function::Method(this, static_cast<Function::Method*>(function), decl));
-				}
 
-				loadFunctionRanges(function);
+				auto function =
+					decl->getFunctionDecl()->isFunction() ? new Function::Function(definition) : new Function::Method(definition);
+
+				addFunction(new API::Function::Function(this, function, decl));
+				loadFunctionRanges(function->getDefinition());
 			}
 		}
 
-		void loadFunctionRanges(Function::Function* function) {
+		void loadFunctionRanges(Function::FunctionDefinition& definition) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "SELECT * FROM sda_func_ranges WHERE function_id=?1 GROUP BY order_id");
-			query.bind(1, function->getId());
+			SQLite::Statement query(db, "SELECT * FROM sda_func_ranges WHERE def_id=?1 GROUP BY order_id");
+			query.bind(1, definition.getId());
 
 			while (query.executeStep())
 			{
-				function->addRange(Function::Function::Range(
+				definition.addRange(Function::FunctionDefinition::Range(
 					getProgramModule()->toAbsAddr(query.getColumn("min_offset")),
 					getProgramModule()->toAbsAddr(query.getColumn("max_offset"))
 				));
@@ -418,6 +437,10 @@ namespace CE
 
 		FunctionDict& getFunctions() {
 			return m_functions;
+		}
+
+		FunctionDeclDict& getFunctionDecls() {
+			return m_decls;
 		}
 
 		void addFunction(API::Function::Function* function) {
@@ -442,7 +465,7 @@ namespace CE
 
 		API::Function::Function* getFunctionAt(void* addr) {
 			for (auto& it : getFunctions()) {
-				if (it.second->getFunction()->isContainingAddress(addr)) {
+				if (it.second->getDefinition().isContainingAddress(addr)) {
 					return it.second;
 				}
 			}
