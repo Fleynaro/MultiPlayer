@@ -142,6 +142,7 @@
     <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
     <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
     <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
+    <ClCompile Include="Module\FunctionTag\FunctionTag.cpp" />
     <ClCompile Include="GUI\Windows\ProjectManager.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\CallGraph\CallGraph.cpp" />
@@ -180,6 +181,7 @@
     <ClCompile Include="Vendor\imgui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Module\FunctionTag\FunctionTag.h" />
     <ClInclude Include="GUI\Signature.h" />
     <ClInclude Include="GUI\Type.h" />
     <ClInclude Include="GUI\Windows\ItemLists\DataTypeList.h" />

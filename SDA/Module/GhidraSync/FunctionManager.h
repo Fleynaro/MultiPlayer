@@ -169,7 +169,7 @@ namespace CE
 				return getHash(buildDesc(function)).getHash();
 			}
 
-			HashMap generateHashMap() {
+			HashMap generateHashMap() { //MY TODO: исправить хеширование функций
 				HashMap hashmap;
 				for (auto& it : m_functionManager->getFunctions()) {
 					auto function = it.second->getFunction();

@@ -220,6 +220,10 @@ namespace CE
 					: m_function(function)
 				{}
 
+				bool isSourceTop() {
+					return getFunctionsReferTo().size() == 0;
+				}
+
 				Type getGroup() override {
 					return Type::FunctionBody;
 				}
@@ -239,6 +243,8 @@ namespace CE
 				Type getGroup() override {
 					return Type::GlobalVar;
 				}
+
+				//MY TODO: доделать GlobalVarBody как FunctionBody сделана
 			};
 		};
 
@@ -293,6 +299,26 @@ namespace CE
 				iterateCallStack<isLeft>(callback, m_funcBody, stack);
 			}
 
+			enum class Filter : int
+			{
+				FunctionNode = 1,
+				GlobalVarNode = 2,
+				FunctionBody = 4,
+				All = -1
+			};
+
+			template<bool isLeft = true>
+			void iterateCallStack(const std::function<bool(Unit::Node*, CallStack&)>& callback, Filter filter)
+			{
+				pass.iterateCallStack([&callback](Unit::Node* node, CallStack& stack)
+				{
+					if (filter & Filter::FunctionNode && node->isFunction()
+						|| filter & Filter::GlobalVarNode && node->isGlobalVar()
+						|| filter & Filter::FunctionBody && node->isFunctionBody()) {
+						callback(node, stack);
+					}
+				});
+			}
 		private:
 			template<bool isLeft = true>
 			void iterateCallStack(const std::function<bool(Unit::Node*, CallStack&)>& callback, Unit::FunctionBody* body, CallStack& stack)
@@ -358,9 +384,10 @@ namespace CE
 			template<bool isLeft = true>
 			void iterate(const std::function<bool(Unit::Node*, CallStack&)>& callback)
 			{
+				m_passedFunctions.clear();
 				for (auto it : m_funcManager->getFunctions())
 				{
-					if (it.second->getBody()->getFunctionsReferTo().size() == 0)
+					if (it.second->getBody()->isSourceTop())
 					{
 						FunctionIterator pass(it.second);
 						pass.iterateCallStack<isLeft>([&](Unit::Node* node, CallStack& stack)

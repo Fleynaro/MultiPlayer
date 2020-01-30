@@ -9,7 +9,7 @@ namespace CE
 		class DataTypeManager : public AbstractManager
 		{
 		public:
-			using HashMap = std::map<datatype::Id, datatype::Hash>; //todo: 1) по lastUpdatedDate  2) сделать глобальным и изменять его при изменении типов
+			using HashMap = std::map<datatype::Id, datatype::Hash>; //MY TODO: 1) по lastUpdatedDate  2) сделать глобальным и изменять его при изменении типов
 
 			DataTypeManager(TypeManager* typeManager, Client* client)
 				:
@@ -305,7 +305,7 @@ namespace CE
 					changeOrCreate(dataType);
 				}
 			}
-			//TODO: исправить хеширование
+			//MY TODO: исправить хеширование
 			void updateTypedefs(HashMap hashmap) {
 				auto typedefs = pullTypedefs(hashmap);
 				for (auto Typedef : typedefs) {
