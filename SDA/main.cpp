@@ -17,9 +17,18 @@ public:
 auto g_someClass = new SomeClass;
 int g_IntegerVal = 4;
 
+void setPlayerPos() {
+	g_IntegerVal = 5.0;
+}
+
+void setPlayerVel() {
+	int a = 5;
+}
+
 float gVar = 0;
 void changeGvar() {
 	gVar = 2.0;
+	setPlayerVel();
 }
 
 int setRot(int a, float x, float y, float z, int c)
@@ -27,6 +36,7 @@ int setRot(int a, float x, float y, float z, int c)
 	g_IntegerVal = 100;
 	float result = x + y + z + a + c + g_someClass->getValue();
 	result = pow(result, 1);
+	setPlayerPos();
 	gVar = rand() % 10;
 	changeGvar();
 	return result;
@@ -44,11 +54,8 @@ int main()
 	/*dissasm();
 	return 0;*/
 
-	std::string pathh;
-	if (false) {
-		pathh = "D:\\MultiPlayer\\MultiPlayer\\SDA\\Databases";
-	}
-	else {
+	std::string pathh = "D:\\MultiPlayer\\MultiPlayer\\SDA\\Databases";
+	if (!FS::Directory(pathh).exists()) {
 		pathh = "R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases";
 	}
 
@@ -153,8 +160,10 @@ int main()
 		}
 
 		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::FunctionDefinition::Range(&setRot, 200) }, sda->getFunctionManager()->createFunctionDecl("setRot", "get rot of entity"));
-		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::FunctionDefinition::Range(&changeGvar, 50) }, sda->getFunctionManager()->createFunctionDecl("changeGvar", ""));
+		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::FunctionDefinition::Range(&changeGvar, 40) }, sda->getFunctionManager()->createFunctionDecl("changeGvar", ""));
 		auto functiondb3 = sda->getFunctionManager()->createFunction(&rand, { Function::FunctionDefinition::Range(&rand, 300) }, sda->getFunctionManager()->createFunctionDecl("rand", ""));
+		auto functiondb5 = sda->getFunctionManager()->createFunction(&setPlayerPos, { Function::FunctionDefinition::Range(&setPlayerPos, 10) }, sda->getFunctionManager()->createFunctionDecl("setPlayerPos", ""));
+		auto functiondb6 = sda->getFunctionManager()->createFunction(&setPlayerVel, { Function::FunctionDefinition::Range(&setPlayerVel, 10) }, sda->getFunctionManager()->createFunctionDecl("setPlayerVel", ""));
 		auto function = functiondb->getFunction();
 
 		//sda->getFunctionManager()->saveFunction(*functiondb2->getFunction());
@@ -167,7 +176,7 @@ int main()
 		{
 			using namespace CallGraph;
 			CallGraphIterator iter(sda->getFunctionManager());
-			iter.iterate<true>([&](Unit::Node* node, CallStack& stack)
+			iter.iterate([&](Unit::Node* node, CallStack& stack)
 			{
 				if (!node->isFunctionBody() && !node->isVMethod() && !node->isGlobalVar())
 					return true;
@@ -202,7 +211,10 @@ int main()
 		Function::Tag::Manager manager(sda->getFunctionManager());
 		manager.loadTags();
 		manager.calculateAllTags();
-		auto collection = manager.getTagCollectionByDecl(functiondb2);
+		auto collection = manager.getTagCollectionByDecl(functiondb5);
+
+		CallGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
+		analysis2.doAnalyse();
 
 		functiondb->change([&] {
 			function->getDeclaration().addArgument(new Type::Int32, "a");

@@ -396,31 +396,27 @@ namespace CE
 			template<bool isLeft = true>
 			void iterate(const std::function<bool(Unit::Node*, CallStack&)>& callback)
 			{
-				m_passedFunctions.clear();
-				for (auto it : m_funcManager->getFunctions())
-				{
-					if (it.second->getBody()->isSourceTop())
+				iterateSourceTops([&](Unit::FunctionBody* funcBody) {
+					FunctionIterator pass(funcBody);
+					pass.iterateCallStack<isLeft>([&](Unit::Node* node, CallStack& stack)
 					{
-						FunctionIterator pass(it.second);
-						pass.iterateCallStack<isLeft>([&](Unit::Node* node, CallStack& stack)
-						{
-							if (node->isFunctionBody()) {
-								auto funcBody = static_cast<Unit::FunctionBody*>(node);
-								auto def_id = funcBody->getFunction()->getDefinition().getId();
-								if (m_passedFunctions.find(def_id) == m_passedFunctions.end()) {
-									m_passedFunctions.insert(def_id);
-								}
-								else {
-									return false;
-								}
-							}
-							return callback(node, stack);
-						});
+						return callback(node, stack);
+					});
+					return true;
+				});
+			}
+
+			void iterateSourceTops(const std::function<bool(Unit::FunctionBody*)>& callback)
+			{
+				for (auto it : m_funcManager->getFunctions()) {
+					if (it.second->getBody()->isSourceTop()) {
+						if (!callback(it.second->getBody())) {
+							break;
+						}
 					}
 				}
 			}
 		private:
-			std::set<int> m_passedFunctions;
 			FunctionManager* m_funcManager;
 		};
 
@@ -485,6 +481,7 @@ namespace CE
 					m_funcBody[1] = funcBody2;
 				}
 
+				//MY TODO: + gVar also
 				void doAnalyse() {
 					std::list<Unit::Node*> nodesInBody[2];
 
@@ -515,16 +512,84 @@ namespace CE
 			class ContextDistance
 			{
 			public:
-				ContextDistance(Unit::FunctionBody* funcBody1, Unit::FunctionBody* funcBody2) {
+				const static int m_maxDeepth = 100000;
+
+				struct Result {
+					Unit::FunctionBody* m_topFuncBody = nullptr;
+					int m_fromDist = m_maxDeepth;
+					int m_toDist = m_maxDeepth;
+					
+					Result() = default;
+
+					Result(Unit::FunctionBody* topFuncBody, int fromDist, int toDist)
+						: m_topFuncBody(topFuncBody), m_fromDist(fromDist), m_toDist(toDist)
+					{}
+
+					int getDist() {
+						return m_fromDist + m_toDist;
+					}
+				};
+
+				ContextDistance(FunctionManager* funcManager, Unit::FunctionBody* funcBody1, Unit::FunctionBody* funcBody2)
+					: m_funcManager(funcManager)
+				{
 					m_funcBody[0] = funcBody1;
 					m_funcBody[1] = funcBody2;
 				}
 
 				void doAnalyse() {
-					
+					CallGraphIterator iter(m_funcManager);
+					iter.iterateSourceTops([&](Unit::FunctionBody* funcBody)
+					{
+						iterateCallTree(funcBody, 1);
+						return true;
+					});
+				}
+
+				std::pair<int, int> iterateCallTree(Unit::FunctionBody* funcBody, int depth) {
+					if (funcBody == m_funcBody[0])
+						return std::make_pair(depth, m_maxDeepth);
+					if (funcBody == m_funcBody[1])
+						return std::make_pair(m_maxDeepth, depth);
+
+					std::pair<int, int> result(m_maxDeepth, m_maxDeepth);
+
+					FunctionIterator pass(funcBody);
+					pass.iterateFunctionBody([&](Unit::Node* node)
+					{
+						if(node->isFunction()) {
+							auto funcNode = static_cast<Unit::FunctionNode*>(node);
+							if (!funcNode->isNotCalculated()) {
+								auto pair = iterateCallTree(funcNode->getFunction()->getBody(), depth + 1);
+								if (pair.first < result.first) {
+									result.first = pair.first;
+								}
+								if (pair.second < result.second) {
+									result.second = pair.second;
+								}
+							}
+						}
+						return true;
+					});
+
+					if (result.first != m_maxDeepth && result.second != m_maxDeepth) {
+						auto fromDist = result.first - depth;
+						auto toDist = result.second - depth;
+						if (fromDist + toDist < m_result.getDist()) {
+							m_result = Result(funcBody, fromDist, toDist);
+						}
+					}
+
+					return result;
+				}
+
+				Result& getResult() {
+					return m_result;
 				}
 			private:
+				FunctionManager* m_funcManager;
 				Unit::FunctionBody* m_funcBody[2];
+				Result m_result;
 			};
 		};
 
@@ -543,14 +608,10 @@ namespace CE
 			}
 
 			Unit::FunctionBody* getFunctionBody() {
-				if (m_body == nullptr) {
-					m_body = new Unit::FunctionBody(m_function);
-				}
-				return m_body;
+				return m_function->getBody();
 			}
 		private:
 			API::Function::Function* m_function;
-			Unit::FunctionBody* m_body = nullptr;
 
 			void build(Function::FunctionDefinition::Range& range)
 			{
