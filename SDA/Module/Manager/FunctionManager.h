@@ -17,6 +17,11 @@ namespace CE
 		class NodeGroup;
 	};
 
+	namespace Function::Tag
+	{
+		class Manager;
+	};
+
 	namespace API::Function
 	{
 		class FunctionDecl : public ItemDB
@@ -480,6 +485,14 @@ namespace CE
 			return getProgramModule()->toRelAddr(function->getAddress());
 		}
 
+		void setFunctionTagManager(Function::Tag::Manager* manager) {
+			m_tagManager = manager;
+		}
+
+		Function::Tag::Manager* getFunctionTagManager() {
+			return m_tagManager;
+		}
+
 		void setGhidraManager(Ghidra::FunctionManager* ghidraManager) {
 			m_ghidraManager = ghidraManager;
 		}
@@ -494,6 +507,8 @@ namespace CE
 	private:
 		FunctionDict m_functions;
 		FunctionDeclDict m_decls;
+		Function::Tag::Manager* m_tagManager;
 		Ghidra::FunctionManager* m_ghidraManager;
+
 	};
 };

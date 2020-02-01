@@ -13,18 +13,98 @@ namespace GUI::Window
 		class FunctionFilter : public Filter
 		{
 		public:
-			FunctionFilter(const std::string& name)
-				: Filter(name)
+			FunctionFilter(const std::string& name, FunctionList* functionList)
+				: Filter(name), m_functionList(functionList)
 			{}
 
 			virtual bool checkFilter(API::Function::Function* function) = 0;
+
+		protected:
+			FunctionList* m_functionList;
+		};
+
+		class CategoryFilter : public FunctionFilter
+		{
+		public:
+			Elements::List::MultiCombo* m_categoryList = nullptr;
+
+			enum class Category : int
+			{
+				All					= -1,
+				Not					= 0,
+
+				Function			= 1 << 0,
+				Method				= 1 << 1,
+				StaticMethod		= 1 << 2,
+				VirtualMethod		= 1 << 3,
+				Constructor			= 1 << 4,
+				Destructor			= 1 << 5,
+				VirtualDestructor	= 1 << 6,
+
+				Virtual				= VirtualMethod | VirtualDestructor
+				
+			};
+
+			inline static std::vector<std::pair<std::string, Category>> m_categories = {
+				{ std::make_pair("Function", Category::Function) },
+				{ std::make_pair("Method", Category::Method) },
+				{ std::make_pair("StaticMethod", Category::StaticMethod) },
+				{ std::make_pair("VirtualMethod", Category::VirtualMethod) },
+				{ std::make_pair("Constructor", Category::Constructor) },
+				{ std::make_pair("Destructor", Category::Destructor) },
+				{ std::make_pair("VirtualDestructor", Category::VirtualDestructor) },
+				{ std::make_pair("Virtual", Category::Virtual) }
+			};
+
+			CategoryFilter(FunctionList* functionList, const StyleSettings& style)
+				: FunctionFilter("Category filter", functionList)
+			{
+				buildHeader("Filter function by category.");
+				beginBody()
+					.addItem
+					(
+						(new Elements::List::MultiCombo("",
+							new Events::EventUI(EVENT_LAMBDA(info) {
+								updateFilter();
+							})
+						))
+						->setWidth(style.m_leftWidth - 10),
+						(Item**)& m_categoryList
+					);
+
+				for (auto& cat : m_categories) {
+					m_categoryList->addSelectable(cat.first, true);
+				}
+			}
+
+			void updateFilter() {
+				int categorySelected = 0;
+				for (int i = 0; i < m_categories.size(); i++) {
+					if (m_categoryList->isSelected(i)) {
+						categorySelected |= 1 << i;
+					}
+				}
+				m_categorySelected = (Category)categorySelected;
+				m_functionList->update();
+			}
+
+			bool checkFilter(API::Function::Function* function) override {
+				return ((int)m_categorySelected & (int)m_categories[(int)function->getDeclaration()->getFunctionDecl()->getRole()].second) != 0;
+			}
+
+			bool isDefined() override {
+				return true;
+			}
+
+		private:
+			Category m_categorySelected = Category::All;
 		};
 
 		class ClassFilter : public FunctionFilter
 		{
 		public:
-			ClassFilter()
-				: FunctionFilter("Class filter")
+			ClassFilter(FunctionList* functionList)
+				: FunctionFilter("Class filter", functionList)
 			{
 				buildHeader("Filter function by class.");
 				beginBody()
@@ -53,13 +133,39 @@ namespace GUI::Window
 			API::Type::Class* m_class = nullptr;
 		};
 
+		class FuncTagFilter : public FunctionFilter
+		{
+		public:
+			FuncTagFilter(FunctionList* functionList)
+				: FunctionFilter("Function tag filter", functionList)
+			{
+				buildHeader("Filter function by tag.");
+				beginBody()
+					.text("tag settings");
+			}
+
+			bool checkFilter(API::Function::Function* function) override {
+				auto collection = m_functionList->m_funcManager->getFunctionTagManager()->getTagCollectionByDecl(function);
+				return collection.contains(getTagCollection());
+			}
+
+			bool isDefined() override {
+				return !m_collection.empty();
+			}
+
+			Function::Tag::TagCollection& getTagCollection() {
+				return m_collection;
+			}
+		private:
+			Function::Tag::TagCollection m_collection;
+		};
+
 		class FunctionItem : public Item
 		{
 		public:
 			FunctionItem(API::Function::Function* function)
 			{
-				setHeader(function->getFunction()->getSigName());
-				beginBody()
+				beginHeader()
 					.addItem(
 						new Units::Signature(function,
 							new Events::EventUI(EVENT_LAMBDA(info) {
@@ -69,24 +175,39 @@ namespace GUI::Window
 
 							}),
 							new Events::EventUI(EVENT_LAMBDA(info) {
-								auto argId = m_signautre->m_argumentSelectedIdx;
+								auto argId = m_signature->m_argumentSelectedIdx;
 
 							})
 						),
-						(GUI::Item**)& m_signautre
-					)
+						(GUI::Item**)& m_signature
+					);
+
+				beginBody()
+					.text("Signature: ")
+						.sameLine()
+						.addItem(m_signature)
 					.newLine()
-					.newLine();
+					.newLine()
+					.addItem(
+						new GUI::Elements::Button::ButtonStd(
+							"Open control panel",
+							new Events::EventUI(EVENT_LAMBDA(info) {
+								
+							})
+						)
+					);
 			}
 
 		private:
-			Units::Signature* m_signautre;
+			Units::Signature* m_signature;
 		};
 
 		FunctionList(FunctionManager* funcManager, const StyleSettings& style = StyleSettings())
 			: m_funcManager(funcManager), ItemList("Function list", style)
 		{
-			addFunctionFilter(new ClassFilter);
+			addFunctionFilter(new CategoryFilter(this, style));
+			addFunctionFilter(new ClassFilter(this));
+			addFunctionFilter(new FuncTagFilter(this));
 		}
 
 		void addFunctionFilter(FunctionFilter* filter) {
@@ -100,7 +221,7 @@ namespace GUI::Window
 			int maxCount = 300;
 			for (auto& it : m_funcManager->getFunctions()) {
 				if (checkOnInputValue(it.second, value) && checkAllFilters(it.second)) {
-					add(new FunctionItem(it.second));
+					add(new FunctionItem(it.second));//MY TODO*: ленивая загрузка, при открытии только
 				}
 				if (--maxCount == 0)
 					break;
@@ -120,8 +241,9 @@ namespace GUI::Window
 			}
 			return true;
 		}
-	private:
+
 		FunctionManager* m_funcManager;
+	private:
 		std::list<FunctionFilter*> m_funcFiltes;
 	};
 };

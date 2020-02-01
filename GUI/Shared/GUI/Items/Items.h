@@ -31,6 +31,32 @@ namespace GUI
 		return ImColor(R, G, B, A);
 	}
 
+	namespace Font
+	{
+
+	};
+
+	class IInit
+	{
+	public:
+		virtual void init() = 0;
+	};
+
+	class OnceInit : public IInit
+	{
+	public:
+		OnceInit() = default;
+
+		void call() {
+			if (!m_inited) {
+				init();
+				m_inited = true;
+			}
+		}
+	private:
+		bool m_inited = false;
+	};
+
 #ifdef GUI_IS_MULTIPLAYER
 	class Font
 	{
@@ -437,19 +463,31 @@ namespace GUI
 		: public Container, public Attribute::Name<TreeNode>, public Attribute::Collapse<TreeNode>
 	{
 	public:
-		TreeNode(std::string name, bool open = false)
+		TreeNode(const std::string& name, bool open = false)
 			: Attribute::Name<TreeNode>(name), Attribute::Collapse<TreeNode>(open)
+		{}
+
+		TreeNode(bool open = false)
+			: TreeNode("##" + std::to_string((long long)this), open)
 		{}
 
 		void render() override {
 			if (isOpen()) {
 				ImGui::SetNextTreeNodeOpen(true);
 			}
-			if (ImGui::TreeNode(getName().c_str())) {
+			bool isOpen = ImGui::TreeNode(getName().c_str());
+			if (getName().find("##") != std::string::npos) {
+				ImGui::SameLine();
+				renderHeader();
+				ImGui::NewLine();
+			}
+			if (isOpen) {
 				Container::render();
 				ImGui::TreePop();
 			}
 		}
+
+		virtual void renderHeader() {}
 	};
 
 
@@ -1074,7 +1112,9 @@ namespace GUI
 		namespace Button
 		{
 			class IButton
-				: public Elem, public Events::OnSpecial, public Attribute::Name<IButton>
+				: public Elem,
+				public Events::OnSpecial,
+				public Attribute::Name<IButton>
 			{
 			public:
 				IButton(std::string name, Events::Event* event)
@@ -1083,7 +1123,10 @@ namespace GUI
 			};
 
 			class ButtonStd
-				: public IButton, public Attribute::Width<ButtonStd>, public Attribute::Font<ButtonStd>
+				: public IButton,
+				public Attribute::Width<ButtonStd>,
+				public Attribute::Height<ButtonStd>,
+				public Attribute::Font<ButtonStd>
 			{
 			public:
 				ButtonStd(std::string name, Events::Event* event = nullptr)
@@ -1092,20 +1135,19 @@ namespace GUI
 
 				void render() override
 				{
-					pushWidthParam();
 					pushFontParam();
 
-					if (ImGui::Button(getName().c_str())) {
+					if (ImGui::Button(getName().c_str(), ImVec2(getWidth(), getHeight()))) {
 						sendSpecialEvent();
 					}
 
 					popFontParam();
-					popWidthParam();
 				}
 			};
 
 			class ButtonSmall
-				: public IButton, public Attribute::Width<ButtonSmall>, public Attribute::Font<ButtonSmall>
+				: public IButton,
+				public Attribute::Font<ButtonSmall>
 			{
 			public:
 				ButtonSmall(std::string name, Events::Event* event = nullptr)
@@ -1114,7 +1156,6 @@ namespace GUI
 
 				void render() override
 				{
-					pushWidthParam();
 					pushFontParam();
 
 					if (ImGui::SmallButton(getName().c_str())) {
@@ -1122,7 +1163,6 @@ namespace GUI
 					}
 
 					popFontParam();
-					popWidthParam();
 				}
 			};
 		};

@@ -25,6 +25,8 @@ namespace CE
 			virtual bool isUserDefined() = 0;
 			virtual void free() {}
 
+			Type* getBaseType();
+
 			bool isSystem() {
 				return !isUserDefined();
 			}

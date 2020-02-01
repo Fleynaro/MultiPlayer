@@ -71,6 +71,24 @@ namespace GUI
 		};
 
 		template<typename T>
+		class Height
+		{
+		public:
+			Height(float height = -1.f) : m_height(height) {};
+
+			float getHeight() {
+				return m_height;
+			}
+
+			T* setHeight(float value) {
+				m_height = value;
+				return (T*)this;
+			}
+		protected:
+			float m_height;
+		};
+
+		template<typename T>
 		class Font
 		{
 		public:
@@ -144,9 +162,9 @@ namespace GUI
 		class Name
 		{
 		public:
-			Name(std::string name) : m_name(name) {};
+			Name(const std::string& name) : m_name(name) {};
 
-			virtual std::string getName() {
+			virtual const std::string& getName() {
 				return m_name;
 			}
 

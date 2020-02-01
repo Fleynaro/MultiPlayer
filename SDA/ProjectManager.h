@@ -1,7 +1,6 @@
 #pragma once
 #include <Manager/Manager.h>
 #include <GhidraSync/GhidraSync.h>
-#include <FunctionTag/FunctionTag.h>
 #include <Utility/DebugView.h>
 
 

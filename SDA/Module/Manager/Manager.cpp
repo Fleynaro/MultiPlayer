@@ -1,5 +1,6 @@
 #include "Manager.h"
 #include <GhidraSync/GhidraSync.h>
+#include <FunctionTag/FunctionTag.h>
 
 void CE::ProgramModule::load()
 {
@@ -11,6 +12,7 @@ void CE::ProgramModule::load()
 	getFunctionManager()->loadFunctionBodies();
 	getVTableManager()->loadVTables();
 	getTypeManager()->loadClasses();
+	getFunctionManager()->getFunctionTagManager()->loadTags();
 }
 
 void CE::ProgramModule::initManagers()
@@ -21,6 +23,7 @@ void CE::ProgramModule::initManagers()
 	m_vtableManager = new VtableManager(this);
 	m_triggerManager = new TriggerManager(this);
 	m_statManager = new StatManager(this);
+	m_functionManager->setFunctionTagManager(new Function::Tag::Manager(m_functionManager));
 }
 
 void CE::ProgramModule::initGhidraClient()

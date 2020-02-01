@@ -20,3 +20,13 @@ CE::Type::SystemType::Set CE::Type::SystemType::GetNumberSetOf(Type* type)
 		return GetNumberSetOf(static_cast<CE::Type::Typedef*>(type)->getRefType());
 	return Set::Undefined;
 }
+
+CE::Type::Type* CE::Type::Type::getBaseType() {
+	if (isPointer()) {
+		return static_cast<CE::Type::Pointer*>(this)->getType()->getBaseType();
+	}
+	if (isArray()) {
+		return static_cast<CE::Type::Array*>(this)->getType()->getBaseType();
+	}
+	return this;
+}

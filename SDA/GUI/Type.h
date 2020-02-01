@@ -59,7 +59,7 @@ namespace GUI::Units
 				{
 				case CE::Type::Type::Typedef:
 				{
-					auto Typedef = static_cast<CE::Type::Typedef*>(type);
+					auto Typedef = static_cast<CE::Type::Typedef*>(type->getBaseType());
 					if (Typedef->getRefType() != nullptr) {
 						info += "Source: " + Typedef->getRefType()->getDisplayName() + "\n";
 					}
@@ -68,7 +68,7 @@ namespace GUI::Units
 
 				case CE::Type::Type::Enum:
 				{
-					auto Enum = static_cast<CE::Type::Enum*>(type);
+					auto Enum = static_cast<CE::Type::Enum*>(type->getBaseType());
 					info += "enum " + Enum->getName() + " {\n";
 					for (auto& field : Enum->getFieldDict()) {
 						info += field.second + " = "+ std::to_string(field.first) +",\n";
@@ -79,7 +79,7 @@ namespace GUI::Units
 
 				case CE::Type::Type::Class:
 				{
-					auto Class = static_cast<CE::Type::Class*>(type);
+					auto Class = static_cast<CE::Type::Class*>(type->getBaseType());
 					info += "class " + Class->getName() + " ";
 
 					if (Class->getBaseClass() != nullptr) {

@@ -13,11 +13,14 @@ namespace GUI::Window
 		class TypeFilter : public Filter
 		{
 		public:
-			TypeFilter(const std::string& name)
-				: Filter(name)
+			TypeFilter(const std::string& name, DataTypeList* dataTypeList)
+				: Filter(name), m_dataTypeList(dataTypeList)
 			{}
 
 			virtual bool checkFilter(API::Type::Type* type) = 0;
+
+		protected:
+			DataTypeList* m_dataTypeList;
 		};
 
 		class CategoryFilter : public TypeFilter
@@ -27,15 +30,16 @@ namespace GUI::Window
 
 			enum class Category : int
 			{
+				All			= -1,
+				Not			= 0,
+
 				Simple		= 1 << 0,
 				Enum		= 1 << 1,
 				Class		= 1 << 2,
 				Typedef		= 1 << 3,
 				Signature	= 1 << 4,
 
-				Composed = Enum | Class | Signature,
-				All = -1,
-				Not = 0
+				Composed	= Enum | Class | Signature
 			};
 
 			inline static std::vector<std::pair<std::string, Category>> m_categories = {
@@ -47,7 +51,7 @@ namespace GUI::Window
 			};
 
 			CategoryFilter(DataTypeList* dataTypeList, const StyleSettings& style)
-				: m_dataTypeList(dataTypeList), TypeFilter("Category filter")
+				: TypeFilter("Category filter", dataTypeList)
 			{
 				buildHeader("Filter types by category.");
 				beginBody()
@@ -86,7 +90,6 @@ namespace GUI::Window
 				return true;
 			}
 		private:
-			DataTypeList* m_dataTypeList;
 			Category m_categorySelected = Category::All;
 		};
 

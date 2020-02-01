@@ -106,6 +106,22 @@ namespace CE
 				getTagList().clear();
 			}
 
+			bool contains(Tag* tag) {
+				for (auto tag_ : getTagList()) {
+					if (tag->getId() == tag_->getId())
+						return true;
+				}
+				return false;
+			}
+
+			bool contains(TagCollection& collection) {
+				for (auto tag : collection.getTagList()) {
+					if (!contains(tag))
+						return false;
+				}
+				return true;
+			}
+
 			bool empty() {
 				return getTagList().empty();
 			}
@@ -151,6 +167,8 @@ namespace CE
 
 					addTag(new UserTag(decl, parentTag, tag_id, query.getColumn("name"), query.getColumn("desc")));
 				}
+
+				calculateAllTags();
 			}
 
 			void saveTag(UserTag& tag) {

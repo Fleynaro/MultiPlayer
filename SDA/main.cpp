@@ -1,6 +1,7 @@
 ﻿#include <Program.h>
 #include <SdaInterface.h>
 #include <CallGraph/CallGraph.h>
+#include <FunctionTag/FunctionTag.h>
 Program* g_program = nullptr;
 
 

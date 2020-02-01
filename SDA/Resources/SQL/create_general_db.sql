@@ -1,10 +1,10 @@
 create table sda_callnodes
 (
-    function_id INTEGER,
-    id          INTEGER,
-    item_group  INTEGER,
-    item_id     INTEGER,
-    extra       BLOB
+    def_id     INTEGER,
+    id         INTEGER,
+    item_group INTEGER,
+    item_id    INTEGER,
+    extra      BLOB
 );
 
 create table sda_class_fields
@@ -20,9 +20,10 @@ create table sda_class_fields
 
 create table sda_class_methods
 (
-    class_id    INTEGER,
-    function_id INTEGER,
-    primary key (class_id, function_id)
+    class_id INTEGER,
+    decl_id  INTEGER,
+    def_id   INTEGER,
+    primary key (class_id, decl_id)
 );
 
 create table sda_classes
@@ -44,20 +45,52 @@ create table sda_enum_fields
 create table sda_func_arguments
 (
     id          INTEGER,
-    function_id INTEGER,
+    decl_id     INTEGER,
     name        TEXT,
     type_id     INTEGER not null,
     pointer_lvl INTEGER not null,
     array_size  INTEGER not null,
-    primary key (id, function_id)
+    primary key (id, decl_id)
+);
+
+create table sda_func_decls
+(
+    decl_id         INTEGER
+        primary key autoincrement,
+    name            TEXT
+        unique,
+    role            INTEGER,
+    ret_type_id     INTEGER not null,
+    ret_pointer_lvl INTEGER not null,
+    ret_array_size  INTEGER not null,
+    desc            TEXT
+);
+
+create table sda_func_defs
+(
+    def_id  INTEGER
+        primary key autoincrement,
+    decl_id INTEGER,
+    offset  INTEGER
+        unique
 );
 
 create table sda_func_ranges
 (
-    function_id INTEGER,
-    order_id    INTEGER,
-    min_offset  INTEGER,
-    max_offset  INTEGER
+    def_id     INTEGER,
+    order_id   INTEGER,
+    min_offset INTEGER,
+    max_offset INTEGER
+);
+
+create table sda_func_tags
+(
+    tag_id        INTEGER
+        primary key autoincrement,
+    parent_tag_id INTEGER,
+    decl_id       INTEGER,
+    name          TEXT,
+    desc          TEXT
 );
 
 create table sda_func_trigger_filters
@@ -65,21 +98,6 @@ create table sda_func_trigger_filters
     trigger_id INTEGER,
     filter_id  INTEGER,
     data       BLOB
-);
-
-create table sda_functions
-(
-    id              INTEGER
-        primary key autoincrement,
-    name            TEXT
-        unique,
-    method          INTEGER,
-    offset          INTEGER
-        unique,
-    ret_type_id     INTEGER not null,
-    ret_pointer_lvl INTEGER not null,
-    ret_array_size  INTEGER not null,
-    desc            TEXT
 );
 
 create table sda_gvars
@@ -124,10 +142,10 @@ create table sda_types
 
 create table sda_vtable_funcs
 (
-    vtable_id   INTEGER,
-    function_id INTEGER,
-    id          INTEGER,
-    primary key (vtable_id, function_id)
+    vtable_id INTEGER,
+    def_id    INTEGER,
+    id        INTEGER,
+    primary key (vtable_id, def_id)
 );
 
 create table sda_vtables

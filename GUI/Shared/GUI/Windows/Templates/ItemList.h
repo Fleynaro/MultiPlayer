@@ -46,17 +46,37 @@ namespace GUI::Window::Template
 			{}
 
 			Item()
-				: TreeNode("undefined")
+				: TreeNode()
 			{}
+
+			~Item() {
+				if (m_header != nullptr && m_header->canBeRemovedBy(this)) {
+					delete m_header;
+				}
+			}
 
 			void setHeader(const std::string& header) {
 				setName(header);
+			}
+
+			Container& beginHeader()
+			{
+				m_header = new Container;
+				m_header->setParent(this);
+				return *m_header;
 			}
 
 			Container& beginBody()
 			{
 				return beginContainer();
 			}
+
+			void renderHeader() override {
+				m_header->render();
+			}
+
+		private:
+			Container* m_header = nullptr;
 		};
 
 	private:
