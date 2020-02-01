@@ -157,6 +157,8 @@ int main()
 		auto functiondb3 = sda->getFunctionManager()->createFunction(&rand, { Function::FunctionDefinition::Range(&rand, 300) }, sda->getFunctionManager()->createFunctionDecl("rand", ""));
 		auto function = functiondb->getFunction();
 
+		//sda->getFunctionManager()->saveFunction(*functiondb2->getFunction());
+
 		sda->getFunctionManager()->buildFunctionBodies();
 		
 		CallGraph::Analyser::Generic analysis(functiondb);
@@ -194,6 +196,13 @@ int main()
 				return true;
 			});
 		}
+
+		auto fMan = sda->getFunctionManager();
+
+		Function::Tag::Manager manager(sda->getFunctionManager());
+		manager.loadTags();
+		manager.calculateAllTags();
+		auto collection = manager.getTagCollectionByDecl(functiondb2);
 
 		functiondb->change([&] {
 			function->getDeclaration().addArgument(new Type::Int32, "a");
@@ -326,6 +335,10 @@ int main()
 //MY TODO*: 6.2) сохранение указанных состояний списка параметров для вызова функций
 //MY TODO*: 7) триггеры. сделать менеджер. в одном триггере может быть несколько функций(выбор через спец. виджет combobox + search) + указание в нем списка фильтров и действий
 //MY TODO*: 7.1) к каждому триггеру прикладывается статистика вызовов функций, где строится гистограмма и тд
+//MY TODO*: 8) Менеджер шрифтов для GUI
+//MY TODO*: 9) Всевозможные виды анализов
+//MY TODO*: 9.1) Наличие общих функций у двух функций
+//MY TODO*: 9.2) Нахождение кратчайшего пути для 2-х функций в графе вызовов
 
 BOOL APIENTRY DllMain(HMODULE hModule,
 	DWORD  ul_reason_for_call,

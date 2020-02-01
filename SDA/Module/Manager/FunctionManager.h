@@ -59,6 +59,10 @@ namespace CE
 
 			void save() override;
 
+			bool hasBody() {
+				return m_funcBody != nullptr;
+			}
+
 			CallGraph::Unit::FunctionBody* getBody();
 
 			void setBody(CallGraph::Unit::FunctionBody* body) {
@@ -158,7 +162,7 @@ namespace CE
 			SQLite::Transaction transaction(db);
 
 			{
-				SQLite::Statement query(db, "DELETE FROM sda_func_ranges WHERE function_id=?1");
+				SQLite::Statement query(db, "DELETE FROM sda_func_ranges WHERE def_id=?1");
 				query.bind(1, definition.getId());
 				query.exec();
 			}
@@ -200,7 +204,7 @@ namespace CE
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "REPLACE INTO sda_functions (id, decl_id, offset)\
+			SQLite::Statement query(db, "REPLACE INTO sda_func_defs (def_id, decl_id, offset)\
 				VALUES(?1, ?2, ?3)");
 			query.bind(1, definition.getId());
 			query.bind(2, definition.getDeclaration().getId());

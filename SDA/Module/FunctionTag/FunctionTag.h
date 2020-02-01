@@ -3,7 +3,7 @@
 
 namespace CE
 {
-	//MY TODO: конфликтные теги
+	//MY TODO: конфликтные теги, дефолтные теги set,get(реентерабельность),краш
 	namespace Function::Tag
 	{
 		class Tag : public Desc
@@ -16,7 +16,7 @@ namespace CE
 			};
 
 			Tag(Tag* parent, int id, std::string name, std::string desc = "")
-				: Desc(id, name, desc)
+				: m_parent(parent), Desc(id, name, desc)
 			{}
 
 			virtual Type getType() = 0;
@@ -123,11 +123,14 @@ namespace CE
 			using TagDict = std::map<int, Tag*>;
 			using TagCollectionDict = std::map<int, TagCollection>;
 
+			GetTag* m_getTag = new GetTag;
+			SetTag* m_setTag = new SetTag;
+
 			Manager(FunctionManager* funcManager)
 				: m_funcManager(funcManager)
 			{
-				addTag(new GetTag);
-				addTag(new SetTag);
+				addTag(m_getTag);
+				addTag(m_setTag);
 			}
 
 			void loadTags() {
@@ -155,10 +158,10 @@ namespace CE
 
 				SQLite::Database& db = getProgramModule()->getDB();
 				{
-					SQLite::Statement query(db, "REPLACE INTO sda_functions (tag_id, parent_tag_id, decl_id, name, desc) VALUES(?1, ?2, ?3, ?4, ?5)");
+					SQLite::Statement query(db, "REPLACE INTO sda_func_tags (tag_id, parent_tag_id, decl_id, name, desc) VALUES(?1, ?2, ?3, ?4, ?5)");
 					query.bind(1, tag.getId());
 					query.bind(2, tag.getParent()->getId());
-					query.bind(3, tag.getDeclaration()->getFunctionDecl()->getId());
+					query.bind(3, tag.isDefinedForDecl() ? tag.getDeclaration()->getFunctionDecl()->getId() : 0);
 					query.bind(4, tag.getName());
 					query.bind(5, tag.getDesc());
 					query.exec();
@@ -195,7 +198,13 @@ namespace CE
 						}
 
 						auto funcBody = static_cast<Unit::FunctionBody*>(node);
-						TagCollection* gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclaration());
+						
+						TagCollection tempCollection;
+						for (auto it : tags) {
+							tempCollection.add(it.second);
+						}
+
+						auto gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclaration());
 						if (gCollection != nullptr) {
 							for (auto tag : gCollection->getTagList()) {
 								if (tag->getType() == Tag::GET) {
@@ -204,11 +213,9 @@ namespace CE
 							}
 						}
 
-						if (!tags.empty()) {
+						if (!tempCollection.empty()) {
 							gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclaration(), true);
-							for (auto it : tags) {
-								gCollection->add(it.second);
-							}
+							gCollection->add(tempCollection);
 						}
 					}
 					return true;
@@ -217,6 +224,23 @@ namespace CE
 
 			TagDict& getTags() {
 				return m_tags;
+			}
+
+			int getNewTagId() {
+				int id = 1;
+				while (m_tags.find(id) != m_tags.end())
+					id++;
+				return id;
+			}
+
+			UserTag* createTag(API::Function::FunctionDecl* decl, Tag* parent, std::string name, std::string desc = "") {
+				int tag_id = getNewTagId();
+				UserTag* tag;
+				if(decl != nullptr)
+					tag = new UserTag(decl, parent, tag_id, name, desc);
+				else tag = new UserTag(parent, tag_id, name, desc);
+				m_tags[tag_id] = tag;
+				return tag;
 			}
 
 			void addTag(Tag* tag) {

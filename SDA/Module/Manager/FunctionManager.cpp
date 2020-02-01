@@ -160,6 +160,8 @@ void FunctionManager::loadFunctionBody(API::Function::Function* function) {
 
 void CE::FunctionManager::buildFunctionBodies() {
 	for (auto it : m_functions) {
+		if (it.second->hasBody())
+			continue;
 		CallGraph::FunctionBodyBuilder bodyBuilder(it.second);
 		bodyBuilder.build();
 		it.second->setBody(bodyBuilder.getFunctionBody());

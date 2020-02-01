@@ -310,14 +310,26 @@ namespace CE
 			template<bool isLeft = true>
 			void iterateCallStack(const std::function<bool(Unit::Node*, CallStack&)>& callback, Filter filter)
 			{
-				pass.iterateCallStack([&callback](Unit::Node* node, CallStack& stack)
+				iterateCallStack([&](Unit::Node* node, CallStack& stack)
 				{
-					if (filter & Filter::FunctionNode && node->isFunction()
-						|| filter & Filter::GlobalVarNode && node->isGlobalVar()
-						|| filter & Filter::FunctionBody && node->isFunctionBody()) {
-						callback(node, stack);
+					if ((int)filter & (int)Filter::FunctionNode && node->isFunction()
+						|| (int)filter & (int)Filter::GlobalVarNode && node->isGlobalVar()
+						|| (int)filter & (int)Filter::FunctionBody && node->isFunctionBody()) {
+						return callback(node, stack);
 					}
+					return true;
 				});
+			}
+
+			std::list<Unit::Node*> getAllNodesInCallTree(Filter filter)
+			{
+				std::list<Unit::Node*> nodes;
+				iterateCallStack([&](Unit::Node* node, CallStack& stack)
+				{
+					nodes.push_back(node);
+					return true;
+				}, filter);
+				return nodes;
 			}
 		private:
 			template<bool isLeft = true>
@@ -465,7 +477,55 @@ namespace CE
 				} m_stat;
 			};
 
-			
+			class CompareFunctionBodies
+			{
+			public:
+				CompareFunctionBodies(Unit::FunctionBody* funcBody1, Unit::FunctionBody* funcBody2) {
+					m_funcBody[0] = funcBody1;
+					m_funcBody[1] = funcBody2;
+				}
+
+				void doAnalyse() {
+					std::list<Unit::Node*> nodesInBody[2];
+
+					for (int i = 0; i <= 1; i++) {
+						FunctionIterator pass(m_funcBody[i]);
+						nodesInBody[i] = pass.getAllNodesInCallTree(FunctionIterator::Filter::FunctionBody);
+					}
+					
+					for (auto node1 : nodesInBody[0]) {
+						auto funcBody1 = static_cast<Unit::FunctionBody*>(node1);
+						for (auto node2 : nodesInBody[1]) {
+							auto funcBody2 = static_cast<Unit::FunctionBody*>(node2);
+							if (funcBody1->getFunction()->getDefinition().getId() == funcBody2->getFunction()->getDefinition().getId()) {
+								m_mutualFuncBodies.push_back(funcBody1);
+							}
+						}
+					}
+				}
+
+				const std::list<Unit::FunctionBody*>& getMutualFuncBodies() {
+					return m_mutualFuncBodies;
+				}
+			private:
+				Unit::FunctionBody* m_funcBody[2];
+				std::list<Unit::FunctionBody*> m_mutualFuncBodies;
+			};
+
+			class ContextDistance
+			{
+			public:
+				ContextDistance(Unit::FunctionBody* funcBody1, Unit::FunctionBody* funcBody2) {
+					m_funcBody[0] = funcBody1;
+					m_funcBody[1] = funcBody2;
+				}
+
+				void doAnalyse() {
+					
+				}
+			private:
+				Unit::FunctionBody* m_funcBody[2];
+			};
 		};
 
 		class FunctionBodyBuilder
@@ -483,10 +543,14 @@ namespace CE
 			}
 
 			Unit::FunctionBody* getFunctionBody() {
-				return m_function->getBody();
+				if (m_body == nullptr) {
+					m_body = new Unit::FunctionBody(m_function);
+				}
+				return m_body;
 			}
 		private:
 			API::Function::Function* m_function;
+			Unit::FunctionBody* m_body = nullptr;
 
 			void build(Function::FunctionDefinition::Range& range)
 			{
