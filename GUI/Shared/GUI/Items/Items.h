@@ -875,10 +875,12 @@ namespace GUI
 		namespace Text
 		{
 			class Text
-				: public Elem, public Attribute::Width<Text>, public Attribute::Font<Text>
+				: public Elem,
+				public Attribute::Width<Text>,
+				public Attribute::Font<Text>
 			{
 			public:
-				Text(std::string text)
+				Text(const std::string& text)
 					: m_text(text)
 				{}
 

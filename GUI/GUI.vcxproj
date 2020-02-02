@@ -176,6 +176,7 @@
     <ClInclude Include="Shared\GUI\Widgets\PopupContextWindow.h" />
     <ClInclude Include="Shared\GUI\Widgets\Template\CategoryListSearch.h" />
     <ClInclude Include="Shared\GUI\Widgets\Template\CategoryListSearchWithPageNav.h" />
+    <ClInclude Include="Shared\GUI\Widgets\Template\ControlPanel.h" />
     <ClInclude Include="Shared\GUI\Windows\Templates\ItemList.h" />
     <ClInclude Include="Shared\GUI\Windows\Templates\ManagerWin.h" />
     <ClInclude Include="targetver.h" />

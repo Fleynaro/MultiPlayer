@@ -8,7 +8,7 @@ namespace GUI
 		class Pos
 		{
 		public:
-			Pos(float posX = -1.f, float posY = -1.f)
+			Pos(float posX = 0.f, float posY = 0.f)
 				: m_posX(posX), m_posY(posY)
 			{};
 
@@ -31,20 +31,20 @@ namespace GUI
 			}
 
 			void pushPosParam() {
-				if (getPosX() == -1.f)
+				if (getPosX() == 0.f)
 					return;
 				ImGui::SetNextWindowPos(ImVec2(m_posX, m_posY));
 			}
 		protected:
-			float m_posX = -1.f;
-			float m_posY = -1.f;
+			float m_posX;
+			float m_posY;
 		};
 
 		template<typename T>
 		class Width
 		{
 		public:
-			Width(float width = -1.f) : m_width(width) {};
+			Width(float width = 0.f) : m_width(width) {};
 
 			float getWidth() {
 				return m_width;
@@ -56,13 +56,13 @@ namespace GUI
 			}
 
 			void pushWidthParam() {
-				if (getWidth() == -1.f)
+				if (getWidth() == 0.f)
 					return;
 				ImGui::PushItemWidth(getWidth());
 			}
 
 			void popWidthParam() {
-				if (getWidth() == -1.f)
+				if (getWidth() == 0.f)
 					return;
 				ImGui::PopItemWidth();
 			}
@@ -74,7 +74,7 @@ namespace GUI
 		class Height
 		{
 		public:
-			Height(float height = -1.f) : m_height(height) {};
+			Height(float height = 0.f) : m_height(height) {};
 
 			float getHeight() {
 				return m_height;

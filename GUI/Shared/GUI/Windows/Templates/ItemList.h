@@ -68,7 +68,7 @@ namespace GUI::Window::Template
 
 			Container& beginBody()
 			{
-				return beginContainer();
+				return (*this);
 			}
 
 			void renderHeader() override {

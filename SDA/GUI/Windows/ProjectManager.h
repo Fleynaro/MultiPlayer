@@ -1,8 +1,7 @@
 #pragma once
 #include "Shared/GUI/Items/IWindow.h"
 #include <ProjectManager.h>
-#include "GUI/Windows/ItemLists/DataTypeList.h"
-#include "GUI/Windows/ItemLists/FunctionList.h"
+#include "GUI/Windows/ProjectWindow.h"
 
 namespace GUI::Window
 {
@@ -106,13 +105,8 @@ namespace GUI::Window
 								project->open();
 								m_projectManager->setCurrentProject(project);
 
-								static_cast<ProjectManagerWin*>(getParent())->addWindow(
-									new Window::DataTypeList(
-										project->getProgramExe()->getTypeManager())
-								);
-								static_cast<ProjectManagerWin*>(getParent())->addWindow(
-									new Window::FunctionList(
-										project->getProgramExe()->getFunctionManager())
+								getParent()->addWindow(
+									new Window::ProjectWindow(project)
 								);
 								close();
 							})
@@ -139,7 +133,9 @@ namespace GUI::Window
 		}
 
 		void showProjectInfo(Project* project) {
-			m_selectedProjectInfoText->setText("Project name: " + project->getName() + "\nProject location: " + project->getDirectory().getPath());
+			m_selectedProjectInfoText->setText(
+				"Project name: " + project->getName() +
+				"\nProject location: " + project->getDirectory().getPath());
 		}
 
 		void updateProjectList() {

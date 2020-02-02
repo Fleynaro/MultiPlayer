@@ -8,20 +8,24 @@ namespace GUI
 	{
 		class ISender;
 		class OnSpecial;
-		class EventInfo
+		class EventMessage
 		{
 		public:
-			using Type = std::shared_ptr<EventInfo>;
-			EventInfo(ISender* sender, uint64_t value = 0)
+			using Type = std::shared_ptr<EventMessage>;
+			EventMessage(ISender* sender, uint64_t value = 0)
 				: m_sender(sender), m_value(value)
 			{}
 
-			~EventInfo() {
+			~EventMessage() {
 				int a = 5;
 			}
 
 			ISender* getSender() {
 				return m_sender;
+			}
+
+			void changeSender(ISender* sender) {
+				m_sender = sender;
 			}
 
 			OnSpecial* getOwner() {
@@ -36,18 +40,19 @@ namespace GUI
 			ISender* m_sender;
 			uint64_t m_value;
 		};
+		using EventInfo = EventMessage;
 
 
-		class Event
+		class EventHandler
 		{
 		public:
-			using CallbackType = std::function<void(EventInfo::Type&)>;
-			Event(CallbackType callback)
+			using CallbackType = std::function<void(EventMessage::Type&)>;
+			EventHandler(CallbackType callback)
 				: m_callback(callback)
 			{};
-			virtual ~Event() {}
+			virtual ~EventHandler() {}
 
-			virtual void callHandler(EventInfo::Type info) = 0;
+			virtual void callHandler(EventMessage::Type info) = 0;
 
 			bool canBeRemovedBy(ISender* sender) {
 				return m_owner == sender && m_canBeRemoved;
@@ -76,12 +81,14 @@ namespace GUI
 			ISender* m_owner = nullptr;
 			bool m_canBeRemoved = true;
 		};
+		using Event = EventHandler;
 
 
+		//MY TODO: rename to Sender
 		class ISender
 		{
 		protected:
-			ISender(Event* event) {
+			ISender(EventHandler* event) {
 				setEvent(event);
 			}
 			~ISender() {
@@ -91,17 +98,17 @@ namespace GUI
 
 			virtual void callEventHandler() {
 				if (isEventDefined()) {
-					getEvent()->callHandler(EventInfo::Type(
-						new EventInfo(this)
+					getEvent()->callHandler(EventMessage::Type(
+						new EventMessage(this)
 					));
 				}
 			}
 		public:
-			Event* getEvent() {
+			EventHandler* getEvent() {
 				return m_event;
 			}
 
-			void setEvent(Event* event) {
+			void setEvent(EventHandler* event) {
 				m_event = event;
 				if (isEventDefined())
 					event->setOwner(this);
@@ -111,15 +118,15 @@ namespace GUI
 				return m_event != nullptr;
 			}
 		private:
-			Event* m_event = nullptr;
+			EventHandler* m_event = nullptr;
 		};
 
 
-		class EventStd : public Event
+		class EventStd : public EventHandler
 		{
 		public:
 			EventStd(CallbackType callback)
-				: Event(callback)
+				: EventHandler(callback)
 			{}
 
 			void callHandler(EventInfo::Type info) override {
@@ -128,11 +135,11 @@ namespace GUI
 		};
 
 
-		class EventUI : public Event
+		class EventUI : public EventHandler
 		{
 		public:
 			EventUI(CallbackType callback)
-				: Event(callback)
+				: EventHandler(callback)
 			{}
 			~EventUI() {}
 
@@ -151,6 +158,26 @@ namespace GUI
 			}
 		private:
 			inline static std::list<EventInfo::Type> m_eventMessages;
+		};
+
+
+		class EventHook : public ISender, public EventHandler
+		{
+		public:
+			EventHook(Event* event, void* userDataPtr)
+				: ISender(event), EventHandler(nullptr), m_userDataPtr(userDataPtr)
+			{}
+
+			void callHandler(EventInfo::Type info) override {
+				info->changeSender(this);
+				getEvent()->callHandler(info);
+			}
+
+			void* getUserDataPtr() {
+				return m_userDataPtr;
+			}
+		private:
+			void* m_userDataPtr;
 		};
 
 
@@ -222,51 +249,57 @@ namespace GUI
 		};
 
 		template<typename T>
-		class OnLeftMouseClick : private ISender
+		class OnLeftMouseClick
 		{
 		public:
-			OnLeftMouseClick(Event* event = nullptr)
-				: ISender(event)
+			OnLeftMouseClick(ISender* sender)
+				: m_sender(sender)
 			{};
 
 			Event* getLeftMouseClickEvent() {
-				return getEvent();
+				return m_sender->getEvent();
 			}
 
 			T* setLeftMouseClickEvent(Event* event) {
-				setEvent(event);
+				m_sender->setEvent(event);
 				return (T*)this;
 			}
 
 			void sendLeftMouseClickEvent() {
 				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
-					callEventHandler();
+					m_sender->callEventHandler();
 				}
 			}
+
+		private:
+			ISender* m_sender;
 		};
 
 		template<typename T>
-		class OnRightMouseClick : private ISender
+		class OnRightMouseClick
 		{
 		public:
-			OnRightMouseClick(Event* event = nullptr)
-				: ISender(event)
+			OnRightMouseClick(ISender* sender)
+				: m_sender(sender)
 			{};
 
 			Event* getRightMouseClickEvent() {
-				return getEvent();
+				return m_sender->getEvent();
 			}
 
 			T* setRightMouseClickEvent(Event* event) {
-				setEvent(event);
+				m_sender->setEvent(event);
 				return (T*)this;
 			}
 
 			void sendRightMouseClickEvent() {
 				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) {
-					callEventHandler();
+					m_sender->callEventHandler();
 				}
 			}
+
+		private:
+			ISender* m_sender;
 		};
 		
 		template<typename T>

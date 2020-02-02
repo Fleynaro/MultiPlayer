@@ -10,6 +10,24 @@ namespace GUI::Units
 		: public Container
 	{
 	public:
+		class ArgName
+			: public Elements::Text::Text,
+			public Events::ISender,
+			public Events::OnLeftMouseClick<ArgName>,
+			public Events::OnRightMouseClick<ArgName>
+		{
+		public:
+			ArgName(const std::string& name, Events::Event* event)
+				: Elements::Text::Text(name), Events::OnLeftMouseClick<ArgName>(event)
+			{}
+
+			void render() {
+				Elements::Text::Text::render();
+				sendLeftMouseClickEvent();
+			}
+		};
+
+
 		Signature(
 			API::Function::Function* function,
 			Events::Event* leftMouseClickOnType = nullptr,
@@ -67,25 +85,23 @@ namespace GUI::Units
 
 		void buildArgument(int idx, const std::string& name, CE::Type::Type* type, bool isFinal = false)
 		{
+			std::string argName = " " + name + (!isFinal ? ", " : "");
 			(*this)
 				.sameLine(0.f)
 				.addItem(new Type(type))
-				.text(" " + name + (!isFinal ? ", " : ""))
-				.beginImGui([this, idx] {
-					m_argumentSelectedIdx = idx;
-					m_leftMouseClickOnArgName.sendLeftMouseClickEvent();
-				})
+				.addItem(new ArgName(argName, m_leftMouseClickOnArgName))
 				.sameLine(0.f);
 		}
 
 		ColorRGBA getColor() {
 			return -1;
 		}
-	private:
+
 		API::Function::Function* m_function;
+	private:
 		Events::OnLeftMouseClick<Signature> m_leftMouseClickOnType;
 		Events::OnLeftMouseClick<Signature> m_leftMouseClickOnFuncName;
-		Events::OnLeftMouseClick<Signature> m_leftMouseClickOnArgName;
+		Events::Event* m_leftMouseClickOnArgName;
 
 		Function::Function* getFunction() {
 			return m_function->getFunction();

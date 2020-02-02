@@ -2,6 +2,9 @@
 #include "Shared/GUI/Windows/Templates/ItemList.h"
 #include "GUI/Signature.h"
 #include <Manager/FunctionManager.h>
+#include <FunctionTag/FunctionTag.h>
+#include "../ItemControlPanels/FunctionCP.h"
+#include "../ProjectWindow.h"
 
 using namespace CE;
 
@@ -163,7 +166,7 @@ namespace GUI::Window
 		class FunctionItem : public Item
 		{
 		public:
-			FunctionItem(API::Function::Function* function)
+			FunctionItem(API::Function::Function* function, Events::Event* event)
 			{
 				beginHeader()
 					.addItem(
@@ -189,16 +192,20 @@ namespace GUI::Window
 					.newLine()
 					.newLine()
 					.addItem(
-						new GUI::Elements::Button::ButtonStd(
+						new Elements::Button::ButtonStd(
 							"Open control panel",
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								
-							})
+							new Events::EventHook(event, function)
 						)
 					);
+
+				m_signature->setCanBeRemoved(false);
 			}
 
+			~FunctionItem() {
+				delete m_signature;
+			}
 		private:
+			//MY TODO: может быть краш при удалении объекта, если он принадлежит нескольким родителям. т.е. битая ссылка. Вроде решил
 			Units::Signature* m_signature;
 		};
 
@@ -208,6 +215,19 @@ namespace GUI::Window
 			addFunctionFilter(new CategoryFilter(this, style));
 			addFunctionFilter(new ClassFilter(this));
 			addFunctionFilter(new FuncTagFilter(this));
+
+			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
+				auto sender = static_cast<Events::EventHook*>(info->getSender());
+				auto function = (API::Function::Function*)sender->getUserDataPtr();
+
+				getParent()->getMainContainer().clear();
+				getParent()->getMainContainer().addItem((new Widget::FunctionCP(function))->getMainContainerPtr());
+			});
+			m_openFunctionCP->setCanBeRemoved(false);
+		}
+
+		~FunctionList() {
+			delete m_openFunctionCP;
 		}
 
 		void addFunctionFilter(FunctionFilter* filter) {
@@ -221,7 +241,7 @@ namespace GUI::Window
 			int maxCount = 300;
 			for (auto& it : m_funcManager->getFunctions()) {
 				if (checkOnInputValue(it.second, value) && checkAllFilters(it.second)) {
-					add(new FunctionItem(it.second));//MY TODO*: ленивая загрузка, при открытии только
+					add(new FunctionItem(it.second, m_openFunctionCP));//MY TODO*: ленивая загрузка, при открытии только
 				}
 				if (--maxCount == 0)
 					break;
@@ -245,5 +265,6 @@ namespace GUI::Window
 		FunctionManager* m_funcManager;
 	private:
 		std::list<FunctionFilter*> m_funcFiltes;
+		Events::Event* m_openFunctionCP;
 	};
 };

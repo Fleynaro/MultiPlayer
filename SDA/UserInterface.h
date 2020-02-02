@@ -1,41 +1,9 @@
 #pragma once
 #include "Shared/GUI/Items/Items.h"
 #include "Shared/GUI/Items/StyleThemes.h"
-#include "Shared/GUI/Items/IWindow.h"
 #include "Shared/GUI/Items/IWidget.h"
+#include "WindowManager.h"
 
-using namespace GUI::Window;
-
-class WindowManager
-{
-public:
-	WindowManager() {
-		m_mainWindow = new InvisibleWindow("WindowManager");
-		setVisible(true);
-	}
-
-	void addWindow(IWindow* window) {
-		m_mainWindow->addWindow(window);
-	}
-
-	void removeWindow(IWindow* window) {
-		m_mainWindow->removeWindow(window);
-	}
-
-	void setVisible(bool state) {
-		m_mainWindow->setDisplay(state);
-	}
-
-	bool isVisible() {
-		return m_mainWindow->isShown();
-	}
-
-	void render() {
-		m_mainWindow->show();
-	}
-private:
-	GUI::Window::InvisibleWindow* m_mainWindow;
-};
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
