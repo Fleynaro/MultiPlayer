@@ -1,6 +1,8 @@
 #pragma once
 #include "Type.h"
 #include <Manager/FunctionManager.h>
+#include <Utils/MultipleAction.h>
+#include <CallGraph/CallGraph.h>
 
 using namespace CE;
 
@@ -20,10 +22,27 @@ namespace GUI::Units
 				: Elements::Text::Text(name), Events::OnLeftMouseClick<Name>(clickEvent)
 			{}
 
-			void render() {
+			void render() override {
 				Elements::Text::Text::render();
 				sendLeftMouseClickEvent();
 			}
+		};
+
+		class FuncName : public Name
+		{
+		public:
+			FuncName(API::Function::Function* function, const std::string& name, Events::Event* clickEvent)
+				: m_function(function), Name(name, clickEvent)
+			{}
+
+			void render() override {
+				Name::render();
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip(getTooltipDesc(m_function->getFunction(), m_function->getBody()).c_str());
+				}
+			}
+		private:
+			API::Function::Function* m_function;
 		};
 
 		class ArgName : public Name
@@ -71,23 +90,27 @@ namespace GUI::Units
 			buildName();
 			buildArgumentList();
 
-			m_leftMouseClickOnType->setCanBeRemoved(false);
-			m_leftMouseClickOnFuncName->setCanBeRemoved(false);
-			m_leftMouseClickOnArgName->setCanBeRemoved(false);
-		}
-
-		~Signature() {
-			Events::Event* eventHandlers[] = {
+			Utils::actionForList<Events::Event>(
+			{
 				m_leftMouseClickOnType,
 				m_leftMouseClickOnFuncName,
 				m_leftMouseClickOnArgName
-			};
+			}, [](Events::Event* handler) {
+				handler->setCanBeRemoved(false);
+			});
+		}
 
-			for (int i = 0; i < 3; i++) {
-				if (eventHandlers[i] != nullptr && eventHandlers[i]->canBeRemovedBy(nullptr)) {
-					delete eventHandlers[i];
+		~Signature() {
+			Utils::actionForList<Events::Event>(
+			{
+				m_leftMouseClickOnType,
+				m_leftMouseClickOnFuncName,
+				m_leftMouseClickOnArgName
+			}, [](Events::Event* handler) {
+				if (handler->canBeRemovedBy(nullptr)) {
+					delete handler;
 				}
-			}
+			});
 		}
 
 		int m_argumentSelectedIdx = 0;
@@ -102,7 +125,7 @@ namespace GUI::Units
 		{
 			std::string funcName = " " + getFunction()->getDeclaration().Desc::getName();
 			(*this)
-				.addItem(new Name(funcName, m_leftMouseClickOnFuncName))
+				.addItem(new FuncName(m_function, funcName, m_leftMouseClickOnFuncName))
 				.sameLine(0.f);
 		}
 
@@ -138,6 +161,59 @@ namespace GUI::Units
 
 		ColorRGBA getColor() {
 			return -1;
+		}
+
+		static std::string getTooltipDesc(CE::Function::Function* function, CE::CallGraph::Unit::FunctionBody* body = nullptr) {
+			using namespace Generic::String;
+			
+			std::string info =
+				"Name: " + function->getName() + " (DeclId: " + std::to_string(function->getDeclaration().getId()) +
+				", DefId: " + (function->hasDefinition() ? std::to_string(function->getDefinition().getId()) : "not definition") + ")" +
+				"\nRole: " + getRoleName((int)function->getDeclaration().getRole());
+
+			if (function->hasDefinition())
+			{
+				info +=
+					"\nBase address: 0x" + NumberToHex((std::uintptr_t)function->getAddress());
+
+				auto& ranges = function->getDefinition().getRangeList();
+				if (ranges.size() > 1)
+				{
+					info +=
+						"\nAddress ranges:";
+					for (auto range : ranges) {
+						info +=
+							"\n\t- Begin: 0x" + NumberToHex((std::uintptr_t)range.getMinAddress()) + " | Size: 0x" + NumberToHex(range.getSize());
+					}
+				}
+				else if (ranges.size() == 1) {
+					info +=
+						" | Size: 0x" + NumberToHex(ranges[0].getSize());
+				}
+
+				if (body != nullptr) {
+					info +=
+						"\nReferences to: " + std::to_string(body->getFunctionsReferTo().size());
+				}
+			}
+
+			info +=
+				"\nDescription:\n\n" + function->getDesc();
+
+			return info;
+		}
+
+		static const std::string& getRoleName(int roleId) {
+			static std::vector<std::string> roleName = {
+				"Function",
+				"Method",
+				"Static method",
+				"Virtual method",
+				"Constructor",
+				"Destructor",
+				"Virtual destructor"
+			};
+			return roleName[roleId];
 		}
 
 		API::Function::Function* m_function;

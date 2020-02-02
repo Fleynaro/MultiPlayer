@@ -51,11 +51,11 @@ namespace GUI::Window
 			inline static std::vector<std::pair<std::string, Category>> m_categories = {
 				{ std::make_pair("Function", Category::Function) },
 				{ std::make_pair("Method", Category::Method) },
-				{ std::make_pair("StaticMethod", Category::StaticMethod) },
-				{ std::make_pair("VirtualMethod", Category::VirtualMethod) },
+				{ std::make_pair("Static method", Category::StaticMethod) },
+				{ std::make_pair("Virtual method", Category::VirtualMethod) },
 				{ std::make_pair("Constructor", Category::Constructor) },
 				{ std::make_pair("Destructor", Category::Destructor) },
-				{ std::make_pair("VirtualDestructor", Category::VirtualDestructor) },
+				{ std::make_pair("Virtual destructor", Category::VirtualDestructor) },
 				{ std::make_pair("Virtual", Category::Virtual) }
 			};
 
@@ -174,13 +174,8 @@ namespace GUI::Window
 							new Events::EventUI(EVENT_LAMBDA(info) {
 								
 							}),
-							new Events::EventUI(EVENT_LAMBDA(info) {
-
-							}),
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								auto argId = m_signature->m_argumentSelectedIdx;
-
-							})
+							new Events::EventHook(event, function),
+							nullptr
 						),
 						(GUI::Item**)& m_signature
 					);

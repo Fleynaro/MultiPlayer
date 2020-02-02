@@ -48,7 +48,7 @@ namespace GUI::Units
 
 		static std::string getTooltipDesc(CE::Type::Type* type, bool sizeLimit = true) {
 			std::string info =
-				"Name: " + type->getDisplayName() +
+				"Name: " + type->getDisplayName() + " (Id: "+ std::to_string(type->getId()) +")" +
 				"\nGroup: " + getGroupName(type->getGroup()) +
 				"\nSize: " + std::to_string(type->getSize()) + " bytes"
 				"\nDescription:\n" + type->getDesc();
@@ -146,18 +146,17 @@ namespace GUI::Units
 			return info;
 		}
 
-		static const std::string& getGroupName(CE::Type::Type::Group groupId) {
-			return m_groupName[groupId];
+		static const std::string& getGroupName(int groupId) {
+			static std::vector<std::string> groupName = {
+				"Simple",
+				"Enum",
+				"Class",
+				"Typedef",
+				"Signature"
+			};
+			return groupName[groupId];
 		}
 	private:
 		CE::Type::Type* m_type;
-
-		inline static std::vector<std::string> m_groupName = {
-			"Simple",
-			"Enum",
-			"Class",
-			"Typedef",
-			"Signature"
-		};
 	};
 };

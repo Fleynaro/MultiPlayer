@@ -33,6 +33,10 @@ namespace CE
 				return getType()->getName();
 			}
 
+			std::string getDesc() override {
+				return getType()->getDesc();
+			}
+
 			std::string getDisplayName() override {
 				return getType()->getName() + "*";
 			}

@@ -251,6 +251,7 @@
     <ClInclude Include="Utility\Generic.h" />
     <ClInclude Include="Utility\Resource.h" />
     <ClInclude Include="Utils\BitStream.h" />
+    <ClInclude Include="Utils\MultipleAction.h" />
     <ClInclude Include="Utils\ObjectHash.h" />
     <ClInclude Include="Vendor\imgui\imconfig.h" />
     <ClInclude Include="Vendor\imgui\imgui.h" />
