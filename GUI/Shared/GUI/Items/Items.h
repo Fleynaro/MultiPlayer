@@ -637,7 +637,8 @@ namespace GUI
 		class Table;
 		class Body;
 		class TR
-			: public Elem, public Attribute::Font<TR>
+			: public Elem,
+			public Attribute::Font<TR>
 		{
 		public:
 			~TR() {
@@ -690,7 +691,8 @@ namespace GUI
 
 		
 		class Body
-			: public Elem, public Attribute::Font<Body>
+			: public Elem,
+			public Attribute::Font<Body>
 		{
 		public:
 			~Body() {
@@ -751,7 +753,8 @@ namespace GUI
 
 
 		class Table
-			: public Elem, public Attribute::Font<Table>
+			: public Elem,
+			public Attribute::Font<Table>
 		{
 		public:
 			~Table() {
@@ -1115,12 +1118,13 @@ namespace GUI
 		{
 			class IButton
 				: public Elem,
-				public Events::OnSpecial,
+				public Events::ISender,
+				public Events::OnSpecial<IButton>,
 				public Attribute::Name<IButton>
 			{
 			public:
 				IButton(std::string name, Events::Event* event)
-					: Attribute::Name<IButton>(name), Events::OnSpecial(event)
+					: Attribute::Name<IButton>(name), Events::OnSpecial<IButton>(event)
 				{}
 			};
 
@@ -1174,11 +1178,14 @@ namespace GUI
 		{
 			template<typename T>
 			class ISlider
-				: public Elem, public Events::OnSpecial, public Attribute::Name<ISlider<T>>
+				: public Elem,
+				public Events::ISender,
+				public Events::OnSpecial<ISlider<T>>,
+				public Attribute::Name<ISlider<T>>
 			{
 			public:
 				ISlider(std::string name, Events::Event* event, T min, T max, T value)
-					: Attribute::Name<ISlider>(name), Events::OnSpecial(event), m_min(min), m_max(max), m_value(value)
+					: Attribute::Name<ISlider>(name), Events::OnSpecial<ISlider>(event), m_min(min), m_max(max), m_value(value)
 				{}
 
 				void setMin(T value) {
@@ -1248,11 +1255,14 @@ namespace GUI
 		namespace Color
 		{
 			class IColorEdit
-				: public Elem, public Events::OnSpecial, public Attribute::Name<IColorEdit>
+				: public Elem,
+				public Events::ISender,
+				public Events::OnSpecial<IColorEdit>,
+				public Attribute::Name<IColorEdit>
 			{
 			public:
 				IColorEdit(std::string name, Events::Event* event, ColorRGBA color)
-					: Attribute::Name<IColorEdit>(name), Events::OnSpecial(event), m_color(color)
+					: Attribute::Name<IColorEdit>(name), Events::OnSpecial<IColorEdit>(event), m_color(color)
 				{}
 
 				ColorRGBA getColor() {
@@ -1286,17 +1296,22 @@ namespace GUI
 		namespace Input
 		{
 			class IInput
-				: public Elem, public Events::OnSpecial, public Attribute::Name<IInput>
+				: public Elem,
+				public Events::ISender,
+				public Events::OnSpecial<IInput>,
+				public Attribute::Name<IInput>
 			{
 			public:
 				IInput(std::string name, Events::Event* event)
-					: Attribute::Name<IInput>(name), Events::OnSpecial(event)
+					: Attribute::Name<IInput>(name), Events::OnSpecial<IInput>(event)
 				{}
 			};
 
 
 			class Text
-				: public IInput, public Attribute::Width<Text>, public Attribute::Font<Text>
+				: public IInput,
+				public Attribute::Width<Text>,
+				public Attribute::Font<Text>
 			{
 			public:
 				Text(std::string name, int size, Events::Event* event)
@@ -1332,7 +1347,8 @@ namespace GUI
 
 
 			class Float
-				: public IInput, public Attribute::Width<Float>
+				: public IInput,
+				public Attribute::Width<Float>
 			{
 			public:
 				Float(std::string name, Events::Event* event)
@@ -1364,7 +1380,8 @@ namespace GUI
 
 
 			class Double
-				: public IInput, public Attribute::Width<Float>
+				: public IInput,
+				public Attribute::Width<Float>
 			{
 			public:
 				Double(std::string name, Events::Event* event)
@@ -1396,7 +1413,8 @@ namespace GUI
 
 
 			class Int
-				: public IInput, public Attribute::Width<Int>
+				: public IInput,
+				public Attribute::Width<Int>
 			{
 			public:
 				Int(std::string name, Events::Event* event)
@@ -1432,7 +1450,8 @@ namespace GUI
 		namespace Bar
 		{
 			class Progress
-				: public Elem, public Attribute::Width<Progress>
+				: public Elem,
+				public Attribute::Width<Progress>
 			{
 			public:
 				Progress(float value, float min = 0.f, float max = 100.f)
@@ -1492,11 +1511,13 @@ namespace GUI
 		namespace List
 		{
 			class Item
-				: public Elem, public Events::OnSpecial
+				: public Elem,
+				public Events::ISender,
+				public Events::OnSpecial<Item>
 			{
 			public:
 				Item(Events::Event* event, int id)
-					: Events::OnSpecial(event), m_id(id)
+					: Events::OnSpecial<Item>(event), m_id(id)
 				{}
 
 				void setValuePtr(int* ptr) {
@@ -1525,7 +1546,8 @@ namespace GUI
 
 
 			class RadioBtn
-				: public List::Item, public Attribute::Name<RadioBtn>
+				: public List::Item,
+				public Attribute::Name<RadioBtn>
 			{
 			public:
 				RadioBtn(std::string name, int id, Events::Event* event = nullptr)
@@ -1542,7 +1564,8 @@ namespace GUI
 
 
 			class MenuItem
-				: public List::Item, public Attribute::Name<MenuItem>
+				: public List::Item,
+				public Attribute::Name<MenuItem>
 			{
 			public:
 				MenuItem(std::string name, int id, Events::Event* event = nullptr)
@@ -1560,11 +1583,15 @@ namespace GUI
 
 
 			class ListBox
-				: public Elem, public Events::OnSpecial, public Attribute::Name<ListBox>, public Attribute::Width<ListBox>
+				: public Elem,
+				public Events::ISender,
+				public Events::OnSpecial<ListBox>,
+				public Attribute::Name<ListBox>,
+				public Attribute::Width<ListBox>
 			{
 			public:
 				ListBox(std::string name, int selected = 0, Events::Event * event = nullptr)
-					: Attribute::Name<ListBox>(name), m_selected(selected), Events::OnSpecial(event)
+					: Attribute::Name<ListBox>(name), m_selected(selected), Events::OnSpecial<ListBox>(event)
 				{}
 
 				void render() override
@@ -1611,14 +1638,18 @@ namespace GUI
 
 
 			class ListBoxDyn
-				: public Elem, public Events::OnSpecial, public Attribute::Name<ListBoxDyn>, public Attribute::Width<ListBoxDyn>
+				: public Elem,
+				public Events::ISender,
+				public Events::OnSpecial<ListBoxDyn>,
+				public Attribute::Name<ListBoxDyn>,
+				public Attribute::Width<ListBoxDyn>
 			{
 			public:
 				using ItemListType = std::pair<std::vector<const char*>, std::vector<void*>>;
 				using CallbackType = std::function<ItemListType()>;
 
 				ListBoxDyn(std::string name, int selected = 0, Events::Event * event = nullptr)
-					: Attribute::Name<ListBoxDyn>(name), m_selected(selected), Events::OnSpecial(event)
+					: Attribute::Name<ListBoxDyn>(name), m_selected(selected), Events::OnSpecial<ListBoxDyn>(event)
 				{}
 
 				void render() override
@@ -1715,7 +1746,8 @@ namespace GUI
 
 			class MultiCombo
 				: public Elem,
-				public Events::OnSpecial,
+				public Events::ISender,
+				public Events::OnSpecial<MultiCombo>,
 				public Attribute::Name<MultiCombo>,
 				public Attribute::Width<MultiCombo>,
 				public Attribute::Flags<
@@ -1731,7 +1763,7 @@ namespace GUI
 				};
 			public:
 				MultiCombo(std::string name, Events::Event* event = nullptr)
-					: Attribute::Name<MultiCombo>(name), Events::OnSpecial(event)
+					: Attribute::Name<MultiCombo>(name), Events::OnSpecial<MultiCombo>(event)
 				{}
 
 				void render() override
@@ -1791,14 +1823,15 @@ namespace GUI
 		{
 			class Item :
 				public Elem,
-				public Events::OnSpecial,
+				public Events::ISender,
+				public Events::OnSpecial<Item>,
 				public Attribute::Name<Item>,
 				public Attribute::Enable<Item>,
 				public Attribute::Shortcut<Item>
 			{
 			public:
 				Item(std::string name, Events::Event* event = nullptr, bool enable = true)
-					: Events::OnSpecial(event), Attribute::Name<Item>(name), Attribute::Enable<Item>(enable)
+					: Events::OnSpecial<Item>(event), Attribute::Name<Item>(name), Attribute::Enable<Item>(enable)
 				{}
 
 				void render() override

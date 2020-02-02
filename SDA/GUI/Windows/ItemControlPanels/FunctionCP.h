@@ -33,15 +33,20 @@ namespace GUI::Widget
 		{
 			m_signature = new Units::Signature(m_function,
 				new Events::EventUI(EVENT_LAMBDA(info) {
-								
+					auto type = static_cast<Units::Signature::Type*>(info->getSender());
+					auto name = type->getName();
+					int id = type->getId();
+					int a = 5;
 				}),
 				new Events::EventUI(EVENT_LAMBDA(info) {
-
+					auto funcName = static_cast<Units::Signature::Name*>(info->getSender());
+					auto name = funcName->getText();
+					int a = 5;
 				}),
 				new Events::EventUI(EVENT_LAMBDA(info) {
 					auto argName = static_cast<Units::Signature::ArgName*>(info->getSender());
-					//argName->setEvent();
 					auto name = argName->getText();
+					int a = 6;
 				})
 			);
 			m_signature->setCanBeRemoved(false);

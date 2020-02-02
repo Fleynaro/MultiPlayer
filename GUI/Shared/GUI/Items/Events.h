@@ -6,14 +6,15 @@ namespace GUI
 {
 	namespace Events
 	{
-		class ISender;
-		class OnSpecial;
+		class ISender {};
+		class EventHandler;
+
 		class EventMessage
 		{
 		public:
 			using Type = std::shared_ptr<EventMessage>;
-			EventMessage(ISender* sender, uint64_t value = 0)
-				: m_sender(sender), m_value(value)
+			EventMessage(ISender* sender, EventHandler* eventHandler, uint64_t value = 0)
+				: m_sender(sender), m_eventHandler(eventHandler), m_value(value)
 			{}
 
 			~EventMessage() {
@@ -28,16 +29,22 @@ namespace GUI
 				m_sender = sender;
 			}
 
-			OnSpecial* getOwner() {
-				return (OnSpecial*)getSender();
+			EventHandler* getEventHandler() {
+				return m_eventHandler;
 			}
 
+			void changeEventHandler(EventHandler* eventHandler) {
+				m_eventHandler = eventHandler;
+			}
+
+			//MY TODO: remove if not used anywhere
 			template<typename T>
 			T getValue() {
 				return (T)m_value;
 			}
 		private:
 			ISender* m_sender;
+			EventHandler* m_eventHandler;
 			uint64_t m_value;
 		};
 		using EventInfo = EventMessage;
@@ -84,41 +91,48 @@ namespace GUI
 		using Event = EventHandler;
 
 
-		//MY TODO: rename to Sender
-		class ISender
+		class Messager
 		{
-		protected:
-			ISender(EventHandler* event) {
+		public:
+			Messager(ISender* sender, EventHandler* event)
+				: m_sender(sender)
+			{
 				setEvent(event);
 			}
-			~ISender() {
-				if (isEventDefined() && getEvent()->canBeRemovedBy(this))
-					delete m_event;
+
+			~Messager() {
+				if (isEventDefined() && getEventHandler()->canBeRemovedBy(m_sender))
+					delete m_eventHandler;
 			}
 
-			virtual void callEventHandler() {
+			void callEventHandler() {
 				if (isEventDefined()) {
-					getEvent()->callHandler(EventMessage::Type(
-						new EventMessage(this)
+					getEventHandler()->callHandler(EventMessage::Type(
+						new EventMessage(m_sender, m_eventHandler)
 					));
 				}
 			}
-		public:
-			EventHandler* getEvent() {
-				return m_event;
+
+			ISender* getSender() {
+				return m_sender;
+			}
+
+			EventHandler* getEventHandler() {
+				return m_eventHandler;
 			}
 
 			void setEvent(EventHandler* event) {
-				m_event = event;
+				m_eventHandler = event;
 				if (isEventDefined())
-					event->setOwner(this);
+					event->setOwner(m_sender);
 			}
 
 			bool isEventDefined() {
-				return m_event != nullptr;
+				return m_eventHandler != nullptr;
 			}
 		private:
-			EventHandler* m_event = nullptr;
+			ISender* m_sender;
+			EventHandler* m_eventHandler;
 		};
 
 
@@ -149,10 +163,10 @@ namespace GUI
 
 			static void handleEvents() {
 				for (auto &message : m_eventMessages) {
-					auto event = message->getSender()->getEvent();
-					if (event == nullptr)
+					EventHandler* eventHandler = message->getEventHandler();
+					if (eventHandler == nullptr)
 						continue;
-					event->doCallback()(message);
+					eventHandler->doCallback()(message);
 				}
 				m_eventMessages.clear();
 			}
@@ -164,19 +178,21 @@ namespace GUI
 		class EventHook : public ISender, public EventHandler
 		{
 		public:
-			EventHook(Event* event, void* userDataPtr)
-				: ISender(event), EventHandler(nullptr), m_userDataPtr(userDataPtr)
+			EventHook(EventHandler* eventHandler, void* userDataPtr)
+				: m_eventHandler(eventHandler), EventHandler(nullptr), m_userDataPtr(userDataPtr)
 			{}
 
-			void callHandler(EventInfo::Type info) override {
-				info->changeSender(this);
-				getEvent()->callHandler(info);
+			void callHandler(EventMessage::Type message) override {
+				message->changeSender(this);
+				message->changeEventHandler(m_eventHandler);
+				m_eventHandler->callHandler(message);
 			}
 
 			void* getUserDataPtr() {
 				return m_userDataPtr;
 			}
 		private:
+			EventHandler* m_eventHandler;
 			void* m_userDataPtr;
 		};
 
@@ -195,7 +211,7 @@ namespace GUI
 
 			static void handleEvents() {
 				for (auto& message : m_eventMessages) {
-					auto event = message->getSender()->getEvent();
+					auto event = message->getEventHandler();
 					if (event == nullptr)
 						continue;
 					event->doCallback()(message);
@@ -207,121 +223,131 @@ namespace GUI
 		};
 
 
-		class OnSpecial : private ISender
+		template<typename T>
+		class OnSpecial
 		{
 		public:
 			OnSpecial(Event* event = nullptr)
-				: ISender(event)
+				: m_sender((ISender*)this, event)
 			{};
 
 			Event* getSpecialEvent() {
-				return getEvent();
+				return m_sender.getEventHandler();
 			}
 
 			void sendSpecialEvent() {
-				callEventHandler();
+				m_sender.callEventHandler();
 			}
+
+		private:
+			Messager m_sender;
 		};
 
 
 		template<typename T>
-		class OnHovered : private ISender
+		class OnHovered
 		{
 		public:
 			OnHovered(Event* event = nullptr)
-				: ISender(event)
+				: m_sender((ISender*)this, event)
 			{};
 
 			Event* getHoveredEvent() {
-				return getEvent();
+				return m_sender.getEventHandler();
 			}
 
 			T* setHoveredEvent(Event* event) {
-				setEvent(event);
+				m_sender.setEvent(event);
 				return (T*)this;
 			}
 
 			void sendHoveredEvent() {
 				if (ImGui::IsItemHovered()) {
-					callEventHandler();
+					m_sender.callEventHandler();
 				}
 			}
+
+		private:
+			Messager m_sender;
 		};
 
 		template<typename T>
 		class OnLeftMouseClick
 		{
 		public:
-			OnLeftMouseClick(ISender* sender)
-				: m_sender(sender)
+			OnLeftMouseClick(Event* event = nullptr)
+				: m_sender((ISender*)this, event)
 			{};
 
 			Event* getLeftMouseClickEvent() {
-				return m_sender->getEvent();
+				return m_sender.getEventHandler();
 			}
 
 			T* setLeftMouseClickEvent(Event* event) {
-				m_sender->setEvent(event);
+				m_sender.setEvent(event);
 				return (T*)this;
 			}
 
 			void sendLeftMouseClickEvent() {
 				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
-					m_sender->callEventHandler();
+					m_sender.callEventHandler();
 				}
 			}
 
 		private:
-			ISender* m_sender;
+			Messager m_sender;
 		};
 
 		template<typename T>
 		class OnRightMouseClick
 		{
 		public:
-			OnRightMouseClick(ISender* sender)
-				: m_sender(sender)
+			OnRightMouseClick(Event* event = nullptr)
+				: m_sender((ISender*)this, event)
 			{};
 
 			Event* getRightMouseClickEvent() {
-				return m_sender->getEvent();
+				return m_sender.getEventHandler();
 			}
 
 			T* setRightMouseClickEvent(Event* event) {
-				m_sender->setEvent(event);
+				m_sender.setEvent(event);
 				return (T*)this;
 			}
 
 			void sendRightMouseClickEvent() {
 				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) {
-					m_sender->callEventHandler();
+					m_sender.callEventHandler();
 				}
 			}
 
 		private:
-			ISender* m_sender;
+			Messager m_sender;
 		};
 		
 		template<typename T>
-		class OnClose : private ISender
+		class OnClose
 		{
 		public:
 			OnClose(Event* event = nullptr)
-				: ISender(event)
+				: m_sender((ISender*)this, event)
 			{};
 
 			Event* getCloseEvent() {
-				return getEvent();
+				return m_sender.getEventHandler();
 			}
 
 			T* setCloseEvent(Event* event) {
-				setEvent(event);
+				m_sender.setEvent(event);
 				return (T*)this;
 			}
 
 			void sendCloseEvent() {
-				callEventHandler();
+				m_sender.callEventHandler();
 			}
+
+		private:
+			Messager m_sender;
 		};
 	};
 };

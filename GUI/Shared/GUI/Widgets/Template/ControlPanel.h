@@ -33,7 +33,7 @@ namespace GUI::Widget::Template
 					.beginContainer(&m_menu);
 
 				m_menuEvent = new Events::EventUI(EVENT_LAMBDA(info) {
-					auto sender = static_cast<MenuItem*>(info->getOwner());
+					auto sender = static_cast<MenuItem*>(info->getSender());
 					m_controlPanel->onSelectedContainer(sender->m_container);
 					m_selectedContainer = sender->m_container;
 				});

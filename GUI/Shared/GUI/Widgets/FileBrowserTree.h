@@ -100,11 +100,14 @@ namespace GUI::Widget
 		}
 
 		class File
-			: public Elem, public Attribute::Name<File>, public Events::OnSpecial, public Events::OnRightMouseClick<File>
+			: public Elem,
+			public Attribute::Name<File>,
+			public Events::OnSpecial<File>,
+			public Events::OnRightMouseClick<File>
 		{
 		public:
 			File(std::string name, Events::Event* event = nullptr, Events::Event* rightClick = nullptr)
-				: Attribute::Name<File>(name), Events::OnSpecial(event), Events::OnRightMouseClick<File>(rightClick)
+				: Attribute::Name<File>(name), Events::OnSpecial<File>(event), Events::OnRightMouseClick<File>(rightClick)
 			{}
 
 			Directory* getParentDir() {
@@ -171,11 +174,13 @@ namespace GUI::Widget
 		};
 
 		class DirToRename
-			: public Directory, public Events::OnSpecial, public Attribute::Rename<DirToRename>
+			: public Directory,
+			public Events::OnSpecial<DirToRename>,
+			public Attribute::Rename<DirToRename>
 		{
 		public:
 			DirToRename(FS::Directory dir, Events::Event* event = nullptr, std::string preName = "")
-				: Directory("Enter a new name", dir), Events::OnSpecial(event), Attribute::Rename<DirToRename>(preName)
+				: Directory("Enter a new name", dir), Events::OnSpecial<DirToRename>(event), Attribute::Rename<DirToRename>(preName)
 			{}
 
 			void render() override {

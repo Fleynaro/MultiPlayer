@@ -9,8 +9,9 @@ namespace GUI::Units
 	class Type
 		:
 		public Elem,
-		public Attribute::Font<Type>,
-		private Events::OnLeftMouseClick<Type>
+		public Events::ISender,
+		public Events::OnLeftMouseClick<Type>,
+		public Attribute::Font<Type>
 	{
 	public:
 		Type(CE::Type::Type* type, Events::Event* event = nullptr)
