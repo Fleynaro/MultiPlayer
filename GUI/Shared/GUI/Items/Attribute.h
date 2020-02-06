@@ -122,20 +122,40 @@ namespace GUI
 		class Id
 		{
 		public:
-			Id(std::string id)
+			Id(int id = 0)
 				: m_id(id)
 			{};
 
-			std::string getId() {
+			int getId() {
 				return m_id;
 			}
 
-			T* setId(std::string id) {
+			std::string getStrId() {
+				return std::to_string(getId());
+			}
+
+			T* setId(int id) {
 				m_id = id;
 				return (T*)this;
 			}
+
+			void pushIdParam() {
+				if (isDefined()) {
+					ImGui::PushID(m_id);
+				}
+				else {
+					ImGui::PushID(this);
+				}
+			}
+
+			void popIdParam() {
+				ImGui::PopID();
+			}
 		private:
-			std::string m_id;
+			int m_id;
+			bool isDefined() {
+				return m_id != 0;
+			}
 		};
 
 		template<typename T1, typename T2, T2 defFlag = 0>

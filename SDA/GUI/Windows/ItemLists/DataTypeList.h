@@ -10,7 +10,7 @@ namespace GUI::Window
 	class DataTypeList : public Template::ItemList
 	{
 	public:
-		class TypeFilter : public Filter
+		class TypeFilter : public FilterManager::Filter
 		{
 		public:
 			TypeFilter(const std::string& name, DataTypeList* dataTypeList)
@@ -18,7 +18,6 @@ namespace GUI::Window
 			{}
 
 			virtual bool checkFilter(API::Type::Type* type) = 0;
-
 		protected:
 			DataTypeList* m_dataTypeList;
 		};
@@ -50,7 +49,7 @@ namespace GUI::Window
 				{ std::make_pair("Signature", Category::Signature) }
 			};
 
-			CategoryFilter(DataTypeList* dataTypeList, const StyleSettings& style)
+			CategoryFilter(DataTypeList* dataTypeList)
 				: TypeFilter("Category filter", dataTypeList)
 			{
 				buildHeader("Filter types by category.");
@@ -62,7 +61,7 @@ namespace GUI::Window
 								updateFilter();
 							})
 						))
-						->setWidth(style.m_leftWidth - 10),
+						->setWidth(dataTypeList->m_styleSettings->m_leftWidth - 10),
 						(Item**)& m_categoryList
 					);
 
@@ -93,6 +92,28 @@ namespace GUI::Window
 			Category m_categorySelected = Category::All;
 		};
 
+		class TypeFilterCreator : public FilterManager::FilterCreator
+		{
+		public:
+			TypeFilterCreator(DataTypeList* dataTypeList)
+				: m_dataTypeList(dataTypeList), FilterCreator(dataTypeList->getFilterManager())
+			{
+				addItem("Category filter");
+			}
+
+			FilterManager::Filter* createFilter(int idx) override
+			{
+				switch (idx)
+				{
+				case 0: return new CategoryFilter(m_dataTypeList);
+				}
+				return nullptr;
+			}
+
+		private:
+			DataTypeList* m_dataTypeList;
+		};
+
 		class TypeItem : public Item
 		{
 		public:
@@ -104,15 +125,10 @@ namespace GUI::Window
 			}
 		};
 
-		DataTypeList(TypeManager* typeManager, const StyleSettings& style = StyleSettings())
-			: m_typeManager(typeManager), ItemList("Data type list", style)
+		DataTypeList(TypeManager* typeManager)
+			: m_typeManager(typeManager), ItemList("Data type list", new TypeFilterCreator(this))
 		{
-			addTypeFilter(new CategoryFilter(this, style));
-		}
-
-		void addTypeFilter(TypeFilter* filter) {
-			addFilter(filter);
-			m_typeFiltes.push_back(filter);
+			getFilterManager()->addFilter(new CategoryFilter(this));
 		}
 
 		void onSearch(const std::string& value) override
@@ -131,12 +147,9 @@ namespace GUI::Window
 		}
 
 		bool checkAllFilters(API::Type::Type* type) {
-			for (auto filter : m_typeFiltes) {
-				if (filter->isDefined() && !filter->checkFilter(type)) {
-					return false;
-				}
-			}
-			return true;
+			return getFilterManager()->check([&type](FilterManager::Filter* filter) {
+				return static_cast<TypeFilter*>(filter)->checkFilter(type);
+			});
 		}
 	private:
 		TypeManager* m_typeManager;

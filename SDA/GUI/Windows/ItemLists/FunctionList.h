@@ -13,7 +13,7 @@ namespace GUI::Window
 	class FunctionList : public Template::ItemList
 	{
 	public:
-		class FunctionFilter : public Filter
+		class FunctionFilter : public FilterManager::Filter
 		{
 		public:
 			FunctionFilter(const std::string& name, FunctionList* functionList)
@@ -59,7 +59,7 @@ namespace GUI::Window
 				{ std::make_pair("Virtual", Category::Virtual) }
 			};
 
-			CategoryFilter(FunctionList* functionList, const StyleSettings& style)
+			CategoryFilter(FunctionList* functionList)
 				: FunctionFilter("Category filter", functionList)
 			{
 				buildHeader("Filter function by category.");
@@ -71,7 +71,7 @@ namespace GUI::Window
 								updateFilter();
 							})
 						))
-						->setWidth(style.m_leftWidth - 10),
+						->setWidth(functionList->m_styleSettings->m_leftWidth - 10),
 						(Item**)& m_categoryList
 					);
 
@@ -163,6 +163,32 @@ namespace GUI::Window
 			Function::Tag::TagCollection m_collection;
 		};
 
+		class FunctionFilterCreator : public FilterManager::FilterCreator
+		{
+		public:
+			FunctionFilterCreator(FunctionList* funcList)
+				: m_funcList(funcList), FilterCreator(funcList->getFilterManager())
+			{
+				addItem("Category filter");
+				addItem("Class filter");
+				addItem("Tag filter");
+			}
+
+			FilterManager::Filter* createFilter(int idx) override
+			{
+				switch (idx)
+				{
+				case 0: return new CategoryFilter(m_funcList);
+				case 1: return new ClassFilter(m_funcList);
+				case 2: return new FuncTagFilter(m_funcList);
+				}
+				return nullptr;
+			}
+
+		private:
+			FunctionList* m_funcList;
+		};
+
 		class FunctionItem : public Item
 		{
 		public:
@@ -204,12 +230,12 @@ namespace GUI::Window
 			Units::Signature* m_signature;
 		};
 
-		FunctionList(FunctionManager* funcManager, const StyleSettings& style = StyleSettings())
-			: m_funcManager(funcManager), ItemList("Function list", style)
+		FunctionList(FunctionManager* funcManager)
+			: m_funcManager(funcManager), ItemList("Function list", new FunctionFilterCreator(this))
 		{
-			getFilters().addFilter(FilterConditionList::And, new CategoryFilter(this, style));
-			getFilters().addFilter(FilterConditionList::And, new ClassFilter(this));
-			getFilters().addFilter(FilterConditionList::And, new FuncTagFilter(this));
+			getFilterManager()->addFilter(new CategoryFilter(this));
+			getFilterManager()->addFilter(new ClassFilter(this));
+			getFilterManager()->addFilter(new FuncTagFilter(this));
 
 			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
 				auto sender = static_cast<Events::EventHook*>(info->getSender());
@@ -231,11 +257,15 @@ namespace GUI::Window
 			int maxCount = 300;
 			for (auto& it : m_funcManager->getFunctions()) {
 				if (checkOnInputValue(it.second, value) && checkAllFilters(it.second)) {
-					add(new FunctionItem(it.second, m_openFunctionCP));//MY TODO*: ленивая загрузка, при открытии только
+					add(createFuncItem(it.second, m_openFunctionCP));//MY TODO*: ленивая загрузка, при открытии только
 				}
 				if (--maxCount == 0)
 					break;
 			}
+		}
+
+		virtual FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) {
+			return new FunctionItem(function, event);
 		}
 
 		bool checkOnInputValue(API::Function::Function* function, const std::string& value) {
@@ -244,16 +274,57 @@ namespace GUI::Window
 		}
 
 		bool checkAllFilters(API::Function::Function* function) {
-			for (auto filter : m_funcFiltes) {
-				if (filter->isDefined() && !filter->checkFilter(function)) {
-					return false;
-				}
-			}
-			return true;
+			return getFilterManager()->check([&function](FilterManager::Filter* filter) {
+				return static_cast<FunctionFilter*>(filter)->checkFilter(function);
+			});
 		}
 
 		FunctionManager* m_funcManager;
 	private:
 		Events::Event* m_openFunctionCP;
+	};
+
+	//MY TODO: checkbox
+	class FuncSelectList : public FunctionList
+	{
+	public:
+		class FunctionItemWithCheckBox : public FunctionItem
+		{
+		public:
+			FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, Events::Event* eventSelectFunction)
+				: FunctionItem(function, event)
+			{}
+
+			void renderHeader() override {
+				Item::render();
+
+				bool st = false;
+				ImGui::SameLine();
+				//MY TODO: checkbox
+				if (ImGui::Checkbox("", &st)) {
+
+				}
+			}
+
+		private:
+			//checkbox item
+		};
+
+		FuncSelectList(FunctionManager* funcManager)
+			: FunctionList(funcManager)
+		{
+			m_eventSelectFunction = new Events::EventUI(EVENT_LAMBDA(info) {
+				auto sender = static_cast<Events::EventHook*>(info->getSender());
+				auto function = (API::Function::Function*)sender->getUserDataPtr();
+
+			});
+		}
+
+		FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) override {
+			return new FunctionItemWithCheckBox(function, event, m_eventSelectFunction);
+		}
+	private:
+		std::list<API::Function::Function*> m_selectedFunctions;
+		Events::Event* m_eventSelectFunction;
 	};
 };

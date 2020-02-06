@@ -182,6 +182,10 @@ namespace GUI
 				: m_eventHandler(eventHandler), EventHandler(nullptr), m_userDataPtr(userDataPtr)
 			{}
 
+			EventHook(void* userDataPtr)
+				: EventHook(nullptr, userDataPtr)
+			{}
+
 			void callHandler(EventMessage::Type message) override {
 				message->changeSender(this);
 				message->changeEventHandler(m_eventHandler);
@@ -190,6 +194,10 @@ namespace GUI
 
 			void* getUserDataPtr() {
 				return m_userDataPtr;
+			}
+
+			void setEventHandler(EventHandler* eventHandler) {
+				m_eventHandler = eventHandler;
 			}
 		private:
 			EventHandler* m_eventHandler;
@@ -233,6 +241,11 @@ namespace GUI
 
 			Event* getSpecialEvent() {
 				return m_sender.getEventHandler();
+			}
+
+			T* setSpecialEvent(Event* event) {
+				m_sender.setEvent(event);
+				return (T*)this;
 			}
 
 			void sendSpecialEvent() {

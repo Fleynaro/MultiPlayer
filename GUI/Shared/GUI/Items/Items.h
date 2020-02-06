@@ -174,6 +174,10 @@ namespace GUI
 		void setCanBeRemoved(bool state) {
 			m_canBeRemoved = state;
 		}
+	protected:
+		std::string getUniqueId() {
+			return "##" + std::to_string((std::uintptr_t)this);
+		}
 	private:
 		Item* m_parent = nullptr;
 		bool m_display = true;
@@ -414,6 +418,7 @@ namespace GUI
 
 	class TabItem :
 		public Container,
+		public Attribute::Id<TabItem>,
 		public Attribute::Name<TabItem>,
 		public Events::OnRightMouseClick<TabItem>
 	{
@@ -423,7 +428,10 @@ namespace GUI
 		{}
 
 		void render() override {
+			pushIdParam();
 			m_open = ImGui::BeginTabItem(getName().c_str());
+			popIdParam();
+
 			sendRightMouseClickEvent();
 			if (isOpen()) {
 				Container::render();
@@ -440,7 +448,9 @@ namespace GUI
 
 
 	class TabBar
-		: public Container, public Attribute::Name<TabBar>
+		: public Container,
+		public Attribute::Id<TabBar>,
+		public Attribute::Name<TabBar>
 	{
 	public:
 		TabBar(std::string name)
@@ -451,7 +461,11 @@ namespace GUI
 		TabItem& beginTabItem(std::string name, TabItem** ptr);
 
 		void render() override {
-			if (ImGui::BeginTabBar(getName().c_str())) {
+			pushIdParam();
+			bool isOpen = ImGui::BeginTabBar(getName().c_str());
+			popIdParam();
+
+			if (isOpen) {
 				Container::render();
 				ImGui::EndTabBar();
 			}
@@ -460,22 +474,25 @@ namespace GUI
 
 
 	class TreeNode
-		: public Container, public Attribute::Name<TreeNode>, public Attribute::Collapse<TreeNode>
+		: public Container,
+		public Attribute::Id<TreeNode>,
+		public Attribute::Name<TreeNode>,
+		public Attribute::Collapse<TreeNode>
 	{
 	public:
-		TreeNode(const std::string& name, bool open = false)
+		TreeNode(const std::string& name = "##", bool open = false)
 			: Attribute::Name<TreeNode>(name), Attribute::Collapse<TreeNode>(open)
-		{}
-
-		TreeNode(bool open = false)
-			: TreeNode("##" + std::to_string((long long)this), open)
 		{}
 
 		void render() override {
 			if (isOpen()) {
 				ImGui::SetNextTreeNodeOpen(true);
 			}
+
+			pushIdParam();
 			bool isOpen = ImGui::TreeNode(getName().c_str());
+			popIdParam();
+
 			if (getName().find("##") != std::string::npos) {
 				ImGui::SameLine();
 				renderHeader();
@@ -491,15 +508,20 @@ namespace GUI
 	};
 
 
-	class ColContainer : public TreeNode
+	class ColContainer
+		: public TreeNode
 	{
 	public:
-		ColContainer(std::string name, bool open = true)
+		ColContainer(const std::string& name, bool open = true)
 			: TreeNode(name, open)
 		{}
 
 		void render() override {
-			if (ImGui::CollapsingHeader(getName().c_str(), m_closeBtn ? &m_open : nullptr)) {
+			pushIdParam();
+			bool isOpen = ImGui::CollapsingHeader(getName().c_str(), m_closeBtn ? &m_open : nullptr);
+			popIdParam();
+
+			if (isOpen) {
 				Container::render();
 			}
 		}
@@ -521,12 +543,15 @@ namespace GUI
 		public Attribute::Flags<Container, ImGuiWindowFlags_, ImGuiWindowFlags_::ImGuiWindowFlags_None>
 	{
 	public:
-		ChildContainer(std::string id)
-			: Attribute::Id<ChildContainer>(id)
+		ChildContainer(const std::string& name)
 		{}
 
 		void render() override {
-			if (ImGui::BeginChild(getId().c_str(), ImVec2(m_width, m_height), m_border, getFlags())) {
+			pushIdParam();
+			bool isOpen = ImGui::BeginChild("", ImVec2(m_width, m_height), m_border, getFlags());
+			popIdParam();
+
+			if (isOpen) {
 				setScrollbarYParam();
 				Container::render();
 				ImGui::EndChild();
@@ -560,7 +585,7 @@ namespace GUI
 	class MenuContainer : public TreeNode
 	{
 	public:
-		MenuContainer(std::string name, bool open = true)
+		MenuContainer(const std::string& name, bool open = true)
 			: TreeNode(name, open)
 		{}
 
@@ -1120,6 +1145,7 @@ namespace GUI
 				: public Elem,
 				public Events::ISender,
 				public Events::OnSpecial<IButton>,
+				public Attribute::Id<IButton>,
 				public Attribute::Name<IButton>
 			{
 			public:
@@ -1142,11 +1168,13 @@ namespace GUI
 				void render() override
 				{
 					pushFontParam();
+					pushIdParam();
 
 					if (ImGui::Button(getName().c_str(), ImVec2(getWidth(), getHeight()))) {
 						sendSpecialEvent();
 					}
 
+					popIdParam();
 					popFontParam();
 				}
 			};
@@ -1163,11 +1191,13 @@ namespace GUI
 				void render() override
 				{
 					pushFontParam();
+					pushIdParam();
 
 					if (ImGui::SmallButton(getName().c_str())) {
 						sendSpecialEvent();
 					}
 
+					popIdParam();
 					popFontParam();
 				}
 			};
@@ -1181,6 +1211,7 @@ namespace GUI
 				: public Elem,
 				public Events::ISender,
 				public Events::OnSpecial<ISlider<T>>,
+				public Attribute::Id<ISlider<T>>,
 				public Attribute::Name<ISlider<T>>
 			{
 			public:
@@ -1228,9 +1259,11 @@ namespace GUI
 
 				void render() override
 				{
+					pushIdParam();
 					if (ImGui::SliderFloat(getName().c_str(), &m_value, m_min, m_max)) {
 						sendSpecialEvent();
 					}
+					popIdParam();
 				}
 			};
 
@@ -1244,9 +1277,11 @@ namespace GUI
 
 				void render() override
 				{
+					pushIdParam();
 					if (ImGui::SliderInt(getName().c_str(), &m_value, m_min, m_max)) {
 						sendSpecialEvent();
 					}
+					popIdParam();
 				}
 			};
 		};
@@ -1299,6 +1334,7 @@ namespace GUI
 				: public Elem,
 				public Events::ISender,
 				public Events::OnSpecial<IInput>,
+				public Attribute::Id<IInput>,
 				public Attribute::Name<IInput>
 			{
 			public:
@@ -1323,11 +1359,13 @@ namespace GUI
 				void render() override {
 					pushWidthParam();
 					pushFontParam();
+					pushIdParam();
 
 					if (ImGui::InputText(getName().c_str(), m_inputValue.data(), m_size)) {
 						sendSpecialEvent();
 					}
 
+					popIdParam();
 					popFontParam();
 					popWidthParam();
 				}
@@ -1357,11 +1395,13 @@ namespace GUI
 
 				void render() override {
 					pushWidthParam();
+					pushIdParam();
 
 					if (ImGui::InputFloat(getName().c_str(), &m_value, m_step)) {
 						sendSpecialEvent();
 					}
 
+					popIdParam();
 					popWidthParam();
 				}
 
@@ -1390,11 +1430,13 @@ namespace GUI
 
 				void render() override {
 					pushWidthParam();
+					pushIdParam();
 
 					if (ImGui::InputDouble(getName().c_str(), &m_value, m_step)) {
 						sendSpecialEvent();
 					}
 
+					popIdParam();
 					popWidthParam();
 				}
 
@@ -1423,11 +1465,13 @@ namespace GUI
 
 				void render() override {
 					pushWidthParam();
+					pushIdParam();
 
 					if (ImGui::InputInt(getName().c_str(), &m_value, m_step)) {
 						sendSpecialEvent();
 					}
 
+					popIdParam();
 					popWidthParam();
 				}
 
@@ -1550,7 +1594,7 @@ namespace GUI
 				public Attribute::Name<RadioBtn>
 			{
 			public:
-				RadioBtn(std::string name, int id, Events::Event* event = nullptr)
+				RadioBtn(const std::string& name, int id, Events::Event* event = nullptr)
 					: Attribute::Name<RadioBtn>(name), List::Item(event, id)
 				{}
 
@@ -1568,7 +1612,7 @@ namespace GUI
 				public Attribute::Name<MenuItem>
 			{
 			public:
-				MenuItem(std::string name, int id, Events::Event* event = nullptr)
+				MenuItem(const std::string& name, int id, Events::Event* event = nullptr)
 					: Attribute::Name<MenuItem>(name), List::Item(event, id)
 				{}
 
@@ -1586,11 +1630,12 @@ namespace GUI
 				: public Elem,
 				public Events::ISender,
 				public Events::OnSpecial<ListBox>,
+				public Attribute::Id<ListBox>,
 				public Attribute::Name<ListBox>,
 				public Attribute::Width<ListBox>
 			{
 			public:
-				ListBox(std::string name, int selected = 0, Events::Event * event = nullptr)
+				ListBox(const std::string& name, int selected = 0, Events::Event * event = nullptr)
 					: Attribute::Name<ListBox>(name), m_selected(selected), Events::OnSpecial<ListBox>(event)
 				{}
 
@@ -1599,8 +1644,11 @@ namespace GUI
 					if (m_items.empty())
 						return;
 					pushWidthParam();
+					pushIdParam();
+					bool isClicked = ImGui::ListBox(getName().c_str(), &m_selected, &m_items[0], (int)m_items.size(), m_height);
+					popIdParam();
 
-					if (ImGui::ListBox(getName().c_str(), &m_selected, &m_items[0], (int)m_items.size(), m_height)) {
+					if (isClicked) {
 						sendSpecialEvent();
 					}
 
@@ -1641,6 +1689,7 @@ namespace GUI
 				: public Elem,
 				public Events::ISender,
 				public Events::OnSpecial<ListBoxDyn>,
+				public Attribute::Id<ListBoxDyn>,
 				public Attribute::Name<ListBoxDyn>,
 				public Attribute::Width<ListBoxDyn>
 			{
@@ -1648,7 +1697,7 @@ namespace GUI
 				using ItemListType = std::pair<std::vector<const char*>, std::vector<void*>>;
 				using CallbackType = std::function<ItemListType()>;
 
-				ListBoxDyn(std::string name, int selected = 0, Events::Event * event = nullptr)
+				ListBoxDyn(const std::string& name, int selected = 0, Events::Event * event = nullptr)
 					: Attribute::Name<ListBoxDyn>(name), m_selected(selected), Events::OnSpecial<ListBoxDyn>(event)
 				{}
 
@@ -1657,8 +1706,11 @@ namespace GUI
 					if (m_items.size() == 0)
 						return;
 					pushWidthParam();
+					pushIdParam();
+					bool isClicked = ImGui::ListBoxHeader(getName().c_str(), (int)m_items.size(), m_height);
+					popIdParam();
 
-					if (ImGui::ListBoxHeader(getName().c_str(), (int)m_items.size(), m_height)) {
+					if (isClicked) {
 						int i = 0;
 						for (auto it : m_items) {
 							if (ImGui::Selectable(it.first.c_str(), i == m_selected)) {
@@ -1730,14 +1782,18 @@ namespace GUI
 			class Combo : public ListBox
 			{
 			public:
-				Combo(std::string name, int selected = 0, Events::Event * event = nullptr)
+				Combo(const std::string& name, int selected = 0, Events::Event * event = nullptr)
 					: ListBox(name, selected, event)
 				{}
 
 				void render() override
 				{
 					pushWidthParam();
-					if (ImGui::Combo(getName().c_str(), &m_selected, &m_items[0], (int)m_items.size(), m_height)) {
+					pushIdParam();
+					bool isClicked = ImGui::Combo(getName().c_str(), &m_selected, &m_items[0], (int)m_items.size(), m_height);
+					popIdParam();
+
+					if (isClicked) {
 						sendSpecialEvent();
 					}
 					popWidthParam();
@@ -1748,6 +1804,7 @@ namespace GUI
 				: public Elem,
 				public Events::ISender,
 				public Events::OnSpecial<MultiCombo>,
+				public Attribute::Id<MultiCombo>,
 				public Attribute::Name<MultiCombo>,
 				public Attribute::Width<MultiCombo>,
 				public Attribute::Flags<
@@ -1762,14 +1819,18 @@ namespace GUI
 					void* m_userPtr = nullptr;
 				};
 			public:
-				MultiCombo(std::string name, Events::Event* event = nullptr)
+				MultiCombo(const std::string& name, Events::Event* event = nullptr)
 					: Attribute::Name<MultiCombo>(name), Events::OnSpecial<MultiCombo>(event)
 				{}
 
 				void render() override
 				{
 					pushWidthParam();
-					if (ImGui::BeginCombo(getName().c_str(), getSelectedCategories().c_str())) {
+					pushIdParam();
+					bool isClicked = ImGui::BeginCombo(getName().c_str(), getSelectedCategories().c_str());
+					popIdParam();
+
+					if (isClicked) {
 
 						for (auto& item : m_items) {
 							if (ImGui::Selectable(item.m_name.c_str(), &item.m_selected, getFlags())) {
@@ -1830,7 +1891,7 @@ namespace GUI
 				public Attribute::Shortcut<Item>
 			{
 			public:
-				Item(std::string name, Events::Event* event = nullptr, bool enable = true)
+				Item(const std::string& name, Events::Event* event = nullptr, bool enable = true)
 					: Events::OnSpecial<Item>(event), Attribute::Name<Item>(name), Attribute::Enable<Item>(enable)
 				{}
 
@@ -1847,7 +1908,7 @@ namespace GUI
 				public Attribute::Select<SelItem>
 			{
 			public:
-				SelItem(std::string name, Events::Event* event = nullptr, bool select = false, bool enable = true)
+				SelItem(const std::string& name, Events::Event* event = nullptr, bool select = false, bool enable = true)
 					: Item(name, event, enable), Attribute::Select<SelItem>(select)
 				{}
 
