@@ -128,7 +128,7 @@ BOOL WINAPI CreateProcessA_proxy(
 	ResumeThread(lpProcessInformation->hThread);
 
 
-	Sleep(500);
+	Sleep(700);
 
 
 	//CloseHandle(lpProcessInformation->hProcess);

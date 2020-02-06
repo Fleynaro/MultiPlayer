@@ -37,6 +37,50 @@ namespace GUI::Window::Template
 
 			virtual bool isDefined() = 0;
 		};
+		
+		class FilterConditionList
+		{
+		public:
+			enum Operation {
+				And,
+				AndNot,
+				Or,
+				OrNot
+			};
+
+			void addFilter(Operation operation, Filter* filter) {
+				m_filters.push_back(filter);
+				m_conditions.insert(std::make_pair(filter, operation));
+
+			}
+
+			void remove(Filter* filter) {
+				m_filters.remove(filter);
+				m_conditions.erase(filter);
+			}
+			
+			bool check(std::function<bool(Filter*)> callback) {
+				bool result = 1;
+				for (auto filter : m_filters) {
+					switch (m_conditions[filter])
+					{
+					case And:
+					case AndNot:
+						result &= callback(filter) ^ (m_conditions[filter] == AndNot);
+						break;
+					case Or:
+					case OrNot:
+						if (result |= callback(filter) ^ (m_conditions[filter] == OrNot))
+							return true;
+						break;
+					}
+				}
+				return result;
+			}
+		private:
+			std::list<Filter*> m_filters;
+			std::map<Filter*, Operation> m_conditions;
+		};
 
 		class Item : public TreeNode
 		{
@@ -125,8 +169,8 @@ namespace GUI::Window::Template
 				.end();
 		}
 		
-		void addFilter(Filter* filter) {
-			m_filtersContainer->addItem(filter);
+		FilterConditionList& getFilters() {
+			return m_filters;
 		}
 
 		void add(Item* item) {
@@ -146,5 +190,8 @@ namespace GUI::Window::Template
 		const std::string& getOldInputValue() {
 			return m_oldInputValue;
 		}
+
+		private:
+			FilterConditionList m_filters;
 	};
 };

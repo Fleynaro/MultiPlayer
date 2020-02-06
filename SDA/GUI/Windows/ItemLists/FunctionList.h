@@ -207,9 +207,9 @@ namespace GUI::Window
 		FunctionList(FunctionManager* funcManager, const StyleSettings& style = StyleSettings())
 			: m_funcManager(funcManager), ItemList("Function list", style)
 		{
-			addFunctionFilter(new CategoryFilter(this, style));
-			addFunctionFilter(new ClassFilter(this));
-			addFunctionFilter(new FuncTagFilter(this));
+			getFilters().addFilter(FilterConditionList::And, new CategoryFilter(this, style));
+			getFilters().addFilter(FilterConditionList::And, new ClassFilter(this));
+			getFilters().addFilter(FilterConditionList::And, new FuncTagFilter(this));
 
 			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
 				auto sender = static_cast<Events::EventHook*>(info->getSender());
@@ -223,11 +223,6 @@ namespace GUI::Window
 
 		~FunctionList() {
 			delete m_openFunctionCP;
-		}
-
-		void addFunctionFilter(FunctionFilter* filter) {
-			addFilter(filter);
-			m_funcFiltes.push_back(filter);
 		}
 
 		void onSearch(const std::string& value) override
@@ -259,7 +254,6 @@ namespace GUI::Window
 
 		FunctionManager* m_funcManager;
 	private:
-		std::list<FunctionFilter*> m_funcFiltes;
 		Events::Event* m_openFunctionCP;
 	};
 };
