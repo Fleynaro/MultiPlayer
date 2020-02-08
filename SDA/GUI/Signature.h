@@ -19,7 +19,7 @@ namespace GUI::Units
 		{
 		public:
 			Name(const std::string& name, Events::Event* clickEvent)
-				: Elements::Text::Text(name), Events::OnLeftMouseClick<Name>(clickEvent)
+				: Elements::Text::Text(name), Events::OnLeftMouseClick<Name>(this, clickEvent)
 			{}
 
 			void render() override {

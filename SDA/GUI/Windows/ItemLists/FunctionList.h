@@ -17,7 +17,7 @@ namespace GUI::Window
 		{
 		public:
 			FunctionFilter(const std::string& name, FunctionList* functionList)
-				: Filter(name), m_functionList(functionList)
+				: Filter(functionList->getFilterManager(), name), m_functionList(functionList)
 			{}
 
 			virtual bool checkFilter(API::Function::Function* function) = 0;
@@ -88,7 +88,7 @@ namespace GUI::Window
 					}
 				}
 				m_categorySelected = (Category)categorySelected;
-				m_functionList->update();
+				onChanged();
 			}
 
 			bool checkFilter(API::Function::Function* function) override {
@@ -293,13 +293,15 @@ namespace GUI::Window
 			FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction)
 				: FunctionItem(function, event)
 			{
-				beginHeader()
-					.sameLine()
-					.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunction));
+				(*m_header)
+					.beginReverseInserting()
+						.sameLine()
+						.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunction))
+					.endReverseInserting();
 			}
 		};
 
-		FuncSelectList(FunctionManager* funcManager)
+		FuncSelectList(FunctionManager* funcManager, Events::Event* eventSelectFunctions)
 			: FunctionList(funcManager)
 		{
 			m_eventSelectFunction = new Events::EventUI(EVENT_LAMBDA(info) {
@@ -313,6 +315,34 @@ namespace GUI::Window
 					m_selectedFunctions.remove(function);
 				}
 			});
+
+			class UpdSelectInfo : public Container
+			{
+			public:
+				UpdSelectInfo(FuncSelectList* funcSelList, Events::Event* event)
+					: m_funcSelList(funcSelList)
+				{
+					newLine();
+					newLine();
+					separator();
+					addItem(m_button = new Elements::Button::ButtonStd("Select", event));
+				}
+
+				void render() override {
+					Container::render();
+					m_button->setName("Select " + std::to_string(m_funcSelList->getSelectedFuncCount()) + " functions");
+				}
+
+				bool isShown() override {
+					return m_funcSelList->getSelectedFuncCount() > 0;
+				}
+			private:
+				FuncSelectList* m_funcSelList;
+				Elements::Button::ButtonStd* m_button;
+			};
+
+			(*m_underFilterCP)
+				.addItem(new UpdSelectInfo(this, eventSelectFunctions));
 		}
 
 		FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) override {
@@ -320,11 +350,19 @@ namespace GUI::Window
 		}
 
 		bool isFunctionSelected(API::Function::Function* function) {
-			for (auto func : m_selectedFunctions) {
+			for (auto func : getSelectedFunctions()) {
 				if (func == function)
 					return true;
 			}
 			return false;
+		}
+
+		int getSelectedFuncCount() {
+			return getSelectedFunctions().size();
+		}
+
+		std::list<API::Function::Function*>& getSelectedFunctions() {
+			return m_selectedFunctions;
 		}
 	private:
 		std::list<API::Function::Function*> m_selectedFunctions;

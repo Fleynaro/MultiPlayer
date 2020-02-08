@@ -14,7 +14,7 @@ namespace GUI::Window
 		{
 		public:
 			TypeFilter(const std::string& name, DataTypeList* dataTypeList)
-				: Filter(name), m_dataTypeList(dataTypeList)
+				: Filter(dataTypeList->getFilterManager(), name), m_dataTypeList(dataTypeList)
 			{}
 
 			virtual bool checkFilter(API::Type::Type* type) = 0;
@@ -78,7 +78,7 @@ namespace GUI::Window
 					}
 				}
 				m_categorySelected = (Category)categorySelected;
-				m_dataTypeList->update();
+				onChanged();
 			}
 
 			bool checkFilter(API::Type::Type* type) override {

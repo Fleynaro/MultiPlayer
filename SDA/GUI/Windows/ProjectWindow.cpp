@@ -14,8 +14,16 @@ ProjectWindow::ProjectWindow(Project* project)
 		new Window::DataTypeList(
 			getProject()->getProgramExe()->getTypeManager())
 	);
+
+
 	addWindow(
-		new Window::FuncSelectList(
-			getProject()->getProgramExe()->getFunctionManager())
+		m_funcSelList = new Window::FuncSelectList(
+			getProject()->getProgramExe()->getFunctionManager(),
+			new Events::EventUI(EVENT_LAMBDA(info) {
+				auto list = m_funcSelList->getSelectedFunctions();
+				list.size();
+				m_funcSelList->close();
+			})
+		)
 	);
 }

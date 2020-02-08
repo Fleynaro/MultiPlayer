@@ -17,7 +17,7 @@ namespace GUI::Units
 		Type(CE::Type::Type* type, Events::Event* event = nullptr)
 			:
 			m_type(type),
-			Events::OnLeftMouseClick<Type>(event)
+			Events::OnLeftMouseClick<Type>(this, event)
 		{}
 
 		void render() override {

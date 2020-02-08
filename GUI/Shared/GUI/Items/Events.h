@@ -272,16 +272,16 @@ namespace GUI
 		class OnSpecial
 		{
 		public:
-			OnSpecial(Event* event = nullptr)
-				: m_sender((ISender*)this, event)
+			OnSpecial(ISender* sender, Event* event = nullptr)
+				: m_messager(sender, event)
 			{};
 
 			Event* getSpecialEvent() {
-				return m_sender.getEventHandler();
+				return m_messager.getEventHandler();
 			}
 
 			T* setSpecialEvent(Event* event) {
-				m_sender.setEvent(event);
+				m_messager.setEvent(event);
 				return (T*)this;
 			}
 
@@ -290,10 +290,10 @@ namespace GUI
 			}
 
 			virtual void onSpecial() {
-				m_sender.callEventHandler();
+				m_messager.callEventHandler();
 			}
 		private:
-			Messager m_sender;
+			Messager m_messager;
 		};
 
 		enum HoverType
@@ -307,16 +307,16 @@ namespace GUI
 		class OnHovered
 		{
 		public:
-			OnHovered(Event* event = nullptr)
-				: m_sender((ISender*)this, event)
+			OnHovered(ISender* sender, Event* event = nullptr)
+				: m_messager(sender, event)
 			{};
 
 			Event* getHoveredEvent() {
-				return m_sender.getEventHandler();
+				return m_messager.getEventHandler();
 			}
 
 			T* setHoveredEvent(Event* event) {
-				m_sender.setEvent(event);
+				m_messager.setEvent(event);
 				return (T*)this;
 			}
 
@@ -341,18 +341,18 @@ namespace GUI
 			}
 
 			virtual void onHoveredUpdate() {
-				m_sender.callEventHandler(HoveredUpdate);
+				m_messager.callEventHandler(HoveredUpdate);
 			}
 
 			virtual void onHoveredIn() {
-				m_sender.callEventHandler(HoveredIn);
+				m_messager.callEventHandler(HoveredIn);
 			}
 
 			virtual void onHoveredOut() {
-				m_sender.callEventHandler(HoveredOut);
+				m_messager.callEventHandler(HoveredOut);
 			}
 		private:
-			Messager m_sender;
+			Messager m_messager;
 			bool m_isHoveredIn = false;
 		};
 
@@ -367,16 +367,16 @@ namespace GUI
 		class OnFocused
 		{
 		public:
-			OnFocused(Event* event = nullptr)
-				: m_sender((ISender*)this, event)
+			OnFocused(ISender* sender, Event* event = nullptr)
+				: m_messager(sender, event)
 			{};
 
 			Event* getFocusedEvent() {
-				return m_sender.getEventHandler();
+				return m_messager.getEventHandler();
 			}
 
 			T* setFocusedEvent(Event* event) {
-				m_sender.setEvent(event);
+				m_messager.setEvent(event);
 				return (T*)this;
 			}
 
@@ -401,18 +401,18 @@ namespace GUI
 			}
 
 			virtual void onFocusedUpdate() {
-				m_sender.callEventHandler(FocusedUpdate);
+				m_messager.callEventHandler(FocusedUpdate);
 			}
 
 			virtual void onFocusedIn() {
-				m_sender.callEventHandler(FocusedIn);
+				m_messager.callEventHandler(FocusedIn);
 			}
 
 			virtual void onFocusedOut() {
-				m_sender.callEventHandler(FocusedOut);
+				m_messager.callEventHandler(FocusedOut);
 			}
 		private:
-			Messager m_sender;
+			Messager m_messager;
 			bool m_isFocusedIn = false;
 		};
 
@@ -427,16 +427,16 @@ namespace GUI
 		class OnVisible
 		{
 		public:
-			OnVisible(Event* event = nullptr)
-				: m_sender((ISender*)this, event)
+			OnVisible(ISender* sender, Event* event = nullptr)
+				: m_messager(sender, event)
 			{};
 
 			Event* getVisibleEvent() {
-				return m_sender.getEventHandler();
+				return m_messager.getEventHandler();
 			}
 
 			T* setVisibleEvent(Event* event) {
-				m_sender.setEvent(event);
+				m_messager.setEvent(event);
 				return (T*)this;
 			}
 
@@ -461,18 +461,18 @@ namespace GUI
 			}
 
 			virtual void onVisibleUpdate() {
-				m_sender.callEventHandler(VisibleUpdate);
+				m_messager.callEventHandler(VisibleUpdate);
 			}
 
 			virtual void onVisibleOn() {
-				m_sender.callEventHandler(VisibleOn);
+				m_messager.callEventHandler(VisibleOn);
 			}
 
 			virtual void onVisibleOff() {
-				m_sender.callEventHandler(VisibleOff);
+				m_messager.callEventHandler(VisibleOff);
 			}
 		private:
-			Messager m_sender;
+			Messager m_messager;
 			bool m_isVisible = false;
 		};
 
@@ -480,16 +480,16 @@ namespace GUI
 		class OnLeftMouseClick
 		{
 		public:
-			OnLeftMouseClick(Event* event = nullptr)
-				: m_sender((ISender*)this, event)
+			OnLeftMouseClick(ISender* sender, Event* event = nullptr)
+				: m_messager(sender, event)
 			{};
 
 			Event* getLeftMouseClickEvent() {
-				return m_sender.getEventHandler();
+				return m_messager.getEventHandler();
 			}
 
 			T* setLeftMouseClickEvent(Event* event) {
-				m_sender.setEvent(event);
+				m_messager.setEvent(event);
 				return (T*)this;
 			}
 
@@ -500,26 +500,26 @@ namespace GUI
 			}
 
 			virtual void onLeftMouseClick() {
-				m_sender.callEventHandler();
+				m_messager.callEventHandler();
 			}
 		private:
-			Messager m_sender;
+			Messager m_messager;
 		};
 
 		template<typename T>
 		class OnRightMouseClick
 		{
 		public:
-			OnRightMouseClick(Event* event = nullptr)
-				: m_sender((ISender*)this, event)
+			OnRightMouseClick(ISender* sender, Event* event = nullptr)
+				: m_messager(sender, event)
 			{};
 
 			Event* getRightMouseClickEvent() {
-				return m_sender.getEventHandler();
+				return m_messager.getEventHandler();
 			}
 
 			T* setRightMouseClickEvent(Event* event) {
-				m_sender.setEvent(event);
+				m_messager.setEvent(event);
 				return (T*)this;
 			}
 
@@ -530,26 +530,26 @@ namespace GUI
 			}
 
 			virtual void onRightMouseClick() {
-				m_sender.callEventHandler();
+				m_messager.callEventHandler();
 			}
 		private:
-			Messager m_sender;
+			Messager m_messager;
 		};
 		
 		template<typename T>
 		class OnClose
 		{
 		public:
-			OnClose(Event* event = nullptr)
-				: m_sender((ISender*)this, event)
+			OnClose(ISender* sender, Event* event = nullptr)
+				: m_messager(sender, event)
 			{};
 
 			Event* getCloseEvent() {
-				return m_sender.getEventHandler();
+				return m_messager.getEventHandler();
 			}
 
 			T* setCloseEvent(Event* event) {
-				m_sender.setEvent(event);
+				m_messager.setEvent(event);
 				return (T*)this;
 			}
 
@@ -558,10 +558,10 @@ namespace GUI
 			}
 
 			virtual void onClose() {
-				m_sender.callEventHandler();
+				m_messager.callEventHandler();
 			}
 		private:
-			Messager m_sender;
+			Messager m_messager;
 		};
 	};
 };

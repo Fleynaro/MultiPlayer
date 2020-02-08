@@ -10,12 +10,13 @@ namespace GUI::Window
 
 	class IWindow :
 		public Item,
-		public Attribute::Name<IWindow>,
-		public Events::OnClose<IWindow>
+		public Events::ISender,
+		public Events::OnClose<IWindow>,
+		public Attribute::Name<IWindow>
 	{
 	public:
 		IWindow(std::string name, Container* container = new Container)
-			: Attribute::Name<IWindow>(name), m_container(container)
+			: Attribute::Name<IWindow>(name), m_container(container), Events::OnClose<IWindow>(this)
 		{}
 		~IWindow() {
 			delete m_container;

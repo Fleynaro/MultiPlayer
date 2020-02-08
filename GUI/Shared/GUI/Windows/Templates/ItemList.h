@@ -48,8 +48,8 @@ namespace GUI::Window::Template
 				public Events::ISender
 			{
 			public:
-				Filter(const std::string& name, Operation condition = And)
-					: m_condition(condition), ColContainer(name)
+				Filter(FilterManager* filterManager, const std::string& name, Operation condition = And)
+					: m_filterManager(filterManager), m_condition(condition), ColContainer(name)
 				{}
 
 				void buildHeader(const std::string description = "")
@@ -57,6 +57,7 @@ namespace GUI::Window::Template
 					m_eventChangeCondition = new Events::EventUI(EVENT_LAMBDA(info) {
 						auto sender = static_cast<FilterConditionSelector*>(info->getSender());
 						m_condition = sender->getSelectedOperation();
+						onChanged();
 					});
 
 					(*this)
@@ -70,6 +71,10 @@ namespace GUI::Window::Template
 						)
 						.text(description)
 						.separator();
+				}
+
+				void onChanged() {
+					m_filterManager->m_itemList->update();
 				}
 
 				Container& beginBody()
@@ -90,7 +95,9 @@ namespace GUI::Window::Template
 				Operation m_condition;
 				Events::Event* m_eventChangeCondition;
 				Events::EventHook* m_eventRemoveHook;
+				FilterManager* m_filterManager;
 			};
+			friend class Filter;
 
 			class FilterCreator
 				: public Elements::List::Combo
@@ -105,6 +112,7 @@ namespace GUI::Window::Template
 						if (filterIdx != -1) {
 							m_filterManager->addFilter(createFilter(filterIdx));
 							setDefault(0);
+							m_filterManager->m_itemList->update();
 						}
 					}));
 				}
@@ -113,13 +121,17 @@ namespace GUI::Window::Template
 			private:
 				FilterManager* m_filterManager;
 			};
+			friend class FilterCreator;
 
-			FilterManager() {
+			FilterManager(ItemList* itemList)
+				: m_itemList(itemList)
+			{
 				m_eventRemoveFilter = new Events::EventUI(EVENT_LAMBDA(info) {
 					auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
 					auto filter = static_cast<Filter*>(message->getUserDataPtr());
 					remove(filter);
 					delete filter;
+					m_itemList->update();
 				});
 				m_eventRemoveFilter->setCanBeRemoved(false);
 			}
@@ -170,6 +182,7 @@ namespace GUI::Window::Template
 		private:
 			std::list<Filter*> m_filters;
 			Events::Event* m_eventRemoveFilter;
+			ItemList* m_itemList;
 		};
 
 		class Item : public TreeNode
@@ -209,12 +222,10 @@ namespace GUI::Window::Template
 				m_header->render();
 			}
 
-		private:
+		protected:
 			Container* m_header = nullptr;
 		};
 
-	public:
-		Container* m_underFilterCP = nullptr;
 	private:
 		Container* m_filtersContainer = nullptr;
 		Container* m_itemsContainer = nullptr;
@@ -222,8 +233,10 @@ namespace GUI::Window::Template
 		std::string m_oldInputValue = "";
 
 	protected:
+		Container* m_underFilterCP = nullptr;
+
 		ItemList(const std::string& name, FilterManager::FilterCreator* filterCreator, StyleSettings* styleSettings = &DefaultStyleSettings)
-			: IWindow(name), m_styleSettings(styleSettings)
+			: IWindow(name), m_styleSettings(styleSettings), m_filterManager(this)
 		{
 			setWidth(m_styleSettings->m_width);
 			setHeight(m_styleSettings->m_height);

@@ -2,6 +2,7 @@
 
 using namespace GUI;
 
+//MY TODO: here errors
 Container& Container::clear() {
 	for (auto it : m_items) {
 		if (it->canBeRemovedBy(this))
@@ -12,7 +13,12 @@ Container& Container::clear() {
 }
 
 Container& Container::addItem(Item* item) {
-	m_items.push_back(item);
+	if (m_reverseInsert) {
+		m_items.push_front(item);
+	}
+	else {
+		m_items.push_back(item);
+	}
 	item->setParent(this);
 	return *this;
 }

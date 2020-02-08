@@ -47,7 +47,7 @@ public:
 	public:
 		ShortCut* m_cont;
 		HoverText(const std::string& name)
-			: Elements::Text::Text(name)
+			: Elements::Text::Text(name), Events::OnHovered<HoverText>(this)
 		{
 			m_cont = new ShortCut;
 		}

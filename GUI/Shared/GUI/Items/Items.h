@@ -268,11 +268,13 @@ namespace GUI
 	class TabBar;
 	class Container :
 		public Item,
+		public Events::ISender,
 		public Events::OnVisible<Container>,
 		public Attribute::Font<Container>
 	{
 	public:
 		Container(std::string name = "")
+			: Events::OnVisible<Container>(this)
 		{}
 		~Container() {
 			clear();
@@ -310,6 +312,16 @@ namespace GUI
 		ImGuiContainer& beginImGui(const std::function<void()> renderFunction);
 		Container& end();
 		Table::TR& endTD();
+
+		Container& beginReverseInserting() {
+			m_reverseInsert = true;
+			return *this;
+		}
+
+		Container& endReverseInserting() {
+			m_reverseInsert = false;
+			return *this;
+		}
 
 		TabBar& backToTabBar() {
 			return (TabBar&)end();
@@ -428,18 +440,19 @@ namespace GUI
 		std::list<Item*> m_items;
 		std::list<std::pair<std::byte, ColorRGBA>> m_colors;
 		std::list<std::pair<std::byte, std::pair<float, float>>> m_vars;
+		bool m_reverseInsert = false;
 	};
 
 
 	class TabItem :
 		public Container,
+		public Events::OnRightMouseClick<TabItem>,
 		public Attribute::Id<TabItem>,
-		public Attribute::Name<TabItem>,
-		public Events::OnRightMouseClick<TabItem>
+		public Attribute::Name<TabItem>
 	{
 	public:
 		TabItem(std::string name)
-			: Attribute::Name<TabItem>(name)
+			: Attribute::Name<TabItem>(name), Events::OnRightMouseClick<TabItem>(this)
 		{}
 
 		void render() override {
@@ -599,7 +612,7 @@ namespace GUI
 	{
 	public:
 		PopupContainer(bool display = false, int maxDeactiveTime = 1000)
-			: m_maxDeactiveTime(maxDeactiveTime)
+			: m_maxDeactiveTime(maxDeactiveTime), Events::OnHovered<PopupContainer>(this)
 		{}
 
 		void setVisible() {
@@ -990,7 +1003,7 @@ namespace GUI
 			{
 			public:
 				Checkbox(const std::string& name = "", bool state = false, Events::Event* event = nullptr)
-					: Attribute::Name<Checkbox>(name), m_state(state)
+					: Attribute::Name<Checkbox>(name), m_state(state), Events::OnSpecial<Checkbox>(this, event)
 				{}
 
 				void render() override
@@ -1020,7 +1033,7 @@ namespace GUI
 				public Attribute::Font<Text>
 			{
 			public:
-				Text(const std::string& text)
+				Text(const std::string& text = "")
 					: m_text(text)
 				{}
 
@@ -1034,12 +1047,12 @@ namespace GUI
 					popWidthParam();
 				}
 
-				Text* setText(std::string text) {
+				Text* setText(const std::string& text) {
 					m_text = text;
 					return this;
 				}
 
-				std::string& getText() {
+				const std::string& getText() {
 					return m_text;
 				}
 			protected:
@@ -1262,7 +1275,7 @@ namespace GUI
 			{
 			public:
 				IButton(std::string name, Events::Event* event)
-					: Attribute::Name<IButton>(name), Events::OnSpecial<IButton>(event)
+					: Attribute::Name<IButton>(name), Events::OnSpecial<IButton>(this, event)
 				{}
 			};
 
@@ -1328,7 +1341,7 @@ namespace GUI
 			{
 			public:
 				ISlider(std::string name, Events::Event* event, T min, T max, T value)
-					: Attribute::Name<ISlider>(name), Events::OnSpecial<ISlider>(event), m_min(min), m_max(max), m_value(value)
+					: Attribute::Name<ISlider>(name), Events::OnSpecial<ISlider>(this, event), m_min(min), m_max(max), m_value(value)
 				{}
 
 				void setMin(T value) {
@@ -1409,7 +1422,7 @@ namespace GUI
 			{
 			public:
 				IColorEdit(std::string name, Events::Event* event, ColorRGBA color)
-					: Attribute::Name<IColorEdit>(name), Events::OnSpecial<IColorEdit>(event), m_color(color)
+					: Attribute::Name<IColorEdit>(name), Events::OnSpecial<IColorEdit>(this, event), m_color(color)
 				{}
 
 				ColorRGBA getColor() {
@@ -1451,7 +1464,7 @@ namespace GUI
 			{
 			public:
 				IInput(const std::string& name, Events::Event* event)
-					: Attribute::Name<IInput>(name), Events::OnSpecial<IInput>(event)
+					: Attribute::Name<IInput>(name), Events::OnSpecial<IInput>(this, event)
 				{}
 			};
 
@@ -1728,7 +1741,7 @@ namespace GUI
 			{
 			public:
 				Item(Events::Event* event, int id)
-					: Events::OnSpecial<Item>(event), m_id(id)
+					: Events::OnSpecial<Item>(this, event), m_id(id)
 				{}
 
 				void setValuePtr(int* ptr) {
@@ -1803,7 +1816,7 @@ namespace GUI
 			{
 			public:
 				ListBox(const std::string& name, int selected = 0, Events::Event * event = nullptr)
-					: Attribute::Name<ListBox>(name), m_selected(selected), Events::OnSpecial<ListBox>(event)
+					: Attribute::Name<ListBox>(name), m_selected(selected), Events::OnSpecial<ListBox>(this, event)
 				{}
 
 				void render() override
@@ -1865,7 +1878,7 @@ namespace GUI
 				using CallbackType = std::function<ItemListType()>;
 
 				ListBoxDyn(const std::string& name, int selected = 0, Events::Event * event = nullptr)
-					: Attribute::Name<ListBoxDyn>(name), m_selected(selected), Events::OnSpecial<ListBoxDyn>(event)
+					: Attribute::Name<ListBoxDyn>(name), m_selected(selected), Events::OnSpecial<ListBoxDyn>(this, event)
 				{}
 
 				void render() override
@@ -1987,7 +2000,7 @@ namespace GUI
 				};
 			public:
 				MultiCombo(const std::string& name, Events::Event* event = nullptr)
-					: Attribute::Name<MultiCombo>(name), Events::OnSpecial<MultiCombo>(event)
+					: Attribute::Name<MultiCombo>(name), Events::OnSpecial<MultiCombo>(this, event)
 				{}
 
 				void render() override
@@ -2059,7 +2072,7 @@ namespace GUI
 			{
 			public:
 				Item(const std::string& name, Events::Event* event = nullptr, bool enable = true)
-					: Events::OnSpecial<Item>(event), Attribute::Name<Item>(name), Attribute::Enable<Item>(enable)
+					: Events::OnSpecial<Item>(this, event), Attribute::Name<Item>(name), Attribute::Enable<Item>(enable)
 				{}
 
 				void render() override

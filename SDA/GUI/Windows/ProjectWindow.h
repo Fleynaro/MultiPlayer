@@ -4,6 +4,8 @@
 
 namespace GUI::Window
 {
+	class FuncSelectList;
+
 	class ProjectWindow : public IWindow
 	{
 	public:
@@ -14,5 +16,6 @@ namespace GUI::Window
 		}
 	private:
 		Project* m_project;
+		FuncSelectList* m_funcSelList = nullptr;
 	};
 };
