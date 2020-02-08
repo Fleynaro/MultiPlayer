@@ -9,10 +9,17 @@ namespace GUI
 		class ISender {};
 		class EventHandler;
 
-		class EventMessage
+		class IEventMessage
 		{
 		public:
-			using Type = std::shared_ptr<EventMessage>;
+			virtual ISender* getSender() = 0;
+			virtual EventHandler* getEventHandler() = 0;
+		};
+
+		class EventMessage : public IEventMessage
+		{
+		public:
+			using Type = std::shared_ptr<IEventMessage>;
 			EventMessage(ISender* sender, EventHandler* eventHandler, uint64_t value = 0)
 				: m_sender(sender), m_eventHandler(eventHandler), m_value(value)
 			{}
@@ -21,20 +28,12 @@ namespace GUI
 				int a = 5;
 			}
 
-			ISender* getSender() {
+			ISender* getSender() override {
 				return m_sender;
 			}
 
-			void changeSender(ISender* sender) {
-				m_sender = sender;
-			}
-
-			EventHandler* getEventHandler() {
+			EventHandler* getEventHandler() override {
 				return m_eventHandler;
-			}
-
-			void changeEventHandler(EventHandler* eventHandler) {
-				m_eventHandler = eventHandler;
 			}
 
 			//MY TODO: remove if not used anywhere
@@ -111,10 +110,14 @@ namespace GUI
 			}
 
 			void callEventHandler(uint64_t value = 0) {
+				callEventHandler(EventMessage::Type(
+					new EventMessage(m_sender, m_eventHandler, value)
+				));
+			}
+
+			void callEventHandler(EventMessage::Type eventMessage) {
 				if (isEventDefined()) {
-					getEventHandler()->callHandler(EventMessage::Type(
-						new EventMessage(m_sender, m_eventHandler, value)
-					));
+					getEventHandler()->callHandler(eventMessage);
 				}
 			}
 
@@ -179,6 +182,31 @@ namespace GUI
 			inline static std::list<EventInfo::Type> m_eventMessages;
 		};
 
+		class EventHook;
+		class EventHookedMessage : public IEventMessage
+		{
+		public:
+			EventHookedMessage(EventHook* newSender, EventMessage::Type& message)
+				: m_newSender(newSender), m_message(message)
+			{}
+
+			ISender* getSender() override;
+
+			EventHandler* getEventHandler() override;
+
+			void* getUserDataPtr();
+
+			ISender* getRealSender() {
+				return m_message->getSender();
+			}
+
+			EventMessage::Type& getMessage() {
+				return m_message;
+			}
+		private:
+			EventHook* m_newSender;
+			EventMessage::Type m_message;
+		};
 
 		class EventHook : public ISender, public EventHandler
 		{
@@ -192,9 +220,9 @@ namespace GUI
 			{}
 
 			void callHandler(EventMessage::Type message) override {
-				message->changeSender(this);
-				message->changeEventHandler(m_eventHandler);
-				m_eventHandler->callHandler(message);
+				m_eventHandler->callHandler(EventMessage::Type(
+					new EventHookedMessage(this, message)
+				));
 			}
 
 			void* getUserDataPtr() {
@@ -203,6 +231,10 @@ namespace GUI
 
 			void setEventHandler(EventHandler* eventHandler) {
 				m_eventHandler = eventHandler;
+			}
+
+			EventHandler* getEventHandler() {
+				return m_eventHandler;
 			}
 		private:
 			EventHandler* m_eventHandler;

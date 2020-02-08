@@ -284,3 +284,17 @@ TabItem& TabBar::beginTabItem(std::string name, TabItem** ptr)
 	addItem(*ptr);
 	return **ptr;
 }
+
+
+using namespace GUI::Events;
+ISender* EventHookedMessage::getSender() {
+	return m_newSender;
+}
+
+EventHandler* EventHookedMessage::getEventHandler() {
+	return m_newSender->getEventHandler();
+}
+
+void* EventHookedMessage::getUserDataPtr() {
+	return m_newSender->getUserDataPtr();
+}

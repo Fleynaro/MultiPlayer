@@ -20,7 +20,7 @@ namespace GUI::Widget::Template
 			};
 
 			SideBar()
-				: ChildContainer("#sidebar")
+				: ChildContainer()
 			{}
 
 			~SideBar() {
@@ -94,7 +94,7 @@ namespace GUI::Widget::Template
 			getMainContainer()
 				.addItem(getSideBar())
 				.sameLine()
-				.beginChild("#right")
+				.beginChild()
 					//.setVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10))
 					//.setVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 10))
 					.beginImGui([&]() {

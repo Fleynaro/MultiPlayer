@@ -78,6 +78,13 @@ public:
 		WindowTest()
 			: IWindow("ImGui window for test")
 		{
+			auto eventHandler = new Events::EventStd(EVENT_LAMBDA(info) {
+				auto sender = info->getSender();
+				auto text = static_cast<Elements::Input::FilterText*>(sender);
+				auto val = text->getInputValue();
+				val.pop_back();
+			});
+
 			getMainContainer()
 				.addItem(new HoverText("text"))
 				.beginChild()
@@ -117,7 +124,7 @@ public:
 								.beginTD()
 									//.text("1 3")
 									.addItem(
-										(new Elements::Input::FilterText("enter here", 50, nullptr))
+										(new Elements::Input::FilterText("enter here", 50, eventHandler))
 										->setCompare(true)
 										->addWord("cat")
 										->addWord("dogs")

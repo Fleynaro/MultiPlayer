@@ -15,7 +15,7 @@ ProjectWindow::ProjectWindow(Project* project)
 			getProject()->getProgramExe()->getTypeManager())
 	);
 	addWindow(
-		new Window::FunctionList(
+		new Window::FuncSelectList(
 			getProject()->getProgramExe()->getFunctionManager())
 	);
 }

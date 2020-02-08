@@ -116,8 +116,8 @@ namespace GUI::Window::Template
 
 			FilterManager() {
 				m_eventRemoveFilter = new Events::EventUI(EVENT_LAMBDA(info) {
-					auto sender = static_cast<Events::EventHook*>(info->getSender());
-					auto filter = static_cast<Filter*>(sender->getUserDataPtr());
+					auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
+					auto filter = static_cast<Filter*>(message->getUserDataPtr());
 					remove(filter);
 					delete filter;
 				});

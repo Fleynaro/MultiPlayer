@@ -980,6 +980,35 @@ namespace GUI
 					ImGui::Separator();
 				}
 			};
+
+			class Checkbox
+				: public Elem,
+				public Events::ISender,
+				public Events::OnSpecial<Checkbox>,
+				public Attribute::Id<Checkbox>,
+				public Attribute::Name<Checkbox>
+			{
+			public:
+				Checkbox(const std::string& name = "", bool state = false, Events::Event* event = nullptr)
+					: Attribute::Name<Checkbox>(name), m_state(state)
+				{}
+
+				void render() override
+				{
+					pushIdParam();
+					bool isClicked = ImGui::Checkbox(getName().c_str(), &m_state);
+					popIdParam();
+					if (isClicked) {
+						sendSpecialEvent();
+					}
+				}
+
+				bool isSelected() {
+					return m_state;
+				}
+			private:
+				bool m_state;
+			};
 		};
 
 

@@ -238,8 +238,8 @@ namespace GUI::Window
 			getFilterManager()->addFilter(new FuncTagFilter(this));
 
 			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto sender = static_cast<Events::EventHook*>(info->getSender());
-				auto function = (API::Function::Function*)sender->getUserDataPtr();
+				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
+				auto function = (API::Function::Function*)message->getUserDataPtr();
 
 				getParent()->getMainContainer().clear();
 				getParent()->getMainContainer().addItem((new Widget::FunctionCP(function))->getMainContainerPtr());
@@ -284,44 +284,47 @@ namespace GUI::Window
 		Events::Event* m_openFunctionCP;
 	};
 
-	//MY TODO: checkbox
 	class FuncSelectList : public FunctionList
 	{
 	public:
 		class FunctionItemWithCheckBox : public FunctionItem
 		{
 		public:
-			FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, Events::Event* eventSelectFunction)
+			FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction)
 				: FunctionItem(function, event)
-			{}
-
-			void renderHeader() override {
-				Item::render();
-
-				bool st = false;
-				ImGui::SameLine();
-				//MY TODO: checkbox
-				if (ImGui::Checkbox("", &st)) {
-
-				}
+			{
+				beginHeader()
+					.sameLine()
+					.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunction));
 			}
-
-		private:
-			//checkbox item
 		};
 
 		FuncSelectList(FunctionManager* funcManager)
 			: FunctionList(funcManager)
 		{
 			m_eventSelectFunction = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto sender = static_cast<Events::EventHook*>(info->getSender());
-				auto function = (API::Function::Function*)sender->getUserDataPtr();
-
+				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
+				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getRealSender());
+				auto function = (API::Function::Function*)message->getUserDataPtr();
+				if (chekbox->isSelected()) {
+					m_selectedFunctions.push_back(function);
+				}
+				else {
+					m_selectedFunctions.remove(function);
+				}
 			});
 		}
 
 		FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) override {
-			return new FunctionItemWithCheckBox(function, event, m_eventSelectFunction);
+			return new FunctionItemWithCheckBox(function, event, isFunctionSelected(function), new Events::EventHook(m_eventSelectFunction, function));
+		}
+
+		bool isFunctionSelected(API::Function::Function* function) {
+			for (auto func : m_selectedFunctions) {
+				if (func == function)
+					return true;
+			}
+			return false;
 		}
 	private:
 		std::list<API::Function::Function*> m_selectedFunctions;
