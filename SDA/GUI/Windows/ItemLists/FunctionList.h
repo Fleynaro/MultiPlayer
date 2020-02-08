@@ -287,6 +287,34 @@ namespace GUI::Window
 	class FuncSelectList : public FunctionList
 	{
 	public:
+		class SelectedFilter : public FunctionFilter
+		{
+		public:
+			SelectedFilter(FuncSelectList* functionList)
+				: FunctionFilter("Selected function filter", functionList)
+			{
+				buildHeader("Filter function by selected.");
+				beginBody()
+					.addItem(
+						m_cb = new Elements::Generic::Checkbox("show selected only", false,
+							new Events::EventUI(EVENT_LAMBDA(info) {
+								onChanged();
+							})
+						)
+					);
+			}
+
+			bool checkFilter(API::Function::Function* function) override {
+				return static_cast<FuncSelectList*>(m_functionList)->isFunctionSelected(function);
+			}
+
+			bool isDefined() override {
+				return m_cb->isSelected();
+			}
+		private:
+			Elements::Generic::Checkbox* m_cb;
+		};
+
 		class FunctionItemWithCheckBox : public FunctionItem
 		{
 		public:
@@ -304,6 +332,8 @@ namespace GUI::Window
 		FuncSelectList(FunctionManager* funcManager, Events::Event* eventSelectFunctions)
 			: FunctionList(funcManager)
 		{
+			getFilterManager()->addFilter(new SelectedFilter(this));
+
 			m_eventSelectFunction = new Events::EventUI(EVENT_LAMBDA(info) {
 				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
 				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getRealSender());

@@ -8,6 +8,7 @@ using namespace CE;
 
 namespace GUI::Units
 {
+	//MY TODO: for func def and decl
 	class Signature
 		: public Container
 	{
@@ -225,5 +226,9 @@ namespace GUI::Units
 		Function::Function* getFunction() {
 			return m_function->getFunction();
 		}
+
+		/*API::Function::FunctionDecl* getFunctionDecl() {
+			return m_functionDecl;
+		}*/
 	};
 };

@@ -363,7 +363,7 @@ int main()
 //MY TODO*: 10.6) больше вразумительных событий: onHoverIn, onHoverOut(юзаются в toolDesc: create и remove); onShow, onHide(ленивая иницилизация)
 //MY TODO*: 10.6.1) Можно просто по событию hover создать/показать(если передался) tooldesc, держать в памяти до hoverOut и delete. Т.е. вручную управляем
 //MY TODO*: 10.7) context menu - по пкм
-//MY TODO*: 10.8)
+//MY TODO*: 10.8) address viewer(link) and copy to clipboard
 
 /*
 	Важно: время жизни объектов UI <= время жизни сущностей программы -> значит можно хранить указатели на объекты не хадумываясь

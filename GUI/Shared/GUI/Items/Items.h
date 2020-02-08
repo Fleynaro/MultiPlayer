@@ -514,7 +514,7 @@ namespace GUI
 
 		void render() override {
 			if (isOpen()) {
-				ImGui::SetNextTreeNodeOpen(true);
+				ImGui::SetNextItemOpen(true);
 			}
 
 			pushIdParam();
@@ -529,6 +529,9 @@ namespace GUI
 			if (isOpen) {
 				Container::render();
 				ImGui::TreePop();
+			}
+			else {
+				close();
 			}
 		}
 
