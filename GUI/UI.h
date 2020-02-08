@@ -16,145 +16,97 @@ public:
 	
 	}
 
-	class ControlPanel : public IWidget
+	class PopupContainer
+		: public Container,
+		private Events::OnHovered<PopupContainer>
 	{
 	public:
-		class SideBar : public ChildContainer, public IInit
-		{
-		public:
-			class MenuItem : public Elements::Button::ButtonStd
-			{
-			public:
-				Container* m_container;
+		PopupContainer(bool display = false, int maxTimeWaitToHideMs = 1000)
+			: m_display(display), m_maxTimeWaitToHideMs(maxTimeWaitToHideMs)
+		{}
 
-				MenuItem(const std::string& name, Container* container, Events::Event* event)
-					: Elements::Button::ButtonStd(name, event), m_container(container)
-				{}
-			};
-
-			SideBar()
-				: ChildContainer("#sidebar")
-			{}
-
-			~SideBar() {
-				delete m_menuEvent;
+		bool isShown() override {
+			if (m_lastHoveredOut != 0 &&
+				GetTickCount64() - m_lastHoveredOut >= m_maxTimeWaitToHideMs) {
+				m_display = false;
+				ImGui::CloseCurrentPopup();
 			}
 
-			void init() override {
-				(*this)
-					.setWidth(getWidth())
-					.beginContainer(&m_menu);
-
-				m_menuEvent = new Events::EventUI(EVENT_LAMBDA(info) {
-					auto sender = static_cast<MenuItem*>(info->getOwner());
-					m_controlPanel->onSelectedContainer(sender->m_container);
-					m_selectedContainer = sender->m_container;
-				});
-			}
-
-			void addMenuItem(const std::string& name, Container* container)
-			{
-				getMenu()
-					.addItem(
-						(new MenuItem(
-							name,
-							container,
-							m_menuEvent
-						))
-						->setWidth(getWidth())
-						->setHeight(getMenuItemHeight())
-					);
-			}
-
-			virtual int getWidth() {
-				return 200;
-			}
-
-			virtual int getMenuItemHeight() {
-				return 30;
-			}
-
-			Container& getMenu() {
-				return *m_menu;
-			}
-
-			void setControlPanel(ControlPanel* controlPanel) {
-				m_controlPanel = controlPanel;
-			}
-
-			void setSelectedContainer(Container* container) {
-				m_selectedContainer = container;
-			}
-
-			Container* getSelectedContainer() {
-				return m_selectedContainer;
-			}
-		protected:
-			ControlPanel* m_controlPanel;
-			Container* m_menu;
-			Container* m_selectedContainer = nullptr;
-		private:
-			Events::EventUI* m_menuEvent = nullptr;
-		};
-
-		ControlPanel()
-			: IWidget("control panel")
-		{
-			m_sideBar = new SideBar;
-			m_sideBar->init();
-			getSideBar()->setControlPanel(this);
-
-			getMainContainer()
-				.addItem(getSideBar())
-				.sameLine()
-				.beginChild("#right")
-					//.setVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10))
-					//.setVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 10))
-					.beginImGui([&]() {
-						getSideBar()->getSelectedContainer()->show();
-					})
-				.end();
+			return m_display;
 		}
 
-		virtual void onSelectedContainer(Container* container) {}
+		void render() override {
+			if (ImGui::BeginPopup(getUniqueId().c_str()))
+			{
+				Container::render();
+				//sendHoveredEvent();
+				ImGui::EndPopup();
+			}
+		}
 
-		SideBar* getSideBar() {
-			return m_sideBar;
+		void setActive() {
+			m_display = true;
+			m_lastHoveredOut = 0;
+			ImGui::OpenPopup(getUniqueId().c_str());
 		}
 	protected:
-		SideBar* m_sideBar;
+		void onHoveredOut() override {
+			m_lastHoveredOut = GetTickCount64();
+		}
+	private:
+		bool m_display = false;
+		int m_maxTimeWaitToHideMs;
+		ULONGLONG m_lastHoveredOut = 0;
 	};
 
-
-	class FunctionCP : public ControlPanel
+	class ShortCut
+		: public PopupContainer
 	{
 	public:
-		Container* m_generic;
-		Container* m_callFunction;
-
-		FunctionCP()
-			: ControlPanel()
+		ShortCut()
+			: PopupContainer(false, 100)
 		{
-			getSideBar()->addMenuItem("Generic", m_generic = new Container);
-			getSideBar()->addMenuItem("Call", m_callFunction = new Container);
-			getSideBar()->setSelectedContainer(m_generic);
-
-			buildGeneric();
-			buildCallFunction();
-		}
-
-		void buildGeneric()
-		{
-			(*m_generic)
-				.text("generic");
-		}
-
-		void buildCallFunction()
-		{
-			(*m_callFunction)
-				.text("callFunction");
+			
+			text("hello!");
+			newLine();
+			text("i am a cool");
+			newLine();
+			text("i am a cool");
+			newLine();
+			text("i am a cool");
 		}
 	};
+
+	class HoverText
+		: public Elements::Text::Text,
+		public Events::ISender,
+		public Events::OnHovered<HoverText>
+	{
+	public:
+		ShortCut* m_cont;
+		HoverText(const std::string& name)
+			: Elements::Text::Text(name)
+		{
+			m_cont = new ShortCut;
+		}
+
+		void render() override {
+			Elements::Text::Text::render();
+			sendHoveredEvent();
+
+			m_cont->show();
+		}
+
+		void onHoveredIn() {
+			m_cont->setActive();
+		}
+	};
+
+
+
+
+
+
 
 	class WindowTest : public IWindow
 	{
@@ -165,10 +117,142 @@ public:
 			: IWindow("ImGui window for test")
 		{
 			getMainContainer()
-				.addItem((new FunctionCP)->getMainContainerPtr())
-				.beginImGui([]() {
-				
+				.addItem(new HoverText("text"))
+				.beginChild()
+					.setWidth(500)
+					.setHeight(300)
 
+					.beginTable()
+						.setBorder(true)
+
+						.beginHeader()
+							.beginTD()
+								.setWidth(100.f)
+								.text("col 1")
+							.endTD()
+
+							.beginTD()
+								.setWidth(80.f)
+								.text("col 2")
+							.endTD()
+
+							.beginTD()
+								.setWidth(200.f)
+								.text("col 3")
+							.endTD()
+						.endHeader()
+
+						.beginBody()
+							.beginTR()
+								.beginTD()
+									.text("1 1")
+								.endTD()
+
+								.beginTD()
+									.text("1 2")
+								.endTD()
+
+								.beginTD()
+									.text("1 3")
+								.endTD()
+							.endTR()
+
+							.beginTR()
+								.beginTD()
+									.text("2 1")
+								.endTD()
+
+								.beginTD()
+									.text("2 2")
+								.endTD()
+
+								.beginTD()
+									.text("2 3")
+								.endTD()
+							.endTR()
+						.endBody()
+					.end()
+				.end()
+				.beginImGui([]() {
+					/*ImGui::Begin("Issue #1453");
+					ImGui::BeginChild("test", ImVec2(100, 100));
+					ImGui::OpenPopup("lol");
+					if (ImGui::BeginPopupContextWindow("lol"))
+					{
+						if (ImGui::TreeNode("Base"))
+						{
+							ImGui::Indent();
+							ImGui::Text("Num Slots");
+							ImGui::Text("Count");
+							ImGui::Unindent();
+							ImGui::TreePop();
+						}
+						ImGui::EndPopup();
+					}
+					ImGui::EndChild();
+					ImGui::End();*/
+
+					/*const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };
+					static const char* current_item = NULL;
+					ImGuiComboFlags flags = ImGuiComboFlags_NoArrowButton;
+
+					ImGuiStyle& style = ImGui::GetStyle();
+					float w = ImGui::CalcItemWidth();
+					float spacing = style.ItemInnerSpacing.x;
+					float button_sz = ImGui::GetFrameHeight();
+					ImGui::PushItemWidth(w - spacing * 2.0f - button_sz * 2.0f);
+					if (ImGui::BeginCombo("##custom combo", current_item, ImGuiComboFlags_NoArrowButton))
+					{
+						for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+						{
+							bool is_selected = (current_item == items[n]);
+							if (ImGui::Selectable(items[n], is_selected))
+								current_item = items[n];
+							if (is_selected)
+								ImGui::SetItemDefaultFocus();
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::PopItemWidth();
+					ImGui::SameLine(0, spacing);
+					if (ImGui::ArrowButton("##r", ImGuiDir_Left))
+					{
+					}
+					ImGui::SameLine(0, spacing);
+					if (ImGui::ArrowButton("##r", ImGuiDir_Right))
+					{
+					}
+					ImGui::SameLine(0, style.ItemInnerSpacing.x);
+					ImGui::Text("Custom Combo");*/
+
+					static char input[32]{ "" };
+					ImGui::InputText("##input", input, sizeof(input));
+					ImGui::SameLine();
+					static bool isOpen = false;
+					bool isFocused = ImGui::IsItemFocused();
+					isOpen |= ImGui::IsItemActive();
+					if (isOpen)
+					{
+						ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
+						ImGui::SetNextWindowSize({ ImGui::GetItemRectSize().x, 0 });
+						if (ImGui::Begin("##popup", &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+						{
+							isFocused |= ImGui::IsWindowFocused();
+							static const char* autocomplete[] = { "cats", "dogs", "rabbits", "turtles" };
+							for (int i = 0; i < IM_ARRAYSIZE(autocomplete); i++)
+							{
+								if (strstr(autocomplete[i], input) == NULL)
+									continue;
+								if (ImGui::Selectable(autocomplete[i]) || (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter)))
+								{
+									strcpy_s(input, autocomplete[i]);
+									isOpen = false;
+								}
+							}
+							ImGui::End();
+						}
+						isOpen &= isFocused;
+					}
 				});
 		}
 	};

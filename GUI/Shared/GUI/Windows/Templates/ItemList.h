@@ -230,7 +230,7 @@ namespace GUI::Window::Template
 			filterCreator->setWidth(m_styleSettings->m_leftWidth);
 
 			getMainContainer()
-				.beginChild("#left")
+				.beginChild()
 					.setWidth(m_styleSettings->m_leftWidth)
 					.beginContainer()
 						.text("Search")
@@ -259,7 +259,7 @@ namespace GUI::Window::Template
 					.addItem(m_underFilterCP = new Container)
 				.end()
 				.sameLine()
-				.beginChild("##body", (ChildContainer**)& m_itemsContainer)
+				.beginChild((ChildContainer**)& m_itemsContainer)
 					//list of items
 				.end();
 		}

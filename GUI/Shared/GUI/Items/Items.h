@@ -163,11 +163,11 @@ namespace GUI
 			return getParent() == item && m_canBeRemoved;
 		}
 
-		void setDisplay(bool state) {
-			m_display = state;
+		void setDisplay(bool toggle) {
+			m_display = toggle;
 		}
 
-		bool isShown() {
+		virtual bool isShown() {
 			return m_display;
 		}
 
@@ -290,8 +290,8 @@ namespace GUI
 		Container& beginContainer(Container** ptr);
 		Table::Table& beginTable();
 		Table::Table& beginTable(Table::Table** ptr);
-		ChildContainer& beginChild(std::string name);
-		ChildContainer& beginChild(std::string name, ChildContainer** ptr);
+		ChildContainer& beginChild();
+		ChildContainer& beginChild(ChildContainer** ptr);
 		TabBar& beginTabBar(std::string name);
 		TabBar& beginTabBar(std::string name, TabBar** ptr);
 		ColContainer& beginColContainer(std::string name);
@@ -543,8 +543,7 @@ namespace GUI
 		public Attribute::Flags<Container, ImGuiWindowFlags_, ImGuiWindowFlags_::ImGuiWindowFlags_None>
 	{
 	public:
-		ChildContainer(const std::string& name)
-		{}
+		ChildContainer() {}
 
 		void render() override {
 			pushIdParam();
@@ -646,12 +645,14 @@ namespace GUI
 				return m_offset;
 			}
 
-			void setWidth(float value) {
+			TD& setWidth(float value) {
 				m_width = value;
+				return *this;
 			}
 
-			void setOffset(float value) {
+			TD& setOffset(float value) {
 				m_offset = value;
+				return *this;
 			}
 		private:
 			float m_width;
@@ -692,8 +693,10 @@ namespace GUI
 
 			void render() override {
 				pushFontParam();
+				
 				for (auto it : m_columns) {
 					it->show();
+					ImGui::SetItemAllowOverlap();
 					ImGui::NextColumn();
 				}
 				popFontParam();
@@ -756,9 +759,15 @@ namespace GUI
 			}
 
 			void render() override {
+				render(true);
+			}
+
+			void render(bool border) {
 				pushFontParam();
 
 				for (auto it : m_items) {
+					if(border)
+						ImGui::Separator();
 					it->show();
 				}
 
@@ -816,7 +825,7 @@ namespace GUI
 
 			void render() override {
 				pushFontParam();
-
+				
 				ImGui::Columns(getColumnCount(), nullptr, m_border);
 				getHeader().show();
 				if (m_body != nullptr) {

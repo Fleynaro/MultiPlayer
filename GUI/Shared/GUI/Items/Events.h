@@ -105,10 +105,15 @@ namespace GUI
 					delete m_eventHandler;
 			}
 
-			void callEventHandler() {
+			template<typename T>
+			void callEventHandler(T value) {
+				callEventHandler((uint64_t&)value);
+			}
+
+			void callEventHandler(uint64_t value = 0) {
 				if (isEventDefined()) {
 					getEventHandler()->callHandler(EventMessage::Type(
-						new EventMessage(m_sender, m_eventHandler)
+						new EventMessage(m_sender, m_eventHandler, value)
 					));
 				}
 			}
@@ -249,13 +254,22 @@ namespace GUI
 			}
 
 			void sendSpecialEvent() {
-				m_sender.callEventHandler();
+				onSpecial();
 			}
 
+			virtual void onSpecial() {
+				m_sender.callEventHandler();
+			}
 		private:
 			Messager m_sender;
 		};
 
+		enum HoverType
+		{
+			HoveredIn,
+			HoveredOut,
+			HoveredUpdate
+		};
 
 		template<typename T>
 		class OnHovered
@@ -276,12 +290,34 @@ namespace GUI
 
 			void sendHoveredEvent() {
 				if (ImGui::IsItemHovered()) {
-					m_sender.callEventHandler();
+					onHoveredUpdate();
+					if (!m_isHoveredIn) {
+						onHoveredIn();
+						m_isHoveredIn = true;
+					}
+				}
+				else {
+					if (m_isHoveredIn) {
+						onHoveredOut();
+						m_isHoveredIn = false;
+					}
 				}
 			}
 
+			virtual void onHoveredUpdate() {
+				m_sender.callEventHandler(HoveredUpdate);
+			}
+
+			virtual void onHoveredIn() {
+				m_sender.callEventHandler(HoveredIn);
+			}
+
+			virtual void onHoveredOut() {
+				m_sender.callEventHandler(HoveredOut);
+			}
 		private:
 			Messager m_sender;
+			bool m_isHoveredIn = false;
 		};
 
 		template<typename T>
@@ -303,10 +339,13 @@ namespace GUI
 
 			void sendLeftMouseClickEvent() {
 				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
-					m_sender.callEventHandler();
+					onLeftMouseClick();
 				}
 			}
 
+			virtual void onLeftMouseClick() {
+				m_sender.callEventHandler();
+			}
 		private:
 			Messager m_sender;
 		};
@@ -330,10 +369,13 @@ namespace GUI
 
 			void sendRightMouseClickEvent() {
 				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) {
-					m_sender.callEventHandler();
+					onRightMouseClick();
 				}
 			}
 
+			virtual void onRightMouseClick() {
+				m_sender.callEventHandler();
+			}
 		private:
 			Messager m_sender;
 		};
@@ -356,9 +398,12 @@ namespace GUI
 			}
 
 			void sendCloseEvent() {
-				m_sender.callEventHandler();
+				onClose();
 			}
 
+			virtual void onClose() {
+				m_sender.callEventHandler();
+			}
 		private:
 			Messager m_sender;
 		};

@@ -111,15 +111,15 @@ Table::Table& Container::beginTable(Table::Table** ptr)
 	return **ptr;
 }
 
-ChildContainer& Container::beginChild(std::string name)
+ChildContainer& Container::beginChild()
 {
 	ChildContainer* ptr = nullptr;
-	return beginChild(name, &ptr);
+	return beginChild(&ptr);
 }
 
-ChildContainer& Container::beginChild(std::string name, ChildContainer** ptr)
+ChildContainer& Container::beginChild(ChildContainer** ptr)
 {
-	*ptr = new ChildContainer(name);
+	*ptr = new ChildContainer;
 	addItem(*ptr);
 	return **ptr;
 }
