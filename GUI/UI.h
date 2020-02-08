@@ -16,57 +16,15 @@ public:
 	
 	}
 
-	class PopupContainer
-		: public Container,
-		private Events::OnHovered<PopupContainer>
-	{
-	public:
-		PopupContainer(bool display = false, int maxTimeWaitToHideMs = 1000)
-			: m_display(display), m_maxTimeWaitToHideMs(maxTimeWaitToHideMs)
-		{}
-
-		bool isShown() override {
-			if (m_lastHoveredOut != 0 &&
-				GetTickCount64() - m_lastHoveredOut >= m_maxTimeWaitToHideMs) {
-				m_display = false;
-				ImGui::CloseCurrentPopup();
-			}
-
-			return m_display;
-		}
-
-		void render() override {
-			if (ImGui::BeginPopup(getUniqueId().c_str()))
-			{
-				Container::render();
-				//sendHoveredEvent();
-				ImGui::EndPopup();
-			}
-		}
-
-		void setActive() {
-			m_display = true;
-			m_lastHoveredOut = 0;
-			ImGui::OpenPopup(getUniqueId().c_str());
-		}
-	protected:
-		void onHoveredOut() override {
-			m_lastHoveredOut = GetTickCount64();
-		}
-	private:
-		bool m_display = false;
-		int m_maxTimeWaitToHideMs;
-		ULONGLONG m_lastHoveredOut = 0;
-	};
-
 	class ShortCut
 		: public PopupContainer
 	{
 	public:
 		ShortCut()
-			: PopupContainer(false, 100)
-		{
-			
+			: PopupContainer(false, 300)
+		{}
+
+		void onVisibleOn() override {
 			text("hello!");
 			newLine();
 			text("i am a cool");
@@ -74,6 +32,10 @@ public:
 			text("i am a cool");
 			newLine();
 			text("i am a cool");
+		}
+
+		void onVisibleOff() override {
+			clear();
 		}
 	};
 
@@ -98,7 +60,7 @@ public:
 		}
 
 		void onHoveredIn() {
-			m_cont->setActive();
+			m_cont->setVisible();
 		}
 	};
 
@@ -153,7 +115,14 @@ public:
 								.endTD()
 
 								.beginTD()
-									.text("1 3")
+									//.text("1 3")
+									.addItem(
+										(new Elements::Input::FilterText("enter here", 50, nullptr))
+										->setCompare(true)
+										->addWord("cat")
+										->addWord("dogs")
+										->addWord("car")
+									)
 								.endTD()
 							.endTR()
 
@@ -225,34 +194,7 @@ public:
 					ImGui::SameLine(0, style.ItemInnerSpacing.x);
 					ImGui::Text("Custom Combo");*/
 
-					static char input[32]{ "" };
-					ImGui::InputText("##input", input, sizeof(input));
-					ImGui::SameLine();
-					static bool isOpen = false;
-					bool isFocused = ImGui::IsItemFocused();
-					isOpen |= ImGui::IsItemActive();
-					if (isOpen)
-					{
-						ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
-						ImGui::SetNextWindowSize({ ImGui::GetItemRectSize().x, 0 });
-						if (ImGui::Begin("##popup", &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
-						{
-							isFocused |= ImGui::IsWindowFocused();
-							static const char* autocomplete[] = { "cats", "dogs", "rabbits", "turtles" };
-							for (int i = 0; i < IM_ARRAYSIZE(autocomplete); i++)
-							{
-								if (strstr(autocomplete[i], input) == NULL)
-									continue;
-								if (ImGui::Selectable(autocomplete[i]) || (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter)))
-								{
-									strcpy_s(input, autocomplete[i]);
-									isOpen = false;
-								}
-							}
-							ImGui::End();
-						}
-						isOpen &= isFocused;
-					}
+					
 				});
 		}
 	};

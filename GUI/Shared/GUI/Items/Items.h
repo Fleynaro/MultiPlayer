@@ -134,11 +134,15 @@ namespace GUI
 
 	class Item
 	{
+	protected:
+		virtual void render() = 0;
+		virtual void onUpdate() {}
 	public:
 		virtual ~Item() {};
-		virtual void render() = 0;
 
 		void show() {
+			onUpdate();
+
 			if (isShown()) {
 				render();
 			}
@@ -260,9 +264,11 @@ namespace GUI
 	class ColContainer;
 	class TreeNode;
 	class ChildContainer;
+	class PopupContainer;
 	class TabBar;
 	class Container :
 		public Item,
+		public Events::OnVisible<Container>,
 		public Attribute::Font<Container>
 	{
 	public:
@@ -292,6 +298,7 @@ namespace GUI
 		Table::Table& beginTable(Table::Table** ptr);
 		ChildContainer& beginChild();
 		ChildContainer& beginChild(ChildContainer** ptr);
+		PopupContainer& beginPopup(PopupContainer** ptr);
 		TabBar& beginTabBar(std::string name);
 		TabBar& beginTabBar(std::string name, TabBar** ptr);
 		ColContainer& beginColContainer(std::string name);
@@ -393,6 +400,14 @@ namespace GUI
 			}
 
 			popFontParam();
+		}
+
+		void onUpdate() override {
+			sendVisibleEvent();
+		}
+
+		bool isVisible() override {
+			return isShown();
 		}
 
 		void render() override {
@@ -575,6 +590,65 @@ namespace GUI
 		bool m_border = false;
 		float m_width = 0.f;
 		float m_height = 0.f;
+	};
+
+
+	class PopupContainer
+		: public Container,
+		private Events::OnHovered<PopupContainer>
+	{
+	public:
+		PopupContainer(bool display = false, int maxDeactiveTime = 1000)
+			: m_maxDeactiveTime(maxDeactiveTime)
+		{}
+
+		void setVisible() {
+			m_lastActive = 0;
+		}
+
+		void setInvisible() {
+			m_lastActive = GetTickCount64();
+		}
+	protected:
+		bool isHovered() override {
+			return ImGui::IsWindowHovered();
+		}
+
+		bool isShown() override {
+			if (m_lastActive != 0 &&
+				GetTickCount64() - m_lastActive >= m_maxDeactiveTime) {
+				return false;
+			}
+
+			return true;
+		}
+		
+		void render() override {
+			bool isOpen = true;
+			ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
+			if (ImGui::Begin(getUniqueId().c_str(), &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+			{
+				if (!ImGui::IsWindowFocused()) {
+					setInvisible();
+				}
+				else {
+					sendHoveredEvent();
+				}
+				Container::render();
+				ImGui::End();
+			}
+		}
+
+		void onHoveredOut() override {
+			setInvisible();
+		}
+
+		void onHoveredIn() override {
+			setVisible();
+		}
+	private:
+		int m_maxDeactiveTime;
+		ULONGLONG m_lastActive = 1;
 	};
 
 	
@@ -1347,7 +1421,7 @@ namespace GUI
 				public Attribute::Name<IInput>
 			{
 			public:
-				IInput(std::string name, Events::Event* event)
+				IInput(const std::string& name, Events::Event* event)
 					: Attribute::Name<IInput>(name), Events::OnSpecial<IInput>(event)
 				{}
 			};
@@ -1359,7 +1433,7 @@ namespace GUI
 				public Attribute::Font<Text>
 			{
 			public:
-				Text(std::string name, int size, Events::Event* event)
+				Text(const std::string& name, int size, Events::Event* event)
 					: m_size(size), IInput(name, event)
 				{
 					m_inputValue.reserve(size);
@@ -1393,12 +1467,67 @@ namespace GUI
 			};
 
 
+			class FilterText
+				: public Text,
+				public Attribute::Collapse<FilterText>
+			{
+			public:
+				FilterText(const std::string& name, int size, Events::Event* event)
+					: Text(name, size, event), Attribute::Collapse<FilterText>(false)
+				{}
+
+				void render() override {
+					Text::render();
+					ImGui::SameLine();
+					bool isFocused = ImGui::IsItemFocused();
+					m_open |= ImGui::IsItemActive();
+					if (isOpen())
+					{
+						ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
+						ImGui::SetNextWindowSize({ ImGui::GetItemRectSize().x, 0 });
+						if (ImGui::Begin(getUniqueId().c_str(), &m_open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+						{
+							isFocused |= ImGui::IsWindowFocused();
+							for (auto& word : m_words) {
+								if(m_isCompare && word.find(getInputValue()) == std::string::npos)
+									continue;
+								if (ImGui::Selectable(word.c_str()) || (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter)))
+								{
+									setInputValue(word);
+									m_open = false;
+								}
+							}
+							ImGui::End();
+						}
+						m_open &= isFocused;
+					}
+				}
+
+				FilterText* setCompare(bool toggle) {
+					m_isCompare = toggle;
+					return this;
+				}
+
+				FilterText* addWord(const std::string& word) {
+					m_words.push_back(word);
+					return this;
+				}
+
+				void clear() {
+					m_words.clear();
+				}
+			private:
+				bool m_isCompare = false;
+				std::vector<std::string> m_words;
+			};
+
+
 			class Float
 				: public IInput,
 				public Attribute::Width<Float>
 			{
 			public:
-				Float(std::string name, Events::Event* event)
+				Float(const std::string& name, Events::Event* event)
 					: IInput(name, event)
 				{}
 
@@ -1433,7 +1562,7 @@ namespace GUI
 				public Attribute::Width<Float>
 			{
 			public:
-				Double(std::string name, Events::Event* event)
+				Double(const std::string& name, Events::Event* event)
 					: IInput(name, event)
 				{}
 
@@ -1468,7 +1597,7 @@ namespace GUI
 				public Attribute::Width<Int>
 			{
 			public:
-				Int(std::string name, Events::Event* event)
+				Int(const std::string& name, Events::Event* event)
 					: IInput(name, event)
 				{}
 

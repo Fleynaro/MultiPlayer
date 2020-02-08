@@ -124,6 +124,13 @@ ChildContainer& Container::beginChild(ChildContainer** ptr)
 	return **ptr;
 }
 
+PopupContainer& GUI::Container::beginPopup(PopupContainer** ptr)
+{
+	*ptr = new PopupContainer;
+	addItem(*ptr);
+	return **ptr;
+}
+
 TabBar& Container::beginTabBar(std::string name)
 {
 	TabBar* ptr = nullptr;

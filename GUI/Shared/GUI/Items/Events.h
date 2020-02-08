@@ -288,8 +288,12 @@ namespace GUI
 				return (T*)this;
 			}
 
+			virtual bool isHovered() {
+				return ImGui::IsItemHovered();
+			}
+
 			void sendHoveredEvent() {
-				if (ImGui::IsItemHovered()) {
+				if (isHovered()) {
 					onHoveredUpdate();
 					if (!m_isHoveredIn) {
 						onHoveredIn();
@@ -318,6 +322,126 @@ namespace GUI
 		private:
 			Messager m_sender;
 			bool m_isHoveredIn = false;
+		};
+
+		enum FocusType
+		{
+			FocusedIn,
+			FocusedOut,
+			FocusedUpdate
+		};
+
+		template<typename T>
+		class OnFocused
+		{
+		public:
+			OnFocused(Event* event = nullptr)
+				: m_sender((ISender*)this, event)
+			{};
+
+			Event* getFocusedEvent() {
+				return m_sender.getEventHandler();
+			}
+
+			T* setFocusedEvent(Event* event) {
+				m_sender.setEvent(event);
+				return (T*)this;
+			}
+
+			virtual bool isFocused() {
+				return ImGui::IsItemFocused();
+			}
+
+			void sendFocusedEvent() {
+				if (isFocused()) {
+					onFocusedUpdate();
+					if (!m_isFocusedIn) {
+						onFocusedIn();
+						m_isFocusedIn = true;
+					}
+				}
+				else {
+					if (m_isFocusedIn) {
+						onFocusedOut();
+						m_isFocusedIn = false;
+					}
+				}
+			}
+
+			virtual void onFocusedUpdate() {
+				m_sender.callEventHandler(FocusedUpdate);
+			}
+
+			virtual void onFocusedIn() {
+				m_sender.callEventHandler(FocusedIn);
+			}
+
+			virtual void onFocusedOut() {
+				m_sender.callEventHandler(FocusedOut);
+			}
+		private:
+			Messager m_sender;
+			bool m_isFocusedIn = false;
+		};
+
+		enum VisibleType
+		{
+			VisibleOn,
+			VisibleOff,
+			VisibleUpdate
+		};
+
+		template<typename T>
+		class OnVisible
+		{
+		public:
+			OnVisible(Event* event = nullptr)
+				: m_sender((ISender*)this, event)
+			{};
+
+			Event* getVisibleEvent() {
+				return m_sender.getEventHandler();
+			}
+
+			T* setVisibleEvent(Event* event) {
+				m_sender.setEvent(event);
+				return (T*)this;
+			}
+
+			virtual bool isVisible() {
+				return ImGui::IsItemVisible();
+			}
+
+			void sendVisibleEvent() {
+				if (isVisible()) {
+					onVisibleUpdate();
+					if (!m_isVisible) {
+						onVisibleOn();
+						m_isVisible = true;
+					}
+				}
+				else {
+					if (m_isVisible) {
+						onVisibleOff();
+						m_isVisible = false;
+					}
+				}
+			}
+
+			virtual void onVisibleUpdate() {
+				m_sender.callEventHandler(VisibleUpdate);
+			}
+
+			virtual void onVisibleOn() {
+				m_sender.callEventHandler(VisibleOn);
+			}
+
+			virtual void onVisibleOff() {
+				m_sender.callEventHandler(VisibleOff);
+			}
+		private:
+			Messager m_sender;
+			bool m_isVisible = false;
 		};
 
 		template<typename T>
