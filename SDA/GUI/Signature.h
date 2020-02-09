@@ -29,7 +29,7 @@ namespace GUI::Units
 			std::string info = "";
 			for (auto& row : m_rows) {
 				(*container)
-					.text(row.first + ": ", ColorRGBA(0xe8e8e8FF))
+					.text(row.first + ": ", ColorRGBA(0xbdbdbdFF))
 					.sameLine(0.0f)
 					.addItem(row.second);
 			}

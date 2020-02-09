@@ -236,6 +236,10 @@ namespace GUI::Window::Template
 		void setView(IView* view) {
 			m_view = view;
 		}
+
+		virtual void update() {
+			onSearch(getOldInputValue());
+		}
 	private:
 		Container* m_filtersContainer = nullptr;
 		ChildContainer* m_itemsContainer = nullptr;
@@ -293,10 +297,6 @@ namespace GUI::Window::Template
 
 		void onSearch(const std::string& value) {
 			m_view->onSearch(value);
-		}
-
-		virtual void update() {
-			onSearch(getOldInputValue());
 		}
 
 		const std::string& getOldInputValue() {

@@ -186,7 +186,7 @@ namespace GUI
 		class EventHookedMessage : public IEventMessage
 		{
 		public:
-			EventHookedMessage(EventHook* newSender, EventMessage::Type& message)
+			EventHookedMessage(EventHook* newSender, EventMessage::Type message)
 				: m_newSender(newSender), m_message(message)
 			{}
 
@@ -220,6 +220,8 @@ namespace GUI
 			{}
 
 			void callHandler(EventMessage::Type message) override {
+				if (m_eventHandler == nullptr)
+					return;
 				m_eventHandler->callHandler(EventMessage::Type(
 					new EventHookedMessage(this, message)
 				));

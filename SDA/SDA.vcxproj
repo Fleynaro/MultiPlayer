@@ -126,7 +126,7 @@
       <PreprocessorDefinitions>SDA_DLL_EXPORTS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>

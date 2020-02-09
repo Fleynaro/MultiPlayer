@@ -29,6 +29,10 @@ namespace GUI::Window
 			return *m_container;
 		}
 
+		Container* getMainContainerPtr() {
+			return m_container;
+		}
+
 		void render() override {
 			pushParams();
 			if (ImGui::Begin(getName().c_str(), &m_open, m_flags))
