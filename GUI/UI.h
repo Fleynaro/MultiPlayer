@@ -21,21 +21,89 @@ public:
 	{
 	public:
 		ShortCut()
-			: PopupContainer(false, 300)
+			: PopupContainer(false, 0)
 		{}
 
 		void onVisibleOn() override {
-			text("hello!");
-			newLine();
-			text("i am a cool");
-			newLine();
-			text("i am a cool");
-			newLine();
-			text("i am a cool");
+			/*setWidth(400);
+
+			beginTable()
+				.setBorder(false)
+
+				.beginHeader()
+					.beginTD()
+						.text("col 1").sameText("col 2")
+					.endTD()
+
+					.beginTD()
+						.text("col 2")
+					.endTD()
+				.endHeader()
+
+				.beginBody()
+					.beginTR()
+						.beginTD()
+							.text("1 1fsdfsdfs")
+						.endTD()
+
+						.beginTD()
+							.text("1 2fsdfsdfdsfsfddddddddddddddddddddddd")
+						.endTD()
+					.endTR()
+
+					.beginTR()
+						.beginTD()
+							.text("2 1")
+						.endTD()
+
+						.beginTD()
+							.text("2 2")
+						.endTD()
+					.endTR()
+
+					.beginTR()
+						.beginTD()
+							.text("1 1")
+						.endTD()
+
+						.beginTD()
+							.text("1 2")
+						.endTD()
+					.endTR()
+
+					.beginTR()
+						.beginTD()
+							.text("2 1")
+						.endTD()
+
+						.beginTD()
+							.text("2 2")
+						.endTD()
+					.endTR()
+				.endBody()
+			.end();*/
+
+			beginImGui([&] {
+				ImGui::Columns(2);
+				ImGui::Text("Blah");
+				ImGui::NextColumn();
+				ImGui::Text("Blah");
+				ImGui::Columns(1);
+					
+				});
+
+	
+			
 		}
 
 		void onVisibleOff() override {
 			clear();
+		}
+
+		void render() override {
+			PopupContainer::render();
+
+			
 		}
 	};
 
@@ -54,9 +122,12 @@ public:
 
 		void render() override {
 			Elements::Text::Text::render();
-			sendHoveredEvent();
-
+			if (ImGui::IsItemHovered()) {
+				m_cont->setVisible();
+			}
 			m_cont->show();
+			ImGui::SameLine();
+			Elements::Text::Text::render();
 		}
 
 		void onHoveredIn() {
@@ -96,8 +167,8 @@ public:
 
 						.beginHeader()
 							.beginTD()
-								.setWidth(100.f)
-								.text("col 1")
+								.setWidth(200.f)
+								.text("col 1").sameText("col 2")
 							.endTD()
 
 							.beginTD()

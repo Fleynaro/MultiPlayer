@@ -76,6 +76,7 @@ namespace GUI::Widget
 				}
 				if (ImGui::Selectable(m_vMethodNode->getDeclaration()->getSigName().c_str()))
 				{}
+				//DeclSignature
 			}
 		private:
 			CallGraph::Unit::VMethodNode* m_vMethodNode;
@@ -161,7 +162,7 @@ namespace GUI::Widget
 
 			void renderHeader() override {
 				if (m_signature == nullptr) {
-					m_signature = new Units::Signature(m_function);
+					m_signature = new Units::FunctionSignature(m_function);
 					(*m_signature)
 						.beginReverseInserting()
 							.addItem(m_shortCut = new ShortCut(m_function))
@@ -183,7 +184,7 @@ namespace GUI::Widget
 			}
 		private:
 			API::Function::Function* m_function;
-			Units::Signature* m_signature = nullptr;
+			Units::FunctionSignature* m_signature = nullptr;
 			ShortCut* m_shortCut = nullptr;
 		};
 
@@ -222,6 +223,10 @@ namespace GUI::Widget
 
 			buildGeneric();
 			buildCallFunction();
+
+			(*m_generic)
+				.newLine()
+				.addItem(new Units::FuncInfo(function));
 		}
 
 		~FunctionCP() {
@@ -230,20 +235,20 @@ namespace GUI::Widget
 
 		void buildSiganture()
 		{
-			m_signature = new Units::Signature(m_function,
+			m_signature = new Units::FunctionSignature(m_function,
 				new Events::EventUI(EVENT_LAMBDA(info) {
-					auto type = static_cast<Units::Signature::Type*>(info->getSender());
+					auto type = static_cast<Units::FunctionSignature::Type*>(info->getSender());
 					auto name = type->getName();
 					int id = type->getId();
 					int a = 5;
 				}),
 				new Events::EventUI(EVENT_LAMBDA(info) {
-					auto funcName = static_cast<Units::Signature::Name*>(info->getSender());
+					auto funcName = static_cast<Units::FunctionSignature::Name*>(info->getSender());
 					auto name = funcName->getText();
 					int a = 5;
 				}),
 				new Events::EventUI(EVENT_LAMBDA(info) {
-					auto argName = static_cast<Units::Signature::ArgName*>(info->getSender());
+					auto argName = static_cast<Units::FunctionSignature::ArgName*>(info->getSender());
 					auto name = argName->getText();
 					int a = 6;
 				})
@@ -265,6 +270,6 @@ namespace GUI::Widget
 		}
 	private:
 		API::Function::Function* m_function;
-		Units::Signature* m_signature;
+		Units::FunctionSignature* m_signature;
 	};
 };

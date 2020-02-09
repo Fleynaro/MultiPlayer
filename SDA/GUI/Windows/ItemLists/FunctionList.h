@@ -196,7 +196,7 @@ namespace GUI::Window
 			{
 				beginHeader()
 					.addItem(
-						new Units::Signature(function,
+						new Units::FunctionSignature(function,
 							new Events::EventUI(EVENT_LAMBDA(info) {
 								
 							}),
@@ -227,7 +227,7 @@ namespace GUI::Window
 			}
 		private:
 			//MY TODO: может быть краш при удалении объекта, если он принадлежит нескольким родителям. т.е. битая ссылка. Вроде решил
-			Units::Signature* m_signature;
+			Units::FunctionSignature* m_signature;
 		};
 
 		FunctionList(FunctionManager* funcManager)

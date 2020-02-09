@@ -51,12 +51,24 @@ Container& Container::text(std::string value)
 	return text(value, &ptr);
 }
 
-Container& Container::text(std::string value, uint32_t color)
+Container& Container::sameText(std::string value)
+{
+	sameLine(0.0f);
+	return text(value);
+}
+
+Container& Container::text(std::string value, ColorRGBA color)
 {
 	addItem(
 		new Elements::Text::ColoredText(value, color)
 	);
 	return *this;
+}
+
+Container& Container::sameText(std::string value, ColorRGBA color)
+{
+	sameLine(0.0f);
+	return text(value, color);
 }
 
 Container& Container::text(std::string value, Elements::Text::Text** item)

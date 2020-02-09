@@ -289,7 +289,9 @@ namespace GUI
 		Container& newLine();
 		Container& separator();
 		Container& text(std::string value);
-		Container& text(std::string value, uint32_t color);
+		Container& sameText(std::string value);
+		Container& text(std::string value, ColorRGBA color);
+		Container& sameText(std::string value, ColorRGBA color);
 		Container& text(std::string value, Elements::Text::Text** item);
 		Container& ftext(const char* value, ...);
 		Container& removeLastItem();
@@ -625,6 +627,16 @@ namespace GUI
 		void setInvisible() {
 			m_lastActive = GetTickCount64();
 		}
+
+		PopupContainer& setWidth(float value) {
+			m_width = value;
+			return *this;
+		}
+
+		PopupContainer& setHeight(float value) {
+			m_height = value;
+			return *this;
+		}
 	protected:
 		bool isHovered() override {
 			return ImGui::IsWindowHovered();
@@ -642,7 +654,8 @@ namespace GUI
 		void render() override {
 			bool isOpen = true;
 			ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
-			if (ImGui::Begin(getUniqueId().c_str(), &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+			ImGui::SetNextWindowSize(ImVec2(m_width, m_height));
+			if (ImGui::Begin(getUniqueId().c_str(), &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 			{
 				if (!ImGui::IsWindowFocused()) {
 					setInvisible();
@@ -665,6 +678,8 @@ namespace GUI
 	private:
 		int m_maxDeactiveTime;
 		ULONGLONG m_lastActive = 1;
+		float m_width = 0.f;
+		float m_height = 0.f;
 	};
 
 	
