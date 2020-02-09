@@ -3,6 +3,7 @@
 #include <Manager/FunctionManager.h>
 #include <Utils/MultipleAction.h>
 #include <CallGraph/CallGraph.h>
+#include <FunctionTag/FunctionTag.h>
 
 using namespace CE;
 
@@ -89,6 +90,7 @@ namespace GUI::Units
 				addItem(tableInfo.buildText());
 			}
 
+			buildTagList();
 			buildDescription();
 		}
 
@@ -114,6 +116,25 @@ namespace GUI::Units
 				newLine();
 				text(getFunctionDecl()->getDesc());
 			}
+		}
+
+		virtual void buildTagList() {
+			auto collection = getTagCollection();
+
+			if (!collection.empty()) {
+				text("Tags: ");
+				for (auto tag : collection.getTagList()) {
+					sameText(tag->getName() + " ");
+				}
+			}
+			else {
+				text("No tags");
+			}
+		}
+
+		virtual Function::Tag::TagCollection getTagCollection() {
+			auto tagManager = m_functionDecl->getFunctionManager()->getFunctionTagManager();
+			return *tagManager->getGlobalTagCollectionByDecl(m_functionDecl);
 		}
 
 		static const std::string& getRoleName(int roleId) {
@@ -173,6 +194,11 @@ namespace GUI::Units
 			if(m_function->hasBody()) {
 				tableInfo.addRow("References to", std::to_string(m_function->getBody()->getFunctionsReferTo().size()));
 			}
+		}
+
+		Function::Tag::TagCollection getTagCollection() override {
+			auto tagManager = m_function->getFunctionManager()->getFunctionTagManager();
+			return tagManager->getTagCollectionByDecl(m_function);
 		}
 	private:
 		API::Function::Function* m_function;

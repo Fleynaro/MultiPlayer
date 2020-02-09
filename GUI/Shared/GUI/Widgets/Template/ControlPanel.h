@@ -3,10 +3,12 @@
 
 namespace GUI::Widget::Template
 {
-	class ControlPanel : public IWidget
+	class ControlPanel
+		: public Container
 	{
 	public:
-		class SideBar : public ChildContainer, public IInit
+		class SideBar
+			: public ChildContainer, public IInit
 		{
 		public:
 			class MenuItem : public Elements::Button::ButtonStd
@@ -85,13 +87,12 @@ namespace GUI::Widget::Template
 		};
 
 		ControlPanel()
-			: IWidget("control panel")
 		{
 			m_sideBar = new SideBar;
 			m_sideBar->init();
 			getSideBar()->setControlPanel(this);
 
-			getMainContainer()
+			(*this)
 				.addItem(getSideBar())
 				.sameLine()
 				.beginChild()

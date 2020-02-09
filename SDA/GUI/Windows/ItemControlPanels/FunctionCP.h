@@ -6,6 +6,11 @@
 
 using namespace CE;
 
+namespace GUI::Window
+{
+	class FunctionList;
+};
+
 namespace GUI::Widget
 {
 	class FunctionCallStackViewer : public Container
@@ -85,40 +90,6 @@ namespace GUI::Widget
 		class FunctionBody : public TreeNode, public Node
 		{
 		public:
-			class ShortCut
-				: public PopupContainer
-			{
-			public:
-				ShortCut(API::Function::Function* function)
-					: m_function(function), PopupContainer(false, 200)
-				{}
-
-				void onVisibleOn() override {
-					text("All tags of the function:");
-					newLine();
-
-					auto tagManager = m_function->getFunctionManager()->getFunctionTagManager();
-					auto collection = tagManager->getTagCollectionByDecl(m_function);
-
-					if (!collection.empty()) {
-						for (auto tag : collection.getTagList()) {
-							text(tag->getName() + " ");
-							sameLine();
-						}
-					}
-					else {
-						text("no tags");
-					}
-				}
-
-				void onVisibleOff() override {
-					clear();
-				}
-
-			private:
-				API::Function::Function* m_function;
-			};
-
 			FunctionBody(API::Function::Function* function, int depth)
 				: m_function(function), Node(depth)
 			{}
@@ -131,48 +102,11 @@ namespace GUI::Widget
 
 			void onVisibleOn() override {
 				clear();
-				load();
-			}
-
-			void load() {
-				if (m_depth == 1)
-					setOpen(true);
-
-				int nextDepth = m_depth + 1;
-
-				for (auto node : getBody()->getNodeList()) {
-					if (node->isFunction()) {
-						auto funcNode = static_cast<CallGraph::Unit::FunctionNode*>(node);
-						if (!funcNode->isNotCalculated()) {
-							FunctionBody* body;
-							addItem(body = new FunctionBody(funcNode->getFunction(), nextDepth));
-						} else
-							addItem(new FunctionNode(funcNode, nextDepth));
-					}
-					else if (node->isVMethod()) {
-						auto vMethod = static_cast<CallGraph::Unit::VMethodNode*>(node);
-						addItem(new VMethodNode(vMethod, nextDepth));
-					}
-					else if (node->isGlobalVar()) {
-						auto gVar = static_cast<CallGraph::Unit::GlobalVarNode*>(node);
-						addItem(new GlobalVarNode(gVar, nextDepth));
-					}
-				}
 			}
 
 			void renderHeader() override {
 				if (m_signature == nullptr) {
 					m_signature = new Units::FunctionSignature(m_function);
-					(*m_signature)
-						.beginReverseInserting()
-							.addItem(m_shortCut = new ShortCut(m_function))
-						.endReverseInserting();
-				}
-
-				if (ImGui::ArrowButton("##r", ImGuiDir_Down))
-				{}
-				if (ImGui::IsItemHovered()) {
-					m_shortCut->setVisible();
 				}
 
 				ImGui::SameLine();
@@ -185,22 +119,104 @@ namespace GUI::Widget
 		private:
 			API::Function::Function* m_function;
 			Units::FunctionSignature* m_signature = nullptr;
-			ShortCut* m_shortCut = nullptr;
 		};
-
 
 
 		FunctionCallStackViewer(API::Function::Function* function)
 			: m_function(function)
-		{}
+		{
+			
+		}
 
 		void onVisibleOn() override {
+			//reload();
+		}
+
+		void reload() {
+			clear();
 			load();
 		}
 
 		void load() {
 			FunctionBody* body;
 			addItem(body = new FunctionBody(m_function, 1));
+
+			bool isRemove;
+			load(body, 1, isRemove);
+		}
+
+		void load(FunctionBody* funcBody, int depth, bool& remove) {
+			if (isAlwaysOpen() || depth == 1)
+				funcBody->setOpen(true);
+
+			int nextDepth = depth + 1;
+			remove = true;
+
+			for (auto node : funcBody->getBody()->getNodeList()) {
+				if (node->isFunction()) {
+					auto funcNode = static_cast<CallGraph::Unit::FunctionNode*>(node);
+					if (!funcNode->isNotCalculated()) {
+						if (isCalculatedFunc()) {
+							FunctionBody* body;
+							funcBody->addItem(body = new FunctionBody(funcNode->getFunction(), nextDepth));
+							if (isAlwaysOpen()) {
+								bool isRemove;
+								load(body, nextDepth, isRemove);
+
+								if (body->empty()) {
+									if (checkAllFilters(funcNode->getFunction())) {
+										remove = false;
+										isRemove = false;
+									}
+								}
+
+								if (isRemove) {
+									funcBody->removeLastItem();
+								}
+							}
+						}
+					}
+					else if (isNotCalculatedFunc()) {
+						funcBody->addItem(new FunctionNode(funcNode, nextDepth));
+					}
+				}
+				else if (node->isVMethod() && isVMethodNode()) {
+					auto vMethod = static_cast<CallGraph::Unit::VMethodNode*>(node);
+					funcBody->addItem(new VMethodNode(vMethod, nextDepth));
+				}
+				else if (node->isGlobalVar() && isGlobalVarNode()) {
+					auto gVar = static_cast<CallGraph::Unit::GlobalVarNode*>(node);
+					funcBody->addItem(new GlobalVarNode(gVar, nextDepth));
+				}
+			}
+		}
+
+		bool checkAllFilters(API::Function::Function* function) {
+			return true;
+		}
+	private:
+		bool isAlwaysOpen() {
+			return true || isFilterEnabled();
+		}
+
+		bool isGlobalVarNode() {
+			return true && !isFilterEnabled();
+		}
+
+		bool isVMethodNode() {
+			return true && !isFilterEnabled();
+		}
+
+		bool isNotCalculatedFunc() {
+			return true && !isFilterEnabled();
+		}
+
+		bool isCalculatedFunc() {
+			return true;
+		}
+
+		bool isFilterEnabled() {
+			return true;
 		}
 	private:
 		API::Function::Function* m_function;
@@ -214,24 +230,15 @@ namespace GUI::Widget
 		FunctionCallStackViewer* m_funcCallStackViewer;
 
 		FunctionCP(API::Function::Function* function)
-			: m_function(function), ControlPanel()
-		{
-			getSideBar()->addMenuItem("Generic", m_generic = new Container);
-			getSideBar()->addMenuItem("Call", m_callFunction = new Container);
-			getSideBar()->addMenuItem("Call stack", m_funcCallStackViewer = new FunctionCallStackViewer(function));
-			getSideBar()->setSelectedContainer(m_generic);
-
-			buildGeneric();
-			buildCallFunction();
-
-			(*m_generic)
-				.newLine()
-				.addItem(new Units::FuncInfo(function, true));
-		}
+			: m_function(function)
+		{}
 
 		~FunctionCP() {
-			delete m_signature;
+			if(m_signature != nullptr)
+				delete m_signature;
 		}
+
+		void onVisibleOn() override;
 
 		void buildSiganture()
 		{

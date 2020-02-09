@@ -13,6 +13,74 @@ namespace GUI::Window
 	class FunctionList : public Template::ItemList
 	{
 	public:
+		class ListView : public IView
+		{
+		public:
+			class FunctionItem : public Item
+			{
+			public:
+				FunctionItem(API::Function::Function* function, Events::Event* event)
+				{
+					beginHeader()
+						.addItem(
+							new Units::FunctionSignature(function,
+								new Events::EventUI(EVENT_LAMBDA(info) {}),
+								new Events::EventHook(event, function),
+								nullptr
+							),
+							(GUI::Item**)& m_signature
+						);
+
+					beginBody()
+						.text("Signature: ")
+						.sameLine()
+						.addItem(m_signature)
+						.newLine()
+						.newLine()
+						.addItem(
+							new Elements::Button::ButtonStd(
+								"Open control panel",
+								new Events::EventHook(event, function)
+							)
+						);
+
+					m_signature->setCanBeRemoved(false);
+				}
+
+				~FunctionItem() {
+					delete m_signature;
+				}
+			private:
+				//MY TODO: может быть краш при удалении объекта, если он принадлежит нескольким родител€м. т.е. бита€ ссылка. ¬роде решил
+				Units::FunctionSignature* m_signature;
+			};
+
+			ListView(FunctionList* funcList, FunctionManager* funcManager)
+				: m_funcList(funcList), m_funcManager(funcManager)
+			{}
+
+			void onSearch(const std::string& value) override
+			{
+				m_funcList->getItemsContainer().clear();
+				int maxCount = 300;
+				for (auto& it : m_funcManager->getFunctions()) {
+					if (m_funcList->checkOnInputValue(it.second, value) && m_funcList->checkAllFilters(it.second)) {
+						m_funcList->getItemsContainer().addItem(createFuncItem(it.second, m_funcList->m_openFunctionCP));//MY TODO*: ленива€ загрузка, при открытии только
+					}
+					if (--maxCount == 0)
+						break;
+				}
+			}
+
+			virtual FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) {
+				return new FunctionItem(function, event);
+			}
+		protected:
+			FunctionManager* m_funcManager;
+			FunctionList* m_funcList;
+		};
+
+
 		class FunctionFilter : public FilterManager::Filter
 		{
 		public:
@@ -148,7 +216,7 @@ namespace GUI::Window
 			}
 
 			bool checkFilter(API::Function::Function* function) override {
-				auto collection = m_functionList->m_funcManager->getFunctionTagManager()->getTagCollectionByDecl(function);
+				auto collection = function->getFunctionManager()->getFunctionTagManager()->getTagCollectionByDecl(function);
 				return collection.contains(getTagCollection());
 			}
 
@@ -189,49 +257,8 @@ namespace GUI::Window
 			FunctionList* m_funcList;
 		};
 
-		class FunctionItem : public Item
-		{
-		public:
-			FunctionItem(API::Function::Function* function, Events::Event* event)
-			{
-				beginHeader()
-					.addItem(
-						new Units::FunctionSignature(function,
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								
-							}),
-							new Events::EventHook(event, function),
-							nullptr
-						),
-						(GUI::Item**)& m_signature
-					);
-
-				beginBody()
-					.text("Signature: ")
-						.sameLine()
-						.addItem(m_signature)
-					.newLine()
-					.newLine()
-					.addItem(
-						new Elements::Button::ButtonStd(
-							"Open control panel",
-							new Events::EventHook(event, function)
-						)
-					);
-
-				m_signature->setCanBeRemoved(false);
-			}
-
-			~FunctionItem() {
-				delete m_signature;
-			}
-		private:
-			//MY TODO: может быть краш при удалении объекта, если он принадлежит нескольким родител€м. т.е. бита€ ссылка. ¬роде решил
-			Units::FunctionSignature* m_signature;
-		};
-
-		FunctionList(FunctionManager* funcManager)
-			: m_funcManager(funcManager), ItemList("Function list", new FunctionFilterCreator(this))
+		FunctionList()
+			: ItemList("Function list", new FunctionFilterCreator(this))
 		{
 			getFilterManager()->addFilter(new CategoryFilter(this));
 			getFilterManager()->addFilter(new ClassFilter(this));
@@ -242,30 +269,13 @@ namespace GUI::Window
 				auto function = (API::Function::Function*)message->getUserDataPtr();
 
 				getParent()->getMainContainer().clear();
-				getParent()->getMainContainer().addItem((new Widget::FunctionCP(function))->getMainContainerPtr());
+				getParent()->getMainContainer().addItem(new Widget::FunctionCP(function));
 			});
 			m_openFunctionCP->setCanBeRemoved(false);
 		}
 
 		~FunctionList() {
 			delete m_openFunctionCP;
-		}
-
-		void onSearch(const std::string& value) override
-		{
-			clear();
-			int maxCount = 300;
-			for (auto& it : m_funcManager->getFunctions()) {
-				if (checkOnInputValue(it.second, value) && checkAllFilters(it.second)) {
-					add(createFuncItem(it.second, m_openFunctionCP));//MY TODO*: ленива€ загрузка, при открытии только
-				}
-				if (--maxCount == 0)
-					break;
-			}
-		}
-
-		virtual FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) {
-			return new FunctionItem(function, event);
 		}
 
 		bool checkOnInputValue(API::Function::Function* function, const std::string& value) {
@@ -278,8 +288,6 @@ namespace GUI::Window
 				return static_cast<FunctionFilter*>(filter)->checkFilter(function);
 			});
 		}
-
-		FunctionManager* m_funcManager;
 	private:
 		Events::Event* m_openFunctionCP;
 	};
@@ -315,22 +323,38 @@ namespace GUI::Window
 			Elements::Generic::Checkbox* m_cb;
 		};
 
-		class FunctionItemWithCheckBox : public FunctionItem
+		class ListView
+			: public FunctionList::ListView
 		{
 		public:
-			FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction)
-				: FunctionItem(function, event)
+			class FunctionItemWithCheckBox : public FunctionItem
 			{
-				(*m_header)
-					.beginReverseInserting()
+			public:
+				FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction)
+					: FunctionItem(function, event)
+				{
+					(*m_header)
+						.beginReverseInserting()
 						.sameLine()
 						.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunction))
-					.endReverseInserting();
+						.endReverseInserting();
+				}
+			};
+
+			ListView(FuncSelectList* funcList, FunctionManager* funcManager)
+				: FunctionList::ListView(funcList, funcManager)
+			{}
+
+			FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) override {
+				return new FunctionItemWithCheckBox(function, event, getFuncSelList()->isFunctionSelected(function), new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function));
+			}
+		private:
+			FuncSelectList* getFuncSelList() {
+				return static_cast<FuncSelectList*>(m_funcList);
 			}
 		};
 
-		FuncSelectList(FunctionManager* funcManager, Events::Event* eventSelectFunctions)
-			: FunctionList(funcManager)
+		FuncSelectList(Events::Event* eventSelectFunctions)
 		{
 			getFilterManager()->addFilter(new SelectedFilter(this));
 
@@ -373,10 +397,6 @@ namespace GUI::Window
 
 			(*m_underFilterCP)
 				.addItem(new UpdSelectInfo(this, eventSelectFunctions));
-		}
-
-		FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) override {
-			return new FunctionItemWithCheckBox(function, event, isFunctionSelected(function), new Events::EventHook(m_eventSelectFunction, function));
 		}
 
 		bool isFunctionSelected(API::Function::Function* function) {

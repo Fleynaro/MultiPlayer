@@ -16,6 +16,12 @@ namespace GUI::Window::Template
 
 		inline static StyleSettings DefaultStyleSettings;
 	protected:
+		class IView
+		{
+		public:
+			virtual void onSearch(const std::string& value) = 0;
+		};
+
 		class FilterManager : public Item
 		{
 		public:
@@ -226,9 +232,13 @@ namespace GUI::Window::Template
 			Container* m_header = nullptr;
 		};
 
+	public:
+		void setView(IView* view) {
+			m_view = view;
+		}
 	private:
 		Container* m_filtersContainer = nullptr;
-		Container* m_itemsContainer = nullptr;
+		ChildContainer* m_itemsContainer = nullptr;
 
 		std::string m_oldInputValue = "";
 
@@ -276,20 +286,14 @@ namespace GUI::Window::Template
 					//list of items
 				.end();
 		}
-		
-		FilterManager* getFilterManager() {
-			return &m_filterManager;
+
+		ChildContainer& getItemsContainer() {
+			return *m_itemsContainer;
 		}
 
-		void add(Item* item) {
-			m_itemsContainer->addItem(item);
+		void onSearch(const std::string& value) {
+			m_view->onSearch(value);
 		}
-
-		void clear() {
-			m_itemsContainer->clear();
-		}
-
-		virtual void onSearch(const std::string& value) = 0;
 
 		virtual void update() {
 			onSearch(getOldInputValue());
@@ -299,8 +303,13 @@ namespace GUI::Window::Template
 			return m_oldInputValue;
 		}
 
+		FilterManager* getFilterManager() {
+			return &m_filterManager;
+		}
+
 		StyleSettings* m_styleSettings;
 	private:
 		FilterManager m_filterManager;
+		IView* m_view;
 	};
 };

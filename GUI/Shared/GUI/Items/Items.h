@@ -435,6 +435,10 @@ namespace GUI
 			popSettings();
 		}
 
+		bool empty() {
+			return getItems().empty();
+		}
+
 		std::list<Item*>& getItems() {
 			return m_items;
 		}

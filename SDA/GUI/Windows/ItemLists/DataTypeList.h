@@ -10,6 +10,38 @@ namespace GUI::Window
 	class DataTypeList : public Template::ItemList
 	{
 	public:
+		class ListView : public IView
+		{
+		public:
+			class TypeItem : public Item
+			{
+			public:
+				TypeItem(API::Type::Type* type)
+				{
+					setHeader(type->getType()->getName());
+					beginBody()
+						.text(GUI::Units::Type::getTooltipDesc(type->getType(), false));
+				}
+			};
+
+			ListView(DataTypeList* dataTypeList, TypeManager* typeManager)
+				: m_dataTypeList(dataTypeList), m_typeManager(typeManager)
+			{}
+
+			void onSearch(const std::string& value) override
+			{
+				m_dataTypeList->getItemsContainer().clear();
+				for (auto& it : m_typeManager->getTypes()) {
+					if (m_dataTypeList->checkOnInputValue(it.second, value) && m_dataTypeList->checkAllFilters(it.second)) {
+						m_dataTypeList->getItemsContainer().addItem(new TypeItem(it.second));
+					}
+				}
+			}
+		protected:
+			TypeManager* m_typeManager;
+			DataTypeList* m_dataTypeList;
+		};
+
 		class TypeFilter : public FilterManager::Filter
 		{
 		public:
@@ -114,31 +146,10 @@ namespace GUI::Window
 			DataTypeList* m_dataTypeList;
 		};
 
-		class TypeItem : public Item
-		{
-		public:
-			TypeItem(API::Type::Type* type)
-			{
-				setHeader(type->getType()->getName());
-				beginBody()
-					.text(GUI::Units::Type::getTooltipDesc(type->getType(), false));
-			}
-		};
-
-		DataTypeList(TypeManager* typeManager)
-			: m_typeManager(typeManager), ItemList("Data type list", new TypeFilterCreator(this))
+		DataTypeList()
+			: ItemList("Data type list", new TypeFilterCreator(this))
 		{
 			getFilterManager()->addFilter(new CategoryFilter(this));
-		}
-
-		void onSearch(const std::string& value) override
-		{
-			clear();
-			for (auto& it : m_typeManager->getTypes()) {
-				if (checkOnInputValue(it.second, value) && checkAllFilters(it.second)) {
-					add(new TypeItem(it.second));
-				}
-			}
 		}
 
 		bool checkOnInputValue(API::Type::Type* type, const std::string& value) {
@@ -152,7 +163,6 @@ namespace GUI::Window
 			});
 		}
 	private:
-		TypeManager* m_typeManager;
 		std::list<TypeFilter*> m_typeFiltes;
 	};
 };

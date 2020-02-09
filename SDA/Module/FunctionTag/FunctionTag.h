@@ -299,7 +299,7 @@ namespace CE
 						auto gCollection = getGlobalTagCollectionByDecl(funcNode->getFunction()->getDeclaration());
 						if (gCollection != nullptr) {
 							for (auto tag : gCollection->getTagList()) {
-								if (tag->getType() == Tag::SET) {
+								if (tag->getType() == Tag::SET && !collection.contains(tag)) {
 									collection.add(tag);
 								}
 							}
