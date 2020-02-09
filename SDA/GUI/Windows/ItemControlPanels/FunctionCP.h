@@ -226,7 +226,7 @@ namespace GUI::Widget
 
 			(*m_generic)
 				.newLine()
-				.addItem(new Units::FuncInfo(function));
+				.addItem(new Units::FuncInfo(function, true));
 		}
 
 		~FunctionCP() {

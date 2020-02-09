@@ -83,16 +83,7 @@ public:
 				.endBody()
 			.end();*/
 
-			beginImGui([&] {
-				ImGui::Columns(2);
-				ImGui::Text("Blah");
-				ImGui::NextColumn();
-				ImGui::Text("Blah");
-				ImGui::Columns(1);
-					
-				});
-
-	
+			text("hello world!");
 			
 		}
 
@@ -123,7 +114,14 @@ public:
 		void render() override {
 			Elements::Text::Text::render();
 			if (ImGui::IsItemHovered()) {
-				m_cont->setVisible();
+				if (m_lastStartHoveredTime == 0)
+					m_lastStartHoveredTime = GetTickCount64();
+				if (GetTickCount64() - m_lastStartHoveredTime > 200) {
+					m_cont->setVisible();
+				}
+			}
+			else {
+				m_lastStartHoveredTime = 0;
 			}
 			m_cont->show();
 			ImGui::SameLine();
@@ -133,6 +131,8 @@ public:
 		void onHoveredIn() {
 			m_cont->setVisible();
 		}
+	private:
+		ULONGLONG m_lastStartHoveredTime;
 	};
 
 

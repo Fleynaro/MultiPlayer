@@ -14,19 +14,55 @@ namespace GUI::Units
 		TableInfo()
 		{}
 
-		void addRow(const std::string& name, const std::string& value) {
+		void addRow(const std::string& name, Elements::Text::Text* value) {
 			m_rows.push_back(std::make_pair(name, value));
 		}
 
-		std::string buildText() {
+		void addRow(const std::string& name, const std::string& value) {
+			addRow(name, new Elements::Text::Text(value));
+		}
+
+		Container* buildText() {
+			Container* container = new Container;
+
 			std::string info = "";
 			for (auto& row : m_rows) {
-				info += row.first + ": " + row.second + "\n";
+				(*container)
+					.text(row.first + ": ", ColorRGBA(0xe8e8e8FF))
+					.sameLine(0.0f)
+					.addItem(row.second);
 			}
-			return info;
+
+			return container;
+		}
+
+		Table::Table* buildTable() {
+			Table::Table* table = new Table::Table;
+
+			auto& header = (*table)
+				.beginHeader()
+					.beginTD().endTD()
+					.beginTD().endTD();
+			header.setDisplay(false);
+
+			auto& body = table->beginBody();
+
+			for (auto& row : m_rows) {
+				body
+				.beginTR()
+					.beginTD()
+						.text(row.first)
+					.endTD()
+					.beginTD()
+						.addItem(row.second)
+					.endTD()
+				.endTR();
+			}
+
+			return table;
 		}
 	private:
-		std::list<std::pair<std::string, std::string>> m_rows;
+		std::list<std::pair<std::string, Elements::Text::Text*>> m_rows;
 	};
 
 
@@ -39,57 +75,45 @@ namespace GUI::Units
 	class DeclInfo : public ShortInfo
 	{
 	public:
-		DeclInfo(API::Function::FunctionDecl* functionDecl)
-			: m_functionDecl(functionDecl)
+		DeclInfo(API::Function::FunctionDecl* functionDecl, bool viewAsTable = false)
+			: m_functionDecl(functionDecl), m_viewAsTable(viewAsTable)
 		{}
 
 		void onVisibleOn() override {
-			auto& table = beginTable();
-			auto& tableBody = table.beginBody();
-			buildBasicInfo(tableBody);
-			buildDescription();
+			TableInfo tableInfo;
+			buildBasicInfo(tableInfo);
 
-			auto& header = table
-			.beginHeader()
-				.beginTD().endTD()
-				.beginTD().endTD();
-			header.setDisplay(false);
+			if (m_viewAsTable) {
+				addItem(tableInfo.buildTable());
+			} else {
+				addItem(tableInfo.buildText());
+			}
+
+			buildDescription();
 		}
 
 		void onVisibleOff() override {
 			clear();
 		}
 
-		virtual void buildBasicInfo(Table::Body& body) {
-			auto& td = body
-			.beginTR()
-				.beginTD()
-					.text("Name")
-				.endTD()
-				.beginTD();
-					td.text(getFunctionDecl()->getName());
-					buildIdInfo(td);
-					td.sameText(")")
-				.endTD()
-			.endTR()
-			.beginTR()
-				.beginTD()
-					.text("Role")
-				.endTD()
-				.beginTD()
-					.text(getRoleName((int)getFunctionDecl()->getRole()))
-				.endTD()
-			.endTR();
+		virtual void buildBasicInfo(TableInfo& tableInfo) {
+			tableInfo.addRow("Name", getFunctionDecl()->getName() + buildIdInfo() + ")");
+			tableInfo.addRow("Role", getRoleName((int)getFunctionDecl()->getRole()));
 		}
 
-		virtual void buildIdInfo(Table::TD& td) {
-			td.sameText(" (DeclId: " + std::to_string(getFunctionDecl()->getId()));
+		virtual std::string buildIdInfo() {
+			return " (DeclId: " + std::to_string(getFunctionDecl()->getId());
 		}
 
 		virtual void buildDescription() {
 			text("Description:");
-			newLine();
-			text(getFunctionDecl()->getDesc());
+			if (getFunctionDecl()->getDesc().empty()) {
+				sameText(" not.");
+			}
+			else {
+				newLine();
+				text(getFunctionDecl()->getDesc());
+			}
 		}
 
 		static const std::string& getRoleName(int roleId) {
@@ -105,6 +129,7 @@ namespace GUI::Units
 			return roleName[roleId];
 		}
 	private:
+		bool m_viewAsTable = false;
 		API::Function::FunctionDecl* m_functionDecl;
 
 		CE::Function::FunctionDecl* getFunctionDecl() {
@@ -115,57 +140,38 @@ namespace GUI::Units
 	class FuncInfo : public DeclInfo
 	{
 	public:
-		FuncInfo(API::Function::Function* function)
-			: m_function(function), DeclInfo(function->getDeclaration())
+		FuncInfo(API::Function::Function* function, bool viewAsTable = false)
+			: m_function(function), DeclInfo(function->getDeclaration(), viewAsTable)
 		{}
 
-		void buildIdInfo(Table::TD& td) override {
-			DeclInfo::buildIdInfo(td);
-			td.sameText(", DefId: " + std::to_string(getFunction()->getDefinition().getId()));
+		std::string buildIdInfo() override {
+			return DeclInfo::buildIdInfo() + ", DefId: " + std::to_string(getFunction()->getDefinition().getId());
 		}
 
-		void buildBasicInfo(Table::Body& body) override {
+		void buildBasicInfo(TableInfo& tableInfo) override {
 			using namespace Generic::String;
 
-			DeclInfo::buildBasicInfo(body);
+			DeclInfo::buildBasicInfo(tableInfo);
 
-			body
-			.beginTR()
-				.beginTD()
-					.text("Base address")
-				.endTD()
-				.beginTD()
-					.text("0x" + NumberToHex((std::uintptr_t)getFunction()->getAddress()))
-				.endTD()
-			.endTR();
+			std::string baseAddr = "0x" + NumberToHex((std::uintptr_t)getFunction()->getAddress());
 
 			auto& ranges = getFunction()->getDefinition().getRangeList();
 			if (ranges.size() > 1)
 			{
-				auto& td = body
-				.beginTR()
-					.beginTD()
-						.text("Address ranges")
-					.endTD()
-					.beginTD();
-						for (auto range : ranges) {
-							td.text("\t- Begin: 0x" + NumberToHex((std::uintptr_t)range.getMinAddress()) + " | Size: 0x" + NumberToHex(range.getSize()));
-						}
+				std::string rangesText = "";
+				for (auto range : ranges) {
+					rangesText += "\n\t- Begin: 0x" + NumberToHex((std::uintptr_t)range.getMinAddress()) + " | Size: 0x" + NumberToHex(range.getSize());
+				}
+
+				tableInfo.addRow("Base address", baseAddr);
+				tableInfo.addRow("Address ranges", rangesText);
 			}
 			else if (ranges.size() == 1) {
-				sameText(" | Size: 0x" + NumberToHex(ranges[0].getSize()));
+				tableInfo.addRow("Base address", baseAddr + " | Size: 0x" + NumberToHex(ranges[0].getSize()));
 			}
 
 			if(m_function->hasBody()) {
-				body
-				.beginTR()
-					.beginTD()
-						.text("References to")
-					.endTD()
-					.beginTD()
-						.text(std::to_string(m_function->getBody()->getFunctionsReferTo().size()))
-					.endTD()
-				.endTR();
+				tableInfo.addRow("References to", std::to_string(m_function->getBody()->getFunctionsReferTo().size()));
 			}
 		}
 	private:
@@ -180,16 +186,27 @@ namespace GUI::Units
 		: public PopupContainer
 	{
 	public:
-		ShortCutInfo(ShortInfo* shortInfo) {
+		ShortCutInfo(ShortInfo* shortInfo)
+			: PopupContainer(false, 0)
+		{
 			addItem(shortInfo);
 		}
 
 		void showWhenAboveItemHovered() {
 			if (ImGui::IsItemHovered()) {
-				setVisible();
+				if (m_lastStartHoveredTime == 0)
+					m_lastStartHoveredTime = GetTickCount64();
+				if (GetTickCount64() - m_lastStartHoveredTime > 200) {
+					setVisible();
+				}
+			}
+			else {
+				m_lastStartHoveredTime = 0;
 			}
 			PopupContainer::show();
 		}
+	private:
+		ULONGLONG m_lastStartHoveredTime;
 	};
 
 	//MY TODO: for func def and decl
@@ -224,7 +241,6 @@ namespace GUI::Units
 				: FuncName(name, clickEvent)
 			{
 				m_declInfo = new ShortCutInfo(new DeclInfo(functionDecl));
-				m_declInfo->setWidth(200.0f);
 			}
 
 			~FuncName() {
@@ -280,10 +296,6 @@ namespace GUI::Units
 			m_leftMouseClickOnFuncName(leftMouseClickOnFuncName),
 			m_leftMouseClickOnArgName(leftMouseClickOnArgName)
 		{
-			buildReturnValueType();
-			buildName();
-			buildArgumentList();
-
 			Utils::actionForList<Events::Event>(
 			{
 				m_leftMouseClickOnType,
@@ -305,6 +317,12 @@ namespace GUI::Units
 					delete handler;
 				}
 			});
+		}
+
+		void onVisibleOn() override {
+			buildReturnValueType();
+			buildName();
+			buildArgumentList();
 		}
 
 		int m_argumentSelectedIdx = 0;
@@ -383,7 +401,6 @@ namespace GUI::Units
 				: DeclSignature::FuncName(name, clickEvent)
 			{
 				m_declInfo = new ShortCutInfo(new FuncInfo(function));
-				m_declInfo->setWidth(200.0f);
 			}
 		};
 
