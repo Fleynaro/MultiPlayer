@@ -517,7 +517,7 @@ namespace GUI::Widget
 		};
 
 		FunctionList()
-			: ItemList("Function list", new FunctionFilterCreator(this))
+			: ItemList(new FunctionFilterCreator(this))
 		{
 			getFilterManager()->addFilter(new CategoryFilter(this));
 			getFilterManager()->addFilter(new ClassFilter(this));

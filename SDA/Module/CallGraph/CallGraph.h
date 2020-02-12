@@ -35,6 +35,10 @@ namespace CE
 					return getGroup() == Type::Function;
 				}
 
+				virtual bool isCalculatedFunction() {
+					return false;
+				}
+
 				bool isVMethod() {
 					return getGroup() == Type::VMethod;
 				}
@@ -112,6 +116,10 @@ namespace CE
 
 				Type getGroup() override {
 					return Type::Function;
+				}
+
+				bool isCalculatedFunction() override {
+					return !isNotCalculated();
 				}
 
 				bool isNotCalculated() {
@@ -216,6 +224,33 @@ namespace CE
 			class FunctionBody : public AbstractBody
 			{
 			public:
+				struct BasicInfo {
+					int m_stackMaxDepth = 0;
+					int m_calculatedFuncCount = 0;
+					int m_notCalculatedFuncCount = 0;
+					int m_vMethodCount = 0;
+					int m_gVarCount = 0;
+					int m_gVarWriteCount = 0;
+					bool m_inited = false;
+
+					int getAllFunctionsCount() {
+						return m_calculatedFuncCount + m_notCalculatedFuncCount + m_vMethodCount;
+					}
+
+					void join(BasicInfo info) {
+						m_stackMaxDepth = max(m_stackMaxDepth, info.m_stackMaxDepth);
+						m_calculatedFuncCount += info.m_calculatedFuncCount;
+						m_notCalculatedFuncCount += info.m_notCalculatedFuncCount;
+						m_vMethodCount += info.m_vMethodCount;
+						m_gVarCount += info.m_gVarCount;
+						m_gVarWriteCount += info.m_gVarWriteCount;
+					}
+
+					void next() {
+						m_stackMaxDepth++;
+					}
+				};
+
 				FunctionBody(API::Function::Function* function)
 					: m_function(function)
 				{}
@@ -231,8 +266,17 @@ namespace CE
 				API::Function::Function* getFunction() {
 					return m_function;
 				}
+
+				void setBasicInfo(BasicInfo& info) {
+					m_basicInfo = info;
+				}
+
+				BasicInfo& getBasicInfo() {
+					return m_basicInfo;
+				}
 			private:
 				API::Function::Function* m_function;
+				BasicInfo m_basicInfo;
 			};
 
 			class GlobalVarBody : public AbstractBody
@@ -310,7 +354,7 @@ namespace CE
 			template<bool isLeft = true>
 			void iterateCallStack(const std::function<bool(Unit::Node*, CallStack&)>& callback, Filter filter)
 			{
-				iterateCallStack([&](Unit::Node* node, CallStack& stack)
+				iterateCallStack<isLeft>([&](Unit::Node* node, CallStack& stack)
 				{
 					if ((int)filter & (int)Filter::FunctionNode && node->isFunction()
 						|| (int)filter & (int)Filter::GlobalVarNode && node->isGlobalVar()
@@ -340,13 +384,10 @@ namespace CE
 				FunctionIterator pass(body);
 				pass.iterateFunctionBody<isLeft>([&](Unit::Node* node)
 				{
-					if (node->isFunction()) {
-						auto functionNode = static_cast<Unit::FunctionNode*>(node);
-						if (!functionNode->isNotCalculated()) {
-							auto body = functionNode->getFunction()->getBody();
-							if (!stack.has(body)) {
-								iterateCallStack(callback, body, stack);
-							}
+					if (node->isCalculatedFunction()) {
+						auto body = static_cast<Unit::FunctionNode*>(node)->getFunction()->getBody();
+						if (!stack.has(body)) {
+							iterateCallStack(callback, body, stack);
 						}
 					}
 					return callback(node, stack);
@@ -422,6 +463,79 @@ namespace CE
 
 		namespace Analyser
 		{
+			class GenericAll
+			{
+			public:
+				GenericAll(FunctionManager* funcManager)
+					: m_funcManager(funcManager)
+				{}
+
+				void doAnalyse() {
+					for (auto it : m_funcManager->getFunctions()) {
+						it.second->getBody()->getBasicInfo().m_inited = false;
+					}
+
+					for (auto it : m_funcManager->getFunctions()) {
+						if (it.second->getBody()->isSourceTop()) {
+							CallStack stack;
+							iterateCallStack(it.second->getBody(), stack);
+						}
+					}
+				}
+			private:
+				Unit::FunctionBody::BasicInfo iterateCallStack(Unit::FunctionBody* body, CallStack& stack)
+				{
+					if (body->getBasicInfo().m_inited) {
+						auto info = body->getBasicInfo();
+						return info;
+					}
+
+					Unit::FunctionBody::BasicInfo info;
+					info.m_inited = true;
+					stack.push(body);
+
+					FunctionIterator pass(body);
+					pass.iterateFunctionBody([&](Unit::Node* node)
+					{
+						if (node->isFunction()) {
+							if (node->isCalculatedFunction()) {
+								auto body = static_cast<Unit::FunctionNode*>(node)->getFunction()->getBody();
+								if (!stack.has(body)) {
+									info.join(
+										iterateCallStack(body, stack)
+									);
+								}
+								info.m_calculatedFuncCount++;
+							}
+							else {
+								info.m_notCalculatedFuncCount++;
+							}
+						}
+
+						if (node->isVMethod()) {
+							info.m_vMethodCount++;
+						}
+
+						if (node->isGlobalVar()) {
+							info.m_gVarCount++;
+							auto varNode = static_cast<Unit::GlobalVarNode*>(node);
+							if (varNode->getUse() == Unit::GlobalVarNode::Write) {
+								info.m_gVarWriteCount++;
+							}
+						}
+						return true;
+					});
+
+					info.next();
+					body->setBasicInfo(info);
+
+					stack.pop();
+					return info;
+				}
+			private:
+				FunctionManager* m_funcManager;
+			};
+
 			class Generic
 			{
 			public:

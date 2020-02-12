@@ -5,7 +5,7 @@
 namespace GUI::Window
 {
 	class DataTypeList;
-	class FuncSelectList;
+	class FunctionList;
 
 	class ProjectWindow : public IWindow
 	{
@@ -17,7 +17,7 @@ namespace GUI::Window
 		}
 	private:
 		Project* m_project;
-		FunctionList* m_funcSelList = nullptr;
-		DataTypeList* m_dataTypeList = nullptr;
+		Window::FunctionList* m_funcSelList = nullptr;
+		Window::DataTypeList* m_dataTypeList = nullptr;
 	};
 };

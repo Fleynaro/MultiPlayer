@@ -192,7 +192,16 @@ namespace GUI::Units
 			}
 
 			if(m_function->hasBody()) {
-				tableInfo.addRow("References to", std::to_string(m_function->getBody()->getFunctionsReferTo().size()));
+				auto body = m_function->getBody();
+
+				auto& basicInfo = body->getBasicInfo();
+				std::string callStackInfo = "";
+				callStackInfo += "Max depth: "+ std::to_string(basicInfo.m_stackMaxDepth) +"\n";
+				callStackInfo += "Global vars: all - " + std::to_string(basicInfo.m_gVarCount) + ", write - " + std::to_string(basicInfo.m_gVarWriteCount) + "\n";
+				callStackInfo += "Functions: all - " + std::to_string(basicInfo.getAllFunctionsCount()) + ", calc. - " + std::to_string(basicInfo.m_calculatedFuncCount) + ", virt. - " + std::to_string(basicInfo.m_vMethodCount) + "\n";
+
+				tableInfo.addRow("Call stack:", callStackInfo);
+				tableInfo.addRow("References to", std::to_string(body->getFunctionsReferTo().size()));
 			}
 		}
 

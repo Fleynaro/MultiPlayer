@@ -65,6 +65,7 @@ public:
 				getProgramExe()->getFunctionManager()->getGhidraManager()->generateHashMap()
 			);
 			getProgramExe()->getFunctionManager()->buildFunctionBodies();
+			getProgramExe()->getFunctionManager()->buildFunctionBasicInfo();
 
 		}
 		catch (std::exception & e) {

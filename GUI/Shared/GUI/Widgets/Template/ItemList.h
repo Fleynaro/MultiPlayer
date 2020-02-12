@@ -248,7 +248,7 @@ namespace GUI::Widget::Template
 	protected:
 		Container* m_underFilterCP = nullptr;
 
-		ItemList(const std::string& name, FilterManager::FilterCreator* filterCreator, StyleSettings* styleSettings = &DefaultStyleSettings)
+		ItemList(FilterManager::FilterCreator* filterCreator, StyleSettings* styleSettings = &DefaultStyleSettings)
 			: m_styleSettings(styleSettings), m_filterManager(this)
 		{
 			filterCreator->setWidth(m_styleSettings->m_leftWidth);

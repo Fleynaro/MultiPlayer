@@ -444,6 +444,8 @@ namespace CE
 
 		void buildFunctionBodies();
 
+		void buildFunctionBasicInfo();
+
 		FunctionDict& getFunctions() {
 			return m_functions;
 		}

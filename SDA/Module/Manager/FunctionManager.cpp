@@ -167,6 +167,12 @@ void CE::FunctionManager::buildFunctionBodies() {
 	}
 }
 
+void CE::FunctionManager::buildFunctionBasicInfo()
+{
+	CallGraph::Analyser::GenericAll analyser(this);
+	analyser.doAnalyse();
+}
+
 void API::Function::Function::save() {
 	lock();
 

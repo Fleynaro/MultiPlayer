@@ -147,7 +147,7 @@ namespace GUI::Widget
 		};
 
 		DataTypeList()
-			: ItemList("Data type list", new TypeFilterCreator(this))
+			: ItemList(new TypeFilterCreator(this))
 		{
 			getFilterManager()->addFilter(new CategoryFilter(this));
 		}

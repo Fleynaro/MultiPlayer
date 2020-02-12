@@ -10,23 +10,25 @@ ProjectWindow::ProjectWindow(Project* project)
 	setWidth(1000);
 	setHeight(600);
 
+	auto dataTypeListWidget = new Widget::DataTypeList;
+	dataTypeListWidget->setView(
+		new Widget::DataTypeList::ListView(dataTypeListWidget, getProject()->getProgramExe()->getTypeManager())
+	);
 	addWindow(
 		m_dataTypeList = new Window::DataTypeList
 	);
-	m_dataTypeList->getList()->setView(
-		new Widget::DataTypeList::ListView(m_dataTypeList, getProject()->getProgramExe()->getTypeManager())
-	);
 
-	addWindow(
-		m_funcSelList = new Window::FunctionList(new Widget::FuncSelectList(
-			new Events::EventUI(EVENT_LAMBDA(info) {
-				auto list = m_funcSelList->getList()->getSelectedFunctions();
-				list.size();
-				m_funcSelList->close();
-			})
-		))
+	auto functionListWidget = new Widget::FuncSelectList(
+		new Events::EventUI(EVENT_LAMBDA(info) {
+			auto list = static_cast<Widget::FuncSelectList*>(m_funcSelList->getList())->getSelectedFunctions();
+			list.size();
+			m_funcSelList->close();
+		})
 	);
-	m_funcSelList->getList()->setView(
-		new Widget::FuncSelectList::ListView(m_funcSelList->getList(), getProject()->getProgramExe()->getFunctionManager())
+	functionListWidget->setView(
+		new Widget::FuncSelectList::ListView(functionListWidget, getProject()->getProgramExe()->getFunctionManager())
+	);
+	addWindow(
+		m_funcSelList = new Window::FunctionList(functionListWidget)
 	);
 }
