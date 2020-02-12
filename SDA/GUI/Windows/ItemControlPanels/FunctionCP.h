@@ -6,7 +6,7 @@
 
 using namespace CE;
 
-namespace GUI::Window
+namespace GUI::Widget
 {
 	class FunctionList;
 };
@@ -18,7 +18,7 @@ namespace GUI::Widget
 	public:
 		Container* m_generic;
 		Container* m_callFunction;
-		GUI::Window::FunctionList* m_callStackViewer;
+		GUI::Widget::FunctionList* m_callStackViewer;
 
 		FunctionCP(API::Function::Function* function)
 			: m_function(function)

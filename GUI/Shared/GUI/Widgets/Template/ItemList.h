@@ -1,16 +1,15 @@
 #pragma once
+#include "../../Items/IWidget.h"
 
-#include "../../Items/IWindow.h"
-
-namespace GUI::Window::Template
+namespace GUI::Widget::Template
 {
-	class ItemList : public IWindow
+	class ItemList : public Container
 	{
 	public:
 		struct StyleSettings
 		{
-			int m_width = 700;
 			int m_height = 500;
+			int m_rightWidth = 500;
 			int m_leftWidth = 200;
 		};
 
@@ -250,13 +249,11 @@ namespace GUI::Window::Template
 		Container* m_underFilterCP = nullptr;
 
 		ItemList(const std::string& name, FilterManager::FilterCreator* filterCreator, StyleSettings* styleSettings = &DefaultStyleSettings)
-			: IWindow(name), m_styleSettings(styleSettings), m_filterManager(this)
+			: m_styleSettings(styleSettings), m_filterManager(this)
 		{
-			setWidth(m_styleSettings->m_width);
-			setHeight(m_styleSettings->m_height);
 			filterCreator->setWidth(m_styleSettings->m_leftWidth);
 
-			getMainContainer()
+			(*this)
 				.beginChild()
 					.setWidth(m_styleSettings->m_leftWidth)
 					.beginContainer()

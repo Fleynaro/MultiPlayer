@@ -1,5 +1,5 @@
 #pragma once
-#include "Shared/GUI/Windows/Templates/ItemList.h"
+#include "Shared/GUI/Widgets/Template/ItemList.h"
 #include "GUI/Signature.h"
 #include <Manager/FunctionManager.h>
 #include <FunctionTag/FunctionTag.h>
@@ -8,7 +8,7 @@
 
 using namespace CE;
 
-namespace GUI::Window
+namespace GUI::Widget
 {
 	class FunctionList : public Template::ItemList
 	{
@@ -65,7 +65,7 @@ namespace GUI::Window
 				int maxCount = 300;
 				for (auto& it : m_funcManager->getFunctions()) {
 					if (m_funcList->checkOnInputValue(it.second, value) && m_funcList->checkAllFilters(it.second)) {
-						m_funcList->getItemsContainer().addItem(createFuncItem(it.second, m_funcList->m_openFunctionCP));//MY TODO*: ленивая загрузка, при открытии только
+						m_funcList->getItemsContainer().addItem(createFuncItem(it.second, m_funcList->m_openFunction));//MY TODO*: ленивая загрузка, при открытии только
 					}
 					if (--maxCount == 0)
 						break;
@@ -249,7 +249,7 @@ namespace GUI::Window
 						if (!funcNode->isNotCalculated()) {
 							if (isCalculatedFunc()) {
 								FunctionBody* body;
-								funcBody->addItem(body = new FunctionBody(funcNode->getFunction(), nextDepth, m_funcList->m_openFunctionCP));
+								funcBody->addItem(body = new FunctionBody(funcNode->getFunction(), nextDepth, m_funcList->m_openFunction));
 								if (isAlwaysOpen() || depth == 1) {
 									bool isRemove;
 									load(body, nextDepth, isRemove, funcName);
@@ -522,20 +522,6 @@ namespace GUI::Window
 			getFilterManager()->addFilter(new CategoryFilter(this));
 			getFilterManager()->addFilter(new ClassFilter(this));
 			getFilterManager()->addFilter(new FuncTagFilter(this));
-
-			//MY TODO*: error
-			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto function = (API::Function::Function*)message->getUserDataPtr();
-
-				getParent()->getMainContainer().clear();
-				getParent()->getMainContainer().addItem(new Widget::FunctionCP(function));
-			});
-			m_openFunctionCP->setCanBeRemoved(false);
-		}
-
-		~FunctionList() {
-			delete m_openFunctionCP;
 		}
 
 		bool checkOnInputValue(API::Function::Function* function, const std::string& value) {
@@ -548,8 +534,12 @@ namespace GUI::Window
 				return static_cast<FunctionFilter*>(filter)->checkFilter(function);
 			});
 		}
+
+		void setOpenFunctionEventHandler(Events::Event* eventHandler) {
+			m_openFunction = eventHandler;
+		}
 	private:
-		Events::Event* m_openFunctionCP;
+		Events::Event* m_openFunction;
 	};
 
 	class FuncSelectList : public FunctionList
@@ -677,5 +667,39 @@ namespace GUI::Window
 	private:
 		std::list<API::Function::Function*> m_selectedFunctions;
 		Events::Event* m_eventSelectFunction;
+	};
+};
+
+namespace GUI::Window
+{
+	class FunctionList : public IWindow
+	{
+	public:
+		FunctionList(Widget::FunctionList* funcList = new Widget::FunctionList)
+			: IWindow("Function list")
+		{
+			//MY TODO*: error
+			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
+				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
+				auto function = (API::Function::Function*)message->getUserDataPtr();
+
+				getParent()->getMainContainer().clear();
+				getParent()->getMainContainer().addItem(new Widget::FunctionCP(function));
+			});
+			m_openFunctionCP->setCanBeRemoved(false);
+
+			funcList->setOpenFunctionEventHandler(m_openFunctionCP);
+			setMainContainer(funcList);
+		}
+
+		~FunctionList() {
+			delete m_openFunctionCP;
+		}
+
+		Widget::FunctionList* getList() {
+			return static_cast<Widget::FunctionList*>(getMainContainerPtr());
+		}
+	private:
+		Events::EventHandler* m_openFunctionCP;
 	};
 };

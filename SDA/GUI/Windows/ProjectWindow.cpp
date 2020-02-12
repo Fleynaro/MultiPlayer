@@ -13,20 +13,20 @@ ProjectWindow::ProjectWindow(Project* project)
 	addWindow(
 		m_dataTypeList = new Window::DataTypeList
 	);
-	m_dataTypeList->setView(
-		new Window::DataTypeList::ListView(m_dataTypeList, getProject()->getProgramExe()->getTypeManager())
+	m_dataTypeList->getList()->setView(
+		new Widget::DataTypeList::ListView(m_dataTypeList, getProject()->getProgramExe()->getTypeManager())
 	);
 
 	addWindow(
-		m_funcSelList = new Window::FuncSelectList(
+		m_funcSelList = new Window::FunctionList(new Widget::FuncSelectList(
 			new Events::EventUI(EVENT_LAMBDA(info) {
-				auto list = m_funcSelList->getSelectedFunctions();
+				auto list = m_funcSelList->getList()->getSelectedFunctions();
 				list.size();
 				m_funcSelList->close();
 			})
-		)
+		))
 	);
-	m_funcSelList->setView(
-		new Window::FuncSelectList::ListView(m_funcSelList, getProject()->getProgramExe()->getFunctionManager())
+	m_funcSelList->getList()->setView(
+		new Widget::FuncSelectList::ListView(m_funcSelList->getList(), getProject()->getProgramExe()->getFunctionManager())
 	);
 }

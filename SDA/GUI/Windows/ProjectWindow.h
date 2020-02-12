@@ -17,7 +17,7 @@ namespace GUI::Window
 		}
 	private:
 		Project* m_project;
-		FuncSelectList* m_funcSelList = nullptr;
+		FunctionList* m_funcSelList = nullptr;
 		DataTypeList* m_dataTypeList = nullptr;
 	};
 };

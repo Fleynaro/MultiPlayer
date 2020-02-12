@@ -33,6 +33,10 @@ namespace GUI::Window
 			return m_container;
 		}
 
+		void setMainContainer(Container* container) {
+			m_container = container;
+		}
+
 		void render() override {
 			pushParams();
 			if (ImGui::Begin(getName().c_str(), &m_open, m_flags))

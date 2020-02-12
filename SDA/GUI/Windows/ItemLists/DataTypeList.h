@@ -1,11 +1,11 @@
 #pragma once
-#include "Shared/GUI/Windows/Templates/ItemList.h"
+#include "Shared/GUI/Widgets/Template/ItemList.h"
 #include "GUI/Type.h"
 #include <Manager/FunctionManager.h>
 
 using namespace CE;
 
-namespace GUI::Window
+namespace GUI::Widget
 {
 	class DataTypeList : public Template::ItemList
 	{
@@ -164,5 +164,28 @@ namespace GUI::Window
 		}
 	private:
 		std::list<TypeFilter*> m_typeFiltes;
+	};
+};
+
+namespace GUI::Window
+{
+	class DataTypeList : public IWindow
+	{
+	public:
+		DataTypeList(Widget::DataTypeList* dataTypeList = new Widget::DataTypeList)
+			: IWindow("Data type list")
+		{
+			setMainContainer(dataTypeList);
+		}
+
+		~DataTypeList() {
+			delete m_openFunctionCP;
+		}
+
+		Widget::DataTypeList* getList() {
+			return static_cast<Widget::DataTypeList*>(getMainContainerPtr());
+		}
+	private:
+		Events::EventHandler* m_openFunctionCP;
 	};
 };

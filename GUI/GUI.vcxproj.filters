@@ -108,10 +108,10 @@
     <ClInclude Include="Shared\GUI\imgui_include.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Shared\GUI\Windows\Templates\ItemList.h">
+    <ClInclude Include="Shared\GUI\Widgets\Template\ControlPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Shared\GUI\Widgets\Template\ControlPanel.h">
+    <ClInclude Include="Shared\GUI\Widgets\Template\ItemList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

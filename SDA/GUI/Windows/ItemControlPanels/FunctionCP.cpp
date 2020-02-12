@@ -7,10 +7,10 @@ using namespace GUI::Window;
 void FunctionCP::onVisibleOn() {
 	getSideBar()->addMenuItem("Generic", m_generic = new Container);
 	getSideBar()->addMenuItem("Call", m_callFunction = new Container);
-	getSideBar()->addMenuItem("Call stack", (m_callStackViewer = new FunctionList)->getMainContainerPtr());
+	getSideBar()->addMenuItem("Call stack", (m_callStackViewer = new Widget::FunctionList));
 	getSideBar()->setSelectedContainer(m_generic);
 
-	m_callStackViewer->setView(new FunctionList::CallStackView(m_callStackViewer, m_function));
+	m_callStackViewer->setView(new Widget::FunctionList::CallStackView(m_callStackViewer, m_function));
 	m_callStackViewer->update();
 
 	buildGeneric();
