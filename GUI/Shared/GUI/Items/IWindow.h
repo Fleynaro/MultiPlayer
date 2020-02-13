@@ -12,6 +12,7 @@ namespace GUI::Window
 		public Item,
 		public Events::ISender,
 		public Events::OnClose<IWindow>,
+		public Attribute::Id<IWindow>,
 		public Attribute::Name<IWindow>
 	{
 	public:
@@ -19,7 +20,9 @@ namespace GUI::Window
 			: Attribute::Name<IWindow>(name), m_container(container), Events::OnClose<IWindow>(this)
 		{}
 		~IWindow() {
-			delete m_container;
+			if (m_container->canBeRemovedBy(this)) {
+				delete m_container;
+			}
 			for (auto it : m_childs) {
 				delete it;
 			}
@@ -35,11 +38,17 @@ namespace GUI::Window
 
 		void setMainContainer(Container* container) {
 			m_container = container;
+			container->setParent(this);
 		}
 
 		void render() override {
 			pushParams();
-			if (ImGui::Begin(getName().c_str(), &m_open, m_flags))
+
+			pushIdParam();
+			bool isOpen = ImGui::Begin(getName().c_str(), &m_open, m_flags);
+			popIdParam();
+
+			if (isOpen)
 			{
 				calculateActualInfo();
 				onRender();
@@ -165,15 +174,18 @@ namespace GUI::Window
 		IWindow& addWindow(IWindow* window) {
 			m_childs.push_back(window);
 			window->setParent(this);
-			window->setCloseEvent(
-				new Events::EventUI(
-					EVENT_LAMBDA(info) {				
-						auto win = (IWindow*)info->getSender();
-						removeWindow(win);
-						delete win;
-					}
-				)
-			);
+
+			if(window->getCloseEvent() == nullptr) {
+				window->setCloseEvent(
+					new Events::EventUI(
+						EVENT_LAMBDA(info) {				
+							auto win = (IWindow*)info->getSender();
+							removeWindow(win);
+							delete win;
+						}
+					)
+				);
+			}
 			return *this;
 		}
 

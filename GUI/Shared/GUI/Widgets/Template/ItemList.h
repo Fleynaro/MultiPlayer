@@ -14,13 +14,23 @@ namespace GUI::Widget::Template
 		};
 
 		inline static StyleSettings DefaultStyleSettings;
-	protected:
+	
 		class IView
 		{
 		public:
 			virtual void onSearch(const std::string& value) = 0;
-		};
+			
+			void setOutputContainer(Container* container) {
+				m_outContainer = container;
+			}
 
+			Container* getOutContainer() {
+				return m_outContainer;
+			}
+		private:
+			Container* m_outContainer = nullptr;
+		};
+	protected:
 		class FilterManager : public Item
 		{
 		public:
@@ -57,7 +67,7 @@ namespace GUI::Widget::Template
 					: m_filterManager(filterManager), m_condition(condition), ColContainer(name)
 				{}
 
-				void buildHeader(const std::string description = "")
+				void buildHeader(const std::string description = "", bool isFixed = false)
 				{
 					m_eventChangeCondition = new Events::EventUI(EVENT_LAMBDA(info) {
 						auto sender = static_cast<FilterConditionSelector*>(info->getSender());
@@ -66,14 +76,21 @@ namespace GUI::Widget::Template
 					});
 
 					(*this)
-						.setCloseBtn(false)
-						.addItem(new FilterConditionSelector(m_eventChangeCondition, getCondition()))
-						.sameLine().addItem(
-							new GUI::Elements::Button::ButtonStd(
-								"x",
-								m_eventRemoveHook = new Events::EventHook(this)
-							)
-						)
+						.setCloseBtn(false);
+					if (!isFixed) {
+						(*this)
+							.addItem(new FilterConditionSelector(m_eventChangeCondition, getCondition()))
+							.sameLine().addItem(
+								new GUI::Elements::Button::ButtonStd(
+									"x",
+									m_eventRemoveHook = new Events::EventHook(this)
+								)
+							);
+					}
+					else {
+						setOpen(true);
+					}
+					(*this)
 						.text(description)
 						.separator();
 				}
@@ -94,15 +111,18 @@ namespace GUI::Widget::Template
 				}
 
 				void setEventRemoveHandler(Events::Event* eventHandler) {
-					m_eventRemoveHook->setEventHandler(eventHandler);
+					if (m_eventRemoveHook != nullptr) {
+						m_eventRemoveHook->setEventHandler(eventHandler);
+					}
 				}
 			private:
 				Operation m_condition;
 				Events::Event* m_eventChangeCondition;
-				Events::EventHook* m_eventRemoveHook;
+				Events::EventHook* m_eventRemoveHook = nullptr;
 				FilterManager* m_filterManager;
 			};
 			friend class Filter;
+
 
 			class FilterCreator
 				: public Elements::List::Combo
@@ -232,12 +252,21 @@ namespace GUI::Widget::Template
 		};
 
 	public:
-		void setView(IView* view) {
+		void setView(IView* view, bool isUpdate = true) {
 			m_view = view;
+			m_view->setOutputContainer(m_itemsContainer);
+			if (isUpdate) {
+				update();
+			}
 		}
 
 		virtual void update() {
 			onSearch(getOldInputValue());
+		}
+
+		void doSearchRequest(const std::string& text) {
+			onSearch(text);
+			m_oldInputValue = text;
 		}
 	private:
 		Container* m_filtersContainer = nullptr;
@@ -265,8 +294,7 @@ namespace GUI::Widget::Template
 									"##input1", 50,
 									new Events::EventUI(EVENT_LAMBDA(info) {
 										auto sender = (GUI::Elements::Input::Text*)info->getSender();
-										onSearch(sender->getInputValue());
-										m_oldInputValue = sender->getInputValue();
+										doSearchRequest(sender->getInputValue());
 									})
 								))
 								->setWidth(m_styleSettings->m_leftWidth)
@@ -308,5 +336,61 @@ namespace GUI::Widget::Template
 	private:
 		FilterManager m_filterManager;
 		IView* m_view;
+	};
+
+	class ItemInput
+		: public Elements::Input::Text,
+		public Attribute::Collapse<ItemInput>
+	{
+	public:
+		ItemInput(const std::string& name = "", int size = 50)
+			: Elements::Input::Text(name, size, nullptr), Attribute::Collapse<ItemInput>(false)
+		{}
+
+		bool m_focused = true;
+		void render() override {
+			Text::render();
+			ImGui::SameLine();
+
+			if (ImGui::IsItemHovered()) {
+				if(!toolTip().empty())
+					ImGui::SetTooltip(toolTip().c_str());
+			}
+
+			m_open |= ImGui::IsItemActive();
+			m_open &= m_focused;
+
+			if (isOpen())
+			{
+				ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
+				ImGui::SetNextWindowSize({ ImGui::GetItemRectSize().x, 0 });
+				bool open = m_open;
+				if (ImGui::Begin(getUniqueId().c_str(), &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+				{
+					m_focused &= ImGui::IsWindowFocused();
+					
+					renderShortView();
+					renderSelectable(m_focused);
+
+					ImGui::End();
+				}
+			}
+			else {
+				m_focused = true;
+			}
+		}
+
+		void onSpecial() override {
+			onSearch(getInputValue());
+		}
+
+		void refresh() {
+			onSpecial();
+		}
+
+		virtual std::string toolTip() = 0;
+		virtual void renderShortView() = 0;
+		virtual void renderSelectable(bool& open) = 0;
+		virtual void onSearch(const std::string& text) = 0;
 	};
 };

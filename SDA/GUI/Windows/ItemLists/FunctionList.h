@@ -59,21 +59,26 @@ namespace GUI::Widget
 				: m_funcList(funcList), m_funcManager(funcManager)
 			{}
 
+			int m_maxOutputFunctionCount = 300;
 			void onSearch(const std::string& value) override
 			{
-				m_funcList->getItemsContainer().clear();
-				int maxCount = 300;
+				getOutContainer()->clear();
+				int maxCount = m_maxOutputFunctionCount;
 				for (auto& it : m_funcManager->getFunctions()) {
-					if (m_funcList->checkOnInputValue(it.second, value) && m_funcList->checkAllFilters(it.second)) {
-						m_funcList->getItemsContainer().addItem(createFuncItem(it.second, m_funcList->m_openFunction));//MY TODO*: ленивая загрузка, при открытии только
+					if (m_funcList->checkOnInputValue(it.second, value) && (!isFilterEnabled() || m_funcList->checkAllFilters(it.second))) {
+						getOutContainer()->addItem(createFuncItem(it.second));//MY TODO*: ленивая загрузка, при открытии только
 					}
 					if (--maxCount == 0)
 						break;
 				}
 			}
 
-			virtual FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) {
-				return new FunctionItem(function, event);
+			virtual bool isFilterEnabled() {
+				return true;
+			}
+
+			virtual GUI::Item* createFuncItem(API::Function::Function* function) {
+				return new FunctionItem(function, m_funcList->m_openFunction);
 			}
 		protected:
 			FunctionManager* m_funcManager;
@@ -248,14 +253,17 @@ namespace GUI::Widget
 						auto funcNode = static_cast<CallGraph::Unit::FunctionNode*>(node);
 						if (!funcNode->isNotCalculated()) {
 							if (isCalculatedFunc()) {
-								FunctionBody* body;
-								funcBody->addItem(body = new FunctionBody(funcNode->getFunction(), nextDepth, m_funcList->m_openFunction));
+								FunctionBody* childFuncBody;
+								funcBody->addItem(childFuncBody = new FunctionBody(funcNode->getFunction(), nextDepth, m_funcList->m_openFunction));
 								if (isAlwaysOpen() || depth == 1) {
 									bool isRemove;
-									load(body, nextDepth, isRemove, funcName);
+									load(childFuncBody, nextDepth, isRemove, funcName);
+									if (childFuncBody->empty()) {
+										childFuncBody->setNotTreeNode(true);
+									}
 
 									if (isFilterEnabled()) {
-										if (body->empty()) {
+										if (childFuncBody->empty()) {
 											if (m_funcList->checkOnInputValue(funcNode->getFunction(), funcName)
 												&& m_funcList->checkAllFilters(funcNode->getFunction())) {
 												remove = false;
@@ -292,10 +300,10 @@ namespace GUI::Widget
 
 			void onSearch(const std::string& funcName) override
 			{
-				m_funcList->getItemsContainer().clear();
+				getOutContainer()->clear();
 				
 				FunctionBody* body;
-				m_funcList->getItemsContainer().addItem(body = new FunctionBody(m_function, 1, nullptr));
+				getOutContainer()->addItem(body = new FunctionBody(m_function, 1, nullptr));
 
 				bool isRemove;
 				load(body, 1, isRemove, funcName);
@@ -538,7 +546,7 @@ namespace GUI::Widget
 		void setOpenFunctionEventHandler(Events::Event* eventHandler) {
 			m_openFunction = eventHandler;
 		}
-	private:
+	public:
 		Events::Event* m_openFunction;
 	};
 
@@ -551,7 +559,7 @@ namespace GUI::Widget
 			SelectedFilter(FuncSelectList* functionList)
 				: FunctionFilter("Selected function filter", functionList)
 			{
-				buildHeader("Filter function by selected.");
+				buildHeader("Filter function by selected.", true);
 				beginBody()
 					.addItem(
 						m_cb = new Elements::Generic::Checkbox("show selected only", false,
@@ -595,14 +603,43 @@ namespace GUI::Widget
 				: FunctionList::ListView(funcList, funcManager)
 			{}
 
-			FunctionItem* createFuncItem(API::Function::Function* function, Events::Event* event) override {
-				return new FunctionItemWithCheckBox(function, event, getFuncSelList()->isFunctionSelected(function), new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function));
+			GUI::Item* createFuncItem(API::Function::Function* function) override {
+				return new FunctionItemWithCheckBox(function, getFuncSelList()->m_openFunction, getFuncSelList()->isFunctionSelected(function), new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function));
 			}
-		private:
+		protected:
 			FuncSelectList* getFuncSelList() {
 				return static_cast<FuncSelectList*>(m_funcList);
 			}
 		};
+
+		class ShortView
+			: public ListView
+		{
+		public:
+			class FunctionItemWithCheckBox : public Container
+			{
+			public:
+				FunctionItemWithCheckBox(API::Function::Function* function, bool selected, Events::Event* eventSelectFunction)
+				{
+					(*this)
+						.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunction))
+						.sameText(" " + function->getFunction()->getSigName());
+				}
+			};
+
+			ShortView(FuncSelectList* funcList, FunctionManager* funcManager)
+				: ListView(funcList, funcManager)
+			{}
+
+			bool isFilterEnabled() override {
+				return false;
+			}
+
+			GUI::Item* createFuncItem(API::Function::Function* function) override {
+				return new FunctionItemWithCheckBox(function, getFuncSelList()->isFunctionSelected(function), new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function));
+			}
+		};
+
 
 		FuncSelectList(Events::Event* eventSelectFunctions)
 		{
@@ -645,8 +682,10 @@ namespace GUI::Widget
 				Elements::Button::ButtonStd* m_button;
 			};
 
-			(*m_underFilterCP)
-				.addItem(new UpdSelectInfo(this, eventSelectFunctions));
+			if (eventSelectFunctions != nullptr) {
+				(*m_underFilterCP)
+					.addItem(new UpdSelectInfo(this, eventSelectFunctions));
+			}
 		}
 
 		bool isFunctionSelected(API::Function::Function* function) {
@@ -675,8 +714,8 @@ namespace GUI::Window
 	class FunctionList : public IWindow
 	{
 	public:
-		FunctionList(Widget::FunctionList* funcList = new Widget::FunctionList)
-			: IWindow("Function list")
+		FunctionList(Widget::FunctionList* funcList, const std::string& name = "Function list")
+			: IWindow(name)
 		{
 			//MY TODO*: error
 			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
@@ -701,5 +740,94 @@ namespace GUI::Window
 		}
 	private:
 		Events::EventHandler* m_openFunctionCP;
+	};
+};
+
+namespace GUI::Widget
+{
+	class FunctionInput : public Template::ItemInput
+	{
+	public:
+		FunctionInput(Window::IWindow* parentWindow, FunctionManager* funcManager)
+			: m_parentWindow(parentWindow)
+		{
+			m_funcSelectList = new FuncSelectList(nullptr);
+			m_funcSelectList->setView(
+				m_funcListView = new FuncSelectList::ListView(m_funcSelectList, funcManager));
+			m_funcSelectList->setCanBeRemoved(false);
+			
+			m_funcListShortView = new FuncSelectList::ShortView(m_funcSelectList, funcManager);
+			m_funcListShortView->setOutputContainer(m_funcShortList = new Container);
+			m_funcListShortView->m_maxOutputFunctionCount = 15;
+		}
+
+		~FunctionInput() {
+			if (m_window != nullptr) {
+				m_parentWindow->removeWindow(m_window);
+			}
+			delete m_funcSelectList;
+			delete m_funcListView;
+			delete m_funcListShortView;
+			delete m_funcShortList;
+		}
+
+		int getSelectedFuncCount() {
+			return getSelectedFunctions().size();
+		}
+
+		std::list<API::Function::Function*>& getSelectedFunctions() {
+			return m_funcSelectList->getSelectedFunctions();
+		}
+	protected:
+		std::string toolTip() override {
+			if (getSelectedFuncCount() == 0)
+				return "please, select one or more functions";
+			return "selected "+ std::to_string(getSelectedFuncCount()) +" functions";
+		}
+
+		void onSearch(const std::string& text) {
+			m_funcListShortView->onSearch(text);
+		}
+
+		void renderShortView() override {
+			m_funcShortList->show();
+		}
+
+		void renderSelectable(bool& open) override {
+			if (getSelectedFuncCount() > 0) {
+				std::string info = "Clear ("+ toolTip() +")";
+				if (ImGui::Selectable(info.c_str())) {
+					getSelectedFunctions().clear();
+					m_funcShortList->clear();
+					refresh();
+				}
+			}
+
+			if (ImGui::Selectable("More...")) {
+				if (m_window == nullptr) {
+					m_parentWindow->addWindow(
+						m_window = new Window::FunctionList(m_funcSelectList, "Select functions")
+					);
+					m_window->setCloseEvent(
+						new Events::EventUI(
+							EVENT_LAMBDA(info) {
+								m_parentWindow->removeWindow(m_window);
+								delete m_window;
+								m_window = nullptr;
+							}
+						)
+					);
+					open = false;
+				}
+			}
+		}
+
+	private:
+		Window::IWindow* m_parentWindow;
+		Window::IWindow* m_window = nullptr;
+		FuncSelectList* m_funcSelectList;
+		FuncSelectList::ListView* m_funcListView;
+		FuncSelectList::ListView* m_funcListShortView;
+		Container* m_funcShortList;
 	};
 };

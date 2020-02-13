@@ -520,13 +520,21 @@ namespace GUI
 		{}
 
 		void render() override {
-			if (isOpen()) {
+			if (isOpen() || m_alwaysOpened) {
 				ImGui::SetNextItemOpen(true);
 			}
 
+			bool isOpen = false;
 			pushIdParam();
-			bool isOpen = ImGui::TreeNode(getName().c_str());
-			sendLeftMouseClickEvent();
+			if (m_selectable) {
+				if (ImGui::Selectable(getName().c_str())) {
+					onLeftMouseClick();
+				}
+			}
+			else {
+				isOpen = ImGui::TreeNode(getName().c_str());
+				sendLeftMouseClickEvent();
+			}
 			popIdParam();
 
 			if (getName().find("##") != std::string::npos) {
@@ -534,7 +542,11 @@ namespace GUI
 				renderHeader();
 				ImGui::NewLine();
 			}
-			if (isOpen) {
+
+			if (m_selectable)
+				return;
+
+			if (isOpen || m_alwaysOpened) {
 				Container::render();
 				ImGui::TreePop();
 			}
@@ -544,6 +556,17 @@ namespace GUI
 		}
 
 		virtual void renderHeader() {}
+
+		void setAlwaysOpened(bool toggle) {
+			m_alwaysOpened = toggle;
+		}
+
+		void setNotTreeNode(bool toggle) {
+			m_selectable = toggle;
+		}
+	private:
+		bool m_alwaysOpened = false;
+		bool m_selectable = false;
 	};
 
 
@@ -1513,6 +1536,8 @@ namespace GUI
 					if (ImGui::InputText(getName().c_str(), m_inputValue.data(), m_size)) {
 						sendSpecialEvent();
 					}
+					if (m_placeholder.empty()) {
+					}
 
 					popIdParam();
 					popFontParam();
@@ -1527,9 +1552,14 @@ namespace GUI
 				std::string getInputValue() {
 					return m_inputValue.c_str();
 				}
+
+				void setPlaceHolder(const std::string& text) {
+					m_placeholder = text;
+				}
 			private:
 				std::string m_inputValue;
 				int m_size;
+				std::string m_placeholder;
 			};
 
 

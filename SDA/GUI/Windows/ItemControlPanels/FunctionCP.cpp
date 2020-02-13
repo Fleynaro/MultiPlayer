@@ -11,7 +11,6 @@ void FunctionCP::onVisibleOn() {
 	getSideBar()->setSelectedContainer(m_generic);
 
 	m_callStackViewer->setView(new Widget::FunctionList::CallStackView(m_callStackViewer, m_function));
-	m_callStackViewer->update();
 
 	buildGeneric();
 	buildCallFunction();

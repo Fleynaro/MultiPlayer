@@ -16,7 +16,7 @@ ProjectWindow::ProjectWindow(Project* project)
 		new Widget::DataTypeList::ListView(dataTypeListWidget, getProject()->getProgramExe()->getTypeManager())
 	);
 	addWindow(
-		m_dataTypeList = new Window::DataTypeList
+		m_dataTypeList = new Window::DataTypeList(dataTypeListWidget)
 	);
 
 	auto functionListWidget = new Widget::FuncSelectList(
@@ -33,15 +33,26 @@ ProjectWindow::ProjectWindow(Project* project)
 		m_funcSelList = new Window::FunctionList(functionListWidget)
 	);
 
-	auto func = getProject()->getProgramExe()->getFunctionManager()->createFunction();
-	auto manager = getProject()->getProgramExe()->getFunctionManager()->getFunctionTagManager();
-	manager->createTag(manager->m_getTag, "test tag1");
+	auto funcManager = getProject()->getProgramExe()->getFunctionManager();
+	auto tagManager = funcManager->getFunctionTagManager();
+	auto tag1 = tagManager->createTag(tagManager->m_getTag, "test tag1");
+	auto ftag1 = tagManager->createTag(funcManager->getFunctionDeclById(10), tag1, "test ftag1");
+	auto ftag2 = tagManager->createTag(funcManager->getFunctionDeclById(10), tag1, "test ftag2");
+	
+	
+	/*auto handler = new Events::EventUI(EVENT_LAMBDA(info) {
+		auto funcTag = static_cast<Widget::FunctionTagList::TreeView::FunctionTag*>(info->getSender());
+
+	});
+	handler->setCanBeRemoved(false);
 	addWindow(
 		m_funcTagList = new Window::FunctionTagList(getProject()->getProgramExe()->getFunctionManager()->getFunctionTagManager(),
-			new Events::EventUI(EVENT_LAMBDA(info) {
-				auto funcTag = static_cast<Widget::FunctionTagList::TreeView::FunctionTag*>(info->getSender());
-
-			})
+			handler
 		)
-	);
+	);*/
+
+	getMainContainer()
+		.addItem(new Widget::FunctionInput(this, funcManager))
+		.newLine()
+		.addItem(new Widget::FunctionTagInput(this, tagManager));
 }

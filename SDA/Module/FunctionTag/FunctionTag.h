@@ -263,6 +263,10 @@ namespace CE
 				return tag;
 			}
 
+			UserTag* createTag(Tag* parent, std::string name, std::string desc = "") {
+				return createTag(nullptr, parent, name, desc);
+			}
+
 			void addTag(Tag* tag) {
 				m_tags.insert(std::make_pair(tag->getId(), tag));
 			}
