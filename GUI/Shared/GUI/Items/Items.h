@@ -509,13 +509,14 @@ namespace GUI
 
 	class TreeNode
 		: public Container,
+		public Events::OnLeftMouseClick<TreeNode>,
 		public Attribute::Id<TreeNode>,
 		public Attribute::Name<TreeNode>,
 		public Attribute::Collapse<TreeNode>
 	{
 	public:
 		TreeNode(const std::string& name = "##", bool open = false)
-			: Attribute::Name<TreeNode>(name), Attribute::Collapse<TreeNode>(open)
+			: Attribute::Name<TreeNode>(name), Attribute::Collapse<TreeNode>(open), Events::OnLeftMouseClick<TreeNode>(this)
 		{}
 
 		void render() override {
@@ -525,6 +526,7 @@ namespace GUI
 
 			pushIdParam();
 			bool isOpen = ImGui::TreeNode(getName().c_str());
+			sendLeftMouseClickEvent();
 			popIdParam();
 
 			if (getName().find("##") != std::string::npos) {

@@ -141,12 +141,14 @@ namespace CE
 
 			GetTag* m_getTag = new GetTag;
 			SetTag* m_setTag = new SetTag;
+			std::list<Tag*> m_basicTags;
 
 			Manager(FunctionManager* funcManager)
 				: m_funcManager(funcManager)
 			{
 				addTag(m_getTag);
 				addTag(m_setTag);
+				m_basicTags = { m_getTag, m_setTag };
 			}
 
 			void loadTags() {

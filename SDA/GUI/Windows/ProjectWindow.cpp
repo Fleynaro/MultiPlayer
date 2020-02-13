@@ -1,6 +1,7 @@
 #include "ProjectWindow.h"
 #include "GUI/Windows/ItemLists/DataTypeList.h"
 #include "GUI/Windows/ItemLists/FunctionList.h"
+#include "GUI/Windows/ItemLists/FunctionTagList.h"
 
 using namespace GUI::Window;
 
@@ -30,5 +31,17 @@ ProjectWindow::ProjectWindow(Project* project)
 	);
 	addWindow(
 		m_funcSelList = new Window::FunctionList(functionListWidget)
+	);
+
+	auto func = getProject()->getProgramExe()->getFunctionManager()->createFunction();
+	auto manager = getProject()->getProgramExe()->getFunctionManager()->getFunctionTagManager();
+	manager->createTag(manager->m_getTag, "test tag1");
+	addWindow(
+		m_funcTagList = new Window::FunctionTagList(getProject()->getProgramExe()->getFunctionManager()->getFunctionTagManager(),
+			new Events::EventUI(EVENT_LAMBDA(info) {
+				auto funcTag = static_cast<Widget::FunctionTagList::TreeView::FunctionTag*>(info->getSender());
+
+			})
+		)
 	);
 }
