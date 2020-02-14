@@ -88,6 +88,13 @@ namespace CE
 			TagCollection()
 			{}
 
+			TagCollection(TagCollection* collection)
+			{
+				if (collection != nullptr) {
+					add(*collection);
+				}
+			}
+
 			void add(TagCollection& collection) {
 				for (auto tag : collection.getTagList()) {
 					add(tag);
@@ -165,8 +172,8 @@ namespace CE
 					Tag* parentTag = getTagById(parent_tag_id);;
 					if (parentTag == nullptr)
 						continue;
-					auto decl = m_funcManager->getFunctionDeclById(query.getColumn("decl_id"));
 
+					auto decl = m_funcManager->getFunctionDeclById(query.getColumn("decl_id"));
 					addTag(new UserTag(decl, parentTag, tag_id, query.getColumn("name"), query.getColumn("desc")));
 				}
 
@@ -288,7 +295,7 @@ namespace CE
 				return &m_tagCollections[decl_id];
 			}
 
-			TagCollection getTagCollectionByDecl(API::Function::Function* function) {
+			TagCollection getTagCollection(API::Function::Function* function) {
 				TagCollection collection;
 
 				auto globalCollection = getGlobalTagCollectionByDecl(function->getDeclaration());

@@ -174,6 +174,10 @@ namespace GUI
 				m_flags = flags;
 				return (T1*)this;
 			}
+
+			T1* addFlags(int flags, bool toggle = true) {
+				return setFlags(T2(getFlags() & ~flags | flags * toggle));
+			}
 		private:
 			T2 m_flags;
 		};

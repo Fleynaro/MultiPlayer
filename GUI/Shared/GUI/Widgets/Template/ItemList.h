@@ -18,6 +18,7 @@ namespace GUI::Widget::Template
 		class IView
 		{
 		public:
+			virtual void onSetView() {}
 			virtual void onSearch(const std::string& value) = 0;
 			
 			void setOutputContainer(Container* container) {
@@ -215,7 +216,9 @@ namespace GUI::Widget::Template
 		public:
 			Item(const std::string& header)
 				: TreeNode(header)
-			{}
+			{
+				addFlags(ImGuiTreeNodeFlags_FramePadding);
+			}
 
 			Item()
 				: TreeNode()
@@ -255,6 +258,7 @@ namespace GUI::Widget::Template
 		void setView(IView* view, bool isUpdate = true) {
 			m_view = view;
 			m_view->setOutputContainer(m_itemsContainer);
+			m_view->onSetView();
 			if (isUpdate) {
 				update();
 			}

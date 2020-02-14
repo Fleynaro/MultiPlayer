@@ -512,7 +512,12 @@ namespace GUI
 		public Events::OnLeftMouseClick<TreeNode>,
 		public Attribute::Id<TreeNode>,
 		public Attribute::Name<TreeNode>,
-		public Attribute::Collapse<TreeNode>
+		public Attribute::Collapse<TreeNode>,
+		public Attribute::Flags<
+			TreeNode,
+			ImGuiTreeNodeFlags_,
+			ImGuiTreeNodeFlags_None
+		>
 	{
 	public:
 		TreeNode(const std::string& name = "##", bool open = false)
@@ -526,15 +531,8 @@ namespace GUI
 
 			bool isOpen = false;
 			pushIdParam();
-			if (m_selectable) {
-				if (ImGui::Selectable(getName().c_str())) {
-					onLeftMouseClick();
-				}
-			}
-			else {
-				isOpen = ImGui::TreeNode(getName().c_str());
-				sendLeftMouseClickEvent();
-			}
+			isOpen = ImGui::TreeNodeEx(getName().c_str(), getFlags());
+			sendLeftMouseClickEvent();
 			popIdParam();
 
 			if (getName().find("##") != std::string::npos) {
@@ -542,9 +540,6 @@ namespace GUI
 				renderHeader();
 				ImGui::NewLine();
 			}
-
-			if (m_selectable)
-				return;
 
 			if (isOpen || m_alwaysOpened) {
 				Container::render();
@@ -561,12 +556,11 @@ namespace GUI
 			m_alwaysOpened = toggle;
 		}
 
-		void setNotTreeNode(bool toggle) {
-			m_selectable = toggle;
+		void setAsLeaf(bool toggle) {
+			addFlags(ImGuiTreeNodeFlags_Leaf, toggle);
 		}
 	private:
 		bool m_alwaysOpened = false;
-		bool m_selectable = false;
 	};
 
 

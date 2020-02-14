@@ -22,6 +22,7 @@ namespace GUI::Widget
 				FunctionTag(Function::Tag::Tag* tag, Events::EventHandler* openFunctionTag)
 					: m_tag(tag)
 				{
+					addFlags(ImGuiTreeNodeFlags_FramePadding);
 					setLeftMouseClickEvent(openFunctionTag);
 					
 					m_header = new Container;
@@ -78,7 +79,15 @@ namespace GUI::Widget
 			
 			TreeView(FunctionTagList* funcTagList, Events::EventHandler* openFunctionTag = nullptr)
 				: m_funcTagList(funcTagList), m_openFunctionTag(openFunctionTag)
-			{
+			{}
+
+			~TreeView() {
+				if(m_eventUpdateCB != nullptr)
+					delete m_eventUpdateCB;
+			}
+
+			//MY TODO*: unsetView
+			void onSetView() override {
 				m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
 					m_funcTagList->update();
 				});
@@ -94,10 +103,6 @@ namespace GUI::Widget
 					.endReverseInserting();
 			}
 
-			~TreeView() {
-				delete m_eventUpdateCB;
-			}
-
 			void load(FunctionTag* tagNode, bool& remove, const std::string& funcName) {
 				tagNode->setAlwaysOpened(true);
 				remove = true;
@@ -111,7 +116,7 @@ namespace GUI::Widget
 						load(tagChildNode = createUserFunctionTag(static_cast<Function::Tag::UserTag*>(tag.second)), isRemove, funcName);
 						tagNode->addItem(tagChildNode);
 						if (tagChildNode->empty()) {
-							tagChildNode->setNotTreeNode(true);
+							tagChildNode->addFlags(ImGuiTreeNodeFlags_Leaf);
 						}
 
 						if (isFilterEnabled()) {
@@ -148,14 +153,14 @@ namespace GUI::Widget
 				}
 			}
 		protected:
-			bool isFilterEnabled() {
-				return m_cb_isFilterEnabled->isSelected();
+			virtual bool isFilterEnabled() {
+				return /*m_cb_isFilterEnabled != nullptr && */m_cb_isFilterEnabled->isSelected();
 			}
 
 			FunctionTagList* m_funcTagList;
 			Events::EventHandler* m_openFunctionTag;
-			Events::EventHandler* m_eventUpdateCB;
-			Elements::Generic::Checkbox* m_cb_isFilterEnabled;
+			Events::EventHandler* m_eventUpdateCB = nullptr;
+			Elements::Generic::Checkbox* m_cb_isFilterEnabled = nullptr;
 		};
 		friend class TreeView;
 
@@ -275,6 +280,10 @@ namespace GUI::Widget
 		protected:
 			FuncTagSelectList* getFuncTagSelList() {
 				return static_cast<FuncTagSelectList*>(m_funcTagList);
+			}
+
+			bool isFilterEnabled() override {
+				return false;
 			}
 		};
 
@@ -465,13 +474,16 @@ namespace GUI::Widget
 		{}
 	};
 
+	//MY TODO: в виде кнопок, при нажатии на которую вылетает алерт/меню с предложением изменить/удалить
 	class FunctionTagShortCut
 		: public Container
 	{
 	public:
 
-		FunctionTagShortCut()
-		{}
+		FunctionTagShortCut(API::Function::Function* function)
+		{
+			
+		}
 	};
 
 };

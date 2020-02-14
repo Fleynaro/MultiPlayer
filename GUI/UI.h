@@ -157,6 +157,17 @@ public:
 			});
 
 			getMainContainer()
+				.beginChild()
+					.beginTreeNode("level 3")
+						.beginTreeNode("1 level 2")
+							.addFlags(ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_Bullet)
+						->end()
+
+						.beginTreeNode("2 level 2")
+
+						.end()
+					.end()
+				.end()
 				.addItem(new HoverText("text"))
 				.beginChild()
 					.setWidth(500)

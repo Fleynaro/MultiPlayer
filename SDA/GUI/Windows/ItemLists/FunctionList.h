@@ -167,7 +167,9 @@ namespace GUI::Widget
 			public:
 				FunctionBody(API::Function::Function* function, int depth, Events::EventHandler* openFunctionCP)
 					: m_function(function), Node(depth), m_openFunctionCP(openFunctionCP)
-				{}
+				{
+					addFlags(ImGuiTreeNodeFlags_FramePadding);
+				}
 
 				~FunctionBody() {
 					if (m_signature != nullptr) {
@@ -203,11 +205,6 @@ namespace GUI::Widget
 			CallStackView(FunctionList* funcList, API::Function::Function* function)
 				: m_funcList(funcList), m_function(function)
 			{
-				m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
-					m_funcList->update();
-				});
-				m_eventUpdateCB->setCanBeRemoved(false);
-
 				m_eventVisibleFuncBody = new Events::EventUI(EVENT_LAMBDA(info) {
 					auto message = std::dynamic_pointer_cast<Events::EventMessage>(info);
 					if (message->getValue<Events::VisibleType>() != Events::VisibleOn)
@@ -219,6 +216,18 @@ namespace GUI::Widget
 					}
 				});
 				m_eventVisibleFuncBody->setCanBeRemoved(false);
+			}
+
+			~CallStackView() {
+				delete m_eventUpdateCB;
+				delete m_eventVisibleFuncBody;
+			}
+
+			void onSetView() override {
+				m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
+					m_funcList->update();
+				});
+				m_eventUpdateCB->setCanBeRemoved(false);
 
 				(*m_funcList->m_underFilterCP)
 					.beginReverseInserting()
@@ -233,11 +242,6 @@ namespace GUI::Widget
 							.addItem(m_cb_isCalculatedFunc = new Elements::Generic::Checkbox("Calculated functions", true, m_eventUpdateCB))
 						.end()
 					.endReverseInserting();
-			}
-
-			~CallStackView() {
-				delete m_eventUpdateCB;
-				delete m_eventVisibleFuncBody;
 			}
 
 			//MY TODO*: stack overflow; add check
@@ -259,7 +263,7 @@ namespace GUI::Widget
 									bool isRemove;
 									load(childFuncBody, nextDepth, isRemove, funcName);
 									if (childFuncBody->empty()) {
-										childFuncBody->setNotTreeNode(true);
+										childFuncBody->addFlags(ImGuiTreeNodeFlags_Leaf);
 									}
 
 									if (isFilterEnabled()) {
@@ -336,13 +340,13 @@ namespace GUI::Widget
 			API::Function::Function* m_function;
 			FunctionList* m_funcList;
 
-			Elements::Generic::Checkbox* m_cb_isFilterEnabled;
-			Elements::Generic::Checkbox* m_cb_isAlwaysOpen;
-			Elements::Generic::Checkbox* m_cb_isGlobalVarNode;
-			Elements::Generic::Checkbox* m_cb_isVMethodNode;
-			Elements::Generic::Checkbox* m_cb_isNotCalculatedFunc;
-			Elements::Generic::Checkbox* m_cb_isCalculatedFunc;
-			Events::EventHandler* m_eventUpdateCB;
+			Elements::Generic::Checkbox* m_cb_isFilterEnabled = nullptr;
+			Elements::Generic::Checkbox* m_cb_isAlwaysOpen = nullptr;
+			Elements::Generic::Checkbox* m_cb_isGlobalVarNode = nullptr;
+			Elements::Generic::Checkbox* m_cb_isVMethodNode = nullptr;
+			Elements::Generic::Checkbox* m_cb_isNotCalculatedFunc = nullptr;
+			Elements::Generic::Checkbox* m_cb_isCalculatedFunc = nullptr;
+			Events::EventHandler* m_eventUpdateCB = nullptr;
 			Events::EventHandler* m_eventVisibleFuncBody;
 		};
 		friend class CallStackView;
@@ -483,7 +487,7 @@ namespace GUI::Widget
 			}
 
 			bool checkFilter(API::Function::Function* function) override {
-				auto collection = function->getFunctionManager()->getFunctionTagManager()->getTagCollectionByDecl(function);
+				auto collection = function->getFunctionManager()->getFunctionTagManager()->getTagCollection(function);
 				return collection.contains(getTagCollection());
 			}
 

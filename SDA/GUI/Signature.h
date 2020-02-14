@@ -118,24 +118,12 @@ namespace GUI::Units
 			}
 		}
 
-		virtual void buildTagList() {
-			auto collection = getTagCollection();
-
-			if (!collection.empty()) {
-				text("Tags: ");
-				for (auto tag : collection.getTagList()) {
-					sameText(tag->getName() + " ");
-				}
-			}
-			else {
-				text("No tags");
-			}
-		}
+		/*virtual void buildTagList() {}
 
 		virtual Function::Tag::TagCollection getTagCollection() {
 			auto tagManager = m_functionDecl->getFunctionManager()->getFunctionTagManager();
-			return *tagManager->getGlobalTagCollectionByDecl(m_functionDecl);
-		}
+			return Function::Tag::TagCollection(tagManager->getGlobalTagCollectionByDecl(m_functionDecl));
+		}*/
 
 		static const std::string& getRoleName(int roleId) {
 			static std::vector<std::string> roleName = {
@@ -205,9 +193,23 @@ namespace GUI::Units
 			}
 		}
 
+		void buildTagList() {
+			auto collection = getTagCollection();
+
+			if (!collection.empty()) {
+				text("Tags: ");
+				for (auto tag : collection.getTagList()) {
+					sameText(tag->getName() + " ");
+				}
+			}
+			else {
+				text("No tags");
+			}
+		}
+
 		Function::Tag::TagCollection getTagCollection() override {
 			auto tagManager = m_function->getFunctionManager()->getFunctionTagManager();
-			return tagManager->getTagCollectionByDecl(m_function);
+			return tagManager->getTagCollection(m_function);
 		}
 	private:
 		API::Function::Function* m_function;
