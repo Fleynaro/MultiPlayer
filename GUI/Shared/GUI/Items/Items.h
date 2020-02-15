@@ -1367,6 +1367,44 @@ namespace GUI
 					popFontParam();
 				}
 			};
+
+			class ButtonTag
+				: public IButton,
+				public Attribute::Font<ButtonTag>,
+				public Attribute::Hint<ButtonTag>
+			{
+			public:
+				ButtonTag(std::string name, ColorRGBA color, Events::Event* event = nullptr)
+					: IButton(name, event), m_color(color)
+				{}
+
+				void render() override
+				{
+					ImGui::PushTextWrapPos();
+						pushFontParam();
+						ImGui::Text(getName().c_str());
+						popFontParam();
+						if (ImGui::IsItemClicked()) {
+							sendSpecialEvent();
+						}
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+							showHint();
+						}
+
+						auto min = ImGui::GetItemRectMin();
+						min.x -= 2.0;
+						min.y -= 2.0;
+						auto max = ImGui::GetItemRectMax();
+						max.x += 2.0;
+						max.y += 2.0;
+						ImGui::GetWindowDrawList()->AddRect(min, max, ImGui::GetColorU32(toImGuiColor(m_color)));
+					ImGui::PopTextWrapPos();
+				}
+
+			private:
+				ColorRGBA m_color;
+			};
 		};
 
 
@@ -1516,23 +1554,29 @@ namespace GUI
 				public Attribute::Font<Text>
 			{
 			public:
-				Text(const std::string& name, int size, Events::Event* event)
-					: m_size(size), IInput(name, event)
-				{
-					m_inputValue.reserve(size);
-				}
+				Text(const std::string& name = "", Events::Event* event = nullptr)
+					: IInput(name, event)
+				{}
 
 				void render() override {
 					pushWidthParam();
 					pushFontParam();
 					pushIdParam();
 
-					if (ImGui::InputText(getName().c_str(), m_inputValue.data(), m_size)) {
+					if (ImGui::InputText(getName().c_str(), &m_inputValue)) {
 						sendSpecialEvent();
 					}
-					if (m_placeholder.empty()) {
+					if (m_placeHolderEnable) {
+						if (!ImGui::IsItemActive()) {
+							if (ImGui::IsItemHovered()) {
+								m_inputValue.clear();
+							}
+							else {
+								m_inputValue = getPlaceHolder();
+							}
+						}
 					}
-
+					
 					popIdParam();
 					popFontParam();
 					popWidthParam();
@@ -1543,17 +1587,17 @@ namespace GUI
 					return this;
 				}
 
-				std::string getInputValue() {
-					return m_inputValue.c_str();
+				std::string& getInputValue() {
+					return m_inputValue;
+				}			
+			protected:
+				virtual std::string getPlaceHolder() {
+					return "";
 				}
 
-				void setPlaceHolder(const std::string& text) {
-					m_placeholder = text;
-				}
+				bool m_placeHolderEnable = false;
 			private:
 				std::string m_inputValue;
-				int m_size;
-				std::string m_placeholder;
 			};
 
 
@@ -1562,8 +1606,8 @@ namespace GUI
 				public Attribute::Collapse<FilterText>
 			{
 			public:
-				FilterText(const std::string& name, int size, Events::Event* event)
-					: Text(name, size, event), Attribute::Collapse<FilterText>(false)
+				FilterText(const std::string& name, Events::Event* event)
+					: Text(name, event), Attribute::Collapse<FilterText>(false)
 				{}
 
 				void render() override {
@@ -2116,7 +2160,7 @@ namespace GUI
 				public Events::OnSpecial<Item>,
 				public Attribute::Name<Item>,
 				public Attribute::Enable<Item>,
-				public Attribute::Shortcut<Item>
+				public Attribute::Hint<Item>
 			{
 			public:
 				Item(const std::string& name, Events::Event* event = nullptr, bool enable = true)
@@ -2125,7 +2169,7 @@ namespace GUI
 
 				void render() override
 				{
-					if (ImGui::MenuItem(getName().c_str(), passShortcutText(), false, isEnabled())) {
+					if (ImGui::MenuItem(getName().c_str(), getHintText().c_str(), false, isEnabled())) {
 						sendSpecialEvent();
 					}
 				}
@@ -2142,7 +2186,7 @@ namespace GUI
 
 				void render() override
 				{
-					if (ImGui::MenuItem(getName().c_str(), passShortcutText(), &m_selected, isEnabled())) {
+					if (ImGui::MenuItem(getName().c_str(), getHintText().c_str(), &m_selected, isEnabled())) {
 						sendSpecialEvent();
 					}
 				}

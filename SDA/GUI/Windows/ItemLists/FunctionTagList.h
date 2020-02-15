@@ -1,10 +1,5 @@
 #pragma once
-#include "Shared/GUI/Widgets/Template/ItemList.h"
-#include "GUI/Signature.h"
-#include <Manager/FunctionManager.h>
-#include <FunctionTag/FunctionTag.h>
-#include "../ItemControlPanels/FunctionCP.h"
-#include "../ProjectWindow.h"
+#include "FunctionList.h"
 
 using namespace CE;
 
@@ -409,6 +404,27 @@ namespace GUI::Widget
 			return m_funcTagList->getSelectedFunctionTags();
 		}
 	protected:
+		std::string getPlaceHolder() override {
+			if (getSelectedFuncTagCount() == 0)
+				return "No selected function tag(s)";
+
+			std::string info = "";
+			int max = 2;
+			for (auto tag : getSelectedFunctionTags()) {
+				info += tag->getName() + ",";
+				if (--max == 0) break;
+			}
+
+			if (getSelectedFuncTagCount() > 2) {
+				info += " ...";
+			}
+			else {
+				info.pop_back();
+			}
+
+			return info.data();
+		}
+
 		std::string toolTip() override {
 			if (getSelectedFuncTagCount() == 0)
 				return "please, select one or more function tags";
@@ -463,27 +479,201 @@ namespace GUI::Widget
 };
 
 
-namespace GUI::Widget
+namespace GUI::Window
 {
-	class FunctionTagCreator
-		: public Container
+	class FunctionTagEditor
+		: public IWindow
 	{
 	public:
 
-		FunctionTagCreator()
-		{}
+		FunctionTagEditor(const std::string& name, CE::FunctionManager* funcManager, API::Function::Function* function)
+			: IWindow(name), m_funcManager(funcManager)
+		{
+			setWidth(300);
+			setHeight(300);
+			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+
+			getMainContainer()
+				.text("Tag name")
+				.addItem(m_nameInput = new Elements::Input::Text)
+
+				.text("Select function parent tag")
+				.addItem(m_funcTagInput = new Widget::FunctionTagInput(this, funcManager->getFunctionTagManager()))
+				.newLine()
+
+				.text("Select function")
+				.addItem(m_funcInput = new Widget::FunctionInput(this, funcManager))
+				.newLine()
+				.newLine();
+
+			if (function != nullptr) {
+				m_funcInput->getSelectedFunctions().push_back(function);
+			}
+		}
+
+	protected:
+		CE::FunctionManager* m_funcManager;
+		Elements::Input::Text* m_nameInput;
+		Widget::FunctionInput* m_funcInput;
+		Widget::FunctionTagInput* m_funcTagInput;
+
+		bool checkData()
+		{
+			return m_funcInput->getSelectedFuncCount() > 0
+				&& m_funcTagInput->getSelectedFuncTagCount() > 0
+				&& !m_nameInput->getInputValue().empty();
+		}
 	};
 
+	class FunctionTagCreator
+		: public FunctionTagEditor
+	{
+	public:
+		FunctionTagCreator(CE::FunctionManager* funcManager, API::Function::Function* function = nullptr)
+			: FunctionTagEditor("Function tag creator", funcManager, function)
+		{
+			getMainContainer()
+				.addItem(
+					new Elements::Button::ButtonStd("Create", new Events::EventUI(
+						EVENT_LAMBDA(info) {
+							if(!checkData())
+								return;
+
+							auto tagManager = m_funcManager->getFunctionTagManager();
+							auto func = *m_funcInput->getSelectedFunctions().begin();
+							
+							tagManager->createTag(
+								func->getDeclaration(),
+								*m_funcTagInput->getSelectedFunctionTags().begin(),
+								m_nameInput->getInputValue()
+							);
+							hide();
+						}
+				)));
+		}
+	};
+
+	class FunctionTagUpdater
+		: public FunctionTagEditor
+	{
+	public:
+		FunctionTagUpdater(CE::FunctionManager* funcManager, API::Function::Function* function, Function::Tag::Tag* tag)
+			: FunctionTagEditor("Function tag editor", funcManager, function)
+		{
+			m_nameInput->setInputValue(tag->getName());
+			m_funcTagInput->getSelectedFunctionTags().push_back(tag);
+
+			getMainContainer()
+				.addItem(
+					new Elements::Button::ButtonStd("Change", new Events::EventUI(
+						EVENT_LAMBDA(info) {
+							if (!checkData())
+								return;
+
+							auto tagManager = m_funcManager->getFunctionTagManager();
+							auto func = *m_funcInput->getSelectedFunctions().begin();
+
+							auto tag = *m_funcTagInput->getSelectedFunctionTags().begin();
+							if (tag->isUser()) {
+								auto userTag = static_cast<Function::Tag::UserTag*>(tag);
+								userTag->setDeclaration(func->getDeclaration());
+								hide();
+							}
+					}
+				)));
+		}
+	};
+};
+
+
+namespace GUI::Widget
+{
 	//MY TODO: в виде кнопок, при нажатии на которую вылетает алерт/меню с предложением изменить/удалить
 	class FunctionTagShortCut
 		: public Container
 	{
 	public:
-
-		FunctionTagShortCut(API::Function::Function* function)
+		class TagBtn
+			: public Elements::Button::ButtonTag
 		{
-			
+		public:
+			TagBtn(Function::Tag::Tag* tag, Events::EventHandler* eventHandler = nullptr)
+				: m_tag(tag), Elements::Button::ButtonTag(tag->getName(), ColorRGBA(0x0000FFFF), eventHandler)
+			{}
+
+			std::string getHintText() override {
+				return getTag()->getDesc();
+			}
+
+			Function::Tag::Tag* getTag() {
+				return m_tag;
+			}
+		private:
+			Function::Tag::Tag* m_tag;
+		};
+
+		FunctionTagShortCut(API::Function::Function* function, Window::IWindow* parentWindow = nullptr)
+			: m_function(function), m_parentWindow(parentWindow)
+		{
+			if (m_parentWindow != nullptr) {
+				m_clickOnTag = new Events::EventUI(
+					EVENT_LAMBDA(info) {
+						auto sender = static_cast<TagBtn*>(info->getSender());
+						if (m_winEditor != nullptr)
+							m_parentWindow->removeWindow(m_winEditor, true);
+						m_parentWindow->addWindow(m_winEditor = new Window::FunctionTagUpdater(m_function->getFunctionManager(), m_function, sender->getTag()));
+					}
+				);
+
+				m_clickOnCreateTag = new Events::EventUI(
+					EVENT_LAMBDA(info) {
+						if (m_winEditor != nullptr)
+							m_parentWindow->removeWindow(m_winEditor, true);//MY TODO: break triggered error
+						m_parentWindow->addWindow(m_winEditor = new Window::FunctionTagCreator(m_function->getFunctionManager()));
+					}
+				);
+			}
+
+			refresh();
 		}
+
+		~FunctionTagShortCut() {
+			if (m_parentWindow != nullptr) {
+				delete m_clickOnTag;
+				delete m_clickOnCreateTag;
+				if (m_winEditor != nullptr)
+					m_parentWindow->removeWindow(m_winEditor, true);
+			}
+		}
+
+		void refresh() {
+			clear();
+			auto collection = getTagCollection();
+			for (auto tag : collection.getTagList()) {
+				addItem(new TagBtn(tag, m_clickOnTag));
+				sameLine();
+			}
+			if (collection.empty()) {
+				text("Not tags. ");
+				sameLine();
+			}
+
+			if(m_clickOnCreateTag != nullptr)
+				addItem(new Elements::Button::ButtonTag("+", ColorRGBA(0x0000FFFF), m_clickOnCreateTag));
+			
+			newLine();
+		}
+
+		Function::Tag::TagCollection getTagCollection() {
+			auto tagManager = m_function->getFunctionManager()->getFunctionTagManager();
+			return tagManager->getTagCollection(m_function);
+		}
+	private:
+		API::Function::Function* m_function;
+		Events::EventHandler* m_clickOnTag = nullptr;
+		Events::EventHandler* m_clickOnCreateTag = nullptr;
+		Window::IWindow* m_parentWindow;
+		Window::FunctionTagEditor* m_winEditor = nullptr;
 	};
 
 };

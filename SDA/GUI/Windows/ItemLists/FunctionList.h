@@ -19,14 +19,15 @@ namespace GUI::Widget
 			class FunctionItem : public Item
 			{
 			public:
-				FunctionItem(API::Function::Function* function, Events::Event* event)
+				FunctionItem(API::Function::Function* function, Events::Event* event, Window::IWindow* parentWindow)
 				{
 					beginHeader()
 						.addItem(
 							new Units::FunctionSignature(function,
 								new Events::EventUI(EVENT_LAMBDA(info) {}),
 								new Events::EventHook(event, function),
-								nullptr
+								nullptr,
+								parentWindow
 							),
 							(GUI::Item**)& m_signature
 						);
@@ -78,7 +79,7 @@ namespace GUI::Widget
 			}
 
 			virtual GUI::Item* createFuncItem(API::Function::Function* function) {
-				return new FunctionItem(function, m_funcList->m_openFunction);
+				return new FunctionItem(function, m_funcList->m_openFunction, m_funcList->m_parentWindow);
 			}
 		protected:
 			FunctionManager* m_funcManager;
@@ -550,8 +551,13 @@ namespace GUI::Widget
 		void setOpenFunctionEventHandler(Events::Event* eventHandler) {
 			m_openFunction = eventHandler;
 		}
+
+		void setParentWindow(Window::IWindow* parentWindow) {
+			m_parentWindow = parentWindow;
+		}
 	public:
 		Events::Event* m_openFunction;
+		Window::IWindow* m_parentWindow;
 	};
 
 	class FuncSelectList : public FunctionList
@@ -592,8 +598,8 @@ namespace GUI::Widget
 			class FunctionItemWithCheckBox : public FunctionItem
 			{
 			public:
-				FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction)
-					: FunctionItem(function, event)
+				FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction, Window::IWindow* parentWindow)
+					: FunctionItem(function, event, parentWindow)
 				{
 					(*m_header)
 						.beginReverseInserting()
@@ -608,7 +614,13 @@ namespace GUI::Widget
 			{}
 
 			GUI::Item* createFuncItem(API::Function::Function* function) override {
-				return new FunctionItemWithCheckBox(function, getFuncSelList()->m_openFunction, getFuncSelList()->isFunctionSelected(function), new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function));
+				return new FunctionItemWithCheckBox(
+					function,
+					getFuncSelList()->m_openFunction,
+					getFuncSelList()->isFunctionSelected(function),
+					new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function),
+					getFuncSelList()->m_parentWindow
+				);
 			}
 		protected:
 			FuncSelectList* getFuncSelList() {
@@ -732,6 +744,7 @@ namespace GUI::Window
 			m_openFunctionCP->setCanBeRemoved(false);
 
 			funcList->setOpenFunctionEventHandler(m_openFunctionCP);
+			funcList->setParentWindow(this);
 			setMainContainer(funcList);
 		}
 
@@ -783,6 +796,27 @@ namespace GUI::Widget
 			return m_funcSelectList->getSelectedFunctions();
 		}
 	protected:
+		std::string getPlaceHolder() override {
+			if (getSelectedFuncCount() == 0)
+				return "No selected function(s)";
+			
+			std::string info = "";
+			int max = 2;
+			for (auto func : getSelectedFunctions()) {
+				info += func->getFunction()->getName() + ",";
+				if (--max == 0) break;
+			}
+			
+			if (getSelectedFuncCount() > 2) {
+				info += " ...";
+			}
+			else {
+				info.pop_back();
+			}
+
+			return info.data();
+		}
+
 		std::string toolTip() override {
 			if (getSelectedFuncCount() == 0)
 				return "please, select one or more functions";

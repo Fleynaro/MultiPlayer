@@ -9,6 +9,22 @@
 using namespace GUI::Window;
 using namespace GUI::Widget;
 
+static bool InputTextWithPH(const char* placeholder, const char* text, char* buf, size_t buf_size, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = (ImGuiInputTextCallback)0, void* user_data = (void*)0)
+{
+	ImVec2 cursor[2];
+	cursor[0] = ImGui::GetCursorPos();
+	bool result = ImGui::InputText(text, buf, buf_size, flags, callback, user_data);
+	if (placeholder != NULL && strlen(placeholder) > 0) {
+		if (!ImGui::IsItemActive() && strlen(buf) == 0) {
+			cursor[1] = ImGui::GetCursorPos();
+			ImGui::SetCursorPos(ImVec2(cursor[0].x + 5, cursor[0].y + 2));
+			ImGui::Text(placeholder);
+			ImGui::SetCursorPos(cursor[1]);
+		}
+	}
+	return result;
+}
+
 class UI
 {
 public:
@@ -145,7 +161,7 @@ public:
 	{
 	public:
 		//bool m_selected
-		
+		Elements::Input::FilterText* M_TTTT;
 		WindowTest()
 			: IWindow("ImGui window for test")
 		{
@@ -156,19 +172,11 @@ public:
 				val.pop_back();
 			});
 
+
+
 			getMainContainer()
-				.beginChild()
-					.beginTreeNode("level 3")
-						.beginTreeNode("1 level 2")
-							.addFlags(ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_Bullet)
-						->end()
-
-						.beginTreeNode("2 level 2")
-
-						.end()
-					.end()
-				.end()
-				.addItem(new HoverText("text"))
+				.addItem(new Elements::Button::ButtonTag("testsssssssssssss", ColorRGBA(0xFF0000FF))).sameLine()
+				.addItem(new Elements::Button::ButtonTag("2222", ColorRGBA(0xFFFF00FF)))
 				.beginChild()
 					.setWidth(500)
 					.setHeight(300)
@@ -206,12 +214,15 @@ public:
 								.beginTD()
 									//.text("1 3")
 									.addItem(
-										(new Elements::Input::FilterText("enter here", 50, eventHandler))
+										(M_TTTT = new Elements::Input::FilterText("", eventHandler))
 										->setCompare(true)
 										->addWord("cat")
 										->addWord("dogs")
 										->addWord("car")
 									)
+				.addItem(new Elements::Button::ButtonStd("clear", new Events::EventUI(EVENT_LAMBDA(info) {
+				M_TTTT->getInputValue().clear();
+			})))
 								.endTD()
 							.endTR()
 
@@ -232,6 +243,9 @@ public:
 					.end()
 				.end()
 				.beginImGui([]() {
+					static std::string buf = "";
+					InputTextWithPH("any text", "##t1", buf.data(), 50);
+
 					/*ImGui::Begin("Issue #1453");
 					ImGui::BeginChild("test", ImVec2(100, 100));
 					ImGui::OpenPopup("lol");

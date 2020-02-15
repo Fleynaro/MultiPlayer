@@ -268,7 +268,7 @@ MenuContainer& MenuContainer::menuItemWithShortcut(std::string name, std::string
 {
 	Elements::Menu::Item* ptr = nullptr;
 	menuItem(name, event, &ptr);
-	ptr->setShortcutText(shortcut);
+	ptr->setHintText(shortcut);
 	return *this;
 }
 

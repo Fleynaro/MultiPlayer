@@ -75,6 +75,10 @@ namespace CE
 				return getDeclaration() != nullptr;
 			}
 
+			void setDeclaration(API::Function::FunctionDecl* decl) {
+				m_decl = decl;
+			}
+
 			API::Function::FunctionDecl* getDeclaration() {
 				return m_decl;
 			}
@@ -200,6 +204,8 @@ namespace CE
 					if (!it.second->isUser())
 						continue;
 					auto tag = static_cast<UserTag*>(it.second);
+					if (!tag->isDefinedForDecl())
+						continue;
 					TagCollection* collection = getGlobalTagCollectionByDecl(tag->getDeclaration(), true);
 					collection->add(tag);
 				}

@@ -25,7 +25,6 @@ namespace GUI::Window
 				.addItem(
 					(new GUI::Elements::Input::Text(
 						"##input1",
-						50,
 						new Events::EventUI(EVENT_LAMBDA(info) {
 							if(!m_projectDirChangedByUser) {
 								m_projectDirText->setInputValue(
@@ -40,7 +39,6 @@ namespace GUI::Window
 				.addItem(
 					(new GUI::Elements::Input::Text(
 						"##input2",
-						150,
 						new Events::EventUI(EVENT_LAMBDA(info) {
 							m_projectDirChangedByUser = true;
 						})

@@ -189,8 +189,10 @@ namespace GUI::Window
 			return *this;
 		}
 
-		IWindow& removeWindow(IWindow* window) {
+		IWindow& removeWindow(IWindow* window, bool isDestroy = false) {
 			m_childs.remove(window);
+			if (isDestroy)
+				delete window;
 			return *this;
 		}
 
@@ -199,6 +201,11 @@ namespace GUI::Window
 				getParent()->removeWindow(this);
 			}
 			delete this;
+		}
+
+		void hide() {
+			getMainContainer().clear();
+			setDisplay(false);
 		}
 	protected:
 		bool m_open = true;

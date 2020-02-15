@@ -368,22 +368,25 @@ namespace GUI
 		};
 
 		template<typename T>
-		class Shortcut
+		class Hint
 		{
 		public:
-			Shortcut(std::string text = "")
+			Hint(std::string text = "")
 				: m_shortcutText(text)
 			{}
-			
-			const char* passShortcutText() {
-				return getShortcutText().size() == 0 ? NULL : getShortcutText().c_str();
+
+			void showHint() {
+				auto text = getHintText();
+				if (!text.empty()) {
+					ImGui::SetTooltip(getHintText().c_str());
+				}
 			}
 
-			std::string& getShortcutText() {
+			virtual std::string getHintText() {
 				return m_shortcutText;
 			}
 
-			T* setShortcutText(std::string text) {
+			T* setHintText(std::string text) {
 				m_shortcutText = text;
 				return (T*)this;
 			}

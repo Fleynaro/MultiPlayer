@@ -184,6 +184,7 @@
     <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
     <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
     <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
+    <ClCompile Include="GUI\Signature.cpp" />
     <ClCompile Include="GUI\Windows\ItemControlPanels\FunctionCP.cpp" />
     <ClCompile Include="GUI\Windows\ProjectWindow.cpp" />
     <ClCompile Include="Module\FunctionTag\FunctionTag.cpp" />
@@ -223,6 +224,7 @@
     <ClCompile Include="Vendor\imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="Vendor\imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="Vendor\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GUI\Windows\ItemControlPanels\FunctionCP.h" />
@@ -305,6 +307,7 @@
     <ClInclude Include="Vendor\imgui\imstb_rectpack.h" />
     <ClInclude Include="Vendor\imgui\imstb_textedit.h" />
     <ClInclude Include="Vendor\imgui\imstb_truetype.h" />
+    <ClInclude Include="Vendor\imgui\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="Vendor\SQliteCpp\sqlite3\sqlite3.h" />
     <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Assertion.h" />
     <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Backup.h" />

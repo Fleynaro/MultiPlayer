@@ -27,18 +27,20 @@ ProjectWindow::ProjectWindow(Project* project)
 		})
 	);
 	functionListWidget->setView(
-		new Widget::FuncSelectList::ListView(functionListWidget, getProject()->getProgramExe()->getFunctionManager())
+		new Widget::FuncSelectList::ListView(functionListWidget, getProject()->getProgramExe()->getFunctionManager()),
+		false
 	);
 	addWindow(
 		m_funcSelList = new Window::FunctionList(functionListWidget)
 	);
+	functionListWidget->update();
 
 	auto funcManager = getProject()->getProgramExe()->getFunctionManager();
 	auto tagManager = funcManager->getFunctionTagManager();
 	auto tag1 = tagManager->createTag(tagManager->m_getTag, "test tag1");
-	auto ftag1 = tagManager->createTag(funcManager->getFunctionDeclById(10), tag1, "test ftag1");
-	auto ftag2 = tagManager->createTag(funcManager->getFunctionDeclById(10), tag1, "test ftag2");
-	
+	auto ftag1 = tagManager->createTag(funcManager->getFunctionDeclById(12), tag1, "test ftag1");
+	auto ftag2 = tagManager->createTag(funcManager->getFunctionDeclById(12), tagManager->m_setTag, "test ftag2");
+	tagManager->calculateAllTags();
 	
 	/*auto handler = new Events::EventUI(EVENT_LAMBDA(info) {
 		auto funcTag = static_cast<Widget::FunctionTagList::TreeView::FunctionTag*>(info->getSender());

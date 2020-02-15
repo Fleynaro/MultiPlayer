@@ -4,8 +4,13 @@
 #include <Utils/MultipleAction.h>
 #include <CallGraph/CallGraph.h>
 #include <FunctionTag/FunctionTag.h>
+#include "Shared/GUI/Items/IWindow.h"
 
 using namespace CE;
+
+namespace GUI::Widget {
+	class FunctionTagShortCut;
+};
 
 namespace GUI::Units
 {
@@ -90,7 +95,6 @@ namespace GUI::Units
 				addItem(tableInfo.buildText());
 			}
 
-			buildTagList();
 			buildDescription();
 		}
 
@@ -118,13 +122,6 @@ namespace GUI::Units
 			}
 		}
 
-		/*virtual void buildTagList() {}
-
-		virtual Function::Tag::TagCollection getTagCollection() {
-			auto tagManager = m_functionDecl->getFunctionManager()->getFunctionTagManager();
-			return Function::Tag::TagCollection(tagManager->getGlobalTagCollectionByDecl(m_functionDecl));
-		}*/
-
 		static const std::string& getRoleName(int roleId) {
 			static std::vector<std::string> roleName = {
 				"Function",
@@ -149,8 +146,8 @@ namespace GUI::Units
 	class FuncInfo : public DeclInfo
 	{
 	public:
-		FuncInfo(API::Function::Function* function, bool viewAsTable = false)
-			: m_function(function), DeclInfo(function->getDeclaration(), viewAsTable)
+		FuncInfo(API::Function::Function* function, bool viewAsTable = false, Window::IWindow* parentWindow = nullptr)
+			: m_function(function), m_parentWindow(parentWindow), DeclInfo(function->getDeclaration(), viewAsTable)
 		{}
 
 		std::string buildIdInfo() override {
@@ -193,26 +190,11 @@ namespace GUI::Units
 			}
 		}
 
-		void buildTagList() {
-			auto collection = getTagCollection();
-
-			if (!collection.empty()) {
-				text("Tags: ");
-				for (auto tag : collection.getTagList()) {
-					sameText(tag->getName() + " ");
-				}
-			}
-			else {
-				text("No tags");
-			}
-		}
-
-		Function::Tag::TagCollection getTagCollection() override {
-			auto tagManager = m_function->getFunctionManager()->getFunctionTagManager();
-			return tagManager->getTagCollection(m_function);
-		}
+		void buildDescription() override;
 	private:
 		API::Function::Function* m_function;
+		GUI::Widget::FunctionTagShortCut* m_tagShortCut = nullptr;
+		Window::IWindow* m_parentWindow;
 
 		CE::Function::Function* getFunction() {
 			return m_function->getFunction();
@@ -434,32 +416,35 @@ namespace GUI::Units
 		class FuncName : public DeclSignature::FuncName
 		{
 		public:
-			FuncName(API::Function::Function* function, const std::string& name, Events::Event* clickEvent)
+			FuncName(API::Function::Function* function, const std::string& name, Events::Event* clickEvent, Window::IWindow* parentWindow)
 				: DeclSignature::FuncName(name, clickEvent)
 			{
-				m_declInfo = new ShortCutInfo(new FuncInfo(function));
+				m_declInfo = new ShortCutInfo(new FuncInfo(function, false, parentWindow));
 			}
 		};
 
 		FunctionSignature(API::Function::Function* function,
 			Events::Event* leftMouseClickOnType = nullptr,
 			Events::Event* leftMouseClickOnFuncName = nullptr,
-			Events::Event* leftMouseClickOnArgName = nullptr)
+			Events::Event* leftMouseClickOnArgName = nullptr,
+			Window::IWindow* parentWindow = nullptr)
 			:
 			m_function(function),
 			DeclSignature(function->getDeclaration(),
 				leftMouseClickOnType,
 				leftMouseClickOnFuncName,
 				leftMouseClickOnArgName
-			)
+			),
+			m_parentWindow(parentWindow)
 		{}
 
 
 		Name* createFuncName(const std::string& name) override {
-			return new FuncName(m_function, name, m_leftMouseClickOnFuncName);
+			return new FuncName(m_function, name, m_leftMouseClickOnFuncName, m_parentWindow);
 		}
 
 	private:
 		API::Function::Function* m_function;
+		Window::IWindow* m_parentWindow;
 	};
 };

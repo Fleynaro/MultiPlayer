@@ -415,6 +415,7 @@ namespace GUI
 			}
 		private:
 			Messager m_messager;
+		protected:
 			bool m_isFocusedIn = false;
 		};
 

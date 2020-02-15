@@ -295,7 +295,7 @@ namespace GUI::Widget::Template
 						.beginContainer()
 							.addItem(
 								(new GUI::Elements::Input::Text(
-									"##input1", 50,
+									"##input1",
 									new Events::EventUI(EVENT_LAMBDA(info) {
 										auto sender = (GUI::Elements::Input::Text*)info->getSender();
 										doSearchRequest(sender->getInputValue());
@@ -347,9 +347,11 @@ namespace GUI::Widget::Template
 		public Attribute::Collapse<ItemInput>
 	{
 	public:
-		ItemInput(const std::string& name = "", int size = 50)
-			: Elements::Input::Text(name, size, nullptr), Attribute::Collapse<ItemInput>(false)
-		{}
+		ItemInput(const std::string& name = "")
+			: Elements::Input::Text(name, nullptr), Attribute::Collapse<ItemInput>(false)
+		{
+			m_placeHolderEnable = true;
+		}
 
 		bool m_focused = true;
 		void render() override {
