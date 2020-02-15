@@ -17,14 +17,15 @@ namespace GUI::Window
 	{
 	public:
 		IWindow(std::string name, Container* container = new Container)
-			: Attribute::Name<IWindow>(name), m_container(container), Events::OnClose<IWindow>(this)
-		{}
+			: Attribute::Name<IWindow>(name), Events::OnClose<IWindow>(this)
+		{
+			setMainContainer(container);
+		}
+
 		~IWindow() {
-			if (m_container->canBeRemovedBy(this)) {
-				delete m_container;
-			}
+			m_container->destroy();
 			for (auto it : m_childs) {
-				delete it;
+				it->destroy();
 			}
 		}
 
@@ -58,6 +59,7 @@ namespace GUI::Window
 			}
 			renderChildWindows();
 
+			handleEventMessages();
 			checkToClose();
 		}
 
@@ -72,6 +74,10 @@ namespace GUI::Window
 			m_actualHeight = sizeVec.y;
 		}
 	protected:
+		IWindow* getWindow() override {
+			return this;
+		}
+
 		virtual void onRender() {}
 
 		void renderChildWindows() {
@@ -174,25 +180,18 @@ namespace GUI::Window
 		IWindow& addWindow(IWindow* window) {
 			m_childs.push_back(window);
 			window->setParent(this);
-
-			if(window->getCloseEvent() == nullptr) {
-				window->setCloseEvent(
-					new Events::EventUI(
-						EVENT_LAMBDA(info) {				
-							auto win = (IWindow*)info->getSender();
-							removeWindow(win);
-							delete win;
-						}
-					)
+			window->getCloseEvent() +=
+				new Events::EventUI(
+					EVENT_LAMBDA(info) {				
+						auto win = (IWindow*)info->getSender();
+						win->close();
+					}
 				);
-			}
 			return *this;
 		}
 
-		IWindow& removeWindow(IWindow* window, bool isDestroy = false) {
+		IWindow& removeWindow(IWindow* window) {
 			m_childs.remove(window);
-			if (isDestroy)
-				delete window;
 			return *this;
 		}
 
@@ -206,6 +205,30 @@ namespace GUI::Window
 		void hide() {
 			getMainContainer().clear();
 			setDisplay(false);
+		}
+
+		void addEventMessage(Events::EventMessage::Type message) {
+			m_eventMessages.push_back(message);
+		}
+	private:
+		std::list<Events::EventMessage::Type> m_eventMessages;
+
+		void handleEventMessages() {
+			using namespace Events;
+			for (auto& message : m_eventMessages) {
+				EventHandler* eventHandler = message->getEventHandler();
+				if (eventHandler == nullptr)
+					continue;
+				try {
+					eventHandler->doCallback()(message);
+				}
+				catch (const Exception& ex) {
+					if (ex.getSource() != nullptr) {
+						ex.getSource()->onExceptionOccured(ex);
+					}
+				}
+			}
+			m_eventMessages.clear();
 		}
 	protected:
 		bool m_open = true;

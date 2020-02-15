@@ -36,27 +36,6 @@ namespace GUI
 
 	};
 
-	class IInit
-	{
-	public:
-		virtual void init() = 0;
-	};
-
-	class OnceInit : public IInit
-	{
-	public:
-		OnceInit() = default;
-
-		void call() {
-			if (!m_inited) {
-				init();
-				m_inited = true;
-			}
-		}
-	private:
-		bool m_inited = false;
-	};
-
 #ifdef GUI_IS_MULTIPLAYER
 	class Font
 	{
@@ -131,14 +110,28 @@ namespace GUI
 		}
 	};
 #endif
+	namespace Window {
+		class IWindow;
+	};
 
-	class Item
+	class Item : public Events::ISender
 	{
 	protected:
+		virtual ~Item() {};
 		virtual void render() = 0;
 		virtual void onUpdate() {}
 	public:
-		virtual ~Item() {};
+		void destroy() {
+			if (m_canBeRemoved) {
+				if (--m_parentCount == 0) {
+					delete this;
+				}
+			}
+		}
+
+		void setCanBeRemoved(bool state) {
+			m_canBeRemoved = state;
+		}
 
 		void show() {
 			onUpdate();
@@ -149,22 +142,16 @@ namespace GUI
 		}
 
 		void setParent(Item* parent) {
-			if (getParent() != nullptr) {
-				return;
+			if (++m_parentCount > 1) {
+				if (parent != nullptr) {
+					throw std::logic_error("GUI item cannot have multiple parents at once. Use MirrorItem!");
+				}
 			}
-			setParentAnyway(parent);
-		}
-
-		void setParentAnyway(Item* parent) {
 			m_parent = parent;
 		}
 
 		Item* getParent() {
 			return m_parent;
-		}
-
-		bool canBeRemovedBy(Item* item) {
-			return getParent() == item && m_canBeRemoved;
 		}
 
 		void setDisplay(bool toggle) {
@@ -175,8 +162,10 @@ namespace GUI
 			return m_display;
 		}
 
-		void setCanBeRemoved(bool state) {
-			m_canBeRemoved = state;
+		virtual Window::IWindow* getWindow() {
+			if (getParent() == nullptr)
+				return nullptr;
+			return getParent()->getWindow();
 		}
 	protected:
 		std::string getUniqueId() {
@@ -184,11 +173,64 @@ namespace GUI
 		}
 	private:
 		Item* m_parent = nullptr;
+		int m_parentCount = 0;
 		bool m_display = true;
 		bool m_canBeRemoved = true;
 	};
 
-	
+	class MirrorItem : public Item
+	{
+	public:
+		MirrorItem(Item* item)
+			: m_item(item)
+		{
+			m_item->setParent(nullptr);
+		}
+
+		~MirrorItem() {
+			m_item->destroy();
+		}
+
+		void render() override {
+			m_item->show();
+		}
+	private:
+		Item* m_item;
+	};
+
+
+	class Exception;
+	class IExceptionSource
+	{
+	public:
+		virtual void onExceptionOccured(const Exception& exception) = 0;
+	};
+
+	class Exception : public std::exception
+	{
+	public:
+		Exception(IExceptionSource* source, const std::string& message)
+			: m_source(source), m_message(message)
+		{}
+
+		IExceptionSource* getSource() const {
+			return m_source;
+		}
+
+		const std::string& getMessage() const {
+			return m_message;
+		}
+
+		char const* what() const override {
+			return getMessage().c_str();
+		}
+	private:
+		IExceptionSource* m_source;
+		std::string m_message;
+	};
+
+
+	//widget
 	class Elem : public Item
 	{
 	public:
@@ -797,8 +839,7 @@ namespace GUI
 		public:
 			~TR() {
 				for (auto it : m_columns) {
-					if (it->canBeRemovedBy(this))
-						delete it;
+					it->destroy();
 				}
 			}
 
@@ -857,8 +898,7 @@ namespace GUI
 
 			Body& clear() {
 				for (auto it : m_items) {
-					if (it->canBeRemovedBy(this))
-						delete it;
+					it->destroy();
 				}
 				m_items.clear();
 				return *this;

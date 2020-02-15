@@ -5,8 +5,7 @@ using namespace GUI;
 //MY TODO: here errors
 Container& Container::clear() {
 	for (auto it : m_items) {
-		if (it->canBeRemovedBy(this))
-			delete it;
+		it->destroy();
 	}
 	m_items.clear();
 	return *this;
@@ -93,14 +92,12 @@ Container& Container::ftext(const char* value, ...)
 #endif
 
 Container& Container::removeLastItem() {
-	if (getItems().size() == 0)
-		return *this;
+	if (getItems().size() > 0) {
+		auto item = *(--getItems().end());
+		item->destroy();
 
-	auto item = *(--getItems().end());
-	if (item->canBeRemovedBy(this))
-		delete item;
-
-	getItems().pop_back();
+		getItems().pop_back();
+	}
 	return *this;
 }
 

@@ -165,14 +165,13 @@ public:
 		WindowTest()
 			: IWindow("ImGui window for test")
 		{
-			auto eventHandler = new Events::EventStd(EVENT_LAMBDA(info) {
+			auto eventHandler = new Events::EventUI(EVENT_LAMBDA(info) {
 				auto sender = info->getSender();
 				auto text = static_cast<Elements::Input::FilterText*>(sender);
 				auto val = text->getInputValue();
 				val.pop_back();
 			});
-
-
+			
 
 			getMainContainer()
 				.addItem(new Elements::Button::ButtonTag("testsssssssssssss", ColorRGBA(0xFF0000FF))).sameLine()
@@ -220,6 +219,7 @@ public:
 										->addWord("dogs")
 										->addWord("car")
 									)
+				//.addItem(new MirrorItem(M_TTTT))
 				.addItem(new Elements::Button::ButtonStd("clear", new Events::EventUI(EVENT_LAMBDA(info) {
 				M_TTTT->getInputValue().clear();
 			})))
@@ -310,15 +310,7 @@ public:
 		}
 
 		static void addWindow(GUI::Window::IWindow* window) {
-			window->setCloseEvent(
-				new GUI::Events::EventUI(
-					S_EVENT_LAMBDA(info) {
-						auto win = (GUI::Window::IWindow*)info->getSender();
-						removeWindow(win);
-						delete win;
-					}
-				)
-			);
+
 			m_windows.push_back(window);
 		}
 

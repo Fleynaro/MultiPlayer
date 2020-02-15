@@ -6,7 +6,13 @@ namespace GUI
 {
 	namespace Events
 	{
-		class ISender {};
+		class ISender
+		{
+		public:
+			virtual bool isGuiItem() {
+				return true;
+			}
+		};
 		class EventHandler;
 
 		class IEventMessage
@@ -56,6 +62,7 @@ namespace GUI
 			EventHandler(CallbackType callback)
 				: m_callback(callback)
 			{};
+
 			virtual ~EventHandler() {}
 
 			virtual void callHandler(EventMessage::Type info) = 0;
@@ -90,18 +97,23 @@ namespace GUI
 		using Event = EventHandler;
 
 
+		//MYTODO: 1) rename to Event
 		class Messager
 		{
 		public:
-			Messager(ISender* sender, EventHandler* event)
+			Messager(ISender* sender, EventHandler* eventHandler = nullptr)
 				: m_sender(sender)
 			{
-				setEvent(event);
+				if(eventHandler != nullptr)
+					*this += eventHandler;
 			}
 
 			~Messager() {
-				if (isEventDefined() && getEventHandler()->canBeRemovedBy(m_sender))
-					delete m_eventHandler;
+				for (auto handler : m_eventHandlers) {
+					if (handler->canBeRemovedBy(m_sender)) {
+						delete handler;
+					}
+				}
 			}
 
 			template<typename T>
@@ -110,37 +122,34 @@ namespace GUI
 			}
 
 			void callEventHandler(uint64_t value = 0) {
-				callEventHandler(EventMessage::Type(
-					new EventMessage(m_sender, m_eventHandler, value)
-				));
+				for (auto handler : getEventHandlers()) {
+					handler->callHandler(EventMessage::Type(
+						new EventMessage(m_sender, handler, value)
+					));
+				}
 			}
 
-			void callEventHandler(EventMessage::Type eventMessage) {
-				if (isEventDefined()) {
-					getEventHandler()->callHandler(eventMessage);
-				}
+			std::list<EventHandler*>& getEventHandlers() {
+				return m_eventHandlers;
 			}
 
 			ISender* getSender() {
 				return m_sender;
 			}
 
-			EventHandler* getEventHandler() {
-				return m_eventHandler;
+			Messager& operator+=(EventHandler* eventHandler) {
+				eventHandler->setOwner(m_sender);
+				m_eventHandlers.push_back(eventHandler);
+				return *this;
 			}
 
-			void setEvent(EventHandler* event) {
-				m_eventHandler = event;
-				if (isEventDefined())
-					event->setOwner(m_sender);
-			}
-
-			bool isEventDefined() {
-				return m_eventHandler != nullptr;
+			Messager& operator-=(EventHandler* eventHandler) {
+				m_eventHandlers.remove(eventHandler);
+				return *this;
 			}
 		private:
-			ISender* m_sender;
-			EventHandler* m_eventHandler;
+			ISender* m_sender; //from
+			std::list<EventHandler*> m_eventHandlers; //to
 		};
 
 
@@ -165,9 +174,7 @@ namespace GUI
 			{}
 			~EventUI() {}
 
-			void callHandler(EventInfo::Type info) override {
-				m_eventMessages.push_back(info);
-			}
+			void callHandler(EventMessage::Type message) override;
 
 			static void handleEvents() {
 				for (auto &message : m_eventMessages) {
@@ -278,13 +285,8 @@ namespace GUI
 				: m_messager(sender, event)
 			{};
 
-			Event* getSpecialEvent() {
-				return m_messager.getEventHandler();
-			}
-
-			T* setSpecialEvent(Event* event) {
-				m_messager.setEvent(event);
-				return (T*)this;
+			Messager& getSpecialEvent() {
+				return m_messager;
 			}
 
 			void sendSpecialEvent() {
@@ -313,13 +315,8 @@ namespace GUI
 				: m_messager(sender, event)
 			{};
 
-			Event* getHoveredEvent() {
-				return m_messager.getEventHandler();
-			}
-
-			T* setHoveredEvent(Event* event) {
-				m_messager.setEvent(event);
-				return (T*)this;
+			Messager& getHoveredEvent() {
+				return m_messager;
 			}
 
 			virtual bool isHovered() {
@@ -373,13 +370,8 @@ namespace GUI
 				: m_messager(sender, event)
 			{};
 
-			Event* getFocusedEvent() {
-				return m_messager.getEventHandler();
-			}
-
-			T* setFocusedEvent(Event* event) {
-				m_messager.setEvent(event);
-				return (T*)this;
+			Messager& getFocusedEvent() {
+				return m_messager;
 			}
 
 			virtual bool isFocused() {
@@ -434,13 +426,8 @@ namespace GUI
 				: m_messager(sender, event)
 			{};
 
-			Event* getVisibleEvent() {
-				return m_messager.getEventHandler();
-			}
-
-			T* setVisibleEvent(Event* event) {
-				m_messager.setEvent(event);
-				return (T*)this;
+			Messager& getVisibleEvent() {
+				return m_messager;
 			}
 
 			virtual bool isVisible() {
@@ -487,13 +474,8 @@ namespace GUI
 				: m_messager(sender, event)
 			{};
 
-			Event* getLeftMouseClickEvent() {
-				return m_messager.getEventHandler();
-			}
-
-			T* setLeftMouseClickEvent(Event* event) {
-				m_messager.setEvent(event);
-				return (T*)this;
+			Messager& getLeftMouseClickEvent() {
+				return m_messager;
 			}
 
 			void sendLeftMouseClickEvent() {
@@ -517,13 +499,8 @@ namespace GUI
 				: m_messager(sender, event)
 			{};
 
-			Event* getRightMouseClickEvent() {
-				return m_messager.getEventHandler();
-			}
-
-			T* setRightMouseClickEvent(Event* event) {
-				m_messager.setEvent(event);
-				return (T*)this;
+			Messager& getRightMouseClickEvent() {
+				return m_messager;
 			}
 
 			void sendRightMouseClickEvent() {
@@ -547,13 +524,8 @@ namespace GUI
 				: m_messager(sender, event)
 			{};
 
-			Event* getCloseEvent() {
-				return m_messager.getEventHandler();
-			}
-
-			T* setCloseEvent(Event* event) {
-				m_messager.setEvent(event);
-				return (T*)this;
+			Messager& getCloseEvent() {
+				return m_messager;
 			}
 
 			void sendCloseEvent() {
