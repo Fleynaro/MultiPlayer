@@ -302,14 +302,10 @@ TabItem& TabBar::beginTabItem(std::string name, TabItem** ptr)
 
 
 using namespace GUI::Events;
-ISender* EventHookedMessage::getSender() {
-	return m_newSender;
-}
-
 EventHandler* EventHookedMessage::getEventHandler() {
-	return m_newSender->getEventHandler();
+	return getHookSender()->getEventHandler();
 }
 
 void* EventHookedMessage::getUserDataPtr() {
-	return m_newSender->getUserDataPtr();
+	return getHookSender()->getUserDataPtr();
 }

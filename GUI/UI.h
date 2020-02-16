@@ -169,7 +169,9 @@ public:
 				auto sender = info->getSender();
 				auto text = static_cast<Elements::Input::FilterText*>(sender);
 				auto val = text->getInputValue();
-				val.pop_back();
+				if (val == "lol") {
+					throw Exception(text, "error occured.");
+				}
 			});
 			
 
@@ -297,7 +299,12 @@ public:
 					ImGui::SameLine(0, style.ItemInnerSpacing.x);
 					ImGui::Text("Custom Combo");*/
 
-					
+					/*ImGui::OpenPopup("lol");
+					static bool op = true;
+					if (ImGui::BeginPopupModal("lol", &op)) {
+						ImGui::Text("loool");
+						ImGui::EndPopup();
+					}*/
 				});
 		}
 	};

@@ -54,7 +54,7 @@ ProjectWindow::ProjectWindow(Project* project)
 	);*/
 
 	getMainContainer()
-		.addItem(new Widget::FunctionInput(this, funcManager))
+		.addItem(new Widget::FunctionInput(funcManager))
 		.newLine()
-		.addItem(new Widget::FunctionTagInput(this, tagManager));
+		.addItem(new Widget::FunctionTagInput(tagManager));
 }

@@ -19,23 +19,22 @@ namespace GUI::Widget
 			class FunctionItem : public Item
 			{
 			public:
-				FunctionItem(API::Function::Function* function, Events::Event* event, Window::IWindow* parentWindow)
+				FunctionItem(API::Function::Function* function, Events::Event* event)
 				{
+					m_signature = new Units::FunctionSignature(function,
+						new Events::EventUI(EVENT_LAMBDA(info) {}),
+						new Events::EventHook(event, function),
+						nullptr
+					);
+					m_signature->setParent(this);
+
 					beginHeader()
-						.addItem(
-							new Units::FunctionSignature(function,
-								new Events::EventUI(EVENT_LAMBDA(info) {}),
-								new Events::EventHook(event, function),
-								nullptr,
-								parentWindow
-							),
-							(GUI::Item**)& m_signature
-						);
+						.addItem(new MirrorItem(m_signature));
 
 					beginBody()
 						.text("Signature: ")
 						.sameLine()
-						.addItem(m_signature)
+						.addItem(new MirrorItem(m_signature))
 						.newLine()
 						.newLine()
 						.addItem(
@@ -44,8 +43,6 @@ namespace GUI::Widget
 								new Events::EventHook(event, function)
 							)
 						);
-
-					m_signature->setCanBeRemoved(false);
 				}
 
 				~FunctionItem() {
@@ -79,7 +76,7 @@ namespace GUI::Widget
 			}
 
 			virtual GUI::Item* createFuncItem(API::Function::Function* function) {
-				return new FunctionItem(function, m_funcList->m_openFunction, m_funcList->m_parentWindow);
+				return new FunctionItem(function, m_funcList->m_openFunction);
 			}
 		protected:
 			FunctionManager* m_funcManager;
@@ -282,7 +279,7 @@ namespace GUI::Widget
 									}
 								}
 								else {
-									funcBody->setVisibleEvent(m_eventVisibleFuncBody);
+									funcBody->getVisibleEvent() += m_eventVisibleFuncBody;
 								}
 							}
 						}
@@ -598,8 +595,8 @@ namespace GUI::Widget
 			class FunctionItemWithCheckBox : public FunctionItem
 			{
 			public:
-				FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction, Window::IWindow* parentWindow)
-					: FunctionItem(function, event, parentWindow)
+				FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction)
+					: FunctionItem(function, event)
 				{
 					(*m_header)
 						.beginReverseInserting()
@@ -618,8 +615,7 @@ namespace GUI::Widget
 					function,
 					getFuncSelList()->m_openFunction,
 					getFuncSelList()->isFunctionSelected(function),
-					new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function),
-					getFuncSelList()->m_parentWindow
+					new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function)
 				);
 			}
 		protected:
@@ -663,7 +659,7 @@ namespace GUI::Widget
 
 			m_eventSelectFunction = new Events::EventUI(EVENT_LAMBDA(info) {
 				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getRealSender());
+				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getSender());
 				auto function = (API::Function::Function*)message->getUserDataPtr();
 				if (chekbox->isSelected()) {
 					m_selectedFunctions.push_back(function);
@@ -765,23 +761,20 @@ namespace GUI::Widget
 	class FunctionInput : public Template::ItemInput
 	{
 	public:
-		FunctionInput(Window::IWindow* parentWindow, FunctionManager* funcManager)
-			: m_parentWindow(parentWindow)
+		FunctionInput(FunctionManager* funcManager)
 		{
 			m_funcSelectList = new FuncSelectList(nullptr);
 			m_funcSelectList->setView(
 				m_funcListView = new FuncSelectList::ListView(m_funcSelectList, funcManager));
-			m_funcSelectList->setCanBeRemoved(false);
+			m_funcSelectList->setParent(this);
 			
 			m_funcListShortView = new FuncSelectList::ShortView(m_funcSelectList, funcManager);
 			m_funcListShortView->setOutputContainer(m_funcShortList = new Container);
+			m_funcShortList->setParent(this);
 			m_funcListShortView->m_maxOutputFunctionCount = 15;
 		}
 
 		~FunctionInput() {
-			if (m_window != nullptr) {
-				m_parentWindow->removeWindow(m_window);
-			}
 			delete m_funcSelectList;
 			delete m_funcListView;
 			delete m_funcListShortView;
@@ -841,31 +834,27 @@ namespace GUI::Widget
 				}
 			}
 
-			if (ImGui::Selectable("More...")) {
-				if (m_window == nullptr) {
-					m_parentWindow->addWindow(
-						m_window = new Window::FunctionList(m_funcSelectList, "Select functions")
-					);
-					m_window->setCloseEvent(
-						new Events::EventUI(
-							EVENT_LAMBDA(info) {
-								m_parentWindow->removeWindow(m_window);
-								delete m_window;
-								m_window = nullptr;
-							}
-						)
-					);
-					open = false;
-				}
+			if (!m_isWinOpen && ImGui::Selectable("More...")) {
+				Window::FunctionList* win;
+				getWindow()->addWindow(
+					win = new Window::FunctionList(new MirrorItem(m_funcSelectList), "Select functions")
+				);
+				win->getCloseEvent() +=
+					new Events::EventUI(
+					EVENT_LAMBDA(info) {				
+						m_isWinOpen = false;
+					}
+				);
+				m_isWinOpen = true;
+				open = false;
 			}
 		}
 
 	private:
-		Window::IWindow* m_parentWindow;
-		Window::IWindow* m_window = nullptr;
 		FuncSelectList* m_funcSelectList;
 		FuncSelectList::ListView* m_funcListView;
 		FuncSelectList::ListView* m_funcListShortView;
 		Container* m_funcShortList;
+		bool m_isWinOpen = false;
 	};
 };

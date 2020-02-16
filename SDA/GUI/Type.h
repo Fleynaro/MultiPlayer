@@ -9,7 +9,6 @@ namespace GUI::Units
 	class Type
 		:
 		public Elem,
-		public Events::ISender,
 		public Events::OnLeftMouseClick<Type>,
 		public Attribute::Font<Type>
 	{

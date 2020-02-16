@@ -18,9 +18,10 @@ namespace GUI::Widget
 					: m_tag(tag)
 				{
 					addFlags(ImGuiTreeNodeFlags_FramePadding);
-					setLeftMouseClickEvent(openFunctionTag);
+					getLeftMouseClickEvent() += openFunctionTag;
 					
 					m_header = new Container;
+					m_header->setParent(this);
 					(*m_header)
 						.text(tag->getName());
 				}
@@ -49,27 +50,16 @@ namespace GUI::Widget
 					: FunctionTag(tag, openFunctionTag)
 				{
 					if (getTag()->isDefinedForDecl()) {
-						if (m_signature == nullptr) {
-							m_signature = new Units::DeclSignature(getTag()->getDeclaration());
-						}
 						(*m_header)
 							.sameText(": ")
 							.sameLine()
-							.addItem(m_signature);
-					}
-				}
-
-				~UserFunctionTag() {
-					if (m_signature != nullptr) {
-						delete m_signature;
+							.addItem(new Units::DeclSignature(getTag()->getDeclaration()));
 					}
 				}
 
 				Function::Tag::UserTag* getTag() {
 					return static_cast<Function::Tag::UserTag*>(FunctionTag::getTag());
 				}
-			private:
-				Units::DeclSignature* m_signature = nullptr;
 			};
 			
 			TreeView(FunctionTagList* funcTagList, Events::EventHandler* openFunctionTag = nullptr)
@@ -93,7 +83,7 @@ namespace GUI::Widget
 						.beginContainer()
 							.newLine()
 							.separator()
-							.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters and search", false, m_eventUpdateCB))
+							.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters", false, m_eventUpdateCB))
 						.end()
 					.endReverseInserting();
 			}
@@ -117,7 +107,7 @@ namespace GUI::Widget
 						if (isFilterEnabled()) {
 							if (tagChildNode->empty()) {
 								if (m_funcTagList->checkOnInputValue(tagChildNode->getTag(), funcName)
-									&& m_funcTagList->checkAllFilters(tagChildNode->getTag())) {
+									&& (isSearchOnlyEnabled() || m_funcTagList->checkAllFilters(tagChildNode->getTag()))) {
 									remove = false;
 									isRemove = false;
 								}
@@ -150,6 +140,10 @@ namespace GUI::Widget
 		protected:
 			virtual bool isFilterEnabled() {
 				return /*m_cb_isFilterEnabled != nullptr && */m_cb_isFilterEnabled->isSelected();
+			}
+
+			virtual bool isSearchOnlyEnabled() {
+				return false;
 			}
 
 			FunctionTagList* m_funcTagList;
@@ -253,15 +247,17 @@ namespace GUI::Widget
 			class UserFunctionTagWithCheckBox : public UserFunctionTag
 			{
 			public:
-				UserFunctionTagWithCheckBox(Function::Tag::UserTag* tag, Events::EventHandler* openFunctionTag, bool selected, Events::Event* eventSelectFunction)
-					: UserFunctionTag(tag, openFunctionTag)
+				UserFunctionTagWithCheckBox(Function::Tag::UserTag* tag, Events::EventHandler* openFunctionTag, bool selected, Events::Event* eventSelectFunctionTag)
+					: m_tag(tag), UserFunctionTag(tag, openFunctionTag)
 				{
 					(*m_header)
 						.beginReverseInserting()
 							.sameLine()
-							.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunction))
+							.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunctionTag))
 						.endReverseInserting();
 				}
+
+				Function::Tag::UserTag* m_tag;
 			};
 
 			TreeView(FunctionTagList* funcTagList, Events::EventHandler* openFunctionTag = nullptr)
@@ -278,7 +274,11 @@ namespace GUI::Widget
 			}
 
 			bool isFilterEnabled() override {
-				return false;
+				return true;
+			}
+
+			bool isSearchOnlyEnabled() override {
+				return true;
 			}
 		};
 
@@ -290,7 +290,7 @@ namespace GUI::Widget
 
 			m_eventSelectFunctionTag = new Events::EventUI(EVENT_LAMBDA(info) {
 				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getRealSender());
+				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getSender());
 				auto tag = (Function::Tag::Tag *)message->getUserDataPtr();
 				if (chekbox->isSelected()) {
 					getSelectedFunctionTags().push_back(tag);
@@ -374,22 +374,19 @@ namespace GUI::Widget
 	class FunctionTagInput : public Template::ItemInput
 	{
 	public:
-		FunctionTagInput(Window::IWindow* parentWindow, Function::Tag::Manager* funcTagManager)
-			: m_parentWindow(parentWindow)
+		FunctionTagInput(Function::Tag::Manager* funcTagManager)
 		{
 			m_funcTagList = new FuncTagSelectList(funcTagManager, nullptr);
 			m_funcTagList->setView(
 				m_funcTagListView = new FuncTagSelectList::TreeView(m_funcTagList));
-			m_funcTagList->setCanBeRemoved(false);
+			m_funcTagList->setParent(this);
 
 			m_funcTagListShortView = new FuncTagSelectList::TreeView(m_funcTagList);
 			m_funcTagListShortView->setOutputContainer(m_funcTagShortList = new Container);
+			m_funcTagShortList->setParent(this);
 		}
 
 		~FunctionTagInput() {
-			if (m_window != nullptr) {
-				m_parentWindow->removeWindow(m_window);
-			}
 			delete m_funcTagList;
 			delete m_funcTagListView;
 			delete m_funcTagListShortView;
@@ -449,32 +446,28 @@ namespace GUI::Widget
 				}
 			}
 
-			if (ImGui::Selectable("More...")) {
-				if (m_window == nullptr) {
-					m_parentWindow->addWindow(
-						m_window = new Window::FunctionTagList(m_funcTagList, "Select function tags")
+			if (!m_isWinOpen && ImGui::Selectable("More...")) {
+				Window::FunctionTagList* win;
+				getWindow()->addWindow(
+					win = new Window::FunctionTagList(new MirrorItem(m_funcTagList), "Select function tags")
+				);
+				win->getCloseEvent() +=
+					new Events::EventUI(
+						EVENT_LAMBDA(info) {				
+							m_isWinOpen = false;
+						}
 					);
-					m_window->setCloseEvent(
-						new Events::EventUI(
-							EVENT_LAMBDA(info) {
-								m_parentWindow->removeWindow(m_window);
-								delete m_window;
-								m_window = nullptr;
-							}
-						)
-					);
-					open = false;
-				}
+				m_isWinOpen = true;
+				open = false;
 			}
 		}
 
 	private:
-		Window::IWindow* m_parentWindow;
-		Window::IWindow* m_window = nullptr;
 		FuncTagSelectList* m_funcTagList;
 		FuncTagSelectList::TreeView* m_funcTagListView;
 		FuncTagSelectList::TreeView* m_funcTagListShortView;
 		Container* m_funcTagShortList;
+		bool m_isWinOpen = false;
 	};
 };
 
@@ -498,11 +491,11 @@ namespace GUI::Window
 				.addItem(m_nameInput = new Elements::Input::Text)
 
 				.text("Select function parent tag")
-				.addItem(m_funcTagInput = new Widget::FunctionTagInput(this, funcManager->getFunctionTagManager()))
+				.addItem(m_funcTagInput = new Widget::FunctionTagInput(funcManager->getFunctionTagManager()))
 				.newLine()
 
 				.text("Select function")
-				.addItem(m_funcInput = new Widget::FunctionInput(this, funcManager))
+				.addItem(m_funcInput = new Widget::FunctionInput(funcManager))
 				.newLine()
 				.newLine();
 
@@ -517,11 +510,19 @@ namespace GUI::Window
 		Widget::FunctionInput* m_funcInput;
 		Widget::FunctionTagInput* m_funcTagInput;
 
-		bool checkData()
+		void checkData()
 		{
-			return m_funcInput->getSelectedFuncCount() > 0
-				&& m_funcTagInput->getSelectedFuncTagCount() > 0
-				&& !m_nameInput->getInputValue().empty();
+			if (m_funcInput->getSelectedFuncCount() == 0) {
+				throw Exception(m_funcInput, "Select a function");
+			}
+
+			if (m_funcTagInput->getSelectedFuncTagCount() == 0) {
+				throw Exception(m_funcTagInput, "Select a function tag");
+			}
+
+			if (m_nameInput->getInputValue().empty()) {
+				throw Exception(m_nameInput, "Type a correct name");
+			}
 		}
 	};
 
@@ -536,9 +537,7 @@ namespace GUI::Window
 				.addItem(
 					new Elements::Button::ButtonStd("Create", new Events::EventUI(
 						EVENT_LAMBDA(info) {
-							if(!checkData())
-								return;
-
+							checkData();
 							auto tagManager = m_funcManager->getFunctionTagManager();
 							auto func = *m_funcInput->getSelectedFunctions().begin();
 							
@@ -567,9 +566,7 @@ namespace GUI::Window
 				.addItem(
 					new Elements::Button::ButtonStd("Change", new Events::EventUI(
 						EVENT_LAMBDA(info) {
-							if (!checkData())
-								return;
-
+							checkData();
 							auto tagManager = m_funcManager->getFunctionTagManager();
 							auto func = *m_funcInput->getSelectedFunctions().begin();
 
@@ -612,38 +609,28 @@ namespace GUI::Widget
 			Function::Tag::Tag* m_tag;
 		};
 
-		FunctionTagShortCut(API::Function::Function* function, Window::IWindow* parentWindow = nullptr)
-			: m_function(function), m_parentWindow(parentWindow)
+		FunctionTagShortCut(API::Function::Function* function)
+			: m_function(function)
 		{
-			if (m_parentWindow != nullptr) {
-				m_clickOnTag = new Events::EventUI(
-					EVENT_LAMBDA(info) {
-						auto sender = static_cast<TagBtn*>(info->getSender());
-						if (m_winEditor != nullptr)
-							m_parentWindow->removeWindow(m_winEditor, true);
-						m_parentWindow->addWindow(m_winEditor = new Window::FunctionTagUpdater(m_function->getFunctionManager(), m_function, sender->getTag()));
-					}
-				);
+			m_clickOnTag = new Events::EventUI(
+				EVENT_LAMBDA(info) {
+					auto sender = static_cast<TagBtn*>(info->getSender());
+					getWindow()->addWindow(new Window::FunctionTagUpdater(m_function->getFunctionManager(), m_function, sender->getTag()));
+				}
+			);
 
-				m_clickOnCreateTag = new Events::EventUI(
-					EVENT_LAMBDA(info) {
-						if (m_winEditor != nullptr)
-							m_parentWindow->removeWindow(m_winEditor, true);//MY TODO: break triggered error
-						m_parentWindow->addWindow(m_winEditor = new Window::FunctionTagCreator(m_function->getFunctionManager()));
-					}
-				);
-			}
+			m_clickOnCreateTag = new Events::EventUI(
+				EVENT_LAMBDA(info) {
+					getWindow()->addWindow(new Window::FunctionTagCreator(m_function->getFunctionManager()));
+				}
+			);
 
 			refresh();
 		}
 
 		~FunctionTagShortCut() {
-			if (m_parentWindow != nullptr) {
-				delete m_clickOnTag;
-				delete m_clickOnCreateTag;
-				if (m_winEditor != nullptr)
-					m_parentWindow->removeWindow(m_winEditor, true);
-			}
+			delete m_clickOnTag;
+			delete m_clickOnCreateTag;
 		}
 
 		void refresh() {
@@ -672,8 +659,6 @@ namespace GUI::Widget
 		API::Function::Function* m_function;
 		Events::EventHandler* m_clickOnTag = nullptr;
 		Events::EventHandler* m_clickOnCreateTag = nullptr;
-		Window::IWindow* m_parentWindow;
-		Window::FunctionTagEditor* m_winEditor = nullptr;
 	};
 
 };

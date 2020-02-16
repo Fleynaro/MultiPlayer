@@ -5,20 +5,19 @@
 
 namespace GUI::Widget
 {
-	class FileBrowserTree : public IWidget
+	class FileBrowserTree : public Container
 	{
 	public:
 		class Directory;
 		class File;
 		FileBrowserTree(Directory* mainDir, Events::Event* selectFileEvent = nullptr, Events::Event* rightMouseClickFile = nullptr, Events::Event* rightMouseClickDir = nullptr)
-			: IWidget("file browser tree"), m_mainDir(mainDir), m_selectFileEvent(selectFileEvent), m_rightMouseClickFile(rightMouseClickFile), m_rightMouseClickDir(rightMouseClickDir)
+			: m_mainDir(mainDir), m_selectFileEvent(selectFileEvent), m_rightMouseClickFile(rightMouseClickFile), m_rightMouseClickDir(rightMouseClickDir)
 		{
-			getMainContainer()
-				.addItem(mainDir);
+			addItem(mainDir);
 			buildTree();
 
 			getMainDirPtr()->open();
-			getMainDirPtr()->setRightMouseClickEvent(rightMouseClickDir);
+			getMainDirPtr()->getRightMouseClickEvent() += rightMouseClickDir;
 
 			if (m_selectFileEvent != nullptr)
 				m_selectFileEvent->setCanBeRemoved(false);
@@ -101,7 +100,6 @@ namespace GUI::Widget
 
 		class File
 			: public Elem,
-			public Events::ISender,
 			public Events::OnSpecial<File>,
 			public Events::OnRightMouseClick<File>,
 			public Attribute::Name<File>

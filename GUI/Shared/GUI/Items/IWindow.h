@@ -10,7 +10,6 @@ namespace GUI::Window
 
 	class IWindow :
 		public Item,
-		public Events::ISender,
 		public Events::OnClose<IWindow>,
 		public Attribute::Id<IWindow>,
 		public Attribute::Name<IWindow>
@@ -59,8 +58,8 @@ namespace GUI::Window
 			}
 			renderChildWindows();
 
-			handleEventMessages();
 			checkToClose();
+			handleEventMessages();
 		}
 
 	private:
@@ -210,10 +209,52 @@ namespace GUI::Window
 		void addEventMessage(Events::EventMessage::Type message) {
 			m_eventMessages.push_back(message);
 		}
+
+		void showWinMessage(const std::string& message) {
+			class ModalWin : public IWindow
+			{
+			public:
+				ModalWin(const std::string& message)
+					: IWindow("Message"), m_message(message)
+				{
+					setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+				}
+
+				void render() override {
+					ImGui::OpenPopup(getName().c_str());
+					if (ImGui::BeginPopupModal(getName().c_str(), &m_open, m_flags)) {
+						ImGui::Text(m_message.c_str());
+						ImGui::EndPopup();
+					}
+					if (!ImGui::IsPopupOpen(getName().c_str())) {
+						m_open = false;
+						checkToClose();
+					}
+
+					handleEventMessages();
+				}
+			private:
+				std::string m_message;
+			};
+
+			auto win = new ModalWin(message);
+			win->getCloseEvent() +=
+				new Events::EventUI(
+					EVENT_LAMBDA(info) {				
+						m_handleEventMessageEnabled = true;
+					}
+				);
+			addWindow(win);
+			m_handleEventMessageEnabled = false;
+		}
 	private:
 		std::list<Events::EventMessage::Type> m_eventMessages;
+		bool m_handleEventMessageEnabled = true;
 
 		void handleEventMessages() {
+			if (!m_handleEventMessageEnabled)
+				return;
+
 			using namespace Events;
 			for (auto& message : m_eventMessages) {
 				EventHandler* eventHandler = message->getEventHandler();
@@ -225,6 +266,10 @@ namespace GUI::Window
 				catch (const Exception& ex) {
 					if (ex.getSource() != nullptr) {
 						ex.getSource()->onExceptionOccured(ex);
+					}
+
+					if (ex.m_winMessageShow) {
+						showWinMessage(ex.getMessage());
 					}
 				}
 			}

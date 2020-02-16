@@ -60,8 +60,7 @@ namespace GUI::Widget::Template
 			};
 
 			class Filter
-				: public ColContainer,
-				public Events::ISender
+				: public ColContainer
 			{
 			public:
 				Filter(FilterManager* filterManager, const std::string& name, Operation condition = And)
@@ -133,14 +132,14 @@ namespace GUI::Widget::Template
 					: m_filterManager(filterManager), Elements::List::Combo("")
 				{
 					addItem("<Add a filter>");
-					setSpecialEvent(new Events::EventUI(EVENT_LAMBDA(info) {
+					getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
 						int filterIdx = getSelectedItem() - 1;
 						if (filterIdx != -1) {
 							m_filterManager->addFilter(createFilter(filterIdx));
 							setDefault(0);
 							m_filterManager->m_itemList->update();
 						}
-					}));
+					});
 				}
 
 				virtual Filter* createFilter(int idx) = 0;
@@ -225,9 +224,7 @@ namespace GUI::Widget::Template
 			{}
 
 			~Item() {
-				if (m_header != nullptr && m_header->canBeRemovedBy(this)) {
-					delete m_header;
-				}
+				m_header->destroy();
 			}
 
 			void setHeader(const std::string& header) {

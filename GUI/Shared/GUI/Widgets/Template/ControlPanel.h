@@ -8,7 +8,7 @@ namespace GUI::Widget::Template
 	{
 	public:
 		class SideBar
-			: public ChildContainer, public IInit
+			: public ChildContainer
 		{
 		public:
 			class MenuItem : public Elements::Button::ButtonStd
@@ -23,22 +23,26 @@ namespace GUI::Widget::Template
 
 			SideBar()
 				: ChildContainer()
-			{}
-
-			~SideBar() {
-				delete m_menuEvent;
-			}
-
-			void init() override {
-				(*this)
-					.setWidth(getWidth())
-					.beginContainer(&m_menu);
-
+			{
 				m_menuEvent = new Events::EventUI(EVENT_LAMBDA(info) {
 					auto sender = static_cast<MenuItem*>(info->getSender());
 					m_controlPanel->onSelectedContainer(sender->m_container);
 					m_selectedContainer = sender->m_container;
 				});
+			}
+
+			~SideBar() {
+				delete m_menuEvent;
+			}
+
+			void onVisibleOff() override {
+				clear();
+			}
+
+			void onVisibleOn() override {
+				(*this)
+					.setWidth(getWidth())
+					.beginContainer(&m_menu);
 			}
 
 			void addMenuItem(const std::string& name, Container* container)
@@ -89,7 +93,6 @@ namespace GUI::Widget::Template
 		ControlPanel()
 		{
 			m_sideBar = new SideBar;
-			m_sideBar->init();
 			getSideBar()->setControlPanel(this);
 
 			(*this)

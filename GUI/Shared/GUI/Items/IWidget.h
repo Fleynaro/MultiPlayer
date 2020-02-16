@@ -8,7 +8,7 @@ namespace GUI::Widget
 	using namespace Generic;
 #endif
 
-	class IWidget
+	/*class IWidget
 		: public Attribute::Name<IWidget>
 	{
 	public:
@@ -31,5 +31,5 @@ namespace GUI::Widget
 		}
 	protected:
 		Container* m_container;
-	};
+	};*/
 };

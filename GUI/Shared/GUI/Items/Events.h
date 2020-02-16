@@ -138,13 +138,17 @@ namespace GUI
 			}
 
 			Messager& operator+=(EventHandler* eventHandler) {
-				eventHandler->setOwner(m_sender);
-				m_eventHandlers.push_back(eventHandler);
+				if (eventHandler != nullptr) {
+					eventHandler->setOwner(m_sender);
+					m_eventHandlers.push_front(eventHandler);
+				}
 				return *this;
 			}
 
 			Messager& operator-=(EventHandler* eventHandler) {
-				m_eventHandlers.remove(eventHandler);
+				if (eventHandler != nullptr) {
+					m_eventHandlers.remove(eventHandler);
+				}
 				return *this;
 			}
 		private:
@@ -193,29 +197,31 @@ namespace GUI
 		class EventHookedMessage : public IEventMessage
 		{
 		public:
-			EventHookedMessage(EventHook* newSender, EventMessage::Type message)
-				: m_newSender(newSender), m_message(message)
+			EventHookedMessage(EventHook* hookSender, EventMessage::Type message)
+				: m_hookSender(hookSender), m_message(message)
 			{}
 
-			ISender* getSender() override;
+			ISender* getSender() override {
+				return getMessage()->getSender();
+			}
 
 			EventHandler* getEventHandler() override;
 
 			void* getUserDataPtr();
 
-			ISender* getRealSender() {
-				return m_message->getSender();
+			EventHook* getHookSender() {
+				return m_hookSender;
 			}
 
 			EventMessage::Type& getMessage() {
 				return m_message;
 			}
 		private:
-			EventHook* m_newSender;
+			EventHook* m_hookSender;
 			EventMessage::Type m_message;
 		};
 
-		class EventHook : public ISender, public EventHandler
+		class EventHook : public EventHandler
 		{
 		public:
 			EventHook(EventHandler* eventHandler, void* userDataPtr)

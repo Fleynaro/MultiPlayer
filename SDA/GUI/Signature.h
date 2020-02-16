@@ -146,8 +146,8 @@ namespace GUI::Units
 	class FuncInfo : public DeclInfo
 	{
 	public:
-		FuncInfo(API::Function::Function* function, bool viewAsTable = false, Window::IWindow* parentWindow = nullptr)
-			: m_function(function), m_parentWindow(parentWindow), DeclInfo(function->getDeclaration(), viewAsTable)
+		FuncInfo(API::Function::Function* function, bool viewAsTable = false)
+			: m_function(function), DeclInfo(function->getDeclaration(), viewAsTable)
 		{}
 
 		std::string buildIdInfo() override {
@@ -194,7 +194,6 @@ namespace GUI::Units
 	private:
 		API::Function::Function* m_function;
 		GUI::Widget::FunctionTagShortCut* m_tagShortCut = nullptr;
-		Window::IWindow* m_parentWindow;
 
 		CE::Function::Function* getFunction() {
 			return m_function->getFunction();
@@ -235,7 +234,6 @@ namespace GUI::Units
 	public:
 		class Name
 			: public Elements::Text::Text,
-			public Events::ISender,
 			public Events::OnLeftMouseClick<Name>
 		{
 		public:
@@ -416,35 +414,31 @@ namespace GUI::Units
 		class FuncName : public DeclSignature::FuncName
 		{
 		public:
-			FuncName(API::Function::Function* function, const std::string& name, Events::Event* clickEvent, Window::IWindow* parentWindow)
+			FuncName(API::Function::Function* function, const std::string& name, Events::Event* clickEvent)
 				: DeclSignature::FuncName(name, clickEvent)
 			{
-				m_declInfo = new ShortCutInfo(new FuncInfo(function, false, parentWindow));
+				m_declInfo = new ShortCutInfo(new FuncInfo(function, false));
 			}
 		};
 
 		FunctionSignature(API::Function::Function* function,
 			Events::Event* leftMouseClickOnType = nullptr,
 			Events::Event* leftMouseClickOnFuncName = nullptr,
-			Events::Event* leftMouseClickOnArgName = nullptr,
-			Window::IWindow* parentWindow = nullptr)
+			Events::Event* leftMouseClickOnArgName = nullptr)
 			:
 			m_function(function),
 			DeclSignature(function->getDeclaration(),
 				leftMouseClickOnType,
 				leftMouseClickOnFuncName,
 				leftMouseClickOnArgName
-			),
-			m_parentWindow(parentWindow)
+			)
 		{}
 
 
 		Name* createFuncName(const std::string& name) override {
-			return new FuncName(m_function, name, m_leftMouseClickOnFuncName, m_parentWindow);
+			return new FuncName(m_function, name, m_leftMouseClickOnFuncName);
 		}
-
 	private:
 		API::Function::Function* m_function;
-		Window::IWindow* m_parentWindow;
 	};
 };

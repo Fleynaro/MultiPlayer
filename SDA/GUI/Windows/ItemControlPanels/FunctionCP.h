@@ -51,7 +51,7 @@ namespace GUI::Widget
 					int a = 6;
 				})
 			);
-			m_signature->setCanBeRemoved(false);
+			m_signature->setParent(this);
 		}
 
 		void buildGeneric()

@@ -122,15 +122,12 @@ namespace GUI
 		virtual void onUpdate() {}
 	public:
 		void destroy() {
-			if (m_canBeRemoved) {
-				if (--m_parentCount == 0) {
-					delete this;
-				}
+			if (m_parentCount < 0) {
+				throw std::logic_error("GUI item have parent count < 0.");
 			}
-		}
-
-		void setCanBeRemoved(bool state) {
-			m_canBeRemoved = state;
+			if (--m_parentCount == 0) {
+				delete this;
+			}
 		}
 
 		void show() {
@@ -163,8 +160,9 @@ namespace GUI
 		}
 
 		virtual Window::IWindow* getWindow() {
-			if (getParent() == nullptr)
-				return nullptr;
+			if (getParent() == nullptr) {
+				throw std::logic_error("GUI item have not parent window, but tried to show itself. Use setParent always!");
+			}
 			return getParent()->getWindow();
 		}
 	protected:
@@ -175,7 +173,6 @@ namespace GUI
 		Item* m_parent = nullptr;
 		int m_parentCount = 0;
 		bool m_display = true;
-		bool m_canBeRemoved = true;
 	};
 
 	class MirrorItem : public Item
@@ -203,7 +200,7 @@ namespace GUI
 	class IExceptionSource
 	{
 	public:
-		virtual void onExceptionOccured(const Exception& exception) = 0;
+		virtual void onExceptionOccured(const Exception& exception) {}
 	};
 
 	class Exception : public std::exception
@@ -224,6 +221,12 @@ namespace GUI
 		char const* what() const override {
 			return getMessage().c_str();
 		}
+
+		void setWinMessageShow(bool toggle) {
+			m_winMessageShow = toggle;
+		}
+
+		bool m_winMessageShow = true;
 	private:
 		IExceptionSource* m_source;
 		std::string m_message;
@@ -310,7 +313,6 @@ namespace GUI
 	class TabBar;
 	class Container :
 		public Item,
-		public Events::ISender,
 		public Events::OnVisible<Container>,
 		public Attribute::Font<Container>
 	{
@@ -1077,7 +1079,6 @@ namespace GUI
 
 			class Checkbox
 				: public Elem,
-				public Events::ISender,
 				public Events::OnSpecial<Checkbox>,
 				public Attribute::Id<Checkbox>,
 				public Attribute::Name<Checkbox>
@@ -1349,7 +1350,6 @@ namespace GUI
 		{
 			class IButton
 				: public Elem,
-				public Events::ISender,
 				public Events::OnSpecial<IButton>,
 				public Attribute::Id<IButton>,
 				public Attribute::Name<IButton>
@@ -1453,7 +1453,7 @@ namespace GUI
 			template<typename T>
 			class ISlider
 				: public Elem,
-				public Events::ISender,
+				public IExceptionSource,
 				public Events::OnSpecial<ISlider<T>>,
 				public Attribute::Id<ISlider<T>>,
 				public Attribute::Name<ISlider<T>>
@@ -1535,7 +1535,6 @@ namespace GUI
 		{
 			class IColorEdit
 				: public Elem,
-				public Events::ISender,
 				public Events::OnSpecial<IColorEdit>,
 				public Attribute::Name<IColorEdit>
 			{
@@ -1576,7 +1575,7 @@ namespace GUI
 		{
 			class IInput
 				: public Elem,
-				public Events::ISender,
+				public IExceptionSource,
 				public Events::OnSpecial<IInput>,
 				public Attribute::Id<IInput>,
 				public Attribute::Name<IInput>
@@ -1868,7 +1867,6 @@ namespace GUI
 		{
 			class Item
 				: public Elem,
-				public Events::ISender,
 				public Events::OnSpecial<Item>
 			{
 			public:
@@ -1940,7 +1938,6 @@ namespace GUI
 
 			class ListBox
 				: public Elem,
-				public Events::ISender,
 				public Events::OnSpecial<ListBox>,
 				public Attribute::Id<ListBox>,
 				public Attribute::Name<ListBox>,
@@ -1999,7 +1996,6 @@ namespace GUI
 
 			class ListBoxDyn
 				: public Elem,
-				public Events::ISender,
 				public Events::OnSpecial<ListBoxDyn>,
 				public Attribute::Id<ListBoxDyn>,
 				public Attribute::Name<ListBoxDyn>,
@@ -2114,7 +2110,6 @@ namespace GUI
 
 			class MultiCombo
 				: public Elem,
-				public Events::ISender,
 				public Events::OnSpecial<MultiCombo>,
 				public Attribute::Id<MultiCombo>,
 				public Attribute::Name<MultiCombo>,
@@ -2196,7 +2191,6 @@ namespace GUI
 		{
 			class Item :
 				public Elem,
-				public Events::ISender,
 				public Events::OnSpecial<Item>,
 				public Attribute::Name<Item>,
 				public Attribute::Enable<Item>,
