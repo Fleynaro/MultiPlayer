@@ -449,7 +449,7 @@ namespace GUI::Widget
 			if (!m_isWinOpen && ImGui::Selectable("More...")) {
 				Window::FunctionTagList* win;
 				getWindow()->addWindow(
-					win = new Window::FunctionTagList(new MirrorItem(m_funcTagList), "Select function tags")
+					win = new Window::FunctionTagList(m_funcTagList, "Select function tags")
 				);
 				win->getCloseEvent() +=
 					new Events::EventUI(
@@ -482,7 +482,7 @@ namespace GUI::Window
 		FunctionTagEditor(const std::string& name, CE::FunctionManager* funcManager, API::Function::Function* function)
 			: IWindow(name), m_funcManager(funcManager)
 		{
-			setWidth(300);
+			setWidth(450);
 			setHeight(300);
 			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
@@ -491,7 +491,7 @@ namespace GUI::Window
 				.addItem(m_nameInput = new Elements::Input::Text)
 
 				.text("Select function parent tag")
-				.addItem(m_funcTagInput = new Widget::FunctionTagInput(funcManager->getFunctionTagManager()))
+				.addItem(m_funcParentTagInput = new Widget::FunctionTagInput(funcManager->getFunctionTagManager()))
 				.newLine()
 
 				.text("Select function")
@@ -508,7 +508,7 @@ namespace GUI::Window
 		CE::FunctionManager* m_funcManager;
 		Elements::Input::Text* m_nameInput;
 		Widget::FunctionInput* m_funcInput;
-		Widget::FunctionTagInput* m_funcTagInput;
+		Widget::FunctionTagInput* m_funcParentTagInput;
 
 		void checkData()
 		{
@@ -516,8 +516,8 @@ namespace GUI::Window
 				throw Exception(m_funcInput, "Select a function");
 			}
 
-			if (m_funcTagInput->getSelectedFuncTagCount() == 0) {
-				throw Exception(m_funcTagInput, "Select a function tag");
+			if (m_funcParentTagInput->getSelectedFuncTagCount() == 0) {
+				throw Exception(m_funcParentTagInput, "Select a function tag");
 			}
 
 			if (m_nameInput->getInputValue().empty()) {
@@ -543,7 +543,7 @@ namespace GUI::Window
 							
 							tagManager->createTag(
 								func->getDeclaration(),
-								*m_funcTagInput->getSelectedFunctionTags().begin(),
+								*m_funcParentTagInput->getSelectedFunctionTags().begin(),
 								m_nameInput->getInputValue()
 							);
 							hide();
@@ -556,29 +556,32 @@ namespace GUI::Window
 		: public FunctionTagEditor
 	{
 	public:
-		FunctionTagUpdater(CE::FunctionManager* funcManager, API::Function::Function* function, Function::Tag::Tag* tag)
-			: FunctionTagEditor("Function tag editor", funcManager, function)
+		FunctionTagUpdater(CE::FunctionManager* funcManager, API::Function::Function* function, Function::Tag::UserTag* tag)
+			: FunctionTagEditor("Function tag editor. Tag: " + tag->getName(), funcManager, function), m_tag(tag)
 		{
 			m_nameInput->setInputValue(tag->getName());
-			m_funcTagInput->getSelectedFunctionTags().push_back(tag);
+			m_funcParentTagInput->getSelectedFunctionTags().push_back(tag->getParent());
 
 			getMainContainer()
 				.addItem(
 					new Elements::Button::ButtonStd("Change", new Events::EventUI(
 						EVENT_LAMBDA(info) {
 							checkData();
+
 							auto tagManager = m_funcManager->getFunctionTagManager();
 							auto func = *m_funcInput->getSelectedFunctions().begin();
+							auto parentTag = *m_funcParentTagInput->getSelectedFunctionTags().begin();
 
-							auto tag = *m_funcTagInput->getSelectedFunctionTags().begin();
-							if (tag->isUser()) {
-								auto userTag = static_cast<Function::Tag::UserTag*>(tag);
-								userTag->setDeclaration(func->getDeclaration());
-								hide();
-							}
+							m_tag->setName(m_nameInput->getInputValue());
+							m_tag->setParent(parentTag);
+							m_tag->setDeclaration(func->getDeclaration());
+							hide();
 					}
 				)));
 		}
+
+	private:
+		Function::Tag::UserTag* m_tag;
 	};
 };
 
@@ -615,15 +618,19 @@ namespace GUI::Widget
 			m_clickOnTag = new Events::EventUI(
 				EVENT_LAMBDA(info) {
 					auto sender = static_cast<TagBtn*>(info->getSender());
-					getWindow()->addWindow(new Window::FunctionTagUpdater(m_function->getFunctionManager(), m_function, sender->getTag()));
+					if (!sender->getTag()->isUser())
+						return;
+					getWindow()->addWindow(new Window::FunctionTagUpdater(m_function->getFunctionManager(), m_function, static_cast<Function::Tag::UserTag*>(sender->getTag())));
 				}
 			);
+			m_clickOnTag->setCanBeRemoved(false);
 
 			m_clickOnCreateTag = new Events::EventUI(
 				EVENT_LAMBDA(info) {
 					getWindow()->addWindow(new Window::FunctionTagCreator(m_function->getFunctionManager()));
 				}
 			);
+			m_clickOnCreateTag->setCanBeRemoved(false);
 
 			refresh();
 		}
@@ -635,19 +642,19 @@ namespace GUI::Widget
 
 		void refresh() {
 			clear();
+
 			auto collection = getTagCollection();
 			for (auto tag : collection.getTagList()) {
 				addItem(new TagBtn(tag, m_clickOnTag));
 				sameLine();
 			}
+
 			if (collection.empty()) {
 				text("Not tags. ");
 				sameLine();
 			}
 
-			if(m_clickOnCreateTag != nullptr)
-				addItem(new Elements::Button::ButtonTag("+", ColorRGBA(0x0000FFFF), m_clickOnCreateTag));
-			
+			addItem(new Elements::Button::ButtonTag("+", ColorRGBA(0x0000FFFF), m_clickOnCreateTag));
 			newLine();
 		}
 

@@ -28,7 +28,7 @@ namespace CE
 			Tag* getParent() {
 				return m_parent;
 			}
-		private:
+		protected:
 			Tag* m_parent;
 		};
 
@@ -66,6 +66,10 @@ namespace CE
 			UserTag(API::Function::FunctionDecl* decl, Tag* parent, int id, std::string name, std::string desc = "")
 				: m_decl(decl), Tag(parent, id, name, desc)
 			{}
+
+			void setParent(Tag* parent) {
+				m_parent = parent;
+			}
 
 			Type getType() override {
 				return getParent()->getType();

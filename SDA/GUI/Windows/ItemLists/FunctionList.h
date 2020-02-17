@@ -29,12 +29,12 @@ namespace GUI::Widget
 					m_signature->setParent(this);
 
 					beginHeader()
-						.addItem(new MirrorItem(m_signature));
+						.addItem(m_signature);
 
 					beginBody()
 						.text("Signature: ")
 						.sameLine()
-						.addItem(new MirrorItem(m_signature))
+						.addItem(m_signature)
 						.newLine()
 						.newLine()
 						.addItem(
@@ -46,7 +46,7 @@ namespace GUI::Widget
 				}
 
 				~FunctionItem() {
-					delete m_signature;
+					m_signature->destroy();
 				}
 			private:
 				//MY TODO: может быть краш при удалении объекта, если он принадлежит нескольким родителям. т.е. битая ссылка. Вроде решил
@@ -837,7 +837,7 @@ namespace GUI::Widget
 			if (!m_isWinOpen && ImGui::Selectable("More...")) {
 				Window::FunctionList* win;
 				getWindow()->addWindow(
-					win = new Window::FunctionList(new MirrorItem(m_funcSelectList), "Select functions")
+					win = new Window::FunctionList(m_funcSelectList, "Select functions")
 				);
 				win->getCloseEvent() +=
 					new Events::EventUI(

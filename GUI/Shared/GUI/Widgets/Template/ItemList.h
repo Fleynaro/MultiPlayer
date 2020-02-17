@@ -166,6 +166,7 @@ namespace GUI::Widget::Template
 			}
 
 			void addFilter(Filter* filter) {
+				filter->setParent(this);
 				m_filters.push_back(filter);
 				filter->setEventRemoveHandler(m_eventRemoveFilter);
 			}
@@ -224,7 +225,8 @@ namespace GUI::Widget::Template
 			{}
 
 			~Item() {
-				m_header->destroy();
+				if(m_header != nullptr)
+					m_header->destroy();
 			}
 
 			void setHeader(const std::string& header) {
@@ -281,6 +283,7 @@ namespace GUI::Widget::Template
 		ItemList(FilterManager::FilterCreator* filterCreator, StyleSettings* styleSettings = &DefaultStyleSettings)
 			: m_styleSettings(styleSettings), m_filterManager(this)
 		{
+			m_filterManager.setParent(this);
 			filterCreator->setWidth(m_styleSettings->m_leftWidth);
 
 			(*this)

@@ -238,13 +238,13 @@ namespace GUI::Window
 			};
 
 			auto win = new ModalWin(message);
+			addWindow(win);
 			win->getCloseEvent() +=
 				new Events::EventUI(
 					EVENT_LAMBDA(info) {				
 						m_handleEventMessageEnabled = true;
 					}
 				);
-			addWindow(win);
 			m_handleEventMessageEnabled = false;
 		}
 	private:
@@ -260,10 +260,11 @@ namespace GUI::Window
 				EventHandler* eventHandler = message->getEventHandler();
 				if (eventHandler == nullptr)
 					continue;
+
 				try {
 					eventHandler->doCallback()(message);
 				}
-				catch (const Exception& ex) {
+				catch (const GUI::Exception& ex) {
 					if (ex.getSource() != nullptr) {
 						ex.getSource()->onExceptionOccured(ex);
 					}

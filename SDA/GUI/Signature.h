@@ -258,10 +258,11 @@ namespace GUI::Units
 				: FuncName(name, clickEvent)
 			{
 				m_declInfo = new ShortCutInfo(new DeclInfo(functionDecl));
+				m_declInfo->setParent(this);
 			}
 
 			~FuncName() {
-				delete m_declInfo;
+				m_declInfo->destroy();
 			}
 
 			void render() override {
@@ -418,6 +419,7 @@ namespace GUI::Units
 				: DeclSignature::FuncName(name, clickEvent)
 			{
 				m_declInfo = new ShortCutInfo(new FuncInfo(function, false));
+				m_declInfo->setParent(this);
 			}
 		};
 

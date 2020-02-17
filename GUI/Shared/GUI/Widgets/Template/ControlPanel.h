@@ -18,7 +18,13 @@ namespace GUI::Widget::Template
 
 				MenuItem(const std::string& name, Container* container, Events::Event* event)
 					: Elements::Button::ButtonStd(name, event), m_container(container)
-				{}
+				{
+					m_container->setParent(this);
+				}
+
+				~MenuItem() {
+					m_container->destroy();
+				}
 			};
 
 			SideBar()
@@ -29,20 +35,17 @@ namespace GUI::Widget::Template
 					m_controlPanel->onSelectedContainer(sender->m_container);
 					m_selectedContainer = sender->m_container;
 				});
+				m_menuEvent->setCanBeRemoved(false);
+
+				beginContainer(&m_menu);
 			}
 
 			~SideBar() {
 				delete m_menuEvent;
 			}
 
-			void onVisibleOff() override {
-				clear();
-			}
-
 			void onVisibleOn() override {
-				(*this)
-					.setWidth(getWidth())
-					.beginContainer(&m_menu);
+				setWidth(getWidth());
 			}
 
 			void addMenuItem(const std::string& name, Container* container)
@@ -93,16 +96,16 @@ namespace GUI::Widget::Template
 		ControlPanel()
 		{
 			m_sideBar = new SideBar;
-			getSideBar()->setControlPanel(this);
+			m_sideBar->setControlPanel(this);
 
 			(*this)
-				.addItem(getSideBar())
+				.addItem(m_sideBar)
 				.sameLine()
 				.beginChild()
 					//.setVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10))
 					//.setVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 10))
 					.beginImGui([&]() {
-						getSideBar()->getSelectedContainer()->show();
+						m_sideBar->getSelectedContainer()->show();
 					})
 				.end();
 		}

@@ -139,11 +139,8 @@ namespace GUI
 		}
 
 		void setParent(Item* parent) {
-			if (++m_parentCount > 1) {
-				if (parent != nullptr) {
-					throw std::logic_error("GUI item cannot have multiple parents at once. Use MirrorItem!");
-				}
-			}
+			if (++m_parentCount > 1)
+				return;
 			m_parent = parent;
 		}
 
@@ -173,26 +170,6 @@ namespace GUI
 		Item* m_parent = nullptr;
 		int m_parentCount = 0;
 		bool m_display = true;
-	};
-
-	class MirrorItem : public Item
-	{
-	public:
-		MirrorItem(Item* item)
-			: m_item(item)
-		{
-			m_item->setParent(nullptr);
-		}
-
-		~MirrorItem() {
-			m_item->destroy();
-		}
-
-		void render() override {
-			m_item->show();
-		}
-	private:
-		Item* m_item;
 	};
 
 
