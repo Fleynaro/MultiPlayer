@@ -48,27 +48,6 @@ namespace CE
 			Role m_role = Role::Method;
 		};
 
-		/*class AbstractMethod : public AbstractFunction
-		{
-		public:
-			AbstractMethod(MethodDecl* decl)
-				: AbstractFunction(decl)
-			{}
-
-			inline MethodDecl& getDeclaration() {
-				return static_cast<MethodDecl&>(AbstractFunction::getDeclaration());
-			}
-
-			inline Type::Class* getClass() {
-				return getDeclaration().getClass();
-			}
-
-			inline void setClass(Type::Class* Class) {
-				return getDeclaration().setClass(Class);
-			}
-		};
-		*/
-
 		class Method : public Function
 		{
 		public:
@@ -91,14 +70,6 @@ namespace CE
 			inline void setClass(Type::Class* Class) {
 				return getDeclaration().setClass(Class);
 			}
-
-			/*Function* getFunctionBasedOn() {
-				auto func = new Function(m_addr, m_ranges, getId(), getName(), getDesc());
-				func->getArgNameList().swap(getArgNameList());
-				func->getSignature().getArgList().swap(getSignature().getArgList());
-				func->getSignature().setReturnType(getSignature().getReturnType());
-				return func;
-			}*/
 		};
 	};
 };

@@ -25,6 +25,13 @@ namespace CE
 			virtual bool isUserDefined() = 0;
 			virtual void free() {}
 
+			virtual std::string getViewValue(void* addr) {
+				uint64_t mask = 0x0;
+				for (int i = 0; i < max(8, getSize()); i++)
+					mask |= 0xFF << i;
+				return std::to_string(*(uint64_t*)addr & mask);
+			}
+
 			Type* getBaseType();
 
 			bool isSystem() {

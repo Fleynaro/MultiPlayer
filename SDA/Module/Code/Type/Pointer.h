@@ -1,5 +1,6 @@
 #pragma once
 #include "AbstractType.h"
+#include "Utility/Generic.h"
 
 namespace CE
 {
@@ -43,6 +44,10 @@ namespace CE
 
 			int getSize() override {
 				return 8;
+			}
+
+			std::string getViewValue(void* addr) override {
+				return "(" + getDisplayName() + ")0x" + Generic::String::NumberToHex(*(uint64_t*)addr);
 			}
 
 			Type* getType() {

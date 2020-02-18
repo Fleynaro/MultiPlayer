@@ -549,13 +549,8 @@ namespace GUI::Widget
 		void setOpenFunctionEventHandler(Events::Event* eventHandler) {
 			m_openFunction = eventHandler;
 		}
-
-		void setParentWindow(Window::IWindow* parentWindow) {
-			m_parentWindow = parentWindow;
-		}
 	public:
 		Events::Event* m_openFunction;
-		Window::IWindow* m_parentWindow;
 	};
 
 	class FuncSelectList : public FunctionList
@@ -741,7 +736,6 @@ namespace GUI::Window
 			m_openFunctionCP->setCanBeRemoved(false);
 
 			funcList->setOpenFunctionEventHandler(m_openFunctionCP);
-			funcList->setParentWindow(this);
 			setMainContainer(funcList);
 		}
 

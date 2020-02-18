@@ -26,6 +26,13 @@ namespace CE
 				return Group::Enum;
 			}
 
+			std::string getViewValue(void* addr) override {
+				auto value = m_fields.find(*(int*)(addr));
+				if (value == m_fields.end())
+					return UserType::getViewValue(addr);
+				return value->second;
+			}
+
 			FieldDict& getFieldDict() {
 				return m_fields;
 			}

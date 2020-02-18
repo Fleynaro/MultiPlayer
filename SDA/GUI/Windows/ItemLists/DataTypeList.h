@@ -2,6 +2,7 @@
 #include "Shared/GUI/Widgets/Template/ItemList.h"
 #include "GUI/Type.h"
 #include <Manager/FunctionManager.h>
+#include "GUI/ClassEditor.h"
 
 using namespace CE;
 
@@ -17,11 +18,30 @@ namespace GUI::Widget
 			{
 			public:
 				TypeItem(API::Type::Type* type)
+					: m_type(type)
 				{
 					setHeader(type->getType()->getName());
 					beginBody()
+						.addItem(
+							new Elements::Button::ButtonStd(
+								"Open control panel",
+								new Events::EventUI(EVENT_LAMBDA(info) {
+									if(m_type->getType()->getGroup() != Type::Type::Class)
+										return;
+
+									Widget::ClassEditor* classEditor = new Widget::ClassEditor;
+									classEditor->setView(
+										new Widget::ClassEditor::ClassView(classEditor, static_cast<API::Type::Class*>(m_type), GetModuleHandle(NULL))
+									);
+									getWindow()->addWindow(new Window::ClassEditor(classEditor));
+								})
+							)
+						)
 						.text(GUI::Units::Type::getTooltipDesc(type->getType(), false));
 				}
+
+			private:
+				API::Type::Type* m_type;
 			};
 
 			ListView(DataTypeList* dataTypeList, TypeManager* typeManager)

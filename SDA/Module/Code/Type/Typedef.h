@@ -24,6 +24,12 @@ namespace CE
 				return getRefType()->getSize();
 			}
 
+			std::string getViewValue(void* addr) override {
+				if (getRefType() == this)
+					return UserType::getViewValue(addr);
+				return getRefType()->getViewValue(addr);
+			}
+
 			void setRefType(Type* refType) {
 				m_refType = refType;
 			}

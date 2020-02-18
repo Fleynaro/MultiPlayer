@@ -266,6 +266,7 @@ namespace GUI::Window
 
 					if (ex.m_winMessageShow) {
 						showWinMessage(ex.getMessage());
+						//MY TODO*: return; + remove handled messages
 					}
 				}
 			}

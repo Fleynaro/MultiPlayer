@@ -41,20 +41,12 @@ ProjectWindow::ProjectWindow(Project* project)
 	auto ftag1 = tagManager->createTag(funcManager->getFunctionDeclById(12), tag1, "test ftag1");
 	auto ftag2 = tagManager->createTag(funcManager->getFunctionDeclById(12), tagManager->m_setTag, "test ftag2");
 	tagManager->calculateAllTags();
-	
-	/*auto handler = new Events::EventUI(EVENT_LAMBDA(info) {
-		auto funcTag = static_cast<Widget::FunctionTagList::TreeView::FunctionTag*>(info->getSender());
-
-	});
-	handler->setCanBeRemoved(false);
-	addWindow(
-		m_funcTagList = new Window::FunctionTagList(getProject()->getProgramExe()->getFunctionManager()->getFunctionTagManager(),
-			handler
-		)
-	);*/
 
 	getMainContainer()
 		.addItem(new Widget::FunctionInput(funcManager))
 		.newLine()
-		.addItem(new Widget::FunctionTagInput(tagManager));
+		.addItem(new Widget::FunctionTagInput(tagManager))
+		.newLine()
+		.newLine()
+		.text("Base: 0x" + Generic::String::NumberToHex((uint64_t)GetModuleHandle(NULL)));
 }

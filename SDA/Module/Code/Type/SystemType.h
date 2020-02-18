@@ -101,6 +101,10 @@ namespace CE
 				return Set::Boolean;
 			}
 
+			std::string getViewValue(void* addr) override {
+				return *(bool*)addr ? "true" : "false";
+			}
+
 			int getSize() override {
 				return 1;
 			}
@@ -149,6 +153,10 @@ namespace CE
 				return Set::Integer;
 			}
 
+			std::string getViewValue(void* addr) override {
+				return std::to_string(*(int8_t*)addr);
+			}
+
 			int getSize() override {
 				return 1;
 			}
@@ -171,6 +179,10 @@ namespace CE
 
 			Set getSet() {
 				return Set::Integer;
+			}
+
+			std::string getViewValue(void* addr) override {
+				return std::to_string(*(int16_t*)addr);
 			}
 
 			int getSize() override {
@@ -197,6 +209,10 @@ namespace CE
 				return Set::Integer;
 			}
 
+			std::string getViewValue(void* addr) override {
+				return std::to_string(*(int32_t*)addr);
+			}
+
 			int getSize() override {
 				return 4;
 			}
@@ -219,6 +235,10 @@ namespace CE
 
 			Set getSet() {
 				return Set::Integer;
+			}
+
+			std::string getViewValue(void* addr) override {
+				return std::to_string(*(int64_t*)addr);
 			}
 
 			int getSize() override {
@@ -317,6 +337,10 @@ namespace CE
 				return Set::Integer;
 			}
 
+			std::string getViewValue(void* addr) override {
+				return "<"+ SystemType::getViewValue((void*)((std::uintptr_t)addr + 0x8)) +"|"+ SystemType::getViewValue(addr) +">";
+			}
+
 			int getSize() override {
 				return 16;
 			}
@@ -341,6 +365,10 @@ namespace CE
 				return Set::Real;
 			}
 
+			std::string getViewValue(void* addr) override {
+				return std::to_string(*(float*)addr);
+			}
+
 			int getSize() override {
 				return 4;
 			}
@@ -363,6 +391,10 @@ namespace CE
 
 			Set getSet() {
 				return Set::Real;
+			}
+
+			std::string getViewValue(void* addr) override {
+				return std::to_string(*(double*)addr);
 			}
 
 			int getSize() override {
