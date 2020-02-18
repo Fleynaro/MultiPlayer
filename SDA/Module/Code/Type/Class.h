@@ -83,7 +83,21 @@ namespace CE
 				method->setClass(this);
 			}
 
-			void iterateClasses(std::function<void(Class*)> callback)
+			int getAllMethodCount() {
+				return getMethodList().size() +
+					getBaseClass() != nullptr ? getBaseClass()->getAllMethodCount() : 0;
+			}
+
+			int getAllFieldCount() {
+				return getFieldDict().size() +
+					getBaseClass() != nullptr ? getBaseClass()->getAllFieldCount() : 0;
+			}
+
+			int getBaseOffset() {
+				return getBaseClass() != nullptr ? getBaseClass()->getRelSize() + getBaseClass()->getBaseOffset() : 0;
+			}
+
+			void iterateClasses(std::function<bool(Class*)> callback)
 			{
 				if (getBaseClass() != nullptr) {
 					getBaseClass()->iterateClasses(callback);
@@ -92,10 +106,11 @@ namespace CE
 				callback(this);
 			}
 
-			void iterateAllMethods(std::function<void(Function::Method*)> callback)
+			void iterateAllMethods(std::function<bool(Function::Method*)> callback)
 			{
 				for (auto method : getMethodList()) {
-					callback(method);
+					if (!callback(method))
+						return;
 				}
 
 				if (getBaseClass() != nullptr) {
@@ -103,30 +118,32 @@ namespace CE
 				}
 			}
 
-			void iterateMethods(std::function<void(Function::Method*)> callback)
+			void iterateMethods(std::function<bool(Function::Method*)> callback)
 			{
 				std::set<std::string> methods;
 				iterateAllMethods([&](Function::Method* method) {
 					std::string sigName = method->getSigName();
 					if (!methods.count(sigName)) {
-						callback(method);
+						return callback(method);
 					}
 					methods.insert(sigName);
+					return true;
 					});
 			}
 
-			void iterateFields(std::function<void(Class*, int, Field*)> callback)
+			void iterateFields(std::function<bool(Class*, int, Field*)> callback)
 			{
 				if (getBaseClass() != nullptr) {
 					getBaseClass()->iterateFields(callback);
 				}
 
 				for (auto& it : m_fields) {
-					callback(this, it.first, &it.second);
+					if (!callback(this, it.first, &it.second))
+						return;
 				}
 			}
 
-			void iterateFieldsWithOffset(std::function<void(Class*, int, Field*)> callback)
+			void iterateFieldsWithOffset(std::function<bool(Class*, int, Field*)> callback)
 			{
 				int curClassBase = hasVTable() * 0x8;
 				Class* curClass = nullptr;
@@ -135,7 +152,7 @@ namespace CE
 						curClassBase += curClass->getRelSize();
 					}
 					int curOffset = curClassBase + relOffset;
-					callback(Class, curOffset, field);
+					return callback(Class, curOffset, field);
 					});
 			}
 
@@ -173,6 +190,7 @@ namespace CE
 						}
 					}
 					curOffset += Class->getRelSize();
+					return true;
 					});
 				return result;
 			}

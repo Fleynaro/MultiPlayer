@@ -159,6 +159,7 @@ namespace GUI
 		virtual Window::IWindow* getWindow() {
 			if (getParent() == nullptr) {
 				throw std::logic_error("GUI item have not parent window, but tried to show itself. Use setParent always!");
+				//to check what happens look at 'this' object in debug data tree view
 			}
 			return getParent()->getWindow();
 		}
@@ -589,7 +590,7 @@ namespace GUI
 		: public TreeNode
 	{
 	public:
-		ColContainer(const std::string& name, bool open = true)
+		ColContainer(const std::string& name = "", bool open = true)
 			: TreeNode(name, open)
 		{}
 

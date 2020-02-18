@@ -60,9 +60,16 @@ public:
 			getProgramExe()->initGhidraClient();
 			getProgramExe()->load();
 
-			getProgramExe()->getTypeManager()->getGhidraManager()->updateAll();
-			getProgramExe()->getFunctionManager()->getGhidraManager()->update(
-				getProgramExe()->getFunctionManager()->getGhidraManager()->generateHashMap()
+			auto dataTypeGhidraManager = getProgramExe()->getTypeManager()->getGhidraManager();
+			dataTypeGhidraManager->updateAll();
+			auto hashMap = dataTypeGhidraManager->generateHashMap();
+			dataTypeGhidraManager->updateTypedefs(hashMap);
+			dataTypeGhidraManager->updateEnums(hashMap);
+			dataTypeGhidraManager->updateStructures(hashMap);
+
+			auto functionGhidraManager = getProgramExe()->getFunctionManager()->getGhidraManager();
+			functionGhidraManager->update(
+				functionGhidraManager->generateHashMap()
 			);
 			getProgramExe()->getFunctionManager()->buildFunctionBodies();
 			getProgramExe()->getFunctionManager()->buildFunctionBasicInfo();

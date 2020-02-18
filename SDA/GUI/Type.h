@@ -71,7 +71,7 @@ namespace GUI::Units
 					auto Enum = static_cast<CE::Type::Enum*>(type->getBaseType());
 					info += "enum " + Enum->getName() + " {\n";
 					for (auto& field : Enum->getFieldDict()) {
-						info += field.second + " = "+ std::to_string(field.first) +",\n";
+						info += "\t" + field.second + " = "+ std::to_string(field.first) +",\n";
 					}
 					info += "};";
 					break;
@@ -90,21 +90,25 @@ namespace GUI::Units
 					info += "public:\n";
 
 					info += "\t//fields:\n";
-					int limitCount = sizeLimit * 30;
+					int limitCount = sizeLimit * 10;
 
 					//fields
-					for (auto& field : Class->getFieldDict()) {
-						info += "\t" + field.second.getType()->getDisplayName() + " " + field.second.getName() + "; //" + std::to_string(field.first);
-						if (!field.second.getDesc().empty()) {
-							info += "; " + field.second.getDesc();
+					Class->iterateFieldsWithOffset([&](CE::Type::Class* class_, int offset, CE::Type::Class::Field* field) {
+						if (class_ != Class)
+							return true;
+
+						info += "\t" + field->getType()->getDisplayName() + " " + field->getName() + "; //" + std::to_string(offset);
+						if (!field->getDesc().empty()) {
+							info += "; " + field->getDesc();
 						}
 						info += "\n";
 
 						if (--limitCount == 0) {
-							info += "\t{too long list of fields: "+ std::to_string(Class->getFieldDict().size()) +"}\n";
-							break;
+							info += "\t{too long list of fields: " + std::to_string(Class->getAllFieldCount()) + "}\n";
+							return false;
 						}
-					}
+						return true;
+					});
 
 					if (Class->hasVTable())
 					{
@@ -116,7 +120,7 @@ namespace GUI::Units
 							info += "\t" + method->getSigName() + "\n";
 
 							if (--limitCount == 0) {
-								info += "\t{too long list of virtual methods: " + std::to_string(Class->getMethodList().size()) + "}\n";
+								info += "\t{too long list of virtual methods: " + std::to_string(Class->getVtable()->getVMethodList().size()) + "}\n";
 								break;
 							}
 						}
@@ -127,15 +131,19 @@ namespace GUI::Units
 					limitCount = sizeLimit * 20;
 
 					//methods
-					for (auto method : Class->getMethodList()) {
+					Class->iterateMethods([&](Function::Method* method) {
+						if (method->getClass() != Class)
+							return true;
+
 						info += method->getSigName() + "\n";
 
 						if (--limitCount == 0) {
-							info += "\t{too long list of methods: " + std::to_string(Class->getMethodList().size()) + "}\n";
-							break;
+							info += "\t{too long list of methods: " + std::to_string(Class->getAllMethodCount()) + "}\n";
+							return false;
 						}
-					}
-
+						return true;
+						});
+					
 					info += "};";
 					break;
 				}

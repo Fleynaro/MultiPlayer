@@ -171,7 +171,7 @@ namespace GUI::Widget
 
 				~FunctionBody() {
 					if (m_signature != nullptr) {
-						delete m_signature;
+						m_signature->destroy();
 					}
 				}
 
@@ -183,6 +183,7 @@ namespace GUI::Widget
 							new Events::EventUI(EVENT_LAMBDA(info) {}),
 							new Events::EventHook(m_openFunctionCP, m_function)
 						);
+						m_signature->setParent(this);
 					}
 
 					ImGui::SameLine();

@@ -546,7 +546,8 @@ namespace GUI::Window
 								*m_funcParentTagInput->getSelectedFunctionTags().begin(),
 								m_nameInput->getInputValue()
 							);
-							hide();
+							tagManager->calculateAllTags();
+							close();
 						}
 				)));
 		}
@@ -575,7 +576,8 @@ namespace GUI::Window
 							m_tag->setName(m_nameInput->getInputValue());
 							m_tag->setParent(parentTag);
 							m_tag->setDeclaration(func->getDeclaration());
-							hide();
+							tagManager->calculateAllTags();
+							close();
 					}
 				)));
 		}

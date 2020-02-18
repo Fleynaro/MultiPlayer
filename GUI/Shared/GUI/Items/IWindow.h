@@ -201,11 +201,6 @@ namespace GUI::Window
 			delete this;
 		}
 
-		void hide() {
-			getMainContainer().clear();
-			setDisplay(false);
-		}
-
 		void addEventMessage(Events::EventMessage::Type message) {
 			m_eventMessages.push_back(message);
 		}
