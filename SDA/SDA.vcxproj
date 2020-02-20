@@ -283,6 +283,7 @@
     <ClInclude Include="Module\Manager\VTableManager.h" />
     <ClInclude Include="Module\MemoryAnalyser\AVX\Analyser.h" />
     <ClInclude Include="Module\MemoryAnalyser\AVX\avx.h" />
+    <ClInclude Include="Module\Pointer\Pointer.h" />
     <ClInclude Include="Module\Statistic\Analyser.h" />
     <ClInclude Include="Module\Statistic\Function.h" />
     <ClInclude Include="Module\Statistic\Statistic.h" />

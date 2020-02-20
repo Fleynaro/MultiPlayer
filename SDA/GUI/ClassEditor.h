@@ -5,6 +5,7 @@
 #include <FunctionTag/FunctionTag.h>
 #include "Windows/ItemControlPanels/FunctionCP.h"
 #include "Windows/ProjectWindow.h"
+#include <Pointer/Pointer.h>
 
 using namespace CE;
 
@@ -31,7 +32,13 @@ namespace GUI::Widget
 						{}
 
 						void render() override {
-							setText("0x" + Generic::String::NumberToHex((uint64_t)m_addr) + " -> " + m_type->getViewValue(m_addr));
+							std::string addrText = "0x" + Generic::String::NumberToHex((uint64_t)m_addr);
+							if (Pointer(m_addr).canBeRead()) {
+								setText(addrText + " -> " + m_type->getViewValue(m_addr));
+							}
+							else {
+								setText(addrText + " cannot be read.");
+							}
 							Elements::Text::ColoredText::render();
 						}
 					private:
@@ -121,12 +128,12 @@ namespace GUI::Widget
 					Events::EventHandler* m_openFunctionCP;
 				};
 
-				ClassContent(ClassHierarchy* classHierarchy, API::Type::Class* Class, void* baseAddr = nullptr)
-					: ClassContent(classHierarchy, Class, baseAddr, Class->getClass()->getBaseOffset())
+				ClassContent(ClassHierarchy* classHierarchy, API::Type::Class* Class, bool calculateValues = false, void* baseAddr = nullptr)
+					: ClassContent(classHierarchy, Class, calculateValues, baseAddr, Class->getClass()->getBaseOffset())
 				{}
 
-				ClassContent(ClassHierarchy* classHierarchy, API::Type::Class* Class, void* baseAddr, int baseOffset)
-					: m_classHierarchy(classHierarchy), m_class(Class), m_baseAddr(baseAddr), m_baseOffset(baseOffset), ColContainer(Class->getClass()->getName())
+				ClassContent(ClassHierarchy* classHierarchy, API::Type::Class* Class, bool calculateValues, void* baseAddr, int baseOffset)
+					: m_classHierarchy(classHierarchy), m_class(Class), m_baseAddr(baseAddr), m_calculateValues(calculateValues), m_baseOffset(baseOffset), ColContainer(Class->getClass()->getName())
 				{}
 
 				void buildFields(Container* container, const std::string& name) {
@@ -153,12 +160,20 @@ namespace GUI::Widget
 									else {
 										if (fieldType->isPointer()) {
 											for (int i = 0; i < fieldType->getPointerLvl(); i++) {
+												if (!Pointer(addr).canBeRead())
+													break;
 												addr = (void*)*(std::uintptr_t*)addr;
 											}
 										}
-										ClassHierarchy* classHierarchy;
-										field->addItem(classHierarchy = new ClassHierarchy(m_classHierarchy->m_classEditor, apiBaseClassType, addr));
-										classHierarchy->onSearch(name);
+
+										if (Pointer(addr).canBeRead()) {
+											ClassHierarchy* classHierarchy;
+											field->addItem(classHierarchy = new ClassHierarchy(m_classHierarchy->m_classEditor, apiBaseClassType, addr));
+											classHierarchy->onSearch(name);
+										}
+										else {
+											field->text("Address not valid.");
+										}
 									}
 
 									field->addFlags(ImGuiTreeNodeFlags_Leaf, false);
@@ -172,7 +187,7 @@ namespace GUI::Widget
 						}
 
 						if (canBeFilteredToRemove) {
-							if (!m_classHierarchy->m_classEditor->checkOnInputValue(classField, name)) {
+							if (m_classHierarchy->m_classEditor->isFilterEnabled() && !m_classHierarchy->m_classEditor->checkOnInputValue(classField, name)) {
 								container->removeLastItem();
 							}
 						}
@@ -211,6 +226,7 @@ namespace GUI::Widget
 				void* m_baseAddr;
 				int m_baseOffset;
 				API::Type::Class* m_class;
+				bool m_calculateValues;
 			};
 			friend class ClassContent;
 
@@ -220,7 +236,7 @@ namespace GUI::Widget
 				m_targetClass->getClass()->iterateClasses([&](Type::Class* class_) {
 					auto apiClassType = static_cast<API::Type::Class*>(m_targetClass->getTypeManager()->getTypeById(class_->getId()));
 					if (apiClassType != nullptr) {
-						ClassContent* classContent = new ClassContent(this, apiClassType, m_baseAddr);
+						ClassContent* classContent = new ClassContent(this, apiClassType, m_baseAddr != nullptr, m_baseAddr);
 						addItem(classContent);
 						m_classContents.push_back(classContent);
 
@@ -340,7 +356,7 @@ namespace GUI::Widget
 					.beginContainer()
 					.newLine()
 					.separator()
-						.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters and search", false, m_eventUpdateCB))
+						.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters and search", true, m_eventUpdateCB))
 						.addItem(m_cb_isAlwaysOpen = new Elements::Generic::Checkbox("Open all", false, m_eventUpdateCB))
 					.end()
 				.endReverseInserting();

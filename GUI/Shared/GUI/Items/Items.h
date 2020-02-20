@@ -596,7 +596,7 @@ namespace GUI
 
 		void render() override {
 			pushIdParam();
-			bool isOpen = ImGui::CollapsingHeader(getName().c_str(), m_closeBtn ? &m_open : nullptr);
+			bool isOpen = ImGui::CollapsingHeader(getName().c_str(), &m_open);
 			popIdParam();
 
 			if (isOpen) {
