@@ -244,7 +244,7 @@ int main()
 		//sda->getTriggerManager()->saveTrigger(trigger);
 		//sda->getTriggerManager()->loadTriggers();
 
-		//if(false)
+		if(false)
 		{
 			using namespace CE::Stat::Function;
 			Account account(&sda->getStatManager()->getDB(), function);

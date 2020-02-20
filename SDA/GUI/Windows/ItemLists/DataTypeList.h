@@ -31,7 +31,10 @@ namespace GUI::Widget
 
 									Widget::ClassEditor* classEditor = new Widget::ClassEditor;
 									classEditor->setView(
-										new Widget::ClassEditor::ClassView(classEditor, static_cast<API::Type::Class*>(m_type), GetModuleHandle(NULL))
+										new Widget::ClassEditor::ClassView(
+												new Widget::ClassEditor::ClassHierarchy(classEditor, static_cast<API::Type::Class*>(m_type), GetModuleHandle(NULL)
+											)
+										)
 									);
 									getWindow()->addWindow(new Window::ClassEditor(classEditor));
 								})

@@ -13,28 +13,73 @@ namespace GUI::Widget
 	class ClassEditor : public Template::ItemList
 	{
 	public:
-		class ClassView : public IView
+		class ClassHierarchy : public GUI::Container
 		{
 		public:
-			class ClassContent : public ColContainer, public IView
+			class ClassContent : public ColContainer
 			{
 			public:
 				class Field
 					: public TreeNode
 				{
 				public:
+					class TypeViewValue : public Elements::Text::ColoredText
+					{
+					public:
+						TypeViewValue(CE::Type::Type* type, void* addr, ColorRGBA color)
+							: m_type(type), m_addr(addr), Elements::Text::ColoredText("", color)
+						{}
+
+						void render() override {
+							setText("0x" + Generic::String::NumberToHex((uint64_t)m_addr) + " -> " + m_type->getViewValue(m_addr));
+							Elements::Text::ColoredText::render();
+						}
+					private:
+						CE::Type::Type* m_type;
+						void* m_addr;
+					};
+
 					Field(ClassContent* classContent, int relOffset, Type::Class::Field& field)
 						: m_classContent(classContent), m_relOffset(relOffset), m_field(field)
 					{
-						addFlags(ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_Leaf);
-						setName(field.getType()->getDisplayName() + " " + field.getName());
+						addFlags(ImGuiTreeNodeFlags_FramePadding);
 					}
 
+					~Field() {
+						if (m_headBaseInfo != nullptr)
+							m_headBaseInfo->destroy();
+					}
 
+					void renderHeader() override {
+						if (m_headBaseInfo == nullptr) {
+							m_headBaseInfo = new Container;
+							(*m_headBaseInfo)
+								.text("0x" + Generic::String::NumberToHex(getAbsoluteOffset()) + " ", ColorRGBA(0xfaf4b6FF))
+								.sameLine()
+								.addItem(new Units::Type(m_field.getType()))
+								.sameText(" " + m_field.getName() + " ")
+								.sameLine();
+							if (m_classContent->m_baseAddr != nullptr) {
+								m_headBaseInfo
+									->addItem(new TypeViewValue(m_field.getType(), m_classContent->getAddressByRelOffset(m_relOffset), ColorRGBA(0x919191FF)))
+									.sameLine();
+							}
+
+							m_headBaseInfo->setParent(this);
+						}
+
+						ImGui::SameLine();
+						m_headBaseInfo->show();
+					}
+
+					int getAbsoluteOffset() {
+						return m_classContent->m_baseOffset + m_relOffset;
+					}
 				private:
 					ClassContent* m_classContent;
 					int m_relOffset;
 					Type::Class::Field& m_field;
+					Container* m_headBaseInfo = nullptr;
 				};
 
 				class Method
@@ -76,30 +121,30 @@ namespace GUI::Widget
 					Events::EventHandler* m_openFunctionCP;
 				};
 
-				ClassContent(ClassView* classView, API::Type::Class* Class, void* baseAddr = nullptr)
-					: ClassContent(classView, Class, baseAddr, Class->getClass()->getBaseOffset())
+				ClassContent(ClassHierarchy* classHierarchy, API::Type::Class* Class, void* baseAddr = nullptr)
+					: ClassContent(classHierarchy, Class, baseAddr, Class->getClass()->getBaseOffset())
 				{}
 
-				ClassContent(ClassView* classView, API::Type::Class* Class, void* baseAddr, int baseOffset)
-					: m_classView(classView), m_class(Class), m_baseAddr(baseAddr), m_baseOffset(baseOffset), ColContainer(Class->getClass()->getName())
-				{
-					setOutputContainer(this);
-				}
+				ClassContent(ClassHierarchy* classHierarchy, API::Type::Class* Class, void* baseAddr, int baseOffset)
+					: m_classHierarchy(classHierarchy), m_class(Class), m_baseAddr(baseAddr), m_baseOffset(baseOffset), ColContainer(Class->getClass()->getName())
+				{}
 
 				void buildFields(Container* container, const std::string& name) {
 					for (auto& fieldPair : getClass()->getFieldDict()) {
 						auto relOffset = fieldPair.first;
 						auto& classField = fieldPair.second;
-						
+
 						Field* field;
 						container->addItem(field = new Field(this, relOffset, classField));
-						
+						field->addFlags(ImGuiTreeNodeFlags_Leaf, true);
+
+						bool canBeFilteredToRemove = true;
 						if (m_baseAddr != nullptr) {
 							auto fieldType = classField.getType();
 							auto baseType = fieldType->getBaseType();
 							if (baseType->getGroup() == Type::Type::Group::Class) {
-								auto apiBaseType = static_cast<API::Type::Class*>(m_class->getTypeManager()->getTypeById(baseType->getId()));
-								if (apiBaseType != nullptr) {
+								auto apiBaseClassType = static_cast<API::Type::Class*>(m_class->getTypeManager()->getTypeById(baseType->getId()));
+								if (apiBaseClassType != nullptr) {
 									void* addr = getAddressByRelOffset(relOffset);
 
 									if (fieldType->isArray()) {
@@ -111,13 +156,24 @@ namespace GUI::Widget
 												addr = (void*)*(std::uintptr_t*)addr;
 											}
 										}
-										ClassContent* classContent;
-										field->addItem(classContent = new ClassContent(m_classView, apiBaseType, addr));
-										classContent->onSearch(name);
+										ClassHierarchy* classHierarchy;
+										field->addItem(classHierarchy = new ClassHierarchy(m_classHierarchy->m_classEditor, apiBaseClassType, addr));
+										classHierarchy->onSearch(name);
 									}
 
 									field->addFlags(ImGuiTreeNodeFlags_Leaf, false);
+									canBeFilteredToRemove = false;
+
+									if (m_classHierarchy->m_classEditor->isAlwaysOpen()) {
+										field->setOpen(true);
+									}
 								}
+							}
+						}
+
+						if (canBeFilteredToRemove) {
+							if (!m_classHierarchy->m_classEditor->checkOnInputValue(classField, name)) {
+								container->removeLastItem();
 							}
 						}
 					}
@@ -126,21 +182,20 @@ namespace GUI::Widget
 				void buildMethods(Container* container, const std::string& methodName) {
 					for (auto method : getClass()->getMethodList()) {
 						auto method_ = m_class->getTypeManager()->getProgramModule()->getFunctionManager()->getFunctionById(method->getId());
-						if (!m_classView->isFilterEnabled() || m_classView->m_classEditor->checkOnInputValue(method_, methodName)) {
+						if (!m_classHierarchy->m_classEditor->isFilterEnabled() || m_classHierarchy->m_classEditor->checkOnInputValue(method_, methodName)) {
 							container->addItem(new Method(method_));
 						}
 					}
 				}
 
-				void onSearch(const std::string& name) override
+				void onSearch(const std::string& name)
 				{
-					getOutContainer()->clear();
+					clear();
 
-					buildFields(getOutContainer(), name);
+					buildFields(this, name);
 
 					ColContainer* methodContainer;
-					getOutContainer()->addItem(
-						methodContainer = new ColContainer("Methods"));
+					addItem(methodContainer = new ColContainer("Methods"));
 					buildMethods(methodContainer, name);
 				}
 
@@ -152,71 +207,68 @@ namespace GUI::Widget
 					return m_class->getClass();
 				}
 			private:
-				ClassView* m_classView;
+				ClassHierarchy* m_classHierarchy;
 				void* m_baseAddr;
 				int m_baseOffset;
 				API::Type::Class* m_class;
 			};
 			friend class ClassContent;
 
-
-			ClassView(ClassEditor* classEditor, API::Type::Class* Class, void* baseAddr = nullptr)
-				: m_classEditor(classEditor), m_class(Class), m_baseAddr(baseAddr)
-			{}
-
-			~ClassView() {
-				delete m_eventUpdateCB;
-			}
-
-			//MY TODO*: несколько классов могут фильтроваться одной панелью
-			void onSetView() override {
-				m_class->getClass()->iterateClasses([&](Type::Class* class_) {
-					auto baseClass = static_cast<API::Type::Class*>(m_class->getTypeManager()->getTypeById(class_->getId()));
-					if (baseClass != nullptr) {
-						ClassContent* classContent = new ClassContent(this, baseClass, m_baseAddr);
-						getOutContainer()->addItem(classContent);
+			ClassHierarchy(ClassEditor* classEditor, API::Type::Class* Class, void* baseAddr = nullptr)
+				: m_classEditor(classEditor), m_targetClass(Class), m_baseAddr(baseAddr)
+			{
+				m_targetClass->getClass()->iterateClasses([&](Type::Class* class_) {
+					auto apiClassType = static_cast<API::Type::Class*>(m_targetClass->getTypeManager()->getTypeById(class_->getId()));
+					if (apiClassType != nullptr) {
+						ClassContent* classContent = new ClassContent(this, apiClassType, m_baseAddr);
+						addItem(classContent);
 						m_classContents.push_back(classContent);
+
+						if (m_classEditor->isAlwaysOpen())
+							classContent->setOpen(true);
 					}
 					return true;
 				});
-
-				m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
-					m_classEditor->update();
-				});
-				m_eventUpdateCB->setCanBeRemoved(false);
-
-				(*m_classEditor->m_underFilterCP)
-					.beginReverseInserting()
-						.beginContainer()
-						.newLine()
-						.separator()
-							.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters and search", false, m_eventUpdateCB))
-						.end()
-					.endReverseInserting();
 			}
 
-			void onSearch(const std::string& name) override
+			void onSearch(const std::string& name)
 			{
 				for (auto it : m_classContents) {
 					it->onSearch(name);
 				}
 			}
 		private:
-			bool isFilterEnabled() {
-				return m_cb_isFilterEnabled->isSelected();
-			}
-		private:
 			void* m_baseAddr;
-			API::Type::Class* m_class;
+			API::Type::Class* m_targetClass;
 			ClassEditor* m_classEditor;
 			std::list<ClassContent*> m_classContents;
-
-			Elements::Generic::Checkbox* m_cb_isFilterEnabled = nullptr;
-			Events::EventHandler* m_eventUpdateCB = nullptr;
 		};
-		friend class ClassView;
 
+		class ClassView : public IView
+		{
+		public:
+			//ClassView(ClassEditor* classEditor, API::Type::Class* Class, void* baseAddr = nullptr)
+			//	: ClassView(new ClassHierarchy(classEditor, Class, baseAddr))
+			//{}
 
+			ClassView(ClassHierarchy* classHierarchy)
+				: m_classHierarchy(classHierarchy)
+			{}
+
+			void onSetView() override {
+				getOutContainer()
+					->addItem(m_classHierarchy);
+			}
+
+			//MY TODO*: несколько классов могут фильтроваться одной панелью
+			void onSearch(const std::string& name) override
+			{
+				m_classHierarchy->onSearch(name);
+			}
+		private:
+			ClassHierarchy* m_classHierarchy;
+		};
+		
 		class ClassFilter : public FilterManager::Filter
 		{
 		public:
@@ -277,6 +329,33 @@ namespace GUI::Widget
 			: ItemList(new ClassFilterCreator(this))
 		{
 			//getFilterManager()->addFilter(new CategoryFilter(this));
+
+			m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
+				update();
+			});
+			m_eventUpdateCB->setCanBeRemoved(false);
+
+			(*m_underFilterCP)
+				.beginReverseInserting()
+					.beginContainer()
+					.newLine()
+					.separator()
+						.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters and search", false, m_eventUpdateCB))
+						.addItem(m_cb_isAlwaysOpen = new Elements::Generic::Checkbox("Open all", false, m_eventUpdateCB))
+					.end()
+				.endReverseInserting();
+		}
+
+		~ClassEditor() {
+			delete m_eventUpdateCB;
+		}
+
+		bool isFilterEnabled() {
+			return m_cb_isFilterEnabled->isSelected();
+		}
+
+		bool isAlwaysOpen() {
+			return m_cb_isAlwaysOpen->isSelected();
 		}
 
 		bool checkOnInputValue(Type::Class::Field& field, const std::string& value) {
@@ -300,6 +379,11 @@ namespace GUI::Widget
 		}
 	public:
 		Events::Event* m_openFunction;
+
+	private:
+		Elements::Generic::Checkbox* m_cb_isFilterEnabled = nullptr;
+		Elements::Generic::Checkbox* m_cb_isAlwaysOpen = nullptr;
+		Events::EventHandler* m_eventUpdateCB = nullptr;
 	};
 };
 
