@@ -116,7 +116,7 @@ namespace GUI::Widget
 								updateFilter();
 							})
 						))
-						->setWidth(dataTypeList->m_styleSettings->m_leftWidth - 10),
+						->setWidth(dataTypeList->m_styleSettings.m_leftWidth - 10),
 						(Item**)& m_categoryList
 					);
 

@@ -11,6 +11,16 @@ using namespace CE;
 
 namespace GUI::Widget
 {
+	//MY TODO: смена адреса(сделать спец. ввод)
+	//MY TODO: vtable
+	//MY TODO: stack overflow
+	//MY TODO: неиспользуемые €чейки
+	//MY TODO: предугадывание типа €чейки(указатель, float)
+	//MY TODO: выделение классов, панель справа дл€ выдел. класса, указание в ней названи€, отн. и абс. размера класса
+	//MY TODO: множественное выделение €чеек, добавление типа €чеейкам(как в гидре!)
+	//MY TODO: несколько классов могут фильтроватьс€ одной панелью
+	//MY TODO: getWindow()->showConfirm(), showError(), showWarning(), ....
+
 	class ClassEditor : public Template::ItemList
 	{
 	public:
@@ -133,8 +143,29 @@ namespace GUI::Widget
 				{}
 
 				ClassContent(ClassHierarchy* classHierarchy, API::Type::Class* Class, bool calculateValues, void* baseAddr, int baseOffset)
-					: m_classHierarchy(classHierarchy), m_class(Class), m_baseAddr(baseAddr), m_calculateValues(calculateValues), m_baseOffset(baseOffset), ColContainer(Class->getClass()->getName())
+					: m_classHierarchy(classHierarchy), m_class(Class), m_baseAddr(baseAddr), m_calculateValues(calculateValues), m_baseOffset(baseOffset)
 				{}
+
+				~ClassContent() {
+					if (m_className != nullptr)
+						m_className->destroy();
+
+					if (m_classHierarchy->m_classEditor->m_classContentSelected == this)
+						m_classHierarchy->m_classEditor->unselectClassContent();
+				}
+
+				Elements::Text::ClickedText* m_className = nullptr;
+				void renderHeader() override {
+					if (m_className == nullptr) {
+						m_className = new Elements::Text::ClickedText(m_class->getClass()->getName(), ColorRGBA(0xeddf91FF));
+						m_className->getLeftMouseClickEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+							m_classHierarchy->m_classEditor->selectClassContent(this);
+						});
+						m_className->setParent(this);
+					}
+
+					m_className->show();
+				}
 
 				void buildFields(Container* container, const std::string& name) {
 					for (auto& fieldPair : getClass()->getFieldDict()) {
@@ -221,17 +252,18 @@ namespace GUI::Widget
 				Type::Class* getClass() {
 					return m_class->getClass();
 				}
+
+				API::Type::Class* m_class;
 			private:
 				ClassHierarchy* m_classHierarchy;
 				void* m_baseAddr;
 				int m_baseOffset;
-				API::Type::Class* m_class;
 				bool m_calculateValues;
 			};
 			friend class ClassContent;
 
-			ClassHierarchy(ClassEditor* classEditor, API::Type::Class* Class, void* baseAddr = nullptr)
-				: m_classEditor(classEditor), m_targetClass(Class), m_baseAddr(baseAddr)
+			ClassHierarchy(ClassEditor* classEditor, API::Type::Class* targetClass, void* baseAddr = nullptr)
+				: m_classEditor(classEditor), m_targetClass(targetClass), m_baseAddr(baseAddr)
 			{
 				m_targetClass->getClass()->iterateClasses([&](Type::Class* class_) {
 					auto apiClassType = static_cast<API::Type::Class*>(m_targetClass->getTypeManager()->getTypeById(class_->getId()));
@@ -242,6 +274,11 @@ namespace GUI::Widget
 
 						if (m_classEditor->isAlwaysOpen())
 							classContent->setOpen(true);
+
+						if (m_targetClass->getClass()->getId() == class_->getId()) {
+							if(m_classEditor->m_classContentSelected == nullptr)
+								m_classEditor->selectClassContent(classContent);
+						}
 					}
 					return true;
 				});
@@ -276,7 +313,6 @@ namespace GUI::Widget
 					->addItem(m_classHierarchy);
 			}
 
-			//MY TODO*: несколько классов могут фильтроватьс€ одной панелью
 			void onSearch(const std::string& name) override
 			{
 				m_classHierarchy->onSearch(name);
@@ -341,8 +377,18 @@ namespace GUI::Widget
 			ClassEditor* m_classEditor;
 		};
 
-		ClassEditor()
-			: ItemList(new ClassFilterCreator(this))
+		struct StyleSettings : ItemList::StyleSettings
+		{
+			StyleSettings()
+			{
+				m_leftWidth = 250;
+			}
+		};
+
+		Container* m_classEditorContainer;
+
+		ClassEditor(StyleSettings style = StyleSettings())
+			: ItemList(new ClassFilterCreator(this), style)
 		{
 			//getFilterManager()->addFilter(new CategoryFilter(this));
 
@@ -354,16 +400,56 @@ namespace GUI::Widget
 			(*m_underFilterCP)
 				.beginReverseInserting()
 					.beginContainer()
-					.newLine()
-					.separator()
-						.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters and search", true, m_eventUpdateCB))
-						.addItem(m_cb_isAlwaysOpen = new Elements::Generic::Checkbox("Open all", false, m_eventUpdateCB))
+						.newLine()
+						.separator()
+						.beginContainer()
+							.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters and search", true, m_eventUpdateCB))
+							.addItem(m_cb_isAlwaysOpen = new Elements::Generic::Checkbox("Open all", false, m_eventUpdateCB))
+						.end()
+						
+						.newLine()
+						.separator()
+						.addItem(new AddressInput)
+						.addItem(m_classEditorContainer = new ColContainer("Class editor panel"))
 					.end()
 				.endReverseInserting();
 		}
 
 		~ClassEditor() {
 			delete m_eventUpdateCB;
+		}
+
+		class ClassEditorPanel : public Container
+		{
+		public:
+			ClassEditorPanel(ClassEditor* classEditor, API::Type::Class* Class)
+				: m_classEditor(classEditor), m_class(Class)
+			{
+				(*this)
+					.text("Selected class: " + Class->getClass()->getName());
+			}
+
+		private:
+			API::Type::Class* m_class;
+			ClassEditor* m_classEditor;
+		};
+
+		ClassHierarchy::ClassContent* m_classContentSelected = nullptr;
+		void selectClassContent(ClassHierarchy::ClassContent* classContent) {
+			unselectClassContent();
+
+			m_classEditorContainer->clear();
+			m_classEditorContainer->addItem(new ClassEditorPanel(this, classContent->m_class));
+
+			classContent->addFlags(ImGuiTreeNodeFlags_Selected, true);
+			m_classContentSelected = classContent;
+		}
+
+		void unselectClassContent() {
+			if (m_classContentSelected != nullptr) {
+				m_classContentSelected->addFlags(ImGuiTreeNodeFlags_Selected, false);
+				m_classContentSelected = nullptr;
+			}
 		}
 
 		bool isFilterEnabled() {
@@ -389,13 +475,6 @@ namespace GUI::Widget
 				return static_cast<ClassFilter*>(filter)->checkFilter(function);
 				});
 		}*/
-
-		void setOpenFunctionEventHandler(Events::Event* eventHandler) {
-			m_openFunction = eventHandler;
-		}
-	public:
-		Events::Event* m_openFunction;
-
 	private:
 		Elements::Generic::Checkbox* m_cb_isFilterEnabled = nullptr;
 		Elements::Generic::Checkbox* m_cb_isAlwaysOpen = nullptr;

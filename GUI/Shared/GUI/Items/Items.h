@@ -557,11 +557,7 @@ namespace GUI
 			sendLeftMouseClickEvent();
 			popIdParam();
 
-			if (getName().find("##") != std::string::npos) {
-				ImGui::SameLine();
-				renderHeader();
-				ImGui::NewLine();
-			}
+			tryRenderHeader();
 
 			if (isOpen || m_alwaysOpened) {
 				Container::render();
@@ -581,6 +577,14 @@ namespace GUI
 		void setAsLeaf(bool toggle) {
 			addFlags(ImGuiTreeNodeFlags_Leaf, toggle);
 		}
+	protected:
+		void tryRenderHeader() {
+			if (getName().find("##") != std::string::npos) {
+				ImGui::SameLine();
+				renderHeader();
+				ImGui::NewLine();
+			}
+		}
 	private:
 		bool m_alwaysOpened = false;
 	};
@@ -590,19 +594,23 @@ namespace GUI
 		: public TreeNode
 	{
 	public:
-		ColContainer(const std::string& name = "", bool open = true)
+		ColContainer(const std::string& name = "##", bool open = false)
 			: TreeNode(name, open)
 		{}
 
 		void render() override {
 			pushIdParam();
-			bool isOpen = ImGui::CollapsingHeader(getName().c_str(), &m_open);
+			bool isOpen = ImGui::CollapsingHeader(getName().c_str(), &m_open, getFlags());
 			popIdParam();
+
+			tryRenderHeader();
 
 			if (isOpen) {
 				Container::render();
 			}
 		}
+
+		virtual void renderHeader() {}
 
 		ColContainer& setCloseBtn(bool toggle) {
 			m_closeBtn = toggle;
@@ -1138,7 +1146,7 @@ namespace GUI
 			class ColoredText : public Text
 			{
 			public:
-				ColoredText(std::string text, ColorRGBA color)
+				ColoredText(const std::string& text, ColorRGBA color)
 					: Text(text), m_color(color)
 				{}
 
@@ -1158,6 +1166,22 @@ namespace GUI
 				}
 			protected:
 				ColorRGBA m_color = 0x0;
+			};
+
+			class ClickedText
+				: public ColoredText,
+				public Events::OnLeftMouseClick<ClickedText>
+			{
+			public:
+				ClickedText(const std::string& text, ColorRGBA color)
+					: ColoredText(text, color),
+					Events::OnLeftMouseClick<ClickedText>(this)
+				{}
+
+				void render() override {
+					Elements::Text::ColoredText::render();
+					sendLeftMouseClickEvent();
+				}
 			};
 			
 #ifdef GUI_IS_MULTIPLAYER

@@ -228,6 +228,7 @@
     <ClCompile Include="Vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GUI\AddressInput.h" />
     <ClInclude Include="GUI\ClassEditor.h" />
     <ClInclude Include="GUI\Windows\ItemControlPanels\FunctionCP.h" />
     <ClInclude Include="GUI\Windows\ItemLists\FunctionTagList.h" />

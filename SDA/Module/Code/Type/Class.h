@@ -85,12 +85,12 @@ namespace CE
 
 			int getAllMethodCount() {
 				return getMethodList().size() +
-					getBaseClass() != nullptr ? getBaseClass()->getAllMethodCount() : 0;
+					(getBaseClass() != nullptr ? getBaseClass()->getAllMethodCount() : 0);
 			}
 
 			int getAllFieldCount() {
 				return getFieldDict().size() +
-					getBaseClass() != nullptr ? getBaseClass()->getAllFieldCount() : 0;
+					(getBaseClass() != nullptr ? getBaseClass()->getAllFieldCount() : 0);
 			}
 
 			int getBaseOffset() {

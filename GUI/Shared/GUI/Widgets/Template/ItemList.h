@@ -8,13 +8,18 @@ namespace GUI::Widget::Template
 	public:
 		struct StyleSettings
 		{
-			int m_height = 500;
-			int m_rightWidth = 500;
-			int m_leftWidth = 200;
+			int m_height;
+			int m_rightWidth;
+			int m_leftWidth;
+
+			StyleSettings()
+			{
+				m_height = 500;
+				m_rightWidth = 500;
+				m_leftWidth = 200;
+			}
 		};
 
-		inline static StyleSettings DefaultStyleSettings;
-	
 		class IView
 		{
 		public:
@@ -280,15 +285,15 @@ namespace GUI::Widget::Template
 	protected:
 		Container* m_underFilterCP = nullptr;
 
-		ItemList(FilterManager::FilterCreator* filterCreator, StyleSettings* styleSettings = &DefaultStyleSettings)
+		ItemList(FilterManager::FilterCreator* filterCreator, StyleSettings styleSettings = StyleSettings())
 			: m_styleSettings(styleSettings), m_filterManager(this)
 		{
 			m_filterManager.setParent(this);
-			filterCreator->setWidth(m_styleSettings->m_leftWidth);
+			filterCreator->setWidth(m_styleSettings.m_leftWidth);
 
 			(*this)
 				.beginChild()
-					.setWidth(m_styleSettings->m_leftWidth)
+					.setWidth(m_styleSettings.m_leftWidth)
 					.beginContainer()
 						.text("Search")
 						.separator()
@@ -301,7 +306,7 @@ namespace GUI::Widget::Template
 										doSearchRequest(sender->getInputValue());
 									})
 								))
-								->setWidth(m_styleSettings->m_leftWidth)
+								->setWidth(m_styleSettings.m_leftWidth)
 							)
 						.end()
 						.newLine()
@@ -336,7 +341,7 @@ namespace GUI::Widget::Template
 			return &m_filterManager;
 		}
 
-		StyleSettings* m_styleSettings;
+		StyleSettings m_styleSettings;
 	private:
 		FilterManager m_filterManager;
 		IView* m_view;

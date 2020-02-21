@@ -409,7 +409,7 @@ namespace GUI::Widget
 								updateFilter();
 							})
 						))
-						->setWidth(functionList->m_styleSettings->m_leftWidth - 10),
+						->setWidth(functionList->m_styleSettings.m_leftWidth - 10),
 						(Item**)& m_categoryList
 					);
 
