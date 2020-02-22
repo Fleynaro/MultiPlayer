@@ -184,6 +184,10 @@ namespace GUI
 	class Exception : public std::exception
 	{
 	public:
+		Exception(const std::string& message)
+			: Exception(nullptr, message)
+		{}
+
 		Exception(IExceptionSource* source, const std::string& message)
 			: m_source(source), m_message(message)
 		{}
@@ -1699,7 +1703,7 @@ namespace GUI
 				public Attribute::Collapse<FilterText>
 			{
 			public:
-				FilterText(const std::string& name, Events::Event* event)
+				FilterText(const std::string& name = "##", Events::Event* event = nullptr)
 					: Text(name, event), Attribute::Collapse<FilterText>(false)
 				{}
 
@@ -1754,7 +1758,7 @@ namespace GUI
 				public Attribute::Width<Float>
 			{
 			public:
-				Float(const std::string& name, Events::Event* event)
+				Float(const std::string& name = "##", Events::Event* event = nullptr)
 					: IInput(name, event)
 				{}
 
@@ -1789,7 +1793,7 @@ namespace GUI
 				public Attribute::Width<Float>
 			{
 			public:
-				Double(const std::string& name, Events::Event* event)
+				Double(const std::string& name = "##", Events::Event* event = nullptr)
 					: IInput(name, event)
 				{}
 
@@ -1824,7 +1828,7 @@ namespace GUI
 				public Attribute::Width<Int>
 			{
 			public:
-				Int(const std::string& name, Events::Event* event)
+				Int(const std::string& name = "##", Events::Event* event = nullptr)
 					: IInput(name, event)
 				{}
 
@@ -1850,7 +1854,7 @@ namespace GUI
 				}
 			private:
 				int m_value = 0;
-				int m_step = 0;
+				int m_step = 1;
 			};
 		};
 

@@ -18,6 +18,8 @@ namespace CE
 				: m_typeManager(typeManager)
 			{}
 
+			virtual ~AbstractType() {}
+
 			TypeManager* getTypeManager() {
 				return m_typeManager;
 			}
@@ -30,7 +32,14 @@ namespace CE
 		public:
 			Type(TypeManager* typeManager, CE::Type::Type* type)
 				: AbstractType(typeManager), m_type(type)
-			{}
+			{
+				m_type->setCanBeRemoved(false);
+			}
+
+			~Type() {
+				m_type->setCanBeRemoved(true);
+				m_type->free();
+			}
 
 			virtual void pushToGhidra() {}
 

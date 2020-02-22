@@ -1,10 +1,6 @@
 #pragma once
-#include "Shared/GUI/Widgets/Template/ItemList.h"
+#include "Windows/ItemLists/DataTypeList.h"
 #include "GUI/Signature.h"
-#include <Manager/FunctionManager.h>
-#include <FunctionTag/FunctionTag.h>
-#include "Windows/ItemControlPanels/FunctionCP.h"
-#include "Windows/ProjectWindow.h"
 #include "AddressInput.h"
 
 using namespace CE;
@@ -60,13 +56,27 @@ namespace GUI::Widget
 						: m_classContent(classContent), m_relOffset(relOffset), m_type(type)
 					{
 						addFlags(ImGuiTreeNodeFlags_FramePadding);
+
+						m_eventClick = new Events::EventUI(EVENT_LAMBDA(info) {
+							m_classContent->m_classHierarchy->m_classEditor->unselectClassField();
+							m_classContent->m_classHierarchy->m_classEditor->selectClassField(this);
+						});
+						m_eventClick->setCanBeRemoved(false);
+
+						getLeftMouseClickEvent() += m_eventClick;
 					}
 
 					~EmptyField() {
 						if (m_headBaseInfo != nullptr)
 							m_headBaseInfo->destroy();
+						
 						if(isEmpty())
 							m_type->free();
+
+						if(m_classContent->m_classHierarchy->m_classEditor->m_classFieldSelected == this)
+							m_classContent->m_classHierarchy->m_classEditor->unselectClassField();
+
+						delete m_eventClick;
 					}
 
 					void renderHeader() override {
@@ -101,13 +111,16 @@ namespace GUI::Widget
 					virtual std::string getFieldName() {
 						return "<empty>";
 					}
-				protected:
+
 					ClassContent* m_classContent;
 					int m_relOffset;
+				protected:
 					Container* m_headBaseInfo = nullptr;
 					CE::Type::Type* m_type;
 					bool m_isEmpty = true;
+					Events::EventHandler* m_eventClick;
 				};
+				friend class EmptyField;
 
 				class Field
 					: public EmptyField
@@ -188,6 +201,7 @@ namespace GUI::Widget
 					if (m_className == nullptr) {
 						m_className = new Elements::Text::ClickedText(m_class->getClass()->getName(), ColorRGBA(0xeddf91FF));
 						m_className->getLeftMouseClickEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+							m_classHierarchy->m_classEditor->unselectClassContent();
 							m_classHierarchy->m_classEditor->selectClassContent(this);
 						});
 						m_className->setParent(this);
@@ -476,6 +490,7 @@ namespace GUI::Widget
 
 		Container* m_classHierarchyEditorContainer;
 		ColContainer* m_classEditorContainer;
+		ColContainer* m_classFieldContainer;
 
 		ClassEditor(StyleSettings style = StyleSettings())
 			: ItemList(new ClassFilterCreator(this), style)
@@ -507,8 +522,12 @@ namespace GUI::Widget
 						.addItem(m_classHierarchyEditorContainer = new Container)
 						.newLine()
 						.addItem(m_classEditorContainer = new ColContainer("Class editor panel"))
+						.addItem(m_classFieldContainer = new ColContainer("Class field panel"))
 					.end()
 				.endReverseInserting();
+
+			m_classEditorContainer->setDisplay(false);
+			m_classFieldContainer->setDisplay(false);
 		}
 
 		~ClassEditor() {
@@ -524,10 +543,125 @@ namespace GUI::Widget
 				(*this)
 					.text("Selected class: " + Class->getClass()->getName());
 			}
-
 		private:
 			API::Type::Class* m_class;
 			ClassEditor* m_classEditor;
+		};
+
+
+		class ClassFieldPanel : public Container
+		{
+		public:
+			ClassFieldPanel(ClassEditor* classEditor, API::Type::Class* Class, int relOffset)
+				: m_classEditor(classEditor), m_class(Class), m_relOffset(relOffset)
+			{
+				m_field = getClass()->getField(m_relOffset).second;
+
+				(*this)
+					.addItem(m_nameInput = new Elements::Input::Text("Name: "))
+					.text("Type: " + m_field->getType()->getDisplayName())
+					.text("Relative offset: 0x" + Generic::String::NumberToHex(relOffset));
+
+				m_nameInput->setInputValue(m_field->getName());
+				(*this)
+					.newLine()
+					.addItem(
+						new Elements::Button::ButtonStd("Change data type", new Events::EventUI(
+							EVENT_LAMBDA(info) {
+								if (m_dataTypeSelector == nullptr) {
+									getWindow()->addWindow(
+										m_dataTypeSelector = new Window::DataTypeSelector(m_class->getTypeManager())
+									);
+									m_dataTypeSelector->setType(m_field->getType());
+									m_dataTypeSelector->getCloseEvent() +=
+										new Events::EventUI(
+											EVENT_LAMBDA(info) {
+												m_typeInput = m_dataTypeSelector->getType();
+												m_typeInput->setCanBeRemoved(false);
+												m_dataTypeSelector = nullptr;
+											}
+										);
+								}
+							}
+					)));
+
+				(*this)
+					.newLine()
+					.newLine()
+					.addItem(
+						new Elements::Button::ButtonStd(isEmptyField() ? "Add" : "Change", new Events::EventUI(
+							EVENT_LAMBDA(info) {
+								change();
+							}
+						))
+					);
+
+				(*this)
+					.sameLine()
+					.addItem(
+						new Elements::Button::ButtonStd("Remove", new Events::EventUI(
+							EVENT_LAMBDA(info) {
+								remove();
+							}
+						))
+					);
+			}
+
+			void change() {
+				if (m_nameInput->getInputValue().empty()) {
+					throw Exception(m_nameInput, "Type a correct field name");
+				}
+
+				if (isEmptyField())
+				{
+					if (m_typeInput == nullptr) {
+						throw Exception("Select a type!");
+					}
+
+					if (!getClass()->isEmptyField(m_relOffset, m_typeInput->getSize())) {
+						throw Exception("Cannot insert the selected type to the class");
+					}
+
+					getClass()->addField(m_relOffset, m_nameInput->getInputValue(), m_typeInput);
+				}
+				else
+				{
+					if (m_typeInput != nullptr)
+						m_field->setType(m_typeInput);
+					m_field->setName(m_nameInput->getInputValue());
+				}
+
+				update();
+			}
+
+			void remove() {
+				if (isEmptyField())
+				{
+					getClass()->removeField(m_relOffset);
+				}
+				update();
+			}
+
+			void update() {
+				m_classEditor->update();
+			}
+
+			bool isEmptyField() {
+				return getClass()->isDefaultField(m_field);
+			}
+
+			Type::Class* getClass() {
+				return m_class->getClass();
+			}
+		private:
+			API::Type::Class* m_class;
+			int m_relOffset;
+			ClassEditor* m_classEditor;
+			Type::Class::Field* m_field;
+
+			Elements::Input::Text* m_nameInput;
+			Type::Type* m_typeInput = nullptr;
+			Window::DataTypeSelector* m_dataTypeSelector = nullptr;
 		};
 
 		ClassHierarchy* m_classHierarchySelected = nullptr;
@@ -539,8 +673,6 @@ namespace GUI::Widget
 
 		ClassHierarchy::ClassContent* m_classContentSelected = nullptr;
 		void selectClassContent(ClassHierarchy::ClassContent* classContent) {
-			unselectClassContent();
-
 			if (m_classContentSelected == classContent)
 				return;
 
@@ -558,6 +690,32 @@ namespace GUI::Widget
 				m_classEditorContainer->setDisplay(false);
 				m_classContentSelected->addFlags(ImGuiTreeNodeFlags_Selected, false);
 				m_classContentSelected = nullptr;
+			}
+		}
+
+		ClassHierarchy::ClassContent::EmptyField* m_classFieldSelected = nullptr;
+		void selectClassField(ClassHierarchy::ClassContent::EmptyField* classField) {
+			if (m_classFieldSelected == classField)
+				return;
+			
+			if (m_classContentSelected != classField->m_classContent) {
+				selectClassContent(classField->m_classContent);
+			}
+
+			m_classFieldContainer->setDisplay(true);
+			m_classFieldContainer->setOpen(true);
+			m_classFieldContainer->clear();
+			m_classFieldContainer->addItem(new ClassFieldPanel(this, classField->m_classContent->m_class, classField->m_relOffset));
+
+			classField->addFlags(ImGuiTreeNodeFlags_Selected, true);
+			m_classFieldSelected = classField;
+		}
+
+		void unselectClassField() {
+			if (m_classFieldSelected != nullptr) {
+				m_classFieldContainer->setDisplay(false);
+				m_classFieldSelected->addFlags(ImGuiTreeNodeFlags_Selected, false);
+				m_classFieldSelected = nullptr;
 			}
 		}
 
@@ -611,24 +769,12 @@ namespace GUI::Window
 		ClassEditor(Widget::ClassEditor* classEditor, const std::string& name = "Class editor")
 			: IWindow(name)
 		{
-			//MY TODO*: error
-			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto function = (API::Function::Function*)message->getUserDataPtr();
-
-				getParent()->getMainContainer().clear();
-				getParent()->getMainContainer().addItem(new Widget::FunctionCP(function));
-			});
-			m_openFunctionCP->setCanBeRemoved(false);
-
-			//classEditor->setOpenFunctionEventHandler(m_openFunctionCP);
+			setWidth(400);
+			setHeight(300);
 			setMainContainer(classEditor);
 		}
 
 		~ClassEditor() {
-			delete m_openFunctionCP;
 		}
-	private:
-		Events::EventHandler* m_openFunctionCP;
 	};
 };

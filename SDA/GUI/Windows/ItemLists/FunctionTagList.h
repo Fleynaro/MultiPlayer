@@ -435,9 +435,10 @@ namespace GUI::Widget
 
 		void renderShortView() override {
 			m_funcTagShortList->show();
+			renderSelectables();
 		}
 
-		void renderSelectable(bool& open) override {
+		void renderSelectables() {
 			if (getSelectedFuncTagCount() > 0) {
 				std::string info = "Clear (" + toolTip() + ")";
 				if (ImGui::Selectable(info.c_str())) {
@@ -459,7 +460,7 @@ namespace GUI::Widget
 						}
 					);
 				m_isWinOpen = true;
-				open = false;
+				m_focused = false;
 			}
 		}
 

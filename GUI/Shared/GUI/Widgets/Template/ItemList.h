@@ -379,10 +379,7 @@ namespace GUI::Widget::Template
 				if (ImGui::Begin(getUniqueId().c_str(), &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 				{
 					m_focused &= ImGui::IsWindowFocused();
-					
 					renderShortView();
-					renderSelectable(m_focused);
-
 					ImGui::End();
 				}
 			}
@@ -392,6 +389,7 @@ namespace GUI::Widget::Template
 		}
 
 		void onSpecial() override {
+			Elements::Input::Text::onSpecial();
 			onSearch(getInputValue());
 		}
 
@@ -401,7 +399,6 @@ namespace GUI::Widget::Template
 
 		virtual std::string toolTip() = 0;
 		virtual void renderShortView() = 0;
-		virtual void renderSelectable(bool& open) = 0;
 		virtual void onSearch(const std::string& text) = 0;
 	};
 };

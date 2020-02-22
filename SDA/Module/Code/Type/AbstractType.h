@@ -26,7 +26,8 @@ namespace CE
 			virtual int getSize() = 0;
 			virtual bool isUserDefined() = 0;
 			virtual void free() {
-				delete this;
+				if(m_canBeRemoved)
+					delete this;
 			}
 
 			virtual std::string getViewValue(void* addr) {
@@ -53,6 +54,12 @@ namespace CE
 			bool isArrayOfPointers() {
 				return isArray() && isPointer();
 			}
+
+			void setCanBeRemoved(bool toggle) {
+				m_canBeRemoved = toggle;
+			}
+		private:
+			bool m_canBeRemoved = true;
 		};
 	};
 };

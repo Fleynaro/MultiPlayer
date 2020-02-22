@@ -22,6 +22,10 @@ namespace CE
 					return m_name;
 				}
 
+				void setName(const std::string& name) {
+					m_name = name;
+				}
+
 				std::string& getDesc() {
 					return m_desc;
 				}
@@ -265,7 +269,7 @@ namespace CE
 				return m_fields.end();
 			}
 
-			bool canTypeBeInsertedTo(int relOffset, int size) {
+			/*bool canTypeBeInsertedTo(int relOffset, int size) {
 				if (relOffset + size > getRelSize())
 					return false;
 
@@ -276,7 +280,7 @@ namespace CE
 				auto field_up = m_fields.upper_bound(relOffset);
 				if (field_up != m_fields.end() && field_up->first <= relOffset + size)
 					return false;
-			}
+			}*/
 
 			void addField(int relOffset, std::string name, Type* type, std::string desc = "") {
 				m_fields.insert(std::make_pair(relOffset, Field(name, type, desc)));

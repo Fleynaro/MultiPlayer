@@ -62,6 +62,7 @@ namespace GUI::Widget
 			{
 				getOutContainer()->clear();
 				int maxCount = m_maxOutputFunctionCount;
+
 				for (auto& it : m_funcManager->getFunctions()) {
 					if (m_funcList->checkOnInputValue(it.second, value) && (!isFilterEnabled() || m_funcList->checkAllFilters(it.second))) {
 						getOutContainer()->addItem(createFuncItem(it.second));//MY TODO*: ленивая загрузка, при открытии только
@@ -770,10 +771,10 @@ namespace GUI::Widget
 		}
 
 		~FunctionInput() {
-			delete m_funcSelectList;
+			m_funcSelectList->destroy();
+			m_funcShortList->destroy();
 			delete m_funcListView;
 			delete m_funcListShortView;
-			delete m_funcShortList;
 		}
 
 		int getSelectedFuncCount() {
@@ -817,9 +818,10 @@ namespace GUI::Widget
 
 		void renderShortView() override {
 			m_funcShortList->show();
+			renderSelectables();
 		}
 
-		void renderSelectable(bool& open) override {
+		void renderSelectables() {
 			if (getSelectedFuncCount() > 0) {
 				std::string info = "Clear ("+ toolTip() +")";
 				if (ImGui::Selectable(info.c_str())) {
@@ -841,7 +843,7 @@ namespace GUI::Widget
 					}
 				);
 				m_isWinOpen = true;
-				open = false;
+				m_focused = false;
 			}
 		}
 
