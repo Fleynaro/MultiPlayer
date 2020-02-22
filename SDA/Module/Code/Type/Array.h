@@ -12,11 +12,6 @@ namespace CE
 				: Pointer(type), m_arraySize(arraySize)
 			{}
 
-			void free() override {
-				getType()->free();
-				delete this;
-			}
-
 			Group getGroup() override {
 				return getType()->getGroup();
 			}

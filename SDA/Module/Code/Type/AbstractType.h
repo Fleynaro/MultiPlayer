@@ -7,6 +7,8 @@ namespace CE
 	{
 		class Type : public IDesc
 		{
+		protected:
+			virtual ~Type() {}
 		public:
 			enum Group
 			{
@@ -23,7 +25,9 @@ namespace CE
 			virtual int getArraySize() = 0;
 			virtual int getSize() = 0;
 			virtual bool isUserDefined() = 0;
-			virtual void free() {}
+			virtual void free() {
+				delete this;
+			}
 
 			virtual std::string getViewValue(void* addr) {
 				uint64_t mask = 0x0;

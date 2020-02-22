@@ -282,6 +282,7 @@ namespace GUI
 		class TR;
 	};
 
+	class Condition;
 	class ImGuiContainer;
 	class MenuContainer;
 	class ColContainer;
@@ -320,6 +321,7 @@ namespace GUI
 
 		Container& beginContainer();
 		Container& beginContainer(Container** ptr);
+		Condition& beginIf(const std::function<bool()>& condition);
 		Table::Table& beginTable();
 		Table::Table& beginTable(Table::Table** ptr);
 		ChildContainer& beginChild();
@@ -347,20 +349,25 @@ namespace GUI
 			return *this;
 		}
 
+		template<typename T = Container>
+		T& as() {
+			return (T&)*this;
+		}
+
 		TabBar& backToTabBar() {
-			return (TabBar&)end();
+			return end().as<TabBar>();
 		}
 
 		TreeNode& backToTreeNode() {
-			return (TreeNode&)end();
+			return end().as<TreeNode>();
 		}
 
 		ChildContainer& backToChild() {
-			return (ChildContainer&)end();
+			return end().as<ChildContainer>();
 		}
 
 		MenuContainer& backToMenu() {
-			return (MenuContainer&)end();
+			return end().as<MenuContainer>();
 		}
 
 		Container& setColor(ImGuiCol_ id, ColorRGBA color) {
@@ -469,6 +476,40 @@ namespace GUI
 		std::list<std::pair<std::byte, ColorRGBA>> m_colors;
 		std::list<std::pair<std::byte, std::pair<float, float>>> m_vars;
 		bool m_reverseInsert = false;
+	};
+
+
+#define _condition(condition) [&]() { return (##condition); }
+	class Condition
+		: public Container
+	{
+	public:
+		Condition(const std::function<bool()>& condition)
+			: m_condition(condition)
+		{}
+
+		~Condition() {
+			m_otherwise->destroy();
+		}
+
+		void render() override {
+			if (m_condition()) {
+				Container::render();
+			} 
+			else if (m_otherwise != nullptr) {
+				m_otherwise->show();
+			}
+		}
+
+		Container& beginElse() {
+			m_otherwise = new Container;
+			m_otherwise->setParent(getParent());
+			m_otherwise->setParent(this);
+			return *m_otherwise;
+		}
+	private:
+		std::function<bool()> m_condition;
+		Container* m_otherwise = nullptr;
 	};
 
 
@@ -582,10 +623,11 @@ namespace GUI
 			if (getName().find("##") != std::string::npos) {
 				ImGui::SameLine();
 				renderHeader();
+				ImGui::SameLine();
 				ImGui::NewLine();
 			}
 		}
-	private:
+	protected:
 		bool m_alwaysOpened = false;
 	};
 
@@ -599,18 +641,28 @@ namespace GUI
 		{}
 
 		void render() override {
+			if (isOpen() || m_alwaysOpened) {
+				ImGui::SetNextItemOpen(true);
+			}
+
 			pushIdParam();
-			bool isOpen = ImGui::CollapsingHeader(getName().c_str(), &m_open, getFlags());
+			bool isOpen = ImGui::CollapsingHeader(getName().c_str(), m_closeBtn ? &m_open : nullptr, getFlags());
+			sendLeftMouseClickEvent();
 			popIdParam();
 
 			tryRenderHeader();
 
-			if (isOpen) {
+			if (isOpen || m_alwaysOpened) {
 				Container::render();
+			}
+			else {
+				close();
 			}
 		}
 
-		virtual void renderHeader() {}
+		virtual void renderHeader() {
+			ImGui::Text("5555555555");
+		}
 
 		ColContainer& setCloseBtn(bool toggle) {
 			m_closeBtn = toggle;

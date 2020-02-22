@@ -5,6 +5,7 @@ using namespace CE;
 
 namespace GUI::Widget
 {
+	//MY TODO: исчезают некоторые теги в tree view, не добавл€ютс€ новые, по дефу устанавливать в окне создани€ тега функцию
 	class FunctionTagList : public Template::ItemList
 	{
 	public:

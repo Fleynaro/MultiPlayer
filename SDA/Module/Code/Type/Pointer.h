@@ -6,6 +6,11 @@ namespace CE
 {
 	namespace Type
 	{
+		//MY TODO: сделать так же, как и в GUI: canBeRemoved
+		/*
+			1) canBeRemoved: надо заботиться где true, а где false. при true остается проблема нескольких собственников этого типа
+			2) удалять в зависимости от контекста: один тип может зависить от другого(Pointer), где родитель должен удален, а потомок нет
+		*/
 		class Pointer : public Type
 		{
 		public:
@@ -13,9 +18,8 @@ namespace CE
 				: m_type(type)
 			{}
 
-			void free() override {
+			~Pointer() {
 				getType()->free();
-				delete this;
 			}
 
 			Group getGroup() override {

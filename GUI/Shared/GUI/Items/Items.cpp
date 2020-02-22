@@ -113,6 +113,13 @@ Container& Container::beginContainer(Container** ptr)
 	return **ptr;
 }
 
+Condition& GUI::Container::beginIf(const std::function<bool()>& condition)
+{
+	Condition* conditionContainer = new Condition(condition);
+	addItem(conditionContainer);
+	return *conditionContainer;
+}
+
 Table::Table& Container::beginTable()
 {
 	Table::Table* ptr = nullptr;

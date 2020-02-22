@@ -97,63 +97,93 @@ namespace CE
 				return getBaseClass() != nullptr ? getBaseClass()->getRelSize() + getBaseClass()->getBaseOffset() : 0;
 			}
 
-			void iterateClasses(std::function<bool(Class*)> callback)
+			bool iterateClasses(std::function<bool(Class*)> callback)
 			{
 				if (getBaseClass() != nullptr) {
-					getBaseClass()->iterateClasses(callback);
+					if (!getBaseClass()->iterateClasses(callback))
+						return false;
 				}
 
-				callback(this);
+				return callback(this);
 			}
 
-			void iterateAllMethods(std::function<bool(Function::Method*)> callback)
+		private:
+			bool iterateAllMethods(std::function<bool(Function::Method*)> callback)
 			{
+				if (getBaseClass() != nullptr) {
+					if (!getBaseClass()->iterateAllMethods(callback))
+						return false;
+				}
+
 				for (auto method : getMethodList()) {
 					if (!callback(method))
-						return;
+						return false;
 				}
-
-				if (getBaseClass() != nullptr) {
-					getBaseClass()->iterateAllMethods(callback);
-				}
+				return true;
 			}
 
-			void iterateMethods(std::function<bool(Function::Method*)> callback)
+		public:
+			bool iterateMethods(std::function<bool(Function::Method*)> callback)
 			{
 				std::set<std::string> methods;
-				iterateAllMethods([&](Function::Method* method) {
+				return iterateAllMethods([&](Function::Method* method) {
 					std::string sigName = method->getSigName();
 					if (!methods.count(sigName)) {
 						return callback(method);
 					}
 					methods.insert(sigName);
 					return true;
-					});
+				});
 			}
 
-			void iterateFields(std::function<bool(Class*, int, Field*)> callback)
+			bool iterateFields(const std::function<bool(int&, Field*)>& callback, bool emptyFields = false)
+			{
+				if (!emptyFields) {
+					for (auto& it : m_fields) {
+						int relOffset = it.first;
+						if (!callback(relOffset, &it.second))
+							return false;
+					}
+				}
+				else {
+					for (int byteIdx = 0; byteIdx < getRelSize(); byteIdx++) {
+						auto fieldPair = getField(byteIdx);
+
+						if (!callback(byteIdx, fieldPair.second))
+							return false;
+
+						if (fieldPair.first != -1) {
+							byteIdx += fieldPair.second->getType()->getSize() - 1;
+						}
+					}
+				}
+
+				return true;
+			}
+
+			bool iterateFields(const std::function<bool(Class*, int&, Field*)>& callback, bool emptyFields = false)
 			{
 				if (getBaseClass() != nullptr) {
-					getBaseClass()->iterateFields(callback);
+					if (!getBaseClass()->iterateFields(callback, emptyFields))
+						return false;
 				}
 
-				for (auto& it : m_fields) {
-					if (!callback(this, it.first, &it.second))
-						return;
-				}
+				return iterateFields([&](int& relOffset, Field* field) {
+					return callback(this, relOffset, field);
+				}, emptyFields);
 			}
 
-			void iterateFieldsWithOffset(std::function<bool(Class*, int, Field*)> callback)
+			bool iterateFieldsWithOffset(std::function<bool(Class*, int, Field*)> callback, bool emptyFields = false)
 			{
 				int curClassBase = hasVTable() * 0x8;
 				Class* curClass = nullptr;
-				iterateFields([&](Class* Class, int relOffset, Field* field) {
+				return iterateFields([&](Class* Class, int& relOffset, Field* field) {
 					if (curClass != nullptr && curClass != Class) {
 						curClassBase += curClass->getRelSize();
 					}
 					int curOffset = curClassBase + relOffset;
 					return callback(Class, curOffset, field);
-					});
+				}, emptyFields);
 			}
 
 			Class* getBaseClass() {
@@ -195,19 +225,40 @@ namespace CE
 				return result;
 			}
 
+			bool isEmptyField(int startByteIdx, int size) {
+				if (startByteIdx < 0 || startByteIdx + size > getRelSize() || size <= 0)
+					return false;
+
+				auto it = m_fields.upper_bound(startByteIdx);
+				if (it != m_fields.end()) {
+					if (it->first < startByteIdx + size)
+						return false;
+				}
+
+				return true;
+			}
+
+			static Field* getDefaultField() {
+				static Field defaultField = Field("undefined", new Byte);
+				return &defaultField;
+			}
+
+			static bool isDefaultField(Field* field) {
+				return field == getDefaultField();
+			}
+
 			std::pair<int, Field*> getField(int relOffset) {
 				auto it = getFieldIterator(relOffset);
 				if (it != m_fields.end()) {
 					return std::make_pair(it->first, &it->second);
 				}
-				static Field defaultField = Field("undefined", new Byte);
-				return std::make_pair(-1, &defaultField);
+				return std::make_pair(-1, getDefaultField());
 			}
 
 			FieldDict::iterator getFieldIterator(int relOffset) {
 				auto it = m_fields.lower_bound(relOffset);
 				if (it != m_fields.end()) {
-					if (it->first + it->second.getType()->getSize() >= relOffset) {
+					if (it->first <= relOffset && it->first + it->second.getType()->getSize() > relOffset) {
 						return it;
 					}
 				}

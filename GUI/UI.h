@@ -9,22 +9,6 @@
 using namespace GUI::Window;
 using namespace GUI::Widget;
 
-static bool InputTextWithPH(const char* placeholder, const char* text, char* buf, size_t buf_size, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = (ImGuiInputTextCallback)0, void* user_data = (void*)0)
-{
-	ImVec2 cursor[2];
-	cursor[0] = ImGui::GetCursorPos();
-	bool result = ImGui::InputText(text, buf, buf_size, flags, callback, user_data);
-	if (placeholder != NULL && strlen(placeholder) > 0) {
-		if (!ImGui::IsItemActive() && strlen(buf) == 0) {
-			cursor[1] = ImGui::GetCursorPos();
-			ImGui::SetCursorPos(ImVec2(cursor[0].x + 5, cursor[0].y + 2));
-			ImGui::Text(placeholder);
-			ImGui::SetCursorPos(cursor[1]);
-		}
-	}
-	return result;
-}
-
 class UI
 {
 public:
@@ -162,6 +146,9 @@ public:
 	public:
 		//bool m_selected
 		Elements::Input::FilterText* M_TTTT;
+
+		bool m_if = true;
+
 		WindowTest()
 			: IWindow("ImGui window for test")
 		{
@@ -176,6 +163,15 @@ public:
 			
 
 			getMainContainer()
+
+
+				.beginIf(_condition(m_if))
+					.text("6666")
+				.as<Condition>()
+				.beginElse()
+					.text("8888")
+				.end()
+
 				.addItem(new Elements::Button::ButtonTag("testsssssssssssss", ColorRGBA(0xFF0000FF))).sameLine()
 				.addItem(new Elements::Button::ButtonTag("2222", ColorRGBA(0xFFFF00FF)))
 				.beginChild()
@@ -245,9 +241,7 @@ public:
 					.end()
 				.end()
 				.beginImGui([]() {
-					static std::string buf = "";
-					InputTextWithPH("any text", "##t1", buf.data(), 50);
-
+					
 					/*ImGui::Begin("Issue #1453");
 					ImGui::BeginChild("test", ImVec2(100, 100));
 					ImGui::OpenPopup("lol");

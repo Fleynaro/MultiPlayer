@@ -24,7 +24,7 @@ namespace GUI
 		};
 
 		Container* m_comboContent;
-		AddressInput()
+		AddressInput(Events::EventHandler* eventFocused = nullptr)
 		{
 			m_comboContent = new Container;
 			m_comboContent->setParent(this);
@@ -34,21 +34,42 @@ namespace GUI
 			m_comboContent->destroy();
 		}
 
+		void onFocusedIn() override {}
+		void onFocusedUpdate() override {}
+
 		void renderComboContent() override {
 			m_comboContent->show();
 		}
 
+		bool isAddressValid() {
+			return Pointer(m_addr).canBeRead();
+		}
+
 		void onInput(const std::string& text) override {
 			m_addr = (void*)AddressParser::calculate(text);
+			if (isAddressValid()) {
+				m_lastValidAddr = m_addr;
+			}
 
 			m_comboContent->clear();
-			m_comboContent->text(Pointer(m_addr).canBeRead() ? "valid" : "invalid");
+			m_comboContent->text(isAddressValid() ? "valid" : "invalid");
+			//MY TODO: показать модуль, сегмент, права доступа(R/W/E)
+		}
+
+		void setAddress(void* addr) {
+			setInputValue("0x" + Generic::String::NumberToHex((uint64_t)addr));
+			m_lastValidAddr = m_addr = addr;
 		}
 
 		void* getAddress() {
 			return m_addr;
 		}
+
+		void* getLastValidAddress() {
+			return m_lastValidAddr;
+		}
 	private:
 		void* m_addr;
+		void* m_lastValidAddr;
 	};
 };

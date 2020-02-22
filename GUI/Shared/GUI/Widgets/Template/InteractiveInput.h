@@ -5,16 +5,18 @@ namespace GUI::Widget::Template
 {
 	class InteractiveInput
 		: public Elements::Input::Text,
-		public Attribute::Collapse<InteractiveInput>
+		public Attribute::Collapse<InteractiveInput>,
+		public Events::OnFocused<InteractiveInput>
 	{
 	public:
 		InteractiveInput(const std::string& name = "")
-			: Elements::Input::Text(name, nullptr), Attribute::Collapse<InteractiveInput>(false)
+			: Elements::Input::Text(name, nullptr), Attribute::Collapse<InteractiveInput>(false), Events::OnFocused<InteractiveInput>(this)
 		{}
 
 		bool m_focused = true;
 		void render() override {
 			Text::render();
+			sendFocusedEvent();
 			ImGui::SameLine();
 
 			if (ImGui::IsItemHovered()) {
@@ -42,6 +44,10 @@ namespace GUI::Widget::Template
 			else {
 				m_focused = true;
 			}
+		}
+
+		bool isFocused() override {
+			return ImGui::IsItemActive();
 		}
 
 		void onSpecial() override {
