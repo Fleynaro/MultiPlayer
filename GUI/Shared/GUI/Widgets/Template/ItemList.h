@@ -344,7 +344,7 @@ namespace GUI::Widget::Template
 		StyleSettings m_styleSettings;
 	private:
 		FilterManager m_filterManager;
-		IView* m_view;
+		IView* m_view = nullptr;
 	};
 
 	class ItemInput

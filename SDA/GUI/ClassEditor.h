@@ -7,6 +7,7 @@ using namespace CE;
 
 namespace GUI::Widget
 {
+	//MY TODO: окна по имени дублируютс€ друг в друга
 	//MY TODO: смена адреса(сделать спец. ввод)
 	//MY TODO: vtable
 	//MY TODO: stack overflow
@@ -16,6 +17,12 @@ namespace GUI::Widget
 	//MY TODO: множественное выделение €чеек, добавление типа €чеейкам(как в гидре!)
 	//MY TODO: несколько классов могут фильтроватьс€ одной панелью
 	//MY TODO: getWindow()->showConfirm(), showError(), showWarning(), ....
+	//MY TODO: если объект большой по размеру, то ставить определенные чекбоксы
+	//MY TODO: emptyFields дл€ вложенных классов
+	//MY TODO: fast кнопки в панели дл€ быстрого добавлени€ типов
+	//MY TODO: адрес - это всплывающие окно, где отображаетс€ подробна€ инфа об адресе: + действи€ по записи значений, изменени€ прав и т.д
+	
+	//MY TODO: есть известные и неизвестные функции: чекбокс - show known functions(+ кол-во в фаст панели)
 
 	class ClassEditor : public Template::ItemList
 	{
@@ -58,23 +65,22 @@ namespace GUI::Widget
 						addFlags(ImGuiTreeNodeFlags_FramePadding);
 
 						m_eventClick = new Events::EventUI(EVENT_LAMBDA(info) {
-							m_classContent->m_classHierarchy->m_classEditor->unselectClassField();
-							m_classContent->m_classHierarchy->m_classEditor->selectClassField(this);
+							m_classContent->m_classHierarchy->m_classEditor->selectClassFields(this, Keys::IsShiftPressed(), Keys::IsCtrlPressed());
 						});
 						m_eventClick->setCanBeRemoved(false);
 
 						getLeftMouseClickEvent() += m_eventClick;
+						m_type->addOwner();
 					}
 
 					~EmptyField() {
 						if (m_headBaseInfo != nullptr)
 							m_headBaseInfo->destroy();
 						
-						if(isEmpty())
-							m_type->free();
+						m_type->free();
 
 						if(m_classContent->m_classHierarchy->m_classEditor->m_classFieldSelected == this)
-							m_classContent->m_classHierarchy->m_classEditor->unselectClassField();
+							m_classContent->m_classHierarchy->m_classEditor->unselectClassField(this);
 
 						delete m_eventClick;
 					}
@@ -104,10 +110,6 @@ namespace GUI::Widget
 						return m_classContent->m_baseOffset + m_relOffset;
 					}
 
-					bool isEmpty() {
-						return m_isEmpty;
-					}
-
 					virtual std::string getFieldName() {
 						return "<empty>";
 					}
@@ -117,7 +119,6 @@ namespace GUI::Widget
 				protected:
 					Container* m_headBaseInfo = nullptr;
 					CE::Type::Type* m_type;
-					bool m_isEmpty = true;
 					Events::EventHandler* m_eventClick;
 				};
 				friend class EmptyField;
@@ -126,17 +127,15 @@ namespace GUI::Widget
 					: public EmptyField
 				{
 				public:
-					Field(ClassContent* classContent, int relOffset, Type::Class::Field& field)
-						: EmptyField(classContent, relOffset, field.getType()), m_field(field)
-					{
-						m_isEmpty = false;
-					}
+					Field(ClassContent* classContent, int relOffset, Type::Class::Field* field)
+						: EmptyField(classContent, relOffset, field->getType()), m_field(field)
+					{}
 
 					std::string getFieldName() override {
-						return m_field.getName();
+						return m_field->getName();
 					}
 				private:
-					Type::Class::Field& m_field;
+					Type::Class::Field* m_field;
 				};
 
 				class Method
@@ -211,25 +210,29 @@ namespace GUI::Widget
 				}
 
 				//MY TODO: float, double, string
-				CE::Type::Type* predictTypeAtAddress(void* addr) {
+				CE::Type::Type* predictTypeAtAddress(void* addr, int maxSize = 8, int level = 1) {
 					auto alignment = (char)addr % 8;
-					switch (alignment)
-					{
-						case 0: {
-							void* ptr = (void*)* (std::uintptr_t*)addr;
-							if (Pointer(ptr).canBeRead()) {
-								return new CE::Type::Pointer(predictTypeAtAddress(ptr));
+
+					if (alignment != 0 && alignment <= maxSize || maxSize >= 8) {
+						switch (alignment)
+						{
+							case 0: {
+								void* ptr = (void*)*(std::uintptr_t*)addr;
+								if (Pointer(ptr).canBeRead()) {
+									return new CE::Type::Pointer(predictTypeAtAddress(ptr, maxSize, level + 1));
+								}
+								break;
 							}
-							break;
 						}
 					}
 
-					if (alignment == 0 && m_classHierarchy->m_classEditor->isEmptyFields_GroupingEnabled()) {
-						return new CE::Type::Array(new CE::Type::Byte, 8);
+					if (level == 1 && alignment == 0 && maxSize >= 8) {
+						if (m_classHierarchy->m_classEditor->isEmptyFields_GroupingEnabled()) {
+							return new CE::Type::Array(new CE::Type::Byte, 8);
+						}
 					}
-					else {
-						return new CE::Type::Byte;
-					}
+
+					return new CE::Type::Byte;
 				}
 
 				void buildFields(Container* container, const std::string& name) {
@@ -239,14 +242,15 @@ namespace GUI::Widget
 
 						EmptyField* field;
 						if (getClass()->isDefaultField(classField)) {
-							auto type = predictTypeAtAddress(fieldAddr);
+							auto type = predictTypeAtAddress(fieldAddr, getClass()->getNextEmptyBytesCount(relOffset));
 							container->addItem(field = new EmptyField(this, relOffset, type));
 							relOffset += type->getSize() - 1;
 						}
 						else {
-							container->addItem(field = new Field(this, relOffset, *classField));
+							container->addItem(field = new Field(this, relOffset, classField));
 						}
 						field->addFlags(ImGuiTreeNodeFlags_Leaf, true);
+						m_fields.push_back(field);
 
 						bool canBeFilteredToRemove = true;
 						if (m_baseAddr != nullptr) {
@@ -271,6 +275,7 @@ namespace GUI::Widget
 											ClassHierarchy* classHierarchy;
 											field->addItem(classHierarchy = new ClassHierarchy(m_classHierarchy->m_classEditor, apiBaseClassType, fieldAddr, true));
 											classHierarchy->onSearch(name);
+											m_classHierarchies.insert(classHierarchy);
 										}
 										else {
 											field->text("Address not valid.");
@@ -290,6 +295,7 @@ namespace GUI::Widget
 						if (canBeFilteredToRemove) {
 							if (m_classHierarchy->m_classEditor->isFilterEnabled() && !m_classHierarchy->m_classEditor->checkOnInputValue(*classField, name)) {
 								container->removeLastItem();
+								m_fields.pop_back();
 							}
 						}
 
@@ -309,6 +315,7 @@ namespace GUI::Widget
 				void onSearch(const std::string& name)
 				{
 					clear();
+					m_fields.clear();
 
 					buildFields(this, name);
 
@@ -330,6 +337,8 @@ namespace GUI::Widget
 				}
 
 				API::Type::Class* m_class;
+				std::list<EmptyField*> m_fields;
+				std::set<ClassHierarchy*> m_classHierarchies;
 			private:
 				ClassHierarchy* m_classHierarchy;
 				void* m_baseAddr = nullptr;
@@ -390,6 +399,26 @@ namespace GUI::Widget
 
 			void* getBaseAddress() {
 				return m_addressInput != nullptr ? m_addressInput->getLastValidAddress() : m_baseAddr;
+			}
+
+			ClassContent::EmptyField* getFieldLocationBy(CE::Type::Class* Class, int relOffset) {
+				for (auto it : m_classContents) {
+					if (it->getClass() == Class) {
+						for (auto field : it->m_fields) {
+							if (field->m_relOffset == relOffset) {
+								return field;
+							}
+						}
+					}
+
+					for (auto hierarchy : it->m_classHierarchies) {
+						auto result = hierarchy->getFieldLocationBy(Class, relOffset);
+						if (result != nullptr) {
+							return result;
+						}
+					}
+				}
+				return nullptr;
 			}
 
 			AddressInput* m_addressInput = nullptr;
@@ -541,11 +570,52 @@ namespace GUI::Widget
 				: m_classEditor(classEditor), m_class(Class)
 			{
 				(*this)
-					.text("Selected class: " + Class->getClass()->getName());
+					.text("Name: ").sameLine().addItem(m_nameInput = new Elements::Input::Text)
+					.text("Size: ").sameLine().addItem(m_relSizeInput = new Elements::Input::Int)
+					.newLine()
+					.addItem(
+						new Elements::Button::ButtonStd("Change", new Events::EventUI(
+							EVENT_LAMBDA(info) {
+								change();
+								update();
+							}
+						))
+					);
+
+				m_nameInput->setInputValue(getClass()->getName());
+				m_relSizeInput->setInputValue(getClass()->getRelSize());
+			}
+
+			void change() {
+				if (m_nameInput->getInputValue().empty()) {
+					throw Exception(m_nameInput, "Type a correct class name");
+				}
+
+				if (m_relSizeInput->getInputValue() > 0) {
+					throw Exception(m_relSizeInput, "Type a correct relation size of the class");
+				}
+
+				if (m_relSizeInput->getInputValue() < getClass()->getSizeByLastField()) {
+					throw Exception(m_relSizeInput, "Some fields go out of the size. Remove/relocate them.");
+				}
+
+				getClass()->setName(m_nameInput->getInputValue());
+				getClass()->resize(m_relSizeInput->getInputValue());
+
+			}
+
+			void update() {
+				m_classEditor->update();
+			}
+
+			Type::Class* getClass() {
+				return m_class->getClass();
 			}
 		private:
 			API::Type::Class* m_class;
 			ClassEditor* m_classEditor;
+			Elements::Input::Text* m_nameInput;
+			Elements::Input::Int* m_relSizeInput;
 		};
 
 
@@ -556,9 +626,10 @@ namespace GUI::Widget
 				: m_classEditor(classEditor), m_class(Class), m_relOffset(relOffset)
 			{
 				m_field = getClass()->getField(m_relOffset).second;
+				m_typeInput = m_field->getType();
 
 				(*this)
-					.addItem(m_nameInput = new Elements::Input::Text("Name: "))
+					.text("Name: ").sameLine().addItem(m_nameInput = new Elements::Input::Text)
 					.text("Type: " + m_field->getType()->getDisplayName())
 					.text("Relative offset: 0x" + Generic::String::NumberToHex(relOffset));
 
@@ -572,12 +643,14 @@ namespace GUI::Widget
 									getWindow()->addWindow(
 										m_dataTypeSelector = new Window::DataTypeSelector(m_class->getTypeManager())
 									);
-									m_dataTypeSelector->setType(m_field->getType());
+									m_dataTypeSelector->setType(m_typeInput);
 									m_dataTypeSelector->getCloseEvent() +=
 										new Events::EventUI(
 											EVENT_LAMBDA(info) {
-												m_typeInput = m_dataTypeSelector->getType();
-												m_typeInput->setCanBeRemoved(false);
+												if(m_dataTypeSelector->getType() != nullptr) {
+													m_typeInput = m_dataTypeSelector->getType();
+													m_typeInput->addOwner();
+												}
 												m_dataTypeSelector = nullptr;
 											}
 										);
@@ -592,19 +665,45 @@ namespace GUI::Widget
 						new Elements::Button::ButtonStd(isEmptyField() ? "Add" : "Change", new Events::EventUI(
 							EVENT_LAMBDA(info) {
 								change();
+								update();
 							}
 						))
 					);
 
-				(*this)
-					.sameLine()
-					.addItem(
-						new Elements::Button::ButtonStd("Remove", new Events::EventUI(
-							EVENT_LAMBDA(info) {
-								remove();
-							}
-						))
-					);
+				if (!isEmptyField())
+				{
+					(*this)
+						.sameLine()
+						.addItem(
+							new Elements::Button::ButtonStd("Remove", new Events::EventUI(
+								EVENT_LAMBDA(info) {
+									remove();
+									update();
+								}
+							))
+						)
+						.sameLine()
+						.addItem(
+							new Elements::Button::ButtonArrow(ImGuiDir_Down, new Events::EventUI(
+								EVENT_LAMBDA(info) {
+									if(move(1))
+										update();
+								}
+							))
+						)
+						.sameLine()
+						.addItem(
+							new Elements::Button::ButtonArrow(ImGuiDir_Up, new Events::EventUI(
+								EVENT_LAMBDA(info) {
+									if (move(-1))
+										update();
+								}
+							))
+						)
+						.sameLine()
+						.addItem(m_cb_isMoveFieldOnlyEnabled = new Elements::Generic::Checkbox("Move field only", true));
+						m_cb_isMoveFieldOnlyEnabled->setToolTip(true);
+				}
 			}
 
 			void change() {
@@ -614,11 +713,7 @@ namespace GUI::Widget
 
 				if (isEmptyField())
 				{
-					if (m_typeInput == nullptr) {
-						throw Exception("Select a type!");
-					}
-
-					if (!getClass()->isEmptyField(m_relOffset, m_typeInput->getSize())) {
+					if (!getClass()->areEmptyFields(m_relOffset, m_typeInput->getSize())) {
 						throw Exception("Cannot insert the selected type to the class");
 					}
 
@@ -626,24 +721,38 @@ namespace GUI::Widget
 				}
 				else
 				{
-					if (m_typeInput != nullptr)
-						m_field->setType(m_typeInput);
-					m_field->setName(m_nameInput->getInputValue());
+					remove();
+					change();
 				}
-
-				update();
 			}
 
 			void remove() {
-				if (isEmptyField())
-				{
-					getClass()->removeField(m_relOffset);
+				getClass()->removeField(m_relOffset);
+				m_field = getClass()->getDefaultField();
+			}
+
+			bool move(int direction) {
+				auto bytesCount = m_typeInput->getSize() * direction;
+				bool result;
+
+				if (m_cb_isMoveFieldOnlyEnabled->isSelected()) {
+					result = getClass()->moveField(m_relOffset, bytesCount);
 				}
-				update();
+				else {
+					result = getClass()->moveFields(m_relOffset, bytesCount);
+				}
+
+				if(result)
+					m_relOffset += bytesCount;
+				return result;
 			}
 
 			void update() {
 				m_classEditor->update();
+				auto fieldLocation = m_classEditor->m_classHierarchySelected->getFieldLocationBy(getClass(), m_relOffset);
+				if (fieldLocation != nullptr) {
+					m_classEditor->selectClassFields(fieldLocation);
+				}
 			}
 
 			bool isEmptyField() {
@@ -660,8 +769,46 @@ namespace GUI::Widget
 			Type::Class::Field* m_field;
 
 			Elements::Input::Text* m_nameInput;
-			Type::Type* m_typeInput = nullptr;
+			Elements::Generic::Checkbox* m_cb_isMoveFieldOnlyEnabled = nullptr;
+			Type::Type* m_typeInput;
 			Window::DataTypeSelector* m_dataTypeSelector = nullptr;
+		};
+
+		class ClassFieldsPanel : public Container
+		{
+		public:
+			ClassFieldsPanel(ClassEditor* classEditor, std::list<std::pair<API::Type::Class*, int>> fields)
+				: m_classEditor(classEditor), m_fields(fields)
+			{
+				(*this)
+					.text("Selected "+ std::to_string(m_fields.size()) +" fields.")
+					.newLine()
+					.addItem(
+						new Elements::Button::ButtonStd("Clear", new Events::EventUI(
+							EVENT_LAMBDA(info) {
+								clearFields();
+							}
+						))
+					);
+			}
+
+			void clearFields() {
+				for (auto it : m_fields) {
+					auto Class = it.first->getClass();
+					auto field = Class->getField(it.second);
+					if (!Class->isDefaultField(field.second)) {
+						Class->removeField(field.first);
+					}
+				}
+				update();
+			}
+
+			void update() {
+				m_classEditor->update();
+			}
+		private:
+			ClassEditor* m_classEditor;
+			std::list<std::pair<API::Type::Class*, int>> m_fields;
 		};
 
 		ClassHierarchy* m_classHierarchySelected = nullptr;
@@ -694,29 +841,94 @@ namespace GUI::Widget
 		}
 
 		ClassHierarchy::ClassContent::EmptyField* m_classFieldSelected = nullptr;
-		void selectClassField(ClassHierarchy::ClassContent::EmptyField* classField) {
-			if (m_classFieldSelected == classField)
-				return;
-			
-			if (m_classContentSelected != classField->m_classContent) {
-				selectClassContent(classField->m_classContent);
+		std::set<ClassHierarchy::ClassContent::EmptyField*> m_classFieldsSelected;
+
+		void selectClassFields(ClassHierarchy::ClassContent::EmptyField* classField, bool shiftPressed = false, bool ctrlPressed = false) {
+			if (m_classFieldSelected == nullptr || (!shiftPressed && !ctrlPressed)) {
+				unselectClassFields();
+				selectClassField(classField);
+
+				if (m_classContentSelected != classField->m_classContent) {
+					selectClassContent(classField->m_classContent);
+				}
+
+				m_classFieldContainer->setDisplay(true);
+				m_classFieldContainer->setOpen(true);
+				m_classFieldContainer->clear();
+				m_classFieldContainer->addItem(new ClassFieldPanel(this, classField->m_classContent->m_class, classField->m_relOffset));
+			}
+			else {
+				if (shiftPressed) {
+					auto classContent = classField->m_classContent;
+					if (m_classFieldSelected->m_classContent == classField->m_classContent)
+					{
+						auto firstField = m_classFieldSelected;
+						auto lastField = classField;
+						if (classField->m_relOffset < m_classFieldSelected->m_relOffset)
+							std::swap(firstField, lastField);
+
+						bool select = false;
+						for (auto it = classContent->m_fields.begin(); it != classContent->m_fields.end(); it ++) {
+							if (*it == firstField)
+								select = true;
+
+							if (select) {
+								if (isClassFieldSelected(*it) && *it != firstField && *it != lastField)
+									unselectClassField(*it);
+								else selectClassField(*it);
+							}
+
+							if (*it == lastField)
+								select = false;
+						}
+					}
+				}
+				else if (ctrlPressed) {
+					if (isClassFieldSelected(classField))
+						unselectClassField(classField);
+					else selectClassField(classField);
+				}
+
+				if (m_classFieldsSelected.size() == 1) {
+					selectClassFields(*m_classFieldsSelected.begin(), false, false);
+					return;
+				}
+
+				m_classFieldContainer->clear();
+				std::list<std::pair<API::Type::Class*, int>> fields;
+				for (auto it : m_classFieldsSelected) {
+					fields.push_back(std::make_pair(it->m_classContent->m_class, it->m_relOffset));
+				}
+				m_classFieldContainer->addItem(new ClassFieldsPanel(this, fields));
 			}
 
-			m_classFieldContainer->setDisplay(true);
-			m_classFieldContainer->setOpen(true);
-			m_classFieldContainer->clear();
-			m_classFieldContainer->addItem(new ClassFieldPanel(this, classField->m_classContent->m_class, classField->m_relOffset));
-
-			classField->addFlags(ImGuiTreeNodeFlags_Selected, true);
 			m_classFieldSelected = classField;
 		}
 
-		void unselectClassField() {
-			if (m_classFieldSelected != nullptr) {
-				m_classFieldContainer->setDisplay(false);
-				m_classFieldSelected->addFlags(ImGuiTreeNodeFlags_Selected, false);
-				m_classFieldSelected = nullptr;
+		bool isClassFieldSelected(ClassHierarchy::ClassContent::EmptyField* classField) {
+			return m_classFieldsSelected.find(classField) != m_classFieldsSelected.end();
+		}
+
+		void selectClassField(ClassHierarchy::ClassContent::EmptyField* classField) {
+			m_classFieldsSelected.insert(classField);
+			classField->addFlags(ImGuiTreeNodeFlags_Selected, true);
+		}
+
+		void unselectClassField(ClassHierarchy::ClassContent::EmptyField* classField) {
+			m_classFieldsSelected.erase(classField);
+			classField->addFlags(ImGuiTreeNodeFlags_Selected, false);
+			if (m_classFieldsSelected.size() == 0) {
+				unselectClassFields();
 			}
+		}
+
+		void unselectClassFields() {
+			m_classFieldContainer->setDisplay(false);
+			for (auto field : m_classFieldsSelected) {
+				field->addFlags(ImGuiTreeNodeFlags_Selected, false);
+			}
+			m_classFieldsSelected.clear();
+			m_classFieldSelected = nullptr;
 		}
 
 		bool isFilterEnabled() {
@@ -769,8 +981,8 @@ namespace GUI::Window
 		ClassEditor(Widget::ClassEditor* classEditor, const std::string& name = "Class editor")
 			: IWindow(name)
 		{
-			setWidth(400);
-			setHeight(300);
+			setWidth(700);
+			setHeight(700);
 			setMainContainer(classEditor);
 		}
 

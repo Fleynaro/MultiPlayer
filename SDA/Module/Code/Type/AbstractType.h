@@ -26,8 +26,15 @@ namespace CE
 			virtual int getSize() = 0;
 			virtual bool isUserDefined() = 0;
 			virtual void free() {
-				if(m_canBeRemoved)
+				m_ownerCount--;
+				if (m_ownerCount == 0) {
+					m_isDeleted = true;
 					delete this;
+				} 
+				else if (m_ownerCount < 0)
+					if(m_isDeleted)
+						throw std::logic_error("Double deleting. Trying to delete already deleted type.");
+					else throw std::logic_error("m_ownerCount < 0. The lack of calling addOwner somewhere.");
 			}
 
 			virtual std::string getViewValue(void* addr) {
@@ -55,11 +62,12 @@ namespace CE
 				return isArray() && isPointer();
 			}
 
-			void setCanBeRemoved(bool toggle) {
-				m_canBeRemoved = toggle;
+			void addOwner() {
+				m_ownerCount ++;
 			}
 		private:
-			bool m_canBeRemoved = true;
+			int m_ownerCount = 0;
+			bool m_isDeleted = false;
 		};
 	};
 };

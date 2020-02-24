@@ -30,14 +30,15 @@ namespace GUI::Widget
 				API::Type::Type* m_type;
 			};
 
-			class TypeItem : public ShortTypeItem
+			class TypeItem : public Item
 			{
 			public:
 				TypeItem(API::Type::Type* type, Events::Event* eventClickOnName)
-					: ShortTypeItem(type, eventClickOnName)
+					: m_type(type)
 				{
-					addFlags(ImGuiTreeNodeFlags_Leaf, false);
-
+					beginHeader()
+						.addItem(new Units::Type(type->getType(), eventClickOnName));
+					//setHeader(type->getType()->getDisplayName());
 					beginBody()
 						.addItem(
 							new Elements::Button::ButtonStd(
@@ -68,9 +69,9 @@ namespace GUI::Widget
 				for (auto& it : m_typeManager->getTypes()) {
 					if (m_dataTypeList->checkOnInputValue(it.second, value) && m_dataTypeList->checkAllFilters(it.second)) {
 						getOutContainer()->addItem(createItem(it.second));
+						if (--maxCount == 0)
+							break;
 					}
-					if (--maxCount == 0)
-						break;
 				}
 			}
 
@@ -213,7 +214,7 @@ namespace GUI::Widget
 			m_eventClickOnName = eventHandler;
 		}
 	private:
-		Events::Event* m_eventClickOnName;
+		Events::Event* m_eventClickOnName = nullptr;
 	};
 };
 
@@ -361,7 +362,7 @@ namespace GUI::Window
 			: IWindow("Select data type"), m_typeManager(typeManager)
 		{
 			setWidth(450);
-			setHeight(300);
+			setHeight(280);
 			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
 			m_updateEvent = new Events::EventUI(EVENT_LAMBDA(info) {
@@ -375,7 +376,6 @@ namespace GUI::Window
 				.newLine()
 				.text("Pointer")
 				.addItem(m_pointerInput = new Elements::Input::Int)
-				.newLine()
 				.text("Array")
 				.addItem(m_arrayInput = new Elements::Input::Int)
 				.newLine()
@@ -413,7 +413,10 @@ namespace GUI::Window
 		void onUpdateInput() {
 			if (!checkData())
 				return;
+			updatePreview();
+		}
 
+		void updatePreview() {
 			if (m_type != nullptr)
 				m_type->free();
 
@@ -422,17 +425,12 @@ namespace GUI::Window
 				m_pointerInput->getInputValue(),
 				m_arrayInput->getInputValue()
 			);
-
-			updatePreview();
-		}
-
-		void updatePreview() {
+			m_type->addOwner();
 			m_preview->setText(m_type->getDisplayName());
 		}
 
 		void setType(CE::Type::Type* type) {
-			m_type = type;
-			m_dataTypeInput->setSelectedType(type);
+			m_dataTypeInput->setSelectedType(type->getBaseType());
 			m_pointerInput->setInputValue(type->getPointerLvl());
 			m_arrayInput->setInputValue(type->getArraySize());
 			updatePreview();

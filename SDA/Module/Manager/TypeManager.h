@@ -33,11 +33,10 @@ namespace CE
 			Type(TypeManager* typeManager, CE::Type::Type* type)
 				: AbstractType(typeManager), m_type(type)
 			{
-				m_type->setCanBeRemoved(false);
+				m_type->addOwner();
 			}
 
 			~Type() {
-				m_type->setCanBeRemoved(true);
 				m_type->free();
 			}
 
@@ -298,16 +297,17 @@ namespace CE
 			}
 
 			{
-				for (auto& it : Class->getFieldDict()) {
+				Class->iterateFields([&](int offset, Type::Class::Field* field) {
 					SQLite::Statement query(db, "INSERT INTO sda_class_fields (class_id, rel_offset, name, type_id, pointer_lvl, array_size) VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
 					query.bind(1, Class->getId());
-					query.bind(2, it.first);
-					query.bind(3, it.second.getName());
-					query.bind(4, it.second.getType()->getId());
-					query.bind(5, it.second.getType()->getPointerLvl());
-					query.bind(6, it.second.getType()->getArraySize());
+					query.bind(2, offset);
+					query.bind(3, field->getName());
+					query.bind(4, field->getType()->getId());
+					query.bind(5, field->getType()->getPointerLvl());
+					query.bind(6, field->getType()->getArraySize());
 					query.exec();
-				}
+					return true;
+				});
 			}
 
 			transaction.commit();

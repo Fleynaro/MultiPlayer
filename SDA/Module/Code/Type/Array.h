@@ -25,7 +25,7 @@ namespace CE
 			}
 
 			std::string getDisplayName() override {
-				return getType()->getName() + "[" + std::to_string(getArraySize()) + "]";
+				return getType()->getDisplayName() + "[" + std::to_string(getArraySize()) + "]";
 			}
 
 			int getSize() override {

@@ -14,9 +14,15 @@ namespace CE
 			class Field
 			{
 			public:
-				Field(std::string name, Type* type, std::string desc = "")
-					: m_name(name), m_type(type), m_desc(desc)
-				{}
+				Field(const std::string& name, Type* type, std::string desc = "")
+					: m_name(name), m_desc(desc)
+				{
+					setType(type);
+				}
+
+				~Field() {
+					m_type->free();
+				}
 
 				std::string& getName() {
 					return m_name;
@@ -31,7 +37,10 @@ namespace CE
 				}
 
 				void setType(Type* type) {
+					if(m_type != nullptr)
+						m_type->free();
 					m_type = type;
+					m_type->addOwner();
 				}
 
 				inline Type* getType() {
@@ -40,15 +49,20 @@ namespace CE
 			private:
 				std::string m_name;
 				std::string m_desc;
-				Type* m_type;
+				Type* m_type = nullptr;
 			};
 
-			using FieldDict = std::map<int, Field>;
+			using FieldDict = std::map<int, Field*>;
 			using MethodList = std::list<Function::Method*>;
 			
 			Class(int id, std::string name, std::string desc = "")
 				: UserType(id, name, desc)
 			{}
+
+			~Class() {
+				for (auto it : m_fields)
+					delete it.second;
+			}
 
 			Group getGroup() override {
 				return Group::Class;
@@ -145,7 +159,7 @@ namespace CE
 				if (!emptyFields) {
 					for (auto& it : m_fields) {
 						int relOffset = it.first;
-						if (!callback(relOffset, &it.second))
+						if (!callback(relOffset, it.second))
 							return false;
 					}
 				}
@@ -213,6 +227,13 @@ namespace CE
 				m_vtable = vtable;
 			}
 
+			int getSizeByLastField() {
+				if (m_fields.size() == 0)
+					return 0;
+				auto lastField = --m_fields.end();
+				return lastField->first + lastField->second->getType()->getSize();
+			}
+
 			std::pair<Class*, int> getFieldLocationByOffset(int offset) {
 				std::pair<Class*, int> result(nullptr, -1);
 				int curOffset = hasVTable() * 0x8;
@@ -229,17 +250,22 @@ namespace CE
 				return result;
 			}
 
-			bool isEmptyField(int startByteIdx, int size) {
-				if (startByteIdx < 0 || startByteIdx + size > getRelSize() || size <= 0)
-					return false;
-
+			int getNextEmptyBytesCount(int startByteIdx) {
 				auto it = m_fields.upper_bound(startByteIdx);
 				if (it != m_fields.end()) {
-					if (it->first < startByteIdx + size)
-						return false;
+					return it->first - startByteIdx;
 				}
+				return m_size - startByteIdx;
+			}
 
-				return true;
+			bool areEmptyFields(int startByteIdx, int size) {
+				if (startByteIdx < 0 || size <= 0)
+					return false;
+
+				if (getNextEmptyBytesCount(startByteIdx) < size)
+					return false;
+
+				return getFieldIterator(startByteIdx) == m_fields.end();
 			}
 
 			static Field* getDefaultField() {
@@ -254,7 +280,7 @@ namespace CE
 			std::pair<int, Field*> getField(int relOffset) {
 				auto it = getFieldIterator(relOffset);
 				if (it != m_fields.end()) {
-					return std::make_pair(it->first, &it->second);
+					return std::make_pair(it->first, it->second);
 				}
 				return std::make_pair(-1, getDefaultField());
 			}
@@ -262,34 +288,68 @@ namespace CE
 			FieldDict::iterator getFieldIterator(int relOffset) {
 				auto it = m_fields.lower_bound(relOffset);
 				if (it != m_fields.end()) {
-					if (it->first <= relOffset && it->first + it->second.getType()->getSize() > relOffset) {
+					if (it->first <= relOffset && it->first + it->second->getType()->getSize() > relOffset) {
 						return it;
 					}
 				}
 				return m_fields.end();
 			}
 
-			/*bool canTypeBeInsertedTo(int relOffset, int size) {
-				if (relOffset + size > getRelSize())
+		private:
+			void moveField_(int relOffset, int bytesCount) {
+				auto field_ = m_fields.extract(relOffset);
+				field_.key() += bytesCount;
+				m_fields.insert(std::move(field_));
+			}
+		public:
+			bool moveField(int relOffset, int bytesCount) {
+				auto field = getFieldIterator(relOffset);
+				if (field == m_fields.end())
 					return false;
 
-				auto field_down = m_fields.lower_bound(relOffset);
-				if (field_down != m_fields.end() && field_down->first + field_down->second.getType()->getSize() >= relOffset)
+				if (bytesCount > 0) {
+					if (!areEmptyFields(field->first + field->second->getType()->getSize(), std::abs(bytesCount)))
+						return false;
+				}
+				else {
+					if (!areEmptyFields(field->first - std::abs(bytesCount), std::abs(bytesCount)))
+						return false;
+				}
+
+				moveField_(relOffset, bytesCount);
+				return true;
+			}
+
+			bool moveFields(int relOffset, int bytesCount) {
+				int firstOffset = relOffset;
+				int lastOffset = m_size - 1;
+				if (!areEmptyFields((bytesCount > 0 ? lastOffset : firstOffset) - std::abs(bytesCount), std::abs(bytesCount)))
 					return false;
 
-				auto field_up = m_fields.upper_bound(relOffset);
-				if (field_up != m_fields.end() && field_up->first <= relOffset + size)
-					return false;
-			}*/
+				FieldDict::iterator it = getFieldIterator(firstOffset);
+				FieldDict::iterator end = m_fields.end();
+				if (bytesCount > 0) {
+					end--;
+					it--;
+					std::swap(it, end);
+				}
+				while(it != end) {
+					moveField_(it->first, bytesCount);
+					if (bytesCount > 0)
+						it--; else it++;
+				}
+				return true;
+			}
 
-			void addField(int relOffset, std::string name, Type* type, std::string desc = "") {
-				m_fields.insert(std::make_pair(relOffset, Field(name, type, desc)));
+			void addField(int relOffset, std::string name, Type* type, const std::string& desc = "") {
+				m_fields.insert(std::make_pair(relOffset, new Field(name, type, desc)));
 				m_size = max(m_size, relOffset + type->getSize());
 			}
 
 			bool removeField(int relOffset) {
 				auto it = getFieldIterator(relOffset);
 				if (it != m_fields.end()) {
+					delete it->second;
 					m_fields.erase(it);
 					return true;
 				}

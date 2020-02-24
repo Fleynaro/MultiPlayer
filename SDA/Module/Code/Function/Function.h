@@ -16,9 +16,16 @@ namespace CE
 			using ArgTypeList = std::vector<Type::Type*>;
 
 			Signature() {}
+			~Signature() {
+				if (m_returnType != nullptr)
+					m_returnType->free();
+			}
 
 			void setReturnType(Type::Type* returnType) {
+				if (m_returnType != nullptr)
+					m_returnType->free();
 				m_returnType = returnType;
+				m_returnType->addOwner();
 				//m_retTypeChanged = true;
 			}
 
@@ -28,6 +35,30 @@ namespace CE
 
 			ArgTypeList& getArgList() {
 				return m_args;
+			}
+
+			void addArgument(Type::Type* type) {
+				type->addOwner();
+				m_args.push_back(type);
+			}
+
+			void changeArgument(int id, Type::Type* type) {
+				m_args[id]->free();
+				type->addOwner();
+				m_args[id] = type;
+			}
+
+			void removeLastArgument() {
+				if (m_args.size() > 0)
+					m_args[m_args.size() - 1]->free();
+				m_args.pop_back();
+			}
+
+			void deleteAllArguments() {
+				for (auto it : m_args) {
+					it->free();
+				}
+				m_args.clear();
 			}
 
 			//bool m_retTypeChanged = false;
@@ -90,26 +121,25 @@ namespace CE
 				return role == Role::Function;
 			}
 
-			void addArgument(Type::Type* type, std::string name) {
-				getSignature().getArgList().push_back(type);
+			void addArgument(Type::Type* type, const std::string& name) {
+				getSignature().addArgument(type);
 				getArgNameList().push_back(name);
 			}
 
-			void changeArgument(int id, Type::Type* type, std::string name = "") {
-				getSignature().getArgList()[id]->free();
-				getSignature().getArgList()[id] = type;
+			void changeArgument(int id, Type::Type* type, const std::string& name = "") {
+				getSignature().changeArgument(id, type);
 				if (name.length() > 0) {
 					m_argNames[id] = name;
 				}
 			}
 
 			void removeLastArgument() {
-				getSignature().getArgList().pop_back();
+				getSignature().removeLastArgument();
 				m_argNames.pop_back();
 			}
 
 			void deleteAllArguments() {
-				getSignature().getArgList().clear();
+				getSignature().deleteAllArguments();
 				getArgNameList().clear();
 			}
 

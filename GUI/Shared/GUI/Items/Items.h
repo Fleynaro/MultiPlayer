@@ -31,6 +31,21 @@ namespace GUI
 		return ImColor(R, G, B, A);
 	}
 
+	class Keys {
+	public:
+		static bool IsCtrlPressed() {
+			return IsKeyPressed(VK_CONTROL);
+		}
+
+		static bool IsShiftPressed() {
+			return IsKeyPressed(VK_SHIFT);
+		}
+
+		static bool IsKeyPressed(int vKey) {
+			return (1 << 15) & GetAsyncKeyState(vKey);
+		}
+	};
+
 	namespace Font
 	{
 
@@ -126,6 +141,7 @@ namespace GUI
 				throw std::logic_error("GUI item have parent count < 0.");
 			}
 			if (--m_parentCount == 0) {
+				m_isDeleted = true;
 				delete this;
 			}
 		}
@@ -171,6 +187,7 @@ namespace GUI
 		Item* m_parent = nullptr;
 		int m_parentCount = 0;
 		bool m_display = true;
+		bool m_isDeleted = false;
 	};
 
 
@@ -493,7 +510,8 @@ namespace GUI
 		{}
 
 		~Condition() {
-			m_otherwise->destroy();
+			if(m_otherwise != nullptr)
+				m_otherwise->destroy();
 		}
 
 		void render() override {
@@ -1133,7 +1151,9 @@ namespace GUI
 				void render() override
 				{
 					pushIdParam();
-					bool isClicked = ImGui::Checkbox(getName().c_str(), &m_state);
+					bool isClicked = ImGui::Checkbox(m_tooltip ? "##tooltip" : getName().c_str(), &m_state);
+					if(m_tooltip && ImGui::IsItemHovered())
+						ImGui::SetTooltip(getName().c_str());
 					popIdParam();
 					if (isClicked) {
 						sendSpecialEvent();
@@ -1143,8 +1163,13 @@ namespace GUI
 				bool isSelected() {
 					return m_state;
 				}
+
+				void setToolTip(bool toggle) {
+					m_tooltip = toggle;
+				}
 			private:
 				bool m_state;
+				bool m_tooltip = false;
 			};
 		};
 
@@ -1413,7 +1438,7 @@ namespace GUI
 				public Attribute::Name<IButton>
 			{
 			public:
-				IButton(std::string name, Events::Event* event)
+				IButton(const std::string& name, Events::Event* event)
 					: Attribute::Name<IButton>(name), Events::OnSpecial<IButton>(this, event)
 				{}
 			};
@@ -1425,7 +1450,7 @@ namespace GUI
 				public Attribute::Font<ButtonStd>
 			{
 			public:
-				ButtonStd(std::string name, Events::Event* event = nullptr)
+				ButtonStd(const std::string& name, Events::Event* event = nullptr)
 					: IButton(name, event)
 				{}
 
@@ -1443,12 +1468,34 @@ namespace GUI
 				}
 			};
 
+			class ButtonArrow
+				: public IButton
+			{
+			public:
+				ButtonArrow(ImGuiDir direction, Events::Event* event = nullptr)
+					: m_direction(direction), IButton("##", event)
+				{}
+
+				void render() override
+				{
+					pushIdParam();
+
+					if (ImGui::ArrowButton(getName().c_str(), m_direction)) {
+						sendSpecialEvent();
+					}
+
+					popIdParam();
+				}
+			private:
+				ImGuiDir m_direction;
+			};
+
 			class ButtonSmall
 				: public IButton,
 				public Attribute::Font<ButtonSmall>
 			{
 			public:
-				ButtonSmall(std::string name, Events::Event* event = nullptr)
+				ButtonSmall(const std::string& name, Events::Event* event = nullptr)
 					: IButton(name, event)
 				{}
 
@@ -1472,7 +1519,7 @@ namespace GUI
 				public Attribute::Hint<ButtonTag>
 			{
 			public:
-				ButtonTag(std::string name, ColorRGBA color, Events::Event* event = nullptr)
+				ButtonTag(const std::string& name, ColorRGBA color, Events::Event* event = nullptr)
 					: IButton(name, event), m_color(color)
 				{}
 

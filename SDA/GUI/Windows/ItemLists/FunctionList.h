@@ -66,9 +66,9 @@ namespace GUI::Widget
 				for (auto& it : m_funcManager->getFunctions()) {
 					if (m_funcList->checkOnInputValue(it.second, value) && (!isFilterEnabled() || m_funcList->checkAllFilters(it.second))) {
 						getOutContainer()->addItem(createFuncItem(it.second));//MY TODO*: ленивая загрузка, при открытии только
+						if (--maxCount == 0)
+							break;
 					}
-					if (--maxCount == 0)
-						break;
 				}
 			}
 

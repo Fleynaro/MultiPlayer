@@ -119,17 +119,18 @@ namespace CE
 					curOffset += baseClass->getSizeWithoutVTable();
 				}
 
-				for (auto& it : Class->getFieldDict()) {
-					auto& field = it.second;
+				Class->iterateFields([&](int offset, Type::Class::Field* field_) {
+					auto& field = *field_;
 					datatype::SDataTypeStructureField structFieldDesc;
 					structFieldDesc.__set_name(field.getName());
-					structFieldDesc.__set_offset(curOffset + it.first);
+					structFieldDesc.__set_offset(curOffset + offset);
 					structFieldDesc.type.__set_typeId(getId(field.getType()));
 					structFieldDesc.type.__set_pointerLvl(field.getType()->getPointerLvl());
 					structFieldDesc.type.__set_arraySize(field.getType()->getArraySize());
 					structFieldDesc.__set_comment(field.getDesc());
 					structDesc.fields.push_back(structFieldDesc);
-				}
+					return true;
+				});
 
 				return structDesc;
 			}

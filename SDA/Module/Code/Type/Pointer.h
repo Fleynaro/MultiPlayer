@@ -16,10 +16,14 @@ namespace CE
 		public:
 			Pointer(Type* type)
 				: m_type(type)
-			{}
+			{
+				if (type->isArray())
+					throw std::logic_error("Pointer cannot point at an array.");
+				m_type->addOwner();
+			}
 
 			~Pointer() {
-				getType()->free();
+				m_type->free();
 			}
 
 			Group getGroup() override {
@@ -43,7 +47,7 @@ namespace CE
 			}
 
 			std::string getDisplayName() override {
-				return getType()->getName() + "*";
+				return getType()->getDisplayName() + "*";
 			}
 
 			int getSize() override {
