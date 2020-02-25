@@ -23,6 +23,7 @@ namespace GUI::Widget
 	//MY TODO: адрес - это всплывающие окно, где отображается подробная инфа об адресе: + действия по записи значений, изменения прав и т.д
 	
 	//MY TODO: есть известные и неизвестные функции: чекбокс - show known functions(+ кол-во в фаст панели)
+	//MY TODO: функции одного класса расположены последовательно в памяти => автоматические сделать генерацию списка таких функций
 
 	class ClassEditor : public Template::ItemList
 	{
@@ -33,6 +34,36 @@ namespace GUI::Widget
 			class ClassContent : public TreeNode
 			{
 			public:
+				class Byte : public CE::Type::Byte
+				{
+				public:
+					Byte(int maxBytesCount)
+						: m_maxBytesCount(maxBytesCount)
+					{}
+
+					std::string getViewValue(void* addr) override {
+						return
+							Generic::String::NumberToHex(*(uint64_t*)addr) + " | " +
+							std::to_string(*(int*)addr) + " | " +
+							std::to_string(*(float*)addr) + " | " +
+							std::to_string(*(double*)addr);
+					}
+				protected:
+					int m_maxBytesCount;
+				};
+
+				class ByteGroup : public CE::Type::Array
+				{
+				public:
+					ByteGroup(int bytesCount)
+						: CE::Type::Array(new Byte(bytesCount), bytesCount)
+					{}
+
+					std::string getViewValue(void* addr) override {
+						return getType()->getViewValue(addr);
+					}
+				};
+
 				class EmptyField
 					: public TreeNode
 				{
@@ -87,9 +118,14 @@ namespace GUI::Widget
 
 					void renderHeader() override {
 						if (m_headBaseInfo == nullptr) {
+							std::string offsetText;
+							if (m_classContent->m_classHierarchy->m_classEditor->isHexDisplayEnabled())
+								offsetText = "0x" + Generic::String::NumberToHex(getAbsoluteOffset());
+							else offsetText = std::to_string(getAbsoluteOffset());
+
 							m_headBaseInfo = new Container;
 							(*m_headBaseInfo)
-								.text("0x" + Generic::String::NumberToHex(getAbsoluteOffset()) + " ", ColorRGBA(0xfaf4b6FF))
+								.text(offsetText + " ", ColorRGBA(0xfaf4b6FF))
 								.sameLine()
 								.addItem(new Units::Type(m_type))
 								.sameText(" " + getFieldName() + " ");
@@ -219,7 +255,7 @@ namespace GUI::Widget
 							case 0: {
 								void* ptr = (void*)*(std::uintptr_t*)addr;
 								if (Pointer(ptr).canBeRead()) {
-									return new CE::Type::Pointer(predictTypeAtAddress(ptr, maxSize, level + 1));
+									return new CE::Type::Pointer(predictTypeAtAddress(ptr, 8, level + 1));
 								}
 								break;
 							}
@@ -228,11 +264,11 @@ namespace GUI::Widget
 
 					if (level == 1 && alignment == 0 && maxSize >= 8) {
 						if (m_classHierarchy->m_classEditor->isEmptyFields_GroupingEnabled()) {
-							return new CE::Type::Array(new CE::Type::Byte, 8);
+							return new ByteGroup(8);
 						}
 					}
 
-					return new CE::Type::Byte;
+					return new Byte(maxSize);
 				}
 
 				void buildFields(Container* container, const std::string& name) {
@@ -258,7 +294,7 @@ namespace GUI::Widget
 							auto baseType = fieldType->getBaseType();
 							if (baseType->getGroup() == Type::Type::Group::Class) {
 								auto apiBaseClassType = static_cast<API::Type::Class*>(m_class->getTypeManager()->getTypeById(baseType->getId()));
-								if (apiBaseClassType != nullptr) {
+								if (apiBaseClassType != nullptr && m_classHierarchy->hasClass(apiBaseClassType)) {
 									if (fieldType->isArray()) {
 										//поле ввода для целых чисел со стрелками + добавить новые
 									}
@@ -274,6 +310,7 @@ namespace GUI::Widget
 										if (Pointer(fieldAddr).canBeRead()) {
 											ClassHierarchy* classHierarchy;
 											field->addItem(classHierarchy = new ClassHierarchy(m_classHierarchy->m_classEditor, apiBaseClassType, fieldAddr, true));
+											classHierarchy->setParentClassHierarchy(m_classHierarchy);
 											classHierarchy->onSearch(name);
 											m_classHierarchies.insert(classHierarchy);
 										}
@@ -316,14 +353,14 @@ namespace GUI::Widget
 				{
 					clear();
 					m_fields.clear();
-
+					
 					buildFields(this, name);
 
 					ColContainer* methodContainer;
 					addItem(methodContainer = new ColContainer("Methods"));
 					buildMethods(methodContainer, name);
 				}
-
+				
 				void* getAddressByRelOffset(int relOffset) {
 					return (void*)((std::uintptr_t)m_baseAddr + m_baseOffset + relOffset);
 				}
@@ -421,12 +458,25 @@ namespace GUI::Widget
 				return nullptr;
 			}
 
+			void setParentClassHierarchy(ClassHierarchy* classHierarchy) {
+				m_parentClassHierarchy = classHierarchy;
+			}
+
+			bool hasClass(API::Type::Class* Class) {
+				if (m_targetClass == Class)
+					return true;
+				if(m_parentClassHierarchy != nullptr)
+					return m_parentClassHierarchy->hasClass(Class);
+				return false;
+			}
+
 			AddressInput* m_addressInput = nullptr;
 		private:
 			API::Type::Class* m_targetClass;
 			ClassEditor* m_classEditor;
 			std::list<ClassContent*> m_classContents;
 			void* m_baseAddr = nullptr;
+			ClassHierarchy* m_parentClassHierarchy = nullptr;
 		};
 
 		class ClassView : public IView
@@ -538,6 +588,7 @@ namespace GUI::Widget
 						.separator()
 						.beginContainer()
 							.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters and search", true, m_eventUpdateCB))
+							.addItem(m_cb_isHexDisplayEnabled = new Elements::Generic::Checkbox("Hex display", true, m_eventUpdateCB))
 							.addItem(m_cb_isEmptyFieldsEnabled = new Elements::Generic::Checkbox("Empty fields", true, m_eventUpdateCB))
 							.beginIf(_condition( m_cb_isEmptyFieldsEnabled->isSelected() ))
 								.addItem(m_cb_isEmptyFields_GroupingEnabled = new Elements::Generic::Checkbox("Group by 8 bytes", true, m_eventUpdateCB))
@@ -591,7 +642,7 @@ namespace GUI::Widget
 					throw Exception(m_nameInput, "Type a correct class name");
 				}
 
-				if (m_relSizeInput->getInputValue() > 0) {
+				if (m_relSizeInput->getInputValue() <= 0) {
 					throw Exception(m_relSizeInput, "Type a correct relation size of the class");
 				}
 
@@ -947,6 +998,10 @@ namespace GUI::Widget
 			return m_cb_isAlwaysOpen->isSelected();
 		}
 
+		bool isHexDisplayEnabled() {
+			return m_cb_isHexDisplayEnabled->isSelected();
+		}
+
 		bool checkOnInputValue(Type::Class::Field& field, const std::string& value) {
 			return Generic::String::ToLower(field.getName())
 				.find(Generic::String::ToLower(value)) != std::string::npos;
@@ -967,6 +1022,7 @@ namespace GUI::Widget
 		Elements::Generic::Checkbox* m_cb_isEmptyFieldsEnabled = nullptr;
 		Elements::Generic::Checkbox* m_cb_isEmptyFields_GroupingEnabled = nullptr;
 		Elements::Generic::Checkbox* m_cb_isAlwaysOpen = nullptr;
+		Elements::Generic::Checkbox* m_cb_isHexDisplayEnabled = nullptr;
 		Events::EventHandler* m_eventUpdateCB = nullptr;
 	};
 };

@@ -31,10 +31,11 @@ namespace CE
 					m_isDeleted = true;
 					delete this;
 				} 
-				else if (m_ownerCount < 0)
-					if(m_isDeleted)
+				else if (m_ownerCount < 0) {
+					if (m_isDeleted)
 						throw std::logic_error("Double deleting. Trying to delete already deleted type.");
 					else throw std::logic_error("m_ownerCount < 0. The lack of calling addOwner somewhere.");
+				}
 			}
 
 			virtual std::string getViewValue(void* addr) {
