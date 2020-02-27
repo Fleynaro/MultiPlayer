@@ -43,10 +43,10 @@ namespace GUI::Widget
 
 					std::string getViewValue(void* addr) override {
 						return
-							Generic::String::NumberToHex(*(uint64_t*)addr) + " | " +
-							std::to_string(*(int*)addr) + " | " +
-							std::to_string(*(float*)addr) + " | " +
-							std::to_string(*(double*)addr);
+							/*Generic::String::NumberToHex(*(uint64_t*)addr) + " | " +*/
+							std::to_string(*(int*)addr) + "i | " +
+							std::to_string(*(float*)addr) + "f | " +
+							std::to_string(*(double*)addr).substr(0, 15) + "d";
 					}
 				protected:
 					int m_maxBytesCount;
@@ -64,32 +64,32 @@ namespace GUI::Widget
 					}
 				};
 
+				class TypeViewValue : public Elements::Text::ColoredText
+				{
+				public:
+					TypeViewValue(CE::Type::Type* type, void* addr, ColorRGBA color)
+						: m_type(type), m_addr(addr), Elements::Text::ColoredText("", color)
+					{}
+
+					void render() override {
+						std::string addrText = "0x" + Generic::String::NumberToHex((uint64_t)m_addr);
+						if (Pointer(m_addr).canBeRead()) {
+							setText(addrText + " -> " + m_type->getViewValue(m_addr));
+						}
+						else {
+							setText(addrText + " cannot be read.");
+						}
+						Elements::Text::ColoredText::render();
+					}
+				private:
+					CE::Type::Type* m_type;
+					void* m_addr;
+				};
+
 				class EmptyField
 					: public TreeNode
 				{
 				public:
-					class TypeViewValue : public Elements::Text::ColoredText
-					{
-					public:
-						TypeViewValue(CE::Type::Type* type, void* addr, ColorRGBA color)
-							: m_type(type), m_addr(addr), Elements::Text::ColoredText("", color)
-						{}
-
-						void render() override {
-							std::string addrText = "0x" + Generic::String::NumberToHex((uint64_t)m_addr);
-							if (Pointer(m_addr).canBeRead()) {
-								setText(addrText + " -> " + m_type->getViewValue(m_addr));
-							}
-							else {
-								setText(addrText + " cannot be read.");
-							}
-							Elements::Text::ColoredText::render();
-						}
-					private:
-						CE::Type::Type* m_type;
-						void* m_addr;
-					};
-
 					EmptyField(ClassContent* classContent, int relOffset, CE::Type::Type* type)
 						: m_classContent(classContent), m_relOffset(relOffset), m_type(type)
 					{
@@ -152,9 +152,9 @@ namespace GUI::Widget
 
 					ClassContent* m_classContent;
 					int m_relOffset;
+					CE::Type::Type* m_type;
 				protected:
 					Container* m_headBaseInfo = nullptr;
-					CE::Type::Type* m_type;
 					Events::EventHandler* m_eventClick;
 				};
 				friend class EmptyField;
@@ -172,6 +172,102 @@ namespace GUI::Widget
 					}
 				private:
 					Type::Class::Field* m_field;
+				};
+
+				class ArrayItem
+					: public TreeNode
+				{
+				public:
+					ArrayItem(Field* field, int index)
+						: m_arrayField(field), m_index(index)
+					{
+						addFlags(ImGuiTreeNodeFlags_FramePadding);
+					}
+
+					~ArrayItem() {
+						if (m_headBaseInfo != nullptr)
+							m_headBaseInfo->destroy();
+					}
+
+					void renderHeader() override {
+						if (m_headBaseInfo == nullptr) {
+							std::string offsetText;
+							if (m_arrayField->m_classContent->m_classHierarchy->m_classEditor->isHexDisplayEnabled())
+								offsetText = "0x" + Generic::String::NumberToHex(getAbsoluteOffset());
+							else offsetText = std::to_string(getAbsoluteOffset());
+
+							m_headBaseInfo = new Container;
+							(*m_headBaseInfo)
+								.text(offsetText + " ", ColorRGBA(0xfaf4b6FF))
+								.sameLine()
+								.sameText(" [" + std::to_string(m_index) + "] ");
+							if (m_arrayField->m_classContent->m_baseAddr != nullptr) {
+								(*m_headBaseInfo)
+									.sameLine()
+									.addItem(new TypeViewValue(m_arrayField->m_type, m_arrayField->m_classContent->getAddressByRelOffset(getRelOffset()), ColorRGBA(0x919191FF)));
+							}
+
+							m_headBaseInfo->setParent(this);
+						}
+
+						ImGui::SameLine();
+						m_headBaseInfo->show();
+					}
+
+					int getOffset() {
+						return m_index * m_arrayField->m_type->getSize();
+					}
+
+					int getRelOffset() {
+						return m_arrayField->m_relOffset + getOffset();
+					}
+
+					int getAbsoluteOffset() {
+						return m_arrayField->getAbsoluteOffset() + getOffset();
+					}
+				private:
+					Container* m_headBaseInfo = nullptr;
+					Field* m_arrayField;
+					int m_index;
+				};
+
+				class ArrayClassViewer
+					: public Container
+				{
+				public:
+					ArrayClassViewer(API::Type::Class* Class, void* baseAddr)
+						: m_baseAddr(baseAddr), m_class(Class)
+					{
+						(*this)
+							.text("Item index: ").sameLine().addItem(m_indexInput = new Elements::Input::Int);
+
+						
+					}
+
+					~ArrayClassViewer() {
+						
+					}
+
+					ClassHierarchy* createClassHierarchy() {
+						return new ClassHierarchy(
+							m_arrayField->m_classContent->m_classHierarchy->m_classEditor,
+							m_class,
+							m_arrayField->m_classContent->getAddressByRelOffset(getRelOffset()),
+							true);
+					}
+
+					int getIndex() {
+						return m_indexInput->getInputValue();
+					}
+
+					void* getAddress() {
+						return (void*)((std::uintptr_t)m_baseAddr + getIndex() * m_class->getType()->getSize());
+					}
+				private:
+					void* m_baseAddr;
+					ClassHierarchy* m_classHierarchy;
+					Elements::Input::Int* m_indexInput;
+					API::Type::Class* m_class;
 				};
 
 				class Method
@@ -253,11 +349,13 @@ namespace GUI::Widget
 						switch (alignment)
 						{
 							case 0: {
-								void* ptr = (void*)*(std::uintptr_t*)addr;
-								if (Pointer(ptr).canBeRead()) {
-									return new CE::Type::Pointer(predictTypeAtAddress(ptr, 8, level + 1));
+								if (level <= 3) {
+									void* ptr = (void*)*(std::uintptr_t*)addr;
+									if (Pointer(ptr).canBeRead()) {
+										return new CE::Type::Pointer(predictTypeAtAddress(ptr, 8, level + 1));
+									}
+									break;
 								}
-								break;
 							}
 						}
 					}
@@ -292,9 +390,11 @@ namespace GUI::Widget
 						if (m_baseAddr != nullptr) {
 							auto fieldType = classField->getType();
 							auto baseType = fieldType->getBaseType();
-							if (baseType->getGroup() == Type::Type::Group::Class) {
+
+							if (baseType->getGroup() == Type::Type::Group::Class)
+							{
 								auto apiBaseClassType = static_cast<API::Type::Class*>(m_class->getTypeManager()->getTypeById(baseType->getId()));
-								if (apiBaseClassType != nullptr && m_classHierarchy->hasClass(apiBaseClassType)) {
+								if (apiBaseClassType != nullptr && !m_classHierarchy->hasClass(apiBaseClassType)) {
 									if (fieldType->isArray()) {
 										//поле ввода для целых чисел со стрелками + добавить новые
 									}
@@ -326,6 +426,9 @@ namespace GUI::Widget
 										field->setOpen(true);
 									}
 								}
+							} else if (fieldType->isArray()) {
+								buildArrayItems(static_cast<Field*>(field));
+								field->addFlags(ImGuiTreeNodeFlags_Leaf, false);
 							}
 						}
 
@@ -338,6 +441,26 @@ namespace GUI::Widget
 
 						return true;
 					}, m_classHierarchy->m_classEditor->isEmptyFieldsEnabled());
+				}
+
+				void buildArrayItems(Field* field, int maxItems = 20)
+				{
+					auto arrayType = static_cast<CE::Type::Array*>(field->m_type);
+					int arrItemsCount = arrayType->getArraySize();
+					for (int i = 0; i < min(maxItems, arrItemsCount); i++) {
+						field->addItem(new ArrayItem(field, i));
+					}
+					if (arrItemsCount > 20) {
+						field->addItem(
+							new Elements::Button::ButtonStd(
+								"Load all items",
+								new Events::EventHook(new Events::EventUI(EVENT_LAMBDA(info) {
+									auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
+									buildArrayItems((Field*)message->getUserDataPtr(), 200);
+								}), field)
+							)
+						);
+					}
 				}
 
 				void buildMethods(Container* container, const std::string& methodName) {

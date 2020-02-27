@@ -1,6 +1,8 @@
 #include "DataTypeList.h"
 #include "GUI/ClassEditor.h"
 
+struct TestStructB;
+
 struct TestStructA
 {
 	int a = 5;
@@ -8,6 +10,9 @@ struct TestStructA
 	float pos[3] = { 5.0, 1.0, 2.0 };
 	double c = 1222.123;
 	const char* str = "hello, world!";
+	TestStructB* adddr = nullptr;
+
+	TestStructA();
 };
 
 struct TestStructB
@@ -18,6 +23,10 @@ struct TestStructB
 };
 
 TestStructB g_struct;
+
+TestStructA::TestStructA() {
+	adddr = &g_struct;
+}
 
 
 void GUI::Widget::DataTypeList::ListView::TypeItem::openControlPanel() {
