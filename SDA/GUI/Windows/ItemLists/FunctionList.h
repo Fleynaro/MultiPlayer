@@ -352,7 +352,7 @@ namespace GUI::Widget
 		friend class CallStackView;
 
 
-		class FunctionFilter : public FilterManager::Filter
+		class FunctionFilter : public Template::FilterManager::Filter
 		{
 		public:
 			FunctionFilter(const std::string& name, FunctionList* functionList)
@@ -502,7 +502,7 @@ namespace GUI::Widget
 			Function::Tag::TagCollection m_collection;
 		};
 
-		class FunctionFilterCreator : public FilterManager::FilterCreator
+		class FunctionFilterCreator : public Template::FilterManager::FilterCreator
 		{
 		public:
 			FunctionFilterCreator(FunctionList* funcList)
@@ -513,7 +513,7 @@ namespace GUI::Widget
 				addItem("Tag filter");
 			}
 
-			FilterManager::Filter* createFilter(int idx) override
+			Template::FilterManager::Filter* createFilter(int idx) override
 			{
 				switch (idx)
 				{
@@ -542,7 +542,7 @@ namespace GUI::Widget
 		}
 
 		bool checkAllFilters(API::Function::Function* function) {
-			return getFilterManager()->check([&function](FilterManager::Filter* filter) {
+			return getFilterManager()->check([&function](Template::FilterManager::Filter* filter) {
 				return static_cast<FunctionFilter*>(filter)->checkFilter(function);
 			});
 		}

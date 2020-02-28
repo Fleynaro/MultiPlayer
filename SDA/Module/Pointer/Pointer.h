@@ -31,6 +31,41 @@ namespace CE
 			return m_addr;
 		}
 
+		enum ProtectFlags {
+			No			= 0,
+			Read		= 1,
+			Write		= 2,
+			Execute		= 4
+		};
+
+		void setProtect(ProtectFlags flags) {
+			DWORD new_ = PAGE_NOACCESS;
+			DWORD old_;
+
+			switch (flags)
+			{
+			case Read:
+				new_ = PAGE_READONLY;
+				break;
+			case Write:
+			case Read | Write:
+				new_ = PAGE_READWRITE;
+				break;
+			case Execute:
+				new_ = PAGE_EXECUTE;
+				break;
+			case Execute | Read:
+				new_ = PAGE_EXECUTE_READ;
+				break;
+			case Execute | Write:
+			case Execute | Read | Write:
+				new_ = PAGE_EXECUTE_READWRITE;
+				break;
+			}
+
+			VirtualProtect(m_addr, 1, new_, &old_);
+		}
+
 		static void* Dereference(void* addr, int level)
 		{	
 			for (int i = 0; i < level; i++) {
@@ -47,15 +82,5 @@ namespace CE
 		}
 	private:
 		void* m_addr;
-	};
-
-	class Pointer
-	{
-	public:
-		Pointer() {
-
-		}
-
-
 	};
 };

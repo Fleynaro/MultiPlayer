@@ -163,6 +163,25 @@ public:
 			
 
 			getMainContainer()
+				.beginTabBar("lol")
+					.setFlags(ImGuiTabBarFlags_Reorderable)
+
+					->as<TabBar>()
+					.beginTabItem("first")
+						
+						.text("111")
+					.end()
+
+					.as<TabBar>()
+					.beginTabItem("second")
+						.text("222")
+					.end()
+				.end()
+
+
+				.newLine()
+				.newLine()
+				.newLine()
 
 
 				.beginIf(_condition(m_if))

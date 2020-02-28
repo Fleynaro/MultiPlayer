@@ -89,7 +89,7 @@ namespace GUI::Widget
 		};
 		friend class ListView;
 
-		class TypeFilter : public FilterManager::Filter
+		class TypeFilter : public Template::FilterManager::Filter
 		{
 		public:
 			TypeFilter(const std::string& name, DataTypeList* dataTypeList)
@@ -171,7 +171,7 @@ namespace GUI::Widget
 			Category m_categorySelected = Category::All;
 		};
 
-		class TypeFilterCreator : public FilterManager::FilterCreator
+		class TypeFilterCreator : public Template::FilterManager::FilterCreator
 		{
 		public:
 			TypeFilterCreator(DataTypeList* dataTypeList)
@@ -180,7 +180,7 @@ namespace GUI::Widget
 				addItem("Category filter");
 			}
 
-			FilterManager::Filter* createFilter(int idx) override
+			Template::FilterManager::Filter* createFilter(int idx) override
 			{
 				switch (idx)
 				{
@@ -205,7 +205,7 @@ namespace GUI::Widget
 		}
 
 		bool checkAllFilters(API::Type::Type* type) {
-			return getFilterManager()->check([&type](FilterManager::Filter* filter) {
+			return getFilterManager()->check([&type](Template::FilterManager::Filter* filter) {
 				return static_cast<TypeFilter*>(filter)->checkFilter(type);
 			});
 		}

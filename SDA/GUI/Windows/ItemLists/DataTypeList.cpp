@@ -34,11 +34,6 @@ void GUI::Widget::DataTypeList::ListView::TypeItem::openControlPanel() {
 		return;
 
 	Widget::ClassEditor* classEditor = new Widget::ClassEditor;
-	classEditor->setView(
-		new Widget::ClassEditor::ClassView(
-			new Widget::ClassEditor::ClassHierarchy(classEditor, static_cast<API::Type::Class*>(m_type), &g_struct
-			)
-		)
-	);
+	classEditor->addClass(static_cast<API::Type::Class*>(m_type), &g_struct);
 	getWindow()->addWindow(new Window::ClassEditor(classEditor));
 }

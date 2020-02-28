@@ -535,44 +535,19 @@ namespace GUI
 	};
 
 
-	class TabItem :
-		public Container,
-		public Events::OnRightMouseClick<TabItem>,
-		public Attribute::Id<TabItem>,
-		public Attribute::Name<TabItem>
-	{
-	public:
-		TabItem(std::string name)
-			: Attribute::Name<TabItem>(name), Events::OnRightMouseClick<TabItem>(this)
-		{}
-
-		void render() override {
-			pushIdParam();
-			m_open = ImGui::BeginTabItem(getName().c_str());
-			popIdParam();
-
-			sendRightMouseClickEvent();
-			if (isOpen()) {
-				Container::render();
-				ImGui::EndTabItem();
-			}
-		}
-
-		bool isOpen() {
-			return m_open;
-		}
-	protected:
-		bool m_open = false;
-	};
-
-
+	class TabItem;
 	class TabBar
 		: public Container,
 		public Attribute::Id<TabBar>,
-		public Attribute::Name<TabBar>
+		public Attribute::Name<TabBar>,
+		public Attribute::Flags<
+			TabBar,
+			ImGuiTabBarFlags_,
+			ImGuiTabBarFlags_Reorderable
+		>
 	{
 	public:
-		TabBar(std::string name)
+		TabBar(const std::string& name = "")
 			: Attribute::Name<TabBar>(name)
 		{}
 
@@ -581,7 +556,7 @@ namespace GUI
 
 		void render() override {
 			pushIdParam();
-			bool isOpen = ImGui::BeginTabBar(getName().c_str());
+			bool isOpen = ImGui::BeginTabBar(getName().c_str(), getFlags());
 			popIdParam();
 
 			if (isOpen) {
@@ -591,6 +566,54 @@ namespace GUI
 		}
 	};
 
+	class TabItem :
+		public Container,
+		public Events::OnRightMouseClick<TabItem>,
+		public Events::OnClose<TabItem>,
+		public Attribute::Id<TabItem>,
+		public Attribute::Name<TabItem>,
+		public Attribute::Flags<
+		TabItem,
+		ImGuiTabItemFlags_,
+		ImGuiTabItemFlags_None
+		>
+	{
+	public:
+		TabItem(const std::string& name)
+			: Attribute::Name<TabItem>(name), Events::OnRightMouseClick<TabItem>(this), Events::OnClose<TabItem>(this)
+		{
+			getCloseEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+				getTabBar()->getItems().remove(this);
+				destroy();
+			});
+		}
+
+		void render() override {
+			pushIdParam();
+			bool isOpen = ImGui::BeginTabItem(getName().c_str(), &m_open, getFlags());
+			popIdParam();
+
+			sendRightMouseClickEvent();
+			if (isOpen) {
+				Container::render();
+				ImGui::EndTabItem();
+			}
+
+			if (!m_open) {
+				sendCloseEvent();
+			}
+		}
+
+		bool isOpen() {
+			return m_open;
+		}
+
+		TabBar* getTabBar() {
+			return static_cast<TabBar*>(getParent());
+		}
+	protected:
+		bool m_open = true;
+	};
 
 	class TreeNode
 		: public Container,
@@ -1251,17 +1274,20 @@ namespace GUI
 
 			class ClickedText
 				: public ColoredText,
-				public Events::OnLeftMouseClick<ClickedText>
+				public Events::OnLeftMouseClick<ClickedText>,
+				public Events::OnMiddleMouseClick<ClickedText>
 			{
 			public:
 				ClickedText(const std::string& text, ColorRGBA color)
 					: ColoredText(text, color),
-					Events::OnLeftMouseClick<ClickedText>(this)
+					Events::OnLeftMouseClick<ClickedText>(this),
+					Events::OnMiddleMouseClick<ClickedText>(this)
 				{}
 
 				void render() override {
 					Elements::Text::ColoredText::render();
 					sendLeftMouseClickEvent();
+					sendMiddleMouseClickEvent();
 				}
 			};
 			

@@ -7,18 +7,18 @@ using namespace CE;
 
 namespace GUI::Widget
 {
-	//MY TODO: каждое поле-класс можно открыть в новом окне
-	//MY TODO: обновл€ть не весь ClassHierarchy, а только детей
-	//MY TODO: не передавать через параметр им€ запроса
+	//MY TODO: (+) каждое поле-класс можно открыть в новом окне
+	//MY TODO: (+) обновл€ть не весь ClassHierarchy, а только детей
+	//MY TODO: (+) не передавать через параметр им€ запроса
 	//MY TODO: окна по имени дублируютс€ друг в друга
-	//MY TODO: смена адреса(сделать спец. ввод)
+	//MY TODO: (+) смена адреса(сделать спец. ввод)
 	//MY TODO: vtable
-	//MY TODO: stack overflow
-	//MY TODO: неиспользуемые €чейки
-	//MY TODO: предугадывание типа €чейки(указатель, float)
-	//MY TODO: выделение классов, панель справа дл€ выдел. класса, указание в ней названи€, отн. и абс. размера класса
-	//MY TODO: множественное выделение €чеек, добавление типа €чеейкам(как в гидре!)
-	//MY TODO: несколько классов могут фильтроватьс€ одной панелью
+	//MY TODO: (+) stack overflow, сравнивать по адресу
+	//MY TODO: (+) неиспользуемые €чейки
+	//MY TODO: (+) предугадывание типа €чейки(указатель, float)
+	//MY TODO: (+) выделение классов, панель справа дл€ выдел. класса, указание в ней названи€, отн. и абс. размера класса
+	//MY TODO: (+) множественное выделение €чеек, добавление типа €чеейкам(как в гидре!)
+	//MY TODO: (+) несколько классов могут фильтроватьс€ одной панелью
 	//MY TODO: getWindow()->showConfirm(), showError(), showWarning(), ....
 	//MY TODO: если объект большой по размеру, то ставить определенные чекбоксы
 	//MY TODO: emptyFields дл€ вложенных классов
@@ -28,7 +28,7 @@ namespace GUI::Widget
 	//MY TODO: есть известные и неизвестные функции: чекбокс - show known functions(+ кол-во в фаст панели)
 	//MY TODO: функции одного класса расположены последовательно в пам€ти => автоматические сделать генерацию списка таких функций
 
-	class ClassEditor : public Template::ItemList
+	class ClassEditor : public Container
 	{
 	public:
 		class ClassHierarchy : public GUI::Container
@@ -275,8 +275,7 @@ namespace GUI::Widget
 							classHierarchy = new ClassHierarchy(
 								m_parentClassHierarchy->m_classEditor,
 								m_class,
-								addr,
-								true
+								addr
 							)
 						);
 						classHierarchy->setParentClassHierarchy(m_parentClassHierarchy);
@@ -372,6 +371,9 @@ namespace GUI::Widget
 							m_classHierarchy->m_classEditor->unselectClassContent();
 							m_classHierarchy->m_classEditor->selectClassContent(this);
 						});
+						m_className->getMiddleMouseClickEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+							m_classHierarchy->m_classEditor->addClass(m_class, m_baseAddr);
+						});
 						m_className->setParent(this);
 					}
 
@@ -406,7 +408,8 @@ namespace GUI::Widget
 					return new Byte(maxSize);
 				}
 
-				void buildFields(Container* container, const std::string& name) {
+				void buildFields(Container* container, const std::string& name)
+				{
 					getClass()->iterateFields([&](int& relOffset, Type::Class::Field* classField)
 					{
 						void* fieldAddr = getAddressByRelOffset(relOffset);
@@ -431,7 +434,7 @@ namespace GUI::Widget
 							if (baseType->getGroup() == Type::Type::Group::Class)
 							{
 								auto apiBaseClassType = static_cast<API::Type::Class*>(m_class->getTypeManager()->getTypeById(baseType->getId()));
-								if (apiBaseClassType != nullptr && !m_classHierarchy->hasClass(apiBaseClassType)) {
+								if (apiBaseClassType != nullptr) {
 									if (fieldType->isArray()) {
 										field->addItem(
 											new ArrayClassViewer(m_classHierarchy, apiBaseClassType, fieldAddr, fieldType->getPointerLvl()));
@@ -446,11 +449,16 @@ namespace GUI::Widget
 										}
 
 										if (Address(fieldAddr).canBeRead()) {
-											ClassHierarchy* classHierarchy;
-											field->addItem(classHierarchy = new ClassHierarchy(m_classHierarchy->m_classEditor, apiBaseClassType, fieldAddr, true));
-											classHierarchy->setParentClassHierarchy(m_classHierarchy);
-											classHierarchy->onSearch(name);
-											m_classHierarchies.insert(classHierarchy);
+											if (!fieldType->isPointer() || !m_classHierarchy->hasBaseAddress(fieldAddr)) {
+												ClassHierarchy* classHierarchy;
+												field->addItem(classHierarchy = new ClassHierarchy(m_classHierarchy->m_classEditor, apiBaseClassType, fieldAddr));
+												classHierarchy->setParentClassHierarchy(m_classHierarchy);
+												classHierarchy->onSearch(name);
+												m_classHierarchies.insert(classHierarchy);
+											}
+											else {
+												field->text("Object at the address has been already shown.");
+											}
 										}
 										else {
 											field->text("Address not valid.");
@@ -538,29 +546,17 @@ namespace GUI::Widget
 				API::Type::Class* m_class;
 				std::list<EmptyField*> m_fields;
 				std::set<ClassHierarchy*> m_classHierarchies;
-			private:
 				ClassHierarchy* m_classHierarchy;
+			private:
 				void* m_baseAddr = nullptr;
 				int m_baseOffset;
 				bool m_calculateValues;
 			};
 			friend class ClassContent;
 
-			ClassHierarchy(ClassEditor* classEditor, API::Type::Class* targetClass, void* baseAddr = nullptr, bool isChild = false)
-				: m_classEditor(classEditor), m_targetClass(targetClass)
+			ClassHierarchy(ClassEditor* classEditor, API::Type::Class* targetClass, void* baseAddr = nullptr)
+				: m_classEditor(classEditor), m_targetClass(targetClass), m_baseAddr(baseAddr)
 			{
-				if (!isChild) {
-					m_addressInput = new AddressInput;
-					m_addressInput->setParent(this);
-					m_addressInput->setAddress(baseAddr);
-					m_addressInput->getFocusedEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
-						m_classEditor->update();
-					});
-				}
-				else {
-					m_baseAddr = baseAddr;
-				}
-
 				m_targetClass->getClass()->iterateClasses([&](Type::Class* class_) {
 					auto apiClassType = static_cast<API::Type::Class*>(m_targetClass->getTypeManager()->getTypeById(class_->getId()));
 					if (apiClassType != nullptr) {
@@ -571,21 +567,13 @@ namespace GUI::Widget
 						if (m_classEditor->isAlwaysOpen())
 							classContent->setOpen(true);
 
-						if (m_targetClass->getClass()->getId() == class_->getId()) {
+						/*if (m_targetClass->getClass()->getId() == class_->getId()) {
 							if(m_classEditor->m_classContentSelected == nullptr)
 								m_classEditor->selectClassContent(classContent);
-						}
+						}*/
 					}
 					return true;
 				});
-
-				if(m_classEditor->m_classHierarchySelected == nullptr)
-					m_classEditor->selectClassHierarchy(this);
-			}
-
-			~ClassHierarchy() {
-				if(m_addressInput != nullptr)
-					m_addressInput->destroy();
 			}
 
 			void onSearch(const std::string& name)
@@ -597,7 +585,11 @@ namespace GUI::Widget
 			}
 
 			void* getBaseAddress() {
-				return m_addressInput != nullptr ? m_addressInput->getLastValidAddress() : m_baseAddr;
+				return m_baseAddr;
+			}
+
+			void setBaseAddress(void* addr) {
+				m_baseAddr = addr;
 			}
 
 			ClassContent::EmptyField* getFieldLocationBy(CE::Type::Class* Class, int relOffset) {
@@ -624,48 +616,23 @@ namespace GUI::Widget
 				m_parentClassHierarchy = classHierarchy;
 			}
 
-			bool hasClass(API::Type::Class* Class) {
-				if (m_targetClass == Class)
+			bool hasBaseAddress(void* addr) {
+				if (m_baseAddr == addr)
 					return true;
 				if(m_parentClassHierarchy != nullptr)
-					return m_parentClassHierarchy->hasClass(Class);
+					return m_parentClassHierarchy->hasBaseAddress(addr);
 				return false;
 			}
 
-			AddressInput* m_addressInput = nullptr;
-		private:
 			API::Type::Class* m_targetClass;
+		private:
 			ClassEditor* m_classEditor;
 			std::list<ClassContent*> m_classContents;
 			void* m_baseAddr = nullptr;
 			ClassHierarchy* m_parentClassHierarchy = nullptr;
 		};
-
-		class ClassView : public IView
-		{
-		public:
-			//ClassView(ClassEditor* classEditor, API::Type::Class* Class, void* baseAddr = nullptr)
-			//	: ClassView(new ClassHierarchy(classEditor, Class, baseAddr))
-			//{}
-
-			ClassView(ClassHierarchy* classHierarchy)
-				: m_classHierarchy(classHierarchy)
-			{}
-
-			void onSetView() override {
-				getOutContainer()
-					->addItem(m_classHierarchy);
-			}
-
-			void onSearch(const std::string& name) override
-			{
-				m_classHierarchy->onSearch(name);
-			}
-		private:
-			ClassHierarchy* m_classHierarchy;
-		};
 		
-		class ClassFilter : public FilterManager::Filter
+		class ClassFilter : public Template::FilterManager::Filter
 		{
 		public:
 			ClassFilter(const std::string& name, ClassEditor* classEditor)
@@ -699,7 +666,7 @@ namespace GUI::Widget
 		};
 
 
-		class ClassFilterCreator : public FilterManager::FilterCreator
+		class ClassFilterCreator : public Template::FilterManager::FilterCreator
 		{
 		public:
 			ClassFilterCreator(ClassEditor* classEditor)
@@ -708,7 +675,7 @@ namespace GUI::Widget
 				
 			}
 
-			FilterManager::Filter* createFilter(int idx) override
+			Template::FilterManager::Filter* createFilter(int idx) override
 			{
 				switch (idx)
 				{
@@ -721,30 +688,40 @@ namespace GUI::Widget
 			ClassEditor* m_classEditor;
 		};
 
-		struct StyleSettings : ItemList::StyleSettings
-		{
-			StyleSettings()
-			{
-				m_leftWidth = 250;
-			}
-		};
-
-		Container* m_classHierarchyEditorContainer;
+		AddressInput* m_classHierarchyAddressInput;
 		ColContainer* m_classEditorContainer;
 		ColContainer* m_classFieldContainer;
+		Elements::Input::Text* m_searchInput;
+		TabBar* m_classesTabBar;
 
-		ClassEditor(StyleSettings style = StyleSettings())
-			: ItemList(new ClassFilterCreator(this), style)
+
+		ClassEditor()
 		{
-			//getFilterManager()->addFilter(new CategoryFilter(this));
+			const int width = 250;
 
 			m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
 				update();
 			});
 			m_eventUpdateCB->setCanBeRemoved(false);
 
-			(*m_underFilterCP)
-				.beginReverseInserting()
+			(*this)
+				.beginChild()
+					.setWidth(width)
+					.beginContainer()
+						.text("Search")
+						.separator()
+						.beginContainer()
+							.addItem(m_searchInput = new Elements::Input::Text)
+						.end()
+						.newLine()
+					.end()
+				
+					.text("You may use filters")
+					.addItem(getFilterManager())
+					.newLine()
+					.separator()
+					.addItem(new ClassFilterCreator(this))
+
 					.beginContainer()
 						.newLine()
 						.separator()
@@ -761,19 +738,79 @@ namespace GUI::Widget
 						.newLine()
 						.separator()
 						.text("Base address")
-						.addItem(m_classHierarchyEditorContainer = new Container)
+						.addItem(m_classHierarchyAddressInput = new AddressInput)
 						.newLine()
 						.addItem(m_classEditorContainer = new ColContainer("Class editor panel"))
 						.addItem(m_classFieldContainer = new ColContainer("Class field panel"))
 					.end()
-				.endReverseInserting();
-
+				.end()
+				.sameLine()
+				.beginChild()
+					.addItem(m_classesTabBar = new TabBar)
+				.end();
+			
 			m_classEditorContainer->setDisplay(false);
 			m_classFieldContainer->setDisplay(false);
+			m_searchInput->getSpecialEvent() += m_eventUpdateCB;
+
+			m_classHierarchyAddressInput->getFocusedEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+				if (m_classHierarchySelected != nullptr) {
+					if (m_classHierarchySelected->getBaseAddress() != m_classHierarchyAddressInput->getLastValidAddress()) {
+						m_classHierarchySelected->setBaseAddress(m_classHierarchyAddressInput->getLastValidAddress());
+						updateCurrentClassHierarchy();
+					}
+				}
+			});
 		}
 
 		~ClassEditor() {
 			delete m_eventUpdateCB;
+		}
+
+		class ClassTabItem : public TabItem
+		{
+		public:
+			ClassTabItem(ClassHierarchy* classHierarchy)
+				: m_classHierarchy(classHierarchy), TabItem(classHierarchy->m_targetClass->getClass()->getName())
+			{
+				addItem(classHierarchy);
+			}
+
+			ClassHierarchy* m_classHierarchy;
+		};
+		std::list<ClassHierarchy*> m_classHierarchies;
+
+		void addClassHierarchy(ClassHierarchy* classHierarchy) {
+			ClassTabItem* tabItem;
+			m_classesTabBar->addItem(tabItem = new ClassTabItem(classHierarchy));
+			tabItem->getCloseEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+				auto sender = static_cast<ClassTabItem*>(info->getSender());
+				removeClassHierarchy(sender->m_classHierarchy);
+			});
+
+			m_classHierarchies.push_back(classHierarchy);
+
+			if (m_classHierarchySelected == nullptr) {
+				selectClassHierarchy(classHierarchy);
+				update();
+			}
+		}
+
+		void removeClassHierarchy(ClassHierarchy* classHierarchy) {
+			m_classHierarchies.remove(classHierarchy);
+			if (m_classHierarchySelected == classHierarchy) {
+				if (!m_classHierarchies.empty()) {
+					selectClassHierarchy(*m_classHierarchies.begin());
+				}
+				else {
+					m_classHierarchySelected = nullptr;
+				}
+			}
+		}
+
+		void addClass(API::Type::Class* targetClass, void* baseAddr = nullptr) {
+			ClassHierarchy* classHierarchy = new ClassHierarchy(this, targetClass, baseAddr);
+			addClassHierarchy(classHierarchy);
 		}
 
 		class ClassEditorPanel : public Container
@@ -1027,13 +1064,16 @@ namespace GUI::Widget
 
 		ClassHierarchy* m_classHierarchySelected = nullptr;
 		void selectClassHierarchy(ClassHierarchy* classHierarchy) {
-			m_classHierarchyEditorContainer->clear();
-			m_classHierarchyEditorContainer->addItem(classHierarchy->m_addressInput);
+			m_classHierarchyAddressInput->setAddress(classHierarchy->getBaseAddress());
 			m_classHierarchySelected = classHierarchy;
 		}
 
 		ClassHierarchy::ClassContent* m_classContentSelected = nullptr;
 		void selectClassContent(ClassHierarchy::ClassContent* classContent) {
+			if (m_classHierarchySelected != classContent->m_classHierarchy) {
+				selectClassHierarchy(classContent->m_classHierarchy);
+			}
+
 			if (m_classContentSelected == classContent)
 				return;
 
@@ -1146,16 +1186,18 @@ namespace GUI::Widget
 			m_classFieldSelected = nullptr;
 		}
 
-		void updateClassContent(ClassHierarchy* classHierarchy) {
-			classHierarchy->onSearch(getOldInputValue());
+		void update() {
+			for (auto it : m_classHierarchies) {
+				it->onSearch(getSearchInput());
+			}
 		}
 
-		void updateClassContent(ClassHierarchy::ClassContent* classContent) {
-			classContent->onSearch(getOldInputValue());
+		void updateCurrentClassHierarchy() {
+			m_classHierarchySelected->onSearch(getSearchInput());
 		}
 
 		void updateCurrentClassContent() {
-			updateClassContent(m_classContentSelected);
+			m_classContentSelected->onSearch(getSearchInput());
 		}
 
 		bool isFilterEnabled() {
@@ -1188,11 +1230,19 @@ namespace GUI::Widget
 				.find(Generic::String::ToLower(value)) != std::string::npos;
 		}
 
+		std::string getSearchInput() {
+			return m_searchInput->getInputValue();
+		}
+
 		/*bool checkAllFilters(Type::Class::Field& field) {
 			return getFilterManager()->check([&field](FilterManager::Filter* filter) {
 				return static_cast<ClassFilter*>(filter)->checkFilter(function);
 				});
 		}*/
+
+		Template::FilterManager* getFilterManager() {
+			return &m_filterManager;
+		}
 	private:
 		Elements::Generic::Checkbox* m_cb_isFilterEnabled = nullptr;
 		Elements::Generic::Checkbox* m_cb_isEmptyFieldsEnabled = nullptr;
@@ -1200,6 +1250,7 @@ namespace GUI::Widget
 		Elements::Generic::Checkbox* m_cb_isAlwaysOpen = nullptr;
 		Elements::Generic::Checkbox* m_cb_isHexDisplayEnabled = nullptr;
 		Events::EventHandler* m_eventUpdateCB = nullptr;
+		Template::FilterManager m_filterManager;
 	};
 };
 

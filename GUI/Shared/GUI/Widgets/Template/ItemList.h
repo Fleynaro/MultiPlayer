@@ -3,6 +3,189 @@
 
 namespace GUI::Widget::Template
 {
+	class FilterManager : public Item
+	{
+	public:
+		enum Operation {
+			And,
+			AndNot,
+			Or,
+			OrNot
+		};
+
+		class FilterConditionSelector : public Elements::List::Combo
+		{
+		public:
+			FilterConditionSelector(Events::Event* event, Operation condition)
+				: Elements::List::Combo(getUniqueId(), condition, event)
+			{
+				addItem("And");
+				addItem("And not");
+				addItem("Or");
+				addItem("Or not");
+			}
+
+			Operation getSelectedOperation() {
+				return (Operation)getSelectedItem();
+			}
+		};
+
+		class Filter
+			: public ColContainer
+		{
+		public:
+			Filter(FilterManager* filterManager, const std::string& name, Operation condition = And)
+				: m_filterManager(filterManager), m_condition(condition), m_removeFilterEvent(this), ColContainer(name)
+			{}
+
+			void buildHeader(const std::string description = "", bool isFixed = false)
+			{
+				m_eventChangeCondition = new Events::EventUI(EVENT_LAMBDA(info) {
+					auto sender = static_cast<FilterConditionSelector*>(info->getSender());
+					m_condition = sender->getSelectedOperation();
+					onChanged();
+				});
+
+				(*this)
+					.setCloseBtn(false);
+				if (!isFixed) {
+					(*this)
+						.addItem(new FilterConditionSelector(m_eventChangeCondition, getCondition()))
+						.sameLine().addItem(
+							new GUI::Elements::Button::ButtonStd(
+								"x",
+								new Events::EventUI(EVENT_LAMBDA(info) {
+									getRemoveFilterEvent().callEventHandler();
+								})
+							)
+						);
+				}
+				else {
+					setOpen(true);
+				}
+				(*this)
+					.text(description)
+					.separator();
+			}
+
+			void onChanged() {
+				m_filterManager->getUpdateEvent().callEventHandler();
+			}
+
+			Container& beginBody()
+			{
+				return beginContainer();
+			}
+
+			virtual bool isDefined() = 0;
+
+			Operation getCondition() {
+				return m_condition;
+			}
+
+			Events::Messager& getRemoveFilterEvent() {
+				return m_removeFilterEvent;
+			}
+		private:
+			Operation m_condition;
+			Events::Event* m_eventChangeCondition;
+			Events::Messager m_removeFilterEvent;
+			FilterManager* m_filterManager;
+		};
+		friend class Filter;
+
+
+		class FilterCreator
+			: public Elements::List::Combo
+		{
+		public:
+			FilterCreator(FilterManager* filterManager)
+				: m_filterManager(filterManager), Elements::List::Combo("")
+			{
+				addItem("<Add a filter>");
+				getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+					int filterIdx = getSelectedItem() - 1;
+					if (filterIdx != -1) {
+						m_filterManager->addFilter(createFilter(filterIdx));
+						setDefault(0);
+						m_filterManager->getUpdateEvent().callEventHandler();
+					}
+				});
+			}
+
+			virtual Filter* createFilter(int idx) = 0;
+		private:
+			FilterManager* m_filterManager;
+		};
+		friend class FilterCreator;
+
+		FilterManager()
+			: m_updateEvent(this)
+		{
+			m_eventRemoveFilter = new Events::EventUI(EVENT_LAMBDA(info) {
+				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
+				auto filter = static_cast<Filter*>(message->getUserDataPtr());
+				remove(filter);
+				delete filter;
+				getUpdateEvent().callEventHandler();
+			});
+			m_eventRemoveFilter->setCanBeRemoved(false);
+		}
+
+		~FilterManager() {
+			delete m_eventRemoveFilter;
+		}
+
+		void addFilter(Filter* filter) {
+			filter->setParent(this);
+			m_filters.push_back(filter);
+			filter->getRemoveFilterEvent() += m_eventRemoveFilter;
+		}
+
+		void remove(Filter* filter) {
+			m_filters.remove(filter);
+		}
+
+		bool check(std::function<bool(Filter*)> callback) {
+			bool result = 1;
+			for (auto filter : m_filters) {
+				bool filterResult = !filter->isDefined() || callback(filter);
+
+				switch (filter->getCondition())
+				{
+				case And:
+				case AndNot:
+					result &= filterResult ^ (filter->getCondition() == AndNot);
+					break;
+				case Or:
+				case OrNot:
+					if (result |= filterResult ^ (filter->getCondition() == OrNot))
+						return true;
+					break;
+				}
+			}
+			return result;
+		}
+
+		void render() override {
+			for (auto filter : m_filters) {
+				filter->render();
+			}
+		}
+
+		std::list<Filter*>& getFilters() {
+			return m_filters;
+		}
+
+		Events::Messager& getUpdateEvent() {
+			return m_updateEvent;
+		}
+	private:
+		std::list<Filter*> m_filters;
+		Events::Event* m_eventRemoveFilter;
+		Events::Messager m_updateEvent;
+	};
+
 	class ItemList : public Container
 	{
 	public:
@@ -37,184 +220,7 @@ namespace GUI::Widget::Template
 			Container* m_outContainer = nullptr;
 		};
 	protected:
-		class FilterManager : public Item
-		{
-		public:
-			enum Operation {
-				And,
-				AndNot,
-				Or,
-				OrNot
-			};
-
-			class FilterConditionSelector : public Elements::List::Combo
-			{
-			public:
-				FilterConditionSelector(Events::Event* event, Operation condition)
-					: Elements::List::Combo(getUniqueId(), condition, event)
-				{
-					addItem("And");
-					addItem("And not");
-					addItem("Or");
-					addItem("Or not");
-				}
-
-				Operation getSelectedOperation() {
-					return (Operation)getSelectedItem();
-				}
-			};
-
-			class Filter
-				: public ColContainer
-			{
-			public:
-				Filter(FilterManager* filterManager, const std::string& name, Operation condition = And)
-					: m_filterManager(filterManager), m_condition(condition), ColContainer(name)
-				{}
-
-				void buildHeader(const std::string description = "", bool isFixed = false)
-				{
-					m_eventChangeCondition = new Events::EventUI(EVENT_LAMBDA(info) {
-						auto sender = static_cast<FilterConditionSelector*>(info->getSender());
-						m_condition = sender->getSelectedOperation();
-						onChanged();
-					});
-
-					(*this)
-						.setCloseBtn(false);
-					if (!isFixed) {
-						(*this)
-							.addItem(new FilterConditionSelector(m_eventChangeCondition, getCondition()))
-							.sameLine().addItem(
-								new GUI::Elements::Button::ButtonStd(
-									"x",
-									m_eventRemoveHook = new Events::EventHook(this)
-								)
-							);
-					}
-					else {
-						setOpen(true);
-					}
-					(*this)
-						.text(description)
-						.separator();
-				}
-
-				void onChanged() {
-					m_filterManager->m_itemList->update();
-				}
-
-				Container& beginBody()
-				{
-					return beginContainer();
-				}
-
-				virtual bool isDefined() = 0;
-
-				Operation getCondition() {
-					return m_condition;
-				}
-
-				void setEventRemoveHandler(Events::Event* eventHandler) {
-					if (m_eventRemoveHook != nullptr) {
-						m_eventRemoveHook->setEventHandler(eventHandler);
-					}
-				}
-			private:
-				Operation m_condition;
-				Events::Event* m_eventChangeCondition;
-				Events::EventHook* m_eventRemoveHook = nullptr;
-				FilterManager* m_filterManager;
-			};
-			friend class Filter;
-
-
-			class FilterCreator
-				: public Elements::List::Combo
-			{
-			public:
-				FilterCreator(FilterManager* filterManager)
-					: m_filterManager(filterManager), Elements::List::Combo("")
-				{
-					addItem("<Add a filter>");
-					getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
-						int filterIdx = getSelectedItem() - 1;
-						if (filterIdx != -1) {
-							m_filterManager->addFilter(createFilter(filterIdx));
-							setDefault(0);
-							m_filterManager->m_itemList->update();
-						}
-					});
-				}
-
-				virtual Filter* createFilter(int idx) = 0;
-			private:
-				FilterManager* m_filterManager;
-			};
-			friend class FilterCreator;
-
-			FilterManager(ItemList* itemList)
-				: m_itemList(itemList)
-			{
-				m_eventRemoveFilter = new Events::EventUI(EVENT_LAMBDA(info) {
-					auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-					auto filter = static_cast<Filter*>(message->getUserDataPtr());
-					remove(filter);
-					delete filter;
-					m_itemList->update();
-				});
-				m_eventRemoveFilter->setCanBeRemoved(false);
-			}
-
-			~FilterManager() {
-				delete m_eventRemoveFilter;
-			}
-
-			void addFilter(Filter* filter) {
-				filter->setParent(this);
-				m_filters.push_back(filter);
-				filter->setEventRemoveHandler(m_eventRemoveFilter);
-			}
-
-			void remove(Filter* filter) {
-				m_filters.remove(filter);
-			}
-			
-			bool check(std::function<bool(Filter*)> callback) {
-				bool result = 1;
-				for (auto filter : m_filters) {
-					bool filterResult = !filter->isDefined() || callback(filter);
-
-					switch (filter->getCondition())
-					{
-					case And:
-					case AndNot:
-						result &= filterResult ^ (filter->getCondition() == AndNot);
-						break;
-					case Or:
-					case OrNot:
-						if (result |= filterResult ^ (filter->getCondition() == OrNot))
-							return true;
-						break;
-					}
-				}
-				return result;
-			}
-
-			void render() override {
-				for (auto filter : m_filters) {
-					filter->render();
-				}
-			}
-
-			std::list<Filter*>& getFilters() {
-				return m_filters;
-			}
-		private:
-			std::list<Filter*> m_filters;
-			Events::Event* m_eventRemoveFilter;
-			ItemList* m_itemList;
-		};
+		
 
 		class Item : public TreeNode
 		{
@@ -286,7 +292,7 @@ namespace GUI::Widget::Template
 		Container* m_underFilterCP = nullptr;
 
 		ItemList(FilterManager::FilterCreator* filterCreator, StyleSettings styleSettings = StyleSettings())
-			: m_styleSettings(styleSettings), m_filterManager(this)
+			: m_styleSettings(styleSettings)
 		{
 			m_filterManager.setParent(this);
 			filterCreator->setWidth(m_styleSettings.m_leftWidth);

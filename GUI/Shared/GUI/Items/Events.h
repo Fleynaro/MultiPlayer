@@ -521,6 +521,31 @@ namespace GUI
 		private:
 			Messager m_messager;
 		};
+
+		template<typename T>
+		class OnMiddleMouseClick
+		{
+		public:
+			OnMiddleMouseClick(ISender* sender, Event* event = nullptr)
+				: m_messager(sender, event)
+			{};
+
+			Messager& getMiddleMouseClickEvent() {
+				return m_messager;
+			}
+
+			void sendMiddleMouseClickEvent() {
+				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(2)) {
+					onMiddleMouseClick();
+				}
+			}
+
+			virtual void onMiddleMouseClick() {
+				m_messager.callEventHandler();
+			}
+		private:
+			Messager m_messager;
+		};
 		
 		template<typename T>
 		class OnClose

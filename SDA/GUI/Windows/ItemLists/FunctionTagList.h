@@ -154,7 +154,7 @@ namespace GUI::Widget
 		};
 		friend class TreeView;
 
-		class FunctionTagFilter : public FilterManager::Filter
+		class FunctionTagFilter : public Template::FilterManager::Filter
 		{
 		public:
 			FunctionTagFilter(const std::string& name, FunctionTagList* functionTagList)
@@ -167,7 +167,7 @@ namespace GUI::Widget
 			FunctionTagList* m_functionTagList;
 		};
 
-		class FunctionTagFilterCreator : public FilterManager::FilterCreator
+		class FunctionTagFilterCreator : public Template::FilterManager::FilterCreator
 		{
 		public:
 			FunctionTagFilterCreator(FunctionTagList* functionTagList)
@@ -176,7 +176,7 @@ namespace GUI::Widget
 				//addItem("Category filter");
 			}
 
-			FilterManager::Filter* createFilter(int idx) override
+			Template::FilterManager::Filter* createFilter(int idx) override
 			{
 				switch (idx)
 				{
@@ -201,7 +201,7 @@ namespace GUI::Widget
 		}
 
 		bool checkAllFilters(Function::Tag::Tag* tag) {
-			return getFilterManager()->check([&tag](FilterManager::Filter* filter) {
+			return getFilterManager()->check([&tag](Template::FilterManager::Filter* filter) {
 				return static_cast<FunctionTagFilter*>(filter)->checkFilter(tag);
 			});
 		}
