@@ -7,6 +7,9 @@ using namespace CE;
 
 namespace GUI::Widget
 {
+	//MY TODO: каждое поле-класс можно открыть в новом окне
+	//MY TODO: обновлять не весь ClassHierarchy, а только детей
+	//MY TODO: не передавать через параметр имя запроса
 	//MY TODO: окна по имени дублируются друг в друга
 	//MY TODO: смена адреса(сделать спец. ввод)
 	//MY TODO: vtable
@@ -73,7 +76,7 @@ namespace GUI::Widget
 
 					void render() override {
 						std::string addrText = "0x" + Generic::String::NumberToHex((uint64_t)m_addr);
-						if (Pointer(m_addr).canBeRead()) {
+						if (Address(m_addr).canBeRead()) {
 							setText(addrText + " -> " + m_type->getViewValue(m_addr));
 						}
 						else {
@@ -181,7 +184,7 @@ namespace GUI::Widget
 					ArrayItem(Field* field, int index)
 						: m_arrayField(field), m_index(index)
 					{
-						addFlags(ImGuiTreeNodeFlags_FramePadding);
+						addFlags(ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_Leaf);
 					}
 
 					~ArrayItem() {
@@ -204,7 +207,7 @@ namespace GUI::Widget
 							if (m_arrayField->m_classContent->m_baseAddr != nullptr) {
 								(*m_headBaseInfo)
 									.sameLine()
-									.addItem(new TypeViewValue(m_arrayField->m_type, m_arrayField->m_classContent->getAddressByRelOffset(getRelOffset()), ColorRGBA(0x919191FF)));
+									.addItem(new TypeViewValue(getArrayItemType(), m_arrayField->m_classContent->getAddressByRelOffset(getRelOffset()), ColorRGBA(0x919191FF)));
 							}
 
 							m_headBaseInfo->setParent(this);
@@ -215,11 +218,19 @@ namespace GUI::Widget
 					}
 
 					int getOffset() {
-						return m_index * m_arrayField->m_type->getSize();
+						return m_index * getArrayItemType()->getSize();
 					}
 
 					int getRelOffset() {
 						return m_arrayField->m_relOffset + getOffset();
+					}
+
+					CE::Type::Array* getArrayType() {
+						return static_cast<CE::Type::Array*>(m_arrayField->m_type);
+					}
+
+					CE::Type::Type* getArrayItemType() {
+						return getArrayType()->getType();
 					}
 
 					int getAbsoluteOffset() {
@@ -235,39 +246,65 @@ namespace GUI::Widget
 					: public Container
 				{
 				public:
-					ArrayClassViewer(API::Type::Class* Class, void* baseAddr)
-						: m_baseAddr(baseAddr), m_class(Class)
+					ArrayClassViewer(ClassHierarchy* parentClassHierarchy, API::Type::Class* Class, void* arrBaseAddr, int ptrLevel)
+						: m_parentClassHierarchy(parentClassHierarchy), m_class(Class), m_arrBaseAddr(arrBaseAddr), m_ptrLevel(ptrLevel)
 					{
 						(*this)
-							.text("Item index: ").sameLine().addItem(m_indexInput = new Elements::Input::Int);
+							.text("Item index: ").sameLine().addItem(m_indexInput = new Elements::Input::Int)
+							.newLine()
+							.addItem(m_body = new Container);
 
-						
+						m_indexInput->getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+							if(getIndex() >= 0)
+								update();
+						});
+						update();
 					}
 
-					~ArrayClassViewer() {
-						
-					}
+					void update() {
+						m_body->clear();
 
-					ClassHierarchy* createClassHierarchy() {
-						return new ClassHierarchy(
-							m_arrayField->m_classContent->m_classHierarchy->m_classEditor,
-							m_class,
-							m_arrayField->m_classContent->getAddressByRelOffset(getRelOffset()),
-							true);
+						auto addr = getClassAddress();
+						if (addr == nullptr) {
+							m_body->text("Cannot read the class.");
+							return;
+						}
+
+						ClassHierarchy* classHierarchy;
+						m_body->addItem(
+							classHierarchy = new ClassHierarchy(
+								m_parentClassHierarchy->m_classEditor,
+								m_class,
+								addr,
+								true
+							)
+						);
+						classHierarchy->setParentClassHierarchy(m_parentClassHierarchy);
+						classHierarchy->onSearch("");
 					}
 
 					int getIndex() {
 						return m_indexInput->getInputValue();
 					}
 
-					void* getAddress() {
-						return (void*)((std::uintptr_t)m_baseAddr + getIndex() * m_class->getType()->getSize());
+					int getStepLength() {
+						return m_ptrLevel == 0 ? m_class->getClass()->getSize() : sizeof(std::uintptr_t);
+					}
+
+					void* getAddressInArray() {
+						return (void*)((std::uintptr_t)m_arrBaseAddr + getIndex() * getStepLength());
+					}
+
+					void* getClassAddress() {
+						return Address::Dereference(getAddressInArray(), m_ptrLevel);
 					}
 				private:
-					void* m_baseAddr;
-					ClassHierarchy* m_classHierarchy;
+					void* m_arrBaseAddr;
+					ClassHierarchy* m_parentClassHierarchy;
 					Elements::Input::Int* m_indexInput;
 					API::Type::Class* m_class;
+					int m_ptrLevel;
+					Container* m_body;
 				};
 
 				class Method
@@ -351,7 +388,7 @@ namespace GUI::Widget
 							case 0: {
 								if (level <= 3) {
 									void* ptr = (void*)*(std::uintptr_t*)addr;
-									if (Pointer(ptr).canBeRead()) {
+									if (Address(ptr).canBeRead()) {
 										return new CE::Type::Pointer(predictTypeAtAddress(ptr, 8, level + 1));
 									}
 									break;
@@ -396,18 +433,19 @@ namespace GUI::Widget
 								auto apiBaseClassType = static_cast<API::Type::Class*>(m_class->getTypeManager()->getTypeById(baseType->getId()));
 								if (apiBaseClassType != nullptr && !m_classHierarchy->hasClass(apiBaseClassType)) {
 									if (fieldType->isArray()) {
-										//поле ввода для целых чисел со стрелками + добавить новые
+										field->addItem(
+											new ArrayClassViewer(m_classHierarchy, apiBaseClassType, fieldAddr, fieldType->getPointerLvl()));
 									}
 									else {
 										if (fieldType->isPointer()) {
 											for (int i = 0; i < fieldType->getPointerLvl(); i++) {
-												if (!Pointer(fieldAddr).canBeRead())
+												if (!Address(fieldAddr).canBeRead())
 													break;
 												fieldAddr = (void*)*(std::uintptr_t*)fieldAddr;
 											}
 										}
 
-										if (Pointer(fieldAddr).canBeRead()) {
+										if (Address(fieldAddr).canBeRead()) {
 											ClassHierarchy* classHierarchy;
 											field->addItem(classHierarchy = new ClassHierarchy(m_classHierarchy->m_classEditor, apiBaseClassType, fieldAddr, true));
 											classHierarchy->setParentClassHierarchy(m_classHierarchy);
@@ -475,6 +513,7 @@ namespace GUI::Widget
 				void onSearch(const std::string& name)
 				{
 					clear();
+					m_classHierarchies.clear();
 					m_fields.clear();
 					
 					buildFields(this, name);
@@ -779,7 +818,7 @@ namespace GUI::Widget
 			}
 
 			void update() {
-				m_classEditor->update();
+				m_classEditor->updateCurrentClassContent();
 			}
 
 			Type::Class* getClass() {
@@ -922,7 +961,8 @@ namespace GUI::Widget
 			}
 
 			void update() {
-				m_classEditor->update();
+				m_classEditor->updateCurrentClassContent();
+
 				auto fieldLocation = m_classEditor->m_classHierarchySelected->getFieldLocationBy(getClass(), m_relOffset);
 				if (fieldLocation != nullptr) {
 					m_classEditor->selectClassFields(fieldLocation);
@@ -978,7 +1018,7 @@ namespace GUI::Widget
 			}
 
 			void update() {
-				m_classEditor->update();
+				m_classEditor->updateCurrentClassContent();
 			}
 		private:
 			ClassEditor* m_classEditor;
@@ -1023,6 +1063,7 @@ namespace GUI::Widget
 				selectClassField(classField);
 
 				if (m_classContentSelected != classField->m_classContent) {
+					unselectClassContent();
 					selectClassContent(classField->m_classContent);
 				}
 
@@ -1103,6 +1144,18 @@ namespace GUI::Widget
 			}
 			m_classFieldsSelected.clear();
 			m_classFieldSelected = nullptr;
+		}
+
+		void updateClassContent(ClassHierarchy* classHierarchy) {
+			classHierarchy->onSearch(getOldInputValue());
+		}
+
+		void updateClassContent(ClassHierarchy::ClassContent* classContent) {
+			classContent->onSearch(getOldInputValue());
+		}
+
+		void updateCurrentClassContent() {
+			updateClassContent(m_classContentSelected);
 		}
 
 		bool isFilterEnabled() {

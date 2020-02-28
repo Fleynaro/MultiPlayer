@@ -3,10 +3,10 @@
 
 namespace CE
 {
-	class Pointer
+	class Address
 	{
 	public:
-		Pointer(void* addr)
+		Address(void* addr)
 			: m_addr(addr)
 		{}
 
@@ -30,7 +30,32 @@ namespace CE
 		void* getAddress() {
 			return m_addr;
 		}
+
+		static void* Dereference(void* addr, int level)
+		{	
+			for (int i = 0; i < level; i++) {
+				if (!Address(addr).canBeRead())
+					return nullptr;
+				addr = (void*)*(std::uintptr_t*)addr;
+			}
+			return addr;
+		}
+
+		static void* Dereference(void* addr, CE::Type::Pointer* pointer)
+		{
+			return Dereference(addr, pointer->getPointerLvl());
+		}
 	private:
 		void* m_addr;
+	};
+
+	class Pointer
+	{
+	public:
+		Pointer() {
+
+		}
+
+
 	};
 };

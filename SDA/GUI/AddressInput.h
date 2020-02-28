@@ -42,7 +42,7 @@ namespace GUI
 		}
 
 		bool isAddressValid() {
-			return Pointer(m_addr).canBeRead();
+			return Address(m_addr).canBeRead();
 		}
 
 		void onInput(const std::string& text) override {
