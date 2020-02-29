@@ -61,7 +61,7 @@ namespace CE
 			Type* getType() {
 				return m_type;
 			}
-
+			
 			int getPointerLvl() override {
 				return getType()->getPointerLvl() + 1;
 			}

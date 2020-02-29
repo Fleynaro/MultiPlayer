@@ -22,13 +22,26 @@ namespace CE
 		}
 
 		HMODULE getModuleHandle() {
+			return (HMODULE)getInfo().AllocationBase;
+		}
+
+		MEMORY_BASIC_INFORMATION getInfo() {
 			MEMORY_BASIC_INFORMATION mbi;
 			VirtualQuery(m_addr, &mbi, sizeof(mbi));
-			return (HMODULE)mbi.AllocationBase;
+			return mbi;
 		}
 
 		void* getAddress() {
 			return m_addr;
+		}
+
+		Address dereference() {
+			return Address((void*)*(std::uintptr_t*)m_addr);
+		}
+
+		template<typename T>
+		T& get() {
+			return *(T*)m_addr;
 		}
 
 		enum ProtectFlags {
@@ -38,7 +51,7 @@ namespace CE
 			Execute		= 4
 		};
 
-		void setProtect(ProtectFlags flags) {
+		void setProtect(ProtectFlags flags, int size = 1) {
 			DWORD new_ = PAGE_NOACCESS;
 			DWORD old_;
 
@@ -63,7 +76,25 @@ namespace CE
 				break;
 			}
 
-			VirtualProtect(m_addr, 1, new_, &old_);
+			VirtualProtect(m_addr, size, new_, &old_);
+		}
+
+		ProtectFlags getProtect() {
+			auto protect = getInfo().Protect;
+			DWORD result = 0;
+
+			if(protect & PAGE_READONLY)
+				result |= Read;
+			if (protect & PAGE_READWRITE)
+				result |= Read | Write;
+			if (protect & PAGE_EXECUTE)
+				result |= Execute;
+			if (protect & PAGE_EXECUTE_READ)
+				result |= Execute | Read;
+			if (protect & PAGE_EXECUTE_READWRITE)
+				result |= Execute | Read | Write;
+
+			return (ProtectFlags)result;
 		}
 
 		static void* Dereference(void* addr, int level)

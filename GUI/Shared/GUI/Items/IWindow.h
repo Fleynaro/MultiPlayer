@@ -81,6 +81,8 @@ namespace GUI::Window
 
 		void renderChildWindows() {
 			for (auto it : m_childs) {
+				if (m_childs.size() == 0)
+					throw Exception("some error");
 				it->show();
 			}
 		}

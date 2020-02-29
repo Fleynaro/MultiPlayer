@@ -137,7 +137,43 @@ public:
 
 
 
+	class TypeViewValue : public Elements::Text::ColoredText
+	{
+	public:
+		TypeViewValue()
+			: Elements::Text::ColoredText("hover text", ColorRGBA(0xFFFFFFFF))
+		{
+		
+		}
 
+		~TypeViewValue() {
+			if (m_valueEditor != nullptr)
+				m_valueEditor->destroy();
+		}
+
+		void render() override {
+			Elements::Text::ColoredText::render();
+
+			if (ImGui::IsItemClicked(0)) {
+				if (m_valueEditor == nullptr) {
+						m_valueEditor = new PopupContainer(false, 0);
+						m_valueEditor->setParent(this);
+						m_valueEditor->text("444");
+						m_valueEditor->setVisible();
+						m_valueEditor->setHideByClick(true);
+				}
+				else {
+					m_valueEditor->setVisible();
+				}
+			}
+
+			if (m_valueEditor != nullptr) {
+				m_valueEditor->show();
+			}
+		}
+	private:
+		PopupContainer* m_valueEditor = nullptr;
+	};
 
 
 
@@ -149,6 +185,7 @@ public:
 
 		bool m_if = true;
 
+		Elements::Input::Bool* input;
 		WindowTest()
 			: IWindow("ImGui window for test")
 		{
@@ -161,8 +198,14 @@ public:
 				}
 			});
 			
+			
 
 			getMainContainer()
+				.addItem(new TypeViewValue)
+
+				
+
+
 				.beginTabBar("lol")
 					.setFlags(ImGuiTabBarFlags_Reorderable)
 

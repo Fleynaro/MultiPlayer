@@ -12,18 +12,6 @@ namespace CE
 				: Pointer(type), m_arraySize(arraySize)
 			{}
 
-			Group getGroup() override {
-				return getType()->getGroup();
-			}
-
-			std::string getName() override {
-				return getType()->getName();
-			}
-
-			std::string getDesc() override {
-				return getType()->getDesc();
-			}
-
 			std::string getDisplayName() override {
 				return getType()->getDisplayName() + "[" + std::to_string(getArraySize()) + "]";
 			}
@@ -38,6 +26,10 @@ namespace CE
 
 			int getArraySize() override {
 				return m_arraySize;
+			}
+
+			int getItemSize() {
+				return getType()->getSize();
 			}
 		private:
 			uint64_t m_arraySize;

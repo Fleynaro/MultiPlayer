@@ -384,7 +384,7 @@ namespace GUI::Widget::Template
 				bool open = m_open;
 				if (ImGui::Begin(getUniqueId().c_str(), &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
 				{
-					m_focused &= ImGui::IsWindowFocused();
+					m_focused &= ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 					renderShortView();
 					ImGui::End();
 				}

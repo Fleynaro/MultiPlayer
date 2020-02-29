@@ -153,6 +153,10 @@ namespace CE
 				return Set::Integer;
 			}
 
+			bool isSigned() override {
+				return true;
+			}
+
 			std::string getViewValue(void* addr) override {
 				return std::to_string(*(int8_t*)addr);
 			}
@@ -179,6 +183,10 @@ namespace CE
 
 			Set getSet() {
 				return Set::Integer;
+			}
+
+			bool isSigned() override {
+				return true;
 			}
 
 			std::string getViewValue(void* addr) override {
@@ -209,6 +217,10 @@ namespace CE
 				return Set::Integer;
 			}
 
+			bool isSigned() override {
+				return true;
+			}
+
 			std::string getViewValue(void* addr) override {
 				return std::to_string(*(int32_t*)addr);
 			}
@@ -235,6 +247,10 @@ namespace CE
 
 			Set getSet() {
 				return Set::Integer;
+			}
+
+			bool isSigned() override {
+				return true;
 			}
 
 			std::string getViewValue(void* addr) override {
@@ -365,6 +381,10 @@ namespace CE
 				return Set::Real;
 			}
 
+			bool isSigned() override {
+				return true;
+			}
+
 			std::string getViewValue(void* addr) override {
 				return std::to_string(*(float*)addr);
 			}
@@ -391,6 +411,10 @@ namespace CE
 
 			Set getSet() {
 				return Set::Real;
+			}
+
+			bool isSigned() override {
+				return true;
 			}
 
 			std::string getViewValue(void* addr) override {

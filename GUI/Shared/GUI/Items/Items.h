@@ -147,6 +147,10 @@ namespace GUI
 		}
 
 		void show() {
+			if (m_isDeleted) {
+				throw std::logic_error("Try to show alredy deleted item.");
+			}
+
 			onUpdate();
 
 			if (isShown()) {
@@ -772,6 +776,7 @@ namespace GUI
 
 		void setVisible() {
 			m_lastActive = 0;
+			m_active = GetTickCount64();
 		}
 
 		void setInvisible() {
@@ -787,9 +792,13 @@ namespace GUI
 			m_height = value;
 			return *this;
 		}
+
+		void setHideByClick(bool toggle) {
+			m_hideByClick = toggle;
+		}
 	protected:
 		bool isHovered() override {
-			return ImGui::IsWindowHovered();
+			return ImGui::IsWindowHovered(ImGuiHoveredFlags_RectOnly | ImGuiHoveredFlags_ChildWindows);
 		}
 
 		bool isShown() override {
@@ -807,11 +816,22 @@ namespace GUI
 			ImGui::SetNextWindowSize(ImVec2(m_width, m_height));
 			if (ImGui::Begin(getUniqueId().c_str(), &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 			{
-				if (!ImGui::IsWindowFocused()) {
+				if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) {
 					setInvisible();
 				}
 				else {
-					sendHoveredEvent();
+					if (m_hideByClick) {
+						if (!isHovered()) {
+							if (GetTickCount64() - m_active > 500) {
+								if (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1)) {
+									setInvisible();
+								}
+							}
+						}
+					}
+					else {
+						sendHoveredEvent();
+					}
 				}
 				Container::render();
 				ImGui::End();
@@ -827,9 +847,11 @@ namespace GUI
 		}
 	private:
 		int m_maxDeactiveTime;
+		ULONGLONG m_active = 1;
 		ULONGLONG m_lastActive = 1;
 		float m_width = 0.f;
 		float m_height = 0.f;
+		bool m_hideByClick = false;
 	};
 
 	
@@ -1158,41 +1180,6 @@ namespace GUI
 				void render() override {
 					ImGui::Separator();
 				}
-			};
-
-			class Checkbox
-				: public Elem,
-				public Events::OnSpecial<Checkbox>,
-				public Attribute::Id<Checkbox>,
-				public Attribute::Name<Checkbox>
-			{
-			public:
-				Checkbox(const std::string& name = "", bool state = false, Events::Event* event = nullptr)
-					: Attribute::Name<Checkbox>(name), m_state(state), Events::OnSpecial<Checkbox>(this, event)
-				{}
-
-				void render() override
-				{
-					pushIdParam();
-					bool isClicked = ImGui::Checkbox(m_tooltip ? "##tooltip" : getName().c_str(), &m_state);
-					if(m_tooltip && ImGui::IsItemHovered())
-						ImGui::SetTooltip(getName().c_str());
-					popIdParam();
-					if (isClicked) {
-						sendSpecialEvent();
-					}
-				}
-
-				bool isSelected() {
-					return m_state;
-				}
-
-				void setToolTip(bool toggle) {
-					m_tooltip = toggle;
-				}
-			private:
-				bool m_state;
-				bool m_tooltip = false;
 			};
 		};
 
@@ -1704,17 +1691,37 @@ namespace GUI
 
 		namespace Input
 		{
+			class INumeric
+			{
+			public:
+				virtual uint64_t getInputValue64() = 0;
+			};
+
 			class IInput
 				: public Elem,
+				public INumeric,
 				public IExceptionSource,
 				public Events::OnSpecial<IInput>,
 				public Attribute::Id<IInput>,
-				public Attribute::Name<IInput>
+				public Attribute::Name<IInput>,
+				public Attribute::Flags<
+				IInput,
+				ImGuiInputTextFlags,
+				ImGuiInputTextFlags_None
+				>
 			{
 			public:
 				IInput(const std::string& name, Events::Event* event)
 					: Attribute::Name<IInput>(name), Events::OnSpecial<IInput>(this, event)
 				{}
+
+				void setReadOnly(bool toggle) {
+					addFlags(ImGuiInputTextFlags_ReadOnly, toggle);
+				}
+
+				uint64_t getInputValue64() override {
+					return 0;
+				}
 			};
 
 
@@ -1733,7 +1740,7 @@ namespace GUI
 					pushFontParam();
 					pushIdParam();
 
-					if (ImGui::InputText(getName().c_str(), &m_inputValue)) {
+					if (ImGui::InputText(getName().c_str(), &m_inputValue, getFlags())) {
 						sendSpecialEvent();
 					}
 					if (m_placeHolderEnable) {
@@ -1825,6 +1832,51 @@ namespace GUI
 				std::vector<std::string> m_words;
 			};
 
+			class Bool
+				: public IInput,
+				public Attribute::Width<Bool>
+			{
+			public:
+				Bool(const std::string& name = "##", bool value = false, Events::Event* event = nullptr)
+					: IInput(name, event), m_value(value)
+				{}
+
+				void render() override {
+					pushIdParam();
+					bool isClicked = ImGui::Checkbox(m_tooltip ? "##tooltip" : getName().c_str(), &m_value);
+					if (m_tooltip && ImGui::IsItemHovered())
+						ImGui::SetTooltip(getName().c_str());
+					popIdParam();
+					if (isClicked) {
+						sendSpecialEvent();
+					}
+				}
+
+				Bool* setInputValue(bool value) {
+					m_value = value;
+					return this;
+				}
+
+				bool getInputValue() {
+					return m_value;
+				}
+
+				uint64_t getInputValue64() override {
+					return (uint64_t&)m_value;
+				}
+
+				bool isSelected() {
+					return m_value;
+				}
+
+				void setToolTip(bool toggle) {
+					m_tooltip = toggle;
+				}
+			private:
+				bool m_value = false;
+				bool m_tooltip = false;
+			};
+
 
 			class Float
 				: public IInput,
@@ -1839,7 +1891,7 @@ namespace GUI
 					pushWidthParam();
 					pushIdParam();
 
-					if (ImGui::InputFloat(getName().c_str(), &m_value, m_step)) {
+					if (ImGui::InputFloat(getName().c_str(), &m_value, m_step, m_fastStep, "%.3f", getFlags())) {
 						sendSpecialEvent();
 					}
 
@@ -1855,9 +1907,14 @@ namespace GUI
 				float getInputValue() {
 					return m_value;
 				}
+
+				uint64_t getInputValue64() override {
+					return (uint64_t&)m_value;
+				}
 			private:
 				float m_value = 0;
 				float m_step = 0.f;
+				float m_fastStep = 0.0;
 			};
 
 
@@ -1874,7 +1931,7 @@ namespace GUI
 					pushWidthParam();
 					pushIdParam();
 
-					if (ImGui::InputDouble(getName().c_str(), &m_value, m_step)) {
+					if (ImGui::InputDouble(getName().c_str(), &m_value, m_step, m_fastStep, "%.6f", getFlags())) {
 						sendSpecialEvent();
 					}
 
@@ -1890,9 +1947,14 @@ namespace GUI
 				double getInputValue() {
 					return m_value;
 				}
+
+				uint64_t getInputValue64() override {
+					return (uint64_t&)m_value;
+				}
 			private:
 				double m_value = 0;
 				double m_step = 0.0;
+				double m_fastStep = 0.0;
 			};
 
 
@@ -1909,7 +1971,7 @@ namespace GUI
 					pushWidthParam();
 					pushIdParam();
 
-					if (ImGui::InputInt(getName().c_str(), &m_value, m_step)) {
+					if (ImGui::InputInt(getName().c_str(), &m_value, m_step, m_fastStep, getFlags())) {
 						sendSpecialEvent();
 					}
 
@@ -1925,9 +1987,14 @@ namespace GUI
 				int getInputValue() {
 					return m_value;
 				}
+
+				uint64_t getInputValue64() override {
+					return (uint64_t&)m_value;
+				}
 			private:
 				int m_value = 0;
 				int m_step = 1;
+				int m_fastStep = 100;
 			};
 		};
 
@@ -2356,6 +2423,10 @@ namespace GUI
 					}
 				}
 			};
+		};
+
+		namespace Generic {
+			using Checkbox = Elements::Input::Bool;
 		};
 	};
 };

@@ -74,6 +74,11 @@ namespace GUI::Widget
 						: m_type(type), m_addr(addr), Elements::Text::ColoredText("", color)
 					{}
 
+					~TypeViewValue() {
+						if (m_valueEditor != nullptr)
+							m_valueEditor->destroy();
+					}
+
 					void render() override {
 						std::string addrText = "0x" + Generic::String::NumberToHex((uint64_t)m_addr);
 						if (Address(m_addr).canBeRead()) {
@@ -82,11 +87,32 @@ namespace GUI::Widget
 						else {
 							setText(addrText + " cannot be read.");
 						}
+
 						Elements::Text::ColoredText::render();
+
+						if (ImGui::IsItemClicked(0)) {
+							if (m_valueEditor == nullptr) {
+								if (Address(m_addr).canBeRead()) {
+									m_valueEditor = new PopupContainer(false, 0);
+									m_valueEditor->setParent(this);
+									m_valueEditor->addItem(new AddressValueEditor(m_addr, m_type));
+									m_valueEditor->setVisible();
+									m_valueEditor->setHideByClick(true);
+								}
+							}
+							else {
+								m_valueEditor->setVisible();
+							}
+						}
+
+						if (m_valueEditor != nullptr) {
+							m_valueEditor->show();
+						}
 					}
 				private:
 					CE::Type::Type* m_type;
 					void* m_addr;
+					PopupContainer* m_valueEditor = nullptr;
 				};
 
 				class EmptyField
@@ -496,13 +522,15 @@ namespace GUI::Widget
 					for (int i = 0; i < min(maxItems, arrItemsCount); i++) {
 						field->addItem(new ArrayItem(field, i));
 					}
-					if (arrItemsCount > 20) {
+					if (arrItemsCount >= maxItems) {
 						field->addItem(
 							new Elements::Button::ButtonStd(
 								"Load all items",
 								new Events::EventHook(new Events::EventUI(EVENT_LAMBDA(info) {
 									auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-									buildArrayItems((Field*)message->getUserDataPtr(), 200);
+									auto field = (Field*)message->getUserDataPtr();
+									field->clear();
+									buildArrayItems(field, 1000);
 								}), field)
 							)
 						);
@@ -753,7 +781,7 @@ namespace GUI::Widget
 			m_classFieldContainer->setDisplay(false);
 			m_searchInput->getSpecialEvent() += m_eventUpdateCB;
 
-			m_classHierarchyAddressInput->getFocusedEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+			m_classHierarchyAddressInput->getAddressValidEnteredEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
 				if (m_classHierarchySelected != nullptr) {
 					if (m_classHierarchySelected->getBaseAddress() != m_classHierarchyAddressInput->getLastValidAddress()) {
 						m_classHierarchySelected->setBaseAddress(m_classHierarchyAddressInput->getLastValidAddress());

@@ -63,6 +63,10 @@ namespace CE
 				return isArray() && isPointer();
 			}
 
+			virtual bool isSigned() {
+				return false;
+			}
+
 			void addOwner() {
 				m_ownerCount ++;
 			}
