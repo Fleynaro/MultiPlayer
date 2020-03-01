@@ -380,9 +380,10 @@ namespace GUI::Widget::Template
 			if (isOpen())
 			{
 				ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
-				ImGui::SetNextWindowSize({ ImGui::GetItemRectSize().x, 0 });
+				ImGui::SetNextWindowSize({ 0, 0 });
+
 				bool open = m_open;
-				if (ImGui::Begin(getUniqueId().c_str(), &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+				if (ImGui::Begin(getUniqueId().c_str(), &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ChildWindow2))
 				{
 					m_focused &= ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 					renderShortView();

@@ -115,6 +115,8 @@ namespace CE
 			addType(new API::Type::Type(this, new CE::Type::UInt64));
 			addType(new API::Type::Type(this, new CE::Type::Float));
 			addType(new API::Type::Type(this, new CE::Type::Double));
+			addType(new API::Type::Type(this, new CE::Type::Char));
+			addType(new API::Type::Type(this, new CE::Type::WChar));
 		}
 
 		inline static std::vector<std::pair<std::string, Type::Type*>> ghidraTypes = {
@@ -122,14 +124,12 @@ namespace CE
 			std::make_pair("unicode", new CE::Type::Void),
 			std::make_pair("string", new CE::Type::Void),
 
-			std::make_pair("char", new CE::Type::Int8),
 			std::make_pair("uchar", new CE::Type::Byte),
 			std::make_pair("uint8_t", new CE::Type::Byte),
 			std::make_pair("undefined1", new CE::Type::Int8),
 
 			std::make_pair("short", new CE::Type::Int16),
 			std::make_pair("ushort", new CE::Type::UInt16),
-			std::make_pair("wchar_t", new CE::Type::UInt16),
 			std::make_pair("word", new CE::Type::Int16),
 			std::make_pair("undefined2", new CE::Type::Int16),
 

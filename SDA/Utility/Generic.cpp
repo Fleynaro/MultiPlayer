@@ -65,6 +65,23 @@ std::string String::NumberToHex(uint64_t number)
 	return stream.str();
 }
 
+bool Generic::String::is_number(const std::string& s)
+{
+	std::string::const_iterator it = s.begin();
+	while (it != s.end() && std::isdigit(*it)) ++it;
+	return !s.empty() && it == s.end();
+}
+
+std::wstring Generic::String::s2ws(const std::string& str)
+{
+	return std::wstring(str.begin(), str.end());
+}
+
+std::string Generic::String::ws2s(const std::wstring& wstr)
+{
+	return std::string(wstr.begin(), wstr.end());
+}
+
 void Generic::String::ltrim(std::string& s) {
 	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
 		return !std::isspace(ch);

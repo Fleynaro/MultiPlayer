@@ -30,7 +30,7 @@ namespace CE
 				auto value = m_fields.find(*(int*)(addr));
 				if (value == m_fields.end())
 					return UserType::getViewValue(addr);
-				return value->second;
+				return value->second + " (" + UserType::getViewValue(addr) + ")";
 			}
 
 			FieldDict& getFieldDict() {

@@ -29,7 +29,10 @@ namespace CE
 				UInt32,
 				UInt64,
 				Float,
-				Double
+				Double,
+
+				Char,
+				WChar
 			};
 
 			virtual Set getSet() = 0;
@@ -423,6 +426,54 @@ namespace CE
 
 			int getSize() override {
 				return 8;
+			}
+		};
+
+		class Char : public SystemType
+		{
+		public:
+			int getId() override {
+				return SystemType::Char;
+			}
+
+			std::string getName() override {
+				return "char";
+			}
+
+			std::string getDesc() override {
+				return "char is a byte type that used for ASCII strings";
+			}
+
+			Set getSet() {
+				return Set::Integer;
+			}
+
+			int getSize() override {
+				return 1;
+			}
+		};
+
+		class WChar : public SystemType
+		{
+		public:
+			int getId() override {
+				return SystemType::WChar;
+			}
+
+			std::string getName() override {
+				return "wchar_t";
+			}
+
+			std::string getDesc() override {
+				return "wchar_t is a byte type that used for UNICODE strings";
+			}
+
+			Set getSet() {
+				return Set::Integer;
+			}
+
+			int getSize() override {
+				return 2;
 			}
 		};
 	};

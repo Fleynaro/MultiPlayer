@@ -151,6 +151,7 @@ public:
 				m_valueEditor->destroy();
 		}
 
+		Elements::Input::FilterText* M_TTTT;
 		void render() override {
 			Elements::Text::ColoredText::render();
 
@@ -161,6 +162,14 @@ public:
 						m_valueEditor->text("444");
 						m_valueEditor->setVisible();
 						m_valueEditor->setHideByClick(true);
+
+						m_valueEditor->addItem(
+							(M_TTTT = new Elements::Input::FilterText(""))
+							->setCompare(true)
+							->addWord("cat")
+							->addWord("dogs")
+							->addWord("car")
+						);
 				}
 				else {
 					m_valueEditor->setVisible();

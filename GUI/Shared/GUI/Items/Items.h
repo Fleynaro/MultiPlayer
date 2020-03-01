@@ -187,6 +187,16 @@ namespace GUI
 		std::string getUniqueId() {
 			return "##" + std::to_string((std::uintptr_t)this);
 		}
+
+		void drawBorder(ColorRGBA color, float padding = 1.0) {
+			auto min = ImGui::GetItemRectMin();
+			auto max = ImGui::GetItemRectMax();
+			min.x -= padding;
+			min.y -= padding;
+			max.x += padding;
+			max.y += padding;
+			ImGui::GetWindowDrawList()->AddRect(min, max, ImGui::GetColorU32(toImGuiColor(color)));
+		}
 	private:
 		Item* m_parent = nullptr;
 		int m_parentCount = 0;
@@ -816,23 +826,19 @@ namespace GUI
 			ImGui::SetNextWindowSize(ImVec2(m_width, m_height));
 			if (ImGui::Begin(getUniqueId().c_str(), &isOpen, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 			{
-				if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) {
-					setInvisible();
-				}
-				else {
-					if (m_hideByClick) {
-						if (!isHovered()) {
-							if (GetTickCount64() - m_active > 500) {
-								if (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1)) {
-									setInvisible();
-								}
+				if (m_hideByClick) {
+					if (!isHovered()) {
+						if (GetTickCount64() - m_active > 500) {
+							if (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1)) {
+								setInvisible();
 							}
 						}
 					}
-					else {
-						sendHoveredEvent();
-					}
 				}
+				else {
+					sendHoveredEvent();
+				}
+				
 				Container::render();
 				ImGui::End();
 			}
@@ -1550,13 +1556,7 @@ namespace GUI
 							showHint();
 						}
 
-						auto min = ImGui::GetItemRectMin();
-						min.x -= 2.0;
-						min.y -= 2.0;
-						auto max = ImGui::GetItemRectMax();
-						max.x += 2.0;
-						max.y += 2.0;
-						ImGui::GetWindowDrawList()->AddRect(min, max, ImGui::GetColorU32(toImGuiColor(m_color)));
+						drawBorder(m_color, 2.0);
 					ImGui::PopTextWrapPos();
 				}
 
@@ -1691,6 +1691,12 @@ namespace GUI
 
 		namespace Input
 		{
+			static bool is_number(const std::string& s) {
+				std::string::const_iterator it = s.begin();
+				while (it != s.end() && isdigit(*it)) ++it;
+				return !s.empty() && it == s.end();
+			}
+
 			class INumeric
 			{
 			public:
@@ -1722,6 +1728,33 @@ namespace GUI
 				uint64_t getInputValue64() override {
 					return 0;
 				}
+
+				void showBorder(ColorRGBA color, int ms = 0) {
+					m_borderColor = color;
+					if (ms) {
+						m_borderHideTime = GetTickCount64() + ms;
+					}
+					else {
+						m_borderHideTime = 0;
+					}
+				}
+
+				void hideBorder() {
+					m_borderColor = 0x0;
+				}
+
+				void onExceptionOccured(const Exception& exception) override {
+					showBorder(0xFF0000AA, 3000);
+				}
+			private:
+				ColorRGBA m_borderColor = 0x0;
+				ULONGLONG m_borderHideTime = 0;
+			protected:
+				void drawInputBorder() {
+					if (m_borderColor != 0x0 && (m_borderHideTime == 0 ||GetTickCount64() < m_borderHideTime)) {
+						drawBorder(m_borderColor);
+					}
+				}
 			};
 
 
@@ -1743,6 +1776,7 @@ namespace GUI
 					if (ImGui::InputText(getName().c_str(), &m_inputValue, getFlags())) {
 						sendSpecialEvent();
 					}
+					drawInputBorder();
 					if (m_placeHolderEnable) {
 						if (!ImGui::IsItemActive()) {
 							if (ImGui::IsItemHovered()) {
@@ -1787,7 +1821,7 @@ namespace GUI
 					: Text(name, event), Attribute::Collapse<FilterText>(false)
 				{}
 
-				void render() override {
+				/*void render() override {
 					Text::render();
 					ImGui::SameLine();
 					bool isFocused = ImGui::IsItemFocused();
@@ -1796,7 +1830,7 @@ namespace GUI
 					{
 						ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
 						ImGui::SetNextWindowSize({ ImGui::GetItemRectSize().x, 0 });
-						if (ImGui::Begin(getUniqueId().c_str(), &m_open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+						if (ImGui::BeginPopup(getUniqueId().c_str(), ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoInputs))
 						{
 							isFocused |= ImGui::IsWindowFocused();
 							for (auto& word : m_words) {
@@ -1810,6 +1844,42 @@ namespace GUI
 							}
 							ImGui::End();
 						}
+						m_open &= isFocused;
+
+						ImGui::OpenPopup(getUniqueId().c_str());
+					}
+					else {
+						if (ImGui::IsPopupOpen(getUniqueId().c_str())) {
+							ImGui::CloseCurrentPopup();
+						}
+					}
+				}*/
+
+				void render() override {
+					Text::render();
+					ImGui::SameLine();
+					bool isFocused = ImGui::IsItemFocused();
+					m_open |= ImGui::IsItemActive();
+					if (isOpen())
+					{
+						ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
+						ImGui::SetNextWindowSize({ 0, 0 });
+
+						if (ImGui::Begin(getUniqueId().c_str(), &m_open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ChildWindow2))
+						{
+							isFocused |= ImGui::IsWindowFocused();
+							for (auto& word : m_words) {
+								if (m_isCompare && word.find(getInputValue()) == std::string::npos)
+									continue;
+								if (ImGui::Selectable(word.c_str()) || (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter)))
+								{
+									setInputValue(word);
+									m_open = false;
+								}
+							}
+							ImGui::End();
+						}
+						
 						m_open &= isFocused;
 					}
 				}
@@ -1832,6 +1902,92 @@ namespace GUI
 				std::vector<std::string> m_words;
 			};
 
+
+			class FilterInt
+				: public Text,
+				public Attribute::Collapse<FilterInt>
+			{
+			public: 
+				FilterInt(const std::string& name = "##", Events::Event* event = nullptr)
+					: Text(name, event), Attribute::Collapse<FilterInt>(false)
+				{}
+
+				void render() override {
+					Text::render();
+
+					ImGui::SameLine();
+					bool isFocused = ImGui::IsItemFocused();
+					m_open |= ImGui::IsItemActive();
+					if (isOpen())
+					{
+						ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
+						ImGui::SetNextWindowSize({ 0, 0 });
+
+						if (ImGui::Begin(getUniqueId().c_str(), &m_open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ChildWindow2))
+						{
+							isFocused |= ImGui::IsWindowFocused();
+							for (auto& item : m_items) {
+								auto str = item.first + ": " + std::to_string(item.second);
+								if (m_isCompare && str.find(getInputValue()) == std::string::npos)
+									continue;
+
+								if (ImGui::Selectable(str.c_str()) || (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter)))
+								{
+									setInputValue(std::to_string(item.second));
+									onSpecial();
+									m_open = false;
+								}
+							}
+							if (!isNumber()) {
+								ImGui::NewLine();
+								ImGui::Text("Incorrect input: enter a number.");
+							}
+							ImGui::End();
+						}
+						m_open &= isFocused;
+					}
+				}
+
+				void onSpecial() override {
+					Text::onSpecial();
+					hideBorder();
+					if (!(m_isNumber = is_number(getInputValue()))) {
+						showBorder(0xFF0000AA);
+					}
+				}
+
+				int getInputValueInt() {
+					return std::stoi(getInputValue());
+				}
+
+				uint64_t getInputValue64() override {
+					auto value = getInputValueInt();
+					return (uint64_t&)value;
+				}
+
+				FilterInt* setCompare(bool toggle) {
+					m_isCompare = toggle;
+					return this;
+				}
+
+				FilterInt* addItem(const std::string& name, int value) {
+					m_items.push_back(std::make_pair(name, value));
+					return this;
+				}
+
+				void clear() {
+					m_items.clear();
+				}
+
+				bool isNumber() {
+					return m_isNumber;
+				}
+			private:
+				bool m_isCompare = false;
+				bool m_isNumber = false;
+				std::vector<std::pair<std::string, int>> m_items;
+			};
+
 			class Bool
 				: public IInput,
 				public Attribute::Width<Bool>
@@ -1844,6 +2000,7 @@ namespace GUI
 				void render() override {
 					pushIdParam();
 					bool isClicked = ImGui::Checkbox(m_tooltip ? "##tooltip" : getName().c_str(), &m_value);
+					drawInputBorder();
 					if (m_tooltip && ImGui::IsItemHovered())
 						ImGui::SetTooltip(getName().c_str());
 					popIdParam();
@@ -1894,6 +2051,7 @@ namespace GUI
 					if (ImGui::InputFloat(getName().c_str(), &m_value, m_step, m_fastStep, "%.3f", getFlags())) {
 						sendSpecialEvent();
 					}
+					drawInputBorder();
 
 					popIdParam();
 					popWidthParam();
@@ -1934,6 +2092,7 @@ namespace GUI
 					if (ImGui::InputDouble(getName().c_str(), &m_value, m_step, m_fastStep, "%.6f", getFlags())) {
 						sendSpecialEvent();
 					}
+					drawInputBorder();
 
 					popIdParam();
 					popWidthParam();
@@ -1974,6 +2133,7 @@ namespace GUI
 					if (ImGui::InputInt(getName().c_str(), &m_value, m_step, m_fastStep, getFlags())) {
 						sendSpecialEvent();
 					}
+					drawInputBorder();
 
 					popIdParam();
 					popWidthParam();

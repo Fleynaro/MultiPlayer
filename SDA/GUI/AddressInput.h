@@ -90,6 +90,185 @@ namespace GUI
 	class AddressValueEditor : public Container
 	{
 	public:
+		class Input
+			: public Container
+		{
+		public:
+			Input(CE::Address address)
+				: m_address(address)
+			{}
+
+			virtual void change() = 0;
+			virtual void setReadOnly(bool toggle) = 0;
+		protected:
+			CE::Address m_address;
+		};
+
+		class TextInput : public Input
+		{
+		public:
+			TextInput(CE::Address address, bool unicode = false)
+				: Input(address), m_unicode(unicode)
+			{
+				addItem(m_valueInput = new Elements::Input::Text);
+				read();
+			}
+
+			void change() override {
+				if (m_valueInput->getInputValue().length() > m_sourceLength)
+					throw Exception(m_valueInput, "your string is bigger than the source one");
+
+				auto str = m_valueInput->getInputValue();
+				for (int i = 0, delta = m_sourceLength - str.length(); i < delta; i++)
+					str.push_back(' ');
+
+				if(m_unicode) {
+					auto wStr = Generic::String::s2ws(str);
+					memcpy_s(
+						m_address.getAddress(),
+						m_sourceLength,
+						wStr.data(),
+						wStr.length() * 2);
+				}
+				else {
+					memcpy_s(
+						m_address.getAddress(),
+						m_sourceLength,
+						str.data(),
+						str.length());
+				}
+			}
+
+			void setReadOnly(bool toggle) override {
+				m_valueInput->setReadOnly(toggle);
+			}
+		private:
+			Elements::Input::Text* m_valueInput;
+			bool m_unicode;
+			int m_sourceLength;
+
+			template<typename T>
+			const T* getRawString() {
+				return (const T*)m_address.getAddress();
+			}
+
+			void read() {
+				std::string str;
+				if (m_unicode) {
+					str = Generic::String::ws2s(getRawString<wchar_t>());
+				}
+				else {
+					str = getRawString<char>();
+				}
+				
+				m_valueInput->setInputValue(str);
+				m_sourceLength = str.length();
+			}
+		};
+
+		class PointerInput : public Input
+		{
+		public:
+			PointerInput(CE::Address address)
+				: Input(address)
+			{
+				addItem(m_valueInput = new AddressInput);
+				m_valueInput->setAddress(m_address.get<void*>());
+			}
+
+			void change() override {
+				auto value = m_valueInput->getInputValue64();
+				memcpy_s(m_address.getAddress(), sizeof(std::uintptr_t), &value, sizeof(std::uintptr_t));
+			}
+
+			void setReadOnly(bool toggle) override {
+				m_valueInput->setReadOnly(toggle);
+			}
+		private:
+			AddressInput* m_valueInput;
+		};
+
+		class NumericInput : public Input
+		{
+		public:
+			NumericInput(CE::Address address, CE::Type::Type* type)
+				: Input(address), m_type(type)
+			{
+				auto basicType = Type::SystemType::GetBasicTypeOf(m_type);
+
+				if (basicType != Type::SystemType::Void)
+				{
+					if (basicType == Type::SystemType::Bool) {
+						m_valueInput = new Elements::Generic::Checkbox("", m_address.get<bool>());
+					}
+					else if (basicType == Type::SystemType::Float) {
+						m_valueInput = (new Elements::Input::Float)
+							->setInputValue(m_address.get<float>());
+					}
+					else if (basicType == Type::SystemType::Double) {
+						m_valueInput = (new Elements::Input::Double)
+							->setInputValue(m_address.get<double>());
+					}
+					else {
+						if (m_type->getSize() <= 4) {
+							uint64_t value = m_address.get<uint32_t>();
+							if (m_type->getSize() == 1)
+								value &= 0xFF;
+							if (m_type->getSize() == 2)
+								value &= 0xFFFF;
+							m_valueInput = (new Elements::Input::Int)
+								->setInputValue(value);
+						}
+					}
+				}
+				if(m_valueInput == nullptr)
+					m_valueInput = (new Elements::Input::Int)
+						->setInputValue(m_address.get<uint32_t>());
+				addItem(m_valueInput);
+			}
+
+			void change() override {
+				auto value = m_valueInput->getInputValue64();
+				memcpy_s(m_address.getAddress(), m_type->getSize(), &value, m_type->getSize());
+			}
+
+			void setReadOnly(bool toggle) override {
+				m_valueInput->setReadOnly(toggle);
+			}
+		private:
+			CE::Type::Type* m_type;
+			Elements::Input::IInput* m_valueInput;
+		};
+
+		class EnumInput : public Input
+		{
+		public:
+			EnumInput(CE::Address address, CE::Type::Enum* enumeration)
+				: Input(address), m_enumeration(enumeration)
+			{
+				addItem(m_valueInput = new Elements::Input::FilterInt);
+				m_valueInput->setInputValue(std::to_string(m_address.get<int>()));
+				m_valueInput->setCompare(true);
+				for (auto field : m_enumeration->getFieldDict()) {
+					m_valueInput->addItem(field.second, field.first);
+				}
+			}
+
+			void change() override {
+				if(!m_valueInput->isNumber())
+					throw Exception(m_valueInput, "enter a number!");
+				auto value = m_valueInput->getInputValue64();
+				memcpy_s(m_address.getAddress(), m_enumeration->getSize(), &value, m_enumeration->getSize());
+			}
+
+			void setReadOnly(bool toggle) override {
+				m_valueInput->setReadOnly(toggle);
+			}
+		private:
+			CE::Type::Enum* m_enumeration;
+			Elements::Input::FilterInt* m_valueInput;
+		};
+
 		AddressValueEditor(void* address, CE::Type::Type* type = nullptr, bool changeType = false)
 			: m_address(address), m_type(type), m_changeType(changeType)
 		{
@@ -105,8 +284,16 @@ namespace GUI
 			delete m_eventUpdate;
 		}
 
+		void onVisibleOn() override {
+			if (m_protectContainer != nullptr) {
+				m_protectContainer->clear();
+				buildProtectSelector(m_protectContainer);
+			}
+		}
+
 		void rebuild() {
 			m_valueInput = nullptr;
+			m_protectContainer = nullptr;
 			clear();
 			build();
 		}
@@ -129,17 +316,18 @@ namespace GUI
 				.text("Type: ")
 				.sameLine()
 				.addItem(new Units::Type(m_type))
-				.newLine();
+				.newLine()
+				.addItem(m_protectContainer = new Container);
 
-			buildProtectSelector();
+			buildProtectSelector(m_protectContainer);
 			buildInputForm();
 
 			updateProtect(false);
 		}
 
-		void buildProtectSelector() {
+		void buildProtectSelector(Container* container) {
 			auto protect = getAddress().getProtect();
-			(*this)
+			(*container)
 				.addItem(m_cb_protect_Read = new Elements::Generic::Checkbox("R", protect & CE::Address::Read, m_eventUpdate)).sameLine()
 				.addItem(m_cb_protect_Write = new Elements::Generic::Checkbox("W", protect & CE::Address::Write, m_eventUpdate)).sameLine()
 				.addItem(m_cb_protect_Execute = new Elements::Generic::Checkbox("E", protect & CE::Address::Execute, m_eventUpdate))
@@ -153,14 +341,15 @@ namespace GUI
 					.text("Dereference:")
 					.addItem(combo = new Elements::List::Combo("", m_ptrLevel));
 				combo->addItem("No");
-				CE::Address addr = getAddress(m_ptrLevel);
+				CE::Address addr = getAddress(m_ptrLevel).dereference();
+				bool isVoid = m_type->getId() == Type::SystemType::Void;
 
 				static const std::vector<const char*> names = {"Level 1 - *", "Level 2 - **", "Level 3 - ***" };
-				for (int i = 0; i < min(3, m_type->getPointerLvl()); i++) {
+				for (int i = 0; i < min(3, m_type->getPointerLvl() - isVoid); i++) {
+					if (!addr.canBeRead())
+						break;
+					combo->addItem(names[i]);
 					addr = addr.dereference();
-					if (addr.canBeRead()) {
-						combo->addItem(names[i]);
-					}
 				}
 
 				combo->getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
@@ -174,7 +363,6 @@ namespace GUI
 				Elements::Input::Int* indexInput;
 				(*this)
 					.text("Item index: ")
-					.sameLine()
 					.addItem(indexInput = new Elements::Input::Int);
 				indexInput->getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
 					auto sender = static_cast<Elements::Input::Int*>(info->getSender());
@@ -188,43 +376,22 @@ namespace GUI
 				indexInput->setInputValue(m_arrayIndex);
 			}
 
-			if (isPointerInput()) {
-				auto addrInput = new AddressInput;
-				m_valueInput = addrInput;
-				addrInput->setAddress(getAddress().get<void*>());
+			if (getCurPointerLvl() > 0) {
+				m_valueInput = new PointerInput(getAddress());
 			}
 			else if (m_type->getGroup() == Type::Type::Simple || m_type->getGroup() == Type::Type::Typedef) {
-				auto basicType = Type::SystemType::GetBasicTypeOf(m_type);
-
-				if (basicType != Type::SystemType::Void)
-				{
-					if (basicType == Type::SystemType::Bool) {
-						m_valueInput = new Elements::Generic::Checkbox("", getAddress().get<bool>());
-					}
-					else if (basicType == Type::SystemType::Float) {
-						m_valueInput = (new Elements::Input::Float)
-							->setInputValue(getAddress().get<float>());
-					}
-					else if (basicType == Type::SystemType::Double) {
-						m_valueInput = (new Elements::Input::Double)
-							->setInputValue(getAddress().get<double>());
-					}
-					else {
-						if (m_type->getSize() <= 4) {
-							uint64_t value = getAddress().get<uint32_t>();
-							if (m_type->getSize() == 1)
-								value &= 0xFF;
-							if (m_type->getSize() == 2)
-								value &= 0xFFFF;
-							m_valueInput = (new Elements::Input::Int)
-								->setInputValue(value);
-						}
+				if (m_type->isPointer() || m_type->isArray()) {
+					auto baseType = Type::SystemType::GetBasicTypeOf(m_type);
+					if (baseType == Type::SystemType::Char || baseType == Type::SystemType::WChar) {
+						m_valueInput = new TextInput(getAddress(), baseType == Type::SystemType::WChar);
 					}
 				}
+
+				if(m_valueInput == nullptr)
+					m_valueInput = new NumericInput(getAddress(), m_type->getBaseType());
 			}
 			else if (m_type->getGroup() == Type::Type::Enum) {
-				m_valueInput = (new Elements::Input::Int)
-					->setInputValue(getAddress().get<uint32_t>());
+				m_valueInput = new EnumInput(getAddress(), static_cast<Type::Enum*>(m_type->getBaseType()));
 			}
 
 			if (m_valueInput != nullptr) {
@@ -237,11 +404,9 @@ namespace GUI
 						new Elements::Button::ButtonStd(
 							"ok",
 							new Events::EventUI(EVENT_LAMBDA(info) {
-								int size = m_type->getBaseType()->getSize();
-								if (isPointerInput())
-									size = sizeof(std::uintptr_t);
-								auto value = m_valueInput->getInputValue64();
-								setValue(value, size);
+								if(!m_cb_protect_Write->isSelected())
+									throw Exception(m_cb_protect_Write, "You cannot change value at this address. Need right on writing.");
+								m_valueInput->change();
 								rebuild();
 							})
 						)
@@ -255,8 +420,8 @@ namespace GUI
 
 		void buildTypeSelector();
 
-		bool isPointerInput() {
-			return m_ptrLevel < m_type->getPointerLvl();
+		int getCurPointerLvl() {
+			return m_type->getPointerLvl() - m_ptrLevel;
 		}
 
 		bool isValid() {
@@ -291,10 +456,6 @@ namespace GUI
 			}
 			return (void*)((std::uintptr_t)m_address + offset);
 		}
-
-		void setValue(uint64_t value, int size = sizeof(uint64_t)) {
-			memcpy_s(getAddress().getAddress(), size, &value, size);
-		}
 	private:
 		void* m_address;
 		int m_arrayIndex = 0;
@@ -302,9 +463,10 @@ namespace GUI
 		bool m_changeType;
 		CE::Type::Type* m_type;
 		Events::EventHandler* m_eventUpdate;
+		Container* m_protectContainer = nullptr;
 		Elements::Generic::Checkbox* m_cb_protect_Read = nullptr;
 		Elements::Generic::Checkbox* m_cb_protect_Write = nullptr;
 		Elements::Generic::Checkbox* m_cb_protect_Execute = nullptr;
-		Elements::Input::IInput* m_valueInput = nullptr;
+		Input* m_valueInput = nullptr;
 	};
 };

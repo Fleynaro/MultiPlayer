@@ -17,8 +17,14 @@ namespace Generic
 		
 		extern std::string ToLower(std::string source);
 		extern std::string ToUpper(std::string source);
+
 		extern uint64_t HexToNumber(std::string source);
 		extern std::string NumberToHex(uint64_t number);
+
+		extern bool is_number(const std::string& s);
+
+		std::wstring s2ws(const std::string& str);
+		std::string ws2s(const std::wstring& wstr);
 
 		static inline void ltrim(std::string& s);
 		static inline void rtrim(std::string& s);

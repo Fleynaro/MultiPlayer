@@ -5,11 +5,11 @@ struct TestStructB;
 
 struct TestStructA
 {
+	const char* str = "hello, world!";
 	int a = 5;
 	int b = 1001;
 	float pos[3] = { 5.0, 1.0, 2.0 };
 	double c = 1222.123;
-	const char* str = "hello, world!";
 	TestStructB* adddr = nullptr;
 
 	TestStructA();
