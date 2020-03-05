@@ -13,6 +13,8 @@ using namespace std;
     5) Может случиться, что каждый worker будет потом занят записью содержимого буфера в файл. Тогда будут серьезные подвисания.
         Решение: создать вспомогательные потоки, которые будут спать и просыпаться по запросу менеджера. Если worker заполнен, то забираем у него буфер и передаем спящему потоку(можно одному, у него очередь буферов на запись в файл)
 
+    !!!ВАРИАНТ 2: есть один активный буфер. В него производятся записи. Если буфер заполнился, то отправляем его в очердь на запись в файл в разные потоки. Просто создаем поток новый. Новый активный буфер выделяется в памяти.
+
 
     Также создадим свой ByteStream. Его задача - упаковывать компактно данные о вызовах. Соблюдать выравнивание, ибо лучше записывать словами в память, чем байтами!
     Заголовки:  [тип записи: before/after call] [id триггера] [id функции] [unixtime] [guid] [запись битами сюда общей инфы: есть ли строка, есть ли указ,массив - нужно для поиска]
@@ -33,152 +35,156 @@ using namespace std;
 
 */
 
-namespace Buffer {
-    class IBlock {
-    public:
-        virtual BYTE* getData() = 0;
-        virtual int getSize() = 0;
+class Buffer
+{
+    struct Header {
+        int m_contentSize;
+        int m_currentOffset;
     };
+public:
+    Header m_header;
 
-    template<int BlockSize>
-    class Block : public IBlock {
-        struct Header {
-            int m_contentSize;
-        };
+private:
+    void init(int size) {
+        m_header.m_contentSize = size;
+        m_header.m_currentOffset = 0;
+    }
 
-    protected:
-        Header m_header;
-        BYTE m_content[BlockSize];
+public:
+    static Buffer* Create(int size) {
+        auto buffer = (Buffer*)(new BYTE[size]);
+        buffer->init(size);
+        return buffer;
+    }
+
+    static void Destroy(Buffer* buffer) {
+        delete[] (BYTE*)buffer;
+    }
+
+    inline BYTE* getData() {
+        return (BYTE*)&m_header;
+    }
+
+    inline BYTE* getContent() {
+        return (BYTE*)((std::uintptr_t) &m_header + sizeof(m_header));
+    }
+
+    int getSize() {
+        return sizeof(m_header) + m_header.m_contentSize;
+    }
+
+    int getCurrentOffset() {
+        return sizeof(m_header) + m_header.m_currentOffset;
+    }
+
+    int getFreeSpaceSize() {
+        return getSize() - getCurrentOffset();
+    }
+
+    class Stream {
     public:
-        Block() {
-            m_header.m_contentSize = sizeof(m_content);
-        }
-
-        BYTE* getData() override {
-            return (byte*)&m_header;
-        }
-
-        int getSize() override {
-            return sizeof(m_header) + sizeof(m_content);
-        }
-    };
-
-    template<typename T>
-    class Type : public Block<sizeof(T)> {
-        using Block = Block<sizeof(T)>;
-    public:
-        Type() = default;
-
-        T& operator*() {
-            return (T&)Block::m_content;
-        }
-    };
-
-
-    class IBuffer {
-    public:
-        virtual BYTE* getData() = 0;
-        virtual BYTE* getContent() = 0;
-        virtual int getSize() = 0;
-        virtual int getCurrentOffset() = 0;
-        virtual int getFreeSpaceSize() = 0;
-        virtual void addBlock(IBlock& block) = 0;
-    };
-
-    template<int BufferSize>
-    class Buffer : public IBuffer
-    {
-        struct Header {
-            int m_contentSize;
-            int m_blockCount;
-            int m_currentOffset;
-        };
-    public:
-        Header m_header;
-        BYTE m_content[BufferSize];
-
-        Buffer() {
-            m_header.m_contentSize = sizeof(m_content);
-            m_header.m_blockCount = 0;
-            m_header.m_currentOffset = 0;
-        }
-
-        BYTE* getData() override {
-            return (byte*)&m_header;
-        }
-
-        BYTE* getContent() override {
-            return m_content;
-        }
-
-        int getSize() override {
-            return sizeof(m_header) + sizeof(m_content);
-        }
-
-        int getCurrentOffset() override {
-            return sizeof(m_header) + m_header.m_currentOffset;
-        }
-
-        int getFreeSpaceSize() override {
-            return getSize() - getCurrentOffset();
-        }
-
-        void addBlock(IBlock& block) override {
-            auto addr = (std::uintptr_t)&m_content + getCurrentOffset();
-            memcpy_s((void*)addr, getFreeSpaceSize(), &block, block.getSize());
-            m_header.m_blockCount++;
-            m_header.m_currentOffset += block.getSize();
-        }
-    };
-
-    class Iterator {
-    public:
-        Iterator(IBuffer* buffer)
+        Stream(Buffer* buffer)
             : m_buffer(buffer)
-        {}
-
-        bool hasNext() {
-
+        {
+            setNext(m_buffer->getContent());
         }
 
-        IBlock& next() {
-            auto block = (IBlock*)((std::uintptr_t)m_buffer->getContent() + m_offset);
-            m_offset += block->getSize();
-            return *block;
+        template<typename T = BYTE>
+        inline void write(const T& data) {
+            if (!isFree<T>())
+                return;
+            (T&)*m_curData = data;
+            m_curData += sizeof(T);
+
+            if(m_buffer->m_header.m_currentOffset < getOffset() + sizeof(T))
+                m_buffer->m_header.m_currentOffset = getOffset() + sizeof(T);
+        }
+
+        template<typename T = BYTE>
+        inline T& read() {
+            if (!isFree<T>())
+                throw std::exception("No free space in the buffer.");
+            auto& data = (T&)*m_curData;
+            m_curData += sizeof(T);
+            return data;
+        }
+
+        template<typename T = BYTE>
+        inline bool isFree() {
+            return m_buffer->getFreeSpaceSize() >= sizeof(T);
+        }
+
+        inline BYTE* getNext() {
+            return m_curData;
+        }
+
+        inline void setNext(BYTE* ptr) {
+            m_curData = ptr;
         }
     private:
-        IBuffer* m_buffer;
-        int m_offset = 0;
+        Buffer* m_buffer;
+        BYTE* m_curData;
+
+        int getOffset() {
+            return (int)((std::uintptr_t)m_curData - (std::uintptr_t)m_buffer->getContent());
+        }
     };
+
+    friend class Stream;
 };
 
 
 int main()
 {
-    Buffer::IBuffer* buffer = new Buffer::Buffer<1024 * 1024 * 2>;
-    
+    auto buf = Buffer::Create(1024 * 1024 * 3);
+
     struct CallInfo {
-        uint64_t m_args[10];
+        uint64_t m_args[10000];
     };
 
     {
-        Buffer::Type<CallInfo> block;
-        (*block).m_args[1] = 0xAA;
-        buffer->addBlock(block);
+        auto st = Buffer::Stream(buf);
+
+        auto ptr = st.getNext();
+        st.write(5);
+
+        CallInfo obj;
+        obj.m_args[0] = 0xA1;
+        obj.m_args[1000] = 0xA2;
+        st.write(obj);
+        st.write(5);
+
+        st.setNext(ptr);
+        st.write(8);
     }
 
     ofstream output_file("buffer.data", ios::binary);
-    output_file.write((char*)buffer->getData(), buffer->getSize());
+    if (!output_file.is_open())
+        return 0;
+
+    output_file.write((char*)buf->getData(), buf->getSize());
     output_file.close();
 
-    fstream file("buffer.data", ios::binary);
-    Buffer::IBuffer* buffer2 = new Buffer::Buffer<1024 * 1024 * 2>;
-    file.read((char*)buffer->getData(), buffer->getSize());
+    Buffer::Destroy(buf);
+
+    ifstream file("buffer.data", ios::binary);
+    if (!file.is_open())
+        return 0;
+
+    auto buf2 = Buffer::Create(1024 * 1024 * 3);
+    file.read((char*)buf2->getData(), buf2->getSize());
     file.close();
 
     {
-        Buffer::Type<CallInfo> block;
+        auto st = Buffer::Stream(buf2);
+        auto ll = st.read<int>();
+        CallInfo& obj = st.read<CallInfo>();
+        uint64_t a1 = obj.m_args[0];
+        uint64_t a2 = obj.m_args[1];
         
+        if (st.isFree()) {
+
+        }
     }
 
     system("pause");

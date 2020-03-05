@@ -4,6 +4,7 @@
 #include <DynHook/DynHook.h>
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <Utility/FileWrapper.h>
+#include <Utils/Buffer.h>
 
 using namespace SQLite;
 
@@ -26,6 +27,38 @@ namespace CE
 		Buffer
 		Заголовок буфера [id буфера(GUID)] [размер буфера] [кол-во блоков]
 		Заголовок блока [размер блока]
+
+
+
+
+
+		При разрабокте оттакливаемся от производительности вставки записей. Для этого:
+		1) Избегаем мьютексов
+		2) Делаем много потоков - workers.
+		3) Делаем эффективного менеджера(одного, нет раздедения на арг и рет)
+		4) Каждый worker работает со своим буфером
+		5) Может случиться, что каждый worker будет потом занят записью содержимого буфера в файл. Тогда будут серьезные подвисания.
+			Решение: создать вспомогательные потоки, которые будут спать и просыпаться по запросу менеджера. Если worker заполнен, то забираем у него буфер и передаем спящему потоку(можно одному, у него очередь буферов на запись в файл)
+
+		!!!ВАРИАНТ 2: есть один активный буфер. В него производятся записи. Если буфер заполнился, то отправляем его в очердь на запись в файл в разные потоки. Просто создаем поток новый. Новый активный буфер выделяется в памяти.
+
+
+		Также создадим свой ByteStream. Его задача - упаковывать компактно данные о вызовах. Соблюдать выравнивание, ибо лучше записывать словами в память, чем байтами!
+		Заголовки:  [тип записи: before/after call] [id триггера] [id функции] [unixtime] [guid] [запись битами сюда общей инфы: есть ли строка, есть ли указ,массив - нужно для поиска]
+					before: [кол-во аргументов N] [список типов(byte,int,char,object) для каждого аргумента + [pointer/not pointer] N - 4 бита] [сами аргументы N]
+					аргумент число int - 4 байта
+					аргумент char[32](это pointer, проверяем на массив) - [адрес массива] [число символов] [raw string]
+					аргумент float[4] - то же, что и вверху. это массив. макс. число элементов 65535
+					...
+					опционально записываем фрагмент стека нужного размера
+
+		В итоге у нас будет папка, где будет куча файлов-буферов. Сделать анализатор этих файлов:
+		1) Анализ типов значений
+		2) Анализ строк
+		3) Аанализ объектов: например где этот объект вызывался, где изменялся и т.д
+		4) Встречалось ли какое-то значение в стеке(строка)
+
+		Для каждого типа анализа свой класс, у каждого свои результаты. Некоторые можно сохранить в БД
 	*/
 
 
@@ -39,7 +72,109 @@ namespace CE
 		class Trigger;
 	};
 
+	class StreamRecord
+	{
+	public:
+		StreamRecord(Buffer::Stream* bufferStream)
+			: m_bufferStream(bufferStream)
+		{}
+
+		void write() {
+			writeHeader();
+			writeBody();
+			writeEnd();
+		}
+	private:
+		void writeHeader() {
+			m_sizeValue = getStream().getNext();
+			getStream().write(0);
+		}
+
+		void writeEnd() {
+			auto writtenLength = getStream().getWrittenLength();
+			getStream().setNext(m_sizeValue);
+			getStream().write(writtenLength);
+		}
+	protected:
+		virtual void writeBody() = 0;
+		Buffer::Stream& getStream() {
+			return *m_bufferStream;
+		}
+
+		Buffer::Stream* m_bufferStream;
+		BYTE* m_sizeValue;
+	};
+
 	namespace Stat::Function
+	{
+		struct CallInfo {
+			enum Type {
+				Before,
+				After
+			};
+		};
+
+		/*
+			1) запись и чтение - быстрое
+			2) разнородные данные
+
+			Запись сделать через условные выражения, т.е. ветвить. данные напрямую берем
+			Чтение - КА
+		*/
+		class CallInfoStreamRecord : public StreamRecord
+		{
+		public:
+			CallInfoStreamRecord(Buffer::Stream* bufferStream, CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+				: StreamRecord(bufferStream), m_trigger(trigger), m_hook(hook)
+			{}
+
+			void writeBody() override {
+				getStream().write();
+			}
+
+			void readBody() {
+
+			}
+		private:
+			CE::Trigger::Function::Trigger* m_trigger;
+			CE::Hook::DynHook* m_hook;
+		};
+
+		class BufferManager
+		{
+		public:
+			BufferManager()
+
+			{}
+
+			Buffer* getCurrentBuffer() {
+				return m_currentBuffer;
+			}
+		private:
+			Buffer* m_currentBuffer;
+			//save buffers to file
+		};
+
+		class Collector
+		{
+		public:
+
+
+			inline void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+			{
+				
+			}
+
+
+		private:
+			BufferManager m_bufferManager;
+		};
+	};
+
+
+
+
+	namespace Stat::Function2
 	{
 			template<typename T>
 			class ICollector
