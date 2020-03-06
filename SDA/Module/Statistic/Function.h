@@ -114,6 +114,117 @@ namespace CE
 			};
 		};
 
+		namespace Record
+		{
+			enum class Id {
+				BeforeCallInfo,
+				AfterCallInfo
+			};
+
+			/*class Type {
+
+			public:
+				enum Id {
+					Bool,
+					Char,
+					Byte,
+					Short,
+					Int,
+					Long,
+					Object
+				};
+
+				static Id Get(CE::Type::Type* type) {
+					if (type->getGroup() == CE::Type::Type::Class)
+						return Object;
+
+					switch (type->getSize()) {
+					case 1:
+						if(CE::Type::SystemType::GetBasicTypeOf(type->getBaseType()) == CE::Type::Type::)
+						break;
+					}
+				}
+			};*/
+
+			namespace BeforeCallInfo {
+				class Writer {
+				public:
+					Writer(Buffer::Stream* bufferStream, CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+						: m_bufferStream(bufferStream), m_trigger(trigger), m_hook(hook)
+					{}
+
+					void write() {
+						writeHeader();
+
+					}
+
+				private:
+					void writeHeader() {
+						(*m_bufferStream)
+							.write((BYTE)Id::BeforeCallInfo)
+							.write(m_hook->getUID())
+							.write(m_trigger->getId())
+							.write(getFunctionDef()->getId())
+							.write(m_hook->getArgCount());
+					}
+
+					void writeArgumentType(int argIdx) {
+						auto argType = getFunctionDef()->getDeclaration().getSignature().getArgList()[argIdx - 1];
+						int typeSize = argType->getSize();
+
+						if (CE::Type::SystemType::GetNumberSetOf(argType->getBaseType()) == CE::Type::SystemType::Real) {
+							m_bufferStream->write(8);
+							m_bufferStream->write(m_hook->getXmmArgumentValue(argIdx));
+							return;
+						}
+
+						m_bufferStream->write(typeSize);
+						switch (typeSize) {
+						case 1:
+							m_bufferStream->write((BYTE)m_hook->getArgumentValue(argIdx));
+							break;
+						case 2:
+							m_bufferStream->write((BYTE)m_hook->getArgumentValue(argIdx));
+							break;
+						case 4:
+							m_bufferStream->write((BYTE)m_hook->getArgumentValue(argIdx));
+							break;
+						case 8:
+							m_bufferStream->write((BYTE)m_hook->getArgumentValue(argIdx));
+							break;
+						}
+					}
+
+					void getArgumentTypeCode(Type::Type* type) {
+						/*BYTE code;
+
+						if (type->getGroup() == Type::Type::Class) {
+							code = 
+						}
+						auto basicType = Type::SystemType::GetBasicTypeOf(type->getBaseType());
+						switch (type->getBaseType()->getId()) {
+						case Type::Bool:
+						}
+						
+						return code;*/
+					}
+				private:
+					Buffer::Stream* m_bufferStream;
+					CE::Trigger::Function::Trigger* m_trigger;
+					CE::Hook::DynHook* m_hook;
+
+					inline CE::Function::FunctionDefinition* getFunctionDef() {
+						return (CE::Function::FunctionDefinition*)m_hook->getUserPtr();
+					}
+				};
+
+				class Reader {
+				public:
+
+				};
+			};
+		};
+
 		/*
 			1) запись и чтение - быстрое
 			2) разнородные данные
@@ -121,6 +232,10 @@ namespace CE
 			Запись сделать через условные выражения, т.е. ветвить. данные напрямую берем
 			Чтение - КА
 		*/
+
+
+		 
+
 		class CallInfoStreamRecord : public StreamRecord
 		{
 		public:
@@ -129,7 +244,7 @@ namespace CE
 			{}
 
 			void writeBody() override {
-				getStream().write();
+				//getStream().write();
 			}
 
 			void readBody() {

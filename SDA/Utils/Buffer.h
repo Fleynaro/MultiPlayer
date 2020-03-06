@@ -56,14 +56,15 @@ public:
         }
 
         template<typename T = BYTE>
-        inline void write(const T& data) {
+        inline Stream& write(const T& data) {
             if (!isFree<T>())
-                return;
+                return *this;
             (T&)*m_curData = data;
             m_curData += sizeof(T);
 
             if (m_buffer->m_header.m_currentOffset < getWrittenLength() + sizeof(T))
                 m_buffer->m_header.m_currentOffset = getWrittenLength() + sizeof(T);
+            return *this;
         }
 
         template<typename T = BYTE>
