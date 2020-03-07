@@ -233,20 +233,26 @@ int main()
 		auto trigger = sda->getTriggerManager()->createFunctionTrigger("for filtering");
 		//auto filter1 = new Trigger::Function::Filter::Object(nullptr);
 		//auto filter1 = new Trigger::Function::Filter::Empty;
-		auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 12, Trigger::Function::Filter::Cmp::Eq);
+		auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
 		//auto filter1 = new Trigger::Function::Filter::Cmp::RetValue(12, Trigger::Function::Filter::Cmp::Eq);
 
-		trigger->setStatArgManager(sda->getStatManager()->getFuncArgManager());
-		trigger->setStatRetManager(sda->getStatManager()->getFuncRetManager());
+		trigger->setStatCollector(sda->getStatManager()->getCollector());
 		trigger->addFilter(filter1);
 		hook->addTrigger(trigger);
+
+		setRot(1, 2, 3, 4, 5);
+		setRot(1, 2.6, 3.7, 4.8, 500);
+		setRot(1, 20, 30, 400, 50000);
+
+		system("pause");
+		return 0;
 
 		//sda->getTriggerManager()->saveTrigger(trigger);
 		//sda->getTriggerManager()->loadTriggers();
 
 		if(false)
 		{
-			using namespace CE::Stat::Function;
+			/*using namespace CE::Stat::Function;
 			Account account(&sda->getStatManager()->getDB(), function);
 			account.iterateCalls([&](Account::CallInfo& info) {
 				printf("callId = %llu: %i,%i,%i,%i(float %f,%f,%f,%f) => %i(float %f)\n", info.m_uid, info.m_args[0], info.m_args[1], info.m_args[2], info.m_args[3], info.m_xmm_args[0], info.m_xmm_args[1], info.m_xmm_args[2], info.m_xmm_args[3], info.m_ret, info.m_xmm_ret);
@@ -254,7 +260,7 @@ int main()
 
 			auto statInfo = account.createStatInfo(trigger);
 			statInfo->debugShow();
-			return 0;
+			return 0;*/
 		}
 		//return;
 		//CE::Trigger::Function::callback_before(hook->getDynHook(), 0);
@@ -278,8 +284,7 @@ int main()
 
 		//printf("%i\n", result);
 
-		sda->getStatManager()->clearGeneralDB();
-
+		
 		for (int i = 0; i < 1; i++)
 		{
 			std::thread t([i] {
@@ -293,8 +298,7 @@ int main()
 
 		Sleep(2000);
 		printf("\n\nupdateGeneralDB\n");
-		sda->getStatManager()->updateGeneralDB();
-
+		
 		//sda->getFunctionManager()->saveFunction(function);
 		//sda->getFunctionManager()->saveFunctionArguments(function);
 

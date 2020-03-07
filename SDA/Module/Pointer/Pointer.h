@@ -106,11 +106,6 @@ namespace CE
 			}
 			return addr;
 		}
-
-		static void* Dereference(void* addr, CE::Type::Pointer* pointer)
-		{
-			return Dereference(addr, pointer->getPointerLvl());
-		}
 	private:
 		void* m_addr;
 	};

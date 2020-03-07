@@ -5,6 +5,7 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <Utility/FileWrapper.h>
 #include <Utils/Buffer.h>
+#include <Pointer/Pointer.h>
 
 using namespace SQLite;
 
@@ -61,48 +62,83 @@ namespace CE
 		Для каждого типа анализа свой класс, у каждого свои результаты. Некоторые можно сохранить в БД
 	*/
 
-
-
-
-
-	class StatManager;
-
 	namespace Trigger::Function
 	{
 		class Trigger;
 	};
 
+	class StreamRecordWriter
+	{
+	public:
+		StreamRecordWriter(Buffer::Stream* bufferStream)
+			: m_bufferStream(bufferStream)
+		{}
+
+		int getWrittenLength() {
+			return getStream().getOffset();
+		}
+
+		virtual void write() = 0;
+
+		Buffer::Stream& getStream() {
+			return m_bufferStream;
+		}
+	private:
+		Buffer::Stream m_bufferStream;
+	};
+
 	class StreamRecord
 	{
 	public:
-		StreamRecord(Buffer::Stream* bufferStream)
-			: m_bufferStream(bufferStream)
+		StreamRecord(StreamRecordWriter* streamRecordWriter)
+			: m_streamRecordWriter(streamRecordWriter)
 		{}
 
 		void write() {
 			writeHeader();
-			writeBody();
+			m_streamRecordWriter->write();
 			writeEnd();
 		}
 	private:
 		void writeHeader() {
-			m_sizeValue = getStream().getNext();
-			getStream().write(0);
+			m_size = m_streamRecordWriter->getStream().getNext<int>();
+			m_streamRecordWriter->getStream().write(0);
 		}
 
 		void writeEnd() {
-			auto writtenLength = getStream().getWrittenLength();
-			getStream().setNext(m_sizeValue);
-			getStream().write(writtenLength);
+			*m_size = m_streamRecordWriter->getWrittenLength();
 		}
 	protected:
-		virtual void writeBody() = 0;
-		Buffer::Stream& getStream() {
-			return *m_bufferStream;
+		StreamRecordWriter* m_streamRecordWriter;
+		int* m_size;
+	};
+
+	class BufferIterator {
+	public:
+		BufferIterator(Buffer* buffer)
+			: m_buffer(buffer), m_bufferStream(buffer)
+		{
+			countSize();
 		}
 
-		Buffer::Stream* m_bufferStream;
-		BYTE* m_sizeValue;
+		bool hasNext() {//MYTODO: check offset
+			return m_curSize > 0 && m_bufferStream.getOffset() + (UINT)m_curSize <= m_buffer->m_header.m_currentOffset;
+		}
+
+		Buffer::Stream getStream() {
+			Buffer::Stream bufferStream = m_bufferStream;
+			m_bufferStream.move(m_curSize);
+			countSize();
+			return bufferStream;
+		}
+	private:
+		Buffer* m_buffer;
+		Buffer::Stream m_bufferStream;
+		int m_curSize;
+
+		void countSize() {
+			m_curSize = m_bufferStream.read<int>();
+		}
 	};
 
 	namespace Stat::Function
@@ -116,592 +152,324 @@ namespace CE
 
 		namespace Record
 		{
-			enum class Id {
+			enum class Type {
 				BeforeCallInfo,
 				AfterCallInfo
 			};
 
-			/*class Type {
+			struct Header {
+				BYTE m_type;
+				uint64_t m_uid;
+				int m_triggerId;
+				int m_funcDefId;
+			};
 
+			class CallInfoWriter : public StreamRecordWriter {
 			public:
-				enum Id {
-					Bool,
-					Char,
-					Byte,
-					Short,
-					Int,
-					Long,
-					Object
-				};
+				CallInfoWriter(Buffer::Stream* bufferStream, CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+					: StreamRecordWriter(bufferStream), m_trigger(trigger), m_hook(hook)
+				{}
 
-				static Id Get(CE::Type::Type* type) {
-					if (type->getGroup() == CE::Type::Type::Class)
-						return Object;
+				void writeHeader(Type type);
 
-					switch (type->getSize()) {
-					case 1:
-						if(CE::Type::SystemType::GetBasicTypeOf(type->getBaseType()) == CE::Type::Type::)
-						break;
+				bool writeTypeValue(void* argAddrValue, CE::Type::Type* argType) {
+					if (argType->getPointerLvl() > 1) {
+						argAddrValue = Address::Dereference(argAddrValue, argType->getPointerLvl() - 1);
+						if (argAddrValue == nullptr)
+							return false;
 					}
+
+					int size = argType->getSize();
+					if (argType->isPointer()) {
+						size = argType->getBaseType()->getSize();
+						//string
+					}
+
+					if (Address(argAddrValue).canBeRead()) {
+						getStream().write((USHORT)size);
+						getStream().writeFrom(argAddrValue, size);
+						return true;
+					}
+
+					return false;
 				}
-			};*/
+			protected:
+				CE::Trigger::Function::Trigger* m_trigger;
+				CE::Hook::DynHook* m_hook;
+
+				inline CE::Function::FunctionDefinition* getFunctionDef() {
+					return (CE::Function::FunctionDefinition*)m_hook->getUserPtr();
+				}
+			};
 
 			namespace BeforeCallInfo {
-				class Writer {
+				struct ArgHeader {
+					uint64_t m_argExtraBits;
+					BYTE m_argCount;
+				};
+
+				using ArgBody = BYTE;
+
+				class Writer : public CallInfoWriter {
 				public:
 					Writer(Buffer::Stream* bufferStream, CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
-						: m_bufferStream(bufferStream), m_trigger(trigger), m_hook(hook)
+						: CallInfoWriter(bufferStream, trigger, hook)
 					{}
 
-					void write() {
-						writeHeader();
+					void write() override {
+						//write header
+						writeHeader(Type::BeforeCallInfo);
 
+						//write argument values
+						ArgHeader argHeader;
+						argHeader.m_argExtraBits = 0;
+						argHeader.m_argCount = m_hook->getArgCount();
+						m_argHeader = getStream().getNext<ArgHeader>();
+						getStream().write(argHeader);
+
+						for (int argIdx = 1; argIdx <= m_hook->getArgCount(); argIdx++) {
+							writeArgument(argIdx);
+						}
 					}
 
 				private:
-					void writeHeader() {
-						(*m_bufferStream)
-							.write((BYTE)Id::BeforeCallInfo)
-							.write(m_hook->getUID())
-							.write(m_trigger->getId())
-							.write(getFunctionDef()->getId())
-							.write(m_hook->getArgCount());
+					void writeArgument(int argIdx) {
+						auto argValue = m_hook->getArgumentValue(argIdx);
+						getStream().write(argValue);
+						if (argIdx >= 1 && argIdx <= 4) {
+							getStream().write(m_hook->getXmmArgumentValue(argIdx));
+						}
+
+						writeArgumentExtra(argIdx, (void*)argValue);
 					}
 
-					void writeArgumentType(int argIdx) {
+					void writeArgumentExtra(int argIdx, void* argAddrValue) {
+						/*
+							Могут содержаться в регистре:
+							1) Числа
+							2) Указатели, массивы, объекты в стеке -> ссылка
+							Итог: все представимя в виде числа 8 байтового
+							Задача: 8 байт -> массив байт(нач. адрес и размер)
+						*/
 						auto argType = getFunctionDef()->getDeclaration().getSignature().getArgList()[argIdx - 1];
-						int typeSize = argType->getSize();
-
-						if (CE::Type::SystemType::GetNumberSetOf(argType->getBaseType()) == CE::Type::SystemType::Real) {
-							m_bufferStream->write(8);
-							m_bufferStream->write(m_hook->getXmmArgumentValue(argIdx));
-							return;
+						if (writeTypeValue(argAddrValue, argType)) {
+							m_argHeader->m_argExtraBits |= 0b1 << (argIdx - 1);
 						}
-
-						m_bufferStream->write(typeSize);
-						switch (typeSize) {
-						case 1:
-							m_bufferStream->write((BYTE)m_hook->getArgumentValue(argIdx));
-							break;
-						case 2:
-							m_bufferStream->write((BYTE)m_hook->getArgumentValue(argIdx));
-							break;
-						case 4:
-							m_bufferStream->write((BYTE)m_hook->getArgumentValue(argIdx));
-							break;
-						case 8:
-							m_bufferStream->write((BYTE)m_hook->getArgumentValue(argIdx));
-							break;
-						}
-					}
-
-					void getArgumentTypeCode(Type::Type* type) {
-						/*BYTE code;
-
-						if (type->getGroup() == Type::Type::Class) {
-							code = 
-						}
-						auto basicType = Type::SystemType::GetBasicTypeOf(type->getBaseType());
-						switch (type->getBaseType()->getId()) {
-						case Type::Bool:
-						}
-						
-						return code;*/
 					}
 				private:
-					Buffer::Stream* m_bufferStream;
-					CE::Trigger::Function::Trigger* m_trigger;
-					CE::Hook::DynHook* m_hook;
-
-					inline CE::Function::FunctionDefinition* getFunctionDef() {
-						return (CE::Function::FunctionDefinition*)m_hook->getUserPtr();
-					}
+					ArgHeader* m_argHeader;
 				};
 
 				class Reader {
 				public:
+					Reader(Buffer::Stream* bufferStream)
+						: m_bufferStream(bufferStream)
+					{
+						m_argHeader = getStream().readPtr<ArgHeader>();
+					}
 
+					struct ArgInfo {
+						uint64_t m_value;
+						uint64_t m_xmmValue;
+						USHORT m_extraDataSize = 0;
+						BYTE* m_extraData = nullptr;
+						bool m_hasXmmValue = false;
+					};
+
+					ArgInfo readArgument() {
+						ArgInfo argInfo;
+
+						argInfo.m_value = getStream().read<uint64_t>();
+						if (m_curArgIdx >= 1 && m_curArgIdx <= 4) {
+							argInfo.m_xmmValue = getStream().read<uint64_t>();
+							argInfo.m_hasXmmValue = true;
+						}
+
+						if (m_argHeader->m_argExtraBits >> (m_curArgIdx - 1) & 0b1) {
+							argInfo.m_extraDataSize = getStream().read<USHORT>();
+							argInfo.m_extraData = getStream().readPtr(argInfo.m_extraDataSize);
+						}
+
+						m_curArgIdx++;
+						return argInfo;
+					}
+
+					ArgHeader& getArgHeader() {
+						return *m_argHeader;
+					}
+				private:
+					Buffer::Stream m_bufferStream;
+					ArgHeader* m_argHeader;
+					int m_curArgIdx = 1;
+
+					Buffer::Stream& getStream() {
+						return m_bufferStream;
+					}
 				};
 			};
 		};
 
-		/*
-			1) запись и чтение - быстрое
-			2) разнородные данные
-
-			Запись сделать через условные выражения, т.е. ветвить. данные напрямую берем
-			Чтение - КА
-		*/
-
-
-		 
-
-		class CallInfoStreamRecord : public StreamRecord
-		{
+		class BufferSaver {
 		public:
-			CallInfoStreamRecord(Buffer::Stream* bufferStream, CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
-				: StreamRecord(bufferStream), m_trigger(trigger), m_hook(hook)
+			BufferSaver(Buffer* buffer, const std::string& path)
+				: m_buffer(buffer), m_path(path)
 			{}
 
-			void writeBody() override {
-				//getStream().write();
+			void save() {
+				m_isWorking = true;
+				m_thread = std::thread(&BufferSaver::handler, this);
+				m_thread.detach();
 			}
 
-			void readBody() {
+			void handler() {
+				std::ofstream output_file(m_path, std::ios::binary);
+				if (output_file.is_open()) {
+					output_file.write((char*)m_buffer->getData(), m_buffer->getSize());
+					output_file.close();
+				}
 
+				m_isWorking = false;
 			}
+
+			std::atomic<bool> m_isWorking = false;
 		private:
-			CE::Trigger::Function::Trigger* m_trigger;
-			CE::Hook::DynHook* m_hook;
+			Buffer* m_buffer;
+			std::string m_path;
+			std::thread m_thread;
 		};
 
 		class BufferManager
 		{
 		public:
-			BufferManager()
+			BufferManager(FS::Directory dir, int bufferSizeMb = 3)
+				: m_dir(dir), m_bufferSizeMb(bufferSizeMb)
+			{
+				createNewBuffer();
+				m_savedBufferCount = m_dir.getItems().size();
+			}
 
-			{}
+			~BufferManager() {
+				saveCurBuffer();
 
-			Buffer* getCurrentBuffer() {
-				return m_currentBuffer;
+				while (getWorkedSaverCount() > 0) {
+					Sleep(100);
+				}
+
+				for (auto saver : m_savers) {
+					delete saver;
+				}
+			}
+
+			void write(StreamRecordWriter* writer) {
+				StreamRecord record(writer);
+				record.write();
+
+				if (m_currentBuffer->getFreeSpaceSize() == 0) {
+					if (getWorkedSaverCount() > 0) {
+						m_bufferSizeMb *= 2;
+					}
+					saveCurBuffer();
+					createNewBuffer();
+					write(writer);
+				}
+			}
+
+			void test() {
+				BufferIterator it(m_currentBuffer);
+				while (it.hasNext()) {
+					auto stream = it.getStream(); //set to field of analyser
+					auto& header = stream.read<Record::Header>();
+
+					if ((Record::Type)header.m_type == Record::Type::BeforeCallInfo) //call method beforeCallInfo(reader)
+					{
+						Record::BeforeCallInfo::Reader reader(&stream);
+						auto& argHeader = reader.getArgHeader();
+
+						for (int i = 0; i < argHeader.m_argCount; i++)
+						{
+							auto argInfo = reader.readArgument();
+							auto value = argInfo.m_value;
+							float val = (float&)argInfo.m_xmmValue;
+							val = 0.0;
+						}
+					}
+				}
+				saveCurBuffer();
+			}
+
+			inline Buffer::Stream* getStream() {
+				return &m_bufferStream;
 			}
 		private:
+			int m_bufferSizeMb;
 			Buffer* m_currentBuffer;
-			//save buffers to file
+			Buffer::Stream m_bufferStream;
+			std::list<BufferSaver*> m_savers;
+			FS::Directory m_dir;
+			int m_savedBufferCount;
+
+			int getWorkedSaverCount() {
+				int count = 0;
+				for (auto saver : m_savers) {
+					if (saver->m_isWorking)
+						count++;
+				}
+				return count;
+			}
+
+			std::string generateNewName() {
+				auto number = std::to_string(10000 + m_savedBufferCount++);
+				return "buffer_" + number + ".data";
+			}
+			
+			void saveCurBuffer() {
+				auto saver = new BufferSaver(m_currentBuffer, FS::File(m_dir, generateNewName()).getFilename());
+				saver->save();
+				m_savers.push_back(saver);
+				m_currentBuffer = nullptr;
+			}
+
+			void createNewBuffer() {
+				m_currentBuffer = Buffer::Create(m_bufferSizeMb * 1024 * 1024);
+				m_bufferStream = Buffer::Stream(m_currentBuffer);
+			}
 		};
 
 		class Collector
 		{
 		public:
+			Collector(FS::Directory dir)
+				: m_bufferManager(new BufferManager(dir))
+			{}
 
-
-			inline void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
-			{
-				
+			~Collector() {
+				delete m_bufferManager;
 			}
 
+			void addBeforeCallInfo(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+			{
+				m_bufferMutex.lock();
+				auto writer = Record::BeforeCallInfo::Writer(m_bufferManager->getStream(), trigger, hook);
+				m_bufferManager->write(&writer);
+				m_bufferMutex.unlock();
 
+
+				static int a = 1;
+				if (a == 3) {
+					m_bufferManager->test();
+				}
+				a++;
+			}
+
+			void addAfterCallInfo(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+			{
+				m_bufferMutex.lock();
+
+				m_bufferMutex.unlock();
+			}
 		private:
-			BufferManager m_bufferManager;
+			BufferManager* m_bufferManager;
+			std::mutex m_bufferMutex;
 		};
-	};
-
-
-
-
-	namespace Stat::Function2
-	{
-			template<typename T>
-			class ICollector
-			{
-			public:
-				ICollector(StatManager* statManager = nullptr)
-					: m_statManager(statManager)
-				{}
-
-				~ICollector() {
-					if (m_db != nullptr) {
-						delete m_db;
-					}
-				}
-
-				void start() {
-					m_thread = std::thread(&ICollector<T>::handler, this);
-					m_thread.detach();
-				}
-
-				void initDataBase(SQLite::Database* db)
-				{
-					if (m_db != nullptr) {
-						delete m_db;
-					}
-					m_db = db;
-				}
-
-				virtual void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook) = 0;
-
-				int getSize() {
-					return m_buffers.size();
-				}
-
-				SQLite::Database& getDB() {
-					return *m_db;
-				}
-
-				virtual void copyStatTo(SQLite::Database& db) {};
-				virtual void clear() {}
-			protected:
-				virtual void handler() = 0;
-
-				std::queue<T> m_buffers;
-				std::mutex m_bufferMutex;
-				std::mutex m_dbMutex;
-				std::thread m_thread;
-
-				StatManager* m_statManager;
-				SQLite::Database* m_db = nullptr;
-			};
-
-			template<typename B, typename G = ICollector<B>>
-			class AbstractManager
-			{
-			public:
-				inline void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
-				{
-					selectGarbager1()->add(trigger, hook);
-					//m_counter++;
-				}
-
-				ICollector<B>* selectGarbager1() {
-					ICollector<B>* result = nullptr;
-					int size = INT_MAX;
-					for (ICollector<B>* garbager : m_garbagers) {
-						if (garbager->getSize() < size) {
-							result = garbager;
-							size = garbager->getSize();
-						}
-					}
-					return result;
-				}
-
-				ICollector<B>* selectGarbager2() {
-					return m_garbagers[m_counter % m_garbagers.size()];
-				}
-
-				void copyStatTo(SQLite::Database& db)
-				{
-					for (auto it : m_garbagers) {
-						it->copyStatTo(db);
-						it->clear();
-					}
-				}
-
-				void addCollector(ICollector<B>* garbager)
-				{
-					m_garbagers.push_back(garbager);
-				}
-			protected:
-				std::vector<ICollector<B>*> m_garbagers;
-				std::atomic<uint64_t> m_counter = 0;
-			};
-
-			namespace Args
-			{
-				class Buffer
-				{
-				public:
-					uint64_t m_uid = 0;
-					uint64_t m_args[12] = { 0 };
-					uint64_t m_xmm_args[4] = { 0 };
-					CE::Hook::DynHook* m_hook = nullptr;
-					CE::Trigger::Function::Trigger* m_trigger = nullptr;
-
-					Buffer(CE::Hook::DynHook* hook, CE::Trigger::Function::Trigger* trigger)
-					{
-						m_uid = hook->getUID();
-						for (int i = 1; i <= hook->getArgCount(); i++) {
-							m_args[i - 1] = hook->getArgumentValue(i);
-						}
-						if (hook->isXmmSaved()) {
-							for (int i = 1; i <= min(4, hook->getArgCount()); i++) {
-								m_xmm_args[i - 1] = hook->getXmmArgumentValue(i);
-							}
-						}
-						m_hook = hook;
-						m_trigger = trigger;
-					}
-
-					inline CE::Function::Function* getFunction() {
-						return (CE::Function::Function*)m_hook->getUserPtr();
-					}
-				};
-
-				class Collector : public ICollector<Buffer>
-				{
-				public:
-					Collector(StatManager* statManager)
-						: ICollector<Buffer>(statManager)
-					{}
-
-					void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook) override;
-
-					void handler() override {
-						while (true)
-						{
-							m_bufferMutex.lock();
-							if (m_buffers.empty()) {
-								m_bufferMutex.unlock();
-								Sleep(50);
-								continue;
-							}
-
-							m_dbMutex.lock();
-							SQLite::Transaction transaction(getDB());
-
-							for (int i = 0; i < m_buffers.size(); i++) {
-								send(m_buffers.front());
-								m_buffers.pop();
-
-								static std::atomic<uint64_t> g_counter = 0;
-								g_counter++;
-								int c = g_counter;
-								if (c % 10000 == 0) {
-									printf("\n%i) Args", c);
-								}
-							}
-							m_bufferMutex.unlock();
-
-
-							transaction.commit();
-							m_dbMutex.unlock();
-							Sleep(30);
-						}
-					}
-
-					void copyStatTo(SQLite::Database& db)
-					{
-						m_dbMutex.lock();
-						{
-							SQLite::Statement query(db, "ATTACH DATABASE ?1 AS call_before");
-							query.bind(1, getDB().getFilename());
-							query.exec();
-						}
-
-						{
-							SQLite::Statement query(db, "INSERT INTO sda_call_before SELECT * FROM call_before.sda_call_before");
-							query.exec();
-						}
-
-						{
-							SQLite::Statement query(db, "INSERT INTO sda_call_args SELECT * FROM call_before.sda_call_args");
-							query.exec();
-						}
-
-						{
-							SQLite::Statement query(db, "DETACH DATABASE call_before");
-							query.exec();
-						}
-						m_dbMutex.unlock();
-					}
-
-					void clear() override
-					{
-						{
-							SQLite::Statement query(getDB(), "DELETE FROM sda_call_before");
-							query.exec();
-						}
-						{
-							SQLite::Statement query(getDB(), "DELETE FROM sda_call_args");
-							query.exec();
-						}
-						{
-							SQLite::Statement query(getDB(), "VACUUM");
-							query.exec();
-						}
-					}
-
-					void send(Buffer& buffer);
-				};
-
-				class Manager : public AbstractManager<Buffer, Collector> {};
-			};
-
-			namespace Ret
-			{
-				class Buffer
-				{
-				public:
-					uint64_t m_uid = 0;
-					uint64_t m_ret = 0;
-					uint64_t m_xmm_ret = 0;
-					CE::Hook::DynHook* m_hook = nullptr;
-					CE::Trigger::Function::Trigger* m_trigger = nullptr;
-
-					Buffer(CE::Hook::DynHook* hook, CE::Trigger::Function::Trigger* trigger)
-					{
-						m_uid = hook->getUID();
-						m_ret = hook->getReturnValue();
-						m_xmm_ret = hook->getXmmReturnValue();
-						m_hook = hook;
-						m_trigger = trigger;
-					}
-
-					inline CE::Function::Function* getFunction() {
-						return (CE::Function::Function*)m_hook->getUserPtr();
-					}
-				};
-
-				class Collector : public ICollector<Buffer>
-				{
-				public:
-					Collector(StatManager* statManager)
-						: ICollector<Buffer>(statManager)
-					{}
-
-					void add(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook) override;
-
-					void handler() override {
-						while (true)
-						{
-							m_bufferMutex.lock();
-							if (m_buffers.empty()) {
-								m_bufferMutex.unlock();
-								Sleep(50);
-								continue;
-							}
-							m_dbMutex.lock();
-							SQLite::Transaction transaction(getDB());
-
-							for (int i = 0; i < m_buffers.size(); i++) {
-								send(m_buffers.front());
-								m_buffers.pop();
-
-								static std::atomic<uint64_t> g_counter = 0;
-								g_counter++;
-								int c = g_counter;
-								if (c % 10000 == 0) {
-									printf("\n%i) Ret", c);
-								}
-							}
-							m_bufferMutex.unlock();
-
-							transaction.commit();
-							m_dbMutex.unlock();
-							Sleep(30);
-						}
-					}
-
-					void copyStatTo(SQLite::Database& db)
-					{
-						m_dbMutex.lock();
-						{
-							SQLite::Statement query(db, "ATTACH DATABASE ?1 AS call_after");
-							query.bind(1, getDB().getFilename());
-							query.exec();
-						}
-
-						{
-							SQLite::Statement query(db, "INSERT INTO sda_call_after SELECT * FROM call_after.sda_call_after");
-							query.exec();
-						}
-
-						{
-							SQLite::Statement query(db, "DETACH DATABASE call_after");
-							query.exec();
-						}
-						m_dbMutex.unlock();
-					}
-
-					void clear() override
-					{
-						{
-							SQLite::Statement query(getDB(), "DELETE FROM sda_call_after");
-							query.exec();
-						}
-						{
-							SQLite::Statement query(getDB(), "VACUUM");
-							query.exec();
-						}
-					}
-
-					void send(Buffer& buffer);
-				};
-
-				class Manager : public AbstractManager<Buffer, Collector> {};
-			};
-
-			class StatInfo
-			{
-			public:
-				StatInfo()
-				{}
-
-				struct Value
-				{
-					CE::Type::SystemType::Set m_set = CE::Type::SystemType::Undefined;
-					CE::Type::SystemType::Types m_typeId = CE::Type::SystemType::Void;
-					Analyser::Histogram* m_histogram = nullptr;
-
-					Value() = default;
-
-					Value(CE::Type::SystemType::Set set, CE::Type::SystemType::Types typeId, Analyser::Histogram* histogram)
-						: m_set(set), m_typeId(typeId), m_histogram(histogram)
-					{}
-				};
-
-				void addArgument(Value value) {
-					m_args.push_back(value);
-				}
-
-				void setReturnValue(const Value& value) {
-					m_ret = value;
-				}
-
-				Value& getArgument(int index) {
-					return m_args[index];
-				}
-
-				Value& getReturnValue() {
-					return m_ret;
-				}
-
-				void debugShow()
-				{
-					printf("\nStatistic of the function\n\nReturn value: ");
-					getReturnValue().m_histogram->debugShow();
-					for (int i = 0; i < m_args.size(); i++) {
-						printf("\nArgument %i: ", i + 1);
-						if (getArgument(i).m_set != CE::Type::SystemType::Undefined)
-							getArgument(i).m_histogram->debugShow();
-					}
-				}
-			private:
-				std::vector<Value> m_args;
-				Value m_ret;
-			};
-
-			class Account
-			{
-			public:
-				Account(SQLite::Database* db, CE::Function::Function* function)
-					: m_db(db), m_function(function)
-				{}
-
-				struct CallInfo
-				{
-					uint64_t m_uid;
-					uint64_t m_args[12];
-					uint64_t m_xmm_args[4];
-					uint64_t m_ret;
-					uint64_t m_xmm_ret;
-				};
-
-				void iterateCalls(std::function<void(CallInfo& info)> handler, CE::Trigger::Function::Trigger* trigger, int page, int pageSize = 30);
-
-				static StatInfo::Value getValueByAnalysers(Analyser& analyser, Analyser& analyser_xmm, CE::Type::Type* type)
-				{
-					using namespace CE::Type;
-					Analyser& result = analyser;
-					if (!analyser.isUndefined() && !analyser_xmm.isUndefined()) {
-						if (SystemType::GetNumberSetOf(type) == SystemType::Real) {
-							analyser = analyser_xmm;
-						}
-					}
-					else if (!analyser_xmm.isUndefined()) {
-						analyser = analyser_xmm;
-					}
-					return StatInfo::Value(result.getSet(), result.getTypeId(), result.createHistogram());
-				}
-
-				StatInfo* createStatInfo(CE::Trigger::Function::Trigger* trigger = nullptr);
-
-
-				SQLite::Database& getDB() {
-					return *m_db;
-				}
-			private:
-				CE::Function::Function* m_function;
-				SQLite::Database* m_db;
-			};
 	};
 };

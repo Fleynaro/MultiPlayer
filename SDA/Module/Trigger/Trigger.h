@@ -1,6 +1,6 @@
 #pragma once
 #include "Filter.h"
-#include <Statistic/Statistic.h>
+#include <Statistic/Function.h>
 
 namespace CE
 {
@@ -112,8 +112,8 @@ namespace CE
 					}
 
 					if (sendStat) {
-						if (m_statArgManager != nullptr) {
-							m_statArgManager->add(this, hook);
+						if (m_statCollector != nullptr) {
+							m_statCollector->addBeforeCallInfo(this, hook);
 						}
 					}
 					return !notExecute;
@@ -126,18 +126,14 @@ namespace CE
 					}
 
 					if (sendStat) {
-						if (m_statRetManager != nullptr) {
-							m_statRetManager->add(this, hook);
+						if (m_statCollector != nullptr) {
+							m_statCollector->addAfterCallInfo(this, hook);
 						}
 					}
 				}
 
-				void setStatArgManager(Stat::Function::Args::Manager* manager) {
-					m_statArgManager = manager;
-				}
-
-				void setStatRetManager(Stat::Function::Ret::Manager* manager) {
-					m_statRetManager = manager;
+				void setStatCollector(Stat::Function::Collector* collector) {
+					m_statCollector = collector;
 				}
 
 				void setNotExecute(bool toggle) {
@@ -148,8 +144,7 @@ namespace CE
 					return m_filters;
 				}
 			private:
-				Stat::Function::Args::Manager* m_statArgManager = nullptr;
-				Stat::Function::Ret::Manager* m_statRetManager = nullptr;
+				Stat::Function::Collector* m_statCollector = nullptr;
 				std::list<Filter::IFilter*> m_filters;
 				bool m_notExecute = false;
 			};

@@ -176,8 +176,8 @@ namespace CE
 						bool checkFilterBefore(CE::Hook::DynHook* hook) override {
 							using namespace CE::Type;
 
-							auto function = (CE::Function::Function*)hook->getUserPtr();
-							auto type = function->getSignature().getArgList()[m_argId - 1];
+							auto function = (CE::Function::FunctionDefinition*)hook->getUserPtr();
+							auto type = function->getDeclaration().getSignature().getArgList()[m_argId - 1];
 							return cmp(
 								SystemType::GetNumberSetOf(type) == SystemType::Real ? hook->getXmmArgumentValue(m_argId) : hook->getArgumentValue(m_argId),
 								m_value,

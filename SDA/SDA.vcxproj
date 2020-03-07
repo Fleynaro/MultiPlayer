@@ -194,7 +194,7 @@
     <ClCompile Include="GUI\Windows\ProjectManager.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\CallGraph\CallGraph.cpp" />
-    <ClCompile Include="Module\Code\Function\Function.cpp" />
+    <ClCompile Include="Module\Statistic\Function.cpp" />
     <ClCompile Include="Module\Code\Function\Method.cpp" />
     <ClCompile Include="Module\Code\Type\Type.cpp" />
     <ClCompile Include="Module\Disassembler\Disassembler.cpp" />
@@ -212,12 +212,10 @@
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_types.cpp" />
     <ClCompile Include="Module\Manager\FunctionManager.cpp" />
     <ClCompile Include="Module\Manager\Manager.cpp" />
-    <ClCompile Include="Module\Manager\StatManager.cpp" />
     <ClCompile Include="Module\Manager\TypeManager.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\Analyser.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\avx.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Module\Statistic\Statistic.cpp" />
     <ClCompile Include="Module\Trigger\Trigger.cpp" />
     <ClCompile Include="Utility\FileWrapper.cpp" />
     <ClCompile Include="Utility\Generic.cpp" />
@@ -289,7 +287,6 @@
     <ClInclude Include="Module\Pointer\Pointer.h" />
     <ClInclude Include="Module\Statistic\Analyser.h" />
     <ClInclude Include="Module\Statistic\Function.h" />
-    <ClInclude Include="Module\Statistic\Statistic.h" />
     <ClInclude Include="Module\Trigger\Filter.h" />
     <ClInclude Include="Module\Trigger\Trigger.h" />
     <ClInclude Include="Program.h" />
