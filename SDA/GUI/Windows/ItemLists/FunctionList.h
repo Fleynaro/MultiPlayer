@@ -10,7 +10,19 @@ using namespace CE;
 
 namespace GUI::Widget
 {
-	class FunctionList : public Template::ItemList
+	class IFunctionList
+	{
+	public:
+		virtual void setOpenFunctionEventHandler(Events::Event* eventHandler) = 0;
+		virtual Template::ItemList* getItemList() = 0;
+		virtual Events::Event* getFunctionOpenEvent() = 0;
+		virtual bool checkOnInputValue(API::Function::Function* function, const std::string& value) = 0;
+		virtual bool checkAllFilters(API::Function::Function* function) = 0;
+	};
+
+	class FunctionList
+		: public Template::ItemList,
+		public IFunctionList
 	{
 	public:
 		class ListView : public IView
@@ -202,7 +214,7 @@ namespace GUI::Widget
 				Events::EventHandler* m_openFunctionCP;
 			};
 			
-			CallStackView(FunctionList* funcList, API::Function::Function* function)
+			CallStackView(IFunctionList* funcList, API::Function::Function* function)
 				: m_funcList(funcList), m_function(function)
 			{
 				m_eventVisibleFuncBody = new Events::EventUI(EVENT_LAMBDA(info) {
@@ -225,11 +237,11 @@ namespace GUI::Widget
 
 			void onSetView() override {
 				m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
-					m_funcList->update();
+					m_funcList->getItemList()->update();
 				});
 				m_eventUpdateCB->setCanBeRemoved(false);
 
-				(*m_funcList->m_underFilterCP)
+				(*m_funcList->getItemList()->m_underFilterCP)
 					.beginReverseInserting()
 						.beginContainer()
 							.newLine()
@@ -258,7 +270,7 @@ namespace GUI::Widget
 						if (!funcNode->isNotCalculated()) {
 							if (isCalculatedFunc()) {
 								FunctionBody* childFuncBody;
-								funcBody->addItem(childFuncBody = new FunctionBody(funcNode->getFunction(), nextDepth, m_funcList->m_openFunction));
+								funcBody->addItem(childFuncBody = new FunctionBody(funcNode->getFunction(), nextDepth, m_funcList->getFunctionOpenEvent()));
 								if (isAlwaysOpen() || depth == 1) {
 									bool isRemove;
 									load(childFuncBody, nextDepth, isRemove, funcName);
@@ -338,7 +350,7 @@ namespace GUI::Widget
 			}
 		private:
 			API::Function::Function* m_function;
-			FunctionList* m_funcList;
+			IFunctionList* m_funcList;
 
 			Elements::Generic::Checkbox* m_cb_isFilterEnabled = nullptr;
 			Elements::Generic::Checkbox* m_cb_isAlwaysOpen = nullptr;
@@ -536,89 +548,54 @@ namespace GUI::Widget
 			getFilterManager()->addFilter(new FuncTagFilter(this));
 		}
 
-		bool checkOnInputValue(API::Function::Function* function, const std::string& value) {
+		bool checkOnInputValue(API::Function::Function* function, const std::string& value) override {
 			return Generic::String::ToLower(function->getFunction()->getName())
 				.find(Generic::String::ToLower(value)) != std::string::npos;
 		}
 
-		bool checkAllFilters(API::Function::Function* function) {
+		bool checkAllFilters(API::Function::Function* function) override {
 			return getFilterManager()->check([&function](Template::FilterManager::Filter* filter) {
 				return static_cast<FunctionFilter*>(filter)->checkFilter(function);
 			});
 		}
 
-		void setOpenFunctionEventHandler(Events::Event* eventHandler) {
+		void setOpenFunctionEventHandler(Events::Event* eventHandler) override {
 			m_openFunction = eventHandler;
+		}
+
+		Template::ItemList* getItemList() override {
+			return this;
+		}
+
+		Events::Event* getFunctionOpenEvent() override {
+			return m_openFunction;
 		}
 	public:
 		Events::Event* m_openFunction;
 	};
 
-	class FuncSelectList : public FunctionList
+	class FuncSelectList
+		: public Template::SelectableItemList<API::Function::Function>,
+		public IFunctionList
 	{
 	public:
-		class SelectedFilter : public FunctionFilter
-		{
-		public:
-			SelectedFilter(FuncSelectList* functionList)
-				: FunctionFilter("Selected function filter", functionList)
-			{
-				buildHeader("Filter function by selected.", true);
-				beginBody()
-					.addItem(
-						m_cb = new Elements::Generic::Checkbox("show selected only", false,
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								onChanged();
-							})
-						)
-					);
-			}
-
-			bool checkFilter(API::Function::Function* function) override {
-				return static_cast<FuncSelectList*>(m_functionList)->isFunctionSelected(function);
-			}
-
-			bool isDefined() override {
-				return m_cb->isSelected();
-			}
-		private:
-			Elements::Generic::Checkbox* m_cb;
-		};
-
 		class ListView
 			: public FunctionList::ListView
 		{
 		public:
-			class FunctionItemWithCheckBox : public FunctionItem
-			{
-			public:
-				FunctionItemWithCheckBox(API::Function::Function* function, Events::Event* event, bool selected, Events::Event* eventSelectFunction)
-					: FunctionItem(function, event)
-				{
-					(*m_header)
-						.beginReverseInserting()
-						.sameLine()
-						.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunction))
-						.endReverseInserting();
-				}
-			};
-
-			ListView(FuncSelectList* funcList, FunctionManager* funcManager)
-				: FunctionList::ListView(funcList, funcManager)
+			ListView(FuncSelectList* funcSelectList, FunctionManager* funcManager)
+				: m_funcSelectList(funcSelectList), FunctionList::ListView(funcSelectList->getFuncList(), funcManager)
 			{}
 
 			GUI::Item* createFuncItem(API::Function::Function* function) override {
-				return new FunctionItemWithCheckBox(
-					function,
-					getFuncSelList()->m_openFunction,
-					getFuncSelList()->isFunctionSelected(function),
-					new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function)
+				return new SelectableItem(
+					new FunctionItem(function, m_funcList->m_openFunction),
+					m_funcSelectList->isItemSelected(function),
+					new Events::EventHook(m_funcSelectList->m_eventSelectItem, function)
 				);
 			}
 		protected:
-			FuncSelectList* getFuncSelList() {
-				return static_cast<FuncSelectList*>(m_funcList);
-			}
+			FuncSelectList* m_funcSelectList;
 		};
 
 		class ShortView
@@ -636,8 +613,8 @@ namespace GUI::Widget
 				}
 			};
 
-			ShortView(FuncSelectList* funcList, FunctionManager* funcManager)
-				: ListView(funcList, funcManager)
+			ShortView(FuncSelectList* funcSelectList,FunctionManager* funcManager)
+				: ListView(funcSelectList, funcManager)
 			{}
 
 			bool isFilterEnabled() override {
@@ -645,76 +622,45 @@ namespace GUI::Widget
 			}
 
 			GUI::Item* createFuncItem(API::Function::Function* function) override {
-				return new FunctionItemWithCheckBox(function, getFuncSelList()->isFunctionSelected(function), new Events::EventHook(getFuncSelList()->m_eventSelectFunction, function));
+				return new FunctionItemWithCheckBox(
+					function,
+					m_funcSelectList->isItemSelected(function),
+					new Events::EventHook(m_funcSelectList->m_eventSelectItem, function)
+				);
 			}
 		};
 
+		FuncSelectList(FunctionList* funcList, Events::Event* eventSelectItems)
+			: Template::SelectableItemList<API::Function::Function>(funcList, eventSelectItems)
+		{}
 
-		FuncSelectList(Events::Event* eventSelectFunctions)
-		{
-			getFilterManager()->addFilter(new SelectedFilter(this));
+		FunctionList* getFuncList() {
+			return static_cast<FunctionList*>(m_itemList);
+		}
 
-			m_eventSelectFunction = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getSender());
-				auto function = (API::Function::Function*)message->getUserDataPtr();
-				if (chekbox->isSelected()) {
-					m_selectedFunctions.push_back(function);
-				}
-				else {
-					m_selectedFunctions.remove(function);
-				}
+		bool checkOnInputValue(API::Function::Function* function, const std::string& value) override {
+			return getFuncList()->checkOnInputValue(function, value);
+		}
+
+		bool checkAllFilters(API::Function::Function* function) override {
+			return getFilterManager()->check([&](Template::FilterManager::Filter* filter) {
+				return filter == m_selectedFilter
+					? static_cast<SelectedFilter*>(filter)->checkFilter(function)
+					: static_cast<FunctionList::FunctionFilter*>(filter)->checkFilter(function);
 			});
-
-			class UpdSelectInfo : public Container
-			{
-			public:
-				UpdSelectInfo(FuncSelectList* funcSelList, Events::Event* event)
-					: m_funcSelList(funcSelList)
-				{
-					newLine();
-					newLine();
-					separator();
-					addItem(m_button = new Elements::Button::ButtonStd("Select", event));
-				}
-
-				void render() override {
-					Container::render();
-					m_button->setName("Select " + std::to_string(m_funcSelList->getSelectedFuncCount()) + " functions");
-				}
-
-				bool isShown() override {
-					return m_funcSelList->getSelectedFuncCount() > 0;
-				}
-			private:
-				FuncSelectList* m_funcSelList;
-				Elements::Button::ButtonStd* m_button;
-			};
-
-			if (eventSelectFunctions != nullptr) {
-				(*m_underFilterCP)
-					.addItem(new UpdSelectInfo(this, eventSelectFunctions));
-			}
 		}
 
-		bool isFunctionSelected(API::Function::Function* function) {
-			for (auto func : getSelectedFunctions()) {
-				if (func == function)
-					return true;
-			}
-			return false;
+		void setOpenFunctionEventHandler(Events::Event* eventHandler) override {
+			getFuncList()->setOpenFunctionEventHandler(eventHandler);
 		}
 
-		int getSelectedFuncCount() {
-			return getSelectedFunctions().size();
+		Template::ItemList* getItemList() override {
+			return this;
 		}
 
-		std::list<API::Function::Function*>& getSelectedFunctions() {
-			return m_selectedFunctions;
+		Events::Event* getFunctionOpenEvent() override {
+			return getFuncList()->getFunctionOpenEvent();
 		}
-	private:
-		std::list<API::Function::Function*> m_selectedFunctions;
-		Events::Event* m_eventSelectFunction;
 	};
 };
 
@@ -723,8 +669,8 @@ namespace GUI::Window
 	class FunctionList : public IWindow
 	{
 	public:
-		FunctionList(Widget::FunctionList* funcList, const std::string& name = "Function list")
-			: IWindow(name)
+		FunctionList(Widget::IFunctionList* funcList, const std::string& name = "Function list")
+			: m_funcList(funcList), IWindow(name)
 		{
 			//MY TODO*: error
 			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
@@ -737,18 +683,19 @@ namespace GUI::Window
 			m_openFunctionCP->setCanBeRemoved(false);
 
 			funcList->setOpenFunctionEventHandler(m_openFunctionCP);
-			setMainContainer(funcList);
+			setMainContainer(funcList->getItemList());
 		}
 
 		~FunctionList() {
 			delete m_openFunctionCP;
 		}
 
-		Widget::FunctionList* getList() {
-			return static_cast<Widget::FunctionList*>(getMainContainerPtr());
+		Widget::IFunctionList* getList() {
+			return m_funcList;
 		}
 	private:
 		Events::EventHandler* m_openFunctionCP;
+		Widget::IFunctionList* m_funcList;
 	};
 };
 
@@ -759,7 +706,7 @@ namespace GUI::Widget
 	public:
 		FunctionInput(FunctionManager* funcManager)
 		{
-			m_funcSelectList = new FuncSelectList(nullptr);
+			m_funcSelectList = new FuncSelectList(new FunctionList, nullptr);
 			m_funcSelectList->setView(
 				m_funcListView = new FuncSelectList::ListView(m_funcSelectList, funcManager));
 			m_funcSelectList->setParent(this);
@@ -782,7 +729,7 @@ namespace GUI::Widget
 		}
 
 		std::list<API::Function::Function*>& getSelectedFunctions() {
-			return m_funcSelectList->getSelectedFunctions();
+			return m_funcSelectList->getSelectedItems();
 		}
 	protected:
 		std::string getPlaceHolder() override {

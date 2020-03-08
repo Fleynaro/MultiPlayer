@@ -13,6 +13,8 @@ void CE::ProgramModule::load()
 	getVTableManager()->loadVTables();
 	getTypeManager()->loadClasses();
 	getFunctionManager()->getFunctionTagManager()->loadTags();
+	getTriggerManager()->loadTriggers();
+	getTriggerGroupManager()->loadTriggerGroups();
 }
 
 void CE::ProgramModule::initManagers()
@@ -22,6 +24,7 @@ void CE::ProgramModule::initManagers()
 	m_gvarManager = new GVarManager(this);
 	m_vtableManager = new VtableManager(this);
 	m_triggerManager = new TriggerManager(this);
+	m_triggerGroupManager = new TriggerGroupManager(this);
 	m_statManager = new StatManager(this);
 	m_functionManager->setFunctionTagManager(new Function::Tag::Manager(m_functionManager));
 }

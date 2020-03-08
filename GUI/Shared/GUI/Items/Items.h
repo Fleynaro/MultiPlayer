@@ -1271,7 +1271,7 @@ namespace GUI
 				public Events::OnMiddleMouseClick<ClickedText>
 			{
 			public:
-				ClickedText(const std::string& text, ColorRGBA color)
+				ClickedText(const std::string& text, ColorRGBA color = ColorRGBA(0xFFFFFFFF))
 					: ColoredText(text, color),
 					Events::OnLeftMouseClick<ClickedText>(this),
 					Events::OnMiddleMouseClick<ClickedText>(this)

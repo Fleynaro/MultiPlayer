@@ -11,6 +11,7 @@ namespace CE
 	class FunctionManager;
 	class VtableManager;
 	class TriggerManager;
+	class TriggerGroupManager;
 	class StatManager;
 
 	namespace Ghidra
@@ -59,6 +60,10 @@ namespace CE
 			return m_triggerManager;
 		}
 
+		inline TriggerGroupManager* getTriggerGroupManager() {
+			return m_triggerGroupManager;
+		}
+
 		inline StatManager* getStatManager() {
 			return m_statManager;
 		}
@@ -92,6 +97,7 @@ namespace CE
 		FunctionManager* m_functionManager = nullptr;
 		VtableManager* m_vtableManager = nullptr;
 		TriggerManager* m_triggerManager = nullptr;
+		TriggerGroupManager* m_triggerGroupManager = nullptr;
 		StatManager* m_statManager = nullptr;
 		Ghidra::Client* m_client = nullptr;
 	};

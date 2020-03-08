@@ -107,6 +107,15 @@ namespace CE
 			query.bind(1, trigger->getId());
 			query.exec();
 
+			switch (trigger->getType())
+			{
+			case Trigger::FunctionTrigger:
+				auto tr = static_cast<Trigger::Function::Trigger*>(trigger);
+				tr->getFilters().clear();
+				saveFiltersForFuncTrigger(tr);
+				break;
+			}
+
 			auto it = m_triggers.find(trigger->getId());
 			if (it != m_triggers.end()) {
 				m_triggers.erase(it);
@@ -157,6 +166,10 @@ namespace CE
 			}
 		}
 
+		TriggerDict& getTriggers() {
+			return m_triggers;
+		}
+
 		void addTrigger(Trigger::ITrigger* trigger) {
 			m_triggers.insert(std::make_pair(trigger->getId(), trigger));
 		}
@@ -168,5 +181,125 @@ namespace CE
 		}
 	private:
 		TriggerDict m_triggers;
+	};
+
+
+	class TriggerGroupManager : public AbstractManager
+	{
+	public:
+		using TriggerGroupDict = std::map<int, Trigger::TriggerGroup*>;
+
+		TriggerGroupManager(ProgramModule* sda)
+			: AbstractManager(sda)
+		{}
+
+		void saveTriggerGroup(Trigger::TriggerGroup* group) {
+			using namespace SQLite;
+
+			SQLite::Database& db = getProgramModule()->getDB();
+
+			{
+				SQLite::Statement query(db, "REPLACE INTO sda_trigger_groups(group_id, name, desc) VALUES(?1, ?2, ?3)");
+				query.bind(1, group->getDesc().getId());
+				query.bind(2, group->getDesc().getName());
+				query.bind(3, group->getDesc().getDesc());
+				query.exec();
+			}
+
+			saveTriggersForGroup(group);
+		}
+
+		void removeTriggerGroup(Trigger::TriggerGroup* group) {
+			using namespace SQLite;
+
+			SQLite::Database& db = getProgramModule()->getDB();
+			SQLite::Statement query(db, "DELETE FROM sda_trigger_groups WHERE group_id=?1");
+			query.bind(1, group->getDesc().getId());
+			query.exec();
+
+			group->getTriggers().clear();
+			saveTriggersForGroup(group);
+
+			auto it = m_triggerGroups.find(group->getDesc().getId());
+			if (it != m_triggerGroups.end()) {
+				m_triggerGroups.erase(it);
+			}
+		}
+
+		void loadTriggerGroups()
+		{
+			using namespace SQLite;
+
+			SQLite::Database& db = getProgramModule()->getDB();
+			SQLite::Statement query(db, "SELECT * FROM sda_trigger_groups");
+
+			while (query.executeStep())
+			{
+				auto group = new Trigger::TriggerGroup(
+					query.getColumn("group_id"),
+					query.getColumn("name"),
+					query.getColumn("desc")
+				);
+				addTriggerGroup(group);
+				loadTriggersForGroup(group);
+			}
+		}
+
+		void saveTriggersForGroup(Trigger::TriggerGroup* group) {
+			using namespace SQLite;
+
+			SQLite::Database& db = getProgramModule()->getDB();
+			SQLite::Transaction transaction(db);
+
+			{
+				SQLite::Statement query(db, "DELETE FROM sda_trigger_group_triggers WHERE group_id=?1");
+				query.bind(1, group->getDesc().getId());
+				query.exec();
+			}
+
+			{
+				for (const auto& trigger : group->getTriggers()) {
+					SQLite::Statement query(db, "INSERT INTO sda_trigger_group_triggers (group_id, trigger_id) VALUES(?1, ?2)");
+					query.bind(1, group->getDesc().getId());
+					query.bind(2, trigger->getId());
+					query.exec();
+				}
+			}
+
+			transaction.commit();
+		}
+
+		void loadTriggersForGroup(Trigger::TriggerGroup* group)
+		{
+			using namespace SQLite;
+			using namespace Trigger::Function::Filter;
+
+			SQLite::Database& db = getProgramModule()->getDB();
+			SQLite::Statement query(db, "SELECT trigger_id FROM sda_trigger_group_triggers WHERE group_id=?1");
+			query.bind(1, group->getDesc().getId());
+
+			while (query.executeStep())
+			{
+				auto trigger = getProgramModule()->getTriggerManager()->getTriggerById(query.getColumn("trigger_id"));
+				if(trigger != nullptr)
+					group->addTrigger(trigger);
+			}
+		}
+
+		TriggerGroupDict& getTriggerGroups() {
+			return m_triggerGroups;
+		}
+
+		void addTriggerGroup(Trigger::TriggerGroup* group) {
+			m_triggerGroups.insert(std::make_pair(group->getDesc().getId(), group));
+		}
+
+		inline Trigger::TriggerGroup* getTriggerGroupById(int group_id) {
+			if (m_triggerGroups.find(group_id) == m_triggerGroups.end())
+				return nullptr;
+			return m_triggerGroups[group_id];
+		}
+	private:
+		TriggerGroupDict m_triggerGroups;
 	};
 };

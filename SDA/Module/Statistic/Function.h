@@ -70,8 +70,7 @@ namespace CE
 	class StreamRecordWriter
 	{
 	public:
-		StreamRecordWriter(Buffer::Stream* bufferStream)
-			: m_bufferStream(bufferStream)
+		StreamRecordWriter()
 		{}
 
 		int getWrittenLength() {
@@ -83,6 +82,10 @@ namespace CE
 		Buffer::Stream& getStream() {
 			return m_bufferStream;
 		}
+
+		void setBufferStream(Buffer::Stream bufferStream) {
+			m_bufferStream = bufferStream;
+		}
 	private:
 		Buffer::Stream m_bufferStream;
 	};
@@ -90,25 +93,27 @@ namespace CE
 	class StreamRecord
 	{
 	public:
-		StreamRecord(StreamRecordWriter* streamRecordWriter)
-			: m_streamRecordWriter(streamRecordWriter)
+		StreamRecord(Buffer::Stream* bufferStream, StreamRecordWriter* streamRecordWriter)
+			: m_bufferStream(bufferStream), m_streamRecordWriter(streamRecordWriter)
 		{}
 
 		void write() {
 			writeHeader();
+			m_streamRecordWriter->setBufferStream(m_bufferStream);
 			m_streamRecordWriter->write();
 			writeEnd();
 		}
 	private:
 		void writeHeader() {
-			m_size = m_streamRecordWriter->getStream().getNext<int>();
-			m_streamRecordWriter->getStream().write(0);
+			m_size = m_bufferStream->getNext<int>();
+			m_bufferStream->write(0);
 		}
 
 		void writeEnd() {
 			*m_size = m_streamRecordWriter->getWrittenLength();
 		}
 	protected:
+		Buffer::Stream* m_bufferStream;
 		StreamRecordWriter* m_streamRecordWriter;
 		int* m_size;
 	};
@@ -122,7 +127,7 @@ namespace CE
 		}
 
 		bool hasNext() {//MYTODO: check offset
-			return m_curSize > 0 && m_bufferStream.getOffset() + (UINT)m_curSize <= m_buffer->m_header.m_currentOffset;
+			return m_curSize > 0 && getOffset() + (UINT)m_curSize <= m_buffer->getContentOffset();
 		}
 
 		Buffer::Stream getStream() {
@@ -130,6 +135,10 @@ namespace CE
 			m_bufferStream.move(m_curSize);
 			countSize();
 			return bufferStream;
+		}
+
+		int getOffset() {
+			return m_bufferStream.getOffset();
 		}
 	private:
 		Buffer* m_buffer;
@@ -166,8 +175,8 @@ namespace CE
 
 			class CallInfoWriter : public StreamRecordWriter {
 			public:
-				CallInfoWriter(Buffer::Stream* bufferStream, CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
-					: StreamRecordWriter(bufferStream), m_trigger(trigger), m_hook(hook)
+				CallInfoWriter(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+					: m_trigger(trigger), m_hook(hook)
 				{}
 
 				void writeHeader(Type type);
@@ -184,6 +193,8 @@ namespace CE
 						size = argType->getBaseType()->getSize();
 						//string
 					}
+
+					//MYTODO: узнать тип указателя: на стек, на кучу, массив ли?
 
 					if (Address(argAddrValue).canBeRead()) {
 						getStream().write((USHORT)size);
@@ -212,8 +223,8 @@ namespace CE
 
 				class Writer : public CallInfoWriter {
 				public:
-					Writer(Buffer::Stream* bufferStream, CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
-						: CallInfoWriter(bufferStream, trigger, hook)
+					Writer(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+						: CallInfoWriter(trigger, hook)
 					{}
 
 					void write() override {
@@ -338,30 +349,49 @@ namespace CE
 			std::thread m_thread;
 		};
 
+
+		class TriggerBuffer;
 		class BufferManager
 		{
 		public:
 			BufferManager(FS::Directory dir, int bufferSizeMb = 3)
 				: m_dir(dir), m_bufferSizeMb(bufferSizeMb)
 			{
-				createNewBuffer();
 				m_savedBufferCount = m_dir.getItems().size();
 			}
 
-			~BufferManager() {
-				saveCurBuffer();
+			~BufferManager();
 
-				while (getWorkedSaverCount() > 0) {
-					Sleep(100);
-				}
+			void write(CE::Trigger::Function::Trigger* trigger, StreamRecordWriter* writer);
 
+			void saveTriggerBuffer(int triggerId);
+
+			int m_savedBufferCount;
+			int m_bufferSizeMb;
+			FS::Directory m_dir;
+		private:
+			std::map<int, TriggerBuffer*> m_triggerBuffers;
+			std::mutex m_bufferMutex;
+		};
+
+		class TriggerBuffer
+		{
+			friend class BufferManager;
+		public:
+			TriggerBuffer(BufferManager* bufferManager, CE::Trigger::Function::Trigger* trigger, int bufferSizeMb)
+				: m_bufferManager(bufferManager), m_trigger(trigger), m_bufferSizeMb(bufferSizeMb)
+			{
+				createNewBuffer();
+			}
+
+			~TriggerBuffer() {
 				for (auto saver : m_savers) {
 					delete saver;
 				}
 			}
 
 			void write(StreamRecordWriter* writer) {
-				StreamRecord record(writer);
+				StreamRecord record(&m_bufferStream, writer);
 				record.write();
 
 				if (m_currentBuffer->getFreeSpaceSize() == 0) {
@@ -373,40 +403,13 @@ namespace CE
 					write(writer);
 				}
 			}
-
-			void test() {
-				BufferIterator it(m_currentBuffer);
-				while (it.hasNext()) {
-					auto stream = it.getStream(); //set to field of analyser
-					auto& header = stream.read<Record::Header>();
-
-					if ((Record::Type)header.m_type == Record::Type::BeforeCallInfo) //call method beforeCallInfo(reader)
-					{
-						Record::BeforeCallInfo::Reader reader(&stream);
-						auto& argHeader = reader.getArgHeader();
-
-						for (int i = 0; i < argHeader.m_argCount; i++)
-						{
-							auto argInfo = reader.readArgument();
-							auto value = argInfo.m_value;
-							float val = (float&)argInfo.m_xmmValue;
-							val = 0.0;
-						}
-					}
-				}
-				saveCurBuffer();
-			}
-
-			inline Buffer::Stream* getStream() {
-				return &m_bufferStream;
-			}
 		private:
-			int m_bufferSizeMb;
+			BufferManager* m_bufferManager;
+			CE::Trigger::Function::Trigger* m_trigger;
 			Buffer* m_currentBuffer;
 			Buffer::Stream m_bufferStream;
 			std::list<BufferSaver*> m_savers;
-			FS::Directory m_dir;
-			int m_savedBufferCount;
+			int m_bufferSizeMb;
 
 			int getWorkedSaverCount() {
 				int count = 0;
@@ -417,21 +420,18 @@ namespace CE
 				return count;
 			}
 
-			std::string generateNewName() {
-				auto number = std::to_string(10000 + m_savedBufferCount++);
-				return "buffer_" + number + ".data";
-			}
-			
-			void saveCurBuffer() {
-				auto saver = new BufferSaver(m_currentBuffer, FS::File(m_dir, generateNewName()).getFilename());
-				saver->save();
-				m_savers.push_back(saver);
-				m_currentBuffer = nullptr;
-			}
+			std::string generateNewName();
 
 			void createNewBuffer() {
 				m_currentBuffer = Buffer::Create(m_bufferSizeMb * 1024 * 1024);
 				m_bufferStream = Buffer::Stream(m_currentBuffer);
+			}
+
+			void saveCurBuffer() {
+				auto saver = new BufferSaver(m_currentBuffer, FS::File(m_bufferManager->m_dir, generateNewName()).getFilename());
+				saver->save();
+				m_savers.push_back(saver);
+				m_currentBuffer = nullptr;
 			}
 		};
 
@@ -448,28 +448,138 @@ namespace CE
 
 			void addBeforeCallInfo(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
 			{
-				m_bufferMutex.lock();
-				auto writer = Record::BeforeCallInfo::Writer(m_bufferManager->getStream(), trigger, hook);
-				m_bufferManager->write(&writer);
-				m_bufferMutex.unlock();
-
-
-				static int a = 1;
-				if (a == 3) {
-					m_bufferManager->test();
-				}
-				a++;
+				auto writer = Record::BeforeCallInfo::Writer(trigger, hook);
+				m_bufferManager->write(trigger, &writer);
 			}
 
 			void addAfterCallInfo(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
 			{
-				m_bufferMutex.lock();
+				
+			}
 
-				m_bufferMutex.unlock();
+			BufferManager* getBufferManager() {
+				return m_bufferManager;
 			}
 		private:
 			BufferManager* m_bufferManager;
-			std::mutex m_bufferMutex;
+		};
+
+
+
+		namespace Analyser
+		{
+			class IAnalysisProvider {
+			public:
+				virtual void handle(Record::Header& header, Buffer::Stream& bufferStream) = 0;
+			};
+
+			class SignatureAnalysisProvider : public IAnalysisProvider {
+			public:
+
+				void handle(Record::Header& header, Buffer::Stream& bufferStream) override {
+					auto type = (Record::Type)header.m_type;
+					if (type == Record::Type::BeforeCallInfo) {
+						handleBeforeCallInfo(bufferStream);
+					}
+					else {
+						handleAfterCallInfo(bufferStream);
+					}
+				}
+
+				void handleBeforeCallInfo(Buffer::Stream& bufferStream) {
+					Record::BeforeCallInfo::Reader reader(&bufferStream);
+					auto& argHeader = reader.getArgHeader();
+
+					for (int i = 0; i < argHeader.m_argCount; i++)
+					{
+						auto argInfo = reader.readArgument();
+						auto value = argInfo.m_value;
+						float val = (float&)argInfo.m_xmmValue;
+						val = 0.0;
+					}
+				}
+
+				void handleAfterCallInfo(Buffer::Stream& bufferStream) {
+
+				}
+			private:
+				std::mutex m_dataMutex;
+			};
+
+			class ITaskMonitor
+			{
+			public:
+				virtual bool isWorking() {
+					return getProgress() != 1.0;
+				}
+				virtual float getProgress() = 0;
+			};
+
+			class BufferAnalyser : public ITaskMonitor {
+			public:
+				BufferAnalyser(Buffer* buffer)
+					: m_buffer(buffer)
+				{}
+
+				void startAnalysis() {
+					m_progress = 0.0;
+					m_thread = std::thread(&BufferAnalyser::analyse, this);
+					m_thread.detach();
+				}
+
+				void setAnalysisProvider(IAnalysisProvider* analysisProvider) {
+					m_analysisProvider = analysisProvider;
+				}
+
+				float getProgress() override {
+					return m_progress;
+				}
+			private:
+				Buffer* m_buffer;
+				IAnalysisProvider* m_analysisProvider;
+				std::thread m_thread;
+				std::atomic<float> m_progress = 1.0;
+
+				void analyse() {
+					BufferIterator it(m_buffer);
+					while (it.hasNext()) {
+						auto stream = it.getStream();
+						auto& header = stream.read<Record::Header>();
+						m_analysisProvider->handle(header, stream);
+						m_progress = float(it.getOffset()) / m_buffer->getContentOffset();
+					}
+					m_progress = 1.0;
+				}
+			};
+
+			class Analyser : public ITaskMonitor {
+			public:
+				Analyser(IAnalysisProvider* analysisProvider)
+					: m_analysisProvider(analysisProvider)
+				{}
+
+				void startAnalysis() {
+					for (auto it : m_bufferAnaylysers) {
+						it->startAnalysis();
+					}
+				}
+
+				void addBuffer(Buffer* buffer) {
+					auto bufferAnalyser = new BufferAnalyser(buffer);
+					m_bufferAnaylysers.push_back(bufferAnalyser);
+				}
+
+				float getProgress() override {
+					float totalPorgress = 0.0;
+					for (auto it : m_bufferAnaylysers) {
+						totalPorgress += it->getProgress();
+					}
+					return totalPorgress / m_bufferAnaylysers.size();
+				}
+			private:
+				std::list<BufferAnalyser*> m_bufferAnaylysers;
+				IAnalysisProvider* m_analysisProvider;
+			};
 		};
 	};
 };

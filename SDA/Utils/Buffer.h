@@ -39,12 +39,16 @@ public:
         return sizeof(m_header) + m_header.m_contentSize;
     }
 
-    int getCurrentOffset() {
-        return sizeof(m_header) + m_header.m_currentOffset;
+    int getContentSize() {
+        return m_header.m_contentSize;
+    }
+
+    int getContentOffset() {
+        return m_header.m_currentOffset;
     }
 
     int getFreeSpaceSize() {
-        return getSize() - getCurrentOffset();
+        return getContentSize() - getContentOffset();
     }
 
     class Stream {
@@ -106,8 +110,8 @@ public:
             m_curData += bytes;
 
             if (write) {
-                if (m_buffer->m_header.m_currentOffset < getOffset() + bytes)
-                    m_buffer->m_header.m_currentOffset = getOffset() + bytes;
+                if (m_buffer->m_header.m_currentOffset < getOffset())
+                    m_buffer->m_header.m_currentOffset = getOffset();
             }
 
             if (m_bufferStream != nullptr)
@@ -125,7 +129,7 @@ public:
         }
 
         int getOffset() {
-            return (int)((std::uintptr_t)m_curData - (std::uintptr_t)m_buffer->getContent());
+            return (int)((std::uintptr_t)m_curData - (std::uintptr_t)m_data);
         }
     private:
         Buffer* m_buffer;

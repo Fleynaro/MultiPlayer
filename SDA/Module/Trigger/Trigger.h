@@ -21,6 +21,29 @@ namespace CE
 			virtual Type getType() = 0;
 		};
 
+		class TriggerGroup
+		{
+		public:
+			TriggerGroup(int id, std::string name, std::string desc = "")
+				: m_desc(id, name, desc)
+			{}
+
+			void addTrigger(ITrigger* trigger) {
+				m_triggers.push_back(trigger);
+			}
+
+			std::list<ITrigger*>& getTriggers() {
+				return m_triggers;
+			}
+
+			Desc& getDesc() {
+				return m_desc;
+			}
+		private:
+			Desc m_desc;
+			std::list<ITrigger*> m_triggers;
+		};
+
 		namespace Function
 		{
 			class Hook;

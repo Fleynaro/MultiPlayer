@@ -260,10 +260,8 @@ namespace GUI::Widget::Template
 				m_header->render();
 			}
 
-		protected:
 			Container* m_header = nullptr;
 		};
-
 	public:
 		void setView(IView* view, bool isUpdate = true) {
 			m_view = view;
@@ -289,13 +287,11 @@ namespace GUI::Widget::Template
 		std::string m_oldInputValue = "";
 
 	protected:
-		Container* m_underFilterCP = nullptr;
-
-		ItemList(FilterManager::FilterCreator* filterCreator, StyleSettings styleSettings = StyleSettings())
-			: m_styleSettings(styleSettings)
+		ItemList(FilterManager::FilterCreator* filterCreator, FilterManager* filterManager = new FilterManager, StyleSettings styleSettings = StyleSettings())
+			: m_filterCreator(filterCreator), m_filterManager(filterManager), m_styleSettings(styleSettings)
 		{
-			m_filterManager.setParent(this);
-			filterCreator->setWidth(m_styleSettings.m_leftWidth);
+			m_filterManager->setParent(this);
+			m_filterCreator->setWidth(m_styleSettings.m_leftWidth);
 
 			(*this)
 				.beginChild()
@@ -322,7 +318,7 @@ namespace GUI::Widget::Template
 					.addItem(getFilterManager())
 					.newLine()
 					.separator()
-					.addItem(filterCreator)
+					.addItem(m_filterCreator)
 					.addItem(m_underFilterCP = new Container)
 				.end()
 				.sameLine()
@@ -342,16 +338,171 @@ namespace GUI::Widget::Template
 		const std::string& getOldInputValue() {
 			return m_oldInputValue;
 		}
-
+	public:
 		FilterManager* getFilterManager() {
-			return &m_filterManager;
+			return m_filterManager;
 		}
 
 		StyleSettings m_styleSettings;
+		FilterManager::FilterCreator* m_filterCreator;
+		Container* m_underFilterCP = nullptr;
 	private:
-		FilterManager m_filterManager;
+		FilterManager* m_filterManager;
 		IView* m_view = nullptr;
 	};
+
+
+	template<typename T>
+	class SelectableItemList : public ItemList
+	{
+	public:
+		class SelectedFilter : public FilterManager::Filter
+		{
+		public:
+			SelectedFilter(SelectableItemList* selectableItemList)
+				: m_selectableItemList(selectableItemList), Filter(selectableItemList->getFilterManager(), "Selected items filter")
+			{
+				buildHeader("Filter items by selected.", true);
+				beginBody()
+					.addItem(
+						m_cb = new Elements::Generic::Checkbox("show selected only", false,
+							new Events::EventUI(EVENT_LAMBDA(info) {
+								onChanged();
+							})
+						)
+					);
+			}
+
+			bool checkFilter(T* item) {
+				return m_selectableItemList->isItemSelected(item);
+			}
+
+			bool isDefined() override {
+				return m_cb->isSelected();
+			}
+		private:
+			Elements::Generic::Checkbox* m_cb;
+			SelectableItemList* m_selectableItemList;
+		};
+
+		class SelectableItem : public Item
+		{
+		public:
+			SelectableItem(Item* item, bool selected, Events::Event* eventSelect = nullptr)
+				: m_item(item)
+			{
+				m_item->setParent(this);
+
+				beginHeader()
+					.addItem(m_cb = new Elements::Generic::Checkbox("", selected, eventSelect))
+					.sameLine();
+			}
+
+			~SelectableItem() {
+				m_item->destroy();
+			}
+
+			void render() override {
+				m_item->render();
+			}
+
+			void renderHeader() override {
+				m_header->render();
+				m_item->m_header->render();
+			}
+
+			Events::Messager& getSelectedEvent() {
+				return m_cb->getSpecialEvent();
+			}
+		private:
+			Item* m_item;
+			Elements::Generic::Checkbox* m_cb;
+		};
+
+		SelectedFilter* m_selectedFilter;
+
+		SelectableItemList(ItemList* itemList, Events::Event* eventSelectItems)
+			: m_itemList(itemList), ItemList(itemList->m_filterCreator, itemList->getFilterManager(), itemList->m_styleSettings)
+		{
+			getFilterManager()->addFilter(m_selectedFilter = new SelectedFilter(this));
+			m_itemList->setParent(this);
+
+			m_eventSelectItem = new Events::EventUI(EVENT_LAMBDA(info) {
+				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
+				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getSender());
+				auto item = (T*)message->getUserDataPtr();
+				if (chekbox->isSelected()) {
+					m_selectedItems.push_back(item);
+				}
+				else {
+					m_selectedItems.remove(item);
+				}
+			});
+			m_eventSelectItem->setCanBeRemoved(false);
+
+			class UpdSelectInfo : public Container
+			{
+			public:
+				UpdSelectInfo(SelectableItemList* selectableItemList, Events::Event* event)
+					: m_selectableItemList(selectableItemList)
+				{
+					newLine();
+					newLine();
+					separator();
+					addItem(m_button = new Elements::Button::ButtonStd("Select", event));
+				}
+
+				void render() override {
+					Container::render();
+					m_button->setName("Select " + std::to_string(m_selectableItemList->getSelectedItemsCount()) + " items");
+				}
+
+				bool isShown() override {
+					return m_selectableItemList->getSelectedItemsCount() > 0;
+				}
+			private:
+				SelectableItemList* m_selectableItemList;
+				Elements::Button::ButtonStd* m_button;
+			};
+
+			if (eventSelectItems != nullptr) {
+				(*m_itemList->m_underFilterCP)
+					.addItem(new UpdSelectInfo(this, eventSelectItems));
+			}
+		}
+
+		~SelectableItemList() {
+			m_itemList->destroy();
+		}
+
+		void render() override {
+			m_itemList->render();
+		}
+
+		bool isItemSelected(T* item) {
+			for (auto it : getSelectedItems()) {
+				if (it == item)
+					return true;
+			}
+			return false;
+		}
+
+		int getSelectedItemsCount() {
+			return getSelectedItems().size();
+		}
+
+		std::list<T*>& getSelectedItems() {
+			return m_selectedItems;
+		}
+
+		Events::Event* m_eventSelectItem;
+	protected:
+		ItemList* m_itemList;
+		std::list<T*> m_selectedItems;
+	};
+
+
+
 
 	class ItemInput
 		: public Elements::Input::Text,

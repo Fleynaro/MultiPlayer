@@ -20,8 +20,9 @@ ProjectWindow::ProjectWindow(Project* project)
 	);
 
 	auto functionListWidget = new Widget::FuncSelectList(
+		new Widget::FunctionList,
 		new Events::EventUI(EVENT_LAMBDA(info) {
-			auto list = static_cast<Widget::FuncSelectList*>(m_funcSelList->getList())->getSelectedFunctions();
+			auto list = static_cast<Widget::FuncSelectList*>(m_funcSelList->getList())->getSelectedItems();
 			list.size();
 			m_funcSelList->close();
 		})
