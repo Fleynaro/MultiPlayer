@@ -233,7 +233,9 @@ namespace GUI::Widget::Template
 
 			Item()
 				: TreeNode()
-			{}
+			{
+				addFlags(ImGuiTreeNodeFlags_FramePadding);
+			}
 
 			~Item() {
 				if(m_header != nullptr)
@@ -263,7 +265,7 @@ namespace GUI::Widget::Template
 			Container* m_header = nullptr;
 		};
 	public:
-		void setView(IView* view, bool isUpdate = true) {
+		virtual void setView(IView* view, bool isUpdate = true) {
 			m_view = view;
 			m_view->setOutputContainer(m_itemsContainer);
 			m_view->onSetView();
@@ -291,6 +293,9 @@ namespace GUI::Widget::Template
 			: m_filterCreator(filterCreator), m_filterManager(filterManager), m_styleSettings(styleSettings)
 		{
 			m_filterManager->setParent(this);
+			m_filterManager->getUpdateEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+				update();
+			});
 			m_filterCreator->setWidth(m_styleSettings.m_leftWidth);
 
 			(*this)
@@ -348,6 +353,7 @@ namespace GUI::Widget::Template
 		Container* m_underFilterCP = nullptr;
 	private:
 		FilterManager* m_filterManager;
+	protected:
 		IView* m_view = nullptr;
 	};
 
@@ -385,17 +391,19 @@ namespace GUI::Widget::Template
 			SelectableItemList* m_selectableItemList;
 		};
 
-		class SelectableItem : public Item
+		class SelectableItem : public GUI::Item
 		{
 		public:
-			SelectableItem(Item* item, bool selected, Events::Event* eventSelect = nullptr)
+			SelectableItem(ItemList::Item* item, bool selected, Events::Event* eventSelect = nullptr)
 				: m_item(item)
 			{
 				m_item->setParent(this);
-
-				beginHeader()
-					.addItem(m_cb = new Elements::Generic::Checkbox("", selected, eventSelect))
-					.sameLine();
+				(*m_item->m_header)
+					.beginReverseInserting()
+						.sameLine()
+						.addItem(m_cb = new Elements::Generic::Checkbox("", selected, eventSelect))
+						.sameLine()
+					.endReverseInserting();
 			}
 
 			~SelectableItem() {
@@ -406,16 +414,11 @@ namespace GUI::Widget::Template
 				m_item->render();
 			}
 
-			void renderHeader() override {
-				m_header->render();
-				m_item->m_header->render();
-			}
-
 			Events::Messager& getSelectedEvent() {
 				return m_cb->getSpecialEvent();
 			}
 		private:
-			Item* m_item;
+			ItemList::Item* m_item;
 			Elements::Generic::Checkbox* m_cb;
 		};
 
@@ -473,6 +476,11 @@ namespace GUI::Widget::Template
 
 		~SelectableItemList() {
 			m_itemList->destroy();
+		}
+
+		void setView(IView* view, bool isUpdate = true) override {
+			m_view = view;
+			m_itemList->setView(view, isUpdate);
 		}
 
 		void render() override {

@@ -17,6 +17,7 @@
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
 LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -49,6 +50,8 @@ END
 // SQL
 //
 
+IDR_SQL_CREATE_GEN_DB   SQL                     "Resources\\SQL\\create_general_db.sql"
+
 #endif    // Russian (Russia) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -64,7 +67,3 @@ END
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 
-IDR_SQL_CREATE_GEN_DB           SQL                    "Resources\\SQL\\create_general_db.sql"
-IDR_SQL_CREATE_GENSTAT_DB       SQL                    "Resources\\SQL\\create_generalStat_db.sql"
-IDR_SQL_CREATE_CALLBEFORE_DB    SQL                    "Resources\\SQL\\collectors\\create_callBefore_db.sql"
-IDR_SQL_CREATE_CALLAFTER_DB     SQL                    "Resources\\SQL\\collectors\\create_callAfter_db.sql"

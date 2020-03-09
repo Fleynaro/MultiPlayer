@@ -129,7 +129,7 @@ namespace CE
 			return id;
 		}
 
-		Trigger::Function::Trigger* createFunctionTrigger(std::string name, std::string desc = "") {
+		Trigger::Function::Trigger* createFunctionTrigger(const std::string& name, const std::string& desc = "") {
 			int id = getNewId();
 			auto trigger = new Trigger::Function::Trigger(id, name, desc);
 			m_triggers[id] = trigger;

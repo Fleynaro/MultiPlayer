@@ -82,20 +82,12 @@ namespace CE
 			class Trigger : public ITrigger
 			{
 			public:
-				Trigger(int id, std::string name, std::string desc = "")
+				Trigger(int id, const std::string& name, const std::string& desc = "")
 					: ITrigger(id, name, desc)
 				{}
 
 				Type getType() override {
 					return Type::FunctionTrigger;
-				}
-
-				std::string getName() override {
-					return "Function trigger";
-				}
-
-				std::string getDesc() override {
-					return "Function trigger need for garbaging statistic and filtering function calls.";
 				}
 
 				void addFilter(Filter::IFilter* filter) {

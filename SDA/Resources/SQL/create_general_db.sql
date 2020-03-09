@@ -112,6 +112,18 @@ create table sda_gvars
     desc        TEXT
 );
 
+CREATE TABLE "sda_trigger_group_triggers" (
+	"group_id"	INTEGER,
+	"trigger_id"	INTEGER
+);
+
+CREATE TABLE "sda_trigger_groups" (
+	"group_id"	INTEGER,
+	"name"	TEXT,
+	"desc"	TEXT,
+	PRIMARY KEY("group_id")
+);
+
 create table sda_triggers
 (
     id   INTEGER

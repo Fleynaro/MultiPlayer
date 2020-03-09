@@ -65,7 +65,7 @@ namespace GUI::Widget
 				Units::FunctionSignature* m_signature;
 			};
 
-			ListView(FunctionList* funcList, FunctionManager* funcManager)
+			ListView(IFunctionList* funcList, FunctionManager* funcManager)
 				: m_funcList(funcList), m_funcManager(funcManager)
 			{}
 
@@ -89,11 +89,11 @@ namespace GUI::Widget
 			}
 
 			virtual GUI::Item* createFuncItem(API::Function::Function* function) {
-				return new FunctionItem(function, m_funcList->m_openFunction);
+				return new FunctionItem(function, m_funcList->getFunctionOpenEvent());
 			}
 		protected:
 			FunctionManager* m_funcManager;
-			FunctionList* m_funcList;
+			IFunctionList* m_funcList;
 		};
 
 
@@ -584,12 +584,12 @@ namespace GUI::Widget
 		{
 		public:
 			ListView(FuncSelectList* funcSelectList, FunctionManager* funcManager)
-				: m_funcSelectList(funcSelectList), FunctionList::ListView(funcSelectList->getFuncList(), funcManager)
+				: m_funcSelectList(funcSelectList), FunctionList::ListView(funcSelectList, funcManager)
 			{}
 
 			GUI::Item* createFuncItem(API::Function::Function* function) override {
 				return new SelectableItem(
-					new FunctionItem(function, m_funcList->m_openFunction),
+					static_cast<FunctionItem*>(FunctionList::ListView::createFuncItem(function)),
 					m_funcSelectList->isItemSelected(function),
 					new Events::EventHook(m_funcSelectList->m_eventSelectItem, function)
 				);
@@ -613,7 +613,7 @@ namespace GUI::Widget
 				}
 			};
 
-			ShortView(FuncSelectList* funcSelectList,FunctionManager* funcManager)
+			ShortView(FuncSelectList* funcSelectList, FunctionManager* funcManager)
 				: ListView(funcSelectList, funcManager)
 			{}
 

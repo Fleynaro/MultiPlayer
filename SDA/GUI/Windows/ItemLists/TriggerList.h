@@ -7,7 +7,20 @@ using namespace CE;
 
 namespace GUI::Widget
 {
-	class TriggerList : public Template::ItemList
+	class ITriggerList
+	{
+	public:
+		virtual Template::ItemList* getItemList() = 0;
+		virtual Events::Event* getEventHandlerClickOnName() = 0;
+		virtual void setEventHandlerClickOnName(Events::Event* eventHandler) = 0;
+		virtual bool checkOnInputValue(Trigger::ITrigger* trigger, const std::string& value) = 0;
+		virtual bool checkAllFilters(Trigger::ITrigger* type) = 0;
+	};
+
+
+	class TriggerList
+		: public Template::ItemList,
+		public ITriggerList
 	{
 	public:
 		class ListView : public IView
@@ -31,7 +44,7 @@ namespace GUI::Widget
 				Trigger::ITrigger* m_trigger;
 			};
 
-			ListView(TriggerList* triggerList, TriggerManager* triggerManager)
+			ListView(ITriggerList* triggerList, TriggerManager* triggerManager)
 				: m_triggerList(triggerList), m_triggerManager(triggerManager)
 			{}
 
@@ -50,13 +63,13 @@ namespace GUI::Widget
 				}
 			}
 
-			Item* createItem(Trigger::ITrigger* trigger) {
-				auto eventHandler = new Events::EventHook(m_triggerList->m_eventClickOnName, trigger);
+			virtual GUI::Item* createItem(Trigger::ITrigger* trigger) {
+				auto eventHandler = new Events::EventHook(m_triggerList->getEventHandlerClickOnName(), trigger);
 				return new TriggerItem(trigger, eventHandler);
 			}
 		protected:
 			TriggerManager* m_triggerManager;
-			TriggerList* m_triggerList;
+			ITriggerList* m_triggerList;
 		};
 		friend class ListView;
 
@@ -94,22 +107,90 @@ namespace GUI::Widget
 			
 		}
 
-		bool checkOnInputValue(Trigger::ITrigger* trigger, const std::string& value) {
+		bool checkOnInputValue(Trigger::ITrigger* trigger, const std::string& value) override {
 			return Generic::String::ToLower(trigger->getName())
 				.find(Generic::String::ToLower(value)) != std::string::npos;
 		}
 
-		bool checkAllFilters(Trigger::ITrigger* type) {
+		bool checkAllFilters(Trigger::ITrigger* type) override {
 			return getFilterManager()->check([&type](Template::FilterManager::Filter* filter) {
 				return static_cast<TriggerFilter*>(filter)->checkFilter(type);
 			});
 		}
+
+		Events::Event* getEventHandlerClickOnName() override {
+			return m_eventClickOnName;
+		}
 		
-		void setEventHandlerClickOnName(Events::Event* eventHandler) {
+		void setEventHandlerClickOnName(Events::Event* eventHandler) override {
 			m_eventClickOnName = eventHandler;
+		}
+
+		Template::ItemList* getItemList() override {
+			return this;
 		}
 	private:
 		Events::Event* m_eventClickOnName = nullptr;
+	};
+
+
+
+
+	class TriggerSelectList
+		: public Template::SelectableItemList<Trigger::ITrigger>,
+		public ITriggerList
+	{
+	public:
+		class ListView
+			: public TriggerList::ListView
+		{
+		public:
+			ListView(TriggerSelectList* triggerSelectList, TriggerManager* triggerManager)
+				: m_triggerSelectList(triggerSelectList), TriggerList::ListView(triggerSelectList, triggerManager)
+			{}
+
+			GUI::Item* createItem(Trigger::ITrigger* trigger) override {
+				return new SelectableItem(
+					static_cast<TriggerItem*>(TriggerList::ListView::createItem(trigger)),
+					m_triggerSelectList->isItemSelected(trigger),
+					new Events::EventHook(m_triggerSelectList->m_eventSelectItem, trigger)
+				);
+			}
+		protected:
+			TriggerSelectList* m_triggerSelectList;
+		};
+
+		TriggerSelectList(TriggerList* triggerList, Events::Event* eventSelectItems)
+			: Template::SelectableItemList<Trigger::ITrigger>(triggerList, eventSelectItems)
+		{}
+
+		TriggerList* getTriggerList() {
+			return static_cast<TriggerList*>(m_itemList);
+		}
+
+		bool checkOnInputValue(Trigger::ITrigger* trigger, const std::string& value) override {
+			return getTriggerList()->checkOnInputValue(trigger, value);
+		}
+
+		bool checkAllFilters(Trigger::ITrigger* trigger) override {
+			return getFilterManager()->check([&](Template::FilterManager::Filter* filter) {
+				return filter == m_selectedFilter
+					? static_cast<SelectedFilter*>(filter)->checkFilter(trigger)
+					: false;//static_cast<TriggerList::FunctionFilter*>(filter)->checkFilter(trigger);
+			});
+		}
+
+		Events::Event* getEventHandlerClickOnName() override {
+			return getTriggerList()->getEventHandlerClickOnName();
+		}
+
+		void setEventHandlerClickOnName(Events::Event* eventHandler) override {
+			getTriggerList()->setEventHandlerClickOnName(eventHandler);
+		}
+
+		Template::ItemList* getItemList() override {
+			return this;
+		}
 	};
 };
 
@@ -118,21 +199,128 @@ namespace GUI::Window
 	class TriggerList : public IWindow
 	{
 	public:
-		TriggerList(Widget::TriggerList* triggerList = new Widget::TriggerList)
-			: IWindow("Data type list")
+		TriggerList(Widget::ITriggerList* triggerList = new Widget::TriggerList, const std::string& name = "Trigger list")
+			: m_triggerList(triggerList), IWindow(name)
 		{
-			setMainContainer(triggerList);
+			setMainContainer(m_triggerList->getItemList());
 		}
 
 		~TriggerList() {
 			delete m_openFunctionCP;
 		}
 
-		Widget::TriggerList* getList() {
-			return static_cast<Widget::TriggerList*>(getMainContainerPtr());
+		Widget::ITriggerList* getList() {
+			return m_triggerList;
 		}
 	private:
 		Events::EventHandler* m_openFunctionCP;
+		Widget::ITriggerList* m_triggerList;
+	};
+};
+
+
+
+namespace GUI::Widget
+{
+	class TriggerInput : public Template::ItemInput
+	{
+	public:
+		TriggerInput(TriggerManager* triggerManager)
+		{
+			m_triggerSelectList = new TriggerSelectList(new TriggerList, nullptr);
+			m_triggerSelectList->setView(
+				m_triggerListView = new TriggerSelectList::ListView(m_triggerSelectList, triggerManager));
+			m_triggerSelectList->setParent(this);
+
+			m_triggerListShortView = new TriggerSelectList::ListView(m_triggerSelectList, triggerManager);
+			m_triggerListShortView->setOutputContainer(m_triggerShortList = new Container);
+			m_triggerShortList->setParent(this);
+			m_triggerListShortView->m_maxOutputTriggerCount = 15;
+		}
+
+		~TriggerInput() {
+			m_triggerSelectList->destroy();
+			m_triggerShortList->destroy();
+			delete m_triggerListView;
+			delete m_triggerListShortView;
+		}
+
+		int getSelectedTriggerCount() {
+			return getSelectedTriggers().size();
+		}
+
+		std::list<Trigger::ITrigger*>& getSelectedTriggers() {
+			return m_triggerSelectList->getSelectedItems();
+		}
+	protected:
+		std::string getPlaceHolder() override {
+			if (getSelectedTriggerCount() == 0)
+				return "No selected trigger(s)";
+
+			std::string info = "";
+			int max = 2;
+			for (auto trigger : getSelectedTriggers()) {
+				info += trigger->getName() + ",";
+				if (--max == 0) break;
+			}
+
+			if (getSelectedTriggerCount() > 2) {
+				info += " ...";
+			}
+			else {
+				info.pop_back();
+			}
+
+			return info.data();
+		}
+
+		std::string toolTip() override {
+			if (getSelectedTriggerCount() == 0)
+				return "please, select one or more triggers";
+			return "selected " + std::to_string(getSelectedTriggerCount()) + " triggers";
+		}
+
+		void onSearch(const std::string& text) {
+			m_triggerListShortView->onSearch(text);
+		}
+
+		void renderShortView() override {
+			m_triggerShortList->show();
+			renderSelectables();
+		}
+
+		void renderSelectables() {
+			if (getSelectedTriggerCount() > 0) {
+				std::string info = "Clear (" + toolTip() + ")";
+				if (ImGui::Selectable(info.c_str())) {
+					getSelectedTriggers().clear();
+					m_triggerShortList->clear();
+					refresh();
+				}
+			}
+
+			if (!m_isWinOpen && ImGui::Selectable("More...")) {
+				Window::TriggerList* win;
+				getWindow()->addWindow(
+					win = new Window::TriggerList(m_triggerSelectList, "Select triggers")
+				);
+				win->getCloseEvent() +=
+					new Events::EventUI(
+						EVENT_LAMBDA(info) {
+					m_isWinOpen = false;
+				}
+				);
+				m_isWinOpen = true;
+				m_focused = false;
+			}
+		}
+
+	private:
+		TriggerSelectList* m_triggerSelectList;
+		TriggerSelectList::ListView* m_triggerListView;
+		TriggerSelectList::ListView* m_triggerListShortView;
+		Container* m_triggerShortList;
+		bool m_isWinOpen = false;
 	};
 };
 
