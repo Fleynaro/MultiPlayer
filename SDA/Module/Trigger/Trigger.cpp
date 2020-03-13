@@ -1,8 +1,9 @@
 #include "Trigger.h"
 
-CE::Trigger::Function::Hook* CE::Function::FunctionDefinition::createHook() {
+void CE::Function::FunctionDefinition::createHook() {
+	if (m_hook != nullptr)
+		delete m_hook;
 	m_hook = new CE::Trigger::Function::Hook(this);
-	return m_hook;
 }
 
 CE::Trigger::Function::Hook::Hook(CE::Function::FunctionDefinition* definition)

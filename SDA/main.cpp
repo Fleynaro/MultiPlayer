@@ -225,7 +225,8 @@ int main()
 			function->getDeclaration().addArgument(new Type::Int32, "c");
 		});
 
-		auto hook = function->getDefinition().createHook();
+		function->getDefinition().createHook();
+		auto hook = function->getDefinition().getHook();
 		hook->getDynHook()->setArgCount(5);
 		hook->getDynHook()->setMethod(new CE::Hook::Method::Method2<CE::Trigger::Function::TriggerState>(hook->getDynHook()));
 		hook->getDynHook()->hook();

@@ -1,9 +1,17 @@
 #pragma once
+#include "FunctionList.h"
 #include "Shared/GUI/Widgets/Template/ItemList.h"
 #include <Manager/TriggerManager.h>
 #include "../ProjectWindow.h"
 
 using namespace CE;
+
+/*
+	MYTODO: сделать окно редактирования триггера: разные блоки обновления
+	MYTODO: сделать окно редактирования фильтров через наследование
+	MYTODO: сделать редактирование фильтров в items.h, сделать интерфейс-элемент(getName(), onClickEvent, )
+	MYTODO: отображать при выборе списка функций в редакторе триггера у каждой функции состояние хука(юзать фабрику)
+*/
 
 namespace GUI::Widget
 {
@@ -324,113 +332,47 @@ namespace GUI::Widget
 	};
 };
 
+namespace GUI::Window
+{
+	class TriggerEditor
+		: public IWindow
+	{
+	public:
+		TriggerEditor(const std::string& name, Trigger::ITrigger* trigger)
+			: IWindow(name), m_trigger(trigger)
+		{
+			setWidth(450);
+			setHeight(300);
+			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
-//namespace GUI::Widget
-//{
-//	class TriggerInput : public Template::ItemInput
-//	{
-//	public:
-//		TriggerInput(TriggerManager* triggerManager)
-//			: m_selectDataType(this)
-//		{
-//			m_triggerList = new TriggerList;
-//
-//			m_triggerList->setView(
-//				m_triggerListView = new TriggerList::ListView(m_triggerList, triggerManager)
-//			);
-//			m_triggerList->setParent(this);
-//
-//			m_triggerShortListView = new TriggerList::ListView(m_triggerList, triggerManager);
-//			m_triggerShortListView->setOutputContainer(m_triggerShortList = new Container);
-//			m_triggerShortList->setParent(this);
-//			m_triggerShortListView->m_maxOutputTriggerCount = 20;
-//
-//
-//			m_selectDataTypeEvent = new Events::EventUI(EVENT_LAMBDA(info) {
-//				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-//				auto trigger = (Trigger::ITrigger*)message->getUserDataPtr();
-//
-//				m_selectedType = trigger->getType();
-//				m_focused = false;
-//				m_selectDataType.callEventHandler();
-//			});
-//			m_selectDataTypeEvent->setCanBeRemoved(false);
-//			m_triggerList->setEventHandlerClickOnName(m_selectDataTypeEvent);
-//		}
-//
-//		~TriggerInput() {
-//			m_triggerList->destroy();
-//			m_triggerShortList->destroy();
-//			delete m_triggerListView;
-//			delete m_triggerShortListView;
-//			delete m_selectDataTypeEvent;
-//		}
-//
-//		void setSelectedType(CE::Type::Type* selectedType) {
-//			m_selectedType = selectedType;
-//		}
-//
-//		CE::Type::Type* getSelectedType() {
-//			return m_selectedType;
-//		}
-//
-//		bool isTypeSelected() {
-//			return m_selectedType != nullptr;
-//		}
-//
-//		Events::Messager m_selectDataType;
-//	protected:
-//		std::string getPlaceHolder() override {
-//			if (!isTypeSelected())
-//				return "No selected type";
-//			return getSelectedType()->getDisplayName();
-//		}
-//
-//		std::string toolTip() override {
-//			if (!isTypeSelected())
-//				return "please, select a type";
-//			return "type selected";
-//		}
-//
-//		void onSearch(const std::string& text) {
-//			m_triggerShortListView->onSearch(text);
-//		}
-//
-//		void renderShortView() override {
-//			m_triggerShortList->show();
-//			renderSelectables();
-//		}
-//
-//		void renderSelectables() {
-//			if (isTypeSelected()) {
-//				if (ImGui::Selectable("Clear")) {
-//					m_selectedType = nullptr;
-//				}
-//			}
-//
-//			if (!m_isWinOpen && ImGui::Selectable("More...")) {
-//				Window::TriggerList* win;
-//				getWindow()->addWindow(
-//					win = new Window::TriggerList(m_triggerList)
-//				);
-//				win->getCloseEvent() +=
-//					new Events::EventUI(
-//						EVENT_LAMBDA(info) {
-//					m_isWinOpen = false;
-//				}
-//				);
-//				m_isWinOpen = true;
-//				m_focused = false;
-//			}
-//		}
-//
-//	private:
-//		TriggerList* m_triggerList;
-//		TriggerList::ListView* m_triggerListView;
-//		TriggerList::ListView* m_triggerShortListView;
-//		Container* m_triggerShortList;
-//		CE::Type::Type* m_selectedType = nullptr;
-//		bool m_isWinOpen = false;
-//		Events::EventHandler* m_selectDataTypeEvent;
-//	};
-//};
+			getMainContainer()
+				.text("Trigger name")
+				.addItem(m_nameInput = new Elements::Input::Text);
+		}
+
+	protected:
+		Trigger::ITrigger* m_trigger;
+		Elements::Input::Text* m_nameInput;
+	};
+
+	class FunctionTriggerEditor
+		: public TriggerEditor
+	{
+	public:
+		FunctionTriggerEditor(Trigger::Function::Trigger* trigger, CE::FunctionManager* funcManager)
+			: TriggerEditor("Function trigger editor", trigger)
+		{
+			getMainContainer()
+				.text("Select function(s)")
+				.addItem(m_funcInput = new Widget::FunctionInput(funcManager))
+				.newLine();
+		}
+
+		Trigger::Function::Trigger* getTrigger() {
+			return static_cast<Trigger::Function::Trigger*>(m_trigger);
+		}
+
+	private:
+		Widget::FunctionInput* m_funcInput;
+	};
+};

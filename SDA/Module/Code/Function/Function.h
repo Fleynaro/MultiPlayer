@@ -225,7 +225,7 @@ namespace CE
 				return m_hook;
 			}
 
-			Trigger::Function::Hook* createHook();
+			void createHook();
 
 			inline FunctionDecl* getDeclarationPtr() {
 				return m_decl;

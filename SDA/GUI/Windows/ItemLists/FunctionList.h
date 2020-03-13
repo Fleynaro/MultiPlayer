@@ -579,6 +579,8 @@ namespace GUI::Widget
 		public IFunctionList
 	{
 	public:
+		//MYTODO: сделать фабрику итемов. IFactory, от которого наследуемся 
+
 		class ListView
 			: public FunctionList::ListView
 		{

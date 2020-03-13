@@ -721,6 +721,7 @@ namespace GUI
 
 		virtual void renderHeader() {
 			ImGui::Text("5555555555");
+			//MYTODO: text default
 		}
 
 		ColContainer& setCloseBtn(bool toggle) {
@@ -2155,6 +2156,46 @@ namespace GUI
 				int m_value = 0;
 				int m_step = 1;
 				int m_fastStep = 100;
+			};
+
+			class ObjectList
+				: public Container
+			{
+			public:
+				class IObject {
+				public:
+					virtual std::string getName() = 0;
+					virtual void onClick() = 0;
+				};
+
+				ObjectList()
+					: m_createObjectEvent(this)
+				{
+
+				}
+
+				void render() override {
+
+					for (auto it : m_objects) {
+						ImGui::InputText("##", (char*)it->getName().c_str(), 50);
+						ImGui::SameLine();
+						if (ImGui::Button("*")) {
+							m_createObjectEvent.callEventHandler();
+						}
+					}
+
+					if (ImGui::Button("Add")) {
+						m_createObjectEvent.callEventHandler();
+					}
+				}
+
+				void addObject(IObject* object) {
+					m_objects.push_back(object);
+				}
+
+			private:
+				std::list<IObject*> m_objects;
+				Events::Messager m_createObjectEvent;
 			};
 		};
 

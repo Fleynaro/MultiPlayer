@@ -155,12 +155,18 @@ namespace CE
 					m_notExecute = toggle;
 				}
 
+				void addHook(Hook* hook) {
+					m_hooks.push_back(hook);
+					hook->addTrigger(this);
+				}
+
 				auto& getFilters() {
 					return m_filters;
 				}
 			private:
 				Stat::Function::Collector* m_statCollector = nullptr;
 				std::list<Filter::IFilter*> m_filters;
+				std::list<Hook*> m_hooks;
 				bool m_notExecute = false;
 			};
 
