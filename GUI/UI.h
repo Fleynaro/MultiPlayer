@@ -35,13 +35,13 @@ public:
 	}
 
 	void invoke(Args... args) {
-		m_func(args...);
+		//m_func(args...);
 
 
 		Message<Args...> message(std::make_tuple(args...));
 		int a = 5;
 
-
+		std::apply(m_func, message.m_tuple);
 		//invoke apply
 	}
 };
@@ -161,7 +161,7 @@ public:
 	public:
 		ShortCut* m_cont;
 		HoverText(const std::string& name)
-			: Elements::Text::Text(name), Events::OnHovered<HoverText>(this)
+			: Elements::Text::Text(name), Events::OnHovered<HoverText>(this, getWindow())
 		{
 			m_cont = new ShortCut;
 		}
@@ -253,14 +253,14 @@ public:
 		WindowTest()
 			: IWindow("ImGui window for test")
 		{
-			auto eventHandler = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto sender = info->getSender();
-				auto text = static_cast<Elements::Input::FilterText*>(sender);
-				auto val = text->getInputValue();
-				if (val == "lol") {
-					throw Exception(text, "error occured.");
-				}
-			});
+			auto eventHandler = new Events::SpecialEventType::EventHandlerType(
+				[&](Events::ISender* sender) {
+					auto text = static_cast<Elements::Input::FilterText*>(sender);
+					auto val = text->getInputValue();
+					if (val == "lol") {
+						throw Exception(text, "error occured.");
+					}
+				});
 			
 			
 
@@ -344,9 +344,7 @@ public:
 										->addWord("car")
 									)
 				//.addItem(new MirrorItem(M_TTTT))
-				.addItem(new Elements::Button::ButtonStd("clear", new Events::EventUI(EVENT_LAMBDA(info) {
-				M_TTTT->getInputValue().clear();
-			})))
+				
 								.endTD()
 							.endTR()
 
@@ -491,7 +489,7 @@ public:
 
 		//ImGui::PushFont(GUI::Font::Tahoma);
 		WinManager::RenderAllWindows();
-		GUI::Events::EventUI::handleEvents();
+		
 		//ImGui::PopFont();
 
 		ImGui::Render();

@@ -179,19 +179,6 @@ ColContainer& Container::beginColContainer(std::string name, ColContainer** ptr)
 	return **ptr;
 }
 
-Container& Container::addList(List* list)
-{
-	List* ptr = nullptr;
-	return addList(list, &ptr);
-}
-
-Container& Container::addList(List* list, List** ptr)
-{
-	*ptr = list;
-	addItem(list);
-	return *this;
-}
-
 TreeNode& Container::beginTreeNode(std::string name)
 {
 	TreeNode* ptr = nullptr;
@@ -233,63 +220,28 @@ Table::TR& Container::endTD() {
 	return *(Table::TR*)getParent();
 }
 
-
-List::~List() {
-	for (auto it : m_elems) {
-		delete it;
-	}
-}
-
-List* List::addElem(Elements::List::Item* elem) {
-	m_elems.push_back(elem);
-	elem->setParent(this);
-	elem->setValuePtr(&m_value);
-	return this;
-}
-
-void List::render() {
-	for (auto it : m_elems) {
-		it->show();
-	}
-}
-
-
-ListRadioBtn* ListRadioBtn::addRadioBtn(std::string name, int id)
-{
-	return (ListRadioBtn*)addElem(
-		new Elements::List::RadioBtn(name, id, m_event)
-	);
-}
-
-ListMenuItem* ListMenuItem::addMenuItem(std::string name, int id)
-{
-	return (ListMenuItem*)addElem(
-		new Elements::List::MenuItem(name, id, m_event)
-	);
-}
-
-MenuContainer& MenuContainer::menuItemWithShortcut(std::string name, std::string shortcut, Events::Event* event)
+MenuContainer& MenuContainer::menuItemWithShortcut(const std::string& name, const std::string& shortcut, Events::SpecialEventType::EventHandlerType* eventHandler)
 {
 	Elements::Menu::Item* ptr = nullptr;
-	menuItem(name, event, &ptr);
+	menuItem(name, eventHandler, &ptr);
 	ptr->setHintText(shortcut);
 	return *this;
 }
 
-MenuContainer& MenuContainer::menuItem(std::string name, Events::Event* event)
+MenuContainer& MenuContainer::menuItem(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler)
 {
 	Elements::Menu::Item* ptr = nullptr;
-	return menuItem(name, event, &ptr);
+	return menuItem(name, eventHandler, &ptr);
 }
 
-MenuContainer& MenuContainer::menuItem(std::string name, Events::Event* event, Elements::Menu::Item** item)
+MenuContainer& MenuContainer::menuItem(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler, Elements::Menu::Item** item)
 {
-	*item = new Elements::Menu::Item(name, event);
+	*item = new Elements::Menu::Item(name, eventHandler);
 	addItem(*item, (Item**)item);
 	return *this;
 }
 
-MenuContainer& MenuContainer::menuItem(std::string name, Elements::Menu::Item** item)
+MenuContainer& MenuContainer::menuItem(const std::string& name, Elements::Menu::Item** item)
 {
 	return menuItem(name, nullptr, item);
 }
@@ -307,12 +259,7 @@ TabItem& TabBar::beginTabItem(std::string name, TabItem** ptr)
 	return **ptr;
 }
 
-
-using namespace GUI::Events;
-EventHandler* EventHookedMessage::getEventHandler() {
-	return getHookSender()->getEventHandler();
-}
-
-void* EventHookedMessage::getUserDataPtr() {
-	return getHookSender()->getUserDataPtr();
+#include "IWindow.h"
+void GUI::Item::addEventMessage(Events::IEventMessage* message) {
+	getWindow()->addEventMessage(message);
 }

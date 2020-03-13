@@ -129,7 +129,9 @@ namespace GUI
 		class IWindow;
 	};
 
-	class Item : public Events::ISender
+	class Item
+		: public Events::ISender,
+		public Events::IEventMessageReceiver
 	{
 	protected:
 		virtual ~Item() {};
@@ -183,6 +185,10 @@ namespace GUI
 			}
 			return getParent()->getWindow();
 		}
+
+		void addEventMessage(Events::IEventMessage* message) override;
+
+		void handleEventMessages() override {}
 	protected:
 		std::string getUniqueId() {
 			return "##" + std::to_string((std::uintptr_t)this);
@@ -252,63 +258,6 @@ namespace GUI
 	public:
 	};
 
-	
-	namespace Elements::List {
-		class Item;
-	};
-	class List : public Item
-	{
-	public:
-		List(int value = 0, Events::Event *event = nullptr)
-			: m_event(event), m_value(value)
-		{}
-		~List();
-		List* addElem(Elements::List::Item* elem);
-
-		void render() override;
-
-		int getValue() {
-			return m_value;
-		}
-
-		void setValue(int value) {
-			m_value = value;
-		}
-	protected:
-		std::vector<Elements::List::Item*> m_elems;
-		Events::Event* m_event;
-		int m_value ;
-	};
-
-
-	namespace Elements::List {
-		class RadioBtn;
-	};
-	class ListRadioBtn : public List
-	{
-	public:
-		ListRadioBtn(int value, Events::Event* event = nullptr)
-			: List(value, event)
-		{}
-		
-		ListRadioBtn* addRadioBtn(std::string name, int id);
-	};
-
-
-	namespace Elements::List {
-		class MenuItem;
-	};
-	class ListMenuItem : public List
-	{
-	public:
-		ListMenuItem(int value, Events::Event* event = nullptr)
-			: List(value, event)
-		{}
-		
-		ListMenuItem* addMenuItem(std::string name, int id);
-	};
-
-
 	namespace Elements::Text {
 		class Text;
 	};
@@ -332,7 +281,7 @@ namespace GUI
 	{
 	public:
 		Container(std::string name = "")
-			: Events::OnVisible<Container>(this)
+			: Events::OnVisible<Container>(this, this)
 		{}
 		~Container() {
 			clear();
@@ -341,8 +290,6 @@ namespace GUI
 
 		Container& addItem(Item* item);
 		Container& addItem(Item* item, Item** ptr);
-		Container& addList(List* list);
-		Container& addList(List* list, List** ptr);
 		Container& sameLine(float spacing = -1.f);
 		Container& newLine();
 		Container& separator();
@@ -594,12 +541,13 @@ namespace GUI
 	{
 	public:
 		TabItem(const std::string& name)
-			: Attribute::Name<TabItem>(name), Events::OnRightMouseClick<TabItem>(this), Events::OnClose<TabItem>(this)
+			: Attribute::Name<TabItem>(name), Events::OnRightMouseClick<TabItem>(this, this), Events::OnClose<TabItem>(this, this)
 		{
-			getCloseEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
-				getTabBar()->getItems().remove(this);
-				destroy();
-			});
+			getCloseEvent() +=
+				[&](Events::ISender* sender) {
+					getTabBar()->getItems().remove(this);
+					destroy();
+				};
 		}
 
 		void render() override {
@@ -643,7 +591,7 @@ namespace GUI
 	{
 	public:
 		TreeNode(const std::string& name = "##", bool open = false)
-			: Attribute::Name<TreeNode>(name), Attribute::Collapse<TreeNode>(open), Events::OnLeftMouseClick<TreeNode>(this)
+			: Attribute::Name<TreeNode>(name), Attribute::Collapse<TreeNode>(open), Events::OnLeftMouseClick<TreeNode>(this, this)
 		{}
 
 		void render() override {
@@ -782,7 +730,7 @@ namespace GUI
 	{
 	public:
 		PopupContainer(bool display = false, int maxDeactiveTime = 1000)
-			: m_maxDeactiveTime(maxDeactiveTime), Events::OnHovered<PopupContainer>(this)
+			: m_maxDeactiveTime(maxDeactiveTime), Events::OnHovered<PopupContainer>(this, this)
 		{}
 
 		void setVisible() {
@@ -872,10 +820,10 @@ namespace GUI
 			: TreeNode(name, open)
 		{}
 
-		MenuContainer& menuItemWithShortcut(std::string name, std::string shortcut, Events::Event* event);
-		MenuContainer& menuItem(std::string name, Events::Event* event);
-		MenuContainer& menuItem(std::string name, Events::Event* event, Elements::Menu::Item** item);
-		MenuContainer& menuItem(std::string name, Elements::Menu::Item** item);
+		MenuContainer& menuItemWithShortcut(const std::string& name, const std::string& shortcut, Events::SpecialEventType::EventHandlerType* eventHandler);
+		MenuContainer& menuItem(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler);
+		MenuContainer& menuItem(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler, Elements::Menu::Item** item);
+		MenuContainer& menuItem(const std::string& name, Elements::Menu::Item** item);
 		
 		void render() override {
 			if (ImGui::BeginMenu(getName().c_str(), isOpen())) {
@@ -1274,8 +1222,8 @@ namespace GUI
 			public:
 				ClickedText(const std::string& text, ColorRGBA color = ColorRGBA(0xFFFFFFFF))
 					: ColoredText(text, color),
-					Events::OnLeftMouseClick<ClickedText>(this),
-					Events::OnMiddleMouseClick<ClickedText>(this)
+					Events::OnLeftMouseClick<ClickedText>(this, this),
+					Events::OnMiddleMouseClick<ClickedText>(this, this)
 				{}
 
 				void render() override {
@@ -1458,8 +1406,8 @@ namespace GUI
 				public Attribute::Name<IButton>
 			{
 			public:
-				IButton(const std::string& name, Events::Event* event)
-					: Attribute::Name<IButton>(name), Events::OnSpecial<IButton>(this, event)
+				IButton(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler)
+					: Attribute::Name<IButton>(name), Events::OnSpecial<IButton>(this, this, eventHandler)
 				{}
 			};
 
@@ -1470,8 +1418,8 @@ namespace GUI
 				public Attribute::Font<ButtonStd>
 			{
 			public:
-				ButtonStd(const std::string& name, Events::Event* event = nullptr)
-					: IButton(name, event)
+				ButtonStd(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: IButton(name, eventHandler)
 				{}
 
 				void render() override
@@ -1492,8 +1440,8 @@ namespace GUI
 				: public IButton
 			{
 			public:
-				ButtonArrow(ImGuiDir direction, Events::Event* event = nullptr)
-					: m_direction(direction), IButton("##", event)
+				ButtonArrow(ImGuiDir direction, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: m_direction(direction), IButton("##", eventHandler)
 				{}
 
 				void render() override
@@ -1515,8 +1463,8 @@ namespace GUI
 				public Attribute::Font<ButtonSmall>
 			{
 			public:
-				ButtonSmall(const std::string& name, Events::Event* event = nullptr)
-					: IButton(name, event)
+				ButtonSmall(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: IButton(name, eventHandler)
 				{}
 
 				void render() override
@@ -1539,8 +1487,8 @@ namespace GUI
 				public Attribute::Hint<ButtonTag>
 			{
 			public:
-				ButtonTag(const std::string& name, ColorRGBA color, Events::Event* event = nullptr)
-					: IButton(name, event), m_color(color)
+				ButtonTag(const std::string& name, ColorRGBA color, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: IButton(name, eventHandler), m_color(color)
 				{}
 
 				void render() override
@@ -1578,8 +1526,8 @@ namespace GUI
 				public Attribute::Name<ISlider<T>>
 			{
 			public:
-				ISlider(std::string name, Events::Event* event, T min, T max, T value)
-					: Attribute::Name<ISlider>(name), Events::OnSpecial<ISlider>(this, event), m_min(min), m_max(max), m_value(value)
+				ISlider(std::string name, Events::SpecialEventType::EventHandlerType* eventHandler, T min, T max, T value)
+					: Attribute::Name<ISlider>(name), Events::OnSpecial<ISlider>(this, this), m_min(min), m_max(max), m_value(value)
 				{}
 
 				void setMin(T value) {
@@ -1616,8 +1564,8 @@ namespace GUI
 			class SliderFloat : public ISlider<float>
 			{
 			public:
-				SliderFloat(std::string name, Events::Event* event = nullptr, float min = 0.0, float max = 1.0, float value = 0.0)
-					: ISlider(name, event, min, max, value)
+				SliderFloat(std::string name, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr, float min = 0.0, float max = 1.0, float value = 0.0)
+					: ISlider(name, eventHandler, min, max, value)
 				{}
 
 				void render() override
@@ -1634,8 +1582,8 @@ namespace GUI
 			class SliderInt : public ISlider<int>
 			{
 			public:
-				SliderInt(std::string name, Events::Event* event = nullptr, int min = 0, int max = 100, int value = 0.0)
-					: ISlider(name, event, min, max, value)
+				SliderInt(std::string name, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr, int min = 0, int max = 100, int value = 0.0)
+					: ISlider(name, eventHandler, min, max, value)
 				{}
 
 				void render() override
@@ -1658,8 +1606,8 @@ namespace GUI
 				public Attribute::Name<IColorEdit>
 			{
 			public:
-				IColorEdit(std::string name, Events::Event* event, ColorRGBA color)
-					: Attribute::Name<IColorEdit>(name), Events::OnSpecial<IColorEdit>(this, event), m_color(color)
+				IColorEdit(std::string name, Events::SpecialEventType::EventHandlerType* eventHandler, ColorRGBA color)
+					: Attribute::Name<IColorEdit>(name), Events::OnSpecial<IColorEdit>(this, this), m_color(color)
 				{}
 
 				ColorRGBA getColor() {
@@ -1673,8 +1621,8 @@ namespace GUI
 			class ColorEditStd : public IColorEdit
 			{
 			public:
-				ColorEditStd(std::string name, Events::Event* event, ColorRGBA color = ColorRGBA(0xFF0000FF))
-					: IColorEdit(name, event, color)
+				ColorEditStd(std::string name, Events::SpecialEventType::EventHandlerType* eventHandler, ColorRGBA color = ColorRGBA(0xFF0000FF))
+					: IColorEdit(name, eventHandler, color)
 				{}
 
 				void render() override
@@ -1718,8 +1666,8 @@ namespace GUI
 				>
 			{
 			public:
-				IInput(const std::string& name, Events::Event* event)
-					: Attribute::Name<IInput>(name), Events::OnSpecial<IInput>(this, event)
+				IInput(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler)
+					: Attribute::Name<IInput>(name), Events::OnSpecial<IInput>(this, this, eventHandler)
 				{}
 
 				void setReadOnly(bool toggle) {
@@ -1765,8 +1713,8 @@ namespace GUI
 				public Attribute::Font<Text>
 			{
 			public:
-				Text(const std::string& name = "", Events::Event* event = nullptr)
-					: IInput(name, event)
+				Text(const std::string& name = "", Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: IInput(name, eventHandler)
 				{}
 
 				void render() override {
@@ -1818,43 +1766,9 @@ namespace GUI
 				public Attribute::Collapse<FilterText>
 			{
 			public:
-				FilterText(const std::string& name = "##", Events::Event* event = nullptr)
-					: Text(name, event), Attribute::Collapse<FilterText>(false)
+				FilterText(const std::string& name = "##", Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: Text(name, eventHandler), Attribute::Collapse<FilterText>(false)
 				{}
-
-				/*void render() override {
-					Text::render();
-					ImGui::SameLine();
-					bool isFocused = ImGui::IsItemFocused();
-					m_open |= ImGui::IsItemActive();
-					if (isOpen())
-					{
-						ImGui::SetNextWindowPos({ ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y });
-						ImGui::SetNextWindowSize({ ImGui::GetItemRectSize().x, 0 });
-						if (ImGui::BeginPopup(getUniqueId().c_str(), ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoInputs))
-						{
-							isFocused |= ImGui::IsWindowFocused();
-							for (auto& word : m_words) {
-								if(m_isCompare && word.find(getInputValue()) == std::string::npos)
-									continue;
-								if (ImGui::Selectable(word.c_str()) || (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGuiKey_Enter)))
-								{
-									setInputValue(word);
-									m_open = false;
-								}
-							}
-							ImGui::End();
-						}
-						m_open &= isFocused;
-
-						ImGui::OpenPopup(getUniqueId().c_str());
-					}
-					else {
-						if (ImGui::IsPopupOpen(getUniqueId().c_str())) {
-							ImGui::CloseCurrentPopup();
-						}
-					}
-				}*/
 
 				void render() override {
 					Text::render();
@@ -1909,8 +1823,8 @@ namespace GUI
 				public Attribute::Collapse<FilterInt>
 			{
 			public: 
-				FilterInt(const std::string& name = "##", Events::Event* event = nullptr)
-					: Text(name, event), Attribute::Collapse<FilterInt>(false)
+				FilterInt(const std::string& name = "##", Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: Text(name, eventHandler), Attribute::Collapse<FilterInt>(false)
 				{}
 
 				void render() override {
@@ -1994,8 +1908,8 @@ namespace GUI
 				public Attribute::Width<Bool>
 			{
 			public:
-				Bool(const std::string& name = "##", bool value = false, Events::Event* event = nullptr)
-					: IInput(name, event), m_value(value)
+				Bool(const std::string& name = "##", bool value = false, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: IInput(name, eventHandler), m_value(value)
 				{}
 
 				void render() override {
@@ -2041,8 +1955,8 @@ namespace GUI
 				public Attribute::Width<Float>
 			{
 			public:
-				Float(const std::string& name = "##", Events::Event* event = nullptr)
-					: IInput(name, event)
+				Float(const std::string& name = "##", Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: IInput(name, eventHandler)
 				{}
 
 				void render() override {
@@ -2082,8 +1996,8 @@ namespace GUI
 				public Attribute::Width<Float>
 			{
 			public:
-				Double(const std::string& name = "##", Events::Event* event = nullptr)
-					: IInput(name, event)
+				Double(const std::string& name = "##", Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: IInput(name, eventHandler)
 				{}
 
 				void render() override {
@@ -2123,8 +2037,8 @@ namespace GUI
 				public Attribute::Width<Int>
 			{
 			public:
-				Int(const std::string& name = "##", Events::Event* event = nullptr)
-					: IInput(name, event)
+				Int(const std::string& name = "##", Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: IInput(name, eventHandler)
 				{}
 
 				void render() override {
@@ -2169,7 +2083,7 @@ namespace GUI
 				};
 
 				ObjectList()
-					: m_createObjectEvent(this)
+					//: m_createObjectEvent(this)
 				{
 
 				}
@@ -2180,12 +2094,12 @@ namespace GUI
 						ImGui::InputText("##", (char*)it->getName().c_str(), 50);
 						ImGui::SameLine();
 						if (ImGui::Button("*")) {
-							m_createObjectEvent.callEventHandler();
+							//m_createObjectEvent.invoke();
 						}
 					}
 
 					if (ImGui::Button("Add")) {
-						m_createObjectEvent.callEventHandler();
+						//m_createObjectEvent.invoke();
 					}
 				}
 
@@ -2195,7 +2109,7 @@ namespace GUI
 
 			private:
 				std::list<IObject*> m_objects;
-				Events::Messager m_createObjectEvent;
+				//Events::Messager m_createObjectEvent;
 			};
 		};
 
@@ -2269,8 +2183,8 @@ namespace GUI
 				public Events::OnSpecial<Item>
 			{
 			public:
-				Item(Events::Event* event, int id)
-					: Events::OnSpecial<Item>(this, event), m_id(id)
+				Item(Events::SpecialEventType::EventHandlerType* eventHandler, int id)
+					: Events::OnSpecial<Item>(this, this), m_id(id)
 				{}
 
 				void setValuePtr(int* ptr) {
@@ -2303,8 +2217,8 @@ namespace GUI
 				public Attribute::Name<RadioBtn>
 			{
 			public:
-				RadioBtn(const std::string& name, int id, Events::Event* event = nullptr)
-					: Attribute::Name<RadioBtn>(name), List::Item(event, id)
+				RadioBtn(const std::string& name, int id, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: Attribute::Name<RadioBtn>(name), List::Item(eventHandler, id)
 				{}
 
 				void render() override
@@ -2321,8 +2235,8 @@ namespace GUI
 				public Attribute::Name<MenuItem>
 			{
 			public:
-				MenuItem(const std::string& name, int id, Events::Event* event = nullptr)
-					: Attribute::Name<MenuItem>(name), List::Item(event, id)
+				MenuItem(const std::string& name, int id, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: Attribute::Name<MenuItem>(name), List::Item(eventHandler, id)
 				{}
 
 				void render() override
@@ -2343,8 +2257,8 @@ namespace GUI
 				public Attribute::Width<ListBox>
 			{
 			public:
-				ListBox(const std::string& name, int selected = 0, Events::Event * event = nullptr)
-					: Attribute::Name<ListBox>(name), m_selected(selected), Events::OnSpecial<ListBox>(this, event)
+				ListBox(const std::string& name, int selected = 0, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: Attribute::Name<ListBox>(name), m_selected(selected), Events::OnSpecial<ListBox>(this, this, eventHandler)
 				{}
 
 				void render() override
@@ -2404,8 +2318,8 @@ namespace GUI
 				using ItemListType = std::pair<std::vector<const char*>, std::vector<void*>>;
 				using CallbackType = std::function<ItemListType()>;
 
-				ListBoxDyn(const std::string& name, int selected = 0, Events::Event * event = nullptr)
-					: Attribute::Name<ListBoxDyn>(name), m_selected(selected), Events::OnSpecial<ListBoxDyn>(this, event)
+				ListBoxDyn(const std::string& name, int selected = 0, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: Attribute::Name<ListBoxDyn>(name), m_selected(selected), Events::OnSpecial<ListBoxDyn>(this, this, eventHandler)
 				{}
 
 				void render() override
@@ -2489,8 +2403,8 @@ namespace GUI
 			class Combo : public ListBox
 			{
 			public:
-				Combo(const std::string& name, int selected = 0, Events::Event * event = nullptr)
-					: ListBox(name, selected, event)
+				Combo(const std::string& name, int selected = 0, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: ListBox(name, selected, eventHandler)
 				{}
 
 				void render() override
@@ -2525,8 +2439,8 @@ namespace GUI
 					void* m_userPtr = nullptr;
 				};
 			public:
-				MultiCombo(const std::string& name, Events::Event* event = nullptr)
-					: Attribute::Name<MultiCombo>(name), Events::OnSpecial<MultiCombo>(this, event)
+				MultiCombo(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
+					: Attribute::Name<MultiCombo>(name), Events::OnSpecial<MultiCombo>(this, this, eventHandler)
 				{}
 
 				void render() override
@@ -2596,8 +2510,8 @@ namespace GUI
 				public Attribute::Hint<Item>
 			{
 			public:
-				Item(const std::string& name, Events::Event* event = nullptr, bool enable = true)
-					: Events::OnSpecial<Item>(this, event), Attribute::Name<Item>(name), Attribute::Enable<Item>(enable)
+				Item(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr, bool enable = true)
+					: Events::OnSpecial<Item>(this, this), Attribute::Name<Item>(name), Attribute::Enable<Item>(enable)
 				{}
 
 				void render() override
@@ -2613,8 +2527,8 @@ namespace GUI
 				public Attribute::Select<SelItem>
 			{
 			public:
-				SelItem(const std::string& name, Events::Event* event = nullptr, bool select = false, bool enable = true)
-					: Item(name, event, enable), Attribute::Select<SelItem>(select)
+				SelItem(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr, bool select = false, bool enable = true)
+					: Item(name, eventHandler, enable), Attribute::Select<SelItem>(select)
 				{}
 
 				void render() override

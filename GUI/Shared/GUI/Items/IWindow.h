@@ -10,13 +10,14 @@ namespace GUI::Window
 
 	class IWindow :
 		public Item,
+		public Events::IEventMessageReceiver,
 		public Events::OnClose<IWindow>,
 		public Attribute::Id<IWindow>,
 		public Attribute::Name<IWindow>
 	{
 	public:
 		IWindow(std::string name, Container* container = new Container)
-			: Attribute::Name<IWindow>(name), Events::OnClose<IWindow>(this)
+			: Attribute::Name<IWindow>(name), Events::OnClose<IWindow>(this, this)
 		{
 			setMainContainer(container);
 		}
@@ -182,12 +183,10 @@ namespace GUI::Window
 			m_childs.push_back(window);
 			window->setParent(this);
 			window->getCloseEvent() +=
-				new Events::EventUI(
-					EVENT_LAMBDA(info) {				
-						auto win = (IWindow*)info->getSender();
-						win->close();
-					}
-				);
+				[&](Events::ISender* sender) {
+					auto win = static_cast<IWindow*>(sender);
+					win->close();
+				};
 			return *this;
 		}
 
@@ -203,7 +202,7 @@ namespace GUI::Window
 			delete this;
 		}
 
-		void addEventMessage(Events::EventMessage::Type message) {
+		void addEventMessage(Events::IEventMessage* message) override {
 			m_eventMessages.push_back(message);
 		}
 
@@ -237,29 +236,23 @@ namespace GUI::Window
 			auto win = new ModalWin(message);
 			addWindow(win);
 			win->getCloseEvent() +=
-				new Events::EventUI(
-					EVENT_LAMBDA(info) {				
-						m_handleEventMessageEnabled = true;
-					}
-				);
+				[&](Events::ISender* sender) {
+					m_handleEventMessageEnabled = true;
+				};
 			m_handleEventMessageEnabled = false;
 		}
 	private:
-		std::list<Events::EventMessage::Type> m_eventMessages;
+		std::list<Events::IEventMessage*> m_eventMessages;
 		bool m_handleEventMessageEnabled = true;
 
-		void handleEventMessages() {
+		void handleEventMessages() override {
 			if (!m_handleEventMessageEnabled)
 				return;
 
 			using namespace Events;
 			for (auto& message : m_eventMessages) {
-				EventHandler* eventHandler = message->getEventHandler();
-				if (eventHandler == nullptr)
-					continue;
-
 				try {
-					eventHandler->doCallback()(message);
+					message->execute();
 				}
 				catch (const GUI::Exception& ex) {
 					if (ex.getSource() != nullptr) {
@@ -271,6 +264,8 @@ namespace GUI::Window
 						//MY TODO*: return; + remove handled messages
 					}
 				}
+
+				delete message;
 			}
 			m_eventMessages.clear();
 		}

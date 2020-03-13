@@ -55,7 +55,7 @@ namespace GUI::Widget::Template
 							new GUI::Elements::Button::ButtonStd(
 								"x",
 								new Events::EventUI(EVENT_LAMBDA(info) {
-									getRemoveFilterEvent().callEventHandler();
+									getRemoveFilterEvent().invoke();
 								})
 							)
 						);
@@ -69,7 +69,7 @@ namespace GUI::Widget::Template
 			}
 
 			void onChanged() {
-				m_filterManager->getUpdateEvent().callEventHandler();
+				m_filterManager->getUpdateEvent().invoke();
 			}
 
 			Container& beginBody()
@@ -108,7 +108,7 @@ namespace GUI::Widget::Template
 					if (filterIdx != -1) {
 						m_filterManager->addFilter(createFilter(filterIdx));
 						setDefault(0);
-						m_filterManager->getUpdateEvent().callEventHandler();
+						m_filterManager->getUpdateEvent().invoke();
 					}
 				});
 			}
@@ -127,7 +127,7 @@ namespace GUI::Widget::Template
 				auto filter = static_cast<Filter*>(message->getUserDataPtr());
 				remove(filter);
 				delete filter;
-				getUpdateEvent().callEventHandler();
+				getUpdateEvent().invoke();
 			});
 			m_eventRemoveFilter->setCanBeRemoved(false);
 		}

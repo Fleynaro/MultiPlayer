@@ -13,60 +13,39 @@ namespace GUI
 				return true;
 			}
 		};
+
+		template<typename ...ArgsType>
 		class EventHandler;
 
 		class IEventMessage
 		{
 		public:
 			virtual ISender* getSender() = 0;
-			virtual EventHandler* getEventHandler() = 0;
+			virtual void execute() = 0;
 		};
 
-		class EventMessage : public IEventMessage
+		class IEventMessageReceiver
 		{
 		public:
-			using Type = std::shared_ptr<IEventMessage>;
-			EventMessage(ISender* sender, EventHandler* eventHandler, uint64_t value = 0)
-				: m_sender(sender), m_eventHandler(eventHandler), m_value(value)
-			{}
-
-			~EventMessage() {
-				int a = 5;
-			}
-
-			ISender* getSender() override {
-				return m_sender;
-			}
-
-			EventHandler* getEventHandler() override {
-				return m_eventHandler;
-			}
-
-			//MY TODO: remove if not used anywhere
-			template<typename T>
-			T getValue() {
-				return (T)m_value;
-			}
-		private:
-			ISender* m_sender;
-			EventHandler* m_eventHandler;
-			uint64_t m_value;
+			virtual void addEventMessage(IEventMessage* message) = 0;
+			virtual void handleEventMessages() = 0;
 		};
-		using EventInfo = EventMessage;
 
-
-		//template<typename ...ArgsType>
+		template<typename ...ArgsType>
 		class EventHandler
 		{
 		public:
-			using CallbackType = std::function<void(EventMessage::Type&)>;
+			using CallbackType = std::function<void(ArgsType...)>;
+
 			EventHandler(CallbackType callback)
 				: m_callback(callback)
 			{};
 
-			virtual ~EventHandler() {}
+			~EventHandler() {}
 
-			virtual void callHandler(EventMessage::Type info) = 0;
+			void invoke(std::tuple<ArgsType...> args) {
+				std::apply(m_callback, args);
+			}
 
 			bool canBeRemovedBy(ISender* sender) {
 				return m_owner == sender && m_canBeRemoved;
@@ -79,6 +58,10 @@ namespace GUI
 				setOwnerAnyway(owner);
 			}
 
+			ISender* getSender() {
+				return m_owner;
+			}
+
 			void setOwnerAnyway(ISender* owner) {
 				m_owner = owner;
 			}
@@ -86,30 +69,59 @@ namespace GUI
 			void setCanBeRemoved(bool state) {
 				m_canBeRemoved = state;
 			}
-
-			CallbackType& doCallback() {
-				return m_callback;
-			}
 		protected:
 			CallbackType m_callback;
 			ISender* m_owner = nullptr;
 			bool m_canBeRemoved = true;
 		};
-		using Event = EventHandler;
 
-
-		//MYTODO: 1) rename to Event
-		class Messager
+		template<typename ...ArgsType>
+		class EventMessage : public IEventMessage
 		{
 		public:
-			Messager(ISender* sender, EventHandler* eventHandler = nullptr)
-				: m_sender(sender)
-			{
-				if(eventHandler != nullptr)
-					*this += eventHandler;
+			using EventHandlerType = EventHandler<ArgsType...>;
+
+			EventMessage(EventHandlerType* eventHandler, std::tuple<ArgsType...> arguments)
+				: m_eventHandler(eventHandler), m_arguments(arguments)
+			{}
+
+			~EventMessage() {}
+
+			ISender* getSender() override {
+				return m_eventHandler->getSender();
 			}
 
-			~Messager() {
+			void execute() override {
+				m_eventHandler->invoke(m_arguments);
+			}
+		private:
+			EventHandlerType* m_eventHandler;
+			std::tuple<ArgsType...> m_arguments;
+		};
+
+		template<typename ...ArgsType>
+		static EventHandler<ArgsType...>* Listener(std::function<void(ArgsType...)> callback) {
+			return new EventHandler<ArgsType...>(callback);
+		}
+
+		//MYTODO: 1) rename to Event
+		template<typename ...ArgsType>
+		class Event
+		{
+		public:
+			using EventHandlerType = EventHandler<ArgsType...>;
+
+			Event(ISender* sender, IEventMessageReceiver* receiver)
+				: m_sender(sender), m_receiver(receiver)
+			{}
+
+			Event(ISender* sender, IEventMessageReceiver* receiver, EventHandlerType* eventHandler)
+				: Event(sender, receiver)
+			{
+				*this += eventHandler;
+			}
+
+			~Event() {
 				for (auto handler : m_eventHandlers) {
 					if (handler->canBeRemovedBy(m_sender)) {
 						delete handler;
@@ -117,20 +129,13 @@ namespace GUI
 				}
 			}
 
-			template<typename T>
-			void callEventHandler(T value) {
-				callEventHandler((uint64_t&)value);
-			}
-
-			void callEventHandler(uint64_t value = 0) {
+			void invoke(ArgsType... args) {
 				for (auto handler : getEventHandlers()) {
-					handler->callHandler(EventMessage::Type(
-						new EventMessage(m_sender, handler, value)
-					));
+					m_receiver->addEventMessage(new EventMessage<ArgsType...>(handler, std::make_tuple(args...)));
 				}
 			}
 
-			std::list<EventHandler*>& getEventHandlers() {
+			std::list<EventHandlerType*>& getEventHandlers() {
 				return m_eventHandlers;
 			}
 
@@ -138,7 +143,11 @@ namespace GUI
 				return m_sender;
 			}
 
-			Messager& operator+=(EventHandler* eventHandler) {
+			Event& operator+=(std::function<void(ArgsType...)> callback) {
+				return (*this += Listener(callback));
+			}
+
+			Event& operator+=(EventHandlerType* eventHandler) {
 				if (eventHandler != nullptr) {
 					eventHandler->setOwner(m_sender);
 					m_eventHandlers.push_front(eventHandler);
@@ -146,153 +155,29 @@ namespace GUI
 				return *this;
 			}
 
-			Messager& operator-=(EventHandler* eventHandler) {
+			Event& operator-=(EventHandlerType* eventHandler) {
 				if (eventHandler != nullptr) {
 					m_eventHandlers.remove(eventHandler);
 				}
 				return *this;
 			}
 		private:
-			ISender* m_sender; //from
-			std::list<EventHandler*> m_eventHandlers; //to
+			ISender* m_sender;
+			IEventMessageReceiver* m_receiver;
+			std::list<EventHandlerType*> m_eventHandlers;
 		};
 
 
-		class EventStd : public EventHandler
-		{
-		public:
-			EventStd(CallbackType callback)
-				: EventHandler(callback)
-			{}
-
-			void callHandler(EventInfo::Type info) override {
-				m_callback(info);
-			}
-		};
-
-
-		class EventUI : public EventHandler
-		{
-		public:
-			EventUI(CallbackType callback)
-				: EventHandler(callback)
-			{}
-			~EventUI() {}
-
-			void callHandler(EventMessage::Type message) override;
-
-			static void handleEvents() {
-				for (auto &message : m_eventMessages) {
-					EventHandler* eventHandler = message->getEventHandler();
-					if (eventHandler == nullptr)
-						continue;
-					eventHandler->doCallback()(message);
-				}
-				m_eventMessages.clear();
-			}
-		private:
-			inline static std::list<EventInfo::Type> m_eventMessages;
-		};
-
-		class EventHook;
-		class EventHookedMessage : public IEventMessage
-		{
-		public:
-			EventHookedMessage(EventHook* hookSender, EventMessage::Type message)
-				: m_hookSender(hookSender), m_message(message)
-			{}
-
-			ISender* getSender() override {
-				return getMessage()->getSender();
-			}
-
-			EventHandler* getEventHandler() override;
-
-			void* getUserDataPtr();
-
-			EventHook* getHookSender() {
-				return m_hookSender;
-			}
-
-			EventMessage::Type& getMessage() {
-				return m_message;
-			}
-		private:
-			EventHook* m_hookSender;
-			EventMessage::Type m_message;
-		};
-
-		class EventHook : public EventHandler
-		{
-		public:
-			EventHook(EventHandler* eventHandler, void* userDataPtr)
-				: m_eventHandler(eventHandler), EventHandler(nullptr), m_userDataPtr(userDataPtr)
-			{}
-
-			EventHook(void* userDataPtr)
-				: EventHook(nullptr, userDataPtr)
-			{}
-
-			void callHandler(EventMessage::Type message) override {
-				if (m_eventHandler == nullptr)
-					return;
-				m_eventHandler->callHandler(EventMessage::Type(
-					new EventHookedMessage(this, message)
-				));
-			}
-
-			void* getUserDataPtr() {
-				return m_userDataPtr;
-			}
-
-			void setEventHandler(EventHandler* eventHandler) {
-				m_eventHandler = eventHandler;
-			}
-
-			EventHandler* getEventHandler() {
-				return m_eventHandler;
-			}
-		private:
-			EventHandler* m_eventHandler;
-			void* m_userDataPtr;
-		};
-
-
-		class EventSDK : public Event
-		{
-		public:
-			EventSDK(CallbackType callback)
-				: Event(callback)
-			{}
-			~EventSDK() {}
-
-			void callHandler(EventInfo::Type info) override {
-				m_eventMessages.push_back(info);
-			}
-
-			static void handleEvents() {
-				for (auto& message : m_eventMessages) {
-					auto event = message->getEventHandler();
-					if (event == nullptr)
-						continue;
-					event->doCallback()(message);
-				}
-				m_eventMessages.clear();
-			}
-		private:
-			inline static std::list<EventInfo::Type> m_eventMessages;
-		};
-
-
+		using SpecialEventType = Event<ISender*>;
 		template<typename T>
 		class OnSpecial
 		{
 		public:
-			OnSpecial(ISender* sender, Event* event = nullptr)
-				: m_messager(sender, event)
+			OnSpecial(ISender* sender, IEventMessageReceiver* receiver, SpecialEventType::EventHandlerType* eventHandler = nullptr)
+				: m_messager(sender, receiver, eventHandler)
 			{};
 
-			Messager& getSpecialEvent() {
+			auto& getSpecialEvent() {
 				return m_messager;
 			}
 
@@ -301,10 +186,10 @@ namespace GUI
 			}
 
 			virtual void onSpecial() {
-				m_messager.callEventHandler();
+				m_messager.invoke(m_messager.getSender());
 			}
 		private:
-			Messager m_messager;
+			SpecialEventType m_messager;
 		};
 
 		enum HoverType
@@ -314,15 +199,16 @@ namespace GUI
 			HoveredUpdate
 		};
 
+		using HoveredEventType = Event<ISender*, HoverType>;
 		template<typename T>
 		class OnHovered
 		{
 		public:
-			OnHovered(ISender* sender, Event* event = nullptr)
-				: m_messager(sender, event)
+			OnHovered(ISender* sender, IEventMessageReceiver* receiver, HoveredEventType::EventHandlerType* eventHandler = nullptr)
+				: m_messager(sender, receiver, eventHandler)
 			{};
 
-			Messager& getHoveredEvent() {
+			auto& getHoveredEvent() {
 				return m_messager;
 			}
 
@@ -347,18 +233,18 @@ namespace GUI
 			}
 
 			virtual void onHoveredUpdate() {
-				m_messager.callEventHandler(HoveredUpdate);
+				m_messager.invoke(m_messager.getSender(), HoveredUpdate);
 			}
 
 			virtual void onHoveredIn() {
-				m_messager.callEventHandler(HoveredIn);
+				m_messager.invoke(m_messager.getSender(), HoveredIn);
 			}
 
 			virtual void onHoveredOut() {
-				m_messager.callEventHandler(HoveredOut);
+				m_messager.invoke(m_messager.getSender(), HoveredOut);
 			}
 		private:
-			Messager m_messager;
+			HoveredEventType m_messager;
 			bool m_isHoveredIn = false;
 		};
 
@@ -369,15 +255,16 @@ namespace GUI
 			FocusedUpdate
 		};
 
+		using FocusedEventType = Event<ISender*, FocusType>;
 		template<typename T>
 		class OnFocused
 		{
 		public:
-			OnFocused(ISender* sender, Event* event = nullptr)
-				: m_messager(sender, event)
+			OnFocused(ISender* sender, IEventMessageReceiver* receiver, FocusedEventType::EventHandlerType* eventHandler = nullptr)
+				: m_messager(sender, receiver, eventHandler)
 			{};
 
-			Messager& getFocusedEvent() {
+			auto& getFocusedEvent() {
 				return m_messager;
 			}
 
@@ -402,18 +289,18 @@ namespace GUI
 			}
 
 			virtual void onFocusedUpdate() {
-				m_messager.callEventHandler(FocusedUpdate);
+				m_messager.invoke(m_messager.getSender(), FocusedUpdate);
 			}
 
 			virtual void onFocusedIn() {
-				m_messager.callEventHandler(FocusedIn);
+				m_messager.invoke(m_messager.getSender(), FocusedIn);
 			}
 
 			virtual void onFocusedOut() {
-				m_messager.callEventHandler(FocusedOut);
+				m_messager.invoke(m_messager.getSender(), FocusedOut);
 			}
 		private:
-			Messager m_messager;
+			FocusedEventType m_messager;
 		protected:
 			bool m_isFocusedIn = false;
 		};
@@ -425,15 +312,16 @@ namespace GUI
 			VisibleUpdate
 		};
 
+		using VisibleEventType = Event<ISender*, VisibleType>;
 		template<typename T>
 		class OnVisible
 		{
 		public:
-			OnVisible(ISender* sender, Event* event = nullptr)
-				: m_messager(sender, event)
-			{};
+			OnVisible(ISender* sender, IEventMessageReceiver* receiver, VisibleEventType::EventHandlerType* eventHandler = nullptr)
+				: m_messager(sender, receiver, eventHandler)
+			{}
 
-			Messager& getVisibleEvent() {
+			auto& getVisibleEvent() {
 				return m_messager;
 			}
 
@@ -458,30 +346,31 @@ namespace GUI
 			}
 
 			virtual void onVisibleUpdate() {
-				m_messager.callEventHandler(VisibleUpdate);
+				m_messager.invoke(m_messager.getSender(), VisibleUpdate);
 			}
 
 			virtual void onVisibleOn() {
-				m_messager.callEventHandler(VisibleOn);
+				m_messager.invoke(m_messager.getSender(), VisibleOn);
 			}
 
 			virtual void onVisibleOff() {
-				m_messager.callEventHandler(VisibleOff);
+				m_messager.invoke(m_messager.getSender(), VisibleOff);
 			}
 		private:
-			Messager m_messager;
+			VisibleEventType m_messager;
 			bool m_isVisible = false;
 		};
 
+		using ClickEventType = Event<ISender*>;
 		template<typename T>
 		class OnLeftMouseClick
 		{
 		public:
-			OnLeftMouseClick(ISender* sender, Event* event = nullptr)
-				: m_messager(sender, event)
+			OnLeftMouseClick(ISender* sender, IEventMessageReceiver* receiver, ClickEventType::EventHandlerType* eventHandler = nullptr)
+				: m_messager(sender, receiver, eventHandler)
 			{};
 
-			Messager& getLeftMouseClickEvent() {
+			auto& getLeftMouseClickEvent() {
 				return m_messager;
 			}
 
@@ -492,21 +381,22 @@ namespace GUI
 			}
 
 			virtual void onLeftMouseClick() {
-				m_messager.callEventHandler();
+				m_messager.invoke(m_messager.getSender());
 			}
 		private:
-			Messager m_messager;
+			ClickEventType m_messager;
 		};
 
+		using ClickEventType = Event<ISender*>;
 		template<typename T>
 		class OnRightMouseClick
 		{
 		public:
-			OnRightMouseClick(ISender* sender, Event* event = nullptr)
-				: m_messager(sender, event)
+			OnRightMouseClick(ISender* sender, IEventMessageReceiver* receiver, ClickEventType::EventHandlerType* eventHandler = nullptr)
+				: m_messager(sender, receiver, eventHandler)
 			{};
 
-			Messager& getRightMouseClickEvent() {
+			auto& getRightMouseClickEvent() {
 				return m_messager;
 			}
 
@@ -517,21 +407,22 @@ namespace GUI
 			}
 
 			virtual void onRightMouseClick() {
-				m_messager.callEventHandler();
+				m_messager.invoke(m_messager.getSender());
 			}
 		private:
-			Messager m_messager;
+			ClickEventType m_messager;
 		};
 
+		using ClickEventType = Event<ISender*>;
 		template<typename T>
 		class OnMiddleMouseClick
 		{
 		public:
-			OnMiddleMouseClick(ISender* sender, Event* event = nullptr)
-				: m_messager(sender, event)
+			OnMiddleMouseClick(ISender* sender, IEventMessageReceiver* receiver, ClickEventType::EventHandlerType* eventHandler = nullptr)
+				: m_messager(sender, receiver, eventHandler)
 			{};
 
-			Messager& getMiddleMouseClickEvent() {
+			auto& getMiddleMouseClickEvent() {
 				return m_messager;
 			}
 
@@ -542,21 +433,22 @@ namespace GUI
 			}
 
 			virtual void onMiddleMouseClick() {
-				m_messager.callEventHandler();
+				m_messager.invoke(m_messager.getSender());
 			}
 		private:
-			Messager m_messager;
+			ClickEventType m_messager;
 		};
 		
+		using CloseEventType = Event<ISender*>;
 		template<typename T>
 		class OnClose
 		{
 		public:
-			OnClose(ISender* sender, Event* event = nullptr)
-				: m_messager(sender, event)
+			OnClose(ISender* sender, IEventMessageReceiver* receiver, CloseEventType::EventHandlerType* eventHandler = nullptr)
+				: m_messager(sender, receiver, eventHandler)
 			{};
 
-			Messager& getCloseEvent() {
+			auto& getCloseEvent() {
 				return m_messager;
 			}
 
@@ -565,10 +457,10 @@ namespace GUI
 			}
 
 			virtual void onClose() {
-				m_messager.callEventHandler();
+				m_messager.invoke(m_messager.getSender());
 			}
 		private:
-			Messager m_messager;
+			CloseEventType m_messager;
 		};
 	};
 };

@@ -512,10 +512,10 @@ namespace GUI
 			: TreeNode(name, open)
 		{}
 
-		MenuContainer& menuItemWithShortcut(std::string name, std::string shortcut, Events::Event* event);
-		MenuContainer& menuItem(std::string name, Events::Event* event);
-		MenuContainer& menuItem(std::string name, Events::Event* event, Elements::Menu::Item** item);
-		MenuContainer& menuItem(std::string name, Elements::Menu::Item** item);
+		MenuContainer& menuItemWithShortcut(const std::string& name, const std::string& shortcut, Events::Event* event);
+		MenuContainer& menuItem(const std::string& name, Events::Event* event);
+		MenuContainer& menuItem(const std::string& name, Events::Event* event, Elements::Menu::Item** item);
+		MenuContainer& menuItem(const std::string& name, Elements::Menu::Item** item);
 		
 		void render() override {
 			if (ImGui::BeginMenu(getName().c_str(), isOpen())) {
