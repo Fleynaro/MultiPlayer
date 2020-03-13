@@ -55,6 +55,7 @@ namespace GUI
 		using EventInfo = EventMessage;
 
 
+		//template<typename ...ArgsType>
 		class EventHandler
 		{
 		public:

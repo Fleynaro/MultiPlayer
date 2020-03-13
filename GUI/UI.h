@@ -9,6 +9,61 @@
 using namespace GUI::Window;
 using namespace GUI::Widget;
 
+
+template<typename ...Args>
+class Message
+{
+public:
+
+	std::tuple<Args...> m_tuple;
+
+	Message(std::tuple<Args...> tuple)
+		: m_tuple(tuple)
+	{}
+};
+
+
+template<typename ...Args>
+class A
+{
+public:
+	std::function<void(Args...)> m_func;
+
+	A()
+	{
+		
+	}
+
+	void invoke(Args... args) {
+		m_func(args...);
+
+
+		Message<Args...> message(std::make_tuple(args...));
+		int a = 5;
+
+
+		//invoke apply
+	}
+};
+
+void test()
+{
+	A<int, int> a;
+	a.m_func = [](int a, int b){
+		auto c = a + b;
+		int acc = 5;
+	};
+
+	a.invoke(5, 3);
+}
+
+
+
+
+
+
+
+
 class UI
 {
 public:
@@ -379,6 +434,7 @@ public:
 	public:
 		static void registerWindows() {
 			UI::WinManager::addWindow(new WindowTest);
+			test();
 		}
 
 		static void addWindow(GUI::Window::IWindow* window) {
