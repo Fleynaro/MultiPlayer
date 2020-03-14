@@ -289,11 +289,11 @@ namespace GUI::Widget::Template
 			m_filterManager->getUpdateEvent() += [&](Events::ISender* sender) {
 				update();
 			};
-			m_filterCreator->setWidth(m_styleSettings.m_leftWidth);
+			m_filterCreator->setWidth(static_cast<float>(m_styleSettings.m_leftWidth));
 
 			(*this)
 				.beginChild()
-					.setWidth(m_styleSettings.m_leftWidth)
+					.setWidth(static_cast<float>(m_styleSettings.m_leftWidth))
 					.beginContainer()
 						.text("Search")
 						.separator()
@@ -308,7 +308,7 @@ namespace GUI::Widget::Template
 										})
 									)
 								))
-								->setWidth(m_styleSettings.m_leftWidth)
+								->setWidth(static_cast<float>(m_styleSettings.m_leftWidth))
 							)
 						.end()
 						.newLine()
@@ -358,6 +358,7 @@ namespace GUI::Widget::Template
 	{
 	public:
 		using SelectableItemEventType = Events::Event<Events::ISender*, T*>;
+		using SelectableItemEventHandlerType = Events::EventHandler<Events::ISender*, T*>;
 
 		class SelectedFilter : public FilterManager::Filter
 		{
@@ -369,9 +370,11 @@ namespace GUI::Widget::Template
 				beginBody()
 					.addItem(
 						m_cb = new Elements::Generic::Checkbox("show selected only", false,
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								onChanged();
-							})
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									onChanged();
+								})
+							)
 						)
 					);
 			}
@@ -388,46 +391,25 @@ namespace GUI::Widget::Template
 			SelectableItemList* m_selectableItemList;
 		};
 
-		class SelectableItem : public GUI::Item
-		{
-		public:
-			SelectableItem(ItemList::Item* item, T* userItem, bool selected, SelectableItemEventType::EventHandlerType* eventSelect = nullptr)
-				: m_item(item), m_userItem(userItem)
-			{
-				m_item->setParent(this);
-				(*m_item->m_header)
-					.beginReverseInserting()
-						.sameLine()
-						.addItem(m_cb = new Elements::Generic::Checkbox("", selected))
-						.sameLine()
-					.endReverseInserting();
+		static void makeSelectable(ItemList::Item* item, T* userItem, bool selected, SelectableItemEventHandlerType* eventSelect) {
+			auto cb = new Elements::Generic::Checkbox("", selected);
+			
+			(*item->m_header)
+				.beginReverseInserting()
+					.sameLine()
+					.addItem(cb)
+					.sameLine()
+				.endReverseInserting();
 
-				m_cb->getSpecialEvent() +=
-					[&](Events::ISender* sender) {
-						eventSelect->invoke(sender, m_userItem);
-					};
-			}
-
-			~SelectableItem() {
-				m_item->destroy();
-			}
-
-			void render() override {
-				m_item->render();
-			}
-
-			Events::SpecialEventType& getSelectedEvent() {
-				return m_cb->getSpecialEvent();
-			}
-		private:
-			T* m_userItem;
-			ItemList::Item* m_item;
-			Elements::Generic::Checkbox* m_cb;
-		};
+			cb->getSpecialEvent() +=
+				[=](Events::ISender* sender) {
+				eventSelect->invoke(sender, userItem);
+			};
+		}
 
 		SelectedFilter* m_selectedFilter;
 
-		SelectableItemList(ItemList* itemList, Events::Event* eventSelectItems)
+		SelectableItemList(ItemList* itemList, Events::SpecialEventType::EventHandlerType* eventSelectItemsBtn)
 			: m_itemList(itemList), ItemList(itemList->m_filterCreator, itemList->getFilterManager(), itemList->m_styleSettings)
 		{
 			getFilterManager()->addFilter(m_selectedFilter = new SelectedFilter(this));
@@ -448,13 +430,13 @@ namespace GUI::Widget::Template
 			class UpdSelectInfo : public Container
 			{
 			public:
-				UpdSelectInfo(SelectableItemList* selectableItemList, Events::Event* event)
+				UpdSelectInfo(SelectableItemList* selectableItemList, Events::SpecialEventType::EventHandlerType* eventSelectItemsBtn)
 					: m_selectableItemList(selectableItemList)
 				{
 					newLine();
 					newLine();
 					separator();
-					addItem(m_button = new Elements::Button::ButtonStd("Select", event));
+					addItem(m_button = new Elements::Button::ButtonStd("Select", eventSelectItemsBtn));
 				}
 
 				void render() override {
@@ -470,9 +452,9 @@ namespace GUI::Widget::Template
 				Elements::Button::ButtonStd* m_button;
 			};
 
-			if (eventSelectItems != nullptr) {
+			if (eventSelectItemsBtn != nullptr) {
 				(*m_itemList->m_underFilterCP)
-					.addItem(new UpdSelectInfo(this, eventSelectItems));
+					.addItem(new UpdSelectInfo(this, eventSelectItemsBtn));
 			}
 		}
 
@@ -499,14 +481,14 @@ namespace GUI::Widget::Template
 		}
 
 		int getSelectedItemsCount() {
-			return getSelectedItems().size();
+			return static_cast<int>(getSelectedItems().size());
 		}
 
 		std::list<T*>& getSelectedItems() {
 			return m_selectedItems;
 		}
 
-		SelectableItemEventType::EventHandlerType* m_eventSelectItem;
+		SelectableItemEventHandlerType* m_eventSelectItem;
 	protected:
 		ItemList* m_itemList;
 		std::list<T*> m_selectedItems;

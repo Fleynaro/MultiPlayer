@@ -26,7 +26,11 @@ void FileBrowserTree::fillMainDir(Directory* dir)
 				{
 					auto newDirElem = new DirToRename(
 						*curDir,
-						new Events::EventUI(EVENT_METHOD_PASS(update)),
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								update();
+							})
+						),
 						getOldNameOfItem(*curDir)
 					);
 					dir->addItem(newDirElem);
@@ -45,7 +49,11 @@ void FileBrowserTree::fillMainDir(Directory* dir)
 					dir->addItem(
 						new FileToRename(
 							curFile->getFullname(),
-							new Events::EventUI(EVENT_METHOD_PASS(update)),
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									update();
+								})
+							),
 							getOldNameOfItem(*curFile)
 						)
 					);

@@ -16,14 +16,6 @@ namespace GUI::Widget
 		virtual bool checkAllFilters(Function::Tag::Tag* tag) = 0;
 	};
 
-	class IFunctionTag
-	{
-	public:
-		virtual Function::Tag::Tag* getTag() = 0;
-		virtual TreeNode* getItem() = 0;
-	};
-
-
 	//MY TODO: исчезают некоторые теги в tree view, не добавл€ютс€ новые, по дефу устанавливать в окне создани€ тега функцию
 	class FunctionTagList
 		: public Template::ItemList,
@@ -34,44 +26,32 @@ namespace GUI::Widget
 		{
 		public:
 			class FunctionTag
-				: public Item,
-				public IFunctionTag
+				: public Item
 			{
 			public:
 				FunctionTag(Function::Tag::Tag* tag, FuncTagEventType::EventHandlerType* openFunctionTag)
 					: m_tag(tag), m_openFunctionTag(openFunctionTag)
 				{
 					addFlags(ImGuiTreeNodeFlags_FramePadding);
-					getLeftMouseClickEvent() += [&](Events::ISender* sender) {
-						m_openFunctionTag->invoke(this, m_tag);
+					getLeftMouseClickEvent() += [=](Events::ISender* sender) {
+						if(openFunctionTag != nullptr)
+							openFunctionTag->invoke(this, tag);
 					};
 
-					m_header = new Container;
-					m_header->setParent(this);
-					(*m_header)
+					beginHeader()
 						.text(tag->getName());
-				}
-
-				~FunctionTag() {
-					delete m_header;
 				}
 
 				void renderHeader() override {
 					m_header->show();
 				}
 
-				Function::Tag::Tag* getTag() override {
+				Function::Tag::Tag* getTag() {
 					return m_tag;
-				}
-
-				TreeNode* getItem() override {
-					return this;
 				}
 			private:
 				Function::Tag::Tag* m_tag;
 				FuncTagEventType::EventHandlerType* m_openFunctionTag;
-			protected:
-				Container* m_header;
 			};
 
 			class UserFunctionTag : public FunctionTag
@@ -121,24 +101,24 @@ namespace GUI::Widget
 					.endReverseInserting();
 			}
 
-			void load(IFunctionTag* tagNode, bool& remove, const std::string& funcName) {
-				tagNode->getItem()->setAlwaysOpened(true);
+			void load(FunctionTag* tagNode, bool& remove, const std::string& funcName) {
+				tagNode->setAlwaysOpened(true);
 				remove = true;
 
 				for (auto tag : m_funcTagList->getManager()->getTags()) {
 					if (!tag.second->isUser())
 						continue;
 					if (tag.second->getParent()->getId() == tagNode->getTag()->getId()) {
-						IFunctionTag* tagChildNode;
+						FunctionTag* tagChildNode;
 						bool isRemove;
 						load(tagChildNode = createUserFunctionTag(static_cast<Function::Tag::UserTag*>(tag.second)), isRemove, funcName);
-						tagNode->getItem()->addItem(tagChildNode->getItem());
-						if (tagChildNode->getItem()->empty()) {
-							tagChildNode->getItem()->addFlags(ImGuiTreeNodeFlags_Leaf);
+						tagNode->addItem(tagChildNode);
+						if (tagChildNode->empty()) {
+							tagChildNode->addFlags(ImGuiTreeNodeFlags_Leaf);
 						}
 
 						if (isFilterEnabled()) {
-							if (tagChildNode->getItem()->empty()) {
+							if (tagChildNode->empty()) {
 								if (m_funcTagList->checkOnInputValue(tagChildNode->getTag(), funcName)
 									&& (isSearchOnlyEnabled() || m_funcTagList->checkAllFilters(tagChildNode->getTag()))) {
 									remove = false;
@@ -147,14 +127,14 @@ namespace GUI::Widget
 							}
 
 							if (isRemove) {
-								tagNode->getItem()->removeLastItem();
+								tagNode->removeLastItem();
 							}
 						}
 					}
 				}
 			}
 
-			virtual IFunctionTag* createUserFunctionTag(Function::Tag::UserTag* tag) {
+			virtual UserFunctionTag* createUserFunctionTag(Function::Tag::UserTag* tag) {
 				return new UserFunctionTag(tag, m_openFunctionTag);
 			}
 
@@ -210,10 +190,10 @@ namespace GUI::Widget
 
 			Template::FilterManager::Filter* createFilter(int idx) override
 			{
-				switch (idx)
+				/*switch (idx)
 				{
-					//case 0: return new CategoryFilter(m_funcList);
-				}
+					case 0: return new CategoryFilter(m_funcList);
+				}*/
 				return nullptr;
 			}
 
@@ -262,37 +242,19 @@ namespace GUI::Widget
 			: public FunctionTagList::TreeView
 		{
 		public:
-			class FuncSelTag
-				: public SelectableItem,
-				public IFunctionTag
-			{
-			public:
-				FuncSelTag(FunctionTag* funcTagItem, Function::Tag::Tag* funcTag, bool selected, SelectableItemEventType::EventHandlerType* eventSelect = nullptr)
-					: m_funcTagItem(funcTagItem), SelectableItem(funcTagItem, funcTag, selected, eventSelect)
-				{}
-
-				Function::Tag::Tag* getTag() override {
-					return m_funcTagItem->getTag();
-				}
-
-				TreeNode* getItem() override {
-					return m_funcTagItem;
-				}
-			private:
-				FunctionTag* m_funcTagItem;
-			};
-
 			TreeView(FuncTagSelectList* funcTagSelectList, FuncTagEventType::EventHandlerType* openFunctionTag = nullptr)
 				: m_funcTagSelectList(funcTagSelectList), FunctionTagList::TreeView(funcTagSelectList, openFunctionTag)
 			{}
 
-			IFunctionTag* createUserFunctionTag(Function::Tag::UserTag* tag) override {
-				return new FuncSelTag(
-					static_cast<FunctionTag*>(FunctionTagList::TreeView::createUserFunctionTag(tag)),
+			UserFunctionTag* createUserFunctionTag(Function::Tag::UserTag* tag) override {
+				auto funcTagItem = FunctionTagList::TreeView::createUserFunctionTag(tag);
+				makeSelectable(
+					funcTagItem,
 					tag,
 					m_funcTagSelectList->isItemSelected(tag),
 					m_funcTagSelectList->m_eventSelectItem
 				);
+				return funcTagItem;
 			}
 		protected:
 			FuncTagSelectList* m_funcTagSelectList;
@@ -306,8 +268,8 @@ namespace GUI::Widget
 			}
 		};
 
-		FuncTagSelectList(FunctionTagList* functionTagList, FuncTagEventType::EventHandlerType* eventSelectFunctionTags)
-			: Template::SelectableItemList<Function::Tag::Tag>(functionTagList, eventSelectFunctionTags)
+		FuncTagSelectList(FunctionTagList* functionTagList, Events::SpecialEventType::EventHandlerType* eventSelectFunctionTagsBtn)
+			: Template::SelectableItemList<Function::Tag::Tag>(functionTagList, eventSelectFunctionTagsBtn)
 		{}
 
 		FunctionTagList* getFuncTagList() {
@@ -380,7 +342,7 @@ namespace GUI::Widget
 		}
 
 		int getSelectedFuncTagCount() {
-			return getSelectedFunctionTags().size();
+			return static_cast<int>(getSelectedFunctionTags().size());
 		}
 
 		std::list<Function::Tag::Tag*>& getSelectedFunctionTags() {

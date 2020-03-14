@@ -119,7 +119,7 @@ namespace GUI
 					throw Exception(m_valueInput, "your string is bigger than the source one");
 
 				auto str = m_valueInput->getInputValue();
-				for (int i = 0, delta = m_sourceLength - str.length(); i < delta; i++)
+				for (int i = 0, delta = m_sourceLength - static_cast<int>(str.length()); i < delta; i++)
 					str.push_back(' ');
 
 				if(m_unicode) {
@@ -162,7 +162,7 @@ namespace GUI
 				}
 				
 				m_valueInput->setInputValue(str);
-				m_sourceLength = str.length();
+				m_sourceLength = static_cast<int>(str.length());
 			}
 		};
 
@@ -217,7 +217,7 @@ namespace GUI
 							if (m_type->getSize() == 2)
 								value &= 0xFFFF;
 							m_valueInput = (new Elements::Input::Int)
-								->setInputValue(value);
+								->setInputValue(static_cast<int>(value));
 						}
 					}
 				}

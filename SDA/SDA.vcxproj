@@ -182,7 +182,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
-    <ClCompile Include="..\GUI\Shared\GUI\Items\IWindow.cpp" />
     <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
     <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
     <ClCompile Include="GUI\AddressInput.cpp" />

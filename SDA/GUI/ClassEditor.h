@@ -414,7 +414,7 @@ namespace GUI::Widget
 
 				//MY TODO: float, double, string
 				CE::Type::Type* predictTypeAtAddress(void* addr, int maxSize = 8, int level = 1) {
-					auto alignment = (char)addr % 8;
+					auto alignment = reinterpret_cast<byte&>(addr) % 8;
 
 					if (alignment != 0 && alignment <= maxSize || maxSize >= 8) {
 						switch (alignment)
@@ -711,10 +711,10 @@ namespace GUI::Widget
 
 			Template::FilterManager::Filter* createFilter(int idx) override
 			{
-				switch (idx)
+				/*switch (idx)
 				{
-				//case 0: return new CategoryFilter(m_funcList);
-				}
+				case 0: return new CategoryFilter(m_funcList);
+				}*/
 				return nullptr;
 			}
 
@@ -732,6 +732,7 @@ namespace GUI::Widget
 		ClassEditor()
 		{
 			const int width = 250;
+			getFilterManager()->setParent(this);
 
 			m_eventUpdateCB = Events::Listener(
 				std::function([&](Events::ISender* sender) {
@@ -743,7 +744,9 @@ namespace GUI::Widget
 			(*this)
 				.beginChild()
 					.setWidth(width)
+					.SET_INFO("Class editor")
 					.beginContainer()
+						.setInfo("Search of class editor")
 						.text("Search")
 						.separator()
 						.beginContainer()
@@ -759,6 +762,7 @@ namespace GUI::Widget
 					.addItem(new ClassFilterCreator(this))
 
 					.beginContainer()
+						.SET_INFO("Left panel of class editor")
 						.newLine()
 						.separator()
 						.beginContainer()
@@ -782,6 +786,7 @@ namespace GUI::Widget
 				.end()
 				.sameLine()
 				.beginChild()
+					.SET_INFO("Tab body of class editor: here themselves classes shown")
 					.addItem(m_classesTabBar = new TabBar)
 				.end();
 			

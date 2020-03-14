@@ -11,9 +11,11 @@ void AddressValueEditor::buildTypeSelector() {
 		.addItem(
 			new Elements::Button::ButtonStd(
 				"Select type",
-				new Events::EventUI(EVENT_LAMBDA(info) {
-					rebuild();
-				})
+				Events::Listener(
+					std::function([&](Events::ISender* sender) {
+						rebuild();
+					})
+				)
 			)
 		)
 		.newLine();

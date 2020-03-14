@@ -43,8 +43,7 @@ public:
 		ImGui::NewFrame();
 
 		getWindowManager()->render();
-		GUI::Events::EventUI::handleEvents();
-
+		
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	}

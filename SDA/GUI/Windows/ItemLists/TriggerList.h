@@ -10,7 +10,7 @@ using namespace CE;
 	MYTODO: сделать окно редактирования триггера: разные блоки обновления
 	MYTODO: сделать окно редактирования фильтров через наследование
 	MYTODO: сделать редактирование фильтров в items.h, сделать интерфейс-элемент(getName(), onClickEvent, )
-	MYTODO: отображать при выборе списка функций в редакторе триггера у каждой функции состояние хука(юзать фабрику)
+	MYTODO: отображать при выборе списка функций в редакторе триггера у каждой функции состояние хука
 */
 
 namespace GUI::Widget
@@ -49,8 +49,9 @@ namespace GUI::Widget
 					beginHeader()
 						.addItem(text);
 					text->getLeftMouseClickEvent() +=
-						[&](Events::ISender* sender) {
-							m_eventClickOnName->invoke(this, m_trigger);
+						[=](Events::ISender* sender) {
+							if(eventClickOnName != nullptr)
+								eventClickOnName->invoke(this, trigger);
 						};
 				}
 
@@ -164,12 +165,14 @@ namespace GUI::Widget
 			{}
 
 			GUI::Item* createItem(Trigger::ITrigger* trigger) override {
-				return new SelectableItem(
-					static_cast<TriggerItem*>(TriggerList::ListView::createItem(trigger)),
+				auto triggerItem = static_cast<TriggerItem*>(TriggerList::ListView::createItem(trigger));
+				makeSelectable(
+					triggerItem,
 					trigger,
 					m_triggerSelectList->isItemSelected(trigger),
 					m_triggerSelectList->m_eventSelectItem
 				);
+				return triggerItem;
 			}
 		protected:
 			TriggerSelectList* m_triggerSelectList;
@@ -261,7 +264,7 @@ namespace GUI::Widget
 		}
 
 		int getSelectedTriggerCount() {
-			return getSelectedTriggers().size();
+			return static_cast<int>(getSelectedTriggers().size());
 		}
 
 		std::list<Trigger::ITrigger*>& getSelectedTriggers() {
@@ -346,8 +349,6 @@ namespace GUI::Window
 		TriggerEditor(const std::string& name, Trigger::ITrigger* trigger)
 			: IWindow(name), m_trigger(trigger)
 		{
-			setWidth(450);
-			setHeight(300);
 			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
 			getMainContainer()
@@ -364,12 +365,59 @@ namespace GUI::Window
 		: public TriggerEditor
 	{
 	public:
+		class FilterList : public Elements::Input::ObjectList {
+		public:
+			class Filter : public IObject {
+			public:
+				Filter(Trigger::Function::Filter::IFilter* filter)
+				{}
+
+				std::string getStatusName() override {
+					return std::to_string((int)m_filter->getId());
+				}
+
+				bool isObjectList() override {
+					return false;
+				}
+			private:
+				Trigger::Function::Filter::IFilter* m_filter;
+			};
+
+			FilterList(Trigger::Function::Trigger* trigger)
+				: m_trigger(trigger)
+			{
+				for (auto filter : trigger->getFilters()) {
+					addObject(new Filter(filter));
+				}
+
+				m_editObjectEvent += [&](IObject* object) {
+					auto filter = static_cast<Filter*>(object);
+					if (filter == nullptr) {
+
+						return;
+					}
+
+
+				};
+			}
+
+		private:
+			Trigger::Function::Trigger* m_trigger;
+		};
+
 		FunctionTriggerEditor(Trigger::Function::Trigger* trigger, CE::FunctionManager* funcManager)
 			: TriggerEditor("Function trigger editor", trigger)
 		{
+			setWidth(450);
+			setHeight(300);
+
 			getMainContainer()
 				.text("Select function(s)")
 				.addItem(m_funcInput = new Widget::FunctionInput(funcManager))
+				.newLine()
+				.newLine()
+				.text("Filter list")
+				.addItem(m_filterList = new FilterList(trigger))
 				.newLine();
 		}
 
@@ -379,5 +427,6 @@ namespace GUI::Window
 
 	private:
 		Widget::FunctionInput* m_funcInput;
+		FilterList* m_filterList;
 	};
 };

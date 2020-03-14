@@ -310,7 +310,7 @@ namespace CE
 			}
 
 			int size() {
-				return m_stack.size();
+				return static_cast<int>(m_stack.size());
 			}
 
 			bool has(Unit::FunctionBody* body) {
@@ -733,7 +733,7 @@ namespace CE
 				using namespace Unit;
 				auto nodeGroup = getFunctionBody();
 
-				Decoder decoder(range.getMinAddress(), range.getSize());
+				Decoder decoder(range.getMinAddress(), static_cast<int>(range.getSize()));
 				decoder.decode([&](Code::Instruction& instruction)
 				{
 					void* curAddr = (void*)decoder.getCurrentAddress();

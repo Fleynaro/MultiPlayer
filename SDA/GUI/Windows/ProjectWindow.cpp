@@ -23,9 +23,9 @@ ProjectWindow::ProjectWindow(Project* project)
 	auto functionListWidget = new Widget::FuncSelectList(
 		new Widget::FunctionList,
 		Events::Listener(
-			std::function([&](Events::ISender* sender, API::Function::Function* function) {
+			std::function([&](Events::ISender* sender) {
 				auto list = static_cast<Widget::FuncSelectList*>(m_funcSelList->getList())->getSelectedItems();
-				list.size();
+				static_cast<int>(list.size());
 				m_funcSelList->close();
 			})
 		)

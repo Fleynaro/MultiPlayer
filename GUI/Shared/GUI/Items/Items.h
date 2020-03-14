@@ -1,6 +1,6 @@
 #pragma once
 
-#include "main.h"
+#include <main.h>
 #include "../imgui_include.h"
 #include "Attribute.h"
 #include "Events.h"
@@ -9,14 +9,6 @@
 #include "Utility/FileWrapper.h"
 #include "Utility/Resource.h"
 #endif
-
-
-//#define S_EVENT_LAMBDA(info) [](GUI::Events::EventInfo::Type & ##info) -> void
-//#define EVENT_LAMBDA(info) [this](GUI::Events::EventInfo::Type & ##info) -> void
-//#define EVENT_METHOD(name, info) inline void CALLBACK_##name(const GUI::Events::EventInfo::Type & ##info)
-//#define EVENT_METHOD_DEF(Class, name, info) inline void  ##Class::CALLBACK_##name(const GUI::Events::EventInfo::Type & ##info)
-//#define CALL_EVENT_METHOD(name, arg) CALLBACK_##name(GUI::Events::EventInfo::Type(new GUI::Events::EventInfo(##arg)));
-//#define EVENT_METHOD_PASS(name) EVENT_LAMBDA(info) {this->CALLBACK_##name(info);}
 
 namespace GUI
 {
@@ -141,6 +133,9 @@ namespace GUI
 		void destroy() {
 			if (m_parentCount < 0) {
 				throw std::logic_error("GUI item have parent count < 0.");
+			}
+			if (m_isDeleted) {
+				throw std::logic_error("Double deleting.");
 			}
 			if (--m_parentCount == 0) {
 				m_isDeleted = true;
@@ -277,7 +272,8 @@ namespace GUI
 	class Container :
 		public Item,
 		public Events::OnVisible<Container>,
-		public Attribute::Font<Container>
+		public Attribute::Font<Container>,
+		public DebugInfo
 	{
 	public:
 		Container(std::string name = "")
@@ -287,6 +283,11 @@ namespace GUI
 			clear();
 		}
 		Container& clear();
+
+		Container& setInfo(const std::string& info) {
+			DebugInfo::setInfo(info);
+			return *this;
+		}
 
 		Container& addItem(Item* item);
 		Container& addItem(Item* item, Item** ptr);
@@ -2072,34 +2073,83 @@ namespace GUI
 				int m_fastStep = 100;
 			};
 
+
+			class IObject {
+			public:
+				virtual std::string getStatusName() = 0;
+				virtual bool isObjectList() = 0;
+			};
+
 			class ObjectList
-				: public Container
+				: public Container,
+				public IObject
 			{
 			public:
-				class IObject {
-				public:
-					virtual std::string getName() = 0;
-					virtual void onClick() = 0;
-				};
-
 				ObjectList()
-					//: m_createObjectEvent(this)
+					: m_editObjectEvent(this, this),
+					m_removeObjectEvent(this, this),
+					m_moveObjectEvent(this, this)
 				{
+					m_moveObjectEvent += [&](std::list<IObject*>::iterator it, bool isDown) {
+						if (isDown) {
+							std::swap(*it, *std::next(it));
+						}
+						else {
+							std::swap(*it, *std::prev(it));
+						}
+					};
+				}
 
+				~ObjectList() {
+					for (auto it : m_objects) {
+						delete it;
+					}
+				}
+
+				std::string getStatusName() override {
+					return "";
+				}
+
+				bool isObjectList() override {
+					return true;
 				}
 
 				void render() override {
 
-					for (auto it : m_objects) {
-						ImGui::InputText("##", (char*)it->getName().c_str(), 50);
-						ImGui::SameLine();
-						if (ImGui::Button("*")) {
-							//m_createObjectEvent.invoke();
+					for (auto it = m_objects.begin(); it != m_objects.end(); it ++) {
+						auto name = (*it)->getStatusName();
+
+						if (!(*it)->isObjectList()) {
+							ImGui::InputText("##", (char*)name.c_str(), 50);
+
+							ImGui::SameLine();
+							if (ImGui::Button("*")) {
+								m_editObjectEvent.invoke(*it);
+							}
+							ImGui::SameLine();
+							if (ImGui::Button("x")) {
+								m_removeObjectEvent.invoke(*it);
+							}
+
+							ImGui::SameLine();
+							if (ImGui::ArrowButton("##down", ImGuiDir_Down)) {
+								m_moveObjectEvent.invoke(it, true);
+							}
+							ImGui::SameLine();
+							if (ImGui::ArrowButton("##up", ImGuiDir_Up)) {
+								m_moveObjectEvent.invoke(it, false);
+							}
+						}
+						else {
+							auto objList = static_cast<ObjectList*>(*it);
+
+							//tree node
+							objList->show();
 						}
 					}
 
 					if (ImGui::Button("Add")) {
-						//m_createObjectEvent.invoke();
+						m_editObjectEvent.invoke(nullptr);
 					}
 				}
 
@@ -2107,9 +2157,11 @@ namespace GUI
 					m_objects.push_back(object);
 				}
 
+				Events::Event<IObject*> m_editObjectEvent;
+				Events::Event<IObject*> m_removeObjectEvent;
 			private:
 				std::list<IObject*> m_objects;
-				//Events::Messager m_createObjectEvent;
+				Events::Event<std::list<IObject*>::iterator, bool> m_moveObjectEvent;
 			};
 		};
 

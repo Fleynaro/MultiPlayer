@@ -127,7 +127,7 @@ namespace CE
 		}
 
 		bool hasNext() {//MYTODO: check offset
-			return m_curSize > 0 && getOffset() + (UINT)m_curSize <= m_buffer->getContentOffset();
+			return m_curSize > 0 && getOffset() + static_cast<UINT>(m_curSize) <= static_cast<UINT>(m_buffer->getContentOffset());
 		}
 
 		Buffer::Stream getStream() {
@@ -264,7 +264,7 @@ namespace CE
 						*/
 						auto argType = getFunctionDef()->getDeclaration().getSignature().getArgList()[argIdx - 1];
 						if (writeTypeValue(argAddrValue, argType)) {
-							m_argHeader->m_argExtraBits |= 0b1 << (argIdx - 1);
+							m_argHeader->m_argExtraBits |= uint64_t(0b1) << (argIdx - 1);
 						}
 					}
 				private:
@@ -357,7 +357,7 @@ namespace CE
 			BufferManager(FS::Directory dir, int bufferSizeMb = 3)
 				: m_dir(dir), m_bufferSizeMb(bufferSizeMb)
 			{
-				m_savedBufferCount = m_dir.getItems().size();
+				m_savedBufferCount = static_cast<int>(m_dir.getItems().size());
 			}
 
 			~BufferManager();

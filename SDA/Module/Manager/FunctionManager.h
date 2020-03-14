@@ -70,12 +70,7 @@ namespace CE
 
 			CallGraph::Unit::FunctionBody* getBody();
 
-			void setBody(CallGraph::Unit::FunctionBody* body) {
-				if (m_funcBody != nullptr) {
-					delete m_funcBody;
-				}
-				m_funcBody = body;
-			}
+			void setBody(CallGraph::Unit::FunctionBody* body);
 
 			API::Function::FunctionDecl* getDeclaration() {
 				return m_decl;

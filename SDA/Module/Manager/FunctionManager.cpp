@@ -192,3 +192,10 @@ CallGraph::Unit::FunctionBody* CE::API::Function::Function::getBody() {
 	}
 	return m_funcBody;
 }
+
+void CE::API::Function::Function::setBody(CallGraph::Unit::FunctionBody* body) {
+	if (m_funcBody != nullptr) {
+		delete m_funcBody;
+	}
+	m_funcBody = body;
+}

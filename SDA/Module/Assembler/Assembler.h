@@ -186,7 +186,7 @@ namespace CE
 			}
 
 			DWORD getCalculatedJmpFrom(void* from) {
-				return (std::uintptr_t)getAddr() - (std::uintptr_t)from;
+				return static_cast<DWORD>((std::uintptr_t)getAddr() - (std::uintptr_t)from);
 			}
 
 			bool isConstant() {
@@ -537,7 +537,7 @@ namespace CE
 				template<typename T>
 				void write_operands2(ByteStream& st, Register& reg1, Register& reg2, T cmd_id)
 				{
-					byte mask_user_reg = reg1.isUser() | reg2.isUser() << 2;
+					byte mask_user_reg = static_cast<byte>(reg1.isUser()) | (static_cast<byte>(reg2.isUser()) << 2);
 
 					switch (reg2.getLength())
 					{
@@ -612,7 +612,7 @@ namespace CE
 								else {
 									st.writeByte(0x40 + 0x8 * reg->getIndex() + base_reg.getIndex());
 								}
-								st.writeByte(offset_const.getValue());
+								st.writeByte(static_cast<byte>(offset_const.getValue()));
 							}
 						}
 						else if (ptr->getBase().isConstant() && (!ptr->hasOffset() || ptr->getOffset().isConstant()))
@@ -632,7 +632,7 @@ namespace CE
 								st.writeByte(0x66);
 							else if (reg->getLength() == Register::rl_8)
 								cmd_id--;
-							st.writeByte(cmd_id);
+							st.writeByte(static_cast<byte>(cmd_id));
 							st.write<uint64_t>(base_const.getValue());
 						}
 						return;
@@ -656,7 +656,7 @@ namespace CE
 						else {
 							st.writeByte(rax_base - 1);
 						}
-						st.write<BYTE>(value);
+						st.write(static_cast<BYTE>(value));
 						break;
 					case Register::rl_16:
 						st.writeByte(0x66);
@@ -664,7 +664,7 @@ namespace CE
 							st.writeByte(0x41);
 						st.writeByte(0x83);
 						st.writeByte(cmd_base + reg.getIndex());
-						st.write<BYTE>(value);
+						st.write(static_cast<BYTE>(value));
 						break;
 					case Register::rl_32:
 						if (reg.isUser())
@@ -672,7 +672,7 @@ namespace CE
 						if (value <= 127) {
 							st.writeByte(0x83);
 							st.writeByte(cmd_base + reg.getIndex());
-							st.write<BYTE>(value);
+							st.write(static_cast<BYTE>(value));
 						}
 						else {
 							if (reg.getFullIndex() != 0) {
@@ -682,7 +682,7 @@ namespace CE
 							else {
 								st.writeByte(rax_base);
 							}
-							st.write<DWORD>(value);
+							st.write(static_cast<DWORD>(value));
 						}
 						break;
 					case Register::rl_64:
@@ -694,7 +694,7 @@ namespace CE
 						if (value <= 127) {
 							st.writeByte(0x83);
 							st.writeByte(cmd_base + reg.getIndex());
-							st.write<BYTE>(value);
+							st.write(static_cast<BYTE>(value));
 						}
 						else {
 							if (reg.getFullIndex() != 0) {
@@ -704,7 +704,7 @@ namespace CE
 							else {
 								st.writeByte(rax_base);
 							}
-							st.write<DWORD>(value);
+							st.write(static_cast<DWORD>(value));
 						}
 						break;
 					}
@@ -796,7 +796,7 @@ namespace CE
 					DWORD delta = 0;
 					if (getOperand().isConstant()) {
 						Constant& c = (Constant&)getOperand();
-						delta = c.getValue();
+						delta = static_cast<DWORD>(c.getValue());
 					}
 					else if (getOperand().isLabel()) {
 						Label& label = (Label&)getOperand();
@@ -805,7 +805,7 @@ namespace CE
 
 					if (delta < 0xFF && cmd_id_short != 0xFF && false) {
 						st.writeByte(cmd_id_short);
-						st.writeByte(delta);
+						st.writeByte(static_cast<BYTE>(delta));
 					}
 					else {
 						st.write(cmd_id_long);
@@ -1030,20 +1030,20 @@ namespace CE
 							if (reg.isUser())
 								st.writeByte(0x41);
 							st.writeByte(0xB0 + reg.getIndex());
-							st.write<BYTE>(value);
+							st.write(static_cast<BYTE>(value));
 							break;
 						case Register::rl_16:
 							st.writeByte(0x66);
 							if (reg.isUser())
 								st.writeByte(0x41);
 							st.writeByte(0xB8 + reg.getIndex());
-							st.write<WORD>(value);
+							st.write(static_cast<WORD>(value));
 							break;
 						case Register::rl_32:
 							if (reg.isUser())
 								st.writeByte(0x41);
 							st.writeByte(0xB8 + reg.getIndex());
-							st.write<DWORD>(value);
+							st.write(static_cast<DWORD>(value));
 							break;
 						case Register::rl_64:
 							if (reg.isUser())
@@ -1054,7 +1054,7 @@ namespace CE
 							if (value <= 0xFFFFFFFF && !getSecondOperand().isLabel()) {
 								st.writeByte(0xC7);
 								st.writeByte(0xC0 + reg.getIndex());
-								st.write<DWORD>(value);
+								st.write(static_cast<DWORD>(value));
 							}
 							else {
 								st.writeByte(0xB8 + reg.getIndex());

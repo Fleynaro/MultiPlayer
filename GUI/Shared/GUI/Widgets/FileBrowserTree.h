@@ -10,8 +10,16 @@ namespace GUI::Widget
 	public:
 		class Directory;
 		class File;
-		FileBrowserTree(Directory* mainDir, Events::Event* selectFileEvent = nullptr, Events::Event* rightMouseClickFile = nullptr, Events::Event* rightMouseClickDir = nullptr)
-			: m_mainDir(mainDir), m_selectFileEvent(selectFileEvent), m_rightMouseClickFile(rightMouseClickFile), m_rightMouseClickDir(rightMouseClickDir)
+		FileBrowserTree(
+			Directory* mainDir,
+			Events::SpecialEventType::EventHandlerType* selectFileEvent = nullptr,
+			Events::ClickEventType::EventHandlerType* rightMouseClickFile = nullptr,
+			Events::ClickEventType::EventHandlerType* rightMouseClickDir = nullptr
+		)
+			: m_mainDir(mainDir),
+			m_selectFileEvent(selectFileEvent),
+			m_rightMouseClickFile(rightMouseClickFile),
+			m_rightMouseClickDir(rightMouseClickDir)
 		{
 			addItem(mainDir);
 			buildTree();
@@ -30,10 +38,6 @@ namespace GUI::Widget
 
 		void update() {
 			buildTree();
-		}
-
-		EVENT_METHOD(update, info) {
-			update();
 		}
 
 		void buildTree();
@@ -105,8 +109,8 @@ namespace GUI::Widget
 			public Attribute::Name<File>
 		{
 		public:
-			File(std::string name, Events::Event* event = nullptr, Events::Event* rightClick = nullptr)
-				: Attribute::Name<File>(name), Events::OnSpecial<File>(this, event), Events::OnRightMouseClick<File>(this, rightClick)
+			File(std::string name, Events::SpecialEventType::EventHandlerType* event = nullptr, Events::ClickEventType::EventHandlerType* rightClick = nullptr)
+				: Attribute::Name<File>(name), Events::OnSpecial<File>(this, this, event), Events::OnRightMouseClick<File>(this, this, rightClick)
 			{}
 
 			Directory* getParentDir() {
@@ -129,7 +133,7 @@ namespace GUI::Widget
 			: public File, public Attribute::Rename<FileToRename>
 		{
 		public:
-			FileToRename(std::string name, Events::Event* event = nullptr, std::string preName = "")
+			FileToRename(std::string name, Events::SpecialEventType::EventHandlerType* event = nullptr, std::string preName = "")
 				: File(name, event), Attribute::Rename<FileToRename>(preName)
 			{}
 
@@ -148,8 +152,8 @@ namespace GUI::Widget
 			: public TreeNode, public Events::OnRightMouseClick<Directory>
 		{
 		public:
-			Directory(std::string name, FS::Directory dir, Events::Event* rightClick = nullptr)
-				: TreeNode(name, false), m_dir(dir), Events::OnRightMouseClick<Directory>(this, rightClick)
+			Directory(std::string name, FS::Directory dir, Events::ClickEventType::EventHandlerType* rightClick = nullptr)
+				: TreeNode(name, false), m_dir(dir), Events::OnRightMouseClick<Directory>(this, this, rightClick)
 			{}
 
 			FS::Directory& getDir() {
@@ -178,8 +182,8 @@ namespace GUI::Widget
 			public Attribute::Rename<DirToRename>
 		{
 		public:
-			DirToRename(FS::Directory dir, Events::Event* event = nullptr, std::string preName = "")
-				: Directory("Enter a new name", dir), Events::OnSpecial<DirToRename>(this, event), Attribute::Rename<DirToRename>(preName)
+			DirToRename(FS::Directory dir, Events::SpecialEventType::EventHandlerType* event = nullptr, std::string preName = "")
+				: Directory("Enter a new name", dir), Events::OnSpecial<DirToRename>(this, this, event), Attribute::Rename<DirToRename>(preName)
 			{}
 
 			void render() override {
@@ -199,9 +203,9 @@ namespace GUI::Widget
 		}
 	protected:
 		Directory* m_mainDir;
-		Events::Event* m_selectFileEvent;
-		Events::Event* m_rightMouseClickFile;
-		Events::Event* m_rightMouseClickDir;
+		Events::SpecialEventType::EventHandlerType* m_selectFileEvent;
+		Events::ClickEventType::EventHandlerType* m_rightMouseClickFile;
+		Events::ClickEventType::EventHandlerType* m_rightMouseClickDir;
 
 		std::set<std::string> m_itemCollapsed;
 	};

@@ -85,104 +85,72 @@ void test()
 
 
 
-float sum(float a, double b, bool c, bool d, float r) {
-	return a + b;
-}
-
-int sum_hook(int a, int b) {
-	return a + b;
-}
-
-bool getFalse() {
-	return true;
-}
-
-bool sum_before(CE::Hook::DynHook* hook) {
-	void* retAddr = hook->getReturnAddress();
-	
-	/*float param1 = hook->getArgumentValue<float>(rsp, 1);
-	double param2 = hook->getArgumentValue<double>(rsp, 2);
-	bool param3 = hook->getArgumentValue<bool>(rsp, 3);
-	bool param4 = hook->getArgumentValue<bool>(rsp, 4);
-
-	hook->setReturnValueBefore<float>(rsp, 7.5);
-	hook->setArgumentValue<float>(rsp, 1, 5.0);*/
-
-	return true;
-}
-
-void sum_after(CE::Hook::DynHook* hook) {
-	/*float result = hook->getReturnValueAfter<float>(rsp);
-
-	hook->setReturnValueAfter<float>(rsp, 2.4);*/
-}
-
 void module_dynhook()
 {
-	using namespace CE::Assembly;
-	using namespace CE::Hook;
-	CE::Disassembler::init();
-	
-	if (false)
-	{
-		DynHook hook(&sum, &sum_before, &sum_after);
-		hook.setUserPtr(&hook);
-		hook.hook();
-		//hook.unhook();
+	//using namespace CE::Assembly;
+	//using namespace CE::Hook;
+	//CE::Disassembler::init();
+	//
+	//if (false)
+	//{
+	//	DynHook hook(&sum, &sum_before, &sum_after);
+	//	hook.setUserPtr(&hook);
+	//	hook.hook();
+	//	//hook.unhook();
 
-		{
-			double param2 = 3.0;
-			float result = sum(2.0, param2, true, false, 10.0);
-			printf("result = %f", result);
-		}
-	}
+	//	{
+	//		double param2 = 3.0;
+	//		float result = sum(2.0, param2, true, false, 10.0);
+	//		printf("result = %f", result);
+	//	}
+	//}
 
-	byte* addr = (byte*)&sum;
-	
-	ByteStream bs(addr);
-	Label l1;
-	Label l2;
+	//byte* addr = (byte*)&sum;
+	//
+	//ByteStream bs(addr);
+	//Label l1;
+	//Label l2;
 
-	Block code;
-	RawBlock* codeSaved;
-	code
-		.call(getFalse)
-		.test(Register::al, Register::al)
-		//.rawBlock(&codeSaved)
-		.jnz(&l1)
-		.mov(Register::cl, 5)
-		.mov(Register::dl, 5)
-		.jmp(&l2)
-		.mov(Register::r8, Register::rsp, 2)
-		.movss(Register::rsp, -0x28, Register::xmm1)
-		.label(l1)
-		.mov(Register::cl, 3)
-		.mov(Register::dl, 3)
-		.sub(Register::rsp, 128)
-		.mov_ptr(Register::al, 0x123456789ABCDEF)
-		.mov_ptr(0x123456789ABCDEF, Register::ax)
-		.label(l2)
-		.jmp(&sum_hook);
+	//Block code;
+	//RawBlock* codeSaved;
+	//code
+	//	.call(getFalse)
+	//	.test(Register::al, Register::al)
+	//	//.rawBlock(&codeSaved)
+	//	.jnz(&l1)
+	//	.mov(Register::cl, 5)
+	//	.mov(Register::dl, 5)
+	//	.jmp(&l2)
+	//	.mov(Register::r8, Register::rsp, 2)
+	//	.movss(Register::rsp, -0x28, Register::xmm1)
+	//	.label(l1)
+	//	.mov(Register::cl, 3)
+	//	.mov(Register::dl, 3)
+	//	.sub(Register::rsp, 128)
+	//	.mov_ptr(Register::al, 0x123456789ABCDEF)
+	//	.mov_ptr(0x123456789ABCDEF, Register::ax)
+	//	.label(l2)
+	//	.jmp(&sum_hook);
 
-	//codeSaved->setData(addr, 5);
+	////codeSaved->setData(addr, 5);
 
-	bs.setWriteFlag(false);
-	code.compile(bs);
+	//bs.setWriteFlag(false);
+	//code.compile(bs);
 
-	DWORD old;
-	VirtualProtect(addr, bs.getOffset(), PAGE_EXECUTE_READWRITE, &old);
+	//DWORD old;
+	//VirtualProtect(addr, bs.getOffset(), PAGE_EXECUTE_READWRITE, &old);
 
-	bs.setWriteFlag(true);
-	code.compile(bs);
-	printf("offset = %i\n", bs.getOffset());
+	//bs.setWriteFlag(true);
+	//code.compile(bs);
+	//printf("offset = %i\n", bs.getOffset());
 
-	VirtualProtect(addr, 6, old, &old);
-	zydis_show(&sum, bs.getOffset());
+	//VirtualProtect(addr, 6, old, &old);
+	//zydis_show(&sum, bs.getOffset());
 
 
-	{
-		double param2 = 3.0;
-		int result = sum(2.0, param2, true, false, 0.0);
-		printf("result = %i", result);
-	}
+	//{
+	//	double param2 = 3.0;
+	//	int result = sum(2.0, param2, true, false, 0.0);
+	//	printf("result = %i", result);
+	//}
 }

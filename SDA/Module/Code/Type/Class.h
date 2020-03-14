@@ -102,12 +102,12 @@ namespace CE
 			}
 
 			int getAllMethodCount() {
-				return getMethodList().size() +
+				return static_cast<int>(getMethodList().size()) +
 					(getBaseClass() != nullptr ? getBaseClass()->getAllMethodCount() : 0);
 			}
 
 			int getAllFieldCount() {
-				return getFieldDict().size() +
+				return static_cast<int>(getFieldDict().size()) +
 					(getBaseClass() != nullptr ? getBaseClass()->getAllFieldCount() : 0);
 			}
 

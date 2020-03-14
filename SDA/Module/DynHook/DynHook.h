@@ -81,7 +81,7 @@ namespace CE
 				}
 
 				memcpy_s(m_oldBytes, sizeof(m_oldBytes), m_func_ptr, offset);
-				m_oldBytesSize = offset;
+				m_oldBytesSize = static_cast<int>(offset);
 			}
 			
 

@@ -36,7 +36,8 @@ namespace GUI::Widget
 				{
 					auto lamda =
 						std::function([&](Events::ISender* sender) {
-							event->invoke(this, m_function);
+							if(event != nullptr)
+								event->invoke(this, m_function);
 						});
 
 					m_signature = new Units::FunctionSignature(m_function,
@@ -439,7 +440,7 @@ namespace GUI::Widget
 								})
 							)
 						))
-						->setWidth(functionList->m_styleSettings.m_leftWidth - 10),
+						->setWidth(static_cast<float>(functionList->m_styleSettings.m_leftWidth - 10)),
 						(Item**)& m_categoryList
 					);
 
@@ -607,12 +608,14 @@ namespace GUI::Widget
 			{}
 
 			GUI::Item* createFuncItem(API::Function::Function* function) override {
-				return new SelectableItem(
-					static_cast<FunctionItem*>(FunctionList::ListView::createFuncItem(function)),
+				auto funcItem = static_cast<FunctionItem*>(FunctionList::ListView::createFuncItem(function));
+				makeSelectable(
+					funcItem,
 					function,
 					m_funcSelectList->isItemSelected(function),
 					m_funcSelectList->m_eventSelectItem
 				);
+				return funcItem;
 			}
 		protected:
 			FuncSelectList* m_funcSelectList;
@@ -660,8 +663,8 @@ namespace GUI::Widget
 			}
 		};
 
-		FuncSelectList(FunctionList* funcList, FunctionEventType::EventHandlerType* eventSelectItems)
-			: Template::SelectableItemList<API::Function::Function>(funcList, eventSelectItems)
+		FuncSelectList(FunctionList* funcList, Events::SpecialEventType::EventHandlerType* eventSelectItemsBtn)
+			: Template::SelectableItemList<API::Function::Function>(funcList, eventSelectItemsBtn)
 		{}
 
 		FunctionList* getFuncList() {
@@ -754,7 +757,7 @@ namespace GUI::Widget
 		}
 
 		int getSelectedFuncCount() {
-			return getSelectedFunctions().size();
+			return static_cast<int>(getSelectedFunctions().size());
 		}
 
 		std::list<API::Function::Function*>& getSelectedFunctions() {
@@ -824,7 +827,7 @@ namespace GUI::Widget
 	private:
 		FuncSelectList* m_funcSelectList;
 		FuncSelectList::ListView* m_funcListView;
-		FuncSelectList::ListView* m_funcListShortView;
+		FuncSelectList::ShortView* m_funcListShortView;
 		Container* m_funcShortList;
 		bool m_isWinOpen = false;
 	};

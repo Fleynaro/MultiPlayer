@@ -1,6 +1,6 @@
 #pragma once
 
-class IDXGISwapChain;
+struct IDXGISwapChain;
 
 class SdaInterface
 {

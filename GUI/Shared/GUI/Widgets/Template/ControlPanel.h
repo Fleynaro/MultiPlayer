@@ -16,7 +16,7 @@ namespace GUI::Widget::Template
 			public:
 				Container* m_container;
 
-				MenuItem(const std::string& name, Container* container, Events::Event* event)
+				MenuItem(const std::string& name, Container* container, Events::SpecialEventType::EventHandlerType* event)
 					: Elements::Button::ButtonStd(name, event), m_container(container)
 				{
 					m_container->setParent(this);
@@ -30,11 +30,13 @@ namespace GUI::Widget::Template
 			SideBar()
 				: ChildContainer()
 			{
-				m_menuEvent = new Events::EventUI(EVENT_LAMBDA(info) {
-					auto sender = static_cast<MenuItem*>(info->getSender());
-					m_controlPanel->onSelectedContainer(sender->m_container);
-					m_selectedContainer = sender->m_container;
-				});
+				m_menuEvent = Events::Listener(
+					std::function([&](Events::ISender* sender_) {
+						auto sender = static_cast<MenuItem*>(sender_);
+						m_controlPanel->onSelectedContainer(sender->m_container);
+						m_selectedContainer = sender->m_container;
+					})
+				);
 				m_menuEvent->setCanBeRemoved(false);
 
 				beginContainer(&m_menu);
@@ -45,7 +47,7 @@ namespace GUI::Widget::Template
 			}
 
 			void onVisibleOn() override {
-				setWidth(getWidth());
+				setWidth(static_cast<float>(getWidth()));
 			}
 
 			void addMenuItem(const std::string& name, Container* container)
@@ -57,8 +59,8 @@ namespace GUI::Widget::Template
 							container,
 							m_menuEvent
 						))
-						->setWidth(getWidth())
-						->setHeight(getMenuItemHeight())
+						->setWidth(static_cast<float>(getWidth()))
+						->setHeight(static_cast<float>(getMenuItemHeight()))
 					);
 			}
 
@@ -90,7 +92,7 @@ namespace GUI::Widget::Template
 			Container* m_menu;
 			Container* m_selectedContainer = nullptr;
 		private:
-			Events::EventUI* m_menuEvent = nullptr;
+			Events::SpecialEventType::EventHandlerType* m_menuEvent = nullptr;
 		};
 
 		ControlPanel()

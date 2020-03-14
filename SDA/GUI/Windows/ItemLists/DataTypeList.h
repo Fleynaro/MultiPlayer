@@ -30,8 +30,9 @@ namespace GUI::Widget
 							new Units::Type(
 								type->getType(),
 								Events::Listener(
-									std::function([&](Events::ISender* sender) {
-										m_eventClickOnName->invoke(this, m_type);
+									std::function([=](Events::ISender* sender) {
+										if(eventClickOnName != nullptr)
+											eventClickOnName->invoke(this, type);
 									})
 								)
 							)
@@ -160,7 +161,7 @@ namespace GUI::Widget
 								})
 							)
 						))
-						->setWidth(dataTypeList->m_styleSettings.m_leftWidth - 10),
+						->setWidth(static_cast<float>(dataTypeList->m_styleSettings.m_leftWidth - 10)),
 						(Item**)& m_categoryList
 					);
 

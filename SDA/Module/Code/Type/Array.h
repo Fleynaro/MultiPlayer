@@ -25,7 +25,7 @@ namespace CE
 			}
 
 			int getArraySize() override {
-				return m_arraySize;
+				return static_cast<int>(m_arraySize);
 			}
 
 			int getItemSize() {

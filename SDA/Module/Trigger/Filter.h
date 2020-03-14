@@ -138,23 +138,23 @@ namespace CE
 							{
 							case SystemType::Bool:
 							case SystemType::Byte:
-								return cmp<BYTE>(op1, op2, operation);
+								return cmp(static_cast<BYTE>(op1), static_cast<BYTE>(op2), operation);
 							case SystemType::Int8:
-								return cmp<int8_t>(op1, op2, operation);
+								return cmp(static_cast<int8_t>(op1), static_cast<int8_t>(op2), operation);
 							case SystemType::Int16:
-								return cmp<int16_t>(op1, op2, operation);
+								return cmp(static_cast<int16_t>(op1), static_cast<int16_t>(op2), operation);
 							case SystemType::Int32:
-								return cmp<int32_t>(op1, op2, operation);
+								return cmp(static_cast<int32_t>(op1), static_cast<int32_t>(op2), operation);
 							case SystemType::Int64:
-								return cmp<int64_t>(op1, op2, operation);
+								return cmp(static_cast<int64_t>(op1), static_cast<int64_t>(op2), operation);
 							case SystemType::UInt16:
 							case SystemType::UInt32:
 							case SystemType::UInt64:
-								return cmp<uint64_t>(op1, op2, operation);
+								return cmp(static_cast<uint64_t>(op1), static_cast<uint64_t>(op2), operation);
 							case SystemType::Float:
-								return cmp<float>(op1, op2, operation);
+								return cmp(reinterpret_cast<float&>(op1), reinterpret_cast<float&>(op2), operation);
 							case SystemType::Double:
-								return cmp<double>(op1, op2, operation);
+								return cmp(reinterpret_cast<double&>(op1), reinterpret_cast<double&>(op2), operation);
 							}
 						}
 						return false;

@@ -24,3 +24,21 @@
 
 #include <Vendor/json/json.hpp>
 using json = nlohmann::json;
+
+#define MYDEBUG
+
+class DebugInfo {
+#ifdef MYDEBUG
+	std::string m_info = "Not info.";
+#endif
+public:
+	DebugInfo() = default;
+
+	void setInfo(const std::string& info) {
+#ifdef MYDEBUG
+		m_info = info;
+#endif
+	}
+};
+
+#define SET_INFO(message) setInfo("" + std::to_string(__LINE__)  + ": " + ##message)

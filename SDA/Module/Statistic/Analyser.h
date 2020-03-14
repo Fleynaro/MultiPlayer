@@ -49,7 +49,7 @@ namespace CE
 				}
 
 				int getColumnCount() {
-					return m_columns.size();
+					return static_cast<int>(m_columns.size());
 				}
 
 				int getTotalCount() {
@@ -279,8 +279,8 @@ namespace CE
 			template<typename T>
 			void fillHistogramWithColumns(Histogram& histogram)
 			{
-				double min = getMin<T>();
-				double max = getMax<T>();
+				double min = static_cast<double>(getMin<T>());
+				double max = static_cast<double>(getMax<T>());
 				double step = (max - min) / getColumnCount();
 				for (int i = 0; i < getColumnCount(); i++) {
 					auto interval = Histogram::Interval(min + step * i, min + step * (i + 1));
@@ -303,7 +303,7 @@ namespace CE
 			}
 
 			int getColumnCount() {
-				return floor(log2(m_rawValues.size())) + 1;
+				return static_cast<int>(floor(log2(m_rawValues.size()))) + 1;
 			}
 		private:
 			Type::SystemType::Set m_set = Type::SystemType::Undefined;

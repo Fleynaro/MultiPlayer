@@ -10,7 +10,7 @@ namespace GUI::Widget::Template
 	{
 	public:
 		InteractiveInput(const std::string& name = "")
-			: Elements::Input::Text(name, nullptr), Attribute::Collapse<InteractiveInput>(false), Events::OnFocused<InteractiveInput>(this)
+			: Elements::Input::Text(name, nullptr), Attribute::Collapse<InteractiveInput>(false), Events::OnFocused<InteractiveInput>(this, this)
 		{}
 
 		bool m_focused = true;

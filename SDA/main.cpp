@@ -19,7 +19,7 @@ auto g_someClass = new SomeClass;
 int g_IntegerVal = 4;
 
 void setPlayerPos() {
-	g_IntegerVal = 5.0;
+	g_IntegerVal = 5;
 }
 
 void setPlayerVel() {
@@ -38,7 +38,7 @@ int setRot(int a, float x, float y, float z, int c)
 	float result = x + y + z + a + c + g_someClass->getValue();
 	result = pow(result, 1);
 	setPlayerPos();
-	gVar = rand() % 10;
+	gVar = float(rand() % 10);
 	changeGvar();
 	return result;
 }
@@ -290,7 +290,7 @@ int main()
 		{
 			std::thread t([i] {
 				for (int j = 0; j < 10; j++) {
-					setRot(10 + j, -10, 10, 888.4, 999);
+					setRot(10 + j, -10.f, 10.f, 888.4f, 999);
 					//Sleep(1);
 				}
 				});
