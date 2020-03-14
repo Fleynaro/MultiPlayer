@@ -155,7 +155,6 @@ public:
 
 	class HoverText
 		: public Elements::Text::Text,
-		public Events::ISender,
 		public Events::OnHovered<HoverText>
 	{
 	public:
@@ -253,22 +252,20 @@ public:
 		WindowTest()
 			: IWindow("ImGui window for test")
 		{
-			auto eventHandler = new Events::SpecialEventType::EventHandlerType(
-				[&](Events::ISender* sender) {
+
+			auto eventHandler = Events::Listener(
+				std::function([&](Events::ISender* sender) {
 					auto text = static_cast<Elements::Input::FilterText*>(sender);
 					auto val = text->getInputValue();
 					if (val == "lol") {
 						throw Exception(text, "error occured.");
 					}
-				});
-			
-			
+				})
+			);
+
 
 			getMainContainer()
 				.addItem(new TypeViewValue)
-
-				
-
 
 				.beginTabBar("lol")
 					.setFlags(ImGuiTabBarFlags_Reorderable)

@@ -10,7 +10,6 @@ namespace GUI::Window
 
 	class IWindow :
 		public Item,
-		public Events::IEventMessageReceiver,
 		public Events::OnClose<IWindow>,
 		public Attribute::Id<IWindow>,
 		public Attribute::Name<IWindow>
@@ -125,7 +124,7 @@ namespace GUI::Window
 		}
 	public:
 		bool isFlags(ImGuiWindowFlags flags) {
-			return m_flags & flags != 0;
+			return (m_flags & flags) != 0;
 		}
 
 		IWindow& setFlags(ImGuiWindowFlags flags) {

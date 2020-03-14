@@ -25,13 +25,15 @@ namespace GUI::Window
 				.addItem(
 					(new GUI::Elements::Input::Text(
 						"##input1",
-						new Events::EventUI(EVENT_LAMBDA(info) {
-							if(!m_projectDirChangedByUser) {
-								m_projectDirText->setInputValue(
-									FS::Directory(m_projectDirText->getInputValue()).back().next(m_projectNameText->getInputValue()).getPath()
-								);
-							}
-						})
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								if(!m_projectDirChangedByUser) {
+									m_projectDirText->setInputValue(
+										FS::Directory(m_projectDirText->getInputValue()).back().next(m_projectNameText->getInputValue()).getPath()
+									);
+								}
+							})
+						)
 					)),
 					(Item**)& m_projectNameText
 				)
@@ -39,9 +41,11 @@ namespace GUI::Window
 				.addItem(
 					(new GUI::Elements::Input::Text(
 						"##input2",
-						new Events::EventUI(EVENT_LAMBDA(info) {
-							m_projectDirChangedByUser = true;
-						})
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								m_projectDirChangedByUser = true;
+							})
+						)
 					)),
 					(Item**)& m_projectDirText
 				)
@@ -49,7 +53,11 @@ namespace GUI::Window
 				.addItem(
 					new GUI::Elements::Button::ButtonStd(
 						"Create",
-						new Events::EventUI(EVENT_METHOD_PASS(createProject))
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								createProject();
+							})
+						)
 					)
 				);
 
@@ -57,7 +65,7 @@ namespace GUI::Window
 			m_projectDirText->setInputValue(m_projectManager->getDefaultDirectory().next(prjName).getPath());
 		}
 
-		void CALLBACK_createProject(const GUI::Events::EventInfo::Type& info);
+		void createProject();
 	};
 
 	class ProjectManagerWin : public IWindow
@@ -82,10 +90,12 @@ namespace GUI::Window
 					.addItem
 					(
 						(new Elements::List::ListBoxDyn("", 0,
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								auto project = (Project*)m_projectsList->getSelectedItemPtr();
-								showProjectInfo(project);
-							})
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									auto project = (Project*)m_projectsList->getSelectedItemPtr();
+									showProjectInfo(project);
+								})
+							)
 						))
 						->setWidth(400)
 						->setHeight(-1),
@@ -95,19 +105,21 @@ namespace GUI::Window
 					.addItem(
 						new GUI::Elements::Button::ButtonStd(
 							"open",
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								if (m_projectManager->isAnyProjectActive())
-									return;
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									if (m_projectManager->isAnyProjectActive())
+										return;
 
-								auto project = (Project*)m_projectsList->getSelectedItemPtr();
-								project->open();
-								m_projectManager->setCurrentProject(project);
+									auto project = (Project*)m_projectsList->getSelectedItemPtr();
+									project->open();
+									m_projectManager->setCurrentProject(project);
 
-								getParent()->addWindow(
-									new Window::ProjectWindow(project)
-								);
-								close();
-							})
+									getParent()->addWindow(
+										new Window::ProjectWindow(project)
+									);
+									close();
+								})
+							)
 						)
 					)
 					.newLine()
@@ -122,9 +134,11 @@ namespace GUI::Window
 				.addItem(
 					new GUI::Elements::Button::ButtonStd(
 						"create a project",
-						new Events::EventUI(EVENT_LAMBDA(info) {
-							addWindow(new ProjectCreating(m_projectManager));
-						})
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								addWindow(new ProjectCreating(m_projectManager));
+							})
+						)
 					)
 				);
 			updateProjectList();

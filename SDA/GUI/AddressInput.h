@@ -26,8 +26,8 @@ namespace GUI
 		};
 
 		Container* m_comboContent;
-		AddressInput(Events::EventHandler* eventFocused = nullptr)
-			: m_addressValidEnteredEvent(this)
+		AddressInput()
+			: m_addressValidEnteredEvent(this, this)
 		{
 			m_comboContent = new Container;
 			m_comboContent->setParent(this);
@@ -77,13 +77,13 @@ namespace GUI
 			return (uint64_t&)m_lastValidAddr;
 		}
 
-		Events::Messager& getAddressValidEnteredEvent() {
+		Events::SpecialEventType& getAddressValidEnteredEvent() {
 			return m_addressValidEnteredEvent;
 		}
 	private:
 		void* m_addr;
 		void* m_lastValidAddr;
-		Events::Messager m_addressValidEnteredEvent;
+		Events::SpecialEventType m_addressValidEnteredEvent;
 	};
 
 
@@ -272,9 +272,11 @@ namespace GUI
 		AddressValueEditor(void* address, CE::Type::Type* type = nullptr, bool changeType = false)
 			: m_address(address), m_type(type), m_changeType(changeType)
 		{
-			m_eventUpdate = new Events::EventUI(EVENT_LAMBDA(info) {
-				updateProtect();
-			});
+			m_eventUpdate = Events::Listener(
+				std::function([&](Events::ISender* sender) {
+					updateProtect();
+				})
+			);
 			m_eventUpdate->setCanBeRemoved(false);
 
 			build();
@@ -352,11 +354,11 @@ namespace GUI
 					addr = addr.dereference();
 				}
 
-				combo->getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
-					auto sender = static_cast<Elements::List::Combo*>(info->getSender());
+				combo->getSpecialEvent() += [&](Events::ISender* sender_) {
+					auto sender = static_cast<Elements::List::Combo*>(sender_);
 					m_ptrLevel = sender->getSelectedItem();
 					rebuild();
-				});
+				};
 			}
 
 			if (m_type->getArraySize() > 0) {
@@ -364,15 +366,15 @@ namespace GUI
 				(*this)
 					.text("Item index: ")
 					.addItem(indexInput = new Elements::Input::Int);
-				indexInput->getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
-					auto sender = static_cast<Elements::Input::Int*>(info->getSender());
+				indexInput->getSpecialEvent() += [&](Events::ISender* sender_) {
+					auto sender = static_cast<Elements::Input::Int*>(sender_);
 					if (sender->getInputValue() >= 0) {
 						m_arrayIndex = sender->getInputValue();
 						if (isValid()) {
 							rebuild();
 						}
 					}
-				});
+				};
 				indexInput->setInputValue(m_arrayIndex);
 			}
 
@@ -403,12 +405,14 @@ namespace GUI
 					.addItem(
 						new Elements::Button::ButtonStd(
 							"ok",
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								if(!m_cb_protect_Write->isSelected())
-									throw Exception(m_cb_protect_Write, "You cannot change value at this address. Need right on writing.");
-								m_valueInput->change();
-								rebuild();
-							})
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									if(!m_cb_protect_Write->isSelected())
+										throw Exception(m_cb_protect_Write, "You cannot change value at this address. Need right on writing.");
+									m_valueInput->change();
+									rebuild();
+								})
+							)
 						)
 					);
 			}
@@ -462,7 +466,7 @@ namespace GUI
 		int m_ptrLevel = 0;
 		bool m_changeType;
 		CE::Type::Type* m_type;
-		Events::EventHandler* m_eventUpdate;
+		Events::SpecialEventType::EventHandlerType* m_eventUpdate;
 		Container* m_protectContainer = nullptr;
 		Elements::Generic::Checkbox* m_cb_protect_Read = nullptr;
 		Elements::Generic::Checkbox* m_cb_protect_Write = nullptr;

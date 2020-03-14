@@ -11,12 +11,12 @@
 #endif
 
 
-#define S_EVENT_LAMBDA(info) [](GUI::Events::EventInfo::Type & ##info) -> void
-#define EVENT_LAMBDA(info) [this](GUI::Events::EventInfo::Type & ##info) -> void
-#define EVENT_METHOD(name, info) inline void CALLBACK_##name(const GUI::Events::EventInfo::Type & ##info)
-#define EVENT_METHOD_DEF(Class, name, info) inline void  ##Class::CALLBACK_##name(const GUI::Events::EventInfo::Type & ##info)
-#define CALL_EVENT_METHOD(name, arg) CALLBACK_##name(GUI::Events::EventInfo::Type(new GUI::Events::EventInfo(##arg)));
-#define EVENT_METHOD_PASS(name) EVENT_LAMBDA(info) {this->CALLBACK_##name(info);}
+//#define S_EVENT_LAMBDA(info) [](GUI::Events::EventInfo::Type & ##info) -> void
+//#define EVENT_LAMBDA(info) [this](GUI::Events::EventInfo::Type & ##info) -> void
+//#define EVENT_METHOD(name, info) inline void CALLBACK_##name(const GUI::Events::EventInfo::Type & ##info)
+//#define EVENT_METHOD_DEF(Class, name, info) inline void  ##Class::CALLBACK_##name(const GUI::Events::EventInfo::Type & ##info)
+//#define CALL_EVENT_METHOD(name, arg) CALLBACK_##name(GUI::Events::EventInfo::Type(new GUI::Events::EventInfo(##arg)));
+//#define EVENT_METHOD_PASS(name) EVENT_LAMBDA(info) {this->CALLBACK_##name(info);}
 
 namespace GUI
 {

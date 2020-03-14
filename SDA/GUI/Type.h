@@ -13,10 +13,10 @@ namespace GUI::Units
 		public Attribute::Font<Type>
 	{
 	public:
-		Type(CE::Type::Type* type, Events::Event* event = nullptr)
+		Type(CE::Type::Type* type, Events::ClickEventType::EventHandlerType* eventHandler = nullptr)
 			:
 			m_type(type),
-			Events::OnLeftMouseClick<Type>(this, event)
+			Events::OnLeftMouseClick<Type>(this, this, eventHandler)
 		{}
 
 		void render() override {

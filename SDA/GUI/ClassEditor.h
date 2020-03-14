@@ -124,9 +124,11 @@ namespace GUI::Widget
 					{
 						addFlags(ImGuiTreeNodeFlags_FramePadding);
 
-						m_eventClick = new Events::EventUI(EVENT_LAMBDA(info) {
-							m_classContent->m_classHierarchy->m_classEditor->selectClassFields(this, Keys::IsShiftPressed(), Keys::IsCtrlPressed());
-						});
+						m_eventClick = Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								m_classContent->m_classHierarchy->m_classEditor->selectClassFields(this, Keys::IsShiftPressed(), Keys::IsCtrlPressed());
+							})
+						);
 						m_eventClick->setCanBeRemoved(false);
 
 						getLeftMouseClickEvent() += m_eventClick;
@@ -184,7 +186,7 @@ namespace GUI::Widget
 					CE::Type::Type* m_type;
 				protected:
 					Container* m_headBaseInfo = nullptr;
-					Events::EventHandler* m_eventClick;
+					Events::SpecialEventType::EventHandlerType* m_eventClick;
 				};
 				friend class EmptyField;
 
@@ -280,10 +282,10 @@ namespace GUI::Widget
 							.newLine()
 							.addItem(m_body = new Container);
 
-						m_indexInput->getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+						m_indexInput->getSpecialEvent() += [&](Events::ISender* sender) {
 							if(getIndex() >= 0)
 								update();
-						});
+						};
 						update();
 					}
 
@@ -336,7 +338,7 @@ namespace GUI::Widget
 					: public TreeNode
 				{
 				public:
-					Method(API::Function::Function* method, Events::EventHandler* openFunctionCP = nullptr)
+					Method(API::Function::Function* method, FunctionEventType::EventHandlerType* openFunctionCP = nullptr)
 						: m_method(method), m_openFunctionCP(openFunctionCP)
 					{
 						addFlags(ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_Leaf);
@@ -352,7 +354,11 @@ namespace GUI::Widget
 						if (m_signature == nullptr) {
 							m_signature = new Units::FunctionSignature(m_method,
 								nullptr,
-								new Events::EventHook(m_openFunctionCP, m_method),
+								Events::Listener(
+									std::function([&](Events::ISender* sender) {
+										m_openFunctionCP->invoke(this, m_method);
+									})
+								),
 								nullptr
 							);
 							m_signature->setParent(this);
@@ -368,7 +374,7 @@ namespace GUI::Widget
 				private:
 					API::Function::Function* m_method;
 					Units::FunctionSignature* m_signature = nullptr;
-					Events::EventHandler* m_openFunctionCP;
+					FunctionEventType::EventHandlerType* m_openFunctionCP;
 				};
 
 				ClassContent(ClassHierarchy* classHierarchy, API::Type::Class* Class, bool calculateValues = false)
@@ -393,13 +399,13 @@ namespace GUI::Widget
 				void renderHeader() override {
 					if (m_className == nullptr) {
 						m_className = new Elements::Text::ClickedText(m_class->getClass()->getName(), ColorRGBA(0xeddf91FF));
-						m_className->getLeftMouseClickEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+						m_className->getLeftMouseClickEvent() += [&](Events::ISender* sender) {
 							m_classHierarchy->m_classEditor->unselectClassContent();
 							m_classHierarchy->m_classEditor->selectClassContent(this);
-						});
-						m_className->getMiddleMouseClickEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+						};
+						m_className->getMiddleMouseClickEvent() += [&](Events::ISender* sender) {
 							m_classHierarchy->m_classEditor->addClass(m_class, m_baseAddr);
-						});
+						};
 						m_className->setParent(this);
 					}
 
@@ -526,12 +532,12 @@ namespace GUI::Widget
 						field->addItem(
 							new Elements::Button::ButtonStd(
 								"Load all items",
-								new Events::EventHook(new Events::EventUI(EVENT_LAMBDA(info) {
-									auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-									auto field = (Field*)message->getUserDataPtr();
-									field->clear();
-									buildArrayItems(field, 1000);
-								}), field)
+								Events::Listener(
+									std::function([&](Events::ISender* sender) {
+										field->clear();
+										buildArrayItems(field, 1000);
+									})
+								)
 							)
 						);
 					}
@@ -727,9 +733,11 @@ namespace GUI::Widget
 		{
 			const int width = 250;
 
-			m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
-				update();
-			});
+			m_eventUpdateCB = Events::Listener(
+				std::function([&](Events::ISender* sender) {
+					update();
+				})
+			);
 			m_eventUpdateCB->setCanBeRemoved(false);
 
 			(*this)
@@ -781,14 +789,14 @@ namespace GUI::Widget
 			m_classFieldContainer->setDisplay(false);
 			m_searchInput->getSpecialEvent() += m_eventUpdateCB;
 
-			m_classHierarchyAddressInput->getAddressValidEnteredEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+			m_classHierarchyAddressInput->getAddressValidEnteredEvent() += [&](Events::ISender* sender) {
 				if (m_classHierarchySelected != nullptr) {
 					if (m_classHierarchySelected->getBaseAddress() != m_classHierarchyAddressInput->getLastValidAddress()) {
 						m_classHierarchySelected->setBaseAddress(m_classHierarchyAddressInput->getLastValidAddress());
 						updateCurrentClassHierarchy();
 					}
 				}
-			});
+			};
 		}
 
 		~ClassEditor() {
@@ -811,10 +819,10 @@ namespace GUI::Widget
 		void addClassHierarchy(ClassHierarchy* classHierarchy) {
 			ClassTabItem* tabItem;
 			m_classesTabBar->addItem(tabItem = new ClassTabItem(classHierarchy));
-			tabItem->getCloseEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
-				auto sender = static_cast<ClassTabItem*>(info->getSender());
+			tabItem->getCloseEvent() += [&](Events::ISender* sender_) {
+				auto sender = static_cast<ClassTabItem*>(sender_);
 				removeClassHierarchy(sender->m_classHierarchy);
-			});
+			};
 
 			m_classHierarchies.push_back(classHierarchy);
 
@@ -852,11 +860,11 @@ namespace GUI::Widget
 					.text("Size: ").sameLine().addItem(m_relSizeInput = new Elements::Input::Int)
 					.newLine()
 					.addItem(
-						new Elements::Button::ButtonStd("Change", new Events::EventUI(
-							EVENT_LAMBDA(info) {
+						new Elements::Button::ButtonStd("Change", Events::Listener(
+							std::function([&](Events::ISender* sender) {
 								change();
 								update();
-							}
+							})
 						))
 					);
 
@@ -915,36 +923,34 @@ namespace GUI::Widget
 				(*this)
 					.newLine()
 					.addItem(
-						new Elements::Button::ButtonStd("Change data type", new Events::EventUI(
-							EVENT_LAMBDA(info) {
+						new Elements::Button::ButtonStd("Change data type", Events::Listener(
+							std::function([&](Events::ISender* sender) {
 								if (m_dataTypeSelector == nullptr) {
 									getWindow()->addWindow(
 										m_dataTypeSelector = new Window::DataTypeSelector(m_class->getTypeManager())
 									);
 									m_dataTypeSelector->setType(m_typeInput);
 									m_dataTypeSelector->getCloseEvent() +=
-										new Events::EventUI(
-											EVENT_LAMBDA(info) {
-												if(m_dataTypeSelector->getType() != nullptr) {
-													m_typeInput = m_dataTypeSelector->getType();
-													m_typeInput->addOwner();
-												}
-												m_dataTypeSelector = nullptr;
+										[&](Events::ISender* sender) {
+											if(m_dataTypeSelector->getType() != nullptr) {
+												m_typeInput = m_dataTypeSelector->getType();
+												m_typeInput->addOwner();
 											}
-										);
+											m_dataTypeSelector = nullptr;
+										};
 								}
-							}
+							})
 					)));
 
 				(*this)
 					.newLine()
 					.newLine()
 					.addItem(
-						new Elements::Button::ButtonStd(isEmptyField() ? "Add" : "Change", new Events::EventUI(
-							EVENT_LAMBDA(info) {
+						new Elements::Button::ButtonStd(isEmptyField() ? "Add" : "Change", Events::Listener(
+							std::function([&](Events::ISender* sender) {
 								change();
 								update();
-							}
+							})
 						))
 					);
 
@@ -953,29 +959,29 @@ namespace GUI::Widget
 					(*this)
 						.sameLine()
 						.addItem(
-							new Elements::Button::ButtonStd("Remove", new Events::EventUI(
-								EVENT_LAMBDA(info) {
+							new Elements::Button::ButtonStd("Remove", Events::Listener(
+								std::function([&](Events::ISender* sender) {
 									remove();
 									update();
-								}
+								})
 							))
 						)
 						.sameLine()
 						.addItem(
-							new Elements::Button::ButtonArrow(ImGuiDir_Down, new Events::EventUI(
-								EVENT_LAMBDA(info) {
+							new Elements::Button::ButtonArrow(ImGuiDir_Down, Events::Listener(
+								std::function([&](Events::ISender* sender) {
 									if(move(1))
 										update();
-								}
+								})
 							))
 						)
 						.sameLine()
 						.addItem(
-							new Elements::Button::ButtonArrow(ImGuiDir_Up, new Events::EventUI(
-								EVENT_LAMBDA(info) {
+							new Elements::Button::ButtonArrow(ImGuiDir_Up, Events::Listener(
+								std::function([&](Events::ISender* sender) {
 									if (move(-1))
 										update();
-								}
+								})
 							))
 						)
 						.sameLine()
@@ -1063,11 +1069,13 @@ namespace GUI::Widget
 					.text("Selected "+ std::to_string(m_fields.size()) +" fields.")
 					.newLine()
 					.addItem(
-						new Elements::Button::ButtonStd("Clear", new Events::EventUI(
-							EVENT_LAMBDA(info) {
-								clearFields();
-							}
-						))
+						new Elements::Button::ButtonStd("Clear",
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									clearFields();
+								})
+							)
+						)
 					);
 			}
 
@@ -1277,7 +1285,7 @@ namespace GUI::Widget
 		Elements::Generic::Checkbox* m_cb_isEmptyFields_GroupingEnabled = nullptr;
 		Elements::Generic::Checkbox* m_cb_isAlwaysOpen = nullptr;
 		Elements::Generic::Checkbox* m_cb_isHexDisplayEnabled = nullptr;
-		Events::EventHandler* m_eventUpdateCB = nullptr;
+		Events::SpecialEventType::EventHandlerType* m_eventUpdateCB = nullptr;
 		Template::FilterManager m_filterManager;
 	};
 };

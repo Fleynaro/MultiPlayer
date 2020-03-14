@@ -10,6 +10,8 @@ using namespace CE;
 
 namespace GUI::Widget {
 	class FunctionTagShortCut;
+
+	using FunctionEventType = Events::Event<Events::ISender*, API::Function::Function*>;
 };
 
 namespace GUI::Units
@@ -237,8 +239,8 @@ namespace GUI::Units
 			public Events::OnLeftMouseClick<Name>
 		{
 		public:
-			Name(const std::string& name, Events::Event* clickEvent)
-				: Elements::Text::Text(name), Events::OnLeftMouseClick<Name>(this, clickEvent)
+			Name(const std::string& name, Events::ClickEventType::EventHandlerType* clickEvent)
+				: Elements::Text::Text(name), Events::OnLeftMouseClick<Name>(this, this, clickEvent)
 			{}
 
 			void render() override {
@@ -250,11 +252,11 @@ namespace GUI::Units
 		class FuncName : public Name
 		{
 		public:
-			FuncName(const std::string& name, Events::Event* clickEvent)
+			FuncName(const std::string& name, Events::ClickEventType::EventHandlerType* clickEvent)
 				: Name(name, clickEvent)
 			{}
 
-			FuncName(API::Function::FunctionDecl* functionDecl, const std::string& name, Events::Event* clickEvent)
+			FuncName(API::Function::FunctionDecl* functionDecl, const std::string& name, Events::ClickEventType::EventHandlerType* clickEvent)
 				: FuncName(name, clickEvent)
 			{
 				m_declInfo = new ShortCutInfo(new DeclInfo(functionDecl));
@@ -276,7 +278,7 @@ namespace GUI::Units
 		class ArgName : public Name
 		{
 		public:
-			ArgName(int id, const std::string& name, Events::Event* clickEvent)
+			ArgName(int id, const std::string& name, Events::ClickEventType::EventHandlerType* clickEvent)
 				: m_id(id), Name(name, clickEvent)
 			{}
 
@@ -290,7 +292,7 @@ namespace GUI::Units
 		class Type : public Units::Type
 		{
 		public:
-			Type(int id, CE::Type::Type* type, Events::Event* eventHandler)
+			Type(int id, CE::Type::Type* type, Events::ClickEventType::EventHandlerType* eventHandler)
 				: m_id(id), Units::Type(type, eventHandler)
 			{}
 
@@ -304,9 +306,9 @@ namespace GUI::Units
 
 		DeclSignature(
 			API::Function::FunctionDecl* functionDecl,
-			Events::Event* leftMouseClickOnType = nullptr,
-			Events::Event* leftMouseClickOnFuncName = nullptr,
-			Events::Event* leftMouseClickOnArgName = nullptr
+			Events::ClickEventType::EventHandlerType* leftMouseClickOnType = nullptr,
+			Events::ClickEventType::EventHandlerType* leftMouseClickOnFuncName = nullptr,
+			Events::ClickEventType::EventHandlerType* leftMouseClickOnArgName = nullptr
 		)
 			:
 			m_functionDecl(functionDecl),
@@ -314,23 +316,23 @@ namespace GUI::Units
 			m_leftMouseClickOnFuncName(leftMouseClickOnFuncName),
 			m_leftMouseClickOnArgName(leftMouseClickOnArgName)
 		{
-			Utils::actionForList<Events::Event>(
+			Utils::actionForList<Events::ClickEventType::EventHandlerType>(
 			{
 				m_leftMouseClickOnType,
 				m_leftMouseClickOnFuncName,
 				m_leftMouseClickOnArgName
-			}, [](Events::Event* handler) {
+			}, [](Events::ClickEventType::EventHandlerType* handler) {
 				handler->setCanBeRemoved(false);
 			});
 		}
 
 		~DeclSignature() {
-			Utils::actionForList<Events::Event>(
+			Utils::actionForList<Events::ClickEventType::EventHandlerType>(
 			{
 				m_leftMouseClickOnType,
 				m_leftMouseClickOnFuncName,
 				m_leftMouseClickOnArgName
-			}, [](Events::Event* handler) {
+			}, [](Events::ClickEventType::EventHandlerType* handler) {
 				if (handler->canBeRemovedBy(nullptr)) {
 					delete handler;
 				}
@@ -399,9 +401,9 @@ namespace GUI::Units
 
 		API::Function::FunctionDecl* m_functionDecl;
 	protected:
-		Events::Event* m_leftMouseClickOnType;
-		Events::Event* m_leftMouseClickOnFuncName;
-		Events::Event* m_leftMouseClickOnArgName;
+		Events::ClickEventType::EventHandlerType* m_leftMouseClickOnType;
+		Events::ClickEventType::EventHandlerType* m_leftMouseClickOnFuncName;
+		Events::ClickEventType::EventHandlerType* m_leftMouseClickOnArgName;
 
 		CE::Function::FunctionDecl* getFunctionDecl() {
 			return m_functionDecl->getFunctionDecl();
@@ -415,7 +417,7 @@ namespace GUI::Units
 		class FuncName : public DeclSignature::FuncName
 		{
 		public:
-			FuncName(API::Function::Function* function, const std::string& name, Events::Event* clickEvent)
+			FuncName(API::Function::Function* function, const std::string& name, Events::ClickEventType::EventHandlerType* clickEvent)
 				: DeclSignature::FuncName(name, clickEvent)
 			{
 				m_declInfo = new ShortCutInfo(new FuncInfo(function, false));
@@ -424,9 +426,9 @@ namespace GUI::Units
 		};
 
 		FunctionSignature(API::Function::Function* function,
-			Events::Event* leftMouseClickOnType = nullptr,
-			Events::Event* leftMouseClickOnFuncName = nullptr,
-			Events::Event* leftMouseClickOnArgName = nullptr)
+			Events::ClickEventType::EventHandlerType* leftMouseClickOnType = nullptr,
+			Events::ClickEventType::EventHandlerType* leftMouseClickOnFuncName = nullptr,
+			Events::ClickEventType::EventHandlerType* leftMouseClickOnArgName = nullptr)
 			:
 			m_function(function),
 			DeclSignature(function->getDeclaration(),

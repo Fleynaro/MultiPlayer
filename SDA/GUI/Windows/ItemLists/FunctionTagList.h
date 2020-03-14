@@ -5,22 +5,47 @@ using namespace CE;
 
 namespace GUI::Widget
 {
+	using FuncTagEventType = Events::Event<Events::ISender*, Function::Tag::Tag*>;
+
+	class IFunctionTagList
+	{
+	public:
+		virtual Function::Tag::Manager* getManager() = 0;
+		virtual Template::ItemList* getItemList() = 0;
+		virtual bool checkOnInputValue(Function::Tag::Tag* tag, const std::string& value) = 0;
+		virtual bool checkAllFilters(Function::Tag::Tag* tag) = 0;
+	};
+
+	class IFunctionTag
+	{
+	public:
+		virtual Function::Tag::Tag* getTag() = 0;
+		virtual TreeNode* getItem() = 0;
+	};
+
+
 	//MY TODO: исчезают некоторые теги в tree view, не добавл€ютс€ новые, по дефу устанавливать в окне создани€ тега функцию
-	class FunctionTagList : public Template::ItemList
+	class FunctionTagList
+		: public Template::ItemList,
+		public IFunctionTagList
 	{
 	public:
 		class TreeView : public IView
 		{
 		public:
-			class FunctionTag : public TreeNode
+			class FunctionTag
+				: public Item,
+				public IFunctionTag
 			{
 			public:
-				FunctionTag(Function::Tag::Tag* tag, Events::EventHandler* openFunctionTag)
-					: m_tag(tag)
+				FunctionTag(Function::Tag::Tag* tag, FuncTagEventType::EventHandlerType* openFunctionTag)
+					: m_tag(tag), m_openFunctionTag(openFunctionTag)
 				{
 					addFlags(ImGuiTreeNodeFlags_FramePadding);
-					getLeftMouseClickEvent() += openFunctionTag;
-					
+					getLeftMouseClickEvent() += [&](Events::ISender* sender) {
+						m_openFunctionTag->invoke(this, m_tag);
+					};
+
 					m_header = new Container;
 					m_header->setParent(this);
 					(*m_header)
@@ -35,11 +60,16 @@ namespace GUI::Widget
 					m_header->show();
 				}
 
-				Function::Tag::Tag* getTag() {
+				Function::Tag::Tag* getTag() override {
 					return m_tag;
+				}
+
+				TreeNode* getItem() override {
+					return this;
 				}
 			private:
 				Function::Tag::Tag* m_tag;
+				FuncTagEventType::EventHandlerType* m_openFunctionTag;
 			protected:
 				Container* m_header;
 			};
@@ -47,7 +77,7 @@ namespace GUI::Widget
 			class UserFunctionTag : public FunctionTag
 			{
 			public:
-				UserFunctionTag(Function::Tag::UserTag* tag, Events::EventHandler* openFunctionTag)
+				UserFunctionTag(Function::Tag::UserTag* tag, FuncTagEventType::EventHandlerType* openFunctionTag)
 					: FunctionTag(tag, openFunctionTag)
 				{
 					if (getTag()->isDefinedForDecl()) {
@@ -62,51 +92,53 @@ namespace GUI::Widget
 					return static_cast<Function::Tag::UserTag*>(FunctionTag::getTag());
 				}
 			};
-			
-			TreeView(FunctionTagList* funcTagList, Events::EventHandler* openFunctionTag = nullptr)
+
+			TreeView(IFunctionTagList* funcTagList, FuncTagEventType::EventHandlerType* openFunctionTag = nullptr)
 				: m_funcTagList(funcTagList), m_openFunctionTag(openFunctionTag)
 			{}
 
 			~TreeView() {
-				if(m_eventUpdateCB != nullptr)
+				if (m_eventUpdateCB != nullptr)
 					delete m_eventUpdateCB;
 			}
 
 			//MY TODO*: unsetView
 			void onSetView() override {
-				m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
-					m_funcTagList->update();
-				});
+				m_eventUpdateCB = Events::Listener(
+					std::function([&](Events::ISender* sender) {
+						m_funcTagList->getItemList()->update();
+						})
+				);
 				m_eventUpdateCB->setCanBeRemoved(false);
 
-				(*m_funcTagList->m_underFilterCP)
+				(*m_funcTagList->getItemList()->m_underFilterCP)
 					.beginReverseInserting()
-						.beginContainer()
-							.newLine()
-							.separator()
-							.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters", false, m_eventUpdateCB))
-						.end()
+					.beginContainer()
+					.newLine()
+					.separator()
+					.addItem(m_cb_isFilterEnabled = new Elements::Generic::Checkbox("Use filters", false, m_eventUpdateCB))
+					.end()
 					.endReverseInserting();
 			}
 
-			void load(FunctionTag* tagNode, bool& remove, const std::string& funcName) {
-				tagNode->setAlwaysOpened(true);
+			void load(IFunctionTag* tagNode, bool& remove, const std::string& funcName) {
+				tagNode->getItem()->setAlwaysOpened(true);
 				remove = true;
-				
-				for (auto tag : m_funcTagList->m_funcTagManager->getTags()) {
+
+				for (auto tag : m_funcTagList->getManager()->getTags()) {
 					if (!tag.second->isUser())
 						continue;
 					if (tag.second->getParent()->getId() == tagNode->getTag()->getId()) {
-						FunctionTag* tagChildNode;
+						IFunctionTag* tagChildNode;
 						bool isRemove;
 						load(tagChildNode = createUserFunctionTag(static_cast<Function::Tag::UserTag*>(tag.second)), isRemove, funcName);
-						tagNode->addItem(tagChildNode);
-						if (tagChildNode->empty()) {
-							tagChildNode->addFlags(ImGuiTreeNodeFlags_Leaf);
+						tagNode->getItem()->addItem(tagChildNode->getItem());
+						if (tagChildNode->getItem()->empty()) {
+							tagChildNode->getItem()->addFlags(ImGuiTreeNodeFlags_Leaf);
 						}
 
 						if (isFilterEnabled()) {
-							if (tagChildNode->empty()) {
+							if (tagChildNode->getItem()->empty()) {
 								if (m_funcTagList->checkOnInputValue(tagChildNode->getTag(), funcName)
 									&& (isSearchOnlyEnabled() || m_funcTagList->checkAllFilters(tagChildNode->getTag()))) {
 									remove = false;
@@ -115,22 +147,22 @@ namespace GUI::Widget
 							}
 
 							if (isRemove) {
-								tagNode->removeLastItem();
+								tagNode->getItem()->removeLastItem();
 							}
 						}
 					}
 				}
 			}
 
-			virtual FunctionTag* createUserFunctionTag(Function::Tag::UserTag* tag) {
+			virtual IFunctionTag* createUserFunctionTag(Function::Tag::UserTag* tag) {
 				return new UserFunctionTag(tag, m_openFunctionTag);
 			}
 
 			void onSearch(const std::string& tagName) override
 			{
 				getOutContainer()->clear();
-				
-				for(auto tag : m_funcTagList->m_funcTagManager->m_basicTags)
+
+				for (auto tag : m_funcTagList->getManager()->m_basicTags)
 				{
 					FunctionTag* tagNode;
 					getOutContainer()->addItem(tagNode = new FunctionTag(tag, m_openFunctionTag));
@@ -147,9 +179,9 @@ namespace GUI::Widget
 				return false;
 			}
 
-			FunctionTagList* m_funcTagList;
-			Events::EventHandler* m_openFunctionTag;
-			Events::EventHandler* m_eventUpdateCB = nullptr;
+			IFunctionTagList* m_funcTagList;
+			FuncTagEventType::EventHandlerType* m_openFunctionTag;
+			Events::SpecialEventType::EventHandlerType* m_eventUpdateCB = nullptr;
 			Elements::Generic::Checkbox* m_cb_isFilterEnabled = nullptr;
 		};
 		friend class TreeView;
@@ -180,7 +212,7 @@ namespace GUI::Widget
 			{
 				switch (idx)
 				{
-				//case 0: return new CategoryFilter(m_funcList);
+					//case 0: return new CategoryFilter(m_funcList);
 				}
 				return nullptr;
 			}
@@ -189,90 +221,81 @@ namespace GUI::Widget
 			FunctionTagList* m_functionTagList;
 		};
 
+
+
+
 		FunctionTagList(Function::Tag::Manager* funcTagManager)
 			: ItemList(new FunctionTagFilterCreator(this)), m_funcTagManager(funcTagManager)
 		{
 			//getFilterManager()->addFilter(new CategoryFilter(this));
 		}
 
-		bool checkOnInputValue(Function::Tag::Tag* tag, const std::string& value) {
+		bool checkOnInputValue(Function::Tag::Tag* tag, const std::string& value) override {
 			return Generic::String::ToLower(tag->getName())
 				.find(Generic::String::ToLower(value)) != std::string::npos;
 		}
 
-		bool checkAllFilters(Function::Tag::Tag* tag) {
+		bool checkAllFilters(Function::Tag::Tag* tag) override {
 			return getFilterManager()->check([&tag](Template::FilterManager::Filter* filter) {
 				return static_cast<FunctionTagFilter*>(filter)->checkFilter(tag);
-			});
+				});
+		}
+
+		Template::ItemList* getItemList() override {
+			return this;
+		}
+
+		Function::Tag::Manager* getManager() override {
+			return m_funcTagManager;
 		}
 	private:
 		Function::Tag::Manager* m_funcTagManager;
 	};
 
 
-	class FuncTagSelectList : public FunctionTagList
+	class FuncTagSelectList
+		: public Template::SelectableItemList<Function::Tag::Tag>,
+		public IFunctionTagList
 	{
 	public:
-		class SelectedFilter : public FunctionTagFilter
-		{
-		public:
-			SelectedFilter(FuncTagSelectList* functionTagList)
-				: FunctionTagFilter("Selected function tag filter", functionTagList)
-			{
-				buildHeader("Filter function tag by selected.", true);
-				beginBody()
-					.addItem(
-						m_cb = new Elements::Generic::Checkbox("show selected only", false,
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								onChanged();
-							})
-						)
-					);
-			}
-
-			bool checkFilter(Function::Tag::Tag* tag) override {
-				return static_cast<FuncTagSelectList*>(m_functionTagList)->isFunctionTagSelected(tag);
-			}
-
-			bool isDefined() override {
-				return m_cb->isSelected();
-			}
-		private:
-			Elements::Generic::Checkbox* m_cb;
-		};
-
 		class TreeView
 			: public FunctionTagList::TreeView
 		{
 		public:
-			class UserFunctionTagWithCheckBox : public UserFunctionTag
+			class FuncSelTag
+				: public SelectableItem,
+				public IFunctionTag
 			{
 			public:
-				UserFunctionTagWithCheckBox(Function::Tag::UserTag* tag, Events::EventHandler* openFunctionTag, bool selected, Events::Event* eventSelectFunctionTag)
-					: m_tag(tag), UserFunctionTag(tag, openFunctionTag)
-				{
-					(*m_header)
-						.beginReverseInserting()
-							.sameLine()
-							.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunctionTag))
-						.endReverseInserting();
+				FuncSelTag(FunctionTag* funcTagItem, Function::Tag::Tag* funcTag, bool selected, SelectableItemEventType::EventHandlerType* eventSelect = nullptr)
+					: m_funcTagItem(funcTagItem), SelectableItem(funcTagItem, funcTag, selected, eventSelect)
+				{}
+
+				Function::Tag::Tag* getTag() override {
+					return m_funcTagItem->getTag();
 				}
 
-				Function::Tag::UserTag* m_tag;
+				TreeNode* getItem() override {
+					return m_funcTagItem;
+				}
+			private:
+				FunctionTag* m_funcTagItem;
 			};
 
-			TreeView(FunctionTagList* funcTagList, Events::EventHandler* openFunctionTag = nullptr)
-				: FunctionTagList::TreeView(funcTagList, openFunctionTag)
+			TreeView(FuncTagSelectList* funcTagSelectList, FuncTagEventType::EventHandlerType* openFunctionTag = nullptr)
+				: m_funcTagSelectList(funcTagSelectList), FunctionTagList::TreeView(funcTagSelectList, openFunctionTag)
 			{}
 
-			FunctionTag* createUserFunctionTag(Function::Tag::UserTag* tag) override {
-				return new UserFunctionTagWithCheckBox(tag, m_openFunctionTag, getFuncTagSelList()->isFunctionTagSelected(tag),
-					new Events::EventHook(getFuncTagSelList()->m_eventSelectFunctionTag, tag));
+			IFunctionTag* createUserFunctionTag(Function::Tag::UserTag* tag) override {
+				return new FuncSelTag(
+					static_cast<FunctionTag*>(FunctionTagList::TreeView::createUserFunctionTag(tag)),
+					tag,
+					m_funcTagSelectList->isItemSelected(tag),
+					m_funcTagSelectList->m_eventSelectItem
+				);
 			}
 		protected:
-			FuncTagSelectList* getFuncTagSelList() {
-				return static_cast<FuncTagSelectList*>(m_funcTagList);
-			}
+			FuncTagSelectList* m_funcTagSelectList;
 
 			bool isFilterEnabled() override {
 				return true;
@@ -283,73 +306,33 @@ namespace GUI::Widget
 			}
 		};
 
+		FuncTagSelectList(FunctionTagList* functionTagList, FuncTagEventType::EventHandlerType* eventSelectFunctionTags)
+			: Template::SelectableItemList<Function::Tag::Tag>(functionTagList, eventSelectFunctionTags)
+		{}
 
-		FuncTagSelectList(Function::Tag::Manager* funcTagManager, Events::Event* eventSelectFunctionTags)
-			: FunctionTagList(funcTagManager)
-		{
-			getFilterManager()->addFilter(new SelectedFilter(this));
-
-			m_eventSelectFunctionTag = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getSender());
-				auto tag = (Function::Tag::Tag *)message->getUserDataPtr();
-				if (chekbox->isSelected()) {
-					getSelectedFunctionTags().push_back(tag);
-				}
-				else {
-					getSelectedFunctionTags().remove(tag);
-				}
-			});
-
-			class UpdSelectInfo : public Container
-			{
-			public:
-				UpdSelectInfo(FuncTagSelectList* funcTagSelList, Events::Event* event)
-					: m_funcTagSelList(funcTagSelList)
-				{
-					newLine();
-					newLine();
-					separator();
-					addItem(m_button = new Elements::Button::ButtonStd("Select", event));
-				}
-
-				void render() override {
-					Container::render();
-					m_button->setName("Select " + std::to_string(m_funcTagSelList->getSelectedFuncTagCount()) + " function tags");
-				}
-
-				bool isShown() override {
-					return m_funcTagSelList->getSelectedFuncTagCount() > 0;
-				}
-			private:
-				FuncTagSelectList* m_funcTagSelList;
-				Elements::Button::ButtonStd* m_button;
-			};
-
-			if (eventSelectFunctionTags != nullptr) {
-				(*m_underFilterCP)
-					.addItem(new UpdSelectInfo(this, eventSelectFunctionTags));
-			}
+		FunctionTagList* getFuncTagList() {
+			return static_cast<FunctionTagList*>(m_itemList);
 		}
 
-		bool isFunctionTagSelected(Function::Tag::Tag* tag) {
-			for (auto tag_ : getSelectedFunctionTags()) {
-				if (tag_ == tag)
-					return true;
-			}
-			return false;
+		bool checkOnInputValue(Function::Tag::Tag* tag, const std::string& value) override {
+			return getFuncTagList()->checkOnInputValue(tag, value);
 		}
 
-		int getSelectedFuncTagCount() {
-			return getSelectedFunctionTags().size();
+		bool checkAllFilters(Function::Tag::Tag* tag) override {
+			return getFilterManager()->check([&](Template::FilterManager::Filter* filter) {
+				return filter == m_selectedFilter
+					? static_cast<SelectedFilter*>(filter)->checkFilter(tag)
+					: static_cast<FunctionTagList::FunctionTagFilter*>(filter)->checkFilter(tag);
+				});
 		}
 
-		std::list<Function::Tag::Tag*>& getSelectedFunctionTags() {
-			return m_selectedFunctionTags;
+		Template::ItemList* getItemList() override {
+			return this;
 		}
-	private:
-		std::list<Function::Tag::Tag*> m_selectedFunctionTags;
-		Events::Event* m_eventSelectFunctionTag;
+
+		Function::Tag::Manager* getManager() override {
+			return getFuncTagList()->getManager();
+		}
 	};
 };
 
@@ -358,15 +341,17 @@ namespace GUI::Window
 	class FunctionTagList : public IWindow
 	{
 	public:
-		FunctionTagList(Widget::FunctionTagList* funcTagList, const std::string& name = "Function tag list")
-			: IWindow(name)
+		FunctionTagList(Widget::IFunctionTagList* funcTagList, const std::string& name = "Function tag list")
+			: m_funcTagList(funcTagList), IWindow(name)
 		{
-			setMainContainer(funcTagList);
+			setMainContainer(m_funcTagList->getItemList());
 		}
 
-		Widget::FunctionTagList* getList() {
-			return static_cast<Widget::FunctionTagList*>(getMainContainerPtr());
+		Widget::IFunctionTagList* getList() {
+			return m_funcTagList;
 		}
+	private:
+		Widget::IFunctionTagList* m_funcTagList;
 	};
 };
 
@@ -377,7 +362,7 @@ namespace GUI::Widget
 	public:
 		FunctionTagInput(Function::Tag::Manager* funcTagManager)
 		{
-			m_funcTagList = new FuncTagSelectList(funcTagManager, nullptr);
+			m_funcTagList = new FuncTagSelectList(new FunctionTagList(funcTagManager), nullptr);
 			m_funcTagList->setView(
 				m_funcTagListView = new FuncTagSelectList::TreeView(m_funcTagList));
 			m_funcTagList->setParent(this);
@@ -399,7 +384,7 @@ namespace GUI::Widget
 		}
 
 		std::list<Function::Tag::Tag*>& getSelectedFunctionTags() {
-			return m_funcTagList->getSelectedFunctionTags();
+			return m_funcTagList->getSelectedItems();
 		}
 	protected:
 		std::string getPlaceHolder() override {
@@ -454,11 +439,9 @@ namespace GUI::Widget
 					win = new Window::FunctionTagList(m_funcTagList, "Select function tags")
 				);
 				win->getCloseEvent() +=
-					new Events::EventUI(
-						EVENT_LAMBDA(info) {				
-							m_isWinOpen = false;
-						}
-					);
+					[&](Events::ISender* sender) {
+						m_isWinOpen = false;
+					};
 				m_isWinOpen = true;
 				m_focused = false;
 			}
@@ -537,8 +520,8 @@ namespace GUI::Window
 		{
 			getMainContainer()
 				.addItem(
-					new Elements::Button::ButtonStd("Create", new Events::EventUI(
-						EVENT_LAMBDA(info) {
+					new Elements::Button::ButtonStd("Create", Events::Listener(
+						std::function([&](Events::ISender* sender) {
 							checkData();
 							auto tagManager = m_funcManager->getFunctionTagManager();
 							auto func = *m_funcInput->getSelectedFunctions().begin();
@@ -550,7 +533,7 @@ namespace GUI::Window
 							);
 							tagManager->calculateAllTags();
 							close();
-						}
+						})
 				)));
 		}
 	};
@@ -567,8 +550,8 @@ namespace GUI::Window
 
 			getMainContainer()
 				.addItem(
-					new Elements::Button::ButtonStd("Change", new Events::EventUI(
-						EVENT_LAMBDA(info) {
+					new Elements::Button::ButtonStd("Change", Events::Listener(
+						std::function([&](Events::ISender* sender) {
 							checkData();
 
 							auto tagManager = m_funcManager->getFunctionTagManager();
@@ -580,7 +563,7 @@ namespace GUI::Window
 							m_tag->setDeclaration(func->getDeclaration());
 							tagManager->calculateAllTags();
 							close();
-					}
+					})
 				)));
 		}
 
@@ -601,7 +584,7 @@ namespace GUI::Widget
 			: public Elements::Button::ButtonTag
 		{
 		public:
-			TagBtn(Function::Tag::Tag* tag, Events::EventHandler* eventHandler = nullptr)
+			TagBtn(Function::Tag::Tag* tag, Events::SpecialEventType::EventHandlerType* eventHandler = nullptr)
 				: m_tag(tag), Elements::Button::ButtonTag(tag->getName(), ColorRGBA(0x0000FFFF), eventHandler)
 			{}
 
@@ -619,20 +602,21 @@ namespace GUI::Widget
 		FunctionTagShortCut(API::Function::Function* function)
 			: m_function(function)
 		{
-			m_clickOnTag = new Events::EventUI(
-				EVENT_LAMBDA(info) {
-					auto sender = static_cast<TagBtn*>(info->getSender());
+			m_clickOnTag = Events::Listener(
+				std::function([&](Events::ISender* sender_) {
+					auto sender = static_cast<TagBtn*>(sender_);
 					if (!sender->getTag()->isUser())
 						return;
-					getWindow()->addWindow(new Window::FunctionTagUpdater(m_function->getFunctionManager(), m_function, static_cast<Function::Tag::UserTag*>(sender->getTag())));
-				}
+					getWindow()->addWindow(
+						new Window::FunctionTagUpdater(m_function->getFunctionManager(), m_function, static_cast<Function::Tag::UserTag*>(sender->getTag())));
+				})
 			);
 			m_clickOnTag->setCanBeRemoved(false);
 
-			m_clickOnCreateTag = new Events::EventUI(
-				EVENT_LAMBDA(info) {
+			m_clickOnCreateTag = Events::Listener(
+				std::function([&](Events::ISender* sender_) {
 					getWindow()->addWindow(new Window::FunctionTagCreator(m_function->getFunctionManager()));
-				}
+				})
 			);
 			m_clickOnCreateTag->setCanBeRemoved(false);
 
@@ -668,8 +652,8 @@ namespace GUI::Widget
 		}
 	private:
 		API::Function::Function* m_function;
-		Events::EventHandler* m_clickOnTag = nullptr;
-		Events::EventHandler* m_clickOnCreateTag = nullptr;
+		Events::SpecialEventType::EventHandlerType* m_clickOnTag = nullptr;
+		Events::SpecialEventType::EventHandlerType* m_clickOnCreateTag = nullptr;
 	};
 
 };

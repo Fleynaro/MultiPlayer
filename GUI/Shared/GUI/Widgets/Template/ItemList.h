@@ -16,8 +16,8 @@ namespace GUI::Widget::Template
 		class FilterConditionSelector : public Elements::List::Combo
 		{
 		public:
-			FilterConditionSelector(Events::Event* event, Operation condition)
-				: Elements::List::Combo(getUniqueId(), condition, event)
+			FilterConditionSelector(Operation condition)
+				: Elements::List::Combo(getUniqueId(), condition)
 			{
 				addItem("And");
 				addItem("And not");
@@ -35,30 +35,32 @@ namespace GUI::Widget::Template
 		{
 		public:
 			Filter(FilterManager* filterManager, const std::string& name, Operation condition = And)
-				: m_filterManager(filterManager), m_condition(condition), m_removeFilterEvent(this), ColContainer(name)
+				: m_filterManager(filterManager), m_condition(condition), m_removeFilterEvent(this, this), ColContainer(name)
 			{}
 
 			void buildHeader(const std::string description = "", bool isFixed = false)
 			{
-				m_eventChangeCondition = new Events::EventUI(EVENT_LAMBDA(info) {
-					auto sender = static_cast<FilterConditionSelector*>(info->getSender());
-					m_condition = sender->getSelectedOperation();
-					onChanged();
-				});
-
 				(*this)
 					.setCloseBtn(false);
 				if (!isFixed) {
 					(*this)
-						.addItem(new FilterConditionSelector(m_eventChangeCondition, getCondition()))
+						.addItem(m_filterConditionSelector = new FilterConditionSelector(getCondition()))
 						.sameLine().addItem(
 							new GUI::Elements::Button::ButtonStd(
 								"x",
-								new Events::EventUI(EVENT_LAMBDA(info) {
-									getRemoveFilterEvent().invoke();
-								})
+								Events::Listener(
+									std::function([&](Events::ISender* sender) {
+										getRemoveFilterEvent().invoke(this);
+									})
+								)
 							)
 						);
+
+					m_filterConditionSelector->getSpecialEvent() +=
+						[&](Events::ISender* sender) {
+							m_condition = m_filterConditionSelector->getSelectedOperation();
+							onChanged();
+						};
 				}
 				else {
 					setOpen(true);
@@ -69,7 +71,7 @@ namespace GUI::Widget::Template
 			}
 
 			void onChanged() {
-				m_filterManager->getUpdateEvent().invoke();
+				m_filterManager->getUpdateEvent().invoke(m_filterManager);
 			}
 
 			Container& beginBody()
@@ -83,13 +85,13 @@ namespace GUI::Widget::Template
 				return m_condition;
 			}
 
-			Events::Messager& getRemoveFilterEvent() {
+			Events::SpecialEventType& getRemoveFilterEvent() {
 				return m_removeFilterEvent;
 			}
 		private:
 			Operation m_condition;
-			Events::Event* m_eventChangeCondition;
-			Events::Messager m_removeFilterEvent;
+			FilterConditionSelector* m_filterConditionSelector;
+			Events::SpecialEventType m_removeFilterEvent;
 			FilterManager* m_filterManager;
 		};
 		friend class Filter;
@@ -103,14 +105,14 @@ namespace GUI::Widget::Template
 				: m_filterManager(filterManager), Elements::List::Combo("")
 			{
 				addItem("<Add a filter>");
-				getSpecialEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+				getSpecialEvent() += [&](Events::ISender* sender) {
 					int filterIdx = getSelectedItem() - 1;
 					if (filterIdx != -1) {
 						m_filterManager->addFilter(createFilter(filterIdx));
 						setDefault(0);
-						m_filterManager->getUpdateEvent().invoke();
+						m_filterManager->getUpdateEvent().invoke(m_filterManager);
 					}
-				});
+				};
 			}
 
 			virtual Filter* createFilter(int idx) = 0;
@@ -120,26 +122,18 @@ namespace GUI::Widget::Template
 		friend class FilterCreator;
 
 		FilterManager()
-			: m_updateEvent(this)
-		{
-			m_eventRemoveFilter = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto filter = static_cast<Filter*>(message->getUserDataPtr());
-				remove(filter);
-				delete filter;
-				getUpdateEvent().invoke();
-			});
-			m_eventRemoveFilter->setCanBeRemoved(false);
-		}
-
-		~FilterManager() {
-			delete m_eventRemoveFilter;
-		}
+			: m_updateEvent(this, this)
+		{}
 
 		void addFilter(Filter* filter) {
 			filter->setParent(this);
 			m_filters.push_back(filter);
-			filter->getRemoveFilterEvent() += m_eventRemoveFilter;
+			filter->getRemoveFilterEvent() += [&](Events::ISender* sender) {
+				auto filter = static_cast<Filter*>(sender);
+				remove(filter);
+				delete filter;
+				getUpdateEvent().invoke(this);
+			};
 		}
 
 		void remove(Filter* filter) {
@@ -177,13 +171,12 @@ namespace GUI::Widget::Template
 			return m_filters;
 		}
 
-		Events::Messager& getUpdateEvent() {
+		Events::SpecialEventType& getUpdateEvent() {
 			return m_updateEvent;
 		}
 	private:
 		std::list<Filter*> m_filters;
-		Events::Event* m_eventRemoveFilter;
-		Events::Messager m_updateEvent;
+		Events::SpecialEventType m_updateEvent;
 	};
 
 	class ItemList : public Container
@@ -293,9 +286,9 @@ namespace GUI::Widget::Template
 			: m_filterCreator(filterCreator), m_filterManager(filterManager), m_styleSettings(styleSettings)
 		{
 			m_filterManager->setParent(this);
-			m_filterManager->getUpdateEvent() += new Events::EventUI(EVENT_LAMBDA(info) {
+			m_filterManager->getUpdateEvent() += [&](Events::ISender* sender) {
 				update();
-			});
+			};
 			m_filterCreator->setWidth(m_styleSettings.m_leftWidth);
 
 			(*this)
@@ -308,10 +301,12 @@ namespace GUI::Widget::Template
 							.addItem(
 								(new GUI::Elements::Input::Text(
 									"##input1",
-									new Events::EventUI(EVENT_LAMBDA(info) {
-										auto sender = (GUI::Elements::Input::Text*)info->getSender();
-										doSearchRequest(sender->getInputValue());
-									})
+									Events::Listener(
+										std::function([&](Events::ISender* sender) {
+											auto textBox = static_cast<GUI::Elements::Input::Text*>(sender);
+											doSearchRequest(textBox->getInputValue());
+										})
+									)
 								))
 								->setWidth(m_styleSettings.m_leftWidth)
 							)
@@ -362,6 +357,8 @@ namespace GUI::Widget::Template
 	class SelectableItemList : public ItemList
 	{
 	public:
+		using SelectableItemEventType = Events::Event<Events::ISender*, T*>;
+
 		class SelectedFilter : public FilterManager::Filter
 		{
 		public:
@@ -394,16 +391,21 @@ namespace GUI::Widget::Template
 		class SelectableItem : public GUI::Item
 		{
 		public:
-			SelectableItem(ItemList::Item* item, bool selected, Events::Event* eventSelect = nullptr)
-				: m_item(item)
+			SelectableItem(ItemList::Item* item, T* userItem, bool selected, SelectableItemEventType::EventHandlerType* eventSelect = nullptr)
+				: m_item(item), m_userItem(userItem)
 			{
 				m_item->setParent(this);
 				(*m_item->m_header)
 					.beginReverseInserting()
 						.sameLine()
-						.addItem(m_cb = new Elements::Generic::Checkbox("", selected, eventSelect))
+						.addItem(m_cb = new Elements::Generic::Checkbox("", selected))
 						.sameLine()
 					.endReverseInserting();
+
+				m_cb->getSpecialEvent() +=
+					[&](Events::ISender* sender) {
+						eventSelect->invoke(sender, m_userItem);
+					};
 			}
 
 			~SelectableItem() {
@@ -414,10 +416,11 @@ namespace GUI::Widget::Template
 				m_item->render();
 			}
 
-			Events::Messager& getSelectedEvent() {
+			Events::SpecialEventType& getSelectedEvent() {
 				return m_cb->getSpecialEvent();
 			}
 		private:
+			T* m_userItem;
 			ItemList::Item* m_item;
 			Elements::Generic::Checkbox* m_cb;
 		};
@@ -430,19 +433,18 @@ namespace GUI::Widget::Template
 			getFilterManager()->addFilter(m_selectedFilter = new SelectedFilter(this));
 			m_itemList->setParent(this);
 
-			m_eventSelectItem = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto chekbox = static_cast<Elements::Generic::Checkbox*>(message->getSender());
-				auto item = (T*)message->getUserDataPtr();
-				if (chekbox->isSelected()) {
-					m_selectedItems.push_back(item);
-				}
-				else {
-					m_selectedItems.remove(item);
-				}
-			});
-			m_eventSelectItem->setCanBeRemoved(false);
-
+			m_eventSelectItem = Events::Listener(
+				std::function([&](Events::ISender* sender, T* item) {
+					auto chekbox = static_cast<Elements::Generic::Checkbox*>(sender);
+					if (chekbox->isSelected()) {
+						m_selectedItems.push_back(item);
+					}
+					else {
+						m_selectedItems.remove(item);
+					}
+				})
+			);
+			
 			class UpdSelectInfo : public Container
 			{
 			public:
@@ -476,6 +478,7 @@ namespace GUI::Widget::Template
 
 		~SelectableItemList() {
 			m_itemList->destroy();
+			delete m_eventSelectItem;
 		}
 
 		void setView(IView* view, bool isUpdate = true) override {
@@ -503,7 +506,7 @@ namespace GUI::Widget::Template
 			return m_selectedItems;
 		}
 
-		Events::Event* m_eventSelectItem;
+		SelectableItemEventType::EventHandlerType* m_eventSelectItem;
 	protected:
 		ItemList* m_itemList;
 		std::list<T*> m_selectedItems;

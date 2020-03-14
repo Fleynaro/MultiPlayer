@@ -13,9 +13,9 @@ namespace GUI::Widget
 	class IFunctionList
 	{
 	public:
-		virtual void setOpenFunctionEventHandler(Events::Event* eventHandler) = 0;
 		virtual Template::ItemList* getItemList() = 0;
-		virtual Events::Event* getFunctionOpenEvent() = 0;
+		virtual FunctionEventType::EventHandlerType* getFunctionOpenEvent() = 0;
+		virtual void setOpenFunctionEventHandler(FunctionEventType::EventHandlerType* eventHandler) = 0;
 		virtual bool checkOnInputValue(API::Function::Function* function, const std::string& value) = 0;
 		virtual bool checkAllFilters(API::Function::Function* function) = 0;
 	};
@@ -31,11 +31,17 @@ namespace GUI::Widget
 			class FunctionItem : public Item
 			{
 			public:
-				FunctionItem(API::Function::Function* function, Events::Event* event)
+				FunctionItem(API::Function::Function* function, FunctionEventType::EventHandlerType* event)
+					: m_function(function)
 				{
-					m_signature = new Units::FunctionSignature(function,
-						new Events::EventUI(EVENT_LAMBDA(info) {}),
-						new Events::EventHook(event, function),
+					auto lamda =
+						std::function([&](Events::ISender* sender) {
+							event->invoke(this, m_function);
+						});
+
+					m_signature = new Units::FunctionSignature(m_function,
+						nullptr,
+						Events::Listener(lamda),
 						nullptr
 					);
 					m_signature->setParent(this);
@@ -52,7 +58,7 @@ namespace GUI::Widget
 						.addItem(
 							new Elements::Button::ButtonStd(
 								"Open control panel",
-								new Events::EventHook(event, function)
+								Events::Listener(lamda)
 							)
 						);
 				}
@@ -63,6 +69,7 @@ namespace GUI::Widget
 			private:
 				//MY TODO: может быть краш при удалении объекта, если он принадлежит нескольким родителям. т.е. битая ссылка. Вроде решил
 				Units::FunctionSignature* m_signature;
+				API::Function::Function* m_function;
 			};
 
 			ListView(IFunctionList* funcList, FunctionManager* funcManager)
@@ -176,7 +183,7 @@ namespace GUI::Widget
 			class FunctionBody : public TreeNode, public Node
 			{
 			public:
-				FunctionBody(API::Function::Function* function, int depth, Events::EventHandler* openFunctionCP)
+				FunctionBody(API::Function::Function* function, int depth, FunctionEventType::EventHandlerType* openFunctionCP)
 					: m_function(function), Node(depth), m_openFunctionCP(openFunctionCP)
 				{
 					addFlags(ImGuiTreeNodeFlags_FramePadding);
@@ -192,9 +199,14 @@ namespace GUI::Widget
 				
 				void renderHeader() override {
 					if (m_signature == nullptr) {
-						m_signature = new Units::FunctionSignature(m_function,
-							new Events::EventUI(EVENT_LAMBDA(info) {}),
-							new Events::EventHook(m_openFunctionCP, m_function)
+						m_signature = new Units::FunctionSignature(
+							m_function,
+							nullptr,
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									m_openFunctionCP->invoke(this, m_function);
+								})
+							)
 						);
 						m_signature->setParent(this);
 					}
@@ -211,22 +223,23 @@ namespace GUI::Widget
 			private:
 				API::Function::Function* m_function;
 				Units::FunctionSignature* m_signature = nullptr;
-				Events::EventHandler* m_openFunctionCP;
+				FunctionEventType::EventHandlerType* m_openFunctionCP;
 			};
 			
 			CallStackView(IFunctionList* funcList, API::Function::Function* function)
 				: m_funcList(funcList), m_function(function)
 			{
-				m_eventVisibleFuncBody = new Events::EventUI(EVENT_LAMBDA(info) {
-					auto message = std::dynamic_pointer_cast<Events::EventMessage>(info);
-					if (message->getValue<Events::VisibleType>() != Events::VisibleOn)
-						return;
-					auto sender = static_cast<FunctionBody*>(message->getSender());
-					if (!sender->m_isContentLoaded) {
-						bool isRemove;
-						load(sender, sender->m_depth, isRemove, "");
-					}
-				});
+				m_eventVisibleFuncBody = Events::Listener(
+					std::function([&](Events::ISender* sender_, Events::VisibleType type) {
+						if (type != Events::VisibleOn)
+							return;
+						auto sender = static_cast<FunctionBody*>(sender_);
+						if (!sender->m_isContentLoaded) {
+							bool isRemove;
+							load(sender, sender->m_depth, isRemove, "");
+						}
+					})
+				);
 				m_eventVisibleFuncBody->setCanBeRemoved(false);
 			}
 
@@ -236,9 +249,11 @@ namespace GUI::Widget
 			}
 
 			void onSetView() override {
-				m_eventUpdateCB = new Events::EventUI(EVENT_LAMBDA(info) {
-					m_funcList->getItemList()->update();
-				});
+				m_eventUpdateCB = Events::Listener(
+					std::function([&](Events::ISender* sender) {
+						m_funcList->getItemList()->update();
+					})
+				);
 				m_eventUpdateCB->setCanBeRemoved(false);
 
 				(*m_funcList->getItemList()->m_underFilterCP)
@@ -358,8 +373,8 @@ namespace GUI::Widget
 			Elements::Generic::Checkbox* m_cb_isVMethodNode = nullptr;
 			Elements::Generic::Checkbox* m_cb_isNotCalculatedFunc = nullptr;
 			Elements::Generic::Checkbox* m_cb_isCalculatedFunc = nullptr;
-			Events::EventHandler* m_eventUpdateCB = nullptr;
-			Events::EventHandler* m_eventVisibleFuncBody;
+			Events::SpecialEventType::EventHandlerType* m_eventUpdateCB = nullptr;
+			Events::VisibleEventType::EventHandlerType* m_eventVisibleFuncBody;
 		};
 		friend class CallStackView;
 
@@ -418,9 +433,11 @@ namespace GUI::Widget
 					.addItem
 					(
 						(new Elements::List::MultiCombo("",
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								updateFilter();
-							})
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									updateFilter();
+								})
+							)
 						))
 						->setWidth(functionList->m_styleSettings.m_leftWidth - 10),
 						(Item**)& m_categoryList
@@ -559,7 +576,7 @@ namespace GUI::Widget
 			});
 		}
 
-		void setOpenFunctionEventHandler(Events::Event* eventHandler) override {
+		void setOpenFunctionEventHandler(FunctionEventType::EventHandlerType* eventHandler) override {
 			m_openFunction = eventHandler;
 		}
 
@@ -567,11 +584,11 @@ namespace GUI::Widget
 			return this;
 		}
 
-		Events::Event* getFunctionOpenEvent() override {
+		FunctionEventType::EventHandlerType* getFunctionOpenEvent() override {
 			return m_openFunction;
 		}
 	public:
-		Events::Event* m_openFunction;
+		FunctionEventType::EventHandlerType* m_openFunction;
 	};
 
 	class FuncSelectList
@@ -592,8 +609,9 @@ namespace GUI::Widget
 			GUI::Item* createFuncItem(API::Function::Function* function) override {
 				return new SelectableItem(
 					static_cast<FunctionItem*>(FunctionList::ListView::createFuncItem(function)),
+					function,
 					m_funcSelectList->isItemSelected(function),
-					new Events::EventHook(m_funcSelectList->m_eventSelectItem, function)
+					m_funcSelectList->m_eventSelectItem
 				);
 			}
 		protected:
@@ -607,12 +625,22 @@ namespace GUI::Widget
 			class FunctionItemWithCheckBox : public Container
 			{
 			public:
-				FunctionItemWithCheckBox(API::Function::Function* function, bool selected, Events::Event* eventSelectFunction)
+				FunctionItemWithCheckBox(API::Function::Function* function, bool selected, SelectableItemEventType::EventHandlerType* eventSelectFunction)
+					: m_function(function), m_eventSelectFunction(eventSelectFunction)
 				{
+					Elements::Generic::Checkbox* cb;
 					(*this)
-						.addItem(new Elements::Generic::Checkbox("", selected, eventSelectFunction))
-						.sameText(" " + function->getFunction()->getSigName());
+						.addItem(cb = new Elements::Generic::Checkbox("", selected))
+						.sameText(" " + m_function->getFunction()->getSigName());
+
+					cb->getSpecialEvent() += [&](Events::ISender* sender) {
+						m_eventSelectFunction->invoke(sender, m_function);
+					};
 				}
+
+			private:
+				API::Function::Function* m_function;
+				SelectableItemEventType::EventHandlerType* m_eventSelectFunction;
 			};
 
 			ShortView(FuncSelectList* funcSelectList, FunctionManager* funcManager)
@@ -627,12 +655,12 @@ namespace GUI::Widget
 				return new FunctionItemWithCheckBox(
 					function,
 					m_funcSelectList->isItemSelected(function),
-					new Events::EventHook(m_funcSelectList->m_eventSelectItem, function)
+					m_funcSelectList->m_eventSelectItem
 				);
 			}
 		};
 
-		FuncSelectList(FunctionList* funcList, Events::Event* eventSelectItems)
+		FuncSelectList(FunctionList* funcList, FunctionEventType::EventHandlerType* eventSelectItems)
 			: Template::SelectableItemList<API::Function::Function>(funcList, eventSelectItems)
 		{}
 
@@ -652,7 +680,7 @@ namespace GUI::Widget
 			});
 		}
 
-		void setOpenFunctionEventHandler(Events::Event* eventHandler) override {
+		void setOpenFunctionEventHandler(FunctionEventType::EventHandlerType* eventHandler) override {
 			getFuncList()->setOpenFunctionEventHandler(eventHandler);
 		}
 
@@ -660,7 +688,7 @@ namespace GUI::Widget
 			return this;
 		}
 
-		Events::Event* getFunctionOpenEvent() override {
+		FunctionEventType::EventHandlerType* getFunctionOpenEvent() override {
 			return getFuncList()->getFunctionOpenEvent();
 		}
 	};
@@ -675,13 +703,12 @@ namespace GUI::Window
 			: m_funcList(funcList), IWindow(name)
 		{
 			//MY TODO*: error
-			m_openFunctionCP = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto function = (API::Function::Function*)message->getUserDataPtr();
-
-				getParent()->getMainContainer().clear();
-				getParent()->getMainContainer().addItem(new Widget::FunctionCP(function));
-			});
+			m_openFunctionCP = Events::Listener(
+				std::function([&](Events::ISender* sender, API::Function::Function* function) {
+					getParent()->getMainContainer().clear();
+					getParent()->getMainContainer().addItem(new Widget::FunctionCP(function));
+				})
+			);
 			m_openFunctionCP->setCanBeRemoved(false);
 
 			funcList->setOpenFunctionEventHandler(m_openFunctionCP);
@@ -696,7 +723,7 @@ namespace GUI::Window
 			return m_funcList;
 		}
 	private:
-		Events::EventHandler* m_openFunctionCP;
+		Widget::FunctionEventType::EventHandlerType* m_openFunctionCP;
 		Widget::IFunctionList* m_funcList;
 	};
 };
@@ -786,11 +813,9 @@ namespace GUI::Widget
 					win = new Window::FunctionList(m_funcSelectList, "Select functions")
 				);
 				win->getCloseEvent() +=
-					new Events::EventUI(
-					EVENT_LAMBDA(info) {				
+					[&](Events::ISender* sender) {
 						m_isWinOpen = false;
-					}
-				);
+					};
 				m_isWinOpen = true;
 				m_focused = false;
 			}

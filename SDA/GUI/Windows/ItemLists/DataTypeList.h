@@ -8,6 +8,9 @@ using namespace CE;
 
 namespace GUI::Widget
 {
+	using DataTypeEventType = Events::Event<Events::ISender*, API::Type::Type*>;
+
+
 	class DataTypeList : public Template::ItemList
 	{
 	public:
@@ -17,35 +20,51 @@ namespace GUI::Widget
 			class ShortTypeItem : public Item
 			{
 			public:
-				ShortTypeItem(API::Type::Type* type, Events::Event* eventClickOnName)
-					: m_type(type)
+				ShortTypeItem(API::Type::Type* type, DataTypeEventType::EventHandlerType* eventClickOnName)
+					: m_type(type), m_eventClickOnName(eventClickOnName)
 				{
 					addFlags(ImGuiTreeNodeFlags_Leaf, true);
 
 					beginHeader()
-						.addItem(new Units::Type(type->getType(), eventClickOnName));
+						.addItem(
+							new Units::Type(
+								type->getType(),
+								Events::Listener(
+									std::function([&](Events::ISender* sender) {
+										m_eventClickOnName->invoke(this, m_type);
+									})
+								)
+							)
+						);
 				}
 
 			private:
 				API::Type::Type* m_type;
+				DataTypeEventType::EventHandlerType* m_eventClickOnName;
 			};
 
 			class TypeItem : public Item
 			{
 			public:
-				TypeItem(API::Type::Type* type, Events::Event* eventClickOnName)
+				TypeItem(API::Type::Type* type, DataTypeEventType::EventHandlerType* eventClickOnName)
 					: m_type(type)
 				{
+					auto lamda = std::function([&](Events::ISender* sender) {
+						openControlPanel();
+					});
+
 					beginHeader()
-						.addItem(new Units::Type(type->getType(), eventClickOnName));
-					//setHeader(type->getType()->getDisplayName());
+						.addItem(
+							new Units::Type(
+								type->getType(),
+								Events::Listener(lamda)
+							)
+						);
 					beginBody()
 						.addItem(
 							new Elements::Button::ButtonStd(
 								"Open control panel",
-								new Events::EventUI(EVENT_LAMBDA(info) {
-									openControlPanel();
-								})
+								Events::Listener(lamda)
 							)
 						)
 						.text(GUI::Units::Type::getTooltipDesc(type->getType(), false));
@@ -76,11 +95,10 @@ namespace GUI::Widget
 			}
 
 			Item* createItem(API::Type::Type* type) {
-				auto eventHandler = new Events::EventHook(m_dataTypeList->m_eventClickOnName, type);
 				if (m_shortTypeItem) {
-					return new ShortTypeItem(type, eventHandler);
+					return new ShortTypeItem(type, m_dataTypeList->m_eventClickOnName);
 				}
-				return new TypeItem(type, eventHandler);
+				return new TypeItem(type, m_dataTypeList->m_eventClickOnName);
 			}
 		protected:
 			TypeManager* m_typeManager;
@@ -136,9 +154,11 @@ namespace GUI::Widget
 					.addItem
 					(
 						(new Elements::List::MultiCombo("",
-							new Events::EventUI(EVENT_LAMBDA(info) {
-								updateFilter();
-							})
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									updateFilter();
+								})
+							)
 						))
 						->setWidth(dataTypeList->m_styleSettings.m_leftWidth - 10),
 						(Item**)& m_categoryList
@@ -210,11 +230,11 @@ namespace GUI::Widget
 			});
 		}
 		
-		void setEventHandlerClickOnName(Events::Event* eventHandler) {
+		void setEventHandlerClickOnName(DataTypeEventType::EventHandlerType* eventHandler) {
 			m_eventClickOnName = eventHandler;
 		}
 	private:
-		Events::Event* m_eventClickOnName = nullptr;
+		DataTypeEventType::EventHandlerType* m_eventClickOnName = nullptr;
 	};
 };
 
@@ -229,15 +249,9 @@ namespace GUI::Window
 			setMainContainer(dataTypeList);
 		}
 
-		~DataTypeList() {
-			delete m_openFunctionCP;
-		}
-
 		Widget::DataTypeList* getList() {
 			return static_cast<Widget::DataTypeList*>(getMainContainerPtr());
 		}
-	private:
-		Events::EventHandler* m_openFunctionCP;
 	};
 };
 
@@ -248,7 +262,7 @@ namespace GUI::Widget
 	{
 	public:
 		DataTypeInput(TypeManager* typeManager)
-			: m_selectDataType(this)
+			: m_selectDataTypeEvent(this, this)
 		{
 			m_dataTypeList = new DataTypeList;
 
@@ -263,16 +277,15 @@ namespace GUI::Widget
 			m_dataTypeShortListView->m_maxOutputDataTypeCount = 20;
 
 
-			m_selectDataTypeEvent = new Events::EventUI(EVENT_LAMBDA(info) {
-				auto message = std::dynamic_pointer_cast<Events::EventHookedMessage>(info);
-				auto dataType = (API::Type::Type*)message->getUserDataPtr();
-
-				m_selectedType = dataType->getType();
-				m_focused = false;
-				m_selectDataType.callEventHandler();
-			});
-			m_selectDataTypeEvent->setCanBeRemoved(false);
-			m_dataTypeList->setEventHandlerClickOnName(m_selectDataTypeEvent);
+			m_selectDataTypeEventHandler = Events::Listener(
+				std::function([&](Events::ISender* sender, API::Type::Type* dataType) {
+					m_selectedType = dataType->getType();
+					m_focused = false;
+					m_selectDataTypeEvent.invoke(sender);
+				})
+			);
+			m_selectDataTypeEventHandler->setCanBeRemoved(false);
+			m_dataTypeList->setEventHandlerClickOnName(m_selectDataTypeEventHandler);
 		}
 
 		~DataTypeInput() {
@@ -280,7 +293,7 @@ namespace GUI::Widget
 			m_dataTypeShortList->destroy();
 			delete m_dataTypeListView;
 			delete m_dataTypeShortListView;
-			delete m_selectDataTypeEvent;
+			delete m_selectDataTypeEventHandler;
 		}
 
 		void setSelectedType(CE::Type::Type* selectedType) {
@@ -295,7 +308,7 @@ namespace GUI::Widget
 			return m_selectedType != nullptr;
 		}
 
-		Events::Messager m_selectDataType;
+		Events::SpecialEventType m_selectDataTypeEvent;
 	protected:
 		std::string getPlaceHolder() override {
 			if (!isTypeSelected())
@@ -331,16 +344,13 @@ namespace GUI::Widget
 					win = new Window::DataTypeList(m_dataTypeList)
 				);
 				win->getCloseEvent() +=
-					new Events::EventUI(
-						EVENT_LAMBDA(info) {
-					m_isWinOpen = false;
-				}
-				);
+					[&](Events::ISender* sender) {
+						m_isWinOpen = false;
+					};
 				m_isWinOpen = true;
 				m_focused = false;
 			}
 		}
-
 	private:
 		DataTypeList* m_dataTypeList;
 		DataTypeList::ListView* m_dataTypeListView;
@@ -348,7 +358,7 @@ namespace GUI::Widget
 		Container* m_dataTypeShortList;
 		CE::Type::Type* m_selectedType = nullptr;
 		bool m_isWinOpen = false;
-		Events::EventHandler* m_selectDataTypeEvent;
+		Widget::DataTypeEventType::EventHandlerType* m_selectDataTypeEventHandler;
 	};
 };
 
@@ -365,10 +375,12 @@ namespace GUI::Window
 			setHeight(280);
 			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
-			m_updateEvent = new Events::EventUI(EVENT_LAMBDA(info) {
-				onUpdateInput();
-			});
-			m_updateEvent->setCanBeRemoved(false);
+			m_updateEventHandler = Events::Listener(
+				std::function([&](Events::ISender* sender) {
+					onUpdateInput();
+				})
+			);
+			m_updateEventHandler->setCanBeRemoved(false);
 
 			getMainContainer()
 				.text("Data type")
@@ -384,20 +396,25 @@ namespace GUI::Window
 				.newLine()
 				.newLine()
 				.addItem(
-					new Elements::Button::ButtonStd("Ok", new Events::EventUI(
-						EVENT_LAMBDA(info) {
-							sendCloseEvent();
-						}
-				)));
+					new Elements::Button::ButtonStd("Ok", 
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								sendCloseEvent();
+							})
+						)
+					)
+				);
 
-			m_dataTypeInput->m_selectDataType += m_updateEvent;
-			m_pointerInput->getSpecialEvent() += m_updateEvent;
-			m_arrayInput->getSpecialEvent() += m_updateEvent;
+			m_dataTypeInput->m_selectDataTypeEvent += m_updateEventHandler;
+			m_pointerInput->getSpecialEvent() += m_updateEventHandler;
+			m_arrayInput->getSpecialEvent() += m_updateEventHandler;
 		}
 
 		~DataTypeSelector() {
 			if (m_type != nullptr)
 				m_type->free();
+
+			delete m_updateEventHandler;
 		}
 
 		bool checkData() {
@@ -445,7 +462,7 @@ namespace GUI::Window
 		Widget::DataTypeInput* m_dataTypeInput;
 		Elements::Input::Int* m_pointerInput;
 		Elements::Input::Int* m_arrayInput;
-		Events::EventHandler* m_updateEvent;
+		Events::SpecialEventType::EventHandlerType* m_updateEventHandler;
 		Elements::Text::Text* m_preview;
 	};
 };

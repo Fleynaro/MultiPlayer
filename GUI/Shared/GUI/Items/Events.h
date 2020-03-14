@@ -47,6 +47,10 @@ namespace GUI
 				std::apply(m_callback, args);
 			}
 
+			void invoke(ArgsType... args) {
+				m_callback(args);
+			}
+
 			bool canBeRemovedBy(ISender* sender) {
 				return m_owner == sender && m_canBeRemoved;
 			}
@@ -100,7 +104,7 @@ namespace GUI
 		};
 
 		template<typename ...ArgsType>
-		static EventHandler<ArgsType...>* Listener(std::function<void(ArgsType...)> callback) {
+		static EventHandler<ArgsType...>* Listener(const std::function<void(ArgsType...)>& callback) {
 			return new EventHandler<ArgsType...>(callback);
 		}
 

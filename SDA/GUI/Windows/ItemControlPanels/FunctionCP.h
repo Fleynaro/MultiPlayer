@@ -33,24 +33,7 @@ namespace GUI::Widget
 
 		void buildSiganture()
 		{
-			m_signature = new Units::FunctionSignature(m_function,
-				new Events::EventUI(EVENT_LAMBDA(info) {
-					auto type = static_cast<Units::FunctionSignature::Type*>(info->getSender());
-					auto name = type->getName();
-					int id = type->getId();
-					int a = 5;
-				}),
-				new Events::EventUI(EVENT_LAMBDA(info) {
-					auto funcName = static_cast<Units::FunctionSignature::Name*>(info->getSender());
-					auto name = funcName->getText();
-					int a = 5;
-				}),
-				new Events::EventUI(EVENT_LAMBDA(info) {
-					auto argName = static_cast<Units::FunctionSignature::ArgName*>(info->getSender());
-					auto name = argName->getText();
-					int a = 6;
-				})
-			);
+			m_signature = new Units::FunctionSignature(m_function);
 			m_signature->setParent(this);
 		}
 

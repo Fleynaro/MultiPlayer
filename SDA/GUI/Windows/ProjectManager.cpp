@@ -1,7 +1,7 @@
 #include "ProjectManager.h"
 
 
-void GUI::Window::ProjectCreating::CALLBACK_createProject(const GUI::Events::EventInfo::Type& info)
+void GUI::Window::ProjectCreating::createProject()
 {
 	auto projectDir = FS::Directory(m_projectDirText->getInputValue());
 	if (projectDir.back().exists() && !ProjectManager::doesProjectExists(projectDir))

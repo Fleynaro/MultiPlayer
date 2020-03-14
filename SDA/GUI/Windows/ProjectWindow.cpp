@@ -22,11 +22,13 @@ ProjectWindow::ProjectWindow(Project* project)
 
 	auto functionListWidget = new Widget::FuncSelectList(
 		new Widget::FunctionList,
-		new Events::EventUI(EVENT_LAMBDA(info) {
-			auto list = static_cast<Widget::FuncSelectList*>(m_funcSelList->getList())->getSelectedItems();
-			list.size();
-			m_funcSelList->close();
-		})
+		Events::Listener(
+			std::function([&](Events::ISender* sender, API::Function::Function* function) {
+				auto list = static_cast<Widget::FuncSelectList*>(m_funcSelList->getList())->getSelectedItems();
+				list.size();
+				m_funcSelList->close();
+			})
+		)
 	);
 	functionListWidget->setView(
 		new Widget::FuncSelectList::ListView(functionListWidget, getProject()->getProgramExe()->getFunctionManager()),

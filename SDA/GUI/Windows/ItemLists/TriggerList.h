@@ -15,12 +15,15 @@ using namespace CE;
 
 namespace GUI::Widget
 {
+	using TriggerEventType = Events::Event<Events::ISender*, Trigger::ITrigger*>;
+
+	
 	class ITriggerList
 	{
 	public:
 		virtual Template::ItemList* getItemList() = 0;
-		virtual Events::Event* getEventHandlerClickOnName() = 0;
-		virtual void setEventHandlerClickOnName(Events::Event* eventHandler) = 0;
+		virtual TriggerEventType::EventHandlerType* getEventHandlerClickOnName() = 0;
+		virtual void setEventHandlerClickOnName(TriggerEventType::EventHandlerType* eventHandler) = 0;
 		virtual bool checkOnInputValue(Trigger::ITrigger* trigger, const std::string& value) = 0;
 		virtual bool checkAllFilters(Trigger::ITrigger* type) = 0;
 	};
@@ -37,19 +40,23 @@ namespace GUI::Widget
 			class TriggerItem : public Item
 			{
 			public:
-				TriggerItem(Trigger::ITrigger* trigger, Events::Event* eventClickOnName)
-					: m_trigger(trigger)
+				TriggerItem(Trigger::ITrigger* trigger, TriggerEventType::EventHandlerType* eventClickOnName)
+					: m_trigger(trigger), m_eventClickOnName(eventClickOnName)
 				{
 					addFlags(ImGuiTreeNodeFlags_Leaf, true);
 
 					auto text = new Elements::Text::ClickedText(trigger->getName());
 					beginHeader()
 						.addItem(text);
-					text->getLeftMouseClickEvent() += eventClickOnName;
+					text->getLeftMouseClickEvent() +=
+						[&](Events::ISender* sender) {
+							m_eventClickOnName->invoke(this, m_trigger);
+						};
 				}
 
 			private:
 				Trigger::ITrigger* m_trigger;
+				TriggerEventType::EventHandlerType* m_eventClickOnName;
 			};
 
 			ListView(ITriggerList* triggerList, TriggerManager* triggerManager)
@@ -72,8 +79,7 @@ namespace GUI::Widget
 			}
 
 			virtual GUI::Item* createItem(Trigger::ITrigger* trigger) {
-				auto eventHandler = new Events::EventHook(m_triggerList->getEventHandlerClickOnName(), trigger);
-				return new TriggerItem(trigger, eventHandler);
+				return new TriggerItem(trigger, m_triggerList->getEventHandlerClickOnName());
 			}
 		protected:
 			TriggerManager* m_triggerManager;
@@ -126,11 +132,11 @@ namespace GUI::Widget
 			});
 		}
 
-		Events::Event* getEventHandlerClickOnName() override {
+		TriggerEventType::EventHandlerType* getEventHandlerClickOnName() override {
 			return m_eventClickOnName;
 		}
 		
-		void setEventHandlerClickOnName(Events::Event* eventHandler) override {
+		void setEventHandlerClickOnName(TriggerEventType::EventHandlerType* eventHandler) override {
 			m_eventClickOnName = eventHandler;
 		}
 
@@ -138,7 +144,7 @@ namespace GUI::Widget
 			return this;
 		}
 	private:
-		Events::Event* m_eventClickOnName = nullptr;
+		TriggerEventType::EventHandlerType* m_eventClickOnName = nullptr;
 	};
 
 
@@ -160,15 +166,16 @@ namespace GUI::Widget
 			GUI::Item* createItem(Trigger::ITrigger* trigger) override {
 				return new SelectableItem(
 					static_cast<TriggerItem*>(TriggerList::ListView::createItem(trigger)),
+					trigger,
 					m_triggerSelectList->isItemSelected(trigger),
-					new Events::EventHook(m_triggerSelectList->m_eventSelectItem, trigger)
+					m_triggerSelectList->m_eventSelectItem
 				);
 			}
 		protected:
 			TriggerSelectList* m_triggerSelectList;
 		};
 
-		TriggerSelectList(TriggerList* triggerList, Events::Event* eventSelectItems)
+		TriggerSelectList(TriggerList* triggerList, Events::SpecialEventType::EventHandlerType* eventSelectItems)
 			: Template::SelectableItemList<Trigger::ITrigger>(triggerList, eventSelectItems)
 		{}
 
@@ -188,11 +195,11 @@ namespace GUI::Widget
 			});
 		}
 
-		Events::Event* getEventHandlerClickOnName() override {
+		TriggerEventType::EventHandlerType* getEventHandlerClickOnName() override {
 			return getTriggerList()->getEventHandlerClickOnName();
 		}
 
-		void setEventHandlerClickOnName(Events::Event* eventHandler) override {
+		void setEventHandlerClickOnName(TriggerEventType::EventHandlerType* eventHandler) override {
 			getTriggerList()->setEventHandlerClickOnName(eventHandler);
 		}
 
@@ -221,7 +228,7 @@ namespace GUI::Window
 			return m_triggerList;
 		}
 	private:
-		Events::EventHandler* m_openFunctionCP;
+		Events::SpecialEventType::EventHandlerType* m_openFunctionCP;
 		Widget::ITriggerList* m_triggerList;
 	};
 };
@@ -313,11 +320,9 @@ namespace GUI::Widget
 					win = new Window::TriggerList(m_triggerSelectList, "Select triggers")
 				);
 				win->getCloseEvent() +=
-					new Events::EventUI(
-						EVENT_LAMBDA(info) {
-					m_isWinOpen = false;
-				}
-				);
+					[&](Events::ISender* sender) {
+						m_isWinOpen = false;
+					};
 				m_isWinOpen = true;
 				m_focused = false;
 			}
