@@ -9,60 +9,9 @@
 using namespace GUI::Window;
 using namespace GUI::Widget;
 
+void test() {
 
-template<typename ...Args>
-class Message
-{
-public:
-
-	std::tuple<Args...> m_tuple;
-
-	Message(std::tuple<Args...> tuple)
-		: m_tuple(tuple)
-	{}
-};
-
-
-template<typename ...Args>
-class A
-{
-public:
-	std::function<void(Args...)> m_func;
-
-	A()
-	{
-		
-	}
-
-	void invoke(Args... args) {
-		//m_func(args...);
-
-
-		Message<Args...> message(std::make_tuple(args...));
-		int a = 5;
-
-		std::apply(m_func, message.m_tuple);
-		//invoke apply
-	}
-};
-
-void test()
-{
-	A<int, int> a;
-	a.m_func = [](int a, int b){
-		auto c = a + b;
-		int acc = 5;
-	};
-
-	a.invoke(5, 3);
 }
-
-
-
-
-
-
-
 
 class UI
 {
@@ -362,6 +311,26 @@ public:
 					.end()
 				.end()
 				.beginImGui([]() {
+					if (ImGui::Button("click")) {
+						ImGui::OpenPopup("lol2");
+					}
+
+					if (ImGui::BeginPopup("lol2"))
+					{
+						if (ImGui::TreeNode("Base"))
+						{
+							if (ImGui::Selectable("trigger 1")) {
+
+							}
+
+							if (ImGui::Selectable("trigger 2")) {
+
+							}
+							ImGui::TreePop();
+						}
+						ImGui::EndPopup();
+					}
+
 					
 					/*ImGui::Begin("Issue #1453");
 					ImGui::BeginChild("test", ImVec2(100, 100));

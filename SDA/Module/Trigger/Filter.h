@@ -94,13 +94,13 @@ namespace CE
 						bt.read(&data, sizeof(Data));
 						m_addr = data.m_addr;
 					}
+
+					void* m_addr = nullptr;
 				private:
 					struct Data
 					{
 						void* m_addr;
-					};
-
-					void* m_addr = nullptr;
+					};				
 				};
 
 				namespace Cmp
@@ -211,6 +211,10 @@ namespace CE
 							m_value = data.m_value;
 							m_operation = data.m_operation;
 						}
+
+						int m_argId = 0;
+						uint64_t m_value = 0;
+						Operation m_operation = Operation::Eq;
 					private:
 						struct Data
 						{
@@ -218,9 +222,6 @@ namespace CE
 							uint64_t m_value;
 							Operation m_operation;
 						};
-						int m_argId = 0;
-						uint64_t m_value = 0;
-						Operation m_operation = Operation::Eq;
 					};
 
 					class RetValue : public IFilter
@@ -271,6 +272,9 @@ namespace CE
 							m_value = data.m_value;
 							m_operation = data.m_operation;
 						}
+
+						uint64_t m_value = 0;
+						Operation m_operation = Operation::Eq;
 					private:
 						struct Data
 						{
@@ -278,8 +282,6 @@ namespace CE
 							uint64_t m_value;
 							Operation m_operation;
 						};
-						uint64_t m_value = 0;
-						Operation m_operation = Operation::Eq;
 					};
 				};
 			};

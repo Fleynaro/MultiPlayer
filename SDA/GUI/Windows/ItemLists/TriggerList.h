@@ -340,13 +340,133 @@ namespace GUI::Widget
 	};
 };
 
+
+#include <GUI/AddressInput.h>
+namespace GUI::Widget
+{
+	namespace FunctionTriggerFilter
+	{
+		using namespace Trigger::Function::Filter;
+
+		class ObjectEditor : public Container {
+		public:
+			ObjectEditor(Object* filter)
+				: m_filter(filter)
+			{
+				addItem(m_valueInput = new AddressInput);
+				m_valueInput->setAddress(filter->m_addr);
+
+				m_valueInput->getAddressValidEnteredEvent() += [&](Events::ISender* sender) {
+					filter->m_addr = m_valueInput->getLastValidAddress();
+				};
+			}
+
+		private:
+			Object* m_filter;
+			AddressInput* m_valueInput;
+		};
+
+		static Container* CreateFilterEditor(IFilter* filter) {
+			switch (filter->getId())
+			{
+			case Id::Object:
+				return new ObjectEditor(static_cast<Object*>(filter));
+			}
+
+			return nullptr;
+		}
+	};
+};
+
+
+namespace TriggerFilterInfo {
+	struct TreeNode {
+		std::string m_name;
+		std::string m_desc;
+
+		TreeNode(const std::string& name, const std::string& desc)
+			: m_name(name), m_desc(desc)
+		{}
+
+		virtual ~TreeNode() {}
+	};
+
+	struct Category : public TreeNode {
+		std::list<TreeNode*> m_nodes;
+
+		Category(const std::string& name, const std::string& desc, std::list<TreeNode*> nodes = {})
+			: TreeNode(name, desc), m_nodes(nodes)
+		{}
+	};
+
+	template<class T1, typename T2>
+	static T1* GetFilter_(T2 id, TreeNode* node) {
+		if (T1* filter = dynamic_cast<T1*>(node)) {
+			if (filter->m_id == id)
+				return filter;
+		}
+		if (Category* category = dynamic_cast<Category*>(node)) {
+			for (auto it : category->m_nodes) {
+				if (T1* filter = GetFilter_<T1, T2>(id, it)) {
+					return filter;
+				}
+			}
+		}
+		return nullptr;
+	}
+
+	namespace Function
+	{
+		using namespace Trigger::Function::Filter;
+
+		struct Filter : public TreeNode {
+			Id m_id;
+			std::function<IFilter * ()> m_createFilter;
+
+			Filter(Id id, const std::function<IFilter * ()>& createFilter, const std::string& name, const std::string& desc = "")
+				: m_id(id), m_createFilter(createFilter), TreeNode(name, desc)
+			{}
+		};
+
+		static inline Category* RootCategory =
+			new Category("Filters", "", {
+				new Filter(Id::Empty, []() { return new Empty; }, "Empty"),
+				new Filter(Id::Object, []() { return new Object; }, "Object"),
+				new Filter(Id::Argument, []() { return new Cmp::Argument; }, "Argument"),
+				new Filter(Id::ReturnValue, []() { return new Cmp::RetValue; }, "Return value")
+			});
+
+		static Filter* GetFilter(Id id) {
+			return GetFilter_<Filter>(id, RootCategory);
+		}
+
+		/*static IFilter* CreateFilter(Id id) {
+			switch (id)
+			{
+			case Id::Empty:
+				return new Empty;
+			case Id::Object:
+				return new Object;
+			case Id::Argument:
+				return new Cmp::Argument;
+			case Id::ReturnValue:
+				return new Cmp::RetValue;
+			}
+
+			return nullptr;
+		}*/
+	};
+};
+
 namespace GUI::Window
 {
-	class TriggerEditor
+	
+
+	class GenericTriggerEditor
 		: public IWindow
 	{
 	public:
-		TriggerEditor(const std::string& name, Trigger::ITrigger* trigger)
+		GenericTriggerEditor(const std::string& name, Trigger::ITrigger* trigger)
 			: IWindow(name), m_trigger(trigger)
 		{
 			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
@@ -361,72 +481,116 @@ namespace GUI::Window
 		Elements::Input::Text* m_nameInput;
 	};
 
-	class FunctionTriggerEditor
-		: public TriggerEditor
-	{
-	public:
-		class FilterList : public Elements::Input::ObjectList {
+	namespace FunctionTrigger {
+		using namespace Trigger::Function::Filter;
+
+		class TriggerEditor
+			: public GenericTriggerEditor
+		{
 		public:
-			class Filter : public IObject {
+			class FilterList : public Elements::Input::ObjectList {
 			public:
-				Filter(Trigger::Function::Filter::IFilter* filter)
-				{}
+				class Filter : public IObject {
+				public:
+					Filter(IFilter* filter)
+					{}
 
-				std::string getStatusName() override {
-					return std::to_string((int)m_filter->getId());
-				}
+					std::string getStatusName() override {
+						return std::to_string((int)m_filter->getId());
+					}
+				private:
+					IFilter* m_filter;
+				};
 
-				bool isObjectList() override {
-					return false;
-				}
-			private:
-				Trigger::Function::Filter::IFilter* m_filter;
-			};
+				using TreeView = Elements::List::TreeView<Trigger::Function::Filter::Id>;
 
-			FilterList(Trigger::Function::Trigger* trigger)
-				: m_trigger(trigger)
-			{
-				for (auto filter : trigger->getFilters()) {
-					addObject(new Filter(filter));
-				}
-
-				m_editObjectEvent += [&](IObject* object) {
-					auto filter = static_cast<Filter*>(object);
-					if (filter == nullptr) {
-
-						return;
+				FilterList(Trigger::Function::Trigger* trigger)
+					: m_trigger(trigger)
+				{
+					for (auto filter : trigger->getFilters()) {
+						addObject(new Filter(filter));
 					}
 
+					m_treeView = new TreeView;
+					m_treeView->setParent(this);
+					generateTreeView(m_treeView->getRoot());
 
-				};
+					m_editObjectEvent += [&](IObject* object) {
+						auto filter = static_cast<Filter*>(object);
+						
+					};
+
+					m_treeView->getTreeViewEvent() += [&](TreeView::TreeNode* treeNode) {
+						auto filter = TriggerFilterInfo::Function::GetFilter(treeNode->getValue());
+						if (filter != nullptr) {
+							filter->m_createFilter();
+						}
+					};
+				}
+
+				~FilterList() {
+					m_treeView->destroy();
+				}
+
+				void generateTreeView(TreeView::TreeNode* parentTreeNode, TriggerFilterInfo::TreeNode* node = TriggerFilterInfo::Function::RootCategory) {
+					using namespace TriggerFilterInfo;
+
+					TreeView::TreeNode* treeNode = new TreeView::TreeNode(node->m_name, node->m_desc);
+					parentTreeNode->addNode(treeNode);
+
+					if (auto filter = dynamic_cast<TriggerFilterInfo::Function::Filter*>(node)) {
+						treeNode->setValue(filter->m_id);
+					}
+
+					if (Category* category = dynamic_cast<Category*>(node)) {
+						for (auto it : category->m_nodes) {
+							generateTreeView(treeNode, it);
+						}
+					}
+				}
+
+				void render() override {
+					Elements::Input::ObjectList::render();
+					
+					if (ImGui::Button("Add")) {
+						ImGui::OpenPopup("FilterListCreator");
+					}
+
+					if (ImGui::BeginPopup("FilterListCreator"))
+					{
+						m_treeView->show();
+						ImGui::EndPopup();
+					}
+				}
+			private:
+				Trigger::Function::Trigger* m_trigger;
+				TreeView* m_treeView;
+
+			};
+
+			TriggerEditor(Trigger::Function::Trigger* trigger, CE::FunctionManager* funcManager)
+				: GenericTriggerEditor("Function trigger editor", trigger)
+			{
+				setWidth(450);
+				setHeight(300);
+
+				getMainContainer()
+					.text("Select function(s)")
+					.addItem(m_funcInput = new Widget::FunctionInput(funcManager))
+					.newLine()
+					.newLine()
+					.text("Filter list")
+					.addItem(m_filterList = new FilterList(trigger))
+					.newLine();
+			}
+
+			Trigger::Function::Trigger* getTrigger() {
+				return static_cast<Trigger::Function::Trigger*>(m_trigger);
 			}
 
 		private:
-			Trigger::Function::Trigger* m_trigger;
+			Widget::FunctionInput* m_funcInput;
+			FilterList* m_filterList;
 		};
-
-		FunctionTriggerEditor(Trigger::Function::Trigger* trigger, CE::FunctionManager* funcManager)
-			: TriggerEditor("Function trigger editor", trigger)
-		{
-			setWidth(450);
-			setHeight(300);
-
-			getMainContainer()
-				.text("Select function(s)")
-				.addItem(m_funcInput = new Widget::FunctionInput(funcManager))
-				.newLine()
-				.newLine()
-				.text("Filter list")
-				.addItem(m_filterList = new FilterList(trigger))
-				.newLine();
-		}
-
-		Trigger::Function::Trigger* getTrigger() {
-			return static_cast<Trigger::Function::Trigger*>(m_trigger);
-		}
-
-	private:
-		Widget::FunctionInput* m_funcInput;
-		FilterList* m_filterList;
 	};
 };

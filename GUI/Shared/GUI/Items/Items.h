@@ -1410,6 +1410,31 @@ namespace GUI
 				IButton(const std::string& name, Events::SpecialEventType::EventHandlerType* eventHandler)
 					: Attribute::Name<IButton>(name), Events::OnSpecial<IButton>(this, this, eventHandler)
 				{}
+
+				~IButton() {
+					if (m_popupContainer != nullptr)
+						m_popupContainer->destroy();
+				}
+
+				void setPopupContainer(Container* popupContainer) {
+					m_popupContainer = popupContainer;
+					m_popupContainer->setParent(this);
+				}
+
+				void onSpecial() override {
+					Events::OnSpecial<IButton>::onSpecial();
+
+					if (m_popupContainer != nullptr) {
+						ImGui::OpenPopup(getUniqueId().c_str());
+						if (ImGui::BeginPopup(getUniqueId().c_str()))
+						{
+							m_popupContainer->show();
+							ImGui::EndPopup();
+						}
+					}
+				}
+			protected:
+				Container* m_popupContainer = nullptr;
 			};
 
 			class ButtonStd
@@ -2077,7 +2102,6 @@ namespace GUI
 			class IObject {
 			public:
 				virtual std::string getStatusName() = 0;
-				virtual bool isObjectList() = 0;
 			};
 
 			class ObjectList
@@ -2110,16 +2134,16 @@ namespace GUI
 					return "";
 				}
 
-				bool isObjectList() override {
-					return true;
-				}
-
 				void render() override {
 
 					for (auto it = m_objects.begin(); it != m_objects.end(); it ++) {
 						auto name = (*it)->getStatusName();
 
-						if (!(*it)->isObjectList()) {
+						if (ObjectList* objList = dynamic_cast<ObjectList*>(*it))
+						{
+							//tree node
+							objList->show();
+						} else {
 							ImGui::InputText("##", (char*)name.c_str(), 50);
 
 							ImGui::SameLine();
@@ -2140,16 +2164,6 @@ namespace GUI
 								m_moveObjectEvent.invoke(it, false);
 							}
 						}
-						else {
-							auto objList = static_cast<ObjectList*>(*it);
-
-							//tree node
-							objList->show();
-						}
-					}
-
-					if (ImGui::Button("Add")) {
-						m_editObjectEvent.invoke(nullptr);
 					}
 				}
 
@@ -2547,6 +2561,110 @@ namespace GUI
 						categories.pop_back();
 					return categories;
 				}
+			};
+
+			template<typename T>
+			class TreeView
+				: public Elem
+			{
+			public:
+				class TreeNode;
+				using TreeViewEventType = Events::Event<TreeNode*>;
+
+				class TreeNode
+					: public Elem,
+					public Attribute::Name<TreeNode>,
+					public Attribute::Hint<TreeNode>
+				{
+				public:
+					friend class TreeView;
+
+					TreeNode(const std::string& name, const std::string& desc = "", std::list<TreeNode*> nodes = {})
+						: Attribute::Name<TreeNode>(name), Attribute::Hint<TreeNode>(desc), m_nodes(nodes)
+					{}
+
+					~TreeNode() {
+						for (auto it : m_nodes) {
+							it->destroy();
+						}
+					}
+
+					void render() override {
+						auto name = Attribute::Name<TreeNode>::getName();
+
+						if (m_nodes.empty()) {
+							if (ImGui::Selectable(name.c_str())) {
+								m_treeView->getTreeViewEvent().invoke(this);
+							}
+						}
+						else {
+							ImGui::SetNextItemOpen(true);
+							if (ImGui::TreeNode(name.c_str()))
+							{
+								for (auto it : m_nodes) {
+									it->show();
+								}
+								ImGui::TreePop();
+							}
+						}
+
+						if (ImGui::IsItemHovered()) {
+							Attribute::Hint<TreeNode>::showHint();
+						}
+					}
+
+					void addNode(TreeNode* node) {
+						m_nodes.push_back(node);
+						node->m_treeView = m_treeView;
+					}
+
+					auto& getNodes() {
+						return m_nodes;
+					}
+
+					void setValue(T value) {
+						m_value = value;
+					}
+
+					T getValue() {
+						return m_value;
+					}
+				private:
+					TreeView* m_treeView = nullptr;
+					std::list<TreeNode*> m_nodes;
+					T m_value;
+				};
+
+				TreeView()
+					: m_treeViewEvent(this, this)
+				{
+					setRoot(new TreeNode("Root"));
+				}
+
+				~TreeView() {
+					m_root->destroy();
+				}
+
+				void render() override {
+					m_root->show();
+				}
+
+				TreeViewEventType& getTreeViewEvent() {
+					return m_treeViewEvent;
+				}
+
+				void setRoot(TreeNode* root) {
+					m_root = root;
+					m_root->m_treeView = this;
+					m_root->setParent(this);
+				}
+
+				TreeNode* getRoot() {
+					return m_root;
+				}
+			private:
+				TreeViewEventType m_treeViewEvent;
+				TreeNode* m_root = nullptr;
 			};
 		};
 

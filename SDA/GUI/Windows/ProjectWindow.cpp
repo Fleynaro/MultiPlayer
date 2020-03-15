@@ -55,6 +55,8 @@ ProjectWindow::ProjectWindow(Project* project)
 	}
 	{
 		auto trigger = triggerManager->createFunctionTrigger("global", "for testing, no more");
+		auto win = new Window::FunctionTrigger::TriggerEditor(trigger, funcManager);
+		addWindow(win);
 	}
 
 	getMainContainer()
@@ -66,4 +68,6 @@ ProjectWindow::ProjectWindow(Project* project)
 		.newLine()
 		.newLine()
 		.text("Base: 0x" + Generic::String::NumberToHex((uint64_t)GetModuleHandle(NULL)));
+
+
 }
