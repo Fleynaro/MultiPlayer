@@ -52,6 +52,7 @@ namespace GUI
 			m_addr = (void*)AddressParser::calculate(text);
 			if (isAddressValid()) {
 				m_lastValidAddr = m_addr;
+				m_addressValidEnteredEvent.invoke(this);
 			}
 
 			m_comboContent->clear();
@@ -269,8 +270,15 @@ namespace GUI
 			Elements::Input::FilterInt* m_valueInput;
 		};
 
-		AddressValueEditor(void* address, CE::Type::Type* type = nullptr, bool changeType = false)
-			: m_address(address), m_type(type), m_changeType(changeType)
+		struct Style {
+			bool m_typeSelector = false;
+			bool m_protectSelector = true;
+			bool m_pointerDereference = true;
+			bool m_arrayItemSelector = true;
+		};
+
+		AddressValueEditor(void* address, CE::Type::Type* type = new CE::Type::UInt64, Style style = Style())
+			: m_address(address), m_type(type), m_style(style)
 		{
 			m_eventUpdate = Events::Listener(
 				std::function([&](Events::ISender* sender) {
@@ -279,10 +287,12 @@ namespace GUI
 			);
 			m_eventUpdate->setCanBeRemoved(false);
 
+			m_type->addOwner();
 			build();
 		}
 
 		~AddressValueEditor() {
+			m_type->free();
 			delete m_eventUpdate;
 		}
 
@@ -310,21 +320,30 @@ namespace GUI
 				}
 			}
 
-			if (m_changeType) {
+			if (m_style.m_typeSelector) {
 				buildTypeSelector();
 			}
 
 			(*this)
 				.text("Type: ")
 				.sameLine()
-				.addItem(new Units::Type(m_type))
-				.newLine()
-				.addItem(m_protectContainer = new Container);
+				.addItem(new Units::Type(m_type));
 
-			buildProtectSelector(m_protectContainer);
+			if (m_style.m_protectSelector) {
+				(*this)
+					.newLine()
+					.addItem(m_protectContainer = new Container);
+				buildProtectSelector(m_protectContainer);
+				updateProtect(false);
+			}
+			if (m_style.m_pointerDereference) {
+				buildPointerDereference();
+			}
+			if (m_style.m_arrayItemSelector) {
+				buildArrayItemSelector();
+			}
+			
 			buildInputForm();
-
-			updateProtect(false);
 		}
 
 		void buildProtectSelector(Container* container) {
@@ -337,47 +356,6 @@ namespace GUI
 		}
 
 		void buildInputForm() {
-			if (m_type->getPointerLvl() > 0) {
-				Elements::List::Combo* combo;
-				(*this)
-					.text("Dereference:")
-					.addItem(combo = new Elements::List::Combo("", m_ptrLevel));
-				combo->addItem("No");
-				CE::Address addr = getAddress(m_ptrLevel).dereference();
-				bool isVoid = m_type->getId() == Type::SystemType::Void;
-
-				static const std::vector<const char*> names = {"Level 1 - *", "Level 2 - **", "Level 3 - ***" };
-				for (int i = 0; i < min(3, m_type->getPointerLvl() - isVoid); i++) {
-					if (!addr.canBeRead())
-						break;
-					combo->addItem(names[i]);
-					addr = addr.dereference();
-				}
-
-				combo->getSpecialEvent() += [&](Events::ISender* sender_) {
-					auto sender = static_cast<Elements::List::Combo*>(sender_);
-					m_ptrLevel = sender->getSelectedItem();
-					rebuild();
-				};
-			}
-
-			if (m_type->getArraySize() > 0) {
-				Elements::Input::Int* indexInput;
-				(*this)
-					.text("Item index: ")
-					.addItem(indexInput = new Elements::Input::Int);
-				indexInput->getSpecialEvent() += [&](Events::ISender* sender_) {
-					auto sender = static_cast<Elements::Input::Int*>(sender_);
-					if (sender->getInputValue() >= 0) {
-						m_arrayIndex = sender->getInputValue();
-						if (isValid()) {
-							rebuild();
-						}
-					}
-				};
-				indexInput->setInputValue(m_arrayIndex);
-			}
-
 			if (getCurPointerLvl() > 0) {
 				m_valueInput = new PointerInput(getAddress());
 			}
@@ -407,7 +385,7 @@ namespace GUI
 							"ok",
 							Events::Listener(
 								std::function([&](Events::ISender* sender) {
-									if(!m_cb_protect_Write->isSelected())
+									if(m_style.m_protectSelector && !m_cb_protect_Write->isSelected())
 										throw Exception(m_cb_protect_Write, "You cannot change value at this address. Need right on writing.");
 									m_valueInput->change();
 									rebuild();
@@ -419,6 +397,51 @@ namespace GUI
 
 			if (m_type->getGroup() == Type::Type::Class) {
 				text("Link to class editor.");
+			}
+		}
+
+		void buildPointerDereference() {
+			if (m_type->getPointerLvl() > 0) {
+				Elements::List::Combo* combo;
+				(*this)
+					.text("Dereference:")
+					.addItem(combo = new Elements::List::Combo("", m_ptrLevel));
+				combo->addItem("No");
+				CE::Address addr = getAddress(m_ptrLevel).dereference();
+				bool isVoid = m_type->getId() == Type::SystemType::Void;
+
+				static const std::vector<const char*> names = { "Level 1 - *", "Level 2 - **", "Level 3 - ***" };
+				for (int i = 0; i < min(3, m_type->getPointerLvl() - isVoid); i++) {
+					if (!addr.canBeRead())
+						break;
+					combo->addItem(names[i]);
+					addr = addr.dereference();
+				}
+
+				combo->getSpecialEvent() += [&](Events::ISender* sender_) {
+					auto sender = static_cast<Elements::List::Combo*>(sender_);
+					m_ptrLevel = sender->getSelectedItem();
+					rebuild();
+				};
+			}
+		}
+
+		void buildArrayItemSelector() {
+			if (m_type->getArraySize() > 0) {
+				Elements::Input::Int* indexInput;
+				(*this)
+					.text("Item index: ")
+					.addItem(indexInput = new Elements::Input::Int);
+				indexInput->getSpecialEvent() += [&](Events::ISender* sender_) {
+					auto sender = static_cast<Elements::Input::Int*>(sender_);
+					if (sender->getInputValue() >= 0) {
+						m_arrayIndex = sender->getInputValue();
+						if (isValid()) {
+							rebuild();
+						}
+					}
+				};
+				indexInput->setInputValue(m_arrayIndex);
 			}
 		}
 
@@ -460,11 +483,26 @@ namespace GUI
 			}
 			return (void*)((std::uintptr_t)m_address + offset);
 		}
+
+		void setInfo(CE::Type::Type* type, int arrayIndex, int ptrLevel) {
+			if (m_type != nullptr)
+				m_type->free();
+			m_type = type;
+			m_type->addOwner();
+
+			m_arrayIndex = arrayIndex;
+			m_ptrLevel = ptrLevel;
+			rebuild();
+		}
+
+		void setTypeManager(TypeManager* typeManager) {
+			m_typeManager = typeManager;
+		}
 	private:
 		void* m_address;
 		int m_arrayIndex = 0;
 		int m_ptrLevel = 0;
-		bool m_changeType;
+		Style m_style;
 		CE::Type::Type* m_type;
 		Events::SpecialEventType::EventHandlerType* m_eventUpdate;
 		Container* m_protectContainer = nullptr;
@@ -472,5 +510,37 @@ namespace GUI
 		Elements::Generic::Checkbox* m_cb_protect_Write = nullptr;
 		Elements::Generic::Checkbox* m_cb_protect_Execute = nullptr;
 		Input* m_valueInput = nullptr;
+		TypeManager* m_typeManager = nullptr;
+	};
+
+	class IntegralValueInput
+		: public Container
+	{
+	public:
+		IntegralValueInput(uint64_t value = 0, CE::Type::Type* type = new CE::Type::UInt64)
+			: m_value(value)
+		{
+			AddressValueEditor::Style style;
+			style.m_typeSelector = true;
+			style.m_protectSelector = false;
+			style.m_pointerDereference = false;
+			style.m_arrayItemSelector = false;
+			addItem(m_addressValueEditor = new AddressValueEditor(&m_value, type, style));
+		}
+
+		void changeType(CE::Type::Type* type) {
+			m_addressValueEditor->setInfo(type, 0, 0);
+		}
+
+		uint64_t& getValue() {
+			return m_value;
+		}
+
+		AddressValueEditor* getAddressValueEditor() {
+			return m_addressValueEditor;
+		}
+	private:
+		AddressValueEditor* m_addressValueEditor;
+		uint64_t m_value;
 	};
 };

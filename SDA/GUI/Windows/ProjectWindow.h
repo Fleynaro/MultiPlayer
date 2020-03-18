@@ -1,6 +1,5 @@
 #pragma once
-#include "Shared/GUI/Items/IWindow.h"
-#include <Project.h>
+#include <GUI/Windows/Window.h>
 
 namespace GUI::Window
 {
@@ -8,7 +7,7 @@ namespace GUI::Window
 	class FunctionList;
 	class FunctionTagList;
 
-	class ProjectWindow : public IWindow
+	class ProjectWindow : public PrjWindow
 	{
 	public:
 		ProjectWindow(Project* project);

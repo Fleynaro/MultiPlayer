@@ -2,7 +2,7 @@
 #include "FunctionList.h"
 #include "Shared/GUI/Widgets/Template/ItemList.h"
 #include <Manager/TriggerManager.h>
-#include "../ProjectWindow.h"
+#include <GUI/Windows/Window.h>
 
 using namespace CE;
 
@@ -340,45 +340,6 @@ namespace GUI::Widget
 	};
 };
 
-
-#include <GUI/AddressInput.h>
-namespace GUI::Widget
-{
-	namespace FunctionTriggerFilter
-	{
-		using namespace Trigger::Function::Filter;
-
-		class ObjectEditor : public Container {
-		public:
-			ObjectEditor(Object* filter)
-				: m_filter(filter)
-			{
-				addItem(m_valueInput = new AddressInput);
-				m_valueInput->setAddress(filter->m_addr);
-
-				m_valueInput->getAddressValidEnteredEvent() += [&](Events::ISender* sender) {
-					filter->m_addr = m_valueInput->getLastValidAddress();
-				};
-			}
-
-		private:
-			Object* m_filter;
-			AddressInput* m_valueInput;
-		};
-
-		static Container* CreateFilterEditor(IFilter* filter) {
-			switch (filter->getId())
-			{
-			case Id::Object:
-				return new ObjectEditor(static_cast<Object*>(filter));
-			}
-
-			return nullptr;
-		}
-	};
-};
-
-
 namespace TriggerFilterInfo {
 	struct TreeNode {
 		std::string m_name;
@@ -427,9 +388,15 @@ namespace TriggerFilterInfo {
 				: m_id(id), m_createFilter(createFilter), TreeNode(name, desc)
 			{}
 		};
-
+		
 		static inline Category* RootCategory =
 			new Category("Filters", "", {
+				new Category("Condition", "", {
+					new Filter(Id::Condition_AND, []() { return new ConditionFilter(Id::Condition_AND); }, "AND"),
+					new Filter(Id::Condition_OR, []() { return new ConditionFilter(Id::Condition_OR); }, "OR"),
+					new Filter(Id::Condition_XOR, []() { return new ConditionFilter(Id::Condition_XOR); }, "XOR"),
+					new Filter(Id::Condition_NOT, []() { return new ConditionFilter(Id::Condition_NOT); }, "NOT")
+				}),
 				new Filter(Id::Empty, []() { return new Empty; }, "Empty"),
 				new Filter(Id::Object, []() { return new Object; }, "Object"),
 				new Filter(Id::Argument, []() { return new Cmp::Argument; }, "Argument"),
@@ -439,35 +406,159 @@ namespace TriggerFilterInfo {
 		static Filter* GetFilter(Id id) {
 			return GetFilter_<Filter>(id, RootCategory);
 		}
-
-		/*static IFilter* CreateFilter(Id id) {
-			switch (id)
-			{
-			case Id::Empty:
-				return new Empty;
-			case Id::Object:
-				return new Object;
-			case Id::Argument:
-				return new Cmp::Argument;
-			case Id::ReturnValue:
-				return new Cmp::RetValue;
-			}
-
-			return nullptr;
-		}*/
 	};
 };
+
+
+#include <GUI/AddressInput.h>
+namespace GUI::Widget
+{
+	namespace FunctionTriggerFilter
+	{
+		using namespace Trigger::Function::Filter;
+
+		class FilterEditor : public Container {
+		public:
+			FilterEditor(Trigger::Function::Trigger* trigger, TriggerFilterInfo::Function::Filter* info)
+				: m_trigger(trigger), m_filterInfo(info)
+			{
+				text("Trigger: " + trigger->getName());
+				text("Filter: " + m_filterInfo->m_name);
+				text("Description:\n" + m_filterInfo->m_desc);
+				newLine();
+				newLine();
+			}
+
+			virtual void save() {};
+		protected:
+			Trigger::Function::Trigger* m_trigger;
+			TriggerFilterInfo::Function::Filter* m_filterInfo;
+		};
+
+		class ObjectEditor : public FilterEditor {
+		public:
+			ObjectEditor(Object* filter, Trigger::Function::Trigger* trigger, TriggerFilterInfo::Function::Filter* info)
+				: m_filter(filter), FilterEditor(trigger, info)
+			{
+				text("Enter the address of the object.");
+				addItem(m_valueInput = new AddressInput);
+				m_valueInput->setAddress(filter->m_addr);
+			}
+
+			void save() override {
+				m_filter->m_addr = m_valueInput->getAddress();
+			}
+		private:
+			Object* m_filter;
+			AddressInput* m_valueInput;
+		};
+
+		namespace Compare
+		{
+			class OperationSelector : public Elements::List::Combo
+			{
+			public:
+				OperationSelector(Cmp::Operation operation = Cmp::Operation::Eq)
+					: Elements::List::Combo("Operation", static_cast<int>(operation))
+				{
+					addItem("Equal (==)");
+					addItem("Not equal (!=)");
+					addItem("Less than (<)");
+					addItem("Less or equal (<=)");
+					addItem("Greater than (>=)");
+					addItem("Greater or equal (>)");
+				}
+
+				Cmp::Operation getOperation() {
+					return static_cast<Cmp::Operation>(getSelectedItem());
+				}
+			};
+
+			class ArgumentEditor : public FilterEditor {
+			public:
+				ArgumentEditor(Cmp::Argument* filter, Trigger::Function::Trigger* trigger, TriggerFilterInfo::Function::Filter* info, CE::TypeManager* typeManager)
+					: m_filter(filter), FilterEditor(trigger, info)
+				{
+					text("Select an argument index.");
+					addItem(m_argIndexInput = new Elements::Input::Int);
+					m_argIndexInput->setInputValue(m_filter->m_argId);
+					m_argIndexInput->getSpecialEvent() += [=](Events::ISender* sender) {
+						update();
+					};
+					newLine();
+
+					text("Select an operation.");
+					addItem(m_operationInput = new OperationSelector(m_filter->m_operation));
+					newLine();
+
+					text("Enter a value.");
+					addItem(m_valueInput = new IntegralValueInput(m_filter->m_value, getType(0)));
+					newLine();
+					
+
+					m_valueInput->getAddressValueEditor()->setTypeManager(typeManager);
+				}
+
+			private:
+				void update() {
+					auto argIdx = m_argIndexInput->getInputValue() - 1;
+					if (argIdx < 0)
+						return;
+					m_valueInput->changeType(getType(argIdx));
+				}
+
+				CE::Type::Type* getType(int argIdx) {
+					if (m_trigger->getHooks().size() == 0)
+						return new CE::Type::UInt64;
+					
+					auto hook = *m_trigger->getHooks().begin();
+					auto argList = hook->getFunctionDef()->getDeclaration().getSignature().getArgList();
+					if (argIdx >= argList.size() || argIdx < 0)
+						return new CE::Type::UInt64;
+
+					return argList[argIdx];
+				}
+
+			public:
+				void save() override {
+					m_filter->m_argId = m_argIndexInput->getInputValue();
+					m_filter->m_operation = m_operationInput->getOperation();
+					m_filter->m_value = m_valueInput->getValue();
+				}
+			private:
+				Cmp::Argument* m_filter;
+				Elements::Input::Int* m_argIndexInput;
+				OperationSelector* m_operationInput;
+				IntegralValueInput* m_valueInput;
+			};
+
+			class RetValueEditor : public FilterEditor {
+			public:
+				RetValueEditor(Cmp::RetValue* filter, Trigger::Function::Trigger* trigger, TriggerFilterInfo::Function::Filter* info)
+					: m_filter(filter), FilterEditor(trigger, info)
+				{
+
+				}
+
+			private:
+				Cmp::RetValue* m_filter;
+				AddressInput* m_valueInput;
+			};
+		};
+	};
+};
+
 
 namespace GUI::Window
 {
 	
 
 	class GenericTriggerEditor
-		: public IWindow
+		: public PrjWindow
 	{
 	public:
 		GenericTriggerEditor(const std::string& name, Trigger::ITrigger* trigger)
-			: IWindow(name), m_trigger(trigger)
+			: PrjWindow(name), m_trigger(trigger)
 		{
 			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
@@ -484,6 +575,48 @@ namespace GUI::Window
 	namespace FunctionTrigger {
 		using namespace Trigger::Function::Filter;
 
+		class FilterWinEditor : public PrjWindow
+		{
+		public:
+			FilterWinEditor(Trigger::Function::Trigger* trigger, IFilter* filter, TriggerFilterInfo::Function::Filter* info)
+				: PrjWindow("Fitler editor: " + info->m_name)
+			{
+				setWidth(450);
+				setHeight(300);
+
+				auto filterEditor = createFilterEditor(trigger, filter, info);
+				(*filterEditor)
+					.newLine()
+					.addItem(
+						new Elements::Button::ButtonStd(
+							"Ok",
+							Events::Listener(
+								std::function([=](Events::ISender* sender) {
+									filterEditor->save();
+									sendCloseEvent();
+								})
+							)
+						)
+					);
+				setMainContainer(filterEditor);
+			}
+
+			Widget::FunctionTriggerFilter::FilterEditor* createFilterEditor(Trigger::Function::Trigger* trigger, IFilter* filter, TriggerFilterInfo::Function::Filter* info) {
+				using namespace Widget::FunctionTriggerFilter;
+
+				switch (filter->getId())
+				{
+				case Trigger::Function::Filter::Id::Object:
+					return new ObjectEditor(static_cast<Object*>(filter), trigger, info);
+				case Trigger::Function::Filter::Id::Argument:
+					return new Compare::ArgumentEditor(static_cast<Cmp::Argument*>(filter), trigger, info, getProject()->getProgramExe()->getTypeManager());
+				case Trigger::Function::Filter::Id::ReturnValue:
+					return new Compare::RetValueEditor(static_cast<Cmp::RetValue*>(filter), trigger, info);
+				}
+				return new FilterEditor(trigger, info);
+			}
+		};
+
 		class TriggerEditor
 			: public GenericTriggerEditor
 		{
@@ -492,23 +625,47 @@ namespace GUI::Window
 			public:
 				class Filter : public IObject {
 				public:
-					Filter(IFilter* filter)
+					Filter(IFilter* filter, TriggerFilterInfo::Function::Filter* filterInfo)
+						: m_filter(filter), m_filterInfo(filterInfo)
 					{}
 
 					std::string getStatusName() override {
-						return std::to_string((int)m_filter->getId());
+						return m_filterInfo->m_name;
+					}
+
+					IFilter* getFilter() {
+						return m_filter;
 					}
 				private:
 					IFilter* m_filter;
+					TriggerFilterInfo::Function::Filter* m_filterInfo;
+				};
+
+				class CompositeFilter : public Elements::Input::ObjectList {
+				public:
+					CompositeFilter(ICompositeFilter* compositeFilter, TriggerFilterInfo::Function::Filter* filterInfo)
+						: m_compositeFilter(compositeFilter), m_filterInfo(filterInfo)
+					{}
+
+					std::string getStatusName() override {
+						return m_filterInfo->m_name;
+					}
+
+					ICompositeFilter* getFilter() {
+						return m_compositeFilter;
+					}
+				private:
+					ICompositeFilter* m_compositeFilter;
+					TriggerFilterInfo::Function::Filter* m_filterInfo;
 				};
 
 				using TreeView = Elements::List::TreeView<Trigger::Function::Filter::Id>;
 
-				FilterList(Trigger::Function::Trigger* trigger)
-					: m_trigger(trigger)
+				FilterList(Trigger::Function::Trigger* trigger, TriggerEditor* triggerEditor)
+					: m_trigger(trigger), m_triggerEditor(triggerEditor)
 				{
-					for (auto filter : trigger->getFilters()) {
-						addObject(new Filter(filter));
+					for (auto filter : trigger->getFilters()->getFilters()) {
+						addObject(new Filter(filter, TriggerFilterInfo::Function::GetFilter(filter->getId())));
 					}
 
 					m_treeView = new TreeView;
@@ -517,13 +674,30 @@ namespace GUI::Window
 
 					m_editObjectEvent += [&](IObject* object) {
 						auto filter = static_cast<Filter*>(object);
+						auto filterInfo = TriggerFilterInfo::Function::GetFilter(filter->getFilter()->getId());
 						
+						if (filterInfo != nullptr) {
+							m_triggerEditor->showFilterWinEditor(filter->getFilter(), filterInfo);
+						}
 					};
 
-					m_treeView->getTreeViewEvent() += [&](TreeView::TreeNode* treeNode) {
-						auto filter = TriggerFilterInfo::Function::GetFilter(treeNode->getValue());
-						if (filter != nullptr) {
-							filter->m_createFilter();
+					m_removeObjectEvent += [&](IObject* object) {
+						if (m_triggerEditor->m_winEditor != nullptr) {
+							throw Exception("Close window filter editor to remove.");
+						}
+
+						auto filter = static_cast<Filter*>(object);
+						m_trigger->getFilters()->removeFilter(filter->getFilter());
+						delete filter->getFilter();
+					};
+
+					m_treeView->getTreeNodeSelectedEvent() += [&](TreeView::TreeNode* treeNode) {
+						auto filterInfo = TriggerFilterInfo::Function::GetFilter(treeNode->getValue());
+						
+						if (filterInfo != nullptr) {
+							auto filter = filterInfo->m_createFilter();
+							addObject(new Filter(filter, filterInfo));
+							m_triggerEditor->showFilterWinEditor(filter, filterInfo);
 						}
 					};
 				}
@@ -562,11 +736,13 @@ namespace GUI::Window
 						ImGui::EndPopup();
 					}
 				}
+
 			private:
 				Trigger::Function::Trigger* m_trigger;
 				TreeView* m_treeView;
-
+				TriggerEditor* m_triggerEditor;
 			};
+			friend class FilterList;
 
 			TriggerEditor(Trigger::Function::Trigger* trigger, CE::FunctionManager* funcManager)
 				: GenericTriggerEditor("Function trigger editor", trigger)
@@ -580,7 +756,7 @@ namespace GUI::Window
 					.newLine()
 					.newLine()
 					.text("Filter list")
-					.addItem(m_filterList = new FilterList(trigger))
+					.addItem(m_filterList = new FilterList(trigger, this))
 					.newLine();
 			}
 
@@ -588,9 +764,22 @@ namespace GUI::Window
 				return static_cast<Trigger::Function::Trigger*>(m_trigger);
 			}
 
+			void showFilterWinEditor(IFilter* filter, TriggerFilterInfo::Function::Filter* filterInfo) {
+				if (m_winEditor != nullptr) {
+					m_winEditor->close();
+				}
+				m_winEditor = new FilterWinEditor(getTrigger(), filter, filterInfo);
+				addWindow(m_winEditor);
+
+				m_winEditor->getCloseEvent() +=
+					[&](Events::ISender* sender) {
+					m_winEditor = nullptr;
+				};
+			}
 		private:
 			Widget::FunctionInput* m_funcInput;
 			FilterList* m_filterList;
+			FilterWinEditor* m_winEditor = nullptr;
 		};
 	};
 };

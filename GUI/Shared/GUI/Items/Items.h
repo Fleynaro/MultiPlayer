@@ -1726,7 +1726,7 @@ namespace GUI
 				ULONGLONG m_borderHideTime = 0;
 			protected:
 				void drawInputBorder() {
-					if (m_borderColor != 0x0 && (m_borderHideTime == 0 ||GetTickCount64() < m_borderHideTime)) {
+					if (m_borderColor != 0x0 && (m_borderHideTime == 0 || GetTickCount64() < m_borderHideTime)) {
 						drawBorder(m_borderColor);
 					}
 				}
@@ -2116,11 +2116,17 @@ namespace GUI
 				{
 					m_moveObjectEvent += [&](std::list<IObject*>::iterator it, bool isDown) {
 						if (isDown) {
-							std::swap(*it, *std::next(it));
+							if(*std::next(it))
+								std::swap(*it, *std::next(it));
 						}
 						else {
-							std::swap(*it, *std::prev(it));
+							if(*std::prev(it))
+								std::swap(*it, *std::prev(it));
 						}
+					};
+
+					m_removeObjectEvent += [&](IObject* object) {
+						m_objects.remove(object);
 					};
 				}
 
@@ -2144,8 +2150,9 @@ namespace GUI
 							//tree node
 							objList->show();
 						} else {
+							ImGui::PushID(*it);
 							ImGui::InputText("##", (char*)name.c_str(), 50);
-
+							
 							ImGui::SameLine();
 							if (ImGui::Button("*")) {
 								m_editObjectEvent.invoke(*it);
@@ -2163,6 +2170,7 @@ namespace GUI
 							if (ImGui::ArrowButton("##up", ImGuiDir_Up)) {
 								m_moveObjectEvent.invoke(it, false);
 							}
+							ImGui::PopID();
 						}
 					}
 				}
@@ -2594,7 +2602,7 @@ namespace GUI
 
 						if (m_nodes.empty()) {
 							if (ImGui::Selectable(name.c_str())) {
-								m_treeView->getTreeViewEvent().invoke(this);
+								m_treeView->getTreeNodeSelectedEvent().invoke(this);
 							}
 						}
 						else {
@@ -2649,7 +2657,7 @@ namespace GUI
 					m_root->show();
 				}
 
-				TreeViewEventType& getTreeViewEvent() {
+				TreeViewEventType& getTreeNodeSelectedEvent() {
 					return m_treeViewEvent;
 				}
 

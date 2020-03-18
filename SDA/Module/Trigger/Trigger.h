@@ -67,6 +67,10 @@ namespace CE
 					return &m_hook;
 				}
 
+				inline CE::Function::FunctionDefinition* getFunctionDef() {
+					return static_cast<CE::Function::FunctionDefinition*>(getDynHook()->getUserPtr());
+				}
+
 				void addTrigger(Trigger* trigger) {
 					m_triggers.push_back(trigger);
 				}
@@ -84,43 +88,22 @@ namespace CE
 			public:
 				Trigger(int id, const std::string& name, const std::string& desc = "")
 					: ITrigger(id, name, desc)
-				{}
+				{
+					m_compositeFilter = new Filter::ConditionFilter(Filter::Id::Condition_AND);
+				}
+
+				~Trigger() {
+					delete m_compositeFilter;
+				}
 
 				Type getType() override {
 					return Type::FunctionTrigger;
 				}
-
-				void addFilter(Filter::IFilter* filter) {
-					m_filters.push_back(filter);
-				}
-
-				void removeFilter(Filter::IFilter* filter) {
-					m_filters.remove(filter);
-				}
-
 			public:
-				bool checkFilterBefore(CE::Hook::DynHook* hook) {
-					for (auto& filter : m_filters) {
-						if (filter->checkFilterBefore(hook)) {
-							return true;
-						}
-					}
-					return false;
-				}
-
-				bool checkFilterAfter(CE::Hook::DynHook* hook) {
-					for (auto& filter : m_filters) {
-						if (filter->checkFilterAfter(hook)) {
-							return true;
-						}
-					}
-					return false;
-				}
-
 				bool actionBefore(CE::Hook::DynHook* hook) {
 					bool sendStat = false;
 					bool notExecute = false;
-					if (checkFilterBefore(hook)) {
+					if (getFilters()->checkFilterBefore(hook)) {
 						notExecute = m_notExecute;
 						hook->getUserData<TriggerState>().m_beforeFilter = true;
 						sendStat = true;
@@ -136,7 +119,7 @@ namespace CE
 
 				void actionAfter(CE::Hook::DynHook* hook) {
 					bool sendStat = hook->getUserData<TriggerState>().m_beforeFilter;
-					if (checkFilterAfter(hook)) {
+					if (getFilters()->checkFilterAfter(hook)) {
 						sendStat = true;
 					}
 
@@ -160,12 +143,16 @@ namespace CE
 					hook->addTrigger(this);
 				}
 
-				auto& getFilters() {
-					return m_filters;
+				Filter::ICompositeFilter* getFilters() {
+					return m_compositeFilter;
+				}
+
+				auto& getHooks() {
+					return m_hooks;
 				}
 			private:
 				Stat::Function::Collector* m_statCollector = nullptr;
-				std::list<Filter::IFilter*> m_filters;
+				Filter::ICompositeFilter* m_compositeFilter;
 				std::list<Hook*> m_hooks;
 				bool m_notExecute = false;
 			};

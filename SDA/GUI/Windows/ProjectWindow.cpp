@@ -7,16 +7,17 @@
 using namespace GUI::Window;
 
 ProjectWindow::ProjectWindow(Project* project)
-	: m_project(project), IWindow("Project: " + project->getName())
+	: m_project(project), PrjWindow("Project: " + project->getName())
 {
 	setWidth(1000);
 	setHeight(600);
+	setProject(project);
 
 	auto dataTypeListWidget = new Widget::DataTypeList;
 	dataTypeListWidget->setView(
 		new Widget::DataTypeList::ListView(dataTypeListWidget, getProject()->getProgramExe()->getTypeManager())
 	);
-	addWindow(
+	IWindow::addWindow(
 		m_dataTypeList = new Window::DataTypeList(dataTypeListWidget)
 	);
 
@@ -34,7 +35,7 @@ ProjectWindow::ProjectWindow(Project* project)
 		new Widget::FuncSelectList::ListView(functionListWidget, getProject()->getProgramExe()->getFunctionManager()),
 		false
 	);
-	addWindow(
+	IWindow::addWindow(
 		m_funcSelList = new Window::FunctionList(functionListWidget)
 	);
 	functionListWidget->update();

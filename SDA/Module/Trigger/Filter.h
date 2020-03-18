@@ -14,6 +14,10 @@ namespace CE
 			{
 				enum class Id
 				{
+					Condition_AND,
+					Condition_OR,
+					Condition_XOR,
+					Condition_NOT,
 					Empty,
 					Object,
 					Argument,
@@ -47,6 +51,81 @@ namespace CE
 					bool m_afterDefFilter = false;
 				};
 
+				class ICompositeFilter : public IFilter
+				{
+				public:
+					ICompositeFilter(std::list<IFilter*> filters = {})
+						: m_filters(filters)
+					{}
+
+					void addFilter(IFilter* filter) {
+						m_filters.push_back(filter);
+					}
+
+					void removeFilter(IFilter* filter) {
+						m_filters.remove(filter);
+					}
+
+					auto& getFilters() {
+						return m_filters;
+					}
+				protected:
+					std::list<IFilter*> m_filters;
+				};
+
+				class ConditionFilter : public ICompositeFilter
+				{
+				public:
+					ConditionFilter(Id id, std::list<IFilter*> filters = {})
+						: m_id(id), ICompositeFilter(filters)
+					{
+						switch (id)
+						{
+						case Id::Condition_AND:
+							m_source = true;
+							m_cmp = [](bool a, bool b) { return a & b; };
+							break;
+						case Id::Condition_OR:
+							m_source = false;
+							m_cmp = [](bool a, bool b) { return a | b; };
+							break;
+						case Id::Condition_XOR:
+							m_source = false;
+							m_cmp = [](bool a, bool b) { return a ^ b; };
+							break;
+						case Id::Condition_NOT:
+							m_cmp = [](bool a, bool b) { return 1 ^ b; };
+							break;
+						}
+					}
+
+					Id getId() override {
+						return m_id;
+					}
+
+					bool checkFilterBefore(CE::Hook::DynHook* hook) override {
+						bool result = m_source;
+						for (auto filter : m_filters) {
+							result = m_cmp(result, filter->checkFilterBefore(hook));
+						}
+						return result;
+					}
+
+					bool checkFilterAfter(CE::Hook::DynHook* hook) override {
+						bool result = m_source;
+						for (auto filter : m_filters) {
+							result = m_cmp(result, filter->checkFilterAfter(hook));
+						}
+						return result;
+					}
+
+				private:
+					Id m_id;
+					bool m_source;
+					std::function<bool(bool, bool)> m_cmp;
+				};
+
+				
 				class Empty : public IFilter
 				{
 				public:

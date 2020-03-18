@@ -233,6 +233,7 @@
     <ClInclude Include="GUI\Windows\ItemLists\FunctionTagList.h" />
     <ClInclude Include="GUI\Windows\ItemLists\TriggerList.h" />
     <ClInclude Include="GUI\Windows\ProjectWindow.h" />
+    <ClInclude Include="GUI\Windows\Window.h" />
     <ClInclude Include="Module\FunctionTag\FunctionTag.h" />
     <ClInclude Include="GUI\Signature.h" />
     <ClInclude Include="GUI\Type.h" />

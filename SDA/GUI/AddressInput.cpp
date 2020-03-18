@@ -13,7 +13,11 @@ void AddressValueEditor::buildTypeSelector() {
 				"Select type",
 				Events::Listener(
 					std::function([&](Events::ISender* sender) {
-						rebuild();
+						if (m_typeManager == nullptr)
+							return;
+						auto dataTypeSelector = new Window::DataTypeSelector(m_typeManager);
+						getWindow()->addWindow(dataTypeSelector);
+						dataTypeSelector->setType(m_type);
 					})
 				)
 			)
