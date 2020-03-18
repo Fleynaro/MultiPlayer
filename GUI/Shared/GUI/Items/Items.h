@@ -2116,11 +2116,11 @@ namespace GUI
 				{
 					m_moveObjectEvent += [&](std::list<IObject*>::iterator it, bool isDown) {
 						if (isDown) {
-							if(*std::next(it))
+							if(std::next(it) != m_objects.end())
 								std::swap(*it, *std::next(it));
 						}
 						else {
-							if(*std::prev(it))
+							if(std::prev(it) != m_objects.end())
 								std::swap(*it, *std::prev(it));
 						}
 					};
@@ -2132,7 +2132,12 @@ namespace GUI
 
 				~ObjectList() {
 					for (auto it : m_objects) {
-						delete it;
+						if (ObjectList* objList = dynamic_cast<ObjectList*>(it)) {
+							objList->destroy();
+						}
+						else {
+							delete it;
+						}
 					}
 				}
 
@@ -2144,39 +2149,57 @@ namespace GUI
 
 					for (auto it = m_objects.begin(); it != m_objects.end(); it ++) {
 						auto name = (*it)->getStatusName();
+						ImGui::PushID(*it);
 
 						if (ObjectList* objList = dynamic_cast<ObjectList*>(*it))
 						{
-							//tree node
-							objList->show();
-						} else {
-							ImGui::PushID(*it);
-							ImGui::InputText("##", (char*)name.c_str(), 50);
-							
-							ImGui::SameLine();
-							if (ImGui::Button("*")) {
-								m_editObjectEvent.invoke(*it);
-							}
-							ImGui::SameLine();
-							if (ImGui::Button("x")) {
-								m_removeObjectEvent.invoke(*it);
-							}
+							ImGui::SetNextItemOpen(true);
+							if (ImGui::TreeNodeEx("##", ImGuiTreeNodeFlags_FramePadding))
+							{
+								ImGui::SameLine();
+								renderHeader(it, name);
+								ImGui::NewLine();
 
-							ImGui::SameLine();
-							if (ImGui::ArrowButton("##down", ImGuiDir_Down)) {
-								m_moveObjectEvent.invoke(it, true);
+								objList->show();
+								ImGui::TreePop();
 							}
-							ImGui::SameLine();
-							if (ImGui::ArrowButton("##up", ImGuiDir_Up)) {
-								m_moveObjectEvent.invoke(it, false);
-							}
-							ImGui::PopID();
 						}
+						else {
+							renderHeader(it, name);
+						}
+						
+						ImGui::PopID();
+					}
+				}
+
+				void renderHeader(std::list<IObject*>::iterator it, const std::string& name) {
+					ImGui::InputText("##", (char*)name.c_str(), 50, ImGuiInputTextFlags_ReadOnly);
+
+					ImGui::SameLine();
+					if (ImGui::Button("*")) {
+						m_editObjectEvent.invoke(*it);
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("x")) {
+						m_removeObjectEvent.invoke(*it);
+					}
+
+					ImGui::SameLine();
+					if (ImGui::ArrowButton("##down", ImGuiDir_Down)) {
+						m_moveObjectEvent.invoke(it, true);
+					}
+					ImGui::SameLine();
+					if (ImGui::ArrowButton("##up", ImGuiDir_Up)) {
+						m_moveObjectEvent.invoke(it, false);
 					}
 				}
 
 				void addObject(IObject* object) {
 					m_objects.push_back(object);
+
+					if (ObjectList* objList = dynamic_cast<ObjectList*>(object)) {
+						objList->setParent(this);
+					}
 				}
 
 				Events::Event<IObject*> m_editObjectEvent;

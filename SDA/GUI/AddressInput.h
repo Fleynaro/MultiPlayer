@@ -96,11 +96,13 @@ namespace GUI
 		{
 		public:
 			Input(CE::Address address)
-				: m_address(address)
+				: m_address(address), m_updateEvent(this, this)
 			{}
 
 			virtual void change() = 0;
 			virtual void setReadOnly(bool toggle) = 0;
+
+			Events::SpecialEventType m_updateEvent;
 		protected:
 			CE::Address m_address;
 		};
@@ -112,6 +114,9 @@ namespace GUI
 				: Input(address), m_unicode(unicode)
 			{
 				addItem(m_valueInput = new Elements::Input::Text);
+				m_valueInput->getSpecialEvent() += [&](ISender* sender) {
+					m_updateEvent.invoke(sender);
+				};
 				read();
 			}
 
@@ -174,6 +179,9 @@ namespace GUI
 				: Input(address)
 			{
 				addItem(m_valueInput = new AddressInput);
+				m_valueInput->getSpecialEvent() += [&](ISender* sender) {
+					m_updateEvent.invoke(sender);
+				};
 				m_valueInput->setAddress(m_address.get<void*>());
 			}
 
@@ -225,6 +233,11 @@ namespace GUI
 				if(m_valueInput == nullptr)
 					m_valueInput = (new Elements::Input::Int)
 						->setInputValue(m_address.get<uint32_t>());
+
+				m_valueInput->getSpecialEvent() += [&](ISender* sender) {
+					m_updateEvent.invoke(sender);
+				};
+
 				addItem(m_valueInput);
 			}
 
@@ -253,6 +266,10 @@ namespace GUI
 				for (auto field : m_enumeration->getFieldDict()) {
 					m_valueInput->addItem(field.second, field.first);
 				}
+
+				m_valueInput->getSpecialEvent() += [&](ISender* sender) {
+					m_updateEvent.invoke(sender);
+				};
 			}
 
 			void change() override {
@@ -275,6 +292,7 @@ namespace GUI
 			bool m_protectSelector = true;
 			bool m_pointerDereference = true;
 			bool m_arrayItemSelector = true;
+			bool m_changeValueByButton = true;
 		};
 
 		AddressValueEditor(void* address, CE::Type::Type* type = new CE::Type::UInt64, Style style = Style())
@@ -379,25 +397,38 @@ namespace GUI
 					.newLine()
 					.text("Value:")
 					.addItem(m_valueInput)
-					.sameLine()
-					.addItem(
-						new Elements::Button::ButtonStd(
-							"ok",
-							Events::Listener(
-								std::function([&](Events::ISender* sender) {
-									if(m_style.m_protectSelector && !m_cb_protect_Write->isSelected())
-										throw Exception(m_cb_protect_Write, "You cannot change value at this address. Need right on writing.");
-									m_valueInput->change();
-									rebuild();
-								})
+					.sameLine();
+
+				if (m_style.m_changeValueByButton) {
+					(*this)
+						.addItem(
+							new Elements::Button::ButtonStd(
+								"ok",
+								Events::Listener(
+									std::function([&](Events::ISender* sender) {
+										changeValue();
+									})
+								)
 							)
-						)
-					);
+						);
+				}
+				else {
+					m_valueInput->m_updateEvent += [&](Events::ISender* sender) {
+						changeValue();
+					};
+				}
 			}
 
 			if (m_type->getGroup() == Type::Type::Class) {
 				text("Link to class editor.");
 			}
+		}
+
+		void changeValue() {
+			if (m_style.m_protectSelector && !m_cb_protect_Write->isSelected())
+				throw Exception(m_cb_protect_Write, "You cannot change value at this address. Need right on writing.");
+			m_valueInput->change();
+			rebuild();
 		}
 
 		void buildPointerDereference() {
@@ -484,15 +515,16 @@ namespace GUI
 			return (void*)((std::uintptr_t)m_address + offset);
 		}
 
-		void setInfo(CE::Type::Type* type, int arrayIndex, int ptrLevel) {
+		void setInfo(int arrayIndex, int ptrLevel) {
+			m_arrayIndex = arrayIndex;
+			m_ptrLevel = ptrLevel;
+		}
+
+		void setType(CE::Type::Type* type) {
 			if (m_type != nullptr)
 				m_type->free();
 			m_type = type;
 			m_type->addOwner();
-
-			m_arrayIndex = arrayIndex;
-			m_ptrLevel = ptrLevel;
-			rebuild();
 		}
 
 		void setTypeManager(TypeManager* typeManager) {
@@ -525,11 +557,13 @@ namespace GUI
 			style.m_protectSelector = false;
 			style.m_pointerDereference = false;
 			style.m_arrayItemSelector = false;
+			style.m_changeValueByButton = false;
 			addItem(m_addressValueEditor = new AddressValueEditor(&m_value, type, style));
 		}
 
 		void changeType(CE::Type::Type* type) {
-			m_addressValueEditor->setInfo(type, 0, 0);
+			m_addressValueEditor->setType(type);
+			m_addressValueEditor->rebuild();
 		}
 
 		uint64_t& getValue() {

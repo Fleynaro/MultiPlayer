@@ -51,8 +51,8 @@ ProjectWindow::ProjectWindow(Project* project)
 	auto triggerManager = getProject()->getProgramExe()->getTriggerManager();
 	{
 		auto trigger = triggerManager->createFunctionTrigger("myTrigger1", "for test, no more");
-		trigger->addFilter(new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq));
-		trigger->addFilter(new Trigger::Function::Filter::Cmp::RetValue(100, Trigger::Function::Filter::Cmp::Ge));
+		trigger->getFilters()->addFilter(new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq));
+		trigger->getFilters()->addFilter(new Trigger::Function::Filter::Cmp::RetValue(100, Trigger::Function::Filter::Cmp::Ge));
 	}
 	{
 		auto trigger = triggerManager->createFunctionTrigger("global", "for testing, no more");

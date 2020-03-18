@@ -44,58 +44,62 @@ namespace CE
 				query.exec();
 			}
 
-			{
-				for (const auto& filter : trigger->getFilters()) {
-					BitStream bs;
-					filter->serialize(bs);
-
-					SQLite::Statement query(db, "INSERT INTO sda_func_trigger_filters (trigger_id, filter_id, data) VALUES(?1, ?2, ?3)");
-					query.bind(1, trigger->getId());
-					query.bind(2, (int)filter->getId());
-					query.bind(3, bs.getData(), bs.getSize());
-					query.exec();
-				}
-			}
-
+			saveFiltersForFuncTrigger(db, trigger->getId(), 1, trigger->getFilters());
 			transaction.commit();
 		}
 
-		void loadFiltersForFuncTrigger(Trigger::Function::Trigger* trigger)
-		{
+		void saveFiltersForFuncTrigger(SQLite::Database& db, int trigger_id, int filter_idx, Trigger::Function::Filter::IFilter* filter) {
+			using namespace Trigger::Function::Filter;
+			
+			if (trigger_id != 1) {
+				BitStream bs;
+				filter->serialize(bs);
+
+				SQLite::Statement query(db, "INSERT INTO sda_func_trigger_filters (trigger_id, filter_id, filter_idx, data) VALUES(?1, ?2, ?3, ?4)");
+				query.bind(1, trigger_id);
+				query.bind(2, (int)filter->getId());
+				query.bind(3, filter_idx);
+				query.bind(4, bs.getData(), bs.getSize());
+				query.exec();
+			}
+
+			if (auto compositeFilter = dynamic_cast<ICompositeFilter*>(filter)) {
+				for (const auto& filter : compositeFilter->getFilters()) {
+					saveFiltersForFuncTrigger(db, trigger_id, filter_idx + 1, filter);
+				}
+			}
+		}
+
+		void loadFiltersForFuncTrigger(Trigger::Function::Trigger* trigger) {
 			using namespace SQLite;
 			using namespace Trigger::Function::Filter;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "SELECT filter_id,data FROM sda_func_trigger_filters WHERE trigger_id=?1");
+			SQLite::Statement query(db, "SELECT filter_id,data FROM sda_func_trigger_filters WHERE trigger_id=?1 ORDER BY filter_idx ASC");
 			query.bind(1, trigger->getId());
 
-			while (query.executeStep())
-			{
-				IFilter* filter = nullptr;
-				auto filter_id = (Id)(int)query.getColumn("filter_id");
+			loadFiltersForFuncTrigger(query, trigger->getFilters());
+		}
 
-				switch (filter_id)
-				{
-				case Id::Empty:
-					filter = new Empty;
-					break;
-				case Id::Object:
-					filter = new Object;
-					break;
-				case Id::Argument:
-					filter = new Cmp::Argument;
-					break;
-				case Id::ReturnValue:
-					filter = new Cmp::RetValue;
-					break;
-				}
+		void loadFiltersForFuncTrigger(SQLite::Statement& query, Trigger::Function::Filter::ICompositeFilter* compositeFilter) {
+			using namespace Trigger::Function::Filter;
+
+			auto size = compositeFilter->m_filtersSavedCount != -1 ? compositeFilter->m_filtersSavedCount : 1000;
+			for(int idx = 0; query.executeStep() && idx < compositeFilter->m_filtersSavedCount; idx ++)
+			{
+				auto filter_id = (Id)(int)query.getColumn("filter_id");
+				auto filterInfo = TriggerFilterInfo::Function::GetFilter(filter_id);
+				auto filter = filterInfo->m_createFilter();
 
 				BitStream bs;
 				bs.write(query.getColumn("data").getBlob(), query.getColumn("data").getBytes());
 				bs.resetPointer();
 				filter->deserialize(bs);
+				compositeFilter->addFilter(filter);
 
-				trigger->addFilter(filter);
+				if (auto compositeFilter_ = dynamic_cast<ICompositeFilter*>(filter)) {
+					loadFiltersForFuncTrigger(query, compositeFilter_);
+				}
 			}
 		}
 
@@ -111,7 +115,6 @@ namespace CE
 			{
 			case Trigger::FunctionTrigger:
 				auto tr = static_cast<Trigger::Function::Trigger*>(trigger);
-				tr->getFilters().clear();
 				saveFiltersForFuncTrigger(tr);
 				break;
 			}

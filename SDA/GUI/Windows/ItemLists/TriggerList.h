@@ -340,75 +340,6 @@ namespace GUI::Widget
 	};
 };
 
-namespace TriggerFilterInfo {
-	struct TreeNode {
-		std::string m_name;
-		std::string m_desc;
-
-		TreeNode(const std::string& name, const std::string& desc)
-			: m_name(name), m_desc(desc)
-		{}
-
-		virtual ~TreeNode() {}
-	};
-
-	struct Category : public TreeNode {
-		std::list<TreeNode*> m_nodes;
-
-		Category(const std::string& name, const std::string& desc, std::list<TreeNode*> nodes = {})
-			: TreeNode(name, desc), m_nodes(nodes)
-		{}
-	};
-
-	template<class T1, typename T2>
-	static T1* GetFilter_(T2 id, TreeNode* node) {
-		if (T1* filter = dynamic_cast<T1*>(node)) {
-			if (filter->m_id == id)
-				return filter;
-		}
-		if (Category* category = dynamic_cast<Category*>(node)) {
-			for (auto it : category->m_nodes) {
-				if (T1* filter = GetFilter_<T1, T2>(id, it)) {
-					return filter;
-				}
-			}
-		}
-		return nullptr;
-	}
-
-	namespace Function
-	{
-		using namespace Trigger::Function::Filter;
-
-		struct Filter : public TreeNode {
-			Id m_id;
-			std::function<IFilter * ()> m_createFilter;
-
-			Filter(Id id, const std::function<IFilter * ()>& createFilter, const std::string& name, const std::string& desc = "")
-				: m_id(id), m_createFilter(createFilter), TreeNode(name, desc)
-			{}
-		};
-		
-		static inline Category* RootCategory =
-			new Category("Filters", "", {
-				new Category("Condition", "", {
-					new Filter(Id::Condition_AND, []() { return new ConditionFilter(Id::Condition_AND); }, "AND"),
-					new Filter(Id::Condition_OR, []() { return new ConditionFilter(Id::Condition_OR); }, "OR"),
-					new Filter(Id::Condition_XOR, []() { return new ConditionFilter(Id::Condition_XOR); }, "XOR"),
-					new Filter(Id::Condition_NOT, []() { return new ConditionFilter(Id::Condition_NOT); }, "NOT")
-				}),
-				new Filter(Id::Empty, []() { return new Empty; }, "Empty"),
-				new Filter(Id::Object, []() { return new Object; }, "Object"),
-				new Filter(Id::Argument, []() { return new Cmp::Argument; }, "Argument"),
-				new Filter(Id::ReturnValue, []() { return new Cmp::RetValue; }, "Return value")
-			});
-
-		static Filter* GetFilter(Id id) {
-			return GetFilter_<Filter>(id, RootCategory);
-		}
-	};
-};
-
 
 #include <GUI/AddressInput.h>
 namespace GUI::Widget
@@ -560,11 +491,12 @@ namespace GUI::Window
 		GenericTriggerEditor(const std::string& name, Trigger::ITrigger* trigger)
 			: PrjWindow(name), m_trigger(trigger)
 		{
-			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+			//setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
 
 			getMainContainer()
 				.text("Trigger name")
 				.addItem(m_nameInput = new Elements::Input::Text);
+			m_nameInput->setInputValue(trigger->getName());
 		}
 
 	protected:
@@ -578,11 +510,12 @@ namespace GUI::Window
 		class FilterWinEditor : public PrjWindow
 		{
 		public:
-			FilterWinEditor(Trigger::Function::Trigger* trigger, IFilter* filter, TriggerFilterInfo::Function::Filter* info)
-				: PrjWindow("Fitler editor: " + info->m_name)
+			FilterWinEditor(Trigger::Function::Trigger* trigger, IFilter* filter, TriggerFilterInfo::Function::Filter* info, Project* project)
+				: PrjWindow("Filter editor: " + info->m_name)
 			{
-				setWidth(450);
-				setHeight(300);
+				setWidth(500);
+				setHeight(400);
+				setProject(project);
 
 				auto filterEditor = createFilterEditor(trigger, filter, info);
 				(*filterEditor)
@@ -641,43 +574,35 @@ namespace GUI::Window
 					TriggerFilterInfo::Function::Filter* m_filterInfo;
 				};
 
-				class CompositeFilter : public Elements::Input::ObjectList {
-				public:
-					CompositeFilter(ICompositeFilter* compositeFilter, TriggerFilterInfo::Function::Filter* filterInfo)
-						: m_compositeFilter(compositeFilter), m_filterInfo(filterInfo)
-					{}
-
-					std::string getStatusName() override {
-						return m_filterInfo->m_name;
-					}
-
-					ICompositeFilter* getFilter() {
-						return m_compositeFilter;
-					}
-				private:
-					ICompositeFilter* m_compositeFilter;
-					TriggerFilterInfo::Function::Filter* m_filterInfo;
-				};
-
 				using TreeView = Elements::List::TreeView<Trigger::Function::Filter::Id>;
 
-				FilterList(Trigger::Function::Trigger* trigger, TriggerEditor* triggerEditor)
-					: m_trigger(trigger), m_triggerEditor(triggerEditor)
+				FilterList(ICompositeFilter* compositeFilter, TriggerEditor* triggerEditor, TreeView* treeView = nullptr)
+					: m_compositeFilter(compositeFilter), m_triggerEditor(triggerEditor), m_treeView(treeView)
 				{
-					for (auto filter : trigger->getFilters()->getFilters()) {
-						addObject(new Filter(filter, TriggerFilterInfo::Function::GetFilter(filter->getId())));
-					}
+					m_filterInfo = TriggerFilterInfo::Function::GetFilter(compositeFilter->getId());
 
-					m_treeView = new TreeView;
+					if (m_treeView == nullptr) {
+						m_treeView = new TreeView;
+						generateTreeView(m_treeView->getRoot());
+					}
 					m_treeView->setParent(this);
-					generateTreeView(m_treeView->getRoot());
+					m_treeView->getTreeNodeSelectedEvent() += [&](TreeView::TreeNode* treeNode) {
+						auto filterInfo = TriggerFilterInfo::Function::GetFilter(treeNode->getValue());
+
+						if (filterInfo != nullptr) {
+							auto filter = filterInfo->m_createFilter();
+							addFilter(filter);
+							m_triggerEditor->showFilterWinEditor(filter, filterInfo);
+							m_compositeFilter->addFilter(filter);
+						}
+					};
 
 					m_editObjectEvent += [&](IObject* object) {
-						auto filter = static_cast<Filter*>(object);
-						auto filterInfo = TriggerFilterInfo::Function::GetFilter(filter->getFilter()->getId());
+						auto filter = getFilter(object);
+						auto filterInfo = TriggerFilterInfo::Function::GetFilter(filter->getId());
 						
 						if (filterInfo != nullptr) {
-							m_triggerEditor->showFilterWinEditor(filter->getFilter(), filterInfo);
+							m_triggerEditor->showFilterWinEditor(filter, filterInfo);
 						}
 					};
 
@@ -686,24 +611,35 @@ namespace GUI::Window
 							throw Exception("Close window filter editor to remove.");
 						}
 
-						auto filter = static_cast<Filter*>(object);
-						m_trigger->getFilters()->removeFilter(filter->getFilter());
-						delete filter->getFilter();
+						auto filter = getFilter(object);
+						m_compositeFilter->removeFilter(filter);
 					};
 
-					m_treeView->getTreeNodeSelectedEvent() += [&](TreeView::TreeNode* treeNode) {
-						auto filterInfo = TriggerFilterInfo::Function::GetFilter(treeNode->getValue());
-						
-						if (filterInfo != nullptr) {
-							auto filter = filterInfo->m_createFilter();
-							addObject(new Filter(filter, filterInfo));
-							m_triggerEditor->showFilterWinEditor(filter, filterInfo);
-						}
-					};
+					for (auto filter : m_compositeFilter->getFilters()) {
+						addFilter(filter);
+					}
 				}
 
 				~FilterList() {
 					m_treeView->destroy();
+				}
+
+				IFilter* getFilter(IObject* object) {
+					if (auto filterList = dynamic_cast<FilterList*>(object)) {
+						return filterList->m_compositeFilter;
+					}
+					return static_cast<Filter*>(object)->getFilter();
+				}
+
+				void addFilter(IFilter* filter) {
+					if (auto compositeFilter_ = dynamic_cast<ICompositeFilter*>(filter)) {
+						auto filterList = new FilterList(compositeFilter_, m_triggerEditor);
+						addObject(filterList);
+					}
+					else {
+						auto filterInfo = TriggerFilterInfo::Function::GetFilter(filter->getId());
+						addObject(new Filter(filter, filterInfo));
+					}
 				}
 
 				void generateTreeView(TreeView::TreeNode* parentTreeNode, TriggerFilterInfo::TreeNode* node = TriggerFilterInfo::Function::RootCategory) {
@@ -737,8 +673,12 @@ namespace GUI::Window
 					}
 				}
 
+				std::string getStatusName() override {
+					return "Composite: " + m_filterInfo->m_name;
+				}
 			private:
-				Trigger::Function::Trigger* m_trigger;
+				ICompositeFilter* m_compositeFilter;
+				TriggerFilterInfo::Function::Filter* m_filterInfo;
 				TreeView* m_treeView;
 				TriggerEditor* m_triggerEditor;
 			};
@@ -754,11 +694,24 @@ namespace GUI::Window
 					.text("Select function(s)")
 					.addItem(m_funcInput = new Widget::FunctionInput(funcManager))
 					.newLine()
+					.addItem(
+						new Elements::Button::ButtonStd(
+							"Ok",
+							Events::Listener(
+								std::function([=](Events::ISender* sender) {
+									
+								})
+							)
+						)
+					)
+					.separator()
 					.newLine()
 					.text("Filter list")
-					.addItem(m_filterList = new FilterList(trigger, this))
+					.addItem(m_filterList = new FilterList(trigger->getFilters(), this))
 					.newLine();
 			}
+
+			void loadSelectedFunctions();
 
 			Trigger::Function::Trigger* getTrigger() {
 				return static_cast<Trigger::Function::Trigger*>(m_trigger);
@@ -768,7 +721,7 @@ namespace GUI::Window
 				if (m_winEditor != nullptr) {
 					m_winEditor->close();
 				}
-				m_winEditor = new FilterWinEditor(getTrigger(), filter, filterInfo);
+				m_winEditor = new FilterWinEditor(getTrigger(), filter, filterInfo, getProject());
 				addWindow(m_winEditor);
 
 				m_winEditor->getCloseEvent() +=

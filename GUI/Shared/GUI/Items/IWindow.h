@@ -249,9 +249,11 @@ namespace GUI::Window
 				return;
 
 			using namespace Events;
+			bool isContinue = true;
 			for (auto& message : m_eventMessages) {
 				try {
-					message->execute();
+					if(isContinue)
+						message->execute();
 				}
 				catch (const GUI::Exception& ex) {
 					if (ex.getSource() != nullptr) {
@@ -262,6 +264,8 @@ namespace GUI::Window
 						showWinMessage(ex.getMessage());
 						//MY TODO*: return; + remove handled messages
 					}
+
+					isContinue = false;
 				}
 
 				delete message;

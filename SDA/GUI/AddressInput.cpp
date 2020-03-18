@@ -18,6 +18,14 @@ void AddressValueEditor::buildTypeSelector() {
 						auto dataTypeSelector = new Window::DataTypeSelector(m_typeManager);
 						getWindow()->addWindow(dataTypeSelector);
 						dataTypeSelector->setType(m_type);
+
+						dataTypeSelector->getCloseEvent() +=
+							[=](Events::ISender* sender) {
+								if (dataTypeSelector->getType() != nullptr) {
+									setType(dataTypeSelector->getType());
+									rebuild();
+								}
+							};
 					})
 				)
 			)

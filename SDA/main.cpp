@@ -238,7 +238,7 @@ int main()
 		//auto filter1 = new Trigger::Function::Filter::Cmp::RetValue(12, Trigger::Function::Filter::Cmp::Eq);
 
 		trigger->setStatCollector(sda->getStatManager()->getCollector());
-		trigger->addFilter(filter1);
+		trigger->getFilters()->addFilter(filter1);
 		hook->addTrigger(trigger);
 
 		setRot(1, 2, 3, 4, 5);

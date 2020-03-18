@@ -93,11 +93,11 @@ create table sda_func_tags
     desc          TEXT
 );
 
-create table sda_func_trigger_filters
-(
-    trigger_id INTEGER,
-    filter_id  INTEGER,
-    data       BLOB
+CREATE TABLE "sda_func_trigger_filters" (
+	"trigger_id"	INTEGER,
+	"filter_id"	    INTEGER,
+	"filter_idx"	INTEGER,
+	"data"	BLOB
 );
 
 create table sda_gvars
