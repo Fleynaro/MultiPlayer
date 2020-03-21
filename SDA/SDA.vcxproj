@@ -188,6 +188,7 @@
     <ClCompile Include="GUI\Signature.cpp" />
     <ClCompile Include="GUI\Windows\ItemControlPanels\FunctionCP.cpp" />
     <ClCompile Include="GUI\Windows\ItemLists\DataTypeList.cpp" />
+    <ClCompile Include="GUI\Windows\ItemLists\TriggerList.cpp" />
     <ClCompile Include="GUI\Windows\ProjectWindow.cpp" />
     <ClCompile Include="Module\FunctionTag\FunctionTag.cpp" />
     <ClCompile Include="GUI\Windows\ProjectManager.cpp" />

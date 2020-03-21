@@ -225,6 +225,10 @@ namespace CE
 				return m_hook;
 			}
 
+			inline bool hasHook() {
+				return m_hook != nullptr;
+			}
+
 			void createHook();
 
 			inline FunctionDecl* getDeclarationPtr() {

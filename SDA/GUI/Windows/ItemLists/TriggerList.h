@@ -257,6 +257,8 @@ namespace GUI::Widget
 		}
 
 		~TriggerInput() {
+			if (m_win != nullptr)
+				m_win->destroy();
 			m_triggerSelectList->destroy();
 			m_triggerShortList->destroy();
 			delete m_triggerListView;
@@ -317,26 +319,24 @@ namespace GUI::Widget
 				}
 			}
 
-			if (!m_isWinOpen && ImGui::Selectable("More...")) {
-				Window::TriggerList* win;
+			if (!m_win && ImGui::Selectable("More...")) {
 				getWindow()->addWindow(
-					win = new Window::TriggerList(m_triggerSelectList, "Select triggers")
+					m_win = new Window::TriggerList(m_triggerSelectList, "Select triggers")
 				);
-				win->getCloseEvent() +=
+				m_win->getCloseEvent() +=
 					[&](Events::ISender* sender) {
-						m_isWinOpen = false;
+						m_win = nullptr;
 					};
-				m_isWinOpen = true;
 				m_focused = false;
 			}
 		}
 
 	private:
+		Window::TriggerList* m_win = nullptr;
 		TriggerSelectList* m_triggerSelectList;
 		TriggerSelectList::ListView* m_triggerListView;
 		TriggerSelectList::ListView* m_triggerListShortView;
 		Container* m_triggerShortList;
-		bool m_isWinOpen = false;
 	};
 };
 
@@ -439,11 +439,10 @@ namespace GUI::Widget
 				}
 
 				CE::Type::Type* getType(int argIdx) {
-					if (m_trigger->getHooks().size() == 0)
+					if(m_trigger->getFunctions().size() == 0)
 						return new CE::Type::UInt64;
-					
-					auto hook = *m_trigger->getHooks().begin();
-					auto argList = hook->getFunctionDef()->getDeclaration().getSignature().getArgList();
+					auto func = *m_trigger->getFunctions().begin();
+					auto argList = func->getFunction()->getDeclaration().getSignature().getArgList();
 					if (argIdx >= argList.size() || argIdx < 0)
 						return new CE::Type::UInt64;
 
@@ -584,6 +583,7 @@ namespace GUI::Window
 					if (m_treeView == nullptr) {
 						m_treeView = new TreeView;
 						generateTreeView(m_treeView->getRoot());
+						//MYTODO: один раз генерить
 					}
 					m_treeView->setParent(this);
 					m_treeView->getTreeNodeSelectedEvent() += [&](TreeView::TreeNode* treeNode) {
@@ -699,16 +699,59 @@ namespace GUI::Window
 							"Ok",
 							Events::Listener(
 								std::function([=](Events::ISender* sender) {
-									
+									if (getTrigger()->isActive())
+										throw Exception("Trigger is active now.");
+
+									for (auto it : m_funcInput->getSelectedFunctions()) {
+										if (it->getDefinition().hasHook())
+											return;
+										it->getDefinition().createHook();
+									}
+
+									getTrigger()->getFunctions().clear();
+									for (auto it : m_funcInput->getSelectedFunctions()) {
+										getTrigger()->addFunction(it);
+									}
 								})
 							)
 						)
 					)
+					.sameLine().addItem(
+						new Elements::Button::ButtonStd(
+							"Start",
+							Events::Listener(
+								std::function([=](Events::ISender* sender) {
+									if (getTrigger()->isActive())
+										throw Exception("Trigger is active now.");
+
+									getTrigger()->start();
+								})
+							)
+						)
+					)
+					.sameLine().addItem(
+						new Elements::Button::ButtonStd(
+							"Stop",
+							Events::Listener(
+								std::function([=](Events::ISender* sender) {
+									if (!getTrigger()->isActive())
+										throw Exception("Trigger is not active now.");
+
+									getTrigger()->stop();
+								})
+							)
+						)
+					)
+					.beginIf(_condition(getTrigger()->isActive()))
+						.text("Trigger is active now.")
+					.end()
 					.separator()
 					.newLine()
 					.text("Filter list")
 					.addItem(m_filterList = new FilterList(trigger->getFilters(), this))
 					.newLine();
+
+				loadSelectedFunctions();
 			}
 
 			void loadSelectedFunctions();

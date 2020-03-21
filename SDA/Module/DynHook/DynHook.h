@@ -6,6 +6,7 @@
 
 void module_dynhook();
 
+//MYTODO: проблема. хук функций, у которых в начале вызов другой функции => нельзя прыгнуть из сегмента данных в сегмент кода
 
 namespace CE
 {
@@ -54,6 +55,13 @@ namespace CE
 				m_callback_after(callback_after)
 			{}
 
+			~DynHook() {
+				unhook();
+
+				if (m_method != nullptr)
+					delete m_method;
+			}
+
 			void setXmmSaved(bool value) {
 				m_xmmSaved = value;
 			}
@@ -89,11 +97,11 @@ namespace CE
 			{
 				using namespace Assembly;
 
-				m_tramplineBuffer = VirtualAlloc(NULL, 500, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-				if (m_tramplineBuffer == NULL) {
-					return false;
-				}
-				ByteStream bs((byte*)m_tramplineBuffer);
+				m_tramplineBuffer = new BYTE[500];
+				DWORD old;
+				VirtualProtect(m_tramplineBuffer, 500, PAGE_EXECUTE_READWRITE, &old);
+
+				ByteStream bs(m_tramplineBuffer);
 				bs.setWriteFlag(false);
 				code.compile(bs);
 				bs.setWriteFlag(true);
@@ -106,6 +114,10 @@ namespace CE
 			void enable()
 			{
 				using namespace Assembly;
+
+				if (m_tramplineBuffer == nullptr) {
+					hook();
+				}
 
 				//make jump to the trampline
 				Block jmpToTrampline;
@@ -134,11 +146,11 @@ namespace CE
 
 			bool unhook()
 			{
-				if (m_tramplineBuffer == NULL) {
+				if (m_tramplineBuffer == nullptr) {
 					return false;
 				}
-				VirtualFree(m_tramplineBuffer, 0, MEM_RELEASE);
-				m_tramplineBuffer = NULL;
+				delete[] m_tramplineBuffer;
+				m_tramplineBuffer = nullptr;
 
 				disable();
 				m_oldBytesSize = 0;
@@ -226,6 +238,8 @@ namespace CE
 
 			void setMethod(Method::IMethod* method)
 			{
+				if (m_method != nullptr)
+					delete m_method;
 				m_method = method;
 			}
 
@@ -244,7 +258,7 @@ namespace CE
 			int m_oldBytesSize = 0;
 		private:
 			Method::IMethod* m_method = nullptr;
-			LPVOID m_tramplineBuffer = NULL;
+			byte* m_tramplineBuffer = nullptr;
 			int m_func_size = 30;
 			int m_func_argsCount = 5;
 			bool m_xmmSaved = true;
@@ -472,7 +486,6 @@ namespace CE
 					//make the trampline
 					if (!m_dynHook->createTrampline(trampline))
 						return false;
-					m_dynHook->enable();
 					return true;
 				}
 
@@ -660,7 +673,7 @@ namespace CE
 					int argCount = min(m_dynHook->getArgCount(), 4);
 					int64_t stackFrameSize = 0x100;
 
-					//allocate the main stack frame and write arguments
+					//allocate the main stack frame and write arguments there for callback_before
 					int mainStackFrameSize = (2 * argCount * 0x8 + 0x10) & ~0xF; //aligning on 16-byte boundary
 					mainStackFrameSize += 8;
 					trampline
@@ -683,7 +696,7 @@ namespace CE
 					trampline
 						.addUnit(&NewCallState);
 
-					//call the callback_before
+					//*** call the callback_before ***
 					trampline
 						.addUnit(&GetCurCallState)
 						.mov(Register::rax, 0x8, Register::rbp)
@@ -698,9 +711,10 @@ namespace CE
 						//deallocate the main stack frame
 						.add(Register::rsp, (uint64_t)mainStackFrameSize)
 						.pop(Register::rbp)
-						.mov(Register::dl, Register::al)
+						.push(Register::rax)
 						//store the return address
 						.addUnit(&GetCurCallState)
+						.pop(Register::rdx)
 						.pop(Register::rcx)
 						.mov(Register::rax, 0x0, Register::rcx)
 						//check if callback_before returns true or false
@@ -722,13 +736,15 @@ namespace CE
 							trampline
 							.movsd(regs_xmm[i], Register::rsp, -0x08 * (argCount + i) - 0x10);
 					}
-					//call the original function
+					//*** call the original function ***
 					trampline
 						.rawBlock(&rawBlock)
 						.mov(Register::rax, (uint64_t)m_dynHook->m_func_ptr + m_dynHook->m_oldBytesSize)
 						.jmp(Register::rax); //problem with it
 					rawBlock->setData(m_dynHook->m_oldBytes, m_dynHook->m_oldBytesSize);
 
+
+					//after the original function executed
 					trampline
 						.label(label)
 						.sub(Register::rsp, 0x8)
@@ -741,6 +757,7 @@ namespace CE
 							.movsd(Register::rsp, 0, Register::xmm0);
 					}
 
+					//*** call the callback_after ***
 					if (m_dynHook->m_callback_after != nullptr) {
 						trampline
 							.mov(Register::rcx, (uint64_t)m_dynHook)
@@ -748,6 +765,8 @@ namespace CE
 							.addUnit(&callback_after);
 					}
 
+
+					//we go here anyway
 					trampline
 						.label(label2)
 						.addUnit(&PopCallState);
@@ -771,7 +790,6 @@ namespace CE
 					//make the trampline
 					if (!m_dynHook->createTrampline(trampline))
 						return false;
-					m_dynHook->enable();
 					return true;
 				}
 
@@ -944,7 +962,6 @@ namespace CE
 					//make the trampline
 					if (!m_dynHook->createTrampline(trampline))
 						return false;
-					m_dynHook->enable();
 					return true;
 				}
 

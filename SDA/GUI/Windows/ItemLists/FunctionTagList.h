@@ -335,6 +335,8 @@ namespace GUI::Widget
 		}
 
 		~FunctionTagInput() {
+			if (m_win != nullptr)
+				m_win->destroy();
 			delete m_funcTagList;
 			delete m_funcTagListView;
 			delete m_funcTagListShortView;
@@ -395,26 +397,24 @@ namespace GUI::Widget
 				}
 			}
 
-			if (!m_isWinOpen && ImGui::Selectable("More...")) {
-				Window::FunctionTagList* win;
+			if (!m_win && ImGui::Selectable("More...")) {
 				getWindow()->addWindow(
-					win = new Window::FunctionTagList(m_funcTagList, "Select function tags")
+					m_win = new Window::FunctionTagList(m_funcTagList, "Select function tags")
 				);
-				win->getCloseEvent() +=
+				m_win->getCloseEvent() +=
 					[&](Events::ISender* sender) {
-						m_isWinOpen = false;
+						m_win = nullptr;
 					};
-				m_isWinOpen = true;
 				m_focused = false;
 			}
 		}
 
 	private:
+		Window::FunctionTagList* m_win = nullptr;
 		FuncTagSelectList* m_funcTagList;
 		FuncTagSelectList::TreeView* m_funcTagListView;
 		FuncTagSelectList::TreeView* m_funcTagListShortView;
 		Container* m_funcTagShortList;
-		bool m_isWinOpen = false;
 	};
 };
 

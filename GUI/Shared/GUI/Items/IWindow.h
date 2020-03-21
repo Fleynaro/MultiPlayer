@@ -198,7 +198,7 @@ namespace GUI::Window
 			if (getParent() != nullptr) {
 				getParent()->removeWindow(this);
 			}
-			delete this;
+			destroy();
 		}
 
 		void addEventMessage(Events::IEventMessage* message) override {

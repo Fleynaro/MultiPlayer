@@ -230,6 +230,7 @@ int main()
 		hook->getDynHook()->setArgCount(5);
 		hook->getDynHook()->setMethod(new CE::Hook::Method::Method2<CE::Trigger::Function::TriggerState>(hook->getDynHook()));
 		hook->getDynHook()->hook();
+		hook->getDynHook()->enable();
 
 		auto trigger = sda->getTriggerManager()->createFunctionTrigger("for filtering");
 		//auto filter1 = new Trigger::Function::Filter::Object(nullptr);
@@ -239,7 +240,7 @@ int main()
 
 		trigger->setStatCollector(sda->getStatManager()->getCollector());
 		trigger->getFilters()->addFilter(filter1);
-		hook->addTrigger(trigger);
+		hook->addActiveTrigger(trigger);
 
 		setRot(1, 2, 3, 4, 5);
 		setRot(1, 2.6, 3.7, 4.8, 500);

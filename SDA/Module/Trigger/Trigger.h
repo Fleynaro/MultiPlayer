@@ -59,8 +59,8 @@ namespace CE
 			public:
 				Hook(CE::Function::FunctionDefinition* definition);
 
-				inline std::list<Trigger*>& getTriggers() {
-					return m_triggers;
+				inline std::list<Trigger*>& getActiveTriggers() {
+					return m_activeTriggers;
 				}
 
 				inline CE::Hook::DynHook* getDynHook() {
@@ -71,16 +71,25 @@ namespace CE
 					return static_cast<CE::Function::FunctionDefinition*>(getDynHook()->getUserPtr());
 				}
 
-				void addTrigger(Trigger* trigger) {
-					m_triggers.push_back(trigger);
+				void addActiveTrigger(Trigger* trigger) {
+					//mutex
+					if (m_activeTriggers.size() == 0) {
+						m_hook.enable();
+					}
+					m_activeTriggers.push_back(trigger);
 				}
 
-				void removeTrigger(Trigger* trigger) {
-					m_triggers.remove(trigger);
+				void removeActiveTrigger(Trigger* trigger) {
+					//mutex
+					m_activeTriggers.remove(trigger);
+
+					if (m_activeTriggers.size() == 0) {
+						m_hook.disable();
+					}
 				}
 			private:
 				CE::Hook::DynHook m_hook;
-				std::list<Trigger*> m_triggers;
+				std::list<Trigger*> m_activeTriggers;
 			};
 
 			class Trigger : public ITrigger
@@ -138,37 +147,88 @@ namespace CE
 					m_notExecute = toggle;
 				}
 
-				void addHook(Hook* hook) {
-					m_hooks.push_back(hook);
-					hook->addTrigger(this);
+				void addFunction(API::Function::Function* function) {
+					m_functions.push_back(function);
+				}
+
+				void start() {
+					setActiveState(true);
+					m_isActive = true;
+				}
+
+				void stop() {
+					setActiveState(false);
+					m_isActive = false;
+				}
+
+				bool isActive() {
+					return m_isActive;
 				}
 
 				Filter::ICompositeFilter* getFilters() {
 					return m_compositeFilter;
 				}
 
-				auto& getHooks() {
-					return m_hooks;
+				auto& getFunctions() {
+					return m_functions;
 				}
 			private:
 				Stat::Function::Collector* m_statCollector = nullptr;
 				Filter::ICompositeFilter* m_compositeFilter;
-				std::list<Hook*> m_hooks;
+				std::list<API::Function::Function*> m_functions;
 				bool m_notExecute = false;
+				bool m_isActive = false;
+
+				void setActiveState(bool state) {
+					for (auto it : m_functions) {
+						if (!it->getDefinition().hasHook())
+							continue;
+						if (state) {
+							it->getDefinition().getHook()->addActiveTrigger(this);
+						}
+						else {
+							it->getDefinition().getHook()->removeActiveTrigger(this);
+						}
+					}
+				}
 			};
 
 			static bool callback_before(CE::Hook::DynHook* hook)
 			{
 				auto func = (CE::Function::FunctionDefinition*)hook->getUserPtr();
 				bool exectute = true;
-				for (auto trigger : func->getHook()->getTriggers()) {
+				for (auto trigger : func->getHook()->getActiveTriggers()) {
 					exectute &= trigger->actionBefore(hook);
 				}
 
-				/*	auto value1 = hook->getArgumentValue<uint64_t>(5);
-					auto value2 = hook->getXmmArgumentValue<float>(2);
-					auto value3 = hook->getXmmArgumentValue<float>(3);
-					auto value4 = hook->getXmmArgumentValue<float>(4);*/
+				auto funcName = func->getDeclaration().getName();
+				auto& signature = func->getDeclaration().getSignature();
+				auto hookMethod = hook->getMethod();
+
+				auto value1 = hook->getXmmArgumentValue<uint64_t>(1);
+				auto value2 = hook->getXmmArgumentValue<uint64_t>(2);
+				auto value3 = hook->getXmmArgumentValue<uint64_t>(3);
+				auto value4 = hook->getXmmArgumentValue<uint64_t>(4);
+				auto value5 = hook->getXmmArgumentValue<uint64_t>(5);
+				auto value6 = hook->getXmmArgumentValue<uint64_t>(6);
+				auto value7 = hook->getXmmArgumentValue<uint64_t>(7);
+
+				auto int_value1 = hook->getXmmArgumentValue<int>(1);
+				auto int_value2 = hook->getXmmArgumentValue<int>(2);
+				auto int_value3 = hook->getXmmArgumentValue<int>(3);
+				auto int_value4 = hook->getXmmArgumentValue<int>(4);
+				auto int_value5 = hook->getXmmArgumentValue<int>(5);
+				auto int_value6 = hook->getXmmArgumentValue<int>(6);
+				auto int_value7 = hook->getXmmArgumentValue<int>(7);
+
+				auto xmm_value1 = hook->getXmmArgumentValue<float>(1);
+				auto xmm_value2 = hook->getXmmArgumentValue<float>(2);
+				auto xmm_value3 = hook->getXmmArgumentValue<float>(3);
+				auto xmm_value4 = hook->getXmmArgumentValue<float>(4);
+				auto xmm_value5 = hook->getXmmArgumentValue<float>(5);
+				auto xmm_value6 = hook->getXmmArgumentValue<float>(6);
+				auto xmm_value7 = hook->getXmmArgumentValue<float>(7);
+				auto xmm_value8 = hook->getXmmArgumentValue<float>(8);
 
 				return exectute;
 			}
@@ -176,10 +236,16 @@ namespace CE
 			static void callback_after(CE::Hook::DynHook* hook)
 			{
 				auto func = (CE::Function::FunctionDefinition*)hook->getUserPtr();
-				for (auto trigger : func->getHook()->getTriggers()) {
+				for (auto trigger : func->getHook()->getActiveTriggers()) {
 					trigger->actionAfter(hook);
 				}
 				//hook->setReturnValue(11);
+
+				auto retAddr = hook->getReturnAddress();
+				auto retValue = hook->getReturnValue();
+				auto xmm_retValue = hook->getXmmReturnValue<float>();
+
+				int a = 5;
 			}
 		};
 	};

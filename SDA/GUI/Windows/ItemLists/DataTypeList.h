@@ -290,6 +290,8 @@ namespace GUI::Widget
 		}
 
 		~DataTypeInput() {
+			if (m_win != nullptr)
+				m_win->destroy();
 			m_dataTypeList->destroy();
 			m_dataTypeShortList->destroy();
 			delete m_dataTypeListView;
@@ -339,26 +341,24 @@ namespace GUI::Widget
 				}
 			}
 
-			if (!m_isWinOpen && ImGui::Selectable("More...")) {
-				Window::DataTypeList* win;
+			if (!m_win && ImGui::Selectable("More...")) {
 				getWindow()->addWindow(
-					win = new Window::DataTypeList(m_dataTypeList)
+					m_win = new Window::DataTypeList(m_dataTypeList)
 				);
-				win->getCloseEvent() +=
+				m_win->getCloseEvent() +=
 					[&](Events::ISender* sender) {
-						m_isWinOpen = false;
+						m_win = nullptr;
 					};
-				m_isWinOpen = true;
 				m_focused = false;
 			}
 		}
 	private:
+		Window::DataTypeList* m_win = nullptr;
 		DataTypeList* m_dataTypeList;
 		DataTypeList::ListView* m_dataTypeListView;
 		DataTypeList::ListView* m_dataTypeShortListView;
 		Container* m_dataTypeShortList;
 		CE::Type::Type* m_selectedType = nullptr;
-		bool m_isWinOpen = false;
 		Widget::DataTypeEventType::EventHandlerType* m_selectDataTypeEventHandler;
 	};
 };
