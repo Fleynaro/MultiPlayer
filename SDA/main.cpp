@@ -60,6 +60,8 @@ int main()
 		pathh = "R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases";
 	}
 
+	Hook::init();
+
 	ProgramExe* sda = new ProgramExe(GetModuleHandle(NULL), FS::Directory(pathh));
 	try {
 		sda->initDataBase("database.db");
@@ -227,9 +229,6 @@ int main()
 
 		function->getDefinition().createHook();
 		auto hook = function->getDefinition().getHook();
-		hook->getDynHook()->setArgCount(5);
-		hook->getDynHook()->setMethod(new CE::Hook::Method::Method2<CE::Trigger::Function::TriggerState>(hook->getDynHook()));
-		hook->getDynHook()->hook();
 		hook->getDynHook()->enable();
 
 		auto trigger = sda->getTriggerManager()->createFunctionTrigger("for filtering");
@@ -238,7 +237,7 @@ int main()
 		auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
 		//auto filter1 = new Trigger::Function::Filter::Cmp::RetValue(12, Trigger::Function::Filter::Cmp::Eq);
 
-		trigger->setStatCollector(sda->getStatManager()->getCollector());
+		//trigger->setStatCollector(sda->getStatManager()->getCollector());
 		trigger->getFilters()->addFilter(filter1);
 		hook->addActiveTrigger(trigger);
 

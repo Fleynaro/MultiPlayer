@@ -205,21 +205,21 @@ namespace CE
 				auto& signature = func->getDeclaration().getSignature();
 				auto hookMethod = hook->getMethod();
 
-				auto value1 = hook->getXmmArgumentValue<uint64_t>(1);
-				auto value2 = hook->getXmmArgumentValue<uint64_t>(2);
-				auto value3 = hook->getXmmArgumentValue<uint64_t>(3);
-				auto value4 = hook->getXmmArgumentValue<uint64_t>(4);
-				auto value5 = hook->getXmmArgumentValue<uint64_t>(5);
-				auto value6 = hook->getXmmArgumentValue<uint64_t>(6);
-				auto value7 = hook->getXmmArgumentValue<uint64_t>(7);
+				auto value1 = hook->getArgumentValue<uint64_t>(1);
+				auto value2 = hook->getArgumentValue<uint64_t>(2);
+				auto value3 = hook->getArgumentValue<uint64_t>(3);
+				auto value4 = hook->getArgumentValue<uint64_t>(4);
+				auto value5 = hook->getArgumentValue<uint64_t>(5);
+				auto value6 = hook->getArgumentValue<uint64_t>(6);
+				auto value7 = hook->getArgumentValue<uint64_t>(7);
 
-				auto int_value1 = hook->getXmmArgumentValue<int>(1);
-				auto int_value2 = hook->getXmmArgumentValue<int>(2);
-				auto int_value3 = hook->getXmmArgumentValue<int>(3);
-				auto int_value4 = hook->getXmmArgumentValue<int>(4);
-				auto int_value5 = hook->getXmmArgumentValue<int>(5);
-				auto int_value6 = hook->getXmmArgumentValue<int>(6);
-				auto int_value7 = hook->getXmmArgumentValue<int>(7);
+				auto int_value1 = hook->getArgumentValue<int>(1);
+				auto int_value2 = hook->getArgumentValue<int>(2);
+				auto int_value3 = hook->getArgumentValue<int>(3);
+				auto int_value4 = hook->getArgumentValue<int>(4);
+				auto int_value5 = hook->getArgumentValue<int>(5);
+				auto int_value6 = hook->getArgumentValue<int>(6);
+				auto int_value7 = hook->getArgumentValue<int>(7);
 
 				auto xmm_value1 = hook->getXmmArgumentValue<float>(1);
 				auto xmm_value2 = hook->getXmmArgumentValue<float>(2);

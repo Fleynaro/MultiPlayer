@@ -12,6 +12,7 @@ public:
 		m_dir = FS::File::getModule(hModule).getDirectory();
 		m_projectManager = new ::ProjectManager(FS::File(getProgramDirectory(), "projects.json"));
 		m_userInterface = new UserInterface;
+		CE::Hook::init();
 	}
 
 	void start() {
