@@ -1,5 +1,22 @@
 #include "DynHook.h"
 
+using namespace CE::Hook::Method;
+using namespace CE::Assembly;
+
+
+//template<typename UserType>
+//void Method2<UserType>::generateDynFuncBody()
+//{
+//
+//}
+
+
+
+
+
+
+
+
 //TODO на сегодня
 /*
 	1) сделать функцию хука. Сохранить аргументы. Узнать про хранение float, double, 5-ого и тд аргумента

@@ -2,6 +2,7 @@
 #include <SdaInterface.h>
 #include <CallGraph/CallGraph.h>
 #include <FunctionTag/FunctionTag.h>
+
 Program* g_program = nullptr;
 
 
@@ -34,6 +35,9 @@ void changeGvar() {
 
 int setRot(int a, float x, float y, float z, int c)
 {
+	if (a <= 2) {
+		int result = setRot(a + 1, x, y, z, c);
+	}
 	g_IntegerVal = 100;
 	float result = x + y + z + a + c + g_someClass->getValue();
 	result = pow(result, 1);

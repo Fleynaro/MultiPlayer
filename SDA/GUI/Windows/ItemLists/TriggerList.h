@@ -451,6 +451,9 @@ namespace GUI::Widget
 
 			public:
 				void save() override {
+					if (m_argIndexInput->getInputValue() <= 0)
+						throw Exception(m_argIndexInput, "Argument must be > 0");
+
 					m_filter->m_argId = m_argIndexInput->getInputValue();
 					m_filter->m_operation = m_operationInput->getOperation();
 					m_filter->m_value = m_valueInput->getValue();

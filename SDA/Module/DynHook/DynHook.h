@@ -288,7 +288,6 @@ namespace CE
 
 				struct CallStack
 				{
-					CallState* m_curCallState = nullptr;
 					std::vector<CallState> m_buffer;
 
 					uint32_t m_callStateId = 0;
@@ -321,23 +320,25 @@ namespace CE
 				}
 
 				static CallState* getCurCallState() {
-					return getCurCallStack()->m_curCallState;
+					return (CallState*)&getCurCallStack()->m_buffer[getCurCallStack()->m_buffer.size() - 1];
 				}
 
 				static void newCallStack() {
 					m_callStack = new CallStack;
 				}
 
-				static void newCallState() {
+				static CallState* newCallState() {
 					if (getCurCallStack() == nullptr) {
 						newCallStack();
 					}
 					getCurCallStack()->m_buffer.push_back(CallState(getCurCallStack()->getNewId()));
-					getCurCallStack()->m_curCallState = (CallState*)&getCurCallStack()->m_buffer[getCurCallStack()->m_buffer.size() - 1];
+					return getCurCallState();
 				}
 
-				static void popCallState() {
+				static uint64_t popCallState() {
+					auto retAddr = getCurCallState()->m_ret_addr;
 					getCurCallStack()->m_buffer.pop_back();
+					return retAddr;
 				}
 
 				void generateDynFuncBody() override
@@ -347,25 +348,14 @@ namespace CE
 					Register::Register64 regs_gen[4] = { Register::rcx, Register::rdx, Register::r8, Register::r9 };
 					Register::Register64 regs_xmm[4] = { Register::xmm0, Register::xmm1, Register::xmm2, Register::xmm3 };
 
-					Block GetCurCallState;
-					GetCurCallState
-						.push(Register::rbp)
-						.mov(Register::rbp, Register::rsp)
-						.sub(Register::rsp, 0x100)
-						.mov(Register::rax, (uint64_t)& getCurCallState)
-						.call(Register::rax)
-						.add(Register::rsp, 0x100)
-						.pop(Register::rbp);
-						//.mov_ptr(Register::rax, (uint64_t)& m_callStack)
-						//.mov(Register::rax, Register::rax, 0);
 					Block NewCallState;
 					NewCallState
 						.push(Register::rbp)
 						.mov(Register::rbp, Register::rsp)
-						.sub(Register::rsp, 0x100)
+						.sub(Register::rsp, 0x108)
 						.mov(Register::rax, (uint64_t)& newCallState)
 						.call(Register::rax)
-						.add(Register::rsp, 0x100)
+						.add(Register::rsp, 0x108)
 						.pop(Register::rbp);
 					Block PopCallState;
 					PopCallState
@@ -403,10 +393,14 @@ namespace CE
 					int mainStackFrameSize = (2 * argCount * 0x8 + 0x10) & ~0xF; //aligning on 16-byte boundary
 					mainStackFrameSize += 8;
 					Assembly::Block body;
+
+					//stack frame
 					body
+						.mov(Register::rax, Register::rsp, 0x0) //get origin ret addr
 						.push(Register::rbp)
 						.mov(Register::rbp, Register::rsp)
-						.sub(Register::rsp, (uint64_t)mainStackFrameSize);
+						.sub(Register::rsp, (uint64_t)mainStackFrameSize)
+						.push(Register::rax);
 
 					//store 4 first args
 					for (int i = 0; i < argCount; i++)
@@ -421,12 +415,14 @@ namespace CE
 
 					//create a new call state
 					body
-						.addUnit(&NewCallState);
+						.addUnit(&NewCallState)
+						//store the origin return address
+						.pop(Register::rcx) //get origin ret addr
+						.mov(Register::rax, 0x0, Register::rcx)
+						.mov(Register::rax, 0x8, Register::rbp);
 
 					//*** call the callback_before ***
 					body
-						.addUnit(&GetCurCallState)
-						.mov(Register::rax, 0x8, Register::rbp)
 						.mov(Register::rcx, (uint64_t)m_dynHook)
 						.addUnit(&callback_before);
 
@@ -434,24 +430,22 @@ namespace CE
 					Label label2;
 					//prepare all to call the original function
 					body
-						.push(Register::rax)
-						.addUnit(&GetCurCallState)
-						.pop(Register::rdx)
 						//deallocate the main stack frame
 						.add(Register::rsp, (uint64_t)mainStackFrameSize)
-						.pop(Register::rbp)
-						//store the origin return address
-						.pop(Register::rcx) //get origin ret addr
-						.mov(Register::rax, 0x0, Register::rcx)
-						//check if callback_before returns true or false
-						.sub(Register::rsp, (uint64_t)m_dynHook->isXmmSaved() * 0x8 + 0x8 + 0x8)
-						.test(Register::dl, Register::dl)
+						.pop(Register::rbp);
+
+					//check if callback_before returns true or false
+					auto retValuesSize = (uint64_t)m_dynHook->isXmmSaved() * 0x8 + 0x8;
+					body
+						//for return values(xmm, not xmm)
+						.sub(Register::rsp, retValuesSize)
+						.test(Register::al, Register::al)
 						.jz(&label2)
-						.add(Register::rsp, (uint64_t)m_dynHook->isXmmSaved() * 0x8 + 0x8 + 0x8)
+						.add(Register::rsp, retValuesSize)
 						//replace the return address with another
 						.mov(Register::rcx, &label)
-						.push(Register::rcx);
-
+						.mov(Register::rsp, 0x0, Register::rcx);
+					
 					//restore 4 first args
 					for (int i = 0; i < argCount; i++)
 						body
@@ -495,7 +489,8 @@ namespace CE
 					//we go here anyway
 					body
 						.label(label2)
-						.addUnit(&PopCallState);
+						.addUnit(&PopCallState)
+						.mov(Register::rcx, Register::rax);
 					if (m_dynHook->isXmmSaved()) {
 						//return xmm value
 						body
@@ -503,9 +498,6 @@ namespace CE
 							.add(Register::rsp, 0x8);
 					}
 					body
-						//return addr
-						.addUnit(&GetCurCallState)
-						.mov(Register::rcx, Register::rax, 0x0)
 						//return value
 						.pop(Register::rax)
 						//return back

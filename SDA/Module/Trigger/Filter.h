@@ -275,7 +275,11 @@ namespace CE
 							using namespace CE::Type;
 
 							auto function = (CE::Function::FunctionDefinition*)hook->getUserPtr();
-							auto type = function->getDeclaration().getSignature().getArgList()[m_argId - 1];
+							auto& argList = function->getDeclaration().getSignature().getArgList();
+							if (m_argId >= argList.size())
+								return false;
+
+							auto type = argList[m_argId - 1];
 							return cmp(
 								SystemType::GetNumberSetOf(type) == SystemType::Real ? hook->getXmmArgumentValue(m_argId) : hook->getArgumentValue(m_argId),
 								m_value,
@@ -310,7 +314,7 @@ namespace CE
 							m_operation = data.m_operation;
 						}
 
-						int m_argId = 0;
+						int m_argId = 1;
 						uint64_t m_value = 0;
 						Operation m_operation = Operation::Eq;
 					private:
