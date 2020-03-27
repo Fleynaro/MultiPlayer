@@ -230,6 +230,8 @@
   <ItemGroup>
     <ClInclude Include="GUI\AddressInput.h" />
     <ClInclude Include="GUI\ClassEditor.h" />
+    <ClInclude Include="GUI\TriggerTableView.h" />
+    <ClInclude Include="GUI\Widgets\TableView.h" />
     <ClInclude Include="GUI\Windows\ItemControlPanels\FunctionCP.h" />
     <ClInclude Include="GUI\Windows\ItemLists\FunctionTagList.h" />
     <ClInclude Include="GUI\Windows\ItemLists\TriggerList.h" />
@@ -291,6 +293,7 @@
     <ClInclude Include="Module\Statistic\Function.h" />
     <ClInclude Include="Module\Trigger\Filter.h" />
     <ClInclude Include="Module\Trigger\Trigger.h" />
+    <ClInclude Include="Module\Trigger\TriggerTableLog.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="Project.h" />
     <ClInclude Include="ProjectManager.h" />
@@ -305,6 +308,7 @@
     <ClInclude Include="Utils\Buffer.h" />
     <ClInclude Include="Utils\MultipleAction.h" />
     <ClInclude Include="Utils\ObjectHash.h" />
+    <ClInclude Include="Utils\Table.h" />
     <ClInclude Include="Vendor\imgui\imconfig.h" />
     <ClInclude Include="Vendor\imgui\imgui.h" />
     <ClInclude Include="Vendor\imgui\imgui_impl_dx11.h" />

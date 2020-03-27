@@ -181,7 +181,7 @@ namespace CE
 
 				void writeHeader(Type type);
 
-				bool writeTypeValue(void* argAddrValue, CE::Type::Type* argType) {
+				static bool writeTypeValue(Buffer::Stream& bufferStream, void* argAddrValue, CE::Type::Type* argType) {
 					if (argType->getPointerLvl() > 1) {
 						argAddrValue = Address::Dereference(argAddrValue, argType->getPointerLvl() - 1);
 						if (argAddrValue == nullptr)
@@ -197,8 +197,8 @@ namespace CE
 					//MYTODO: узнать тип указателя: на стек, на кучу, массив ли?
 
 					if (Address(argAddrValue).canBeRead()) {
-						getStream().write((USHORT)size);
-						getStream().writeFrom(argAddrValue, size);
+						bufferStream.write((USHORT)size);
+						bufferStream.writeFrom(argAddrValue, size);
 						return true;
 					}
 
@@ -263,7 +263,7 @@ namespace CE
 							Задача: 8 байт -> массив байт(нач. адрес и размер)
 						*/
 						auto argType = getFunctionDef()->getDeclaration().getSignature().getArgList()[argIdx - 1];
-						if (writeTypeValue(argAddrValue, argType)) {
+						if (writeTypeValue(getStream(), argAddrValue, argType)) {
 							m_argHeader->m_argExtraBits |= uint64_t(0b1) << (argIdx - 1);
 						}
 					}

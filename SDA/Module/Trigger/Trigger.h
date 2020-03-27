@@ -48,6 +48,7 @@ namespace CE
 		{
 			class Hook;
 			class Trigger;
+			class TableLog;
 
 			struct TriggerState
 			{
@@ -109,35 +110,9 @@ namespace CE
 					return Type::FunctionTrigger;
 				}
 			public:
-				bool actionBefore(CE::Hook::DynHook* hook) {
-					bool sendStat = false;
-					bool notExecute = false;
-					if (getFilters()->checkFilterBefore(hook)) {
-						notExecute = m_notExecute;
-						hook->getUserData<TriggerState>().m_beforeFilter = true;
-						sendStat = true;
-					}
+				bool actionBefore(CE::Hook::DynHook* hook);
 
-					if (sendStat) {
-						if (m_statCollector != nullptr) {
-							m_statCollector->addBeforeCallInfo(this, hook);
-						}
-					}
-					return !notExecute;
-				}
-
-				void actionAfter(CE::Hook::DynHook* hook) {
-					bool sendStat = hook->getUserData<TriggerState>().m_beforeFilter;
-					if (getFilters()->checkFilterAfter(hook)) {
-						sendStat = true;
-					}
-
-					if (sendStat) {
-						if (m_statCollector != nullptr) {
-							m_statCollector->addAfterCallInfo(this, hook);
-						}
-					}
-				}
+				void actionAfter(CE::Hook::DynHook* hook);
 
 				void setStatCollector(Stat::Function::Collector* collector) {
 					m_statCollector = collector;
@@ -172,8 +147,15 @@ namespace CE
 				auto& getFunctions() {
 					return m_functions;
 				}
+
+				TableLog* getTableLog() {
+					return m_tableLog;
+				}
+
+				void setTableLogEnable(bool toggle);
 			private:
 				Stat::Function::Collector* m_statCollector = nullptr;
+				TableLog* m_tableLog = nullptr;
 				Filter::ICompositeFilter* m_compositeFilter;
 				std::list<API::Function::Function*> m_functions;
 				bool m_notExecute = false;

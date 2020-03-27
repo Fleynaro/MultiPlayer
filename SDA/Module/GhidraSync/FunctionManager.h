@@ -137,6 +137,8 @@ namespace CE
 			void update(HashMap hashmap) {
 				auto functions = pull(hashmap);
 				for (auto function : functions) {
+					if (function.name.find("FUN_") != std::string::npos)
+						continue;
 					changeOrCreate(function);
 				}
 			}

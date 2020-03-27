@@ -11,6 +11,10 @@ using namespace CE;
 	MYTODO: сделать окно редактирования фильтров через наследование
 	MYTODO: сделать редактирование фильтров в items.h, сделать интерфейс-элемент(getName(), onClickEvent, )
 	MYTODO: отображать при выборе списка функций в редакторе триггера у каждой функции состояние хука
+
+
+	MYTODO: сделать лог вызовов, который в основном будет в ОЗУ. Сделать таблицу с сортировкой по полям, с поиском, со страницами, которая будет отображать данные этого лога. Что-то типа БД.
+	MYTODO: сделать фильтры, которые будут применимы ко всем функциям(например поиск значения среди аргументов без указания индекса и других сигнатурно-зависимых параметров)
 */
 
 namespace GUI::Widget
@@ -482,10 +486,9 @@ namespace GUI::Widget
 };
 
 
+
 namespace GUI::Window
 {
-	
-
 	class GenericTriggerEditor
 		: public PrjWindow
 	{
@@ -748,6 +751,16 @@ namespace GUI::Window
 					.beginIf(_condition(getTrigger()->isActive()))
 						.text("Trigger is active now.")
 					.end()
+
+					.addItem(m_cb_tableLog = new Elements::Generic::Checkbox("Call log", getTrigger()->getTableLog() != nullptr,
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								getTrigger()->setTableLogEnable(m_cb_tableLog->isSelected());
+								buildTableLog();
+							})
+						)
+					))
+					.addItem(m_tableLogContainer = new Container)
 					.separator()
 					.newLine()
 					.text("Filter list")
@@ -755,9 +768,12 @@ namespace GUI::Window
 					.newLine();
 
 				loadSelectedFunctions();
+				buildTableLog();
 			}
 
 			void loadSelectedFunctions();
+
+			void buildTableLog();
 
 			Trigger::Function::Trigger* getTrigger() {
 				return static_cast<Trigger::Function::Trigger*>(m_trigger);
@@ -779,6 +795,8 @@ namespace GUI::Window
 			Widget::FunctionInput* m_funcInput;
 			FilterList* m_filterList;
 			FilterWinEditor* m_winEditor = nullptr;
+			Elements::Generic::Checkbox* m_cb_tableLog = nullptr;
+			Container* m_tableLogContainer;
 		};
 	};
 };

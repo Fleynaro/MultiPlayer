@@ -901,6 +901,10 @@ namespace GUI
 		{
 		public:
 			~TR() {
+				clear();
+			}
+
+			void clear() {
 				for (auto it : m_columns) {
 					it->destroy();
 				}

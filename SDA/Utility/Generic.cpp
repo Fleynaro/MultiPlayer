@@ -50,6 +50,12 @@ std::string String::ToUpper(std::string source)
 	return source;
 }
 
+bool String::Contains(const std::string& str, const std::string& keyword)
+{
+	return Generic::String::ToLower(str)
+		.find(Generic::String::ToLower(keyword)) != std::string::npos;
+}
+
 uint64_t String::HexToNumber(std::string source)
 {
 	std::istringstream converter(source);

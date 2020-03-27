@@ -18,6 +18,8 @@ namespace Generic
 		extern std::string ToLower(std::string source);
 		extern std::string ToUpper(std::string source);
 
+		extern bool Contains(const std::string& str, const std::string& keyword);
+
 		extern uint64_t HexToNumber(std::string source);
 		extern std::string NumberToHex(uint64_t number);
 

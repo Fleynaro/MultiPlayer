@@ -9,6 +9,16 @@ namespace CE
 	{
 		namespace Function
 		{
+			static uint64_t GetArgumentValue(CE::Type::Type* type, CE::Hook::DynHook* hook, int argIdx) {
+				using namespace CE::Type;
+				return argIdx <= 4 && SystemType::GetNumberSetOf(type) == SystemType::Real ? hook->getXmmArgumentValue(argIdx) : hook->getArgumentValue(argIdx);
+			}
+
+			static uint64_t GetReturnValue(CE::Type::Type* type, CE::Hook::DynHook* hook) {
+				using namespace CE::Type;
+				return SystemType::GetNumberSetOf(type) == SystemType::Real ? hook->getXmmReturnValue() : hook->getReturnValue();
+			}
+
 			class Hook;
 			namespace Filter
 			{
@@ -281,7 +291,7 @@ namespace CE
 
 							auto type = argList[m_argId - 1];
 							return cmp(
-								SystemType::GetNumberSetOf(type) == SystemType::Real ? hook->getXmmArgumentValue(m_argId) : hook->getArgumentValue(m_argId),
+								GetArgumentValue(type, hook, m_argId),
 								m_value,
 								m_operation
 							);
@@ -344,7 +354,7 @@ namespace CE
 							auto function = (CE::Function::Function*)hook->getUserPtr();
 							auto type = function->getSignature().getReturnType();
 							return cmp(
-								SystemType::GetNumberSetOf(type) == SystemType::Real ? hook->getXmmReturnValue() : hook->getReturnValue(),
+								GetReturnValue(type, hook),
 								m_value,
 								m_operation
 							);
