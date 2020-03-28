@@ -11,7 +11,7 @@ Function::Hook::Hook(CE::Function::FunctionDefinition* definition)
 {
 	m_hook = CE::Hook::DynHook(definition->getAddress(), &callback_before, &callback_after);
 	m_hook.setMethod(new CE::Hook::Method::Method2<CE::Trigger::Function::TriggerState>(&m_hook));
-	m_hook.setArgCount(max(4, definition->getDeclaration().getSignature().getArgList().size()));
+	m_hook.setArgCount(max(4, (int)definition->getDeclaration().getSignature().getArgList().size()));
 	m_hook.setUserPtr(definition);
 }
 

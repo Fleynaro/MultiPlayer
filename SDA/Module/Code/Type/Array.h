@@ -5,6 +5,7 @@ namespace CE
 {
 	namespace Type
 	{
+		//MYTODO: массив массивов(arr[2][5]) -> isArrayOfObjects линейный массив arr[10]. Доступ по формулу i*n+j   ИЛИ   isArrayOfPointers массив указателей(pLvl = 2, arrSize = 2 * 8 * 5 * 4) Решение: юзать через классы
 		class Array : public Pointer
 		{
 		public:
@@ -20,10 +21,7 @@ namespace CE
 				return getArraySize() * getType()->getSize();
 			}
 
-			int getPointerLvl() override {
-				return getType()->getPointerLvl();
-			}
-
+			//MYTODO: сделать getArrayInfo, где в битах хранить размерность
 			int getArraySize() override {
 				return static_cast<int>(m_arraySize);
 			}

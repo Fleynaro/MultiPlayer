@@ -45,7 +45,11 @@ namespace CE
 				return std::to_string(*(uint64_t*)addr & mask);
 			}
 
-			Type* getBaseType();
+			virtual std::string getViewValue(uint64_t value) {
+				return getViewValue(&value);
+			}
+
+			Type* getBaseType(bool refType = true, bool dereferencedType = true);
 
 			bool isSystem() {
 				return !isUserDefined();
@@ -60,8 +64,14 @@ namespace CE
 			}
 
 			bool isArrayOfPointers() {
-				return isArray() && isPointer();
+				return isArray() && getPointerLvl() > 1;
 			}
+
+			bool isArrayOfObjects() {
+				return isArray() && getPointerLvl() == 1;
+			}
+
+			bool isString();
 
 			virtual bool isSigned() {
 				return false;

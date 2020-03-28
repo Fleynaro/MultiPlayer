@@ -52,21 +52,32 @@ namespace CE::Trigger::Function
 	public:
 		CE::Type::Type* m_type = nullptr;
 		uint64_t m_rawValue = 0;
-		int m_rawDataSize = 0;
-		void* m_rawData = nullptr;
 
 		Value() = default;
 
-		Value(CE::Type::Type* type, uint64_t rawValue, void* rawData = nullptr, int rawDataSize = 0)
-			: m_type(type), m_rawValue(rawValue), m_rawData(rawData), m_rawDataSize(rawDataSize)
+		Value(CE::Type::Type* type, uint64_t rawValue, void* rawData = nullptr)
+			: m_type(type), m_rawValue(rawValue), m_rawData(rawData)
 		{
-			/*m_type->addOwner();*/
+			if (m_rawData != nullptr) {
+				m_type = new CE::Type::Pointer(m_type->getBaseType());
+			}
 		}
 
-		~Value() {
-			/*if(m_type != nullptr)
-				m_type->free();*/ //multiple times called
+		bool isString() const {
+			return m_rawData != nullptr && m_type->isString();
 		}
+
+		void* getRawData() const {
+			if (m_rawData == nullptr)
+				return nullptr;
+			return (void*)((std::uintptr_t)m_rawData + sizeof(USHORT));
+		}
+
+		USHORT getRawDataSize() {
+			return *(USHORT*)m_rawData;
+		}
+	private:
+		void* m_rawData = nullptr;
 	};
 
 	struct TimeData
@@ -85,16 +96,16 @@ namespace CE::Trigger::Function
 			m_endTime = Clock::now();
 		}
 
-		float getElapsedTime() {
+		float getElapsedTime() const {
 			auto ns = m_endTime - m_startTime;
-			return (float)ns.count() / 1000.0;
+			return (float)ns.count() / 1000.0f;
 		}
 	};
 
 	class TableLog
 		: public Utils::Table<
 			0,
-			uint64_t, int, TimeData, std::list<Value>, Value
+			uint64_t, int, TimeData, std::list<Value>, Value, void*
 		>
 	{
 	public:
@@ -103,7 +114,8 @@ namespace CE::Trigger::Function
 			FunctionId,
 			Time,
 			ArgValues,
-			RetValue
+			RetValue,
+			RetAddr
 		};
 		std::atomic<bool> m_enabled = true;
 
@@ -126,7 +138,8 @@ namespace CE::Trigger::Function
 				funcDef->getId(),
 				TimeData(),
 				getArgValues(funcDef, hook),
-				Value()
+				Value(),
+				nullptr
 			);
 			m_mutex.unlock();
 		}
@@ -144,27 +157,26 @@ namespace CE::Trigger::Function
 			std::get<RetValue>(*row) = getRetValue(funcDef, hook);
 			m_mutex.unlock();
 			std::get<Time>(*row).setEndTime();
+			std::get<RetAddr>(*row) = hook->getReturnAddress();
 		}
 
 		std::list<Value> getArgValues(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook) {
 			using namespace CE::Type;
 			std::list<Value> values;
-			auto argTypes = funcDef->getDeclaration().getSignature().getArgList();
+			auto& argTypes = funcDef->getDeclaration().getSignature().getArgList();
 			for (int argIdx = 1; argIdx <= min(hook->getArgCount(), argTypes.size()); argIdx++) {
 				auto type = argTypes[argIdx - 1];
 				void* rawData = nullptr;
-				int rawDataSize = 0;
 
 				if (type->isPointer()) {
-					getExtraValue((void*)hook->getArgumentValue(argIdx), type, rawData, rawDataSize);
+					getExtraValue((void*)hook->getArgumentValue(argIdx), type, rawData);
 				}
 
 				values.push_back(
 					Value(
 						type,
 						Function::GetArgumentValue(type, hook, argIdx),
-						rawData,
-						rawDataSize
+						rawData
 					)
 				);
 			}
@@ -175,30 +187,23 @@ namespace CE::Trigger::Function
 			using namespace CE::Type;
 			auto retType = funcDef->getDeclaration().getSignature().getReturnType();
 			void* rawData = nullptr;
-			int rawDataSize = 0;
 
 			if (retType->isPointer()) {
-				getExtraValue((void*)hook->getReturnValue(), retType, rawData, rawDataSize);
+				getExtraValue((void*)hook->getReturnValue(), retType, rawData);
 			}
 
 			return Value(
 				retType,
 				Function::GetReturnValue(retType, hook),
-				rawData,
-				rawDataSize
+				rawData
 			);
 		}
 
-		void getExtraValue(void* addrValue, CE::Type::Type* argType, void*& dest, int& size) {
+		void getExtraValue(void* addrValue, CE::Type::Type* argType, void*& dest) {
 			do {
 				dest = m_allocator.getStream().getNext<void>();
-				if (Stat::Function::Record::CallInfoWriter::writeTypeValue(m_allocator.getStream(), addrValue, argType)) {
-					size = static_cast<int>((std::uintptr_t)m_allocator.getStream().getNext<void>() - (std::uintptr_t)dest);
-				}
-				else {
+				if (!Stat::Function::Record::CallInfoWriter::writeTypeValue(m_allocator.getStream(), addrValue, argType)) {
 					dest = nullptr;
-					size = 0;
-					break;
 				}
 			} while (m_allocator.isFilled());
 		}

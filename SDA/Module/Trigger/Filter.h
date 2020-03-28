@@ -11,12 +11,20 @@ namespace CE
 		{
 			static uint64_t GetArgumentValue(CE::Type::Type* type, CE::Hook::DynHook* hook, int argIdx) {
 				using namespace CE::Type;
-				return argIdx <= 4 && SystemType::GetNumberSetOf(type) == SystemType::Real ? hook->getXmmArgumentValue(argIdx) : hook->getArgumentValue(argIdx);
+				if (auto sysType = dynamic_cast<SystemType*>(type->getBaseType(true, false))) {
+					if (argIdx <= 4 && sysType->getSet() == SystemType::Real)
+						return hook->getXmmArgumentValue(argIdx);
+				}
+				return hook->getArgumentValue(argIdx);
 			}
 
 			static uint64_t GetReturnValue(CE::Type::Type* type, CE::Hook::DynHook* hook) {
 				using namespace CE::Type;
-				return SystemType::GetNumberSetOf(type) == SystemType::Real ? hook->getXmmReturnValue() : hook->getReturnValue();
+				if (auto sysType = dynamic_cast<SystemType*>(type->getBaseType(true, false))) {
+					if (sysType->getSet() == SystemType::Real)
+						return hook->getXmmReturnValue();
+				}
+				return hook->getReturnValue();
 			}
 
 			class Hook;
@@ -241,8 +249,8 @@ namespace CE
 					static bool cmp(uint64_t op1, uint64_t op2, Operation operation, CE::Type::Type* type)
 					{
 						using namespace CE::Type;
-						if (type->getGroup() == CE::Type::Type::Simple) {
-							switch (SystemType::GetBasicTypeOf(type))
+						if (!type->isPointer()) {
+							switch (type->getBaseType()->getId())
 							{
 							case SystemType::Bool:
 							case SystemType::Byte:
@@ -265,7 +273,7 @@ namespace CE
 								return cmp(reinterpret_cast<double&>(op1), reinterpret_cast<double&>(op2), operation);
 							}
 						}
-						return false;
+						return cmp(static_cast<uint64_t>(op1), static_cast<uint64_t>(op2), operation);
 					}
 
 					class Argument : public IFilter

@@ -203,7 +203,7 @@ namespace GUI
 			NumericInput(CE::Address address, CE::Type::Type* type)
 				: Input(address), m_type(type)
 			{
-				auto basicType = Type::SystemType::GetBasicTypeOf(m_type);
+				auto basicType = m_type->getBaseType()->getId();
 
 				if (basicType != Type::SystemType::Void)
 				{
@@ -293,6 +293,7 @@ namespace GUI
 			bool m_pointerDereference = true;
 			bool m_arrayItemSelector = true;
 			bool m_changeValueByButton = true;
+			bool m_dereference = false;
 		};
 
 		AddressValueEditor(void* address, CE::Type::Type* type = new CE::Type::UInt64, Style style = Style())
@@ -304,6 +305,10 @@ namespace GUI
 				})
 			);
 			m_eventUpdate->setCanBeRemoved(false);
+
+			if (m_style.m_dereference) {
+				m_ptrLevel = getMaxPossibleDereferenceLevel();
+			}
 
 			m_type->addOwner();
 			build();
@@ -378,18 +383,15 @@ namespace GUI
 				m_valueInput = new PointerInput(getAddress());
 			}
 			else if (m_type->getGroup() == Type::Type::Simple || m_type->getGroup() == Type::Type::Typedef) {
-				if (m_type->isPointer() || m_type->isArray()) {
-					auto baseType = Type::SystemType::GetBasicTypeOf(m_type);
-					if (baseType == Type::SystemType::Char || baseType == Type::SystemType::WChar) {
-						m_valueInput = new TextInput(getAddress(), baseType == Type::SystemType::WChar);
-					}
+				if (m_type->isString()) {
+					m_valueInput = new TextInput(getAddress(), m_type->getBaseType()->getId() == Type::SystemType::WChar);
 				}
 
 				if(m_valueInput == nullptr)
 					m_valueInput = new NumericInput(getAddress(), m_type->getBaseType());
 			}
-			else if (m_type->getGroup() == Type::Type::Enum) {
-				m_valueInput = new EnumInput(getAddress(), static_cast<Type::Enum*>(m_type->getBaseType()));
+			else if (auto Enum = dynamic_cast<CE::Type::Enum*>(m_type->getBaseType())) {
+				m_valueInput = new EnumInput(getAddress(), Enum);
 			}
 
 			if (m_valueInput != nullptr) {
@@ -420,7 +422,8 @@ namespace GUI
 			}
 
 			if (m_type->getGroup() == Type::Type::Class) {
-				text("Link to class editor.");
+				newLine()
+				.text("Link to class editor.");
 			}
 		}
 
@@ -431,18 +434,23 @@ namespace GUI
 			rebuild();
 		}
 
+		int getMaxPossibleDereferenceLevel() {
+			bool isVoid = m_type->getId() == Type::SystemType::Void;
+			return max(0, min(3, m_type->getPointerLvl() - isVoid - m_type->isArray() - 1));
+		}
+
 		void buildPointerDereference() {
-			if (m_type->getPointerLvl() > 0) {
+			auto ptrLvl = getMaxPossibleDereferenceLevel();
+			if (ptrLvl > 0) {
 				Elements::List::Combo* combo;
 				(*this)
 					.text("Dereference:")
 					.addItem(combo = new Elements::List::Combo("", m_ptrLevel));
 				combo->addItem("No");
 				CE::Address addr = getAddress(m_ptrLevel).dereference();
-				bool isVoid = m_type->getId() == Type::SystemType::Void;
-
+				
 				static const std::vector<const char*> names = { "Level 1 - *", "Level 2 - **", "Level 3 - ***" };
-				for (int i = 0; i < min(3, m_type->getPointerLvl() - isVoid); i++) {
+				for (int i = 0; i < ptrLvl; i++) {
 					if (!addr.canBeRead())
 						break;
 					combo->addItem(names[i]);
@@ -479,7 +487,7 @@ namespace GUI
 		void buildTypeSelector();
 
 		int getCurPointerLvl() {
-			return m_type->getPointerLvl() - m_ptrLevel;
+			return getMaxPossibleDereferenceLevel() - m_ptrLevel;
 		}
 
 		bool isValid() {

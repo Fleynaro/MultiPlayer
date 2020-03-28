@@ -12,12 +12,13 @@ void GUI::Window::FunctionTrigger::TriggerEditor::buildTableLog() {
 	if (getTrigger()->getTableLog() == nullptr)
 		return;
 
-	Elements::Generic::Checkbox* cb_collecting;
+	auto tableView = new Widget::TableViews::TriggerTableView(getTrigger()->getTableLog(), getProject());
 	(*m_tableLogContainer)
 		.newLine()
-		.addItem(cb_collecting = new Elements::Generic::Checkbox("Collecting enabled", getTrigger()->getTableLog()->m_enabled,
+		.addItem(new Elements::Generic::Checkbox("Collecting enabled", getTrigger()->getTableLog()->m_enabled,
 			Events::Listener(
-				std::function([=](Events::ISender* sender) {
+				std::function([&](Events::ISender* sender) {
+					auto cb_collecting = static_cast<Elements::Generic::Checkbox*>(sender);
 					getTrigger()->getTableLog()->m_enabled = cb_collecting->isSelected();
 				})
 			)
@@ -28,11 +29,12 @@ void GUI::Window::FunctionTrigger::TriggerEditor::buildTableLog() {
 				Events::Listener(
 					std::function([=](Events::ISender* sender) {
 						getTrigger()->getTableLog()->clear();
+						tableView->update();
 					})
 				)
 			)
 		)
-		.addItem(new Widget::TableViews::TriggerTableView(getTrigger()->getTableLog(), getProject()))
+		.addItem(tableView)
 		.newLine()
 		.newLine();
 }

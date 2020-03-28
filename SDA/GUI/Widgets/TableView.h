@@ -96,6 +96,7 @@ namespace GUI::Widget
 			};
 
 			addItem(m_table);
+			newLine();
 			addItem(m_pageNav = new Widget::PageNavigation);
 			setRowsCountOnPage(20);
 			m_pageNav->getSelectPageEvent() += [&](int oldPage, int newPage) {

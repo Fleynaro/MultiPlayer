@@ -79,12 +79,15 @@ namespace GUI::Window
 
 		virtual void onRender() {}
 
+		bool m_stopRenderNextWin = false;
 		void renderChildWindows() {
 			for (auto it : m_childs) {
-				if (m_childs.size() == 0)
-					throw Exception("some error");
 				it->show();
+				if (m_stopRenderNextWin)
+					break;
 			}
+
+			m_stopRenderNextWin = false;
 		}
 
 		virtual void pushParams() {
@@ -196,6 +199,7 @@ namespace GUI::Window
 
 		void close() {
 			if (getParent() != nullptr) {
+				getParent()->m_stopRenderNextWin = true;
 				getParent()->removeWindow(this);
 			}
 			destroy();

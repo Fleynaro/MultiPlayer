@@ -182,27 +182,40 @@ namespace CE
 				void writeHeader(Type type);
 
 				static bool writeTypeValue(Buffer::Stream& bufferStream, void* argAddrValue, CE::Type::Type* argType) {
+					//MYTODO: 1) массив указателей 2) массив чисел 3) указатель на указатель 4) указатель 5) не указатель(в стеке)
+					//MYTODO: узнать тип указателя: на стек, на кучу, массив ли?
+					
+					//Block 1: point to the begining of the object
 					if (argType->getPointerLvl() > 1) {
 						argAddrValue = Address::Dereference(argAddrValue, argType->getPointerLvl() - 1);
 						if (argAddrValue == nullptr)
 							return false;
 					}
 
-					int size = argType->getSize();
-					if (argType->isPointer()) {
+					if (!Address(argAddrValue).canBeRead())
+						return false;
+
+					//Block 2: calculate size of the object
+					int size;
+					if (argType->isArrayOfObjects()) {
+						size = argType->getSize();
+					}
+					else if (argType->isString()) {
+						char* str = (char*)argAddrValue;
+						size = 0;
+						while (size < 100 && str[size] != '\0')
+							size++;
+					}
+					else {
 						size = argType->getBaseType()->getSize();
-						//string
 					}
 
-					//MYTODO: узнать тип указателя: на стек, на кучу, массив ли?
+					if (size == 0)
+						return false;
 
-					if (Address(argAddrValue).canBeRead()) {
-						bufferStream.write((USHORT)size);
-						bufferStream.writeFrom(argAddrValue, size);
-						return true;
-					}
-
-					return false;
+					bufferStream.write((USHORT)size);
+					bufferStream.writeFrom(argAddrValue, size);
+					return true;
 				}
 			protected:
 				CE::Trigger::Function::Trigger* m_trigger;

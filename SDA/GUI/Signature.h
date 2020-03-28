@@ -73,14 +73,7 @@ namespace GUI::Units
 		std::list<std::pair<std::string, Elements::Text::Text*>> m_rows;
 	};
 
-
-	class ShortInfo
-		: public Container
-	{
-
-	};
-
-	class DeclInfo : public ShortInfo
+	class DeclInfo : public Container
 	{
 	public:
 		DeclInfo(API::Function::FunctionDecl* functionDecl, bool viewAsTable = false)
@@ -200,33 +193,6 @@ namespace GUI::Units
 		CE::Function::Function* getFunction() {
 			return m_function->getFunction();
 		}
-	};
-
-	class ShortCutInfo
-		: public PopupContainer
-	{
-	public:
-		ShortCutInfo(ShortInfo* shortInfo)
-			: PopupContainer(false, 0)
-		{
-			addItem(shortInfo);
-		}
-
-		void showWhenAboveItemHovered() {
-			if (ImGui::IsItemHovered()) {
-				if (m_lastStartHoveredTime == 0)
-					m_lastStartHoveredTime = GetTickCount64();
-				if (GetTickCount64() - m_lastStartHoveredTime > 200) {
-					setVisible();
-				}
-			}
-			else {
-				m_lastStartHoveredTime = 0;
-			}
-			PopupContainer::show();
-		}
-	private:
-		ULONGLONG m_lastStartHoveredTime;
 	};
 
 	//MY TODO: for func def and decl

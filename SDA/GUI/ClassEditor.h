@@ -23,7 +23,7 @@ namespace GUI::Widget
 	//MY TODO: если объект большой по размеру, то ставить определенные чекбоксы
 	//MY TODO: emptyFields для вложенных классов
 	//MY TODO: fast кнопки в панели для быстрого добавления типов
-	//MY TODO: адрес - это всплывающие окно, где отображается подробная инфа об адресе: + действия по записи значений, изменения прав и т.д
+	//MY TODO: (+) адрес - это всплывающие окно, где отображается подробная инфа об адресе: + действия по записи значений, изменения прав и т.д
 	
 	//MY TODO: есть известные и неизвестные функции: чекбокс - show known functions(+ кол-во в фаст панели)
 	//MY TODO: функции одного класса расположены последовательно в памяти => автоматические сделать генерацию списка таких функций
@@ -89,7 +89,9 @@ namespace GUI::Widget
 						}
 
 						Elements::Text::ColoredText::render();
-
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+						}
 						if (ImGui::IsItemClicked(0)) {
 							if (m_valueEditor == nullptr) {
 								if (Address(m_addr).canBeRead()) {
@@ -533,7 +535,7 @@ namespace GUI::Widget
 							new Elements::Button::ButtonStd(
 								"Load all items",
 								Events::Listener(
-									std::function([&](Events::ISender* sender) {
+									std::function([=](Events::ISender* sender) {
 										field->clear();
 										buildArrayItems(field, 1000);
 									})

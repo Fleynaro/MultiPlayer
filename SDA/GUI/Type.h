@@ -55,31 +55,20 @@ namespace GUI::Units
 			if (type->isUserDefined())
 			{
 				info += "\n\n";
-				switch (type->getGroup())
-				{
-				case CE::Type::Type::Typedef:
-				{
-					auto Typedef = static_cast<CE::Type::Typedef*>(type->getBaseType());
+				
+				if (auto Typedef = dynamic_cast<CE::Type::Typedef*>(type->getBaseType(false))) {
 					if (Typedef->getRefType() != nullptr) {
 						info += "Source: " + Typedef->getRefType()->getDisplayName() + "\n";
 					}
-					break;
 				}
-
-				case CE::Type::Type::Enum:
-				{
-					auto Enum = static_cast<CE::Type::Enum*>(type->getBaseType());
+				else if (auto Enum = dynamic_cast<CE::Type::Enum*>(type->getBaseType())) {
 					info += "enum " + Enum->getName() + " {\n";
 					for (auto& field : Enum->getFieldDict()) {
-						info += "\t" + field.second + " = "+ std::to_string(field.first) +",\n";
+						info += "\t" + field.second + " = " + std::to_string(field.first) + ",\n";
 					}
 					info += "};";
-					break;
 				}
-
-				case CE::Type::Type::Class:
-				{
-					auto Class = static_cast<CE::Type::Class*>(type->getBaseType());
+				else if (auto Class = dynamic_cast<CE::Type::Class*>(type->getBaseType())) {
 					info += "class " + Class->getName() + " ";
 
 					if (Class->getBaseClass() != nullptr) {
@@ -108,7 +97,7 @@ namespace GUI::Units
 							return false;
 						}
 						return true;
-					});
+						});
 
 					if (Class->hasVTable())
 					{
@@ -143,10 +132,8 @@ namespace GUI::Units
 						}
 						return true;
 						});
-					
+
 					info += "};";
-					break;
-				}
 				}
 			}
 

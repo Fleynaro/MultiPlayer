@@ -606,6 +606,7 @@ namespace GUI
 			sendLeftMouseClickEvent();
 			popIdParam();
 
+			onHeaderRender();
 			tryRenderHeader();
 
 			if (isOpen || m_alwaysOpened) {
@@ -618,6 +619,7 @@ namespace GUI
 		}
 
 		virtual void renderHeader() {}
+		virtual void onHeaderRender() {}
 
 		void setAlwaysOpened(bool toggle) {
 			m_alwaysOpened = toggle;
@@ -658,6 +660,7 @@ namespace GUI
 			sendLeftMouseClickEvent();
 			popIdParam();
 
+			onHeaderRender();
 			tryRenderHeader();
 
 			if (isOpen || m_alwaysOpened) {
@@ -808,6 +811,38 @@ namespace GUI
 		float m_width = 0.f;
 		float m_height = 0.f;
 		bool m_hideByClick = false;
+	};
+
+
+	class ShortCutInfo
+		: public PopupContainer
+	{
+	public:
+		ShortCutInfo(Container* shortInfo = nullptr)
+			: PopupContainer(false, 0)
+		{
+			if(shortInfo != nullptr)
+				addItem(shortInfo);
+		}
+
+		bool showWhenAboveItemHovered(int ms = 200) {
+			bool result = false;
+			if (ImGui::IsItemHovered()) {
+				if (m_lastStartHoveredTime == 0)
+					m_lastStartHoveredTime = GetTickCount64();
+				if (GetTickCount64() - m_lastStartHoveredTime > ms) {
+					setVisible();
+					result = true;
+				}
+			}
+			else {
+				m_lastStartHoveredTime = 0;
+			}
+			PopupContainer::show();
+			return result;
+		}
+	private:
+		ULONGLONG m_lastStartHoveredTime;
 	};
 
 	
@@ -1005,6 +1040,8 @@ namespace GUI
 						ImGui::Separator();
 					it->show();
 				}
+				if (border)
+					ImGui::Separator();
 
 				popFontParam();
 			}

@@ -193,9 +193,7 @@ public class FunctionManager extends AbstractManager {
     public List<SFunction> getAllFunctions(Map<Long, Long> hashmap) {
         List<SFunction> result = new ArrayList<>();
         Iterator<Function> functions = getFunctionManager().getFunctions(true);
-        int i = 5500;
         while(functions.hasNext()) {
-            if(i-- == 0) break;
             Function function = functions.next();
             if(true) {
                 Long hash = hashmap.get(getId(function));

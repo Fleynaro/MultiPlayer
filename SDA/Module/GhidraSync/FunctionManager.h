@@ -136,9 +136,13 @@ namespace CE
 
 			void update(HashMap hashmap) {
 				auto functions = pull(hashmap);
+				int max = 1000;
 				for (auto function : functions) {
-					if (function.name.find("FUN_") != std::string::npos)
+					if (function.name.find("FUN_") != std::string::npos || function.name.find("tempFunc") != std::string::npos)
 						continue;
+
+					if (function.name.find("File") == std::string::npos && function.name.find("Thread") == std::string::npos)
+						if (--max <= 0) continue;
 					changeOrCreate(function);
 				}
 			}

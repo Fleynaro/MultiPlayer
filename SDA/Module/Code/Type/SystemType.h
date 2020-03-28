@@ -56,9 +56,6 @@ namespace CE
 			int getArraySize() override {
 				return 0;
 			}
-
-			static Types GetBasicTypeOf(Type* type);
-			static Set GetNumberSetOf(Type* type);
 		};
 
 		class Void : public SystemType
