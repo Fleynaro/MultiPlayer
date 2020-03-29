@@ -1,5 +1,6 @@
 #include "FunctionCP.h"
 #include "GUI/Windows/ItemLists/FunctionList.h"
+#include "GUI/Windows/StatisticAnalyser.h"
 
 using namespace GUI::Widget;
 using namespace GUI::Window;
@@ -17,5 +18,17 @@ void FunctionCP::onVisibleOn() {
 
 	(*m_generic)
 		.newLine()
-		.addItem(new Units::FuncInfo(m_function, true));
+		.addItem(new Units::FuncInfo(m_function, true))
+		.addItem(
+			new Elements::Button::ButtonStd(
+				"Analyse",
+				Events::Listener(
+					std::function([&](Events::ISender* sender) {
+						getWindow()->addWindow(
+							new Window::Statistic::SignatureAnalyser(m_function)
+						);
+					})
+				)
+			)
+		);
 }

@@ -68,7 +68,9 @@ ProjectWindow::ProjectWindow(Project* project)
 		.addItem(new Widget::TriggerInput(triggerManager))
 		.newLine()
 		.newLine()
-		.text("Base: 0x" + Generic::String::NumberToHex((uint64_t)GetModuleHandle(NULL)));
+		.text("Base: ")
+		.sameLine()
+		.addItem(new Elements::Input::Text("0x" + Generic::String::NumberToHex((uint64_t)GetModuleHandle(NULL))));
 
 
 }

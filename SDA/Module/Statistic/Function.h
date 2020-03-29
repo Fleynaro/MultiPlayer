@@ -481,6 +481,42 @@ namespace CE
 
 
 
+		class BufferLoader
+		{
+		public:
+			BufferLoader(BufferManager* bufferManager)
+				: m_bufferManager(bufferManager)
+			{}
+
+			void loadAllBuffers() {
+				m_bufferFiles = m_bufferManager->m_dir.getItems();
+			}
+
+			Buffer* getBuffer() {
+				if (m_bufferFiles.empty())
+					return nullptr;
+				auto file = *m_bufferFiles.begin();
+				m_bufferFiles.pop_front();
+
+				if (file->getName().find("buffer_tr") == std::string::npos) {
+					return getBuffer();
+				}
+
+				std::ifstream fs(file->getPath());
+				if (fs.is_open()) {
+					auto size = fs.tellg();
+					auto buffer = Buffer::Create(size);
+					fs.read((char*)buffer, size);
+					fs.close();
+					return buffer;
+				}
+				return nullptr;
+			}
+		private:
+			BufferManager* m_bufferManager;
+			FS::Directory::itemList m_bufferFiles;
+		};
+
 		namespace Analyser
 		{
 			class IAnalysisProvider {
@@ -488,6 +524,7 @@ namespace CE
 				virtual void handle(Record::Header& header, Buffer::Stream& bufferStream) = 0;
 			};
 
+			//here result of analysis
 			class SignatureAnalysisProvider : public IAnalysisProvider {
 			public:
 
@@ -519,6 +556,7 @@ namespace CE
 				}
 			private:
 				std::mutex m_dataMutex;
+				//result data
 			};
 
 			class ITaskMonitor
@@ -549,6 +587,10 @@ namespace CE
 				float getProgress() override {
 					return m_progress;
 				}
+
+				int getSize() {
+					return m_buffer->getSize();
+				}
 			private:
 				Buffer* m_buffer;
 				IAnalysisProvider* m_analysisProvider;
@@ -569,29 +611,53 @@ namespace CE
 
 			class Analyser : public ITaskMonitor {
 			public:
-				Analyser(IAnalysisProvider* analysisProvider)
-					: m_analysisProvider(analysisProvider)
+				Analyser(IAnalysisProvider* analysisProvider, BufferLoader* bufferLoader)
+					: m_analysisProvider(analysisProvider), m_bufferLoader(bufferLoader)
 				{}
 
 				void startAnalysis() {
-					for (auto it : m_bufferAnaylysers) {
-						it->startAnalysis();
-					}
+					m_threadManager = std::thread(&Analyser::manager, this);
+					m_threadManager.detach();
 				}
 
-				void addBuffer(Buffer* buffer) {
-					auto bufferAnalyser = new BufferAnalyser(buffer);
-					m_bufferAnaylysers.push_back(bufferAnalyser);
+				void manager() {
+
+					while (auto buffer = m_bufferLoader->getBuffer())
+					{
+						auto bufferAnalyser = new BufferAnalyser(buffer);
+						m_mutex.lock();
+						m_bufferAnaylysers.push_back(bufferAnalyser);
+						m_mutex.unlock();
+						bufferAnalyser->startAnalysis();
+
+						if (getTotalSize() > 1024 * 1024 * 100) {
+							Sleep(100);
+						}
+					}
 				}
 
 				float getProgress() override {
 					float totalPorgress = 0.0;
+					m_mutex.lock();
 					for (auto it : m_bufferAnaylysers) {
 						totalPorgress += it->getProgress();
 					}
+					m_mutex.unlock();
 					return totalPorgress / m_bufferAnaylysers.size();
 				}
+
+				int getTotalSize() {
+					int size = 0;
+					for (auto it : m_bufferAnaylysers) {
+						if(it->isWorking())
+							size += it->getSize();
+					}
+					return size;
+				}
 			private:
+				BufferLoader* m_bufferLoader;
+				std::thread m_threadManager;
+				std::mutex m_mutex;
 				std::list<BufferAnalyser*> m_bufferAnaylysers;
 				IAnalysisProvider* m_analysisProvider;
 			};

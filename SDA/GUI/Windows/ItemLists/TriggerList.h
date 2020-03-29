@@ -457,7 +457,7 @@ namespace GUI::Widget
 			public:
 				void save() override {
 					if (m_argIndexInput->getInputValue() <= 0)
-						throw Exception(m_argIndexInput, "Argument must be > 0");
+						throw Exception(m_argIndexInput, "Argument index must be > 0");
 
 					m_filter->m_argId = m_argIndexInput->getInputValue();
 					m_filter->m_operation = m_operationInput->getOperation();
@@ -475,12 +475,32 @@ namespace GUI::Widget
 				RetValueEditor(Cmp::RetValue* filter, Trigger::Function::Trigger* trigger, TriggerFilterInfo::Function::Filter* info)
 					: m_filter(filter), FilterEditor(trigger, info)
 				{
+					text("Select an operation.");
+					addItem(m_operationInput = new OperationSelector(m_filter->m_operation));
+					newLine();
 
+					text("Enter a value.");
+					addItem(m_valueInput = new IntegralValueInput(m_filter->m_value, getType()));
+					newLine();
 				}
 
 			private:
+				CE::Type::Type* getType() {
+					if (m_trigger->getFunctions().size() == 0)
+						return new CE::Type::UInt64;
+					auto func = *m_trigger->getFunctions().begin();
+					return func->getFunction()->getDeclaration().getSignature().getReturnType();
+				}
+
+			public:
+				void save() override {
+					m_filter->m_operation = m_operationInput->getOperation();
+					m_filter->m_value = m_valueInput->getValue();
+				}
+			private:
 				Cmp::RetValue* m_filter;
-				AddressInput* m_valueInput;
+				OperationSelector* m_operationInput;
+				IntegralValueInput* m_valueInput;
 			};
 		};
 	};
