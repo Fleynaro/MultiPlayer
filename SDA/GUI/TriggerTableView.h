@@ -27,23 +27,21 @@ namespace GUI::Widget::TableViews
 					}
 					if (ImGui::IsItemClicked(0)) {
 						if (m_valueEditor == nullptr) {
-							if (Address(m_addr).canBeRead()) {
-								m_valueEditor = new PopupContainer(false, 0);
-								m_valueEditor->setParent(this);
+							m_valueEditor = new PopupContainer(false, 0);
+							m_valueEditor->setParent(this);
 
-								AddressValueEditor::Style style;
-								style.m_typeSelector = true;
-								style.m_protectSelector = false;
-								style.m_pointerDereference = false;
-								style.m_arrayItemSelector = true;
-								style.m_changeValueByButton = false;
-								style.m_dereference = true;
-								auto editor = new AddressValueEditor(m_addr, m_type, style);
-								editor->setTypeManager(m_typeManager);
-								m_valueEditor->addItem(editor);
-								m_valueEditor->setVisible();
-								m_valueEditor->setHideByClick(true);
-							}
+							AddressValueEditor::Style style;
+							style.m_typeSelector = true;
+							style.m_protectSelector = false;
+							style.m_pointerDereference = false;
+							style.m_arrayItemSelector = true;
+							style.m_changeValueByButton = false;
+							style.m_dereference = true;
+							auto editor = new AddressValueEditor(m_addr, m_type, style);
+							editor->setTypeManager(m_typeManager);
+							m_valueEditor->addItem(editor);
+							m_valueEditor->setVisible();
+							m_valueEditor->setHideByClick(true);
 						}
 						else {
 							m_valueEditor->setVisible();
@@ -99,7 +97,9 @@ namespace GUI::Widget::TableViews
 			c_ElapsedTime,
 			c_Arguments,
 			c_Return,
-			c_ReturnAddr
+			c_ReturnAddr,
+			c_FilterBefore,
+			c_FilterAfter
 		};
 
 		TriggerTableView(TableLog* triggerTable, Project* project)
@@ -110,6 +110,8 @@ namespace GUI::Widget::TableViews
 			addColumn(new Column(c_Arguments, "Arguments", true));
 			addColumn(new Column(c_Return, "Return", true));
 			addColumn(new Column(c_ReturnAddr, "Return address", true));
+			addColumn(new Column(c_FilterBefore, "Filter before", true));
+			addColumn(new Column(c_FilterAfter, "Filter after", true));
 			buildHeader();
 			update();
 		}
@@ -144,6 +146,16 @@ namespace GUI::Widget::TableViews
 			for (auto column : m_columnsOrder) {
 				switch (column->m_idx)
 				{
+				case c_FilterBefore:
+					result.orderBy([=](const TableLog::Tuple& row1, const TableLog::Tuple& row2) {
+						return static_cast<bool>((std::get<TableLog::Stat>(row1).m_filterBefore < std::get<TableLog::Stat>(row2).m_filterBefore) ^ column->isDescending());
+						});
+					break;
+				case c_FilterAfter:
+					result.orderBy([=](const TableLog::Tuple& row1, const TableLog::Tuple& row2) {
+						return static_cast<bool>((std::get<TableLog::Stat>(row1).m_filterAfter < std::get<TableLog::Stat>(row2).m_filterAfter) ^ column->isDescending());
+						});
+					break;
 				case c_ReturnAddr:
 					result.orderBy<TableLog::RetAddr>(column->isDescending());
 					break;
@@ -237,6 +249,10 @@ namespace GUI::Widget::TableViews
 
 				tr.beginTD()
 					.text("0x" + Generic::String::NumberToHex((uint64_t)std::get<TableLog::RetAddr>(row)));
+				tr.beginTD()
+					.checkbox(std::get<TableLog::Stat>(row).m_filterBefore);
+				tr.beginTD()
+					.checkbox(std::get<TableLog::Stat>(row).m_filterAfter);
 				shownRowsCount++;
 			}
 

@@ -275,8 +275,10 @@ namespace CE
 							Итог: все представимя в виде числа 8 байтового
 							Задача: 8 байт -> массив байт(нач. адрес и размер)
 						*/
-						auto argType = getFunctionDef()->getDeclaration().getSignature().getArgList()[argIdx - 1];
-						if (writeTypeValue(getStream(), argAddrValue, argType)) {
+						auto& argTypes = getFunctionDef()->getDeclaration().getSignature().getArgList();
+						if (argIdx > argTypes.size())
+							return;
+						if (writeTypeValue(getStream(), argAddrValue, argTypes[argIdx - 1])) {
 							m_argHeader->m_argExtraBits |= uint64_t(0b1) << (argIdx - 1);
 						}
 					}

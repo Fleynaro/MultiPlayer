@@ -16,19 +16,18 @@ Function::Hook::Hook(CE::Function::FunctionDefinition* definition)
 }
 
 bool Function::Trigger::actionBefore(CE::Hook::DynHook* hook) {
-	bool sendStat = false;
+	bool filter;
 	bool notExecute = false;
-	if (getFilters()->checkFilterBefore(hook)) {
+	if (filter = getFilters()->checkFilterBefore(hook)) {
 		notExecute = m_notExecute;
 		hook->getUserData<TriggerState>().m_beforeFilter = true;
-		sendStat = true;
 	}
 
 	if (m_tableLog != nullptr) {
-		m_tableLog->addBeforeCallRow(hook);
+		m_tableLog->addBeforeCallRow(hook, filter);
 	}
 
-	if (sendStat) {
+	if (filter || m_sendStatAnyway) {
 		if (m_statCollector != nullptr) {
 			m_statCollector->addBeforeCallInfo(this, hook);
 		}
@@ -38,15 +37,16 @@ bool Function::Trigger::actionBefore(CE::Hook::DynHook* hook) {
 
 void Function::Trigger::actionAfter(CE::Hook::DynHook* hook) {
 	bool sendStat = hook->getUserData<TriggerState>().m_beforeFilter;
-	if (getFilters()->checkFilterAfter(hook)) {
+	bool filter;
+	if (filter = getFilters()->checkFilterAfter(hook)) {
 		sendStat = true;
 	}
 
 	if (m_tableLog != nullptr) {
-		m_tableLog->addAfterCallRow(hook);
+		m_tableLog->addAfterCallRow(hook, filter);
 	}
 
-	if (sendStat) {
+	if (sendStat || m_sendStatAnyway) {
 		if (m_statCollector != nullptr) {
 			m_statCollector->addAfterCallInfo(this, hook);
 		}

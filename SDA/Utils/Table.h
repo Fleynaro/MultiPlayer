@@ -35,7 +35,10 @@ namespace Utils
 
 		void clear() {
 			m_rows.clear();
+			onClear();
 		}
+
+		virtual void onClear() {}
 
 		Tuple* operator [] (PrimaryKeyColumnType key) {
 			return getRow(key);

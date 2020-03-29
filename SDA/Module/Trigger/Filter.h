@@ -294,14 +294,15 @@ namespace CE
 
 							auto function = (CE::Function::FunctionDefinition*)hook->getUserPtr();
 							auto& argList = function->getDeclaration().getSignature().getArgList();
-							if (m_argId >= argList.size())
+							if (m_argId > argList.size())
 								return false;
 
 							auto type = argList[m_argId - 1];
 							return cmp(
 								GetArgumentValue(type, hook, m_argId),
 								m_value,
-								m_operation
+								m_operation,
+								type
 							);
 						}
 
@@ -364,7 +365,8 @@ namespace CE
 							return cmp(
 								GetReturnValue(type, hook),
 								m_value,
-								m_operation
+								m_operation,
+								type
 							);
 						}
 

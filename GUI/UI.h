@@ -98,30 +98,6 @@ namespace Utils
 };
 
 
-class AA {
-public:
-	int m_x;
-
-	AA(int x = 0)
-		: m_x(x)
-	{
-		int a = 5;
-	}
-
-	~AA() {
-		if (m_x != 0) {
-			int c = 7;
-		}
-	}
-};
-
-class TriggerTable2 : public Utils::Table<0, int, AA>
-{
-public:
-	TriggerTable2()
-	{}
-};
-
 class TriggerTable : public Utils::Table<0, int, int, std::string>
 {
 public:
@@ -396,15 +372,7 @@ namespace GUI::Widget
 
 
 void test() {
-	auto table = new TriggerTable2;
 
-	table->addRow(1, AA(22));
-
-	auto& row = *table->getRow(1);
-
-	AA rr(22);
-
-	std::get<1>(row) = rr;
 }
 
 class UI

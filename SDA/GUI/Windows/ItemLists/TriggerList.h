@@ -428,7 +428,7 @@ namespace GUI::Widget
 					newLine();
 
 					text("Enter a value.");
-					addItem(m_valueInput = new IntegralValueInput(m_filter->m_value, getType(0)));
+					addItem(m_valueInput = new IntegralValueInput(m_filter->m_value, getType(m_filter->m_argId - 1)));
 					newLine();
 					
 
@@ -761,6 +761,34 @@ namespace GUI::Window
 							})
 						)
 					))
+					.sameLine().addItem(m_cb_notExecute = new Elements::Generic::Checkbox("Not execute if not filtered", getTrigger()->isNotExecute(),
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								getTrigger()->setNotExecute(m_cb_notExecute->isSelected());
+							})
+						)
+					))
+					.sameLine().addItem(m_cb_stat = new Elements::Generic::Checkbox("Statistic", getTrigger()->m_statCollector != nullptr,
+						Events::Listener(
+							std::function([&](Events::ISender* sender) {
+								if (m_cb_stat->isSelected()) {
+									getTrigger()->setStatCollector(getProject()->getProgramExe()->getStatManager()->getCollector());
+								}
+								else {
+									getTrigger()->setStatCollector(nullptr);
+								}
+							})
+						)
+					))
+					.beginIf(_condition(m_cb_stat->isSelected()))
+						.sameLine().addItem(m_cb_sendStatAnyway = new Elements::Generic::Checkbox("Send statistic anyway", getTrigger()->m_sendStatAnyway,
+							Events::Listener(
+								std::function([&](Events::ISender* sender) {
+									getTrigger()->m_sendStatAnyway = m_cb_sendStatAnyway->isSelected();
+								})
+							)
+						))
+					.end()
 					.addItem(m_tableLogContainer = new Container)
 					.separator()
 					.newLine()
@@ -797,6 +825,9 @@ namespace GUI::Window
 			FilterList* m_filterList;
 			FilterWinEditor* m_winEditor = nullptr;
 			Elements::Generic::Checkbox* m_cb_tableLog = nullptr;
+			Elements::Generic::Checkbox* m_cb_notExecute = nullptr;
+			Elements::Generic::Checkbox* m_cb_stat = nullptr;
+			Elements::Generic::Checkbox* m_cb_sendStatAnyway = nullptr;
 			Container* m_tableLogContainer;
 		};
 	};

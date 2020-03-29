@@ -101,6 +101,15 @@ Container& Container::removeLastItem() {
 	return *this;
 }
 
+Container& GUI::Container::checkbox(bool state)
+{
+	auto cb = new Elements::Input::Bool;
+	cb->setInputValue(state);
+	cb->setReadOnly(true);
+	addItem(cb);
+	return *this;
+}
+
 Container& Container::beginContainer() {
 	Container* ptr = nullptr;
 	return beginContainer(&ptr);

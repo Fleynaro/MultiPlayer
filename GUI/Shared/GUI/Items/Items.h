@@ -301,6 +301,7 @@ namespace GUI
 		Container& text(std::string value, Elements::Text::Text** item);
 		Container& ftext(const char* value, ...);
 		Container& removeLastItem();
+		Container& checkbox(bool state);
 
 		Container& beginContainer();
 		Container& beginContainer(Container** ptr);
@@ -1040,8 +1041,7 @@ namespace GUI
 						ImGui::Separator();
 					it->show();
 				}
-				if (border)
-					ImGui::Separator();
+				ImGui::Columns(1);
 
 				popFontParam();
 			}
@@ -1944,7 +1944,7 @@ namespace GUI
 
 				uint64_t getInputValue64() override {
 					auto value = getInputValueInt();
-					return (uint64_t&)value;
+					return (uint64_t)value;
 				}
 
 				FilterInt* setCompare(bool toggle) {
@@ -2001,7 +2001,7 @@ namespace GUI
 				}
 
 				uint64_t getInputValue64() override {
-					return (uint64_t&)m_value;
+					return (uint64_t)m_value;
 				}
 
 				bool isSelected() {
@@ -2049,7 +2049,7 @@ namespace GUI
 				}
 
 				uint64_t getInputValue64() override {
-					return (uint64_t&)m_value;
+					return (uint64_t&)m_value & (uint64_t)0xFFFFFFFF;
 				}
 			private:
 				float m_value = 0;
@@ -2131,7 +2131,7 @@ namespace GUI
 				}
 
 				uint64_t getInputValue64() override {
-					return (uint64_t&)m_value;
+					return (uint64_t)m_value;
 				}
 			private:
 				int m_value = 0;

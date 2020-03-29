@@ -15,9 +15,7 @@ namespace CE::Trigger::Function
 		{}
 
 		~SeqAllocator() {
-			for (auto it : m_buffers) {
-				Buffer::Destroy(it);
-			}
+			clear();
 		}
 
 		Buffer::Stream& getStream() {
@@ -33,6 +31,14 @@ namespace CE::Trigger::Function
 				createNewBuffer();
 			}
 			return isFilled;
+		}
+
+		void clear() {
+			for (auto it : m_buffers) {
+				Buffer::Destroy(it);
+			}
+			m_buffers.clear();
+			m_curBuffer = nullptr;
 		}
 	private:
 		int m_size;
@@ -102,10 +108,20 @@ namespace CE::Trigger::Function
 		}
 	};
 
+	struct StatData
+	{
+		bool m_filterBefore;
+		bool m_filterAfter = false;
+
+		StatData(bool filterBefore = false)
+			: m_filterBefore(filterBefore)
+		{}
+	};
+
 	class TableLog
 		: public Utils::Table<
 			0,
-			uint64_t, int, TimeData, std::list<Value>, Value, void*
+			uint64_t, int, TimeData, std::list<Value>, Value, void*, StatData
 		>
 	{
 	public:
@@ -115,7 +131,8 @@ namespace CE::Trigger::Function
 			Time,
 			ArgValues,
 			RetValue,
-			RetAddr
+			RetAddr,
+			Stat
 		};
 		std::atomic<bool> m_enabled = true;
 
@@ -123,7 +140,7 @@ namespace CE::Trigger::Function
 			: m_trigger(trigger), m_allocator(1024 * 128)
 		{}
 
-		void addBeforeCallRow(CE::Hook::DynHook* hook)
+		void addBeforeCallRow(CE::Hook::DynHook* hook, bool filter)
 		{
 			if (!m_enabled)
 				return;
@@ -139,12 +156,13 @@ namespace CE::Trigger::Function
 				TimeData(),
 				getArgValues(funcDef, hook),
 				Value(),
-				nullptr
+				nullptr,
+				StatData(filter)
 			);
 			m_mutex.unlock();
 		}
 
-		void addAfterCallRow(CE::Hook::DynHook* hook)
+		void addAfterCallRow(CE::Hook::DynHook* hook, bool filter)
 		{
 			if (!m_enabled)
 				return;
@@ -158,6 +176,7 @@ namespace CE::Trigger::Function
 			m_mutex.unlock();
 			std::get<Time>(*row).setEndTime();
 			std::get<RetAddr>(*row) = hook->getReturnAddress();
+			std::get<Stat>(*row).m_filterAfter = filter;
 		}
 
 		std::list<Value> getArgValues(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook) {
@@ -206,6 +225,10 @@ namespace CE::Trigger::Function
 					dest = nullptr;
 				}
 			} while (m_allocator.isFilled());
+		}
+
+		void onClear() override {
+			m_allocator.clear();
 		}
 	private:
 		Function::Trigger* m_trigger;

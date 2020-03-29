@@ -7,7 +7,6 @@ using namespace GUI;
 
 void AddressValueEditor::buildTypeSelector() {
 	(*this)
-		.text("Type is not selected.")
 		.addItem(
 			new Elements::Button::ButtonStd(
 				"Select type",

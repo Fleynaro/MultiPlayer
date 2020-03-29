@@ -122,6 +122,10 @@ namespace CE
 					m_notExecute = toggle;
 				}
 
+				bool isNotExecute() {
+					return m_notExecute;
+				}
+
 				void addFunction(API::Function::Function* function) {
 					m_functions.push_back(function);
 				}
@@ -153,8 +157,10 @@ namespace CE
 				}
 
 				void setTableLogEnable(bool toggle);
-			private:
+
+				bool m_sendStatAnyway = false;
 				Stat::Function::Collector* m_statCollector = nullptr;
+			private:
 				TableLog* m_tableLog = nullptr;
 				Filter::ICompositeFilter* m_compositeFilter;
 				std::list<API::Function::Function*> m_functions;
