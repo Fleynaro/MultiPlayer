@@ -141,7 +141,7 @@ namespace CE
 					if (function.name.find("FUN_") != std::string::npos || function.name.find("tempFunc") != std::string::npos)
 						continue;
 
-					if (function.name.find("File") == std::string::npos && function.name.find("Thread") == std::string::npos)
+					if (function.name.find("UI_") == std::string::npos && function.name.find("String") == std::string::npos && function.name.find("Thread") == std::string::npos)
 						if (--max <= 0) continue;
 					changeOrCreate(function);
 				}

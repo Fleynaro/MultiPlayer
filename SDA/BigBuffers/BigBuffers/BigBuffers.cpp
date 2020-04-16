@@ -59,7 +59,39 @@ int main()
     //LPVOID pBuffer = AllocateBuffer(&getTestId);
 
 
+    int a = 5;
 
+    char* func = (char*)&getTestId;
+    DWORD old;
+    VirtualProtect(func, 1000, PAGE_EXECUTE_READWRITE, &old); //hook
+    func[4] = 0xCC;
+    func[5] = 0x90;
+
+
+    PEXCEPTION_POINTERS ExceptionPointer = nullptr;
+    __try {
+        getTestId(5);
+    }
+    __except (ExceptionPointer = GetExceptionInformation(), EXCEPTION_EXECUTE_HANDLER)
+    {
+        printf("\n\nexception %x\n", (uint64_t)ExceptionPointer->ExceptionRecord->ExceptionAddress);
+
+        switch (ExceptionPointer->ExceptionRecord->ExceptionCode)
+        {
+        case EXCEPTION_ACCESS_VIOLATION:
+            printf("EXCEPTION_ACCESS_VIOLATION");
+            break;
+        case EXCEPTION_BREAKPOINT:
+            printf("EXCEPTION_BREAKPOINT");
+            break;
+        default:
+            break;
+        }
+    }
+
+    system("pause");
+
+    return 1;
 
 
    

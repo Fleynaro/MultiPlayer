@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.29709.97
+VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BigBuffers", "BigBuffers\BigBuffers.vcxproj", "{752A3086-5CB9-407B-A6CE-9E5B1B144254}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AccessViolationHandling", "M:\Users\user\source\repos\AccessViolationHandling\AccessViolationHandling\AccessViolationHandling.vcxproj", "{565FE959-D979-4CC4-90BF-10C9391D581B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AccessViolationHandling", "AccessViolationHandling\AccessViolationHandling.vcxproj", "{565FE959-D979-4CC4-90BF-10C9391D581B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,14 +13,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{752A3086-5CB9-407B-A6CE-9E5B1B144254}.Debug|x64.ActiveCfg = Debug|x64
-		{752A3086-5CB9-407B-A6CE-9E5B1B144254}.Debug|x64.Build.0 = Debug|x64
-		{752A3086-5CB9-407B-A6CE-9E5B1B144254}.Debug|x86.ActiveCfg = Debug|Win32
-		{752A3086-5CB9-407B-A6CE-9E5B1B144254}.Debug|x86.Build.0 = Debug|Win32
-		{752A3086-5CB9-407B-A6CE-9E5B1B144254}.Release|x64.ActiveCfg = Release|x64
-		{752A3086-5CB9-407B-A6CE-9E5B1B144254}.Release|x64.Build.0 = Release|x64
-		{752A3086-5CB9-407B-A6CE-9E5B1B144254}.Release|x86.ActiveCfg = Release|Win32
-		{752A3086-5CB9-407B-A6CE-9E5B1B144254}.Release|x86.Build.0 = Release|Win32
 		{565FE959-D979-4CC4-90BF-10C9391D581B}.Debug|x64.ActiveCfg = Debug|x64
 		{565FE959-D979-4CC4-90BF-10C9391D581B}.Debug|x64.Build.0 = Debug|x64
 		{565FE959-D979-4CC4-90BF-10C9391D581B}.Debug|x86.ActiveCfg = Debug|Win32
@@ -36,6 +26,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C16026A8-0560-423D-9A68-2A60524A8885}
+		SolutionGuid = {978E05C5-DD70-49C7-AD76-AD9439607E69}
 	EndGlobalSection
 EndGlobal

@@ -505,7 +505,7 @@ namespace CE
 				std::ifstream fs(file->getPath());
 				if (fs.is_open()) {
 					auto size = fs.tellg();
-					auto buffer = Buffer::Create(size);
+					auto buffer = Buffer::Create((int)size);
 					fs.read((char*)buffer, size);
 					fs.close();
 					return buffer;
