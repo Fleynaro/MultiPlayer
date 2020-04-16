@@ -220,7 +220,7 @@ namespace CE::Trigger::Function
 
 		void getExtraValue(void* addrValue, CE::Type::Type* argType, void*& dest) {
 			do {
-				dest = m_allocator.getStream().getNext<void>();
+				dest = m_allocator.getStream().getNext();
 				if (!Stat::Function::Record::CallInfoWriter::writeTypeValue(m_allocator.getStream(), addrValue, argType)) {
 					dest = nullptr;
 				}

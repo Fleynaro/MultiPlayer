@@ -1,6 +1,11 @@
 #pragma once
 #include <main.h>
 
+class BufferOverflowException : public std::exception
+{
+
+};
+
 class Buffer
 {
     struct Header {
@@ -70,7 +75,7 @@ public:
         template<typename T = BYTE>
         inline Stream& write(const T& data) {
             if (!isFree(sizeof(T))) {
-                move(sizeof(T));
+                throw BufferOverflowException();
                 return *this;
             }
             (T&)*m_curData = data;
@@ -80,7 +85,7 @@ public:
 
         inline Stream& writeFrom(void* addr, int size) {
             if (!isFree(size)) {
-                move(size);
+                throw BufferOverflowException();
                 return *this;
             }
             memcpy_s(m_curData, m_buffer->getFreeSpaceSize(), addr, size);
@@ -120,6 +125,9 @@ public:
 
         template<typename T = BYTE>
         inline T* getNext() {
+            if (!isFree(sizeof(T))) {
+                //throw BufferOverflowException();
+            }
             return (T*)m_curData;
         }
 

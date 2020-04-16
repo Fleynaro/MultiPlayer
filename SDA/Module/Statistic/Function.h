@@ -369,9 +369,10 @@ namespace CE
 		class BufferManager
 		{
 		public:
-			BufferManager(FS::Directory dir, int bufferSizeMb = 3)
+			BufferManager(FS::Directory dir, int bufferSizeMb = 1)
 				: m_dir(dir), m_bufferSizeMb(bufferSizeMb)
 			{
+				//MYTODO: max id
 				m_savedBufferCount = static_cast<int>(m_dir.getItems().size());
 			}
 
@@ -407,9 +408,11 @@ namespace CE
 
 			void write(StreamRecordWriter* writer) {
 				StreamRecord record(&m_bufferStream, writer);
-				record.write();
 
-				if (m_currentBuffer->getFreeSpaceSize() == 0) {
+				try {
+					record.write();
+				}
+				catch (const BufferOverflowException&) {
 					if (getWorkedSaverCount() > 0) {
 						m_bufferSizeMb *= 2;
 					}
@@ -630,7 +633,7 @@ namespace CE
 						m_mutex.unlock();
 						bufferAnalyser->startAnalysis();
 
-						if (getTotalSize() > 1024 * 1024 * 100) {
+						while (getTotalSize() > 1024 * 1024 * 100) {
 							Sleep(100);
 						}
 					}
