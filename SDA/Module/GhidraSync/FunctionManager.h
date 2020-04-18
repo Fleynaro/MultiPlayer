@@ -92,10 +92,10 @@ namespace CE
 				return result;
 			}
 
-			Function::FunctionDefinition::RangeList getFunctionRanges(const std::vector<function::SFunctionRange>& rangeDescs) {
-				Function::FunctionDefinition::RangeList ranges;
+			Function::AddressRangeList getFunctionRanges(const std::vector<function::SFunctionRange>& rangeDescs) {
+				Function::AddressRangeList ranges;
 				for (auto& range : rangeDescs) {
-					ranges.push_back(Function::FunctionDefinition::Range(
+					ranges.push_back(Function::AddressRange(
 						getClient()->getProgramModule()->toAbsAddr(range.minOffset),
 						getClient()->getProgramModule()->toAbsAddr(range.maxOffset)
 					));

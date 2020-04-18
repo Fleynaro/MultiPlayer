@@ -13,22 +13,14 @@ namespace CE
 				: Pointer(type), m_arraySize(arraySize)
 			{}
 
-			std::string getDisplayName() override {
-				return getType()->getDisplayName() + "[" + std::to_string(getArraySize()) + "]";
-			}
+			std::string getDisplayName() override;
 
-			int getSize() override {
-				return getArraySize() * getType()->getSize();
-			}
+			int getSize() override;
 
 			//MYTODO: сделать getArrayInfo, где в битах хранить размерность
-			int getArraySize() override {
-				return static_cast<int>(m_arraySize);
-			}
+			int getArraySize() override;
 
-			int getItemSize() {
-				return getType()->getSize();
-			}
+			int getItemSize();
 		private:
 			uint64_t m_arraySize;
 		};

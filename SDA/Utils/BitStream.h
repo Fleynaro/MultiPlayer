@@ -11,78 +11,49 @@ public:
 		setData(data, size);
 	}
 
-	void writeBit(bool bit)
-	{
-		m_bytes[m_curByte] = m_bytes[m_curByte] & ~(0b1 << m_curBit) | (bit << m_curBit);
-		inc();
-	}
+	void writeBit(bool bit);
 
 	template<typename T>
-	void write(T value)
-	{
-		for (int i = 0; i < sizeof(T) * 0x8; i++) {
-			writeBit(value >> i & 0b1);
-		}
-	}
+	void write(T value);
 
-	void write(const void* src, int size) {
-		BYTE* data = (BYTE*)src;
-		for (int i = 0; i < size; i++)
-			write(data[i]);
-	}
+	void write(const void* src, int size);
 
-	bool readBit()
-	{
-		bool result = m_bytes[m_curByte] >> m_curBit & 0b1;
-		inc();
-		return result;
-	}
+	bool readBit();
 
 	template<typename T>
-	T read()
-	{
-		T result = 0;
-		for (int i = 0; i < sizeof(T) * 0x8; i++) {
-			result |= readBit() << i;
-		}
-		return result;
-	}
+	T read();
 
-	void read(void* dst, int size) {
-		BYTE* data = (BYTE*)dst;
-		for (int i = 0; i < size; i++)
-			data[i] = read<BYTE>();
-	}
+	void read(void* dst, int size);
 
-	void setData(BYTE* data, int size) {
-		for (int i = 0; i < size; i++) {
-			m_bytes.push_back(data[i]);
-		}
-	}
+	void setData(BYTE* data, int size);
 
-	BYTE* getData() {
-		return m_bytes.data();
-	}
+	BYTE* getData();
 
-	int getSize() {
-		return m_curByte;
-	}
+	int getSize();
 
-	void resetPointer() {
-		m_curByte = 0;
-		m_curBit = 0;
-	}
+	void resetPointer();
 private:
-	inline void inc() {
-		if (++m_curBit == 0x8 * sizeof(BYTE)) {
-			m_curByte++;
-			m_curBit = 0;
-			if (m_curByte == m_bytes.size())
-				m_bytes.push_back(0);
-		}
-	}
+	inline void inc();
 
 	int m_curByte;
 	int m_curBit;
 	std::vector<BYTE> m_bytes;
 };
+
+template<typename T>
+void BitStream::write(T value)
+{
+	for (int i = 0; i < sizeof(T) * 0x8; i++) {
+		writeBit(value >> i & 0b1);
+	}
+}
+
+template<typename T>
+T BitStream::read()
+{
+	T result = 0;
+	for (int i = 0; i < sizeof(T) * 0x8; i++) {
+		result |= readBit() << i;
+	}
+	return result;
+}

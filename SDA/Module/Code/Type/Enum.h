@@ -14,45 +14,21 @@ namespace CE
 				: UserType(id, name, desc)
 			{}
 
-			int getSize() override {
-				return m_size;
-			}
+			int getSize() override;
 
-			void setSize(int size) {
-				m_size = size;
-			}
+			void setSize(int size);
 
-			Group getGroup() override {
-				return Group::Enum;
-			}
+			Group getGroup() override;
 
-			std::string getViewValue(void* addr) override {
-				auto value = m_fields.find(*(int*)(addr));
-				if (value == m_fields.end())
-					return UserType::getViewValue(addr);
-				return value->second + " (" + UserType::getViewValue(addr) + ")";
-			}
+			std::string getViewValue(void* addr) override;
 
-			FieldDict& getFieldDict() {
-				return m_fields;
-			}
+			FieldDict& getFieldDict();
 
-			bool removeField(int value) {
-				auto it = m_fields.find(value);
-				if (it != m_fields.end()) {
-					m_fields.erase(it);
-					return true;
-				}
-				return false;
-			}
+			bool removeField(int value);
 
-			void addField(std::string name, int value) {
-				m_fields[value] = name;
-			}
+			void addField(std::string name, int value);
 
-			void deleteAll() {
-				m_fields.clear();
-			}
+			void deleteAll();
 		private:
 			FieldDict m_fields;
 			int m_size = 4;

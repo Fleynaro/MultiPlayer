@@ -14,61 +14,31 @@ namespace CE
 		class Pointer : public Type
 		{
 		public:
-			Pointer(Type* type)
-				: m_type(type)
-			{
-				if (type->isArray())
-					throw std::logic_error("Pointer cannot point at an array.");
-				m_type->addOwner();
-			}
+			Pointer(Type* type);
 
-			~Pointer() {
-				m_type->free();
-			}
+			~Pointer();
 
-			Group getGroup() override {
-				return getType()->getGroup();
-			}
+			Group getGroup() override;
 
-			bool isUserDefined() override {
-				return getType()->isUserDefined();
-			}
+			bool isUserDefined() override;
 
-			int getId() override {
-				return getType()->getId();
-			}
+			int getId() override;
 
-			std::string getName() override {
-				return getType()->getName();
-			}
+			std::string getName() override;
 
-			std::string getDesc() override {
-				return getType()->getDesc();
-			}
+			std::string getDesc() override;
 
-			std::string getDisplayName() override {
-				return getType()->getDisplayName() + "*";
-			}
+			std::string getDisplayName() override;
 
-			int getSize() override {
-				return 8;
-			}
+			int getSize() override;
 
-			std::string getViewValue(void* addr) override {
-				return "(" + getDisplayName() + ")0x" + Generic::String::NumberToHex(*(uint64_t*)addr);
-			}
+			std::string getViewValue(void* addr) override;
 
-			Type* getType() {
-				return m_type;
-			}
+			Type* getType();
 			
-			int getPointerLvl() override {
-				return getType()->getPointerLvl() + 1;
-			}
+			int getPointerLvl() override;
 
-			int getArraySize() override {
-				return 0;
-			}
+			int getArraySize() override;
 		private:
 			Type* m_type;
 		};

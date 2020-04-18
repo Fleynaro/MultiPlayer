@@ -214,9 +214,9 @@ namespace CE
 
 		void saveFunction(Function::Function& function) {
 			saveFunctionDecl(function.getDeclaration());
-			if (function.getDeclaration().m_argumentsChanged) {
+			//if (function.getDeclaration().m_argumentsChanged) {
 				saveFunctionDeclArguments(function.getDeclaration());
-			}
+			//}
 			if (function.hasDefinition()) {
 				saveFunctionDefinition(function.getDefinition());
 				saveFunctionRanges(function.getDefinition());
@@ -279,7 +279,7 @@ namespace CE
 			return id;
 		}
 
-		API::Function::Function* createFunction(void* addr, Function::FunctionDefinition::RangeList ranges, API::Function::FunctionDecl* decl = nullptr) {
+		API::Function::Function* createFunction(void* addr, Function::AddressRangeList ranges, API::Function::FunctionDecl* decl = nullptr) {
 			int id = getNewFuncId();
 			auto dd = decl->getFunctionDecl();
 			auto func = m_functions[id] = new API::Function::Function(
@@ -293,7 +293,7 @@ namespace CE
 			return m_functions[id];
 		}
 
-		API::Function::Function* createFunction(Function::FunctionDefinition::RangeList ranges, API::Function::FunctionDecl* decl = nullptr) {
+		API::Function::Function* createFunction(Function::AddressRangeList ranges, API::Function::FunctionDecl* decl = nullptr) {
 			return createFunction(ranges[0].getMinAddress(), ranges, decl);
 		}
 
@@ -353,7 +353,6 @@ namespace CE
 				decl->getSignature().setReturnType(type);
 				loadFunctionDeclArguments(*decl);
 
-				decl->m_argumentsChanged = false;
 				addFunctionDecl(new API::Function::FunctionDecl(this, decl));
 			}
 		}
@@ -400,7 +399,7 @@ namespace CE
 				auto definition =
 					new Function::FunctionDefinition(
 						getProgramModule()->toAbsAddr(def_offset),
-						Function::FunctionDefinition::RangeList(),
+						Function::AddressRangeList(),
 						def_id,
 						decl->getFunctionDecl()
 					);
@@ -422,7 +421,7 @@ namespace CE
 
 			while (query.executeStep())
 			{
-				definition.addRange(Function::FunctionDefinition::Range(
+				definition.addRange(Function::AddressRange(
 					getProgramModule()->toAbsAddr(query.getColumn("min_offset")),
 					getProgramModule()->toAbsAddr(query.getColumn("max_offset"))
 				));

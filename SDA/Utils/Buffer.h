@@ -2,9 +2,7 @@
 #include <main.h>
 
 class BufferOverflowException : public std::exception
-{
-
-};
+{};
 
 class Buffer
 {
@@ -16,129 +14,55 @@ public:
     Header m_header;
 
 private:
-    void init(int size) {
-        m_header.m_contentSize = size;
-        m_header.m_currentOffset = 0;
-    }
+    void init(int size);
 
 public:
-    static Buffer* Create(int size) {
-        auto buffer = (Buffer*)(new BYTE[size]);
-        buffer->init(size);
-        return buffer;
-    }
+    static Buffer* Create(int size);
 
-    static void Destroy(Buffer* buffer) {
-        delete[](BYTE*)buffer;
-    }
+    static void Destroy(Buffer* buffer);
 
-    inline BYTE* getData() {
-        return (BYTE*)&m_header;
-    }
+    BYTE* getData();
 
-    inline BYTE* getContent() {
-        return (BYTE*)((std::uintptr_t) & m_header + sizeof(m_header));
-    }
+    BYTE* getContent();
 
-    int getSize() {
-        return sizeof(m_header) + m_header.m_contentSize;
-    }
+    int getSize();
 
-    int getContentSize() {
-        return m_header.m_contentSize;
-    }
+    int getContentSize();
 
-    int getContentOffset() {
-        return m_header.m_currentOffset;
-    }
+    int getContentOffset();
 
-    int getFreeSpaceSize() {
-        return getContentSize() - getContentOffset();
-    }
+    int getFreeSpaceSize();
 
     class Stream {
     public:
         Stream() = default;
 
-        Stream(Buffer* buffer)
-            : m_buffer(buffer)
-        {
-            setNext(m_data = m_buffer->getContent());
-        }
+        Stream(Buffer* buffer);
 
-        Stream(Stream* bufferStream)
-            : m_bufferStream(bufferStream), m_buffer(bufferStream->m_buffer)
-        {
-            setNext(m_data = m_bufferStream->getNext());
-        }
+        Stream(Stream* bufferStream);
 
         template<typename T = BYTE>
-        inline Stream& write(const T& data) {
-            if (!isFree(sizeof(T))) {
-                throw BufferOverflowException();
-                return *this;
-            }
-            (T&)*m_curData = data;
-            move(sizeof(T), true);
-            return *this;
-        }
+        inline Stream& write(const T& data);
 
-        inline Stream& writeFrom(void* addr, int size) {
-            if (!isFree(size)) {
-                throw BufferOverflowException();
-                return *this;
-            }
-            memcpy_s(m_curData, m_buffer->getFreeSpaceSize(), addr, size);
-            move(size, true);
-            return *this;
-        }
+        Stream& writeFrom(void* addr, int size);
 
         template<typename T = BYTE>
-        inline T& read() {
-            return *readPtr<T>();
-        }
+        inline T& read();
 
         template<typename T = BYTE>
-        inline T* readPtr(int size = sizeof(T)) {
-            if (!isFree(size))
-                throw std::exception("No free space in the buffer.");
-            auto data = (T*)m_curData;
-            m_curData += size;
-            return data;
-        }
+        inline T* readPtr(int size = sizeof(T));
 
-        inline bool isFree(int size) {
-            return m_buffer->getFreeSpaceSize() >= size;
-        }
+        bool isFree(int size);
 
-        void move(int bytes, bool write = false) {
-            m_curData += bytes;
-
-            if (write) {
-                if (m_buffer->m_header.m_currentOffset < getOffset())
-                    m_buffer->m_header.m_currentOffset = getOffset();
-            }
-
-            if (m_bufferStream != nullptr)
-                m_bufferStream->move(bytes, write);
-        }
+        void move(int bytes, bool write = false);
 
         template<typename T = BYTE>
-        inline T* getNext() {
-            if (!isFree(sizeof(T))) {
-                //throw BufferOverflowException();
-            }
-            return (T*)m_curData;
-        }
+        inline T* getNext();
 
         template<typename T = BYTE>
-        inline void setNext(T* ptr) {
-            m_curData = (BYTE*)ptr;
-        }
+        inline void setNext(T* ptr);
 
-        int getOffset() {
-            return (int)((std::uintptr_t)m_curData - (std::uintptr_t)m_data);
-        }
+        int getOffset();
     private:
         Buffer* m_buffer;
         BYTE* m_data;
@@ -149,3 +73,41 @@ public:
 
     friend class Stream;
 };
+
+template<typename T>
+inline Buffer::Stream& Buffer::Stream::write(const T& data) {
+    if (!isFree(sizeof(T))) {
+        throw BufferOverflowException();
+        return *this;
+    }
+    (T&)*m_curData = data;
+    move(sizeof(T), true);
+    return *this;
+}
+
+template<typename T>
+inline T& Buffer::Stream::read() {
+    return *readPtr<T>();
+}
+
+template<typename T>
+inline T* Buffer::Stream::readPtr(int size) {
+    if (!isFree(size))
+        throw BufferOverflowException();
+    auto data = (T*)m_curData;
+    m_curData += size;
+    return data;
+}
+
+template<typename T>
+inline T* Buffer::Stream::getNext() {
+    if (!isFree(sizeof(T))) {
+        throw BufferOverflowException();
+    }
+    return (T*)m_curData;
+}
+
+template<typename T>
+inline void Buffer::Stream::setNext(T* ptr) {
+    m_curData = (BYTE*)ptr;
+}

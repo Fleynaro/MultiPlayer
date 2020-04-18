@@ -727,7 +727,7 @@ namespace CE
 		private:
 			API::Function::Function* m_function;
 
-			void build(Function::FunctionDefinition::Range& range)
+			void build(Function::AddressRange& range)
 			{
 				using namespace CE::Disassembler;
 				using namespace Unit;

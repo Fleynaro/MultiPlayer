@@ -3,10 +3,6 @@
 
 using namespace CE::Trigger;
 
-void CE::Function::FunctionDefinition::createHook() {
-	m_hook = new CE::Trigger::Function::Hook(this);
-}
-
 Function::Hook::Hook(CE::Function::FunctionDefinition* definition)
 {
 	m_hook = CE::Hook::DynHook(definition->getAddress(), &callback_before, &callback_after);

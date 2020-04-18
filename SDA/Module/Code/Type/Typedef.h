@@ -8,47 +8,21 @@ namespace CE
 		class Typedef : public UserType
 		{
 		public:
-			Typedef(Type* refType, int id, const std::string& name, const std::string& desc = "")
-				: UserType(id, name, desc)
-			{
-				setRefType(refType);
-			}
+			Typedef(Type* refType, int id, const std::string& name, const std::string& desc = "");
 
-			Group getGroup() override {
-				return Group::Typedef;
-			}
+			Group getGroup() override;
 
-			int getSize() override {
-				if (getRefType() == this)
-					return 0;
-				return getRefType()->getSize();
-			}
+			int getSize() override;
 
-			std::string getViewValue(void* addr) override {
-				if (getRefType() == this)
-					return UserType::getViewValue(addr);
-				return getRefType()->getViewValue(addr);
-			}
+			std::string getViewValue(void* addr) override;
 
-			int getPointerLvl() override {
-				if (getRefType() == this)
-					return 0;
-				return m_refType->getPointerLvl(); //MYTODO: не может быть указателя на массив
-			}
+			int getPointerLvl() override;
 
-			int getArraySize() override {
-				if (getRefType() == this)
-					return 0;
-				return m_refType->getArraySize();
-			}
+			int getArraySize() override;
 
-			void setRefType(Type* refType) {
-				m_refType = refType;
-			}
+			void setRefType(Type* refType);
 
-			Type* getRefType() {
-				return m_refType;
-			}
+			Type* getRefType();
 		private:
 			Type* m_refType = nullptr;
 		};

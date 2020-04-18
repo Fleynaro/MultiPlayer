@@ -166,11 +166,11 @@ int main()
 			return 0;
 		}
 
-		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::FunctionDefinition::Range(&setRot, 200) }, sda->getFunctionManager()->createFunctionDecl("setRot", "get rot of entity"));
-		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::FunctionDefinition::Range(&changeGvar, 40) }, sda->getFunctionManager()->createFunctionDecl("changeGvar", ""));
-		auto functiondb3 = sda->getFunctionManager()->createFunction(&rand, { Function::FunctionDefinition::Range(&rand, 300) }, sda->getFunctionManager()->createFunctionDecl("rand", ""));
-		auto functiondb5 = sda->getFunctionManager()->createFunction(&setPlayerPos, { Function::FunctionDefinition::Range(&setPlayerPos, 10) }, sda->getFunctionManager()->createFunctionDecl("setPlayerPos", ""));
-		auto functiondb6 = sda->getFunctionManager()->createFunction(&setPlayerVel, { Function::FunctionDefinition::Range(&setPlayerVel, 10) }, sda->getFunctionManager()->createFunctionDecl("setPlayerVel", ""));
+		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::AddressRange(&setRot, 200) }, sda->getFunctionManager()->createFunctionDecl("setRot", "get rot of entity"));
+		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::AddressRange(&changeGvar, 40) }, sda->getFunctionManager()->createFunctionDecl("changeGvar", ""));
+		auto functiondb3 = sda->getFunctionManager()->createFunction(&rand, { Function::AddressRange(&rand, 300) }, sda->getFunctionManager()->createFunctionDecl("rand", ""));
+		auto functiondb5 = sda->getFunctionManager()->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) }, sda->getFunctionManager()->createFunctionDecl("setPlayerPos", ""));
+		auto functiondb6 = sda->getFunctionManager()->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) }, sda->getFunctionManager()->createFunctionDecl("setPlayerVel", ""));
 		auto function = functiondb->getFunction();
 
 		//sda->getFunctionManager()->saveFunction(*functiondb2->getFunction());
