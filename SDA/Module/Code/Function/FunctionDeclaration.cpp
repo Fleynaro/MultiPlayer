@@ -40,12 +40,12 @@ bool FunctionDecl::isFunction(Role role) {
 	return role == Role::Function;
 }
 
-void FunctionDecl::addArgument(Type::Type* type, const std::string& name) {
+void FunctionDecl::addArgument(CE::Type::Type* type, const std::string& name) {
 	getSignature().addArgument(type);
 	getArgNameList().push_back(name);
 }
 
-void FunctionDecl::changeArgument(int id, Type::Type* type, const std::string& name) {
+void FunctionDecl::changeArgument(int id, CE::Type::Type* type, const std::string& name) {
 	getSignature().changeArgument(id, type);
 	if (name.length() > 0) {
 		m_argNames[id] = name;

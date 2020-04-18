@@ -20,7 +20,7 @@ using namespace CE;
 
 namespace GUI::Widget
 {
-	using TriggerEventType = Events::Event<Events::ISender*, Trigger::ITrigger*>;
+	using TriggerEventType = Events::Event<Events::ISender*, Trigger::AbstractTrigger*>;
 
 	
 	class ITriggerList
@@ -29,8 +29,8 @@ namespace GUI::Widget
 		virtual Template::ItemList* getItemList() = 0;
 		virtual TriggerEventType::EventHandlerType* getEventHandlerClickOnName() = 0;
 		virtual void setEventHandlerClickOnName(TriggerEventType::EventHandlerType* eventHandler) = 0;
-		virtual bool checkOnInputValue(Trigger::ITrigger* trigger, const std::string& value) = 0;
-		virtual bool checkAllFilters(Trigger::ITrigger* type) = 0;
+		virtual bool checkOnInputValue(Trigger::AbstractTrigger* trigger, const std::string& value) = 0;
+		virtual bool checkAllFilters(Trigger::AbstractTrigger* type) = 0;
 	};
 
 
@@ -45,7 +45,7 @@ namespace GUI::Widget
 			class TriggerItem : public Item
 			{
 			public:
-				TriggerItem(Trigger::ITrigger* trigger, TriggerEventType::EventHandlerType* eventClickOnName)
+				TriggerItem(Trigger::AbstractTrigger* trigger, TriggerEventType::EventHandlerType* eventClickOnName)
 					: m_trigger(trigger), m_eventClickOnName(eventClickOnName)
 				{
 					addFlags(ImGuiTreeNodeFlags_Leaf, true);
@@ -61,7 +61,7 @@ namespace GUI::Widget
 				}
 
 			private:
-				Trigger::ITrigger* m_trigger;
+				Trigger::AbstractTrigger* m_trigger;
 				TriggerEventType::EventHandlerType* m_eventClickOnName;
 			};
 
@@ -84,7 +84,7 @@ namespace GUI::Widget
 				}
 			}
 
-			virtual GUI::Item* createItem(Trigger::ITrigger* trigger) {
+			virtual GUI::Item* createItem(Trigger::AbstractTrigger* trigger) {
 				return new TriggerItem(trigger, m_triggerList->getEventHandlerClickOnName());
 			}
 		protected:
@@ -100,7 +100,7 @@ namespace GUI::Widget
 				: Filter(triggerList->getFilterManager(), name), m_triggerList(triggerList)
 			{}
 
-			virtual bool checkFilter(Trigger::ITrigger* type) = 0;
+			virtual bool checkFilter(Trigger::AbstractTrigger* type) = 0;
 		protected:
 			TriggerList* m_triggerList;
 		};
@@ -127,12 +127,12 @@ namespace GUI::Widget
 			
 		}
 
-		bool checkOnInputValue(Trigger::ITrigger* trigger, const std::string& value) override {
+		bool checkOnInputValue(Trigger::AbstractTrigger* trigger, const std::string& value) override {
 			return Generic::String::ToLower(trigger->getName())
 				.find(Generic::String::ToLower(value)) != std::string::npos;
 		}
 
-		bool checkAllFilters(Trigger::ITrigger* type) override {
+		bool checkAllFilters(Trigger::AbstractTrigger* type) override {
 			return getFilterManager()->check([&type](Template::FilterManager::Filter* filter) {
 				return static_cast<TriggerFilter*>(filter)->checkFilter(type);
 			});
@@ -157,7 +157,7 @@ namespace GUI::Widget
 
 
 	class TriggerSelectList
-		: public Template::SelectableItemList<Trigger::ITrigger>,
+		: public Template::SelectableItemList<Trigger::AbstractTrigger>,
 		public ITriggerList
 	{
 	public:
@@ -169,7 +169,7 @@ namespace GUI::Widget
 				: m_triggerSelectList(triggerSelectList), TriggerList::ListView(triggerSelectList, triggerManager)
 			{}
 
-			GUI::Item* createItem(Trigger::ITrigger* trigger) override {
+			GUI::Item* createItem(Trigger::AbstractTrigger* trigger) override {
 				auto triggerItem = static_cast<TriggerItem*>(TriggerList::ListView::createItem(trigger));
 				makeSelectable(
 					triggerItem,
@@ -184,18 +184,18 @@ namespace GUI::Widget
 		};
 
 		TriggerSelectList(TriggerList* triggerList, Events::SpecialEventType::EventHandlerType* eventSelectItems)
-			: Template::SelectableItemList<Trigger::ITrigger>(triggerList, eventSelectItems)
+			: Template::SelectableItemList<Trigger::AbstractTrigger>(triggerList, eventSelectItems)
 		{}
 
 		TriggerList* getTriggerList() {
 			return static_cast<TriggerList*>(m_itemList);
 		}
 
-		bool checkOnInputValue(Trigger::ITrigger* trigger, const std::string& value) override {
+		bool checkOnInputValue(Trigger::AbstractTrigger* trigger, const std::string& value) override {
 			return getTriggerList()->checkOnInputValue(trigger, value);
 		}
 
-		bool checkAllFilters(Trigger::ITrigger* trigger) override {
+		bool checkAllFilters(Trigger::AbstractTrigger* trigger) override {
 			return getFilterManager()->check([&](Template::FilterManager::Filter* filter) {
 				return filter == m_selectedFilter
 					? static_cast<SelectedFilter*>(filter)->checkFilter(trigger)
@@ -274,7 +274,7 @@ namespace GUI::Widget
 			return static_cast<int>(getSelectedTriggers().size());
 		}
 
-		std::list<Trigger::ITrigger*>& getSelectedTriggers() {
+		std::list<Trigger::AbstractTrigger*>& getSelectedTriggers() {
 			return m_triggerSelectList->getSelectedItems();
 		}
 	protected:
@@ -514,7 +514,7 @@ namespace GUI::Window
 		: public PrjWindow
 	{
 	public:
-		GenericTriggerEditor(const std::string& name, Trigger::ITrigger* trigger)
+		GenericTriggerEditor(const std::string& name, Trigger::AbstractTrigger* trigger)
 			: PrjWindow(name), m_trigger(trigger)
 		{
 			//setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
@@ -526,7 +526,7 @@ namespace GUI::Window
 		}
 
 	protected:
-		Trigger::ITrigger* m_trigger;
+		Trigger::AbstractTrigger* m_trigger;
 		Elements::Input::Text* m_nameInput;
 	};
 
@@ -536,7 +536,7 @@ namespace GUI::Window
 		class FilterWinEditor : public PrjWindow
 		{
 		public:
-			FilterWinEditor(Trigger::Function::Trigger* trigger, IFilter* filter, TriggerFilterInfo::Function::Filter* info, Project* project)
+			FilterWinEditor(Trigger::Function::Trigger* trigger, AbstractFilter* filter, TriggerFilterInfo::Function::Filter* info, Project* project)
 				: PrjWindow("Filter editor: " + info->m_name)
 			{
 				setWidth(500);
@@ -560,7 +560,7 @@ namespace GUI::Window
 				setMainContainer(filterEditor);
 			}
 
-			Widget::FunctionTriggerFilter::FilterEditor* createFilterEditor(Trigger::Function::Trigger* trigger, IFilter* filter, TriggerFilterInfo::Function::Filter* info) {
+			Widget::FunctionTriggerFilter::FilterEditor* createFilterEditor(Trigger::Function::Trigger* trigger, AbstractFilter* filter, TriggerFilterInfo::Function::Filter* info) {
 				using namespace Widget::FunctionTriggerFilter;
 
 				switch (filter->getId())
@@ -584,7 +584,7 @@ namespace GUI::Window
 			public:
 				class Filter : public IObject {
 				public:
-					Filter(IFilter* filter, TriggerFilterInfo::Function::Filter* filterInfo)
+					Filter(AbstractFilter* filter, TriggerFilterInfo::Function::Filter* filterInfo)
 						: m_filter(filter), m_filterInfo(filterInfo)
 					{}
 
@@ -592,17 +592,17 @@ namespace GUI::Window
 						return m_filterInfo->m_name;
 					}
 
-					IFilter* getFilter() {
+					AbstractFilter* getFilter() {
 						return m_filter;
 					}
 				private:
-					IFilter* m_filter;
+					AbstractFilter* m_filter;
 					TriggerFilterInfo::Function::Filter* m_filterInfo;
 				};
 
 				using TreeView = Elements::List::TreeView<Trigger::Function::Filter::Id>;
 
-				FilterList(ICompositeFilter* compositeFilter, TriggerEditor* triggerEditor, TreeView* treeView = nullptr)
+				FilterList(AbstractCompositeFilter* compositeFilter, TriggerEditor* triggerEditor, TreeView* treeView = nullptr)
 					: m_compositeFilter(compositeFilter), m_triggerEditor(triggerEditor), m_treeView(treeView)
 				{
 					m_filterInfo = TriggerFilterInfo::Function::GetFilter(compositeFilter->getId());
@@ -651,15 +651,15 @@ namespace GUI::Window
 					m_treeView->destroy();
 				}
 
-				IFilter* getFilter(IObject* object) {
+				AbstractFilter* getFilter(IObject* object) {
 					if (auto filterList = dynamic_cast<FilterList*>(object)) {
 						return filterList->m_compositeFilter;
 					}
 					return static_cast<Filter*>(object)->getFilter();
 				}
 
-				void addFilter(IFilter* filter) {
-					if (auto compositeFilter_ = dynamic_cast<ICompositeFilter*>(filter)) {
+				void addFilter(AbstractFilter* filter) {
+					if (auto compositeFilter_ = dynamic_cast<AbstractCompositeFilter*>(filter)) {
 						auto filterList = new FilterList(compositeFilter_, m_triggerEditor);
 						addObject(filterList);
 					}
@@ -704,7 +704,7 @@ namespace GUI::Window
 					return "Composite: " + m_filterInfo->m_name;
 				}
 			private:
-				ICompositeFilter* m_compositeFilter;
+				AbstractCompositeFilter* m_compositeFilter;
 				TriggerFilterInfo::Function::Filter* m_filterInfo;
 				TreeView* m_treeView;
 				TriggerEditor* m_triggerEditor;
@@ -828,7 +828,7 @@ namespace GUI::Window
 				return static_cast<Trigger::Function::Trigger*>(m_trigger);
 			}
 
-			void showFilterWinEditor(IFilter* filter, TriggerFilterInfo::Function::Filter* filterInfo) {
+			void showFilterWinEditor(AbstractFilter* filter, TriggerFilterInfo::Function::Filter* filterInfo) {
 				if (m_winEditor != nullptr) {
 					m_winEditor->close();
 				}

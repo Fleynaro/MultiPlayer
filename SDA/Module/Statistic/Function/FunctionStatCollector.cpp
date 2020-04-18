@@ -1,5 +1,5 @@
-#include "Function.h"
-#include <Trigger/Trigger.h>
+#include "FunctionStatCollector.h"
+#include <Trigger/FunctionTrigger.h>
 
 using namespace CE::Stat::Function;
 

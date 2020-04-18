@@ -1,6 +1,6 @@
 #pragma once
 #include "Shared/GUI/Widgets/Template/InteractiveInput.h"
-#include <Pointer/Pointer.h>
+#include <Address/Address.h>
 #include "Type.h"
 
 using namespace CE;

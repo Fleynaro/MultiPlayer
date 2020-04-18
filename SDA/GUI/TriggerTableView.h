@@ -1,6 +1,6 @@
 #pragma once
 #include "GUI/Widgets/TableView.h"
-#include <Trigger/TriggerTableLog.h>
+#include <Trigger/FunctionTriggerTableLog.h>
 #include "Project.h"
 
 namespace GUI::Widget::TableViews

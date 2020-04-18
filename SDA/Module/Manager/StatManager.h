@@ -1,6 +1,6 @@
 #pragma once
 #include "AbstractManager.h"
-#include <Statistic/Function.h>
+#include <Statistic/Function/FunctionStatCollector.h>
 
 namespace CE
 {

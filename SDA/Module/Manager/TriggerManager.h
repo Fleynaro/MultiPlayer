@@ -1,19 +1,19 @@
 #pragma once
 #include "AbstractManager.h"
-#include <Trigger/Trigger.h>
+#include <Trigger/FunctionTrigger.h>
 
 namespace CE
 {
 	class TriggerManager : public AbstractManager
 	{
 	public:
-		using TriggerDict = std::map<int, Trigger::ITrigger*>;
+		using TriggerDict = std::map<int, Trigger::AbstractTrigger*>;
 
 		TriggerManager(ProgramModule* sda)
 			: AbstractManager(sda)
 		{}
 
-		void saveTrigger(Trigger::ITrigger* trigger) {
+		void saveTrigger(Trigger::AbstractTrigger* trigger) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
@@ -48,7 +48,7 @@ namespace CE
 			transaction.commit();
 		}
 
-		void saveFiltersForFuncTrigger(SQLite::Database& db, int trigger_id, int filter_idx, Trigger::Function::Filter::IFilter* filter) {
+		void saveFiltersForFuncTrigger(SQLite::Database& db, int trigger_id, int filter_idx, Trigger::Function::Filter::AbstractFilter* filter) {
 			using namespace Trigger::Function::Filter;
 			
 			if (trigger_id != 1) {
@@ -63,7 +63,7 @@ namespace CE
 				query.exec();
 			}
 
-			if (auto compositeFilter = dynamic_cast<ICompositeFilter*>(filter)) {
+			if (auto compositeFilter = dynamic_cast<AbstractCompositeFilter*>(filter)) {
 				for (const auto& filter : compositeFilter->getFilters()) {
 					saveFiltersForFuncTrigger(db, trigger_id, filter_idx + 1, filter);
 				}
@@ -81,7 +81,7 @@ namespace CE
 			loadFiltersForFuncTrigger(query, trigger->getFilters());
 		}
 
-		void loadFiltersForFuncTrigger(SQLite::Statement& query, Trigger::Function::Filter::ICompositeFilter* compositeFilter) {
+		void loadFiltersForFuncTrigger(SQLite::Statement& query, Trigger::Function::Filter::AbstractCompositeFilter* compositeFilter) {
 			using namespace Trigger::Function::Filter;
 
 			auto size = compositeFilter->m_filtersSavedCount != -1 ? compositeFilter->m_filtersSavedCount : 1000;
@@ -97,13 +97,13 @@ namespace CE
 				filter->deserialize(bs);
 				compositeFilter->addFilter(filter);
 
-				if (auto compositeFilter_ = dynamic_cast<ICompositeFilter*>(filter)) {
+				if (auto compositeFilter_ = dynamic_cast<AbstractCompositeFilter*>(filter)) {
 					loadFiltersForFuncTrigger(query, compositeFilter_);
 				}
 			}
 		}
 
-		void removeTrigger(Trigger::ITrigger* trigger) {
+		void removeTrigger(Trigger::AbstractTrigger* trigger) {
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
@@ -148,7 +148,7 @@ namespace CE
 
 			while (query.executeStep())
 			{
-				Trigger::ITrigger* trigger = nullptr;
+				Trigger::AbstractTrigger* trigger = nullptr;
 
 				int type = query.getColumn("type");
 				switch ((Trigger::Type)type)
@@ -173,11 +173,11 @@ namespace CE
 			return m_triggers;
 		}
 
-		void addTrigger(Trigger::ITrigger* trigger) {
+		void addTrigger(Trigger::AbstractTrigger* trigger) {
 			m_triggers.insert(std::make_pair(trigger->getId(), trigger));
 		}
 
-		inline Trigger::ITrigger* getTriggerById(int trigger_id) {
+		inline Trigger::AbstractTrigger* getTriggerById(int trigger_id) {
 			if (m_triggers.find(trigger_id) == m_triggers.end())
 				return nullptr;
 			return m_triggers[trigger_id];

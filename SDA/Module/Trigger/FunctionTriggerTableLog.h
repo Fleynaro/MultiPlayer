@@ -1,5 +1,5 @@
 #pragma once
-#include "Trigger.h"
+#include "FunctionTrigger.h"
 #include "Utils/Table.h"
 #include <chrono>
 
