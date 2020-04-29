@@ -1,6 +1,6 @@
 #pragma once
 #include "AbstractManager.h"
-#include <Statistic/Function/FunctionStatCollector.h>
+#include <Statistic/Function/Collector/FunctionStatCollector.h>
 
 namespace CE
 {
@@ -20,7 +20,7 @@ namespace CE
 			delete m_collector;
 		}
 
-		inline Stat::Function::Collector* getCollector() {
+		Stat::Function::Collector* getCollector() {
 			return m_collector;
 		}
 	private:

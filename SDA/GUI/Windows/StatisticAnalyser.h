@@ -1,6 +1,6 @@
 #pragma once
 #include "GUI/Windows/ItemLists/FunctionList.h"
-#include "Module/Statistic/Function/FunctionStatAnalyser.h"
+#include "Module/Statistic/Function/Analysis/FunctionStatAnalyser.h"
 
 using namespace CE;
 

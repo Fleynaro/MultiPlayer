@@ -1,5 +1,5 @@
 #pragma once
-#include "FunctionStatCollector.h"
+#include "../Collector/FunctionStatCollector.h"
 
 namespace CE::Stat::Function::Analyser
 {

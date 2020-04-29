@@ -207,7 +207,7 @@
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\CallGraph\CallGraph.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
-    <ClCompile Include="Module\Statistic\Function\FunctionStatCollector.cpp" />
+    <ClCompile Include="Module\Statistic\Function\Collector\FunctionStatCollector.cpp" />
     <ClCompile Include="Module\Code\Function\Method.cpp" />
     <ClCompile Include="Module\Disassembler\Disassembler.cpp" />
     <ClCompile Include="Module\DynHook\DynHook.cpp" />
@@ -228,6 +228,8 @@
     <ClCompile Include="Module\MemoryAnalyser\AVX\Analyser.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\avx.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Module\Statistic\Function\Collector\Record\BeforeCallInfo.cpp" />
+    <ClCompile Include="Module\Statistic\Function\Collector\Record\CallInfoWriter.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTrigger.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTriggerHook.cpp" />
     <ClCompile Include="Utility\FileWrapper.cpp" />
@@ -311,10 +313,13 @@
     <ClInclude Include="Module\MemoryAnalyser\AVX\avx.h" />
     <ClInclude Include="Module\Address\Address.h" />
     <ClInclude Include="Module\Statistic\Analyser.h" />
-    <ClInclude Include="Module\Statistic\Function\FunctionStatAnalyser.h" />
-    <ClInclude Include="Module\Statistic\Function\FunctionStatCollector.h" />
-    <ClInclude Include="Module\Statistic\Function\IAnalysisProvider.h" />
-    <ClInclude Include="Module\Statistic\Function\SignatureAnalysisProvider.h" />
+    <ClInclude Include="Module\Statistic\Function\Analysis\FunctionStatAnalyser.h" />
+    <ClInclude Include="Module\Statistic\Function\Collector\CollectingBufferSaver.h" />
+    <ClInclude Include="Module\Statistic\Function\Collector\FunctionStatCollector.h" />
+    <ClInclude Include="Module\Statistic\Function\Analysis\IAnalysisProvider.h" />
+    <ClInclude Include="Module\Statistic\Function\Analysis\SignatureAnalysisProvider.h" />
+    <ClInclude Include="Module\Statistic\Function\Collector\Record\BeforeCallInfo.h" />
+    <ClInclude Include="Module\Statistic\Function\Collector\Record\CallInfoWriter.h" />
     <ClInclude Include="Module\Trigger\FunctionFilterFactory.h" />
     <ClInclude Include="Module\Trigger\Filters\AbstractCompositeFilter.h" />
     <ClInclude Include="Module\Trigger\Filters\AbstractFilter.h" />

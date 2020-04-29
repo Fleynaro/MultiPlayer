@@ -2,7 +2,7 @@
 #include "AbstractTrigger.h"
 #include "FunctionFilterFactory.h"
 #include "FunctionTriggerHook.h"
-#include <Statistic/Function/FunctionStatCollector.h>
+#include <Statistic/Function/Collector/FunctionStatCollector.h>
 
 namespace CE::Trigger::Function
 {
