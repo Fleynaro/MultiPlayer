@@ -11,13 +11,13 @@ namespace CE
 
 	namespace Function
 	{
-		class FunctionDefinition
+		class FunctionDefinition : public DB::DomainObject
 		{
 		public:
 			using ArgList = std::vector<Variable::Param>;
 
 			FunctionDefinition(void* addr, AddressRangeList ranges, int def_id, FunctionDecl* decl)
-				: m_addr(addr), m_ranges(ranges), m_id(def_id), m_decl(decl)
+				: m_addr(addr), m_ranges(ranges), m_id(def_id), m_decl(decl), DB::DomainObject(def_id)
 			{}
 
 			int getId();

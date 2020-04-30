@@ -2,8 +2,8 @@
 
 using namespace CE::Function;
 
-FunctionDecl::FunctionDecl(int id, const std::string& name, const std::string& desc)
-	: Desc(id, name, desc)
+FunctionDecl::FunctionDecl(const std::string& name, const std::string& desc)
+	: Desc(0, name, desc)
 {}
 
 std::string FunctionDecl::getSigName() {

@@ -1,5 +1,7 @@
 #pragma once
 #include "Signature.h"
+#include <DB/DomainObject.h>
+#include <DB/AbstractMapper.h>
 
 namespace CE
 {
@@ -7,7 +9,7 @@ namespace CE
 	{
 		using ArgNameList = std::vector<std::string>;
 
-		class FunctionDecl : public Desc
+		class FunctionDecl : public DB::DomainObject, public Desc
 		{
 		public:
 			enum class Role
@@ -21,7 +23,7 @@ namespace CE
 				VirtualDestructor
 			};
 
-			FunctionDecl(int id, const std::string& name, const std::string& desc = "");
+			FunctionDecl(const std::string& name, const std::string& desc = "");
 
 			virtual std::string getSigName();
 
@@ -45,6 +47,7 @@ namespace CE
 		private:
 			Signature m_signature;
 			ArgNameList m_argNames;
+
 		};
 	};
 };

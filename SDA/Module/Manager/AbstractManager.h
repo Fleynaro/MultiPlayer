@@ -1,5 +1,6 @@
 #pragma once
 #include "SDA.h"
+#include <DB/AbstractMapper.h>
 
 namespace CE
 {
@@ -15,6 +16,36 @@ namespace CE
 		}
 	private:
 		ProgramModule* m_programModule;
+	};
+
+	class AbstractItemManager : public AbstractManager, public DB::IRepository
+	{
+		using ItemMapType = std::map<int, DB::DomainObject*>;
+	public:
+		AbstractItemManager(ProgramModule* programModule)
+			: AbstractManager(programModule)
+		{}
+
+		void onChange(DB::DomainObject* obj, ChangeType type) override {
+			switch (type)
+			{
+			case Loaded:
+			case Inserted:
+				m_items.insert(std::make_pair(obj->getId(), obj));
+				break;
+			case Removed:
+				m_items.erase(obj->getId());
+				break;
+			}
+		}
+		
+		DB::DomainObject* find(DB::Id id) override {
+			if (m_items.find(id) == m_items.end())
+				return nullptr;
+			return m_items[id];
+		}
+	private:
+		ItemMapType m_items;
 	};
 
 	namespace API

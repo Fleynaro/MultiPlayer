@@ -12,12 +12,12 @@ namespace CE
 		class MethodDecl : public FunctionDecl
 		{
 		public:
-			MethodDecl(Type::Class* Class, int id, std::string name, std::string desc = "")
-				: m_class(Class), FunctionDecl(id, name, desc)
+			MethodDecl(Type::Class* Class, std::string name, std::string desc = "")
+				: m_class(Class), FunctionDecl(name, desc)
 			{}
 
-			MethodDecl(int id, std::string name, std::string desc = "")
-				: MethodDecl(nullptr, id, name, desc)
+			MethodDecl(std::string name, std::string desc = "")
+				: MethodDecl(nullptr, name, desc)
 			{}
 
 			std::string getSigName() override {

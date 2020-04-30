@@ -260,6 +260,9 @@
     <ClInclude Include="Module\Code\Function\FunctionDeclaration.h" />
     <ClInclude Include="Module\Code\Function\FunctionDefinition.h" />
     <ClInclude Include="Module\Code\Function\Signature.h" />
+    <ClInclude Include="Module\DB\DomainObject.h" />
+    <ClInclude Include="Module\DB\AbstractMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\FunctionDeclMapper.h" />
     <ClInclude Include="Module\FunctionTag\FunctionTag.h" />
     <ClInclude Include="GUI\Signature.h" />
     <ClInclude Include="GUI\Type.h" />
