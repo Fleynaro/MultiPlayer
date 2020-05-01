@@ -1,6 +1,7 @@
 #pragma once
 #include <Code/Function/FunctionDeclaration.h>
-#include <Code/Function/Method.h>
+#include <Code/Function/MethodDeclaration.h>
+#include <Manager/FunctionDeclManager.h>
 
 /*
 	1) сделать менеджер, зависимым от IRepository и абстрактного менеджера итемов
@@ -12,78 +13,84 @@ namespace DB
 	class FunctionDeclMapper : public AbstractMapper
 	{
 	public:
-		FunctionDeclMapper(Database* db, IRepository* repository)
-			: AbstractMapper(db, repository)
+		FunctionDeclMapper(IRepository* repository)
+			: AbstractMapper(repository)
 		{}
 
-		void loadAll() {
-			Statement query(*m_db, "SELECT * FROM sda_func_decls");
-			load(query);
+		void loadAll(Database* db) {
+			Statement query(*db, "SELECT * FROM sda_func_decls");
+			load(db, query);
+		}
+
+		CE::FunctionDeclManager* getManager() {
+			return static_cast<CE::FunctionDeclManager*>(m_repository);
 		}
 	protected:
-		DomainObject* doLoad(SQLite::Statement& query) override {
+		DomainObject* doLoad(Database* db, SQLite::Statement& query) override {
 			using namespace CE;
 			Function::FunctionDecl* decl;
 			Function::FunctionDecl::Role decl_role = (Function::FunctionDecl::Role)(int)query.getColumn("role");
-			int decl_id = query.getColumn("decl_id");
+			Id decl_id = query.getColumn("decl_id");
 			std::string decl_name = query.getColumn("name");
 			std::string decl_desc = query.getColumn("desc");
 
 			if (Function::FunctionDecl::isFunction(decl_role)) {
 				decl = new Function::FunctionDecl(
-					decl_id,
+					getManager(),
 					decl_name,
 					decl_desc
 				);
 			}
 			else {
 				decl = new Function::MethodDecl(
-					decl_id,
+					getManager(),
 					decl_name,
 					decl_desc
 				);
 				static_cast<Function::MethodDecl*>(decl)->setRole((Function::MethodDecl::Role)(int)query.getColumn("role"));
 			}
 
-			Type::Type* type = getProgramModule()->getTypeManager()->getType(
+			decl->setId(decl_id);
+
+			Type::Type* type = getManager()->getProgramModule()->getTypeManager()->getType(
 				query.getColumn("ret_type_id"),
 				query.getColumn("ret_pointer_lvl"),
 				query.getColumn("ret_array_size")
 			);
 
 			if (type == nullptr) {
-				type = getProgramModule()->getTypeManager()->getDefaultReturnType()->getType();
+				type = getManager()->getProgramModule()->getTypeManager()->getDefaultReturnType()->getType();
 			}
 			decl->getSignature().setReturnType(type);
-			loadFunctionDeclArguments(*decl);
+			loadFunctionDeclArguments(db, *decl);
 			return decl;
 		}
 
-		void loadFunctionDeclArguments(CE::Function::FunctionDecl& decl) {
-			using namespace SQLite;
+		void loadFunctionDeclArguments(Database* db, CE::Function::FunctionDecl& decl) {
+			using namespace CE;
 
-			SQLite::Statement query(*m_db, "SELECT * FROM sda_func_arguments WHERE decl_id=?1 GROUP BY id");
+			Statement query(*db, "SELECT * FROM sda_func_arguments WHERE decl_id=?1 GROUP BY id");
 			query.bind(1, decl.getId());
 
 			while (query.executeStep())
 			{
-				Type::Type* type = getProgramModule()->getTypeManager()->getType(
+				Type::Type* type = getManager()->getProgramModule()->getTypeManager()->getType(
 					query.getColumn("type_id"),
 					query.getColumn("pointer_lvl"),
 					query.getColumn("array_size")
 				);
 
 				if (type == nullptr) {
-					type = getProgramModule()->getTypeManager()->getDefaultType()->getType();
+					type = getManager()->getProgramModule()->getTypeManager()->getDefaultType()->getType();
 				}
 
 				decl.addArgument(type, query.getColumn("name"));
 			}
 		}
 
-		void saveFunctionDeclArguments(CE::Function::FunctionDecl& decl) {
+		void saveFunctionDeclArguments(Database* db, CE::Function::FunctionDecl& decl) {
 			{
-				SQLite::Statement query(*m_db, "DELETE FROM sda_func_arguments WHERE decl_id=?1");
+				SQLite::Statement query(*db, "DELETE FROM sda_func_arguments WHERE decl_id=?1");
 				query.bind(1, decl.getId());
 				query.exec();
 			}
@@ -91,7 +98,7 @@ namespace DB
 			{
 				int id = 0;
 				for (auto type : decl.getSignature().getArgList()) {
-					SQLite::Statement query(*m_db, "INSERT INTO sda_func_arguments (decl_id, id, name, type_id, pointer_lvl, array_size) \
+					SQLite::Statement query(*db, "INSERT INTO sda_func_arguments (decl_id, id, name, type_id, pointer_lvl, array_size) \
 					VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
 					query.bind(1, decl.getId());
 					query.bind(2, id);
@@ -105,28 +112,27 @@ namespace DB
 			}
 		}
 
-		void doInsert(DomainObject* obj) override {
+		void doInsert(Database* db, DomainObject* obj) override {
 			auto& decl = *(CE::Function::FunctionDecl*)obj;
 
-			SQLite::Statement query(*m_db, "INSERT INTO sda_func_decls (name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
+			SQLite::Statement query(*db, "INSERT INTO sda_func_decls (name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
 				VALUES(?2, ?3, ?4, ?5, ?6, ?7)");
 			bind(query, decl);
 			query.exec();
-			setNewId(obj);
 		}
 
-		void doUpdate(DomainObject* obj) override {
+		void doUpdate(Database* db, DomainObject* obj) override {
 			auto& decl = *(CE::Function::FunctionDecl*)obj;
 
-			SQLite::Statement query(*m_db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
+			SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
 				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");
 			query.bind(1, obj->getId());
 			bind(query, decl);
 			query.exec();
 		}
 
-		void doRemove(DomainObject* obj) override {
-			Statement query(*m_db, "DELETE FROM sda_func_decls WHERE decl_id=?1");
+		void doRemove(Database* db, DomainObject* obj) override {
+			Statement query(*db, "DELETE FROM sda_func_decls WHERE decl_id=?1");
 			query.bind(1, obj->getId());
 			query.exec();
 		}

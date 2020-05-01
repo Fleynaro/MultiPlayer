@@ -17,37 +17,55 @@ namespace DB
 	class Transaction : public ITransaction
 	{
 	public:
+		Transaction(Database* db)
+			: m_db(db)
+		{}
+
 		void markAsNew(DomainObject* obj) override {
 			m_insertedObjs.push_back(obj);
+
+			if (obj->m_mapper->m_repository != nullptr)
+				obj->m_mapper->m_repository->onChangeBeforeCommit(obj, IRepository::Inserted);
 		}
 
 		void markAsDirty(DomainObject* obj) override {
 			m_updatedObjs.push_back(obj);
+
+			if (obj->m_mapper->m_repository != nullptr)
+				obj->m_mapper->m_repository->onChangeBeforeCommit(obj, IRepository::Updated);
 		}
 
 		void markAsRemoved(DomainObject* obj) override {
 			m_removedObjs.push_back(obj);
+
+			if (obj->m_mapper->m_repository != nullptr)
+				obj->m_mapper->m_repository->onChangeBeforeCommit(obj, IRepository::Removed);
 		}
 
 		void commit() override {
-			SQLite::Transaction transaction(db);
+			SQLite::Transaction transaction(*m_db);
 
 			for (auto obj : m_insertedObjs) {
 				if(obj->m_mapper != nullptr)
-					obj->m_mapper->insert(obj);
+					obj->m_mapper->insert(m_db, obj);
 			}
 
 			for (auto obj : m_updatedObjs) {
 				if (obj->m_mapper != nullptr)
-					obj->m_mapper->update(obj);
+					obj->m_mapper->update(m_db, obj);
 			}
 
 			for (auto obj : m_removedObjs) {
-				if (obj->m_mapper != nullptr)
-					obj->m_mapper->remove(obj);
+				if (obj->m_mapper != nullptr) {
+					obj->m_mapper->remove(m_db, obj);
+					delete obj;
+				}
 			}
+
+			transaction.commit();
 		}
 	private:
+		Database* m_db;
 		std::list<DomainObject*> m_insertedObjs;
 		std::list<DomainObject*> m_updatedObjs;
 		std::list<DomainObject*> m_removedObjs;

@@ -1,5 +1,5 @@
 #pragma once
-#include <Manager/FunctionManager.h>
+#include <Manager/FunctionDefManager.h>
 #include <Disassembler/Disassembler.h>
 
 namespace CE
@@ -106,7 +106,7 @@ namespace CE
 			class FunctionNode : public AbstractNode
 			{
 			public:
-				FunctionNode(API::Function::Function* function, void* addr)
+				FunctionNode(Function::Function* function, void* addr)
 					: m_function(function), AbstractNode(addr)
 				{}
 
@@ -126,11 +126,11 @@ namespace CE
 					return getFunction() == nullptr;
 				}
 
-				API::Function::Function* getFunction() {
+				Function::Function* getFunction() {
 					return m_function;
 				}
 			private:
-				API::Function::Function* m_function = nullptr;
+				Function::Function* m_function = nullptr;
 			};
 
 			class VMethodNode : public AbstractNode
@@ -251,7 +251,7 @@ namespace CE
 					}
 				};
 
-				FunctionBody(API::Function::Function* function)
+				FunctionBody(Function::Function* function)
 					: m_function(function)
 				{}
 
@@ -263,7 +263,7 @@ namespace CE
 					return Type::FunctionBody;
 				}
 
-				API::Function::Function* getFunction() {
+				Function::Function* getFunction() {
 					return m_function;
 				}
 
@@ -275,7 +275,7 @@ namespace CE
 					return m_basicInfo;
 				}
 			private:
-				API::Function::Function* m_function;
+				Function::Function* m_function;
 				BasicInfo m_basicInfo;
 			};
 
@@ -328,7 +328,7 @@ namespace CE
 		class FunctionIterator
 		{
 		public:
-			FunctionIterator(API::Function::Function* function)
+			FunctionIterator(Function::Function* function)
 				: m_funcBody(function->getBody())
 			{}
 
@@ -449,9 +449,11 @@ namespace CE
 
 			void iterateSourceTops(const std::function<bool(Unit::FunctionBody*)>& callback)
 			{
-				for (auto it : m_funcManager->getFunctions()) {
-					if (it.second->getBody()->isSourceTop()) {
-						if (!callback(it.second->getBody())) {
+				FunctionManager::Iterator it(m_funcManager);
+				while (it.hasNext()) {
+					auto func = it.next();
+					if (func->getBody()->isSourceTop()) {
+						if (!callback(func->getBody())) {
 							break;
 						}
 					}
@@ -471,14 +473,22 @@ namespace CE
 				{}
 
 				void doAnalyse() {
-					for (auto it : m_funcManager->getFunctions()) {
-						it.second->getBody()->getBasicInfo().m_inited = false;
+					{
+						FunctionManager::Iterator it(m_funcManager);
+						while (it.hasNext()) {
+							auto func = it.next();
+							func->getBody()->getBasicInfo().m_inited = false;
+						}
 					}
 
-					for (auto it : m_funcManager->getFunctions()) {
-						if (it.second->getBody()->isSourceTop()) {
-							CallStack stack;
-							iterateCallStack(it.second->getBody(), stack);
+					{
+						FunctionManager::Iterator it(m_funcManager);
+						while (it.hasNext()) {
+							auto func = it.next();
+							if (func->getBody()->isSourceTop()) {
+								CallStack stack;
+								iterateCallStack(func->getBody(), stack);
+							}
 						}
 					}
 				}
@@ -539,7 +549,7 @@ namespace CE
 			class Generic
 			{
 			public:
-				Generic(API::Function::Function* function)
+				Generic(Function::Function* function)
 					: m_funcBody(function->getBody())
 				{}
 
@@ -608,7 +618,7 @@ namespace CE
 						auto funcBody1 = static_cast<Unit::FunctionBody*>(node1);
 						for (auto node2 : nodesInBody[1]) {
 							auto funcBody2 = static_cast<Unit::FunctionBody*>(node2);
-							if (funcBody1->getFunction()->getDefinition().getId() == funcBody2->getFunction()->getDefinition().getId()) {
+							if (funcBody1->getFunction() == funcBody2->getFunction()) {
 								m_mutualFuncBodies.push_back(funcBody1);
 							}
 						}
@@ -710,13 +720,13 @@ namespace CE
 		class FunctionBodyBuilder
 		{
 		public:
-			FunctionBodyBuilder(API::Function::Function* function)
+			FunctionBodyBuilder(Function::Function* function)
 				: m_function(function)
 			{}
 
 			void build()
 			{
-				for (auto& range : m_function->getDefinition().getRangeList()) {
+				for (auto& range : m_function->getRangeList()) {
 					build(range);
 				}
 			}
@@ -725,7 +735,7 @@ namespace CE
 				return m_function->getBody();
 			}
 		private:
-			API::Function::Function* m_function;
+			Function::Function* m_function;
 
 			void build(Function::AddressRange& range)
 			{
@@ -762,11 +772,11 @@ namespace CE
 					else if (instruction.isJumping()) {
 						auto& instr = (Code::Instructions::JumpInstruction&)instruction;
 						if (instr.hasAbsoluteAddr()) {
-							auto calledFunc = m_function->getFunctionManager()->getFunctionAt(instr.getAbsoluteAddr());
+							auto calledFunc = m_function->getManager()->getFunctionAt(instr.getAbsoluteAddr());
 
 							if (instruction.getMnemonicId() != ZYDIS_MNEMONIC_CALL) {
 								if (calledFunc != nullptr) {
-									if (calledFunc->getFunction() == m_function->getFunction()) {
+									if (calledFunc == m_function) {
 										calledFunc = nullptr;
 									}
 								}

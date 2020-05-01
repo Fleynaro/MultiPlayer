@@ -20,16 +20,18 @@ namespace CE
 
 	class AbstractItemManager : public AbstractManager, public DB::IRepository
 	{
-		using ItemMapType = std::map<int, DB::DomainObject*>;
 	public:
 		AbstractItemManager(ProgramModule* programModule)
 			: AbstractManager(programModule)
 		{}
 
-		void onChange(DB::DomainObject* obj, ChangeType type) override {
+		void onLoaded(DB::DomainObject* obj) override {
+			m_items.insert(std::make_pair(obj->getId(), obj));
+		}
+
+		void onChangeBeforeCommit(DB::DomainObject* obj, ChangeType type) override {
 			switch (type)
 			{
-			case Loaded:
 			case Inserted:
 				m_items.insert(std::make_pair(obj->getId(), obj));
 				break;
@@ -38,13 +40,17 @@ namespace CE
 				break;
 			}
 		}
+
+		void onChangeAfterCommit(DB::DomainObject* obj, ChangeType type) override {
+		}
 		
 		DB::DomainObject* find(DB::Id id) override {
 			if (m_items.find(id) == m_items.end())
 				return nullptr;
 			return m_items[id];
 		}
-	private:
+	protected:
+		using ItemMapType = std::map<DB::Id, DB::DomainObject*>;
 		ItemMapType m_items;
 	};
 

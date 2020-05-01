@@ -1,7 +1,7 @@
 #pragma once
 #include "UserType.h"
 #include "SystemType.h"
-#include "../Function/Method.h"
+#include "../Function/MethodDeclaration.h"
 #include "../VTable/VTable.h"
 
 namespace CE
@@ -34,7 +34,7 @@ namespace CE
 			};
 
 			using FieldDict = std::map<int, Field*>;
-			using MethodList = std::list<Function::Method*>;
+			using MethodList = std::list<Function::MethodDecl*>;
 			
 			Class(int id, std::string name, std::string desc = "");
 
@@ -54,7 +54,7 @@ namespace CE
 
 			FieldDict& getFieldDict();
 
-			void addMethod(Function::Method* method);
+			void addMethod(Function::MethodDecl* method);
 
 			int getAllMethodCount();
 
@@ -65,10 +65,10 @@ namespace CE
 			bool iterateClasses(std::function<bool(Class*)> callback);
 
 		private:
-			bool iterateAllMethods(std::function<bool(Function::Method*)> callback);
+			bool iterateAllMethods(std::function<bool(Function::MethodDecl*)> callback);
 
 		public:
-			bool iterateMethods(std::function<bool(Function::Method*)> callback);
+			bool iterateMethods(std::function<bool(Function::MethodDecl*)> callback);
 
 			bool iterateFields(const std::function<bool(int&, Field*)>& callback, bool emptyFields = false);
 

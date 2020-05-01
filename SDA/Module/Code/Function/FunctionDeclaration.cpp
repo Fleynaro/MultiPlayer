@@ -1,13 +1,18 @@
 #include "FunctionDeclaration.h"
 
+using namespace CE;
 using namespace CE::Function;
 
-FunctionDecl::FunctionDecl(const std::string& name, const std::string& desc)
-	: Desc(0, name, desc)
+FunctionDecl::FunctionDecl(FunctionDeclManager* manager, const std::string& name, const std::string& desc)
+	: m_manager(manager), m_desc(0, name, desc)
 {}
 
+Desc& FunctionDecl::getDesc() {
+	return m_desc;
+}
+
 std::string FunctionDecl::getSigName() {
-	std::string name = getSignature().getReturnType()->getDisplayName() + " " + getName() + "(";
+	std::string name = getSignature().getReturnType()->getDisplayName() + " " + m_desc.getName() + "(";
 
 	auto& argList = getSignature().getArgList();
 	for (int i = 0; i < argList.size(); i++) {
@@ -38,6 +43,10 @@ bool FunctionDecl::isFunction() {
 
 bool FunctionDecl::isFunction(Role role) {
 	return role == Role::Function;
+}
+
+FunctionDeclManager* FunctionDecl::getManager() {
+	return m_manager;
 }
 
 void FunctionDecl::addArgument(CE::Type::Type* type, const std::string& name) {

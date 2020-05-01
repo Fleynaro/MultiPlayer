@@ -86,7 +86,7 @@ CE::Type::Class::FieldDict& CE::Type::Class::getFieldDict() {
 	return m_fields;
 }
 
-void CE::Type::Class::addMethod(Function::Method* method) {
+void CE::Type::Class::addMethod(Function::MethodDecl* method) {
 	getMethodList().push_back(method);
 	method->setClass(this);
 }
@@ -115,7 +115,7 @@ bool CE::Type::Class::iterateClasses(std::function<bool(Class*)> callback)
 	return callback(this);
 }
 
-bool CE::Type::Class::iterateAllMethods(std::function<bool(Function::Method*)> callback)
+bool CE::Type::Class::iterateAllMethods(std::function<bool(Function::MethodDecl*)> callback)
 {
 	if (getBaseClass() != nullptr) {
 		if (!getBaseClass()->iterateAllMethods(callback))
@@ -129,10 +129,10 @@ bool CE::Type::Class::iterateAllMethods(std::function<bool(Function::Method*)> c
 	return true;
 }
 
-bool CE::Type::Class::iterateMethods(std::function<bool(Function::Method*)> callback)
+bool CE::Type::Class::iterateMethods(std::function<bool(Function::MethodDecl*)> callback)
 {
 	std::set<std::string> methods;
-	return iterateAllMethods([&](Function::Method* method) {
+	return iterateAllMethods([&](Function::MethodDecl* method) {
 		std::string sigName = method->getSigName();
 		if (!methods.count(sigName)) {
 			return callback(method);

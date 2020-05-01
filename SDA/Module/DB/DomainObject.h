@@ -16,6 +16,10 @@ namespace DB
 			: m_id(id)
 		{}
 
+		virtual ~DomainObject() {
+
+		}
+
 		Id getId() {
 			return m_id;
 		}

@@ -117,12 +117,12 @@ int main()
 				funcManager.update(funcManager.generateHashMap());
 
 				if (false) {
-					auto func = sda->getFunctionManager()->getFunctionById(4)->getFunction();
-					func->getDeclaration().setName("AllocateMemory");
+					auto func = sda->getFunctionManager()->getFunctionById(4);
+					func->getDeclaration().getDesc().setName("AllocateMemory");
 					func->getSignature().setReturnType(new Type::Pointer(new Type::Void));
 					func->getDeclaration().deleteAllArguments();
 					func->getDeclaration().addArgument(new Type::Pointer(new Type::Void), "addr");
-					func->getDeclaration().setDesc("this allocate memory\nlol");
+					func->getDeclaration().getDesc().setDesc("this allocate memory\nlol");
 
 					funcManager.push({
 						funcManager.buildDesc(func)
@@ -166,18 +166,18 @@ int main()
 			return 0;
 		}
 
-		auto functiondb = sda->getFunctionManager()->createFunction(&setRot, { Function::AddressRange(&setRot, 200) }, sda->getFunctionManager()->createFunctionDecl("setRot", "get rot of entity"));
-		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::AddressRange(&changeGvar, 40) }, sda->getFunctionManager()->createFunctionDecl("changeGvar", ""));
-		auto functiondb3 = sda->getFunctionManager()->createFunction(&rand, { Function::AddressRange(&rand, 300) }, sda->getFunctionManager()->createFunctionDecl("rand", ""));
-		auto functiondb5 = sda->getFunctionManager()->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) }, sda->getFunctionManager()->createFunctionDecl("setPlayerPos", ""));
-		auto functiondb6 = sda->getFunctionManager()->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) }, sda->getFunctionManager()->createFunctionDecl("setPlayerVel", ""));
-		auto function = functiondb->getFunction();
-
+		auto declManager = sda->getFunctionManager()->getFunctionDeclManager();
+		auto function = sda->getFunctionManager()->createFunction(&setRot, { Function::AddressRange(&setRot, 200) }, declManager->createFunctionDecl("setRot", "get rot of entity"));
+		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::AddressRange(&changeGvar, 40) }, declManager->createFunctionDecl("changeGvar", ""));
+		auto functiondb3 = sda->getFunctionManager()->createFunction(&rand, { Function::AddressRange(&rand, 300) }, declManager->createFunctionDecl("rand", ""));
+		auto functiondb5 = sda->getFunctionManager()->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) }, declManager->createFunctionDecl("setPlayerPos", ""));
+		auto functiondb6 = sda->getFunctionManager()->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) }, declManager->createFunctionDecl("setPlayerVel", ""));
+		
 		//sda->getFunctionManager()->saveFunction(*functiondb2->getFunction());
 
 		sda->getFunctionManager()->buildFunctionBodies();
 		
-		CallGraph::Analyser::Generic analysis(functiondb);
+		CallGraph::Analyser::Generic analysis(function);
 		analysis.doAnalyse();
 
 		{
@@ -198,7 +198,7 @@ int main()
 						line += ">>> ";
 					}
 					auto funcBody = static_cast<Unit::FunctionBody*>(node);
-					line += funcBody->getFunction()->getFunction()->getName();
+					line += funcBody->getFunction()->getName();
 				}
 				if (node->isGlobalVar()) {
 					line += "gVar";
@@ -223,16 +223,14 @@ int main()
 		CallGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
 		analysis2.doAnalyse();
 
-		functiondb->change([&] {
-			function->getDeclaration().addArgument(new Type::Int32, "a");
-			function->getDeclaration().addArgument(new Type::Float, "x");
-			function->getDeclaration().addArgument(new Type::Float, "y");
-			function->getDeclaration().addArgument(new Type::Float, "z");
-			function->getDeclaration().addArgument(new Type::Int32, "c");
-		});
+		function->getDeclaration().addArgument(new Type::Int32, "a");
+		function->getDeclaration().addArgument(new Type::Float, "x");
+		function->getDeclaration().addArgument(new Type::Float, "y");
+		function->getDeclaration().addArgument(new Type::Float, "z");
+		function->getDeclaration().addArgument(new Type::Int32, "c");
 
-		function->getDefinition().createHook();
-		auto hook = function->getDefinition().getHook();
+		function->createHook();
+		auto hook = function->getHook();
 		hook->getDynHook()->enable();
 
 		auto trigger = sda->getTriggerManager()->createFunctionTrigger("for filtering");
@@ -310,7 +308,7 @@ int main()
 		auto method = sda->getFunctionManager()->getFunctionById(3);
 
 
-		printf("%s | %s\n", method->getFunction()->getSigName().c_str(), sda->getTypeManager()->getTypeById(11)->getType()->getName());
+		printf("%s | %s\n", method->getSigName().c_str(), sda->getTypeManager()->getTypeById(11)->getType()->getName());
 	}
 	catch (std::exception& e) {
 		DebugOutput("exception: " + std::string(e.what()));

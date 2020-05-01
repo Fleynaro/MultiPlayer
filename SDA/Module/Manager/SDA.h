@@ -1,5 +1,5 @@
 #pragma once
-#include <SQLiteCpp/SQLiteCpp.h>
+#include <DB/Transaction.h>
 #include <Utility/FileWrapper.h>
 
 using namespace SQLite;
@@ -78,6 +78,10 @@ namespace CE
 
 		int toRelAddr(void* addr) {
 			return addr == nullptr ? 0 : static_cast<int>((std::uintptr_t)addr - getBaseAddr());
+		}
+
+		DB::ITransaction* getTransaction() {
+			return nullptr;
 		}
 
 		FS::Directory& getDirectory() {

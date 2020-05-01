@@ -63,7 +63,7 @@ namespace CE
 				: Tag(parent, id, name, desc)
 			{}
 
-			UserTag(API::Function::FunctionDecl* decl, Tag* parent, int id, std::string name, std::string desc = "")
+			UserTag(FunctionDecl* decl, Tag* parent, int id, std::string name, std::string desc = "")
 				: m_decl(decl), Tag(parent, id, name, desc)
 			{}
 
@@ -79,15 +79,15 @@ namespace CE
 				return getDeclaration() != nullptr;
 			}
 
-			void setDeclaration(API::Function::FunctionDecl* decl) {
+			void setDeclaration(FunctionDecl* decl) {
 				m_decl = decl;
 			}
 
-			API::Function::FunctionDecl* getDeclaration() {
+			FunctionDecl* getDeclaration() {
 				return m_decl;
 			}
 		private:
-			API::Function::FunctionDecl* m_decl = nullptr;
+			FunctionDecl* m_decl = nullptr;
 		};
 
 		class TagCollection
@@ -181,7 +181,7 @@ namespace CE
 					if (parentTag == nullptr)
 						continue;
 
-					auto decl = m_funcManager->getFunctionDeclById(query.getColumn("decl_id"));
+					auto decl = m_funcManager->getFunctionDeclManager()->getFunctionDeclById(query.getColumn("decl_id"));
 					addTag(new UserTag(decl, parentTag, tag_id, query.getColumn("name"), query.getColumn("desc")));
 				}
 
@@ -196,7 +196,7 @@ namespace CE
 					SQLite::Statement query(db, "REPLACE INTO sda_func_tags (tag_id, parent_tag_id, decl_id, name, desc) VALUES(?1, ?2, ?3, ?4, ?5)");
 					query.bind(1, tag.getId());
 					query.bind(2, tag.getParent()->getId());
-					query.bind(3, tag.isDefinedForDecl() ? tag.getDeclaration()->getFunctionDecl()->getId() : 0);
+					query.bind(3, tag.isDefinedForDecl() ? tag.getDeclaration()->getId() : 0);
 					query.bind(4, tag.getName());
 					query.bind(5, tag.getDesc());
 					query.exec();
@@ -241,7 +241,7 @@ namespace CE
 							tempCollection.add(it.second);
 						}
 
-						auto gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclaration());
+						auto gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclarationPtr());
 						if (gCollection != nullptr) {
 							for (auto tag : gCollection->getTagList()) {
 								if (tag->getType() == Tag::GET) {
@@ -251,7 +251,7 @@ namespace CE
 						}
 
 						if (!tempCollection.empty()) {
-							gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclaration(), true);
+							gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclarationPtr(), true);
 							gCollection->add(tempCollection);
 						}
 					}
@@ -270,7 +270,7 @@ namespace CE
 				return id;
 			}
 
-			UserTag* createTag(API::Function::FunctionDecl* decl, Tag* parent, std::string name, std::string desc = "") {
+			UserTag* createTag(FunctionDecl* decl, Tag* parent, std::string name, std::string desc = "") {
 				int tag_id = getNewTagId();
 				UserTag* tag;
 				if(decl != nullptr)
@@ -294,8 +294,8 @@ namespace CE
 				return m_tags[id];
 			}
 
-			inline TagCollection* getGlobalTagCollectionByDecl(API::Function::FunctionDecl* decl, bool create = false) {
-				auto decl_id = decl->getFunctionDecl()->getId();
+			inline TagCollection* getGlobalTagCollectionByDecl(FunctionDecl* decl, bool create = false) {
+				auto decl_id = decl->getId();
 				if (m_tagCollections.find(decl_id) == m_tagCollections.end()) {
 					if (!create) {
 						return nullptr;
@@ -305,10 +305,10 @@ namespace CE
 				return &m_tagCollections[decl_id];
 			}
 
-			TagCollection getTagCollection(API::Function::Function* function) {
+			TagCollection getTagCollection(Function* function) {
 				TagCollection collection;
 
-				auto globalCollection = getGlobalTagCollectionByDecl(function->getDeclaration());
+				auto globalCollection = getGlobalTagCollectionByDecl(function->getDeclarationPtr());
 				if (globalCollection != nullptr) {
 					collection.add(*globalCollection);
 				}
@@ -319,7 +319,7 @@ namespace CE
 				{
 					auto funcNode = static_cast<Unit::FunctionNode*>(node);
 					if (!funcNode->isNotCalculated()) {
-						auto gCollection = getGlobalTagCollectionByDecl(funcNode->getFunction()->getDeclaration());
+						auto gCollection = getGlobalTagCollectionByDecl(funcNode->getFunction()->getDeclarationPtr());
 						if (gCollection != nullptr) {
 							for (auto tag : gCollection->getTagList()) {
 								if (tag->getType() == Tag::SET && !collection.contains(tag)) {

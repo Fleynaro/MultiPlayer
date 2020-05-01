@@ -1,69 +1,69 @@
 #pragma once
 #include <Code/Function/FunctionDefinition.h>
-#include <Code/Function/Method.h>
+#include <Code/Function/MethodDeclaration.h>
+#include <Manager/FunctionManager.h>
 
 namespace DB
 {
 	class FunctionDefMapper : public AbstractMapper
 	{
 	public:
-		FunctionDefMapper(Database* db, IRepository* repository)
-			: AbstractMapper(db, repository)
+		FunctionDefMapper(CE::FunctionManager* repository)
+			: AbstractMapper(repository)
 		{}
 
-		void loadAll() {
-			Statement query(*m_db, "SELECT * FROM sda_func_defs");
-			load(query);
+		void loadAll(Database* db) {
+			Statement query(*db, "SELECT * FROM sda_func_defs");
+			load(db, query);
 		}
 
+		CE::FunctionManager* getManager() {
+			return static_cast<CE::FunctionManager*>(m_repository);
+		}
 	protected:
-		DomainObject* doLoad(SQLite::Statement& query) override {
+		DomainObject* doLoad(Database* db, SQLite::Statement& query) override {
 			using namespace CE;
 
 			int def_id = query.getColumn("def_id");
 			int def_offset = query.getColumn("offset");
 			int decl_id = query.getColumn("decl_id");
 
-			auto decl = getFunctionDeclById(decl_id);
+			auto decl = getManager()->getFunctionDeclManager()->getFunctionDeclById(decl_id);
 			if (decl == nullptr)
 				return nullptr;
 
 			auto definition =
 				new Function::FunctionDefinition(
-					getProgramModule()->toAbsAddr(def_offset),
+					getManager(),
+					getManager()->getProgramModule()->toAbsAddr(def_offset),
 					Function::AddressRangeList(),
-					def_id,
-					decl->getFunctionDecl()
+					decl
 				);
 
-			auto function =
-				decl->getFunctionDecl()->isFunction() ? new Function::Function(definition) : new Function::Method(definition);
-
-			//addFunction(new API::Function::Function(this, function, decl));
-			loadFunctionRanges(function->getDefinition());
+			loadFunctionRanges(db, *definition);
 			return definition;
 		}
 
-		void loadFunctionRanges(CE::Function::FunctionDefinition& definition) {
+		void loadFunctionRanges(Database* db, CE::Function::FunctionDefinition& definition) {
 			using namespace CE;
 
-			SQLite::Statement query(*m_db, "SELECT * FROM sda_func_ranges WHERE def_id=?1 GROUP BY order_id");
+			SQLite::Statement query(*db, "SELECT * FROM sda_func_ranges WHERE def_id=?1 GROUP BY order_id");
 			query.bind(1, definition.getId());
 
 			while (query.executeStep())
 			{
 				definition.addRange(Function::AddressRange(
-					getProgramModule()->toAbsAddr(query.getColumn("min_offset")),
-					getProgramModule()->toAbsAddr(query.getColumn("max_offset"))
+					getManager()->getProgramModule()->toAbsAddr(query.getColumn("min_offset")),
+					getManager()->getProgramModule()->toAbsAddr(query.getColumn("max_offset"))
 				));
 			}
 		}
 
-		void saveFunctionRanges(CE::Function::FunctionDefinition& definition) {
+		void saveFunctionRanges(Database* db, CE::Function::FunctionDefinition& definition) {
 			using namespace CE;
 
 			{
-				SQLite::Statement query(*m_db, "DELETE FROM sda_func_ranges WHERE def_id=?1");
+				SQLite::Statement query(*db, "DELETE FROM sda_func_ranges WHERE def_id=?1");
 				query.bind(1, definition.getId());
 				query.exec();
 			}
@@ -71,12 +71,12 @@ namespace DB
 			{
 				int order_id = 0;
 				for (auto& range : definition.getRangeList()) {
-					SQLite::Statement query(*m_db, "INSERT INTO sda_func_ranges (def_id, order_id, min_offset, max_offset) \
+					SQLite::Statement query(*db, "INSERT INTO sda_func_ranges (def_id, order_id, min_offset, max_offset) \
 					VALUES(?1, ?2, ?3, ?4)");
 					query.bind(1, definition.getId());
 					query.bind(2, order_id);
-					query.bind(3, getProgramModule()->toRelAddr(range.getMinAddress()));
-					query.bind(4, getProgramModule()->toRelAddr(range.getMaxAddress()));
+					query.bind(3, getManager()->getProgramModule()->toRelAddr(range.getMinAddress()));
+					query.bind(4, getManager()->getProgramModule()->toRelAddr(range.getMaxAddress()));
 					query.exec();
 					order_id++;
 				}
@@ -230,28 +230,27 @@ namespace DB
 			}
 		}*/
 
-		void doInsert(DomainObject* obj) override {
+		void doInsert(Database* db, DomainObject* obj) override {
 			auto def = *(CE::Function::FunctionDefinition*)obj;
 
-			SQLite::Statement query(*m_db, "INSERT INTO sda_func_defs (decl_id, offset)\
+			SQLite::Statement query(*db, "INSERT INTO sda_func_defs (decl_id, offset)\
 				VALUES(?2, ?3)");
 			bind(query, def);
 			query.exec();
-			setNewId(obj);
 		}
 
-		void doUpdate(DomainObject* obj) override {
+		void doUpdate(Database* db, DomainObject* obj) override {
 			auto def = *(CE::Function::FunctionDefinition*)obj;
 
-			SQLite::Statement query(*m_db, "REPLACE INTO sda_func_defs (def_id, decl_id, offset)\
+			SQLite::Statement query(*db, "REPLACE INTO sda_func_defs (def_id, decl_id, offset)\
 				VALUES(?1, ?2, ?3)");
 			query.bind(1, def.getId());
 			bind(query, def);
 			query.exec();
 		}
 
-		void doRemove(DomainObject* obj) override {
-			SQLite::Statement query(*m_db, "DELETE FROM sda_func_defs WHERE def_id=?1");
+		void doRemove(Database* db, DomainObject* obj) override {
+			SQLite::Statement query(*db, "DELETE FROM sda_func_defs WHERE def_id=?1");
 			query.bind(1, obj->getId());
 			query.exec();
 		}
@@ -259,7 +258,7 @@ namespace DB
 	private:
 		void bind(SQLite::Statement& query, CE::Function::FunctionDefinition& def) {
 			query.bind(2, def.getDeclaration().getId());
-			query.bind(3, getProgramModule()->toRelAddr(def.getAddress()));
+			query.bind(3, getManager()->getProgramModule()->toRelAddr(def.getAddress()));
 		}
 	};
 };

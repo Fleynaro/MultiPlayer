@@ -2,6 +2,7 @@
 #include "Signature.h"
 #include <DB/DomainObject.h>
 #include <DB/AbstractMapper.h>
+#include <Manager/FunctionDeclManager.h>
 
 namespace CE
 {
@@ -9,7 +10,7 @@ namespace CE
 	{
 		using ArgNameList = std::vector<std::string>;
 
-		class FunctionDecl : public DB::DomainObject, public Desc
+		class FunctionDecl : public DB::DomainObject
 		{
 		public:
 			enum class Role
@@ -23,7 +24,9 @@ namespace CE
 				VirtualDestructor
 			};
 
-			FunctionDecl(const std::string& name, const std::string& desc = "");
+			FunctionDecl(FunctionDeclManager* manager, const std::string& name, const std::string& desc = "");
+
+			Desc& getDesc();
 
 			virtual std::string getSigName();
 
@@ -44,10 +47,13 @@ namespace CE
 			void deleteAllArguments();
 
 			static bool isFunction(Role role);
+
+			FunctionDeclManager* getManager();
 		private:
+			Desc m_desc;
 			Signature m_signature;
 			ArgNameList m_argNames;
-
+			FunctionDeclManager* m_manager;
 		};
 	};
 };

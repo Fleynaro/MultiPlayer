@@ -1,6 +1,8 @@
 #pragma once
 #include "FunctionDeclaration.h"
+#include "MethodDeclaration.h"
 #include "AddressRange.h"
+#include <Manager/FunctionDefManager.h>
 
 namespace CE
 {
@@ -9,18 +11,31 @@ namespace CE
 		class Hook;
 	};
 
+	namespace CallGraph::Unit
+	{
+		class FunctionBody;
+	};
+
 	namespace Function
 	{
-		class FunctionDefinition : public DB::DomainObject
+		class FunctionDefinition : public DB::DomainObject, public IGhidraUnit
 		{
 		public:
 			using ArgList = std::vector<Variable::Param>;
 
-			FunctionDefinition(void* addr, AddressRangeList ranges, int def_id, FunctionDecl* decl)
-				: m_addr(addr), m_ranges(ranges), m_id(def_id), m_decl(decl), DB::DomainObject(def_id)
-			{}
+			FunctionDefinition(FunctionManager* manager, void* addr, AddressRangeList ranges, FunctionDecl* decl);
 
-			int getId();
+			std::string getName();
+
+			std::string getComment();
+
+			std::string getSigName();
+
+			bool isFunction();
+
+			Signature& getSignature();
+
+			ArgNameList& getArgNameList();
 
 			virtual void call(ArgList args) {}
 
@@ -41,12 +56,29 @@ namespace CE
 			FunctionDecl* getDeclarationPtr();
 
 			FunctionDecl& getDeclaration();
-		protected:
-			int m_id;
+
+			bool hasBody();
+
+			CallGraph::Unit::FunctionBody* getBody();
+
+			void setBody(CallGraph::Unit::FunctionBody* body);
+
+			bool isGhidraUnit() override;
+
+			void setGhidraUnit(bool toggle) override;
+
+			FunctionManager* getManager();
+		private:
 			void* m_addr;
 			AddressRangeList m_ranges;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionDecl* m_decl;
+			CallGraph::Unit::FunctionBody* m_funcBody = nullptr;
+			bool m_ghidraUnit = true;
+			FunctionManager* m_manager;
 		};
+
+		using FunctionDef = FunctionDefinition;
+		using Function = FunctionDefinition;
 	};
 };
