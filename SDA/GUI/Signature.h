@@ -185,7 +185,10 @@ namespace GUI::Units
 			}
 		}
 
-		void buildDescription() override;
+		void buildDescription() override {
+			addItem(m_tagShortCut = new GUI::Widget::FunctionTagShortCut(m_function));
+			DeclInfo::buildDescription();
+		}
 	private:
 		API::Function::Function* m_function;
 		GUI::Widget::FunctionTagShortCut* m_tagShortCut = nullptr;

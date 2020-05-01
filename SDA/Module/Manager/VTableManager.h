@@ -112,8 +112,8 @@ namespace CE
 			while (query.executeStep())
 			{
 				auto function = getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("def_id"));
-				if (function != nullptr && !function->getFunction()->isFunction()) {
-					vtable->addMethod(function->getMethod());
+				if (function != nullptr && !function->isFunction()) {
+					//vtable->addMethod(function);
 				}
 			}
 		}

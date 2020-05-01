@@ -1,25 +1,25 @@
 #include "MethodDeclaration.h"
 #include "../Type/Class.h"
 
-using namespace CE::Function;
+//using namespace CE::Function;
 
-MethodDecl::MethodDecl(FunctionDeclManager* manager, Type::Class* Class, std::string name, std::string desc)
+CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, Type::Class* Class, std::string name, std::string desc)
 	: m_class(Class), FunctionDecl(manager, name, desc)
 {}
 
-MethodDecl::MethodDecl(FunctionDeclManager* manager, std::string name, std::string desc)
+CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, std::string name, std::string desc)
 	: MethodDecl(manager, nullptr, name, desc)
 {}
 
-std::string MethodDecl::getSigName() {
+std::string CE::Function::MethodDecl::getSigName() {
 	return (isVirtual() ? "virtual " : "") + FunctionDecl::getSigName();
 }
 
-std::string MethodDecl::getName() {
+std::string CE::Function::MethodDecl::getName() {
 	return getClass()->getName() + "::" + FunctionDecl::getName();
 }
 
-void MethodDecl::setClass(Type::Class* Class)
+void CE::Function::MethodDecl::setClass(Type::Class* Class)
 {
 	if (getSignature().getArgList().size() > 0) {
 		getSignature().getArgList()[0]->free();
@@ -30,18 +30,18 @@ void MethodDecl::setClass(Type::Class* Class)
 	}
 }
 
-CE::Type::Class* MethodDecl::getClass() {
+CE::Type::Class* CE::Function::MethodDecl::getClass() {
 	return m_class;
 }
 
-FunctionDecl::Role MethodDecl::getRole() {
+CE::Function::FunctionDecl::Role CE::Function::MethodDecl::getRole() {
 	return m_role;
 }
 
-void MethodDecl::setRole(Role role) {
+void CE::Function::MethodDecl::setRole(Role role) {
 	m_role = role;
 }
 
-bool MethodDecl::isVirtual() {
+bool CE::Function::MethodDecl::isVirtual() {
 	return getRole() == Role::VirtualMethod || getRole() == Role::VirtualDestructor;
 }

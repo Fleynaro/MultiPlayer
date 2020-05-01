@@ -91,7 +91,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\build\VC15\lib\Release;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\build\VC15\lib\Release;$(ProjectDir)Vendor\gtest\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>$(GTA5_ROOT)\FastLoader</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugExe|x64'">
@@ -170,30 +170,24 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <Optimization>Disabled</Optimization>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\gtest\include;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;libMinHook.x64.lib;libthrift.lib;SQLiteCpp.lib;sqlite3.lib;Zycore.lib;Zydis.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gtest.lib;d3d11.lib;libMinHook.x64.lib;libthrift.lib;SQLiteCpp.lib;sqlite3.lib;Zycore.lib;Zydis.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
     <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
     <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
-    <ClCompile Include="GUI\AddressInput.cpp" />
     <ClCompile Include="Module\Code\Function\AddressRange.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionDeclaration.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionDefinition.cpp" />
-    <ClCompile Include="Module\Code\Function\Signature.cpp" />
-    <ClCompile Include="GUI\Windows\ItemControlPanels\FunctionCP.cpp" />
-    <ClCompile Include="GUI\Windows\ItemLists\DataTypeList.cpp" />
-    <ClCompile Include="GUI\Windows\ItemLists\TriggerList.cpp" />
-    <ClCompile Include="GUI\Windows\ProjectWindow.cpp" />
-    <ClCompile Include="GUI\Windows\StatisticAnalyser.cpp" />
+    <ClCompile Include="Module\Code\Function\FunctionSignature.cpp" />
     <ClCompile Include="Module\Code\Type\AbstractType.cpp" />
     <ClCompile Include="Module\Code\Type\Array.cpp" />
     <ClCompile Include="Module\Code\Type\Class.cpp" />
@@ -203,10 +197,11 @@
     <ClCompile Include="Module\Code\Type\Typedef.cpp" />
     <ClCompile Include="Module\Code\Type\UserType.cpp" />
     <ClCompile Include="Module\FunctionTag\FunctionTag.cpp" />
-    <ClCompile Include="GUI\Windows\ProjectManager.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\CallGraph\CallGraph.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
+    <ClCompile Include="Module\Manager\FunctionDeclManager.cpp" />
+    <ClCompile Include="Module\Manager\FunctionDefManager.cpp" />
     <ClCompile Include="Module\Statistic\Function\Collector\FunctionStatCollector.cpp" />
     <ClCompile Include="Module\Code\Function\MethodDeclaration.cpp" />
     <ClCompile Include="Module\Disassembler\Disassembler.cpp" />
@@ -222,7 +217,6 @@
     <ClCompile Include="Module\GhidraSync\Ghidra\include\ghidra_types.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_constants.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_types.cpp" />
-    <ClCompile Include="Module\Manager\FunctionManager.cpp" />
     <ClCompile Include="Module\Manager\Manager.cpp" />
     <ClCompile Include="Module\Manager\TypeManager.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\Analyser.cpp" />
@@ -246,20 +240,10 @@
     <ClCompile Include="Vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GUI\AddressInput.h" />
-    <ClInclude Include="GUI\ClassEditor.h" />
-    <ClInclude Include="GUI\TriggerTableView.h" />
-    <ClInclude Include="GUI\Widgets\TableView.h" />
-    <ClInclude Include="GUI\Windows\ItemControlPanels\FunctionCP.h" />
-    <ClInclude Include="GUI\Windows\ItemLists\FunctionTagList.h" />
-    <ClInclude Include="GUI\Windows\ItemLists\TriggerList.h" />
-    <ClInclude Include="GUI\Windows\ProjectWindow.h" />
-    <ClInclude Include="GUI\Windows\StatisticAnalyser.h" />
-    <ClInclude Include="GUI\Windows\Window.h" />
     <ClInclude Include="Module\Code\Function\AddressRange.h" />
     <ClInclude Include="Module\Code\Function\FunctionDeclaration.h" />
     <ClInclude Include="Module\Code\Function\FunctionDefinition.h" />
-    <ClInclude Include="Module\Code\Function\Signature.h" />
+    <ClInclude Include="Module\Code\Function\FunctionSignature.h" />
     <ClInclude Include="Module\DB\DomainObject.h" />
     <ClInclude Include="Module\DB\AbstractMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionBodyMapper.h" />
@@ -267,11 +251,6 @@
     <ClInclude Include="Module\DB\Mappers\FunctionDefMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\FunctionTag\FunctionTag.h" />
-    <ClInclude Include="GUI\Signature.h" />
-    <ClInclude Include="GUI\Type.h" />
-    <ClInclude Include="GUI\Windows\ItemLists\DataTypeList.h" />
-    <ClInclude Include="GUI\Windows\ItemLists\FunctionList.h" />
-    <ClInclude Include="GUI\Windows\ProjectManager.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Module\Assembler\Assembler.h" />
     <ClInclude Include="Module\CallGraph\CallGraph.h" />
@@ -308,7 +287,6 @@
     <ClInclude Include="Module\Manager\AbstractManager.h" />
     <ClInclude Include="Module\Manager\FunctionDeclManager.h" />
     <ClInclude Include="Module\Manager\FunctionDefManager.h" />
-    <ClInclude Include="Module\Manager\FunctionManager.h" />
     <ClInclude Include="Module\Manager\GVarManager.h" />
     <ClInclude Include="Module\Manager\Manager.h" />
     <ClInclude Include="Module\Manager\SDA.h" />
@@ -344,6 +322,7 @@
     <ClInclude Include="ProjectManager.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SpeedTest.h" />
+    <ClInclude Include="tests\test.h" />
     <ClInclude Include="UserInterface.h" />
     <ClInclude Include="Utility\DebugView.h" />
     <ClInclude Include="Utility\FileWrapper.h" />
@@ -353,6 +332,7 @@
     <ClInclude Include="Utils\Buffer.h" />
     <ClInclude Include="Utils\BufferStreamRecorder.h" />
     <ClInclude Include="Utils\ITaskMonitor.h" />
+    <ClInclude Include="Utils\Iterator.h" />
     <ClInclude Include="Utils\MultipleAction.h" />
     <ClInclude Include="Utils\ObjectHash.h" />
     <ClInclude Include="Utils\Table.h" />

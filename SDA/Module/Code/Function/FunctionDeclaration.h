@@ -1,11 +1,12 @@
 #pragma once
-#include "Signature.h"
 #include <DB/DomainObject.h>
 #include <DB/AbstractMapper.h>
-#include <Manager/FunctionDeclManager.h>
+#include "FunctionSignature.h"
 
 namespace CE
 {
+	class FunctionDeclManager;
+
 	namespace Function
 	{
 		using ArgNameList = std::vector<std::string>;
@@ -29,6 +30,8 @@ namespace CE
 			Desc& getDesc();
 
 			virtual std::string getSigName();
+
+			virtual std::string getName();
 
 			Signature& getSignature();
 

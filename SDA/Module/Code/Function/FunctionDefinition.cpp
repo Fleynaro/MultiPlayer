@@ -1,6 +1,7 @@
 #include "FunctionDefinition.h"
 #include "Module/Trigger/FunctionTrigger.h"
 #include <CallGraph/CallGraph.h>
+#include <Manager/FunctionDefManager.h>
 
 using namespace CE;
 using namespace CE::Function;
@@ -35,6 +36,10 @@ ArgNameList& CE::Function::FunctionDefinition::getArgNameList() {
 
 void* FunctionDefinition::getAddress() {
 	return m_addr;
+}
+
+int FunctionDefinition::getOffset() {
+	return getManager()->getProgramModule()->toRelAddr(getAddress());
 }
 
 AddressRangeList& FunctionDefinition::getRangeList() {

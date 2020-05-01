@@ -1,5 +1,5 @@
 #pragma once
-#include "../Function/Method.h"
+#include "../Function/MethodDeclaration.h"
 
 namespace CE
 {
@@ -8,7 +8,7 @@ namespace CE
 		class VTable : public Desc
 		{
 		public:
-			using vMethodList = std::vector<CE::Function::Method*>;
+			using vMethodList = std::vector<CE::Function::MethodDecl*>;
 
 			VTable(void* addr, int id, std::string name, std::string desc = "")
 				: m_addr(addr), Desc(id, name, desc)
@@ -18,7 +18,7 @@ namespace CE
 				return m_vmethods;
 			}
 
-			void addMethod(Method* method) {
+			void addMethod(CE::Function::MethodDecl* method) {
 				getVMethodList().push_back(method);
 			}
 

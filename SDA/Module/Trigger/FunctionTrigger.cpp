@@ -67,7 +67,7 @@ bool Trigger::isNotExecute() {
 	return m_notExecute;
 }
 
-void Trigger::addFunction(CE::API::Function::Function* function) {
+void Trigger::addFunction(CE::Function::Function* function) {
 	m_functions.push_back(function);
 }
 
@@ -101,13 +101,13 @@ void Trigger::setTableLogEnable(bool toggle) {
 
 void Trigger::setActiveState(bool state) {
 	for (auto it : m_functions) {
-		if (!it->getDefinition().hasHook())
+		if (!it->hasHook())
 			continue;
 		if (state) {
-			it->getDefinition().getHook()->addActiveTrigger(this);
+			it->getHook()->addActiveTrigger(this);
 		}
 		else {
-			it->getDefinition().getHook()->removeActiveTrigger(this);
+			it->getHook()->removeActiveTrigger(this);
 		}
 	}
 }

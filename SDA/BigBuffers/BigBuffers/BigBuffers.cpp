@@ -4,6 +4,9 @@
 #include "minhook/minhook-master/include/MinHook.h"
 #include "buffer.h"
 
+#include "gtest/gtest.h"
+
+
 using namespace std;
 
 /*
@@ -53,11 +56,10 @@ int getTestHooked(int a) {
     return origFunc(a + 1) + 2;
 }
 
-
-int main()
+int main2(int argc, char** argv)
 {
     //LPVOID pBuffer = AllocateBuffer(&getTestId);
-
+    
 
     int a = 5;
 
@@ -140,4 +142,52 @@ int main()
     }
 
     return 0;
+}
+
+
+
+//Unit tests
+int sum(int a, int b) {
+    return a + b;
+}
+
+TEST(BasicFunc, Sum) {
+    ASSERT_EQ(5, sum(2, 3));
+}
+
+class myTestFixture1 : public ::testing::Test {
+public:
+    myTestFixture1() {
+        
+    }
+
+    void SetUp() {
+        int a = 5;
+        m_list.push_back(5);
+    }
+
+    void TearDown() {
+        int b = 5;
+    }
+
+    ~myTestFixture1() {
+       
+    }
+
+    std::list<int> m_list;
+};
+
+TEST_F(myTestFixture1, UnitTest1) {
+    ASSERT_GT(m_list.size(), 0);
+}
+
+TEST_F(myTestFixture1, UnitTest2) {
+    ASSERT_GT(m_list.size(), 0);
+}
+
+
+int main(int argc, char** argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

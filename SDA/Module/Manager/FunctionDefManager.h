@@ -2,23 +2,27 @@
 #include "AbstractManager.h"
 #include <Code/Function/FunctionDefinition.h>
 #include "FunctionDeclManager.h"
-#include <GhidraSync/FunctionManager.h>
 #include <Utils/Iterator.h>
 
 namespace CE
 {
+	namespace Ghidra
+	{
+		class FunctionManager;
+	};
+
 	namespace Function::Tag
 	{
 		class Manager;
 	};
 
-	class FunctionDefManager : public AbstractItemManager
+	class FunctionManager : public AbstractItemManager
 	{
 	public:
 		class Iterator : public IIterator<Function::Function*>
 		{
 		public:
-			Iterator(FunctionDefManager* manager);
+			Iterator(FunctionManager* manager);
 
 			bool hasNext() override;
 
@@ -28,7 +32,9 @@ namespace CE
 			ItemMapType::iterator m_end;
 		};
 
-		FunctionDefManager(ProgramModule* module, FunctionDeclManager* funcDeclManager);
+		FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager);
+
+		void loadFunctions();
 
 		Function::Function* createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl);
 
@@ -62,5 +68,5 @@ namespace CE
 		Function::Tag::Manager* m_tagManager;
 	};
 
-	using FunctionManager = FunctionDefManager;
+	using FunctionDefManager = FunctionManager;
 };

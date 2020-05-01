@@ -1,32 +1,37 @@
 #include "FunctionDefManager.h"
+#include <GhidraSync/FunctionManager.h>
 #include <CallGraph/CallGraph.h>
 
 using namespace CE;
 
-FunctionDefManager::FunctionDefManager(ProgramModule* module, FunctionDeclManager* funcDeclManager)
+FunctionManager::FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager)
 	: AbstractItemManager(module), m_funcDeclManager(funcDeclManager)
 {}
 
-Function::Function* FunctionDefManager::createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
+void FunctionManager::loadFunctions() {
+
+}
+
+Function::Function* FunctionManager::createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, addr, ranges, decl);
 	getProgramModule()->getTransaction()->markAsNew(def);
 	return def;
 }
 
-void FunctionDefManager::createDefaultFunction() {
+void FunctionManager::createDefaultFunction() {
 	m_defFunction = createFunction(nullptr, {}, getFunctionDeclManager()->createFunctionDecl("DefaultFunction", "This function created automatically."));
 	m_items.insert(std::make_pair(0, m_defFunction));
 }
 
-Function::Function* FunctionDefManager::getDefaultFunction() {
+Function::Function* FunctionManager::getDefaultFunction() {
 	return m_defFunction;
 }
 
-Function::Function* FunctionDefManager::getFunctionById(DB::Id id) {
+Function::Function* FunctionManager::getFunctionById(DB::Id id) {
 	return (Function::Function*)find(id);
 }
 
-Function::Function* FunctionDefManager::getFunctionAt(void* addr) {
+Function::Function* FunctionManager::getFunctionAt(void* addr) {
 	Iterator it(this);
 	while (it.hasNext()) {
 		auto func = it.next();
@@ -37,11 +42,11 @@ Function::Function* FunctionDefManager::getFunctionAt(void* addr) {
 	return nullptr;
 }
 
-FunctionDeclManager* FunctionDefManager::getFunctionDeclManager() {
+FunctionDeclManager* FunctionManager::getFunctionDeclManager() {
 	return m_funcDeclManager;
 }
 
-void FunctionDefManager::buildFunctionBodies() {
+void FunctionManager::buildFunctionBodies() {
 	for (auto it : m_items) {
 		auto func = (Function::Function*)it.second;
 		if (func->getBody()->getNodeList().size() > 0)
@@ -51,40 +56,40 @@ void FunctionDefManager::buildFunctionBodies() {
 	}
 }
 
-void FunctionDefManager::buildFunctionBasicInfo()
+void FunctionManager::buildFunctionBasicInfo()
 {
 	CallGraph::Analyser::GenericAll analyser(this);
 	analyser.doAnalyse();
 }
 
-void FunctionDefManager::setFunctionTagManager(Function::Tag::Manager* manager) {
+void FunctionManager::setFunctionTagManager(Function::Tag::Manager* manager) {
 	m_tagManager = manager;
 }
 
-Function::Tag::Manager* FunctionDefManager::getFunctionTagManager() {
+Function::Tag::Manager* FunctionManager::getFunctionTagManager() {
 	return m_tagManager;
 }
 
-void FunctionDefManager::setGhidraManager(Ghidra::FunctionManager* ghidraManager) {
+void FunctionManager::setGhidraManager(Ghidra::FunctionManager* ghidraManager) {
 	m_ghidraManager = ghidraManager;
 }
 
-Ghidra::FunctionManager* FunctionDefManager::getGhidraManager() {
+Ghidra::FunctionManager* FunctionManager::getGhidraManager() {
 	return m_ghidraManager;
 }
 
-bool FunctionDefManager::isGhidraManagerWorking() {
+bool FunctionManager::isGhidraManagerWorking() {
 	return getGhidraManager() != nullptr;
 }
 
-FunctionDefManager::Iterator::Iterator(FunctionDefManager* manager)
+FunctionManager::Iterator::Iterator(FunctionManager* manager)
 	: m_iterator(manager->m_items.begin()), m_end(manager->m_items.end())
 {}
 
-bool FunctionDefManager::Iterator::hasNext() {
+bool FunctionManager::Iterator::hasNext() {
 	return m_iterator != m_end;
 }
 
-Function::Function* FunctionDefManager::Iterator::next() {
+Function::Function* FunctionManager::Iterator::next() {
 	return static_cast<Function::Function*>((m_iterator++)->second);
 }

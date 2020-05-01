@@ -7,9 +7,7 @@ void CE::ProgramModule::load()
 	getTypeManager()->loadTypes();
 	getTypeManager()->loadTypedefs();
 	getGVarManager()->loadGVars();
-	getFunctionManager()->loadFunctionDecls();
 	getFunctionManager()->loadFunctions();
-	getFunctionManager()->loadFunctionBodies();
 	getVTableManager()->loadVTables();
 	getTypeManager()->loadClasses();
 	getFunctionManager()->getFunctionTagManager()->loadTags();
@@ -20,7 +18,7 @@ void CE::ProgramModule::load()
 void CE::ProgramModule::initManagers()
 {
 	m_typeManager = new TypeManager(this);
-	m_functionManager = new FunctionManager(this);
+	m_functionManager = new FunctionManager(this, new FunctionDeclManager(this));
 	m_gvarManager = new GVarManager(this);
 	m_vtableManager = new VtableManager(this);
 	m_triggerManager = new TriggerManager(this);
@@ -86,23 +84,23 @@ void CE::TypeManager::loadMethodsForClass(Type::Class* Class) {
 	using namespace SQLite;
 
 	SQLite::Database& db = getProgramModule()->getDB();
-	SQLite::Statement query(db, "SELECT decl_id,def_id FROM sda_class_methods  WHERE class_id=?1");
+	SQLite::Statement query(db, "SELECT decl_id,def_id FROM sda_class_methods WHERE class_id=?1");
 	query.bind(1, Class->getId());
 
 	while (query.executeStep())
 	{
 		int def_id = query.getColumn("def_id");
 		if (def_id != 0) {
-			auto function = getProgramModule()->getFunctionManager()->getFunctionById(def_id);
+			/*auto function = getProgramModule()->getFunctionManager()->getFunctionById(def_id);
 			if (function != nullptr && !function->getFunction()->isFunction()) {
 				Class->addMethod(function->getMethod());
-			}
+			}*/
 		}
 		else {
 			int decl_id = query.getColumn("decl_id");
-			auto decl = getProgramModule()->getFunctionManager()->getFunctionDeclById(decl_id);
-			if (decl != nullptr && !decl->getFunctionDecl()->isFunction()) {
-				Class->addMethod(new Function::Method(decl->getMethodDecl()));
+			auto decl = getProgramModule()->getFunctionManager()->getFunctionDeclManager()->getFunctionDeclById(decl_id);
+			if (decl != nullptr && !decl->isFunction()) {
+				Class->addMethod((Function::MethodDecl*)decl);
 			}
 		}
 	}

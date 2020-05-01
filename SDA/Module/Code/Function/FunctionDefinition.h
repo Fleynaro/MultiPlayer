@@ -2,7 +2,6 @@
 #include "FunctionDeclaration.h"
 #include "MethodDeclaration.h"
 #include "AddressRange.h"
-#include <Manager/FunctionDefManager.h>
 
 namespace CE
 {
@@ -15,6 +14,8 @@ namespace CE
 	{
 		class FunctionBody;
 	};
+
+	class FunctionManager;
 
 	namespace Function
 	{
@@ -40,6 +41,8 @@ namespace CE
 			virtual void call(ArgList args) {}
 
 			void* getAddress();
+
+			int getOffset();
 
 			AddressRangeList& getRangeList();
 

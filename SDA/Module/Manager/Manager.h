@@ -1,6 +1,6 @@
 #pragma once
 #include "TypeManager.h"
-#include "FunctionManager.h"
+#include "FunctionDefManager.h"
 #include "GVarManager.h"
 #include "VTableManager.h"
 #include "StatManager.h"

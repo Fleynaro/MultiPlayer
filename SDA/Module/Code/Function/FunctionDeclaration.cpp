@@ -25,6 +25,10 @@ std::string FunctionDecl::getSigName() {
 	return name + ")";
 }
 
+std::string FunctionDecl::getName() {
+	return m_desc.getName();
+}
+
 Signature& FunctionDecl::getSignature() {
 	return m_signature;
 }

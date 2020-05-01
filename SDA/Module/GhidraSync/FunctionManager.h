@@ -1,6 +1,6 @@
 #pragma once
 #include "AbstractManager.h"
-#include <Manager/FunctionManager.h>
+#include <Manager/FunctionDefManager.h>
 #include "DataTypeManager.h"
 
 namespace CE
@@ -23,13 +23,15 @@ namespace CE
 				/*ObjectHash objHash;
 				objHash.addValue(m_functionManager->getFunctionOffset(function));
 				return objHash.getHash();*/
-				return m_functionManager->getFunctionOffset(function);
+				return function->getOffset();
 			}
 
-			API::Function::Function* findFunctionById(function::Id id, bool returnDefType = true) {
-				for (auto& it : m_functionManager->getFunctions()) {
-					if (getId(it.second->getFunction()) == id) {
-						return it.second;
+			Function::Function* findFunctionById(function::Id id, bool returnDefType = true) {
+				CE::FunctionManager::Iterator it(m_functionManager);
+				while (it.hasNext()) {
+					auto function = it.next();
+					if (getId(function) == id) {
+						return function;
 					}
 				}
 				return returnDefType ? m_functionManager->getDefaultFunction() : nullptr;
@@ -57,7 +59,7 @@ namespace CE
 					funcDesc.__set_name(function->getName());
 				}
 
-				funcDesc.__set_comment(function->getDesc());
+				funcDesc.__set_comment(function->getComment());
 
 				auto& signature = function->getSignature();
 				funcDesc.signature.__set_returnType(
@@ -70,7 +72,7 @@ namespace CE
 					funcDesc.argumentNames.push_back(argName);
 				}
 
-				for (auto& range : function->getDefinition().getRangeList()) {
+				for (auto& range : function->getRangeList()) {
 					function::SFunctionRange rangeDesc;
 					rangeDesc.__set_minOffset(getClient()->getProgramModule()->toRelAddr(range.getMinAddress()));
 					rangeDesc.__set_maxOffset(getClient()->getProgramModule()->toRelAddr(range.getMaxAddress()));
@@ -104,8 +106,8 @@ namespace CE
 			}
 
 			void change(Function::Function* function, const function::SFunction& funcDesc) {
-				function->getDeclaration().setName(funcDesc.name);
-				function->getDeclaration().setDesc(funcDesc.comment);
+				function->getDeclaration().getDesc().setName(funcDesc.name);
+				function->getDeclaration().getDesc().setDesc(funcDesc.comment);
 
 				auto& signature = function->getSignature();
 				signature.setReturnType(
@@ -118,19 +120,18 @@ namespace CE
 					function->getDeclaration().addArgument(getClient()->m_dataTypeManager->getType(args[i]), funcDesc.argumentNames[i]);
 				}
 
-				function->getDefinition().getRangeList().clear();
-				function->getDefinition().getRangeList() = getFunctionRanges(funcDesc.ranges);
+				function->getRangeList().clear();
+				function->getRangeList() = getFunctionRanges(funcDesc.ranges);
 			}
 
-			API::Function::Function* changeOrCreate(const function::SFunction& funcDesc) {
-				API::Function::Function* function = findFunctionById(funcDesc.id, false);
+			Function::Function* changeOrCreate(const function::SFunction& funcDesc) {
+				Function::Function* function = findFunctionById(funcDesc.id, false);
 				if (function == nullptr) {
-					function = m_functionManager->createFunction(getClient()->getProgramModule()->toAbsAddr(funcDesc.ranges[0].minOffset), {}, m_functionManager->createFunctionDecl("", ""));
+					function = m_functionManager->createFunction(getClient()->getProgramModule()->toAbsAddr(funcDesc.ranges[0].minOffset), {}, m_functionManager->getFunctionDeclManager()->createFunctionDecl("", ""));
 				}
 
-				function->change([&]{
-					change(function->getFunction(), funcDesc);
-				});
+				//MYTODO: transaction change
+				change(function, funcDesc);
 				return function;
 			}
 
@@ -177,8 +178,9 @@ namespace CE
 
 			HashMap generateHashMap() { //MY TODO: исправить хеширование функций
 				HashMap hashmap;
-				for (auto& it : m_functionManager->getFunctions()) {
-					auto function = it.second->getFunction();
+				CE::FunctionManager::Iterator it(m_functionManager);
+				while (it.hasNext()) {
+					auto function = it.next();
 					if (function->isGhidraUnit()) {
 						hashmap.insert(std::make_pair(getId(function), getHash(function)));
 					}

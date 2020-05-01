@@ -1,5 +1,5 @@
 #pragma once
-#include "Function/Method.h"
+#include "Function/FunctionDefinition.h"
 
 #include "Type/Type.h"
 
