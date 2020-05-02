@@ -77,22 +77,25 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 }
 
 void FunctionDefMapper::doInsert(Database* db, DomainObject* obj) {
-	auto def = *static_cast<CE::Function::FunctionDefinition*>(obj);
+	auto& def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
 	SQLite::Statement query(*db, "INSERT INTO sda_func_defs (decl_id, offset)\
 				VALUES(?2, ?3)");
 	bind(query, def);
 	query.exec();
+	setNewId(db, obj);
+	saveFunctionRanges(db, def);
 }
 
 void FunctionDefMapper::doUpdate(Database* db, DomainObject* obj) {
-	auto def = *static_cast<CE::Function::FunctionDefinition*>(obj);
+	auto& def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
 	SQLite::Statement query(*db, "REPLACE INTO sda_func_defs (def_id, decl_id, offset)\
 				VALUES(?1, ?2, ?3)");
 	query.bind(1, def.getId());
 	bind(query, def);
 	query.exec();
+	saveFunctionRanges(db, def);
 }
 
 void FunctionDefMapper::doRemove(Database* db, DomainObject* obj) {

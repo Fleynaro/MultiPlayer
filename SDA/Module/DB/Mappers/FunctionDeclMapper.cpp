@@ -109,6 +109,8 @@ void FunctionDeclMapper::doInsert(Database* db, DomainObject* obj) {
 				VALUES(?2, ?3, ?4, ?5, ?6, ?7)");
 	bind(query, decl);
 	query.exec();
+	setNewId(db, obj);
+	saveFunctionDeclArguments(db, decl);
 }
 
 void FunctionDeclMapper::doUpdate(Database* db, DomainObject* obj) {
@@ -119,6 +121,7 @@ void FunctionDeclMapper::doUpdate(Database* db, DomainObject* obj) {
 	query.bind(1, obj->getId());
 	bind(query, decl);
 	query.exec();
+	saveFunctionDeclArguments(db, decl);
 }
 
 void FunctionDeclMapper::doRemove(Database* db, DomainObject* obj) {

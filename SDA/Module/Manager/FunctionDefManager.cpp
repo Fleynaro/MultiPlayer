@@ -23,6 +23,7 @@ void FunctionManager::loadFunctions() {
 
 Function::Function* FunctionManager::createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, addr, ranges, decl);
+	def->getSignature().setReturnType(getProgramModule()->getTypeManager()->getDefaultReturnType()->getType());
 	def->m_mapper = m_funcDefMapper;
 	getProgramModule()->getTransaction()->markAsNew(def);
 	return def;
@@ -31,7 +32,6 @@ Function::Function* FunctionManager::createFunction(void* addr, Function::Addres
 void FunctionManager::createDefaultFunction() {
 	m_defFunction = new Function::Function(this, nullptr, {},
 		new Function::FunctionDecl(getFunctionDeclManager(), "DefaultFunction", "This function created automatically."));
-	m_items.insert(std::make_pair(0, m_defFunction));
 }
 
 Function::Function* FunctionManager::getDefaultFunction() {

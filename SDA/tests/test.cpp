@@ -36,7 +36,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
         auto declManager = funcManager->getFunctionDeclManager();
         void* funcAddr = &setRot;
 
-        EXPECT_EQ(funcManager->getItemsCount(), 1);
+        EXPECT_EQ(funcManager->getItemsCount(), 0);
 
         auto decl = declManager->createFunctionDecl(g_testFuncName, "set rot to an entity");
         auto function = m_programModule->getFunctionManager()->createFunction(funcAddr, { Function::AddressRange(&setRot, 200) }, decl);

@@ -46,13 +46,6 @@ namespace DB
 			if(m_repository != nullptr)
 				m_repository->onChangeAfterCommit(obj, IRepository::Inserted);
 			doInsert(db, obj);
-			
-			auto id = (Id)db->getLastInsertRowid();
-			if (!id) {
-				return;
-				//throw std::exception();
-			}
-			obj->setId(id);
 		}
 
 		void update(Database* db, DomainObject* obj) {
@@ -75,5 +68,14 @@ namespace DB
 		virtual void doInsert(Database* db, DomainObject* obj) = 0;
 		virtual void doUpdate(Database* db, DomainObject* obj) = 0;
 		virtual void doRemove(Database* db, DomainObject* obj) = 0;
+
+		void setNewId(Database* db, DomainObject* obj) {
+			auto id = (Id)db->getLastInsertRowid();
+			if (!id) {
+				return;
+				//throw std::exception();
+			}
+			obj->setId(id);
+		}
 	};
 };
