@@ -45,9 +45,13 @@ namespace DB
 		void commit() override {
 			SQLite::Transaction transaction(*m_db);
 
+			//MYTODO: ид еще не присвоился объекту, а объект везде используется => не использовать в программе ID объектов
+
 			for (auto obj : m_insertedObjs) {
-				if(obj->m_mapper != nullptr)
+				if (obj->m_mapper != nullptr) {
 					obj->m_mapper->insert(m_db, obj);
+					m_updatedObjs.erase(obj);
+				}
 			}
 
 			for (auto obj : m_updatedObjs) {

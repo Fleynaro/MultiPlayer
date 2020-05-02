@@ -229,6 +229,7 @@
     <ClCompile Include="Module\Statistic\Function\Collector\Record\CallInfoWriter.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTrigger.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTriggerHook.cpp" />
+    <ClCompile Include="tests\test.cpp" />
     <ClCompile Include="Utility\FileWrapper.cpp" />
     <ClCompile Include="Utility\Generic.cpp" />
     <ClCompile Include="Utils\BitStream.cpp" />

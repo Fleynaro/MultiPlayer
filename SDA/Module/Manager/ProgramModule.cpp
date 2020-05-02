@@ -6,6 +6,43 @@
 
 using namespace CE;
 
+ProgramModule::ProgramModule(void* addr, FS::Directory dir)
+	: m_baseAddr((std::uintptr_t)addr), m_dir(dir)
+{}
+
+ProgramModule::~ProgramModule() {
+	if (m_typeManager != nullptr) {
+		delete m_functionManager;
+		delete m_statManager;
+		delete m_gvarManager;
+		delete m_triggerManager;
+		delete m_triggerGroupManager;
+		delete m_vtableManager;
+		delete m_typeManager;
+	}
+	if (m_client != nullptr) {
+		delete m_client;
+	}
+	if (m_transaction != nullptr)
+		delete m_transaction;
+	if (m_db != nullptr)
+		delete m_db;
+}
+
+void ProgramModule::remove() {
+	if (m_db == nullptr)
+		return;
+	auto file = FS::File(m_db->getFilename());
+	delete m_db;
+	m_db = nullptr;
+	if (file.remove()) {
+	}
+}
+
+void ProgramModule::initTransaction() {
+	m_transaction = new DB::Transaction(m_db);
+}
+
 void ProgramModule::load()
 {
 	getTypeManager()->loadTypes();
@@ -59,4 +96,6 @@ void ProgramModule::initDataBase(std::string filename)
 	if (!filedbExisting) {
 		createGeneralDataBase();
 	}
+
+	initTransaction();
 }

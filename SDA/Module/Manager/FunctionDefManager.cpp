@@ -9,6 +9,11 @@ FunctionManager::FunctionManager(ProgramModule* module, FunctionDeclManager* fun
 	: AbstractItemManager(module), m_funcDeclManager(funcDeclManager)
 {
 	m_funcDefMapper = new DB::FunctionDefMapper(this);
+	createDefaultFunction();
+}
+
+FunctionManager::~FunctionManager() {
+	delete m_funcDeclManager;
 }
 
 void FunctionManager::loadFunctions() {
@@ -24,7 +29,8 @@ Function::Function* FunctionManager::createFunction(void* addr, Function::Addres
 }
 
 void FunctionManager::createDefaultFunction() {
-	m_defFunction = createFunction(nullptr, {}, getFunctionDeclManager()->createFunctionDecl("DefaultFunction", "This function created automatically."));
+	m_defFunction = new Function::Function(this, nullptr, {},
+		new Function::FunctionDecl(getFunctionDeclManager(), "DefaultFunction", "This function created automatically."));
 	m_items.insert(std::make_pair(0, m_defFunction));
 }
 

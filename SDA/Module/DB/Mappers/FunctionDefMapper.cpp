@@ -35,6 +35,7 @@ DomainObject* FunctionDefMapper::doLoad(Database* db, SQLite::Statement& query) 
 			decl
 		);
 
+	
 	definition->setId(def_id);
 	loadFunctionRanges(db, *definition);
 	return definition;
@@ -76,7 +77,7 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 }
 
 void FunctionDefMapper::doInsert(Database* db, DomainObject* obj) {
-	auto def = *(CE::Function::FunctionDefinition*)obj;
+	auto def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
 	SQLite::Statement query(*db, "INSERT INTO sda_func_defs (decl_id, offset)\
 				VALUES(?2, ?3)");
@@ -85,7 +86,7 @@ void FunctionDefMapper::doInsert(Database* db, DomainObject* obj) {
 }
 
 void FunctionDefMapper::doUpdate(Database* db, DomainObject* obj) {
-	auto def = *(CE::Function::FunctionDefinition*)obj;
+	auto def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
 	SQLite::Statement query(*db, "REPLACE INTO sda_func_defs (def_id, decl_id, offset)\
 				VALUES(?1, ?2, ?3)");

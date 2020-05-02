@@ -21,7 +21,7 @@ CE::FunctionDeclManager* FunctionDeclMapper::getManager() {
 
 DomainObject* FunctionDeclMapper::doLoad(Database* db, SQLite::Statement& query) {
 	Function::FunctionDecl* decl;
-	Function::FunctionDecl::Role decl_role = (Function::FunctionDecl::Role)(int)query.getColumn("role");
+	auto decl_role = (Function::FunctionDecl::Role)(int)query.getColumn("role");
 	Id decl_id = query.getColumn("decl_id");
 	std::string decl_name = query.getColumn("name");
 	std::string decl_desc = query.getColumn("desc");
@@ -103,7 +103,7 @@ void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::F
 }
 
 void FunctionDeclMapper::doInsert(Database* db, DomainObject* obj) {
-	auto& decl = *(CE::Function::FunctionDecl*)obj;
+	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
 
 	SQLite::Statement query(*db, "INSERT INTO sda_func_decls (name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
 				VALUES(?2, ?3, ?4, ?5, ?6, ?7)");
@@ -112,7 +112,7 @@ void FunctionDeclMapper::doInsert(Database* db, DomainObject* obj) {
 }
 
 void FunctionDeclMapper::doUpdate(Database* db, DomainObject* obj) {
-	auto& decl = *(CE::Function::FunctionDecl*)obj;
+	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
 
 	SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
 				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");

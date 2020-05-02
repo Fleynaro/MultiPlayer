@@ -49,6 +49,10 @@ namespace CE
 				return nullptr;
 			return m_items[id];
 		}
+
+		int getItemsCount() {
+			return (int)m_items.size();
+		}
 	protected:
 		using ItemMapType = std::map<DB::Id, DB::DomainObject*>;
 		ItemMapType m_items;

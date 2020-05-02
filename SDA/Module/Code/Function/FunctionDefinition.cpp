@@ -8,7 +8,9 @@ using namespace CE::Function;
 
 FunctionDefinition::FunctionDefinition(FunctionManager* manager, void* addr, AddressRangeList ranges, FunctionDecl* decl)
 	: m_manager(manager), m_addr(addr), m_ranges(ranges), m_decl(decl)
-{}
+{
+	decl->getFunctions().push_back(this);
+}
 
 std::string CE::Function::FunctionDefinition::getName() {
 	return getDeclaration().getDesc().getName();

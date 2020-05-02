@@ -10,6 +10,7 @@ namespace CE
 	namespace Function
 	{
 		using ArgNameList = std::vector<std::string>;
+		class FunctionDefinition;
 
 		class FunctionDecl : public DB::DomainObject
 		{
@@ -49,14 +50,19 @@ namespace CE
 
 			void deleteAllArguments();
 
-			static bool isFunction(Role role);
+			std::list<FunctionDefinition*>& getFunctions() {
+				return m_functions;
+			}
 
 			FunctionDeclManager* getManager();
+
+			static bool isFunction(Role role);
 		private:
 			Desc m_desc;
 			Signature m_signature;
 			ArgNameList m_argNames;
 			FunctionDeclManager* m_manager;
+			std::list<FunctionDefinition*> m_functions;
 		};
 	};
 };

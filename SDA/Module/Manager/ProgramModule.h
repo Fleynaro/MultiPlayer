@@ -22,9 +22,11 @@ namespace CE
 	class ProgramModule
 	{
 	public:
-		ProgramModule(void* addr, FS::Directory dir)
-			: m_baseAddr((std::uintptr_t)addr), m_dir(dir)
-		{}
+		ProgramModule(void* addr, FS::Directory dir);
+
+		~ProgramModule();
+
+		void remove();
 
 		virtual bool isExe() = 0;
 
@@ -32,9 +34,7 @@ namespace CE
 			return !isExe();
 		}
 
-		void initTransaction() {
-			m_transaction = new DB::Transaction(m_db);
-		}
+		void initTransaction();
 
 		void load();
 
@@ -95,7 +95,7 @@ namespace CE
 		}
 
 		DB::ITransaction* getTransaction() {
-			return nullptr;
+			return m_transaction;
 		}
 
 		FS::Directory& getDirectory() {

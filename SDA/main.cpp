@@ -6,9 +6,9 @@
 Program* g_program = nullptr;
 
 
-int setRot(int a, float x, float y, float z, int c);
+int setRot2(int a, float x, float y, float z, int c);
 
-class SomeClass
+class SomeClass2
 {
 public:
 	virtual int getValue() {
@@ -16,38 +16,38 @@ public:
 	}
 };
 
-auto g_someClass = new SomeClass;
-int g_IntegerVal = 4;
+auto g_someClass2 = new SomeClass2;
+int g_IntegerVal2 = 4;
 
-void setPlayerPos() {
-	g_IntegerVal = 5;
+void setPlayerPos2() {
+	g_IntegerVal2 = 5;
 }
 
-void setPlayerVel() {
+void setPlayerVel2() {
 	int a = 5;
 }
 
-float gVar = 0;
-void changeGvar() {
-	gVar = 2.0;
-	setPlayerVel();
+float gVar2 = 0;
+void changeGvar2() {
+	gVar2 = 2.0;
+	setPlayerVel2();
 }
 
-int setRot(int a, float x, float y, float z, int c)
+int setRot2(int a, float x, float y, float z, int c)
 {
 	if (a <= 2) {
-		int result = setRot(a + 1, x, y, z, c);
+		int result = setRot2(a + 1, x, y, z, c);
 	}
-	g_IntegerVal = 100;
-	float result = x + y + z + a + c + g_someClass->getValue();
+	g_IntegerVal2 = 100;
+	float result = x + y + z + a + c + g_someClass2->getValue();
 	result = pow(result, 1);
-	setPlayerPos();
-	gVar = float(rand() % 10);
-	changeGvar();
+	setPlayerPos2();
+	gVar2 = float(rand() % 10);
+	changeGvar2();
 	return result;
 }
 
-int main()
+int main2()
 {
 	g_program = new Program(GetModuleHandle(NULL));
 	DebugOutput_Console = false;
@@ -164,11 +164,11 @@ int main()
 		}
 
 		auto declManager = sda->getFunctionManager()->getFunctionDeclManager();
-		auto function = sda->getFunctionManager()->createFunction(&setRot, { Function::AddressRange(&setRot, 200) }, declManager->createFunctionDecl("setRot", "get rot of entity"));
-		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar, { Function::AddressRange(&changeGvar, 40) }, declManager->createFunctionDecl("changeGvar", ""));
+		auto function = sda->getFunctionManager()->createFunction(&setRot2, { Function::AddressRange(&setRot2, 200) }, declManager->createFunctionDecl("setRot", "get rot of entity"));
+		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar2, { Function::AddressRange(&changeGvar2, 40) }, declManager->createFunctionDecl("changeGvar", ""));
 		auto functiondb3 = sda->getFunctionManager()->createFunction(&rand, { Function::AddressRange(&rand, 300) }, declManager->createFunctionDecl("rand", ""));
-		auto functiondb5 = sda->getFunctionManager()->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) }, declManager->createFunctionDecl("setPlayerPos", ""));
-		auto functiondb6 = sda->getFunctionManager()->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) }, declManager->createFunctionDecl("setPlayerVel", ""));
+		auto functiondb5 = sda->getFunctionManager()->createFunction(&setPlayerPos2, { Function::AddressRange(&setPlayerPos2, 10) }, declManager->createFunctionDecl("setPlayerPos", ""));
+		auto functiondb6 = sda->getFunctionManager()->createFunction(&setPlayerVel2, { Function::AddressRange(&setPlayerVel2, 10) }, declManager->createFunctionDecl("setPlayerVel", ""));
 		
 		//sda->getFunctionManager()->saveFunction(*functiondb2->getFunction());
 
@@ -240,9 +240,9 @@ int main()
 		trigger->getFilters()->addFilter(filter1);
 		hook->addActiveTrigger(trigger);
 
-		setRot(1, 2, 3, 4, 5);
-		setRot(1, 2.6, 3.7, 4.8, 500);
-		setRot(1, 20, 30, 400, 50000);
+		setRot2(1, 2, 3, 4, 5);
+		setRot2(1, 2.6, 3.7, 4.8, 500);
+		setRot2(1, 20, 30, 400, 50000);
 
 		system("pause");
 		return 0;
@@ -289,7 +289,7 @@ int main()
 		{
 			std::thread t([i] {
 				for (int j = 0; j < 10; j++) {
-					setRot(10 + j, -10.f, 10.f, 888.4f, 999);
+					setRot2(10 + j, -10.f, 10.f, 888.4f, 999);
 					//Sleep(1);
 				}
 				});

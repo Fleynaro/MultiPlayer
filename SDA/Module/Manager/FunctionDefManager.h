@@ -38,6 +38,8 @@ namespace CE
 
 		FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager);
 
+		~FunctionManager();
+
 		void loadFunctions();
 
 		Function::Function* createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl);
