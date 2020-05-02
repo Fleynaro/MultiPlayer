@@ -56,9 +56,6 @@ int main()
 	printf("SDA module executing\n\n");
 	using namespace CE;
 
-	/*dissasm();
-	return 0;*/
-
 	std::string pathh = "D:\\MultiPlayer\\MultiPlayer\\SDA\\Databases";
 	if (!FS::Directory(pathh).exists()) {
 		pathh = "R:\\Rockstar Games\\MULTIPLAYER Dev\\MultiPlayer\\MultiPlayer\\SDA\\Databases";

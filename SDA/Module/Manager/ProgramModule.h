@@ -27,48 +27,62 @@ namespace CE
 		{}
 
 		virtual bool isExe() = 0;
+
 		bool isDll() {
 			return !isExe();
 		}
 
+		void initTransaction() {
+			m_transaction = new DB::Transaction(m_db);
+		}
+
 		void load();
+
 		void initManagers();
+
 		void initGhidraClient();
+
+		void createGeneralDataBase();
+
 		void initDataBase(std::string filename);
 
-		inline SQLite::Database& getDB() {
+		SQLite::Database& getDB() {
 			return *m_db;
 		}
 
-		inline TypeManager* getTypeManager() {
+		HMODULE getHModule() {
+			return HMODULE(m_baseAddr);
+		}
+
+		TypeManager* getTypeManager() {
 			return m_typeManager;
 		}
 
-		inline GVarManager* getGVarManager() {
+		GVarManager* getGVarManager() {
 			return m_gvarManager;
 		}
 
-		inline FunctionManager* getFunctionManager() {
+		FunctionManager* getFunctionManager() {
 			return m_functionManager;
 		}
 
-		inline VtableManager* getVTableManager() {
+		VtableManager* getVTableManager() {
 			return m_vtableManager;
 		}
 
-		inline TriggerManager* getTriggerManager() {
+		TriggerManager* getTriggerManager() {
 			return m_triggerManager;
 		}
 
-		inline TriggerGroupManager* getTriggerGroupManager() {
+		TriggerGroupManager* getTriggerGroupManager() {
 			return m_triggerGroupManager;
 		}
 
-		inline StatManager* getStatManager() {
+		StatManager* getStatManager() {
 			return m_statManager;
 		}
 
-		inline std::uintptr_t getBaseAddr() {
+		std::uintptr_t getBaseAddr() {
 			return m_baseAddr;
 		}
 
@@ -92,6 +106,7 @@ namespace CE
 			return m_client;
 		}
 	private:
+		DB::ITransaction* m_transaction = nullptr;
 		SQLite::Database* m_db = nullptr;
 		std::uintptr_t m_baseAddr;
 		FS::Directory m_dir;

@@ -30,7 +30,7 @@ namespace DB
 			: m_repository(repository)
 		{}
 
-		DomainObject* load(Database* db, Statement& query) {
+		void load(Database* db, Statement& query) {
 			while (query.executeStep())
 			{
 				auto obj = doLoad(db, query);

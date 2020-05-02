@@ -22,21 +22,21 @@ namespace DB
 		{}
 
 		void markAsNew(DomainObject* obj) override {
-			m_insertedObjs.push_back(obj);
+			m_insertedObjs.insert(obj);
 
 			if (obj->m_mapper->m_repository != nullptr)
 				obj->m_mapper->m_repository->onChangeBeforeCommit(obj, IRepository::Inserted);
 		}
 
 		void markAsDirty(DomainObject* obj) override {
-			m_updatedObjs.push_back(obj);
+			m_updatedObjs.insert(obj);
 
 			if (obj->m_mapper->m_repository != nullptr)
 				obj->m_mapper->m_repository->onChangeBeforeCommit(obj, IRepository::Updated);
 		}
 
 		void markAsRemoved(DomainObject* obj) override {
-			m_removedObjs.push_back(obj);
+			m_removedObjs.insert(obj);
 
 			if (obj->m_mapper->m_repository != nullptr)
 				obj->m_mapper->m_repository->onChangeBeforeCommit(obj, IRepository::Removed);
@@ -66,8 +66,8 @@ namespace DB
 		}
 	private:
 		Database* m_db;
-		std::list<DomainObject*> m_insertedObjs;
-		std::list<DomainObject*> m_updatedObjs;
-		std::list<DomainObject*> m_removedObjs;
+		std::set<DomainObject*> m_insertedObjs;
+		std::set<DomainObject*> m_updatedObjs;
+		std::set<DomainObject*> m_removedObjs;
 	};
 };

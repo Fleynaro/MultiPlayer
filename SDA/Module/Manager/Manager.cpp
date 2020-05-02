@@ -2,38 +2,6 @@
 #include <GhidraSync/GhidraSync.h>
 #include <FunctionTag/FunctionTag.h>
 
-void CE::ProgramModule::load()
-{
-	getTypeManager()->loadTypes();
-	getTypeManager()->loadTypedefs();
-	getGVarManager()->loadGVars();
-	getFunctionManager()->loadFunctions();
-	getVTableManager()->loadVTables();
-	getTypeManager()->loadClasses();
-	getFunctionManager()->getFunctionTagManager()->loadTags();
-	getTriggerManager()->loadTriggers();
-	getTriggerGroupManager()->loadTriggerGroups();
-}
-
-void CE::ProgramModule::initManagers()
-{
-	m_typeManager = new TypeManager(this);
-	m_functionManager = new FunctionManager(this, new FunctionDeclManager(this));
-	m_gvarManager = new GVarManager(this);
-	m_vtableManager = new VtableManager(this);
-	m_triggerManager = new TriggerManager(this);
-	m_triggerGroupManager = new TriggerGroupManager(this);
-	m_statManager = new StatManager(this);
-	m_functionManager->setFunctionTagManager(new Function::Tag::Manager(m_functionManager));
-}
-
-void CE::ProgramModule::initGhidraClient()
-{
-	m_client = new Ghidra::Client(this);
-	getFunctionManager()->setGhidraManager(m_client->m_functionManager);
-	getTypeManager()->setGhidraManager(m_client->m_dataTypeManager);
-}
-
 #include <Utility/Resource.h>
 #include <Program.h>
 void createGeneralDataBase(SQLite::Database& db)
@@ -47,16 +15,6 @@ void createGeneralDataBase(SQLite::Database& db)
 		return;
 	}
 	db.exec(res.getData());
-}
-
-void CE::ProgramModule::initDataBase(std::string relPath)
-{
-	auto filedb = FS::File(getDirectory(), relPath);
-	bool filedbExisting = filedb.exists();
-	m_db = new SQLite::Database(filedb.getFilename(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
-	if (!filedbExisting) {
-		createGeneralDataBase(*m_db);
-	}
 }
 
 void CE::TypeManager::loadInfoForClass(Type::Class* Class)

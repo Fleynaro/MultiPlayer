@@ -4,6 +4,10 @@
 #include "FunctionDeclManager.h"
 #include <Utils/Iterator.h>
 
+namespace DB {
+	class FunctionDefMapper;
+};
+
 namespace CE
 {
 	namespace Ghidra
@@ -66,6 +70,7 @@ namespace CE
 		Ghidra::FunctionManager* m_ghidraManager;
 		Function::Function* m_defFunction = nullptr;
 		Function::Tag::Manager* m_tagManager;
+		DB::FunctionDefMapper* m_funcDefMapper;
 	};
 
 	using FunctionDefManager = FunctionManager;

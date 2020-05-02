@@ -1,4 +1,5 @@
 #include "FunctionDefManager.h"
+#include <DB/Mappers/FunctionDefMapper.h>
 #include <GhidraSync/FunctionManager.h>
 #include <CallGraph/CallGraph.h>
 
@@ -6,14 +7,18 @@ using namespace CE;
 
 FunctionManager::FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager)
 	: AbstractItemManager(module), m_funcDeclManager(funcDeclManager)
-{}
+{
+	m_funcDefMapper = new DB::FunctionDefMapper(this);
+}
 
 void FunctionManager::loadFunctions() {
-
+	m_funcDeclManager->loadFunctionDecls();
+	m_funcDefMapper->loadAll();
 }
 
 Function::Function* FunctionManager::createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, addr, ranges, decl);
+	def->m_mapper = m_funcDefMapper;
 	getProgramModule()->getTransaction()->markAsNew(def);
 	return def;
 }
