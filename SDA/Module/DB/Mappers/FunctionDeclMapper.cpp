@@ -44,7 +44,7 @@ DomainObject* FunctionDeclMapper::doLoad(Database* db, SQLite::Statement& query)
 
 	decl->setId(decl_id);
 
-	Type::Type* type = getManager()->getProgramModule()->getTypeManager()->getType(
+	DataType::Type* type = getManager()->getProgramModule()->getTypeManager()->getType(
 		query.getColumn("ret_type_id"),
 		query.getColumn("ret_pointer_lvl"),
 		query.getColumn("ret_array_size")
@@ -64,7 +64,7 @@ void FunctionDeclMapper::loadFunctionDeclArguments(Database* db, CE::Function::F
 
 	while (query.executeStep())
 	{
-		Type::Type* type = getManager()->getProgramModule()->getTypeManager()->getType(
+		DataType::Type* type = getManager()->getProgramModule()->getTypeManager()->getType(
 			query.getColumn("type_id"),
 			query.getColumn("pointer_lvl"),
 			query.getColumn("array_size")

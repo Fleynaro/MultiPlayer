@@ -13,7 +13,7 @@ namespace GUI::Widget::TableViews
 			: public Elements::Text::Text
 		{
 		public:
-			Value(uint64_t value, void* addr, CE::Type::Type* type, CE::TypeManager* typeManager)
+			Value(uint64_t value, void* addr, CE::DataType::Type* type, CE::TypeManager* typeManager)
 				: m_addr(addr), m_type(type), m_typeManager(typeManager), Elements::Text::Text(type->getViewValue(value))
 			{}
 
@@ -58,7 +58,7 @@ namespace GUI::Widget::TableViews
 			CE::TypeManager* m_typeManager;
 			PopupContainer* m_valueEditor = nullptr;
 			void* m_addr;
-			CE::Type::Type* m_type;
+			CE::DataType::Type* m_type;
 		};
 
 		class ValueColContainer : public ColContainer

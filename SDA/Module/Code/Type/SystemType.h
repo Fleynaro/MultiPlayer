@@ -3,7 +3,7 @@
 
 namespace CE
 {
-	namespace Type
+	namespace DataType
 	{
 		class SystemType : public Type
 		{
@@ -35,6 +35,8 @@ namespace CE
 				WChar
 			};
 
+			virtual Types getTypeId() = 0;
+
 			virtual Set getSet() = 0;
 
 			Group getGroup() override {
@@ -61,7 +63,7 @@ namespace CE
 		class Void : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Void;
 			}
 
@@ -85,7 +87,7 @@ namespace CE
 		class Bool : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Bool;
 			}
 
@@ -113,7 +115,7 @@ namespace CE
 		class Byte : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Byte;
 			}
 
@@ -137,7 +139,7 @@ namespace CE
 		class Int8 : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Int8;
 			}
 
@@ -169,7 +171,7 @@ namespace CE
 		class Int16 : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Int16;
 			}
 
@@ -201,7 +203,7 @@ namespace CE
 		class Int32 : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Int32;
 			}
 
@@ -233,7 +235,7 @@ namespace CE
 		class Int64 : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Int64;
 			}
 
@@ -265,7 +267,7 @@ namespace CE
 		class UInt16 : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::UInt16;
 			}
 
@@ -289,7 +291,7 @@ namespace CE
 		class UInt32 : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::UInt32;
 			}
 
@@ -313,7 +315,7 @@ namespace CE
 		class UInt64 : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::UInt64;
 			}
 
@@ -337,7 +339,7 @@ namespace CE
 		class UInt128 : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::UInt64;
 			}
 
@@ -365,7 +367,7 @@ namespace CE
 		class Float : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Float;
 			}
 
@@ -397,7 +399,7 @@ namespace CE
 		class Double : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Double;
 			}
 
@@ -429,7 +431,7 @@ namespace CE
 		class Char : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::Char;
 			}
 
@@ -453,7 +455,7 @@ namespace CE
 		class WChar : public SystemType
 		{
 		public:
-			int getId() override {
+			Types getTypeId() override {
 				return SystemType::WChar;
 			}
 

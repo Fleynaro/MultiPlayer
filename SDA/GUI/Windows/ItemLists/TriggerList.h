@@ -443,13 +443,13 @@ namespace GUI::Widget
 					m_valueInput->changeType(getType(argIdx));
 				}
 
-				CE::Type::Type* getType(int argIdx) {
+				CE::DataType::Type* getType(int argIdx) {
 					if(m_trigger->getFunctions().size() == 0)
-						return new CE::Type::UInt64;
+						return new CE::DataType::UInt64;
 					auto func = *m_trigger->getFunctions().begin();
 					auto argList = func->getFunction()->getDeclaration().getSignature().getArgList();
 					if (argIdx >= argList.size() || argIdx < 0)
-						return new CE::Type::UInt64;
+						return new CE::DataType::UInt64;
 
 					return argList[argIdx];
 				}
@@ -485,9 +485,9 @@ namespace GUI::Widget
 				}
 
 			private:
-				CE::Type::Type* getType() {
+				CE::DataType::Type* getType() {
 					if (m_trigger->getFunctions().size() == 0)
-						return new CE::Type::UInt64;
+						return new CE::DataType::UInt64;
 					auto func = *m_trigger->getFunctions().begin();
 					return func->getFunction()->getDeclaration().getSignature().getReturnType();
 				}

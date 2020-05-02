@@ -42,9 +42,9 @@ namespace CE
 
 			bool isFunction();
 
-			void addArgument(Type::Type* type, const std::string& name);
+			void addArgument(DataType::Type* type, const std::string& name);
 
-			void changeArgument(int id, Type::Type* type, const std::string& name = "");
+			void changeArgument(int id, DataType::Type* type, const std::string& name = "");
 
 			void removeLastArgument();
 

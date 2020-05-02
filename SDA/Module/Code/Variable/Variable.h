@@ -10,21 +10,21 @@ namespace CE
 		class Variable
 		{
 		public:
-			Variable(Type::Type* type)
+			Variable(DataType::Type* type)
 				: m_type(type)
 			{}
 
-			Type::Type* getType() {
+			DataType::Type* getType() {
 				return m_type;
 			}
 		private:
-			Type::Type* m_type;
+			DataType::Type* m_type;
 		};
 
 		class Global : public Variable, public Desc
 		{
 		public:
-			Global(Type::Type* type, void* addr, int id, std::string name, std::string desc = "")
+			Global(DataType::Type* type, void* addr, int id, std::string name, std::string desc = "")
 				: Variable(type), m_addr(addr), Desc(id, name, desc)
 			{}
 
@@ -38,7 +38,7 @@ namespace CE
 		class Local : public Variable
 		{
 		public:
-			Local(Type::Type* type, void* addr)
+			Local(DataType::Type* type, void* addr)
 				: Variable(type), m_addr(addr)
 			{}
 

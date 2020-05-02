@@ -3,7 +3,7 @@
 
 //using namespace CE::Function;
 
-CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, Type::Class* Class, std::string name, std::string desc)
+CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, DataType::Class* Class, std::string name, std::string desc)
 	: m_class(Class), FunctionDecl(manager, name, desc)
 {}
 
@@ -19,18 +19,18 @@ std::string CE::Function::MethodDecl::getName() {
 	return getClass()->getName() + "::" + FunctionDecl::getName();
 }
 
-void CE::Function::MethodDecl::setClass(Type::Class* Class)
+void CE::Function::MethodDecl::setClass(DataType::Class* Class)
 {
 	if (getSignature().getArgList().size() > 0) {
 		getSignature().getArgList()[0]->free();
-		getSignature().getArgList()[0] = new Type::Pointer(Class);
+		getSignature().getArgList()[0] = new DataType::Pointer(Class);
 	}
 	else {
-		addArgument(new Type::Pointer(Class), "this");
+		addArgument(new DataType::Pointer(Class), "this");
 	}
 }
 
-CE::Type::Class* CE::Function::MethodDecl::getClass() {
+CE::DataType::Class* CE::Function::MethodDecl::getClass() {
 	return m_class;
 }
 

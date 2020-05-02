@@ -4,7 +4,7 @@
 
 namespace CE
 {
-	namespace Type
+	namespace DataType
 	{
 		//MY TODO: сделать так же, как и в GUI: canBeRemoved
 		/*
@@ -21,8 +21,6 @@ namespace CE
 			Group getGroup() override;
 
 			bool isUserDefined() override;
-
-			int getId() override;
 
 			std::string getName() override;
 

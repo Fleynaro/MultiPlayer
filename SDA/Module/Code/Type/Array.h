@@ -3,7 +3,7 @@
 
 namespace CE
 {
-	namespace Type
+	namespace DataType
 	{
 		//MYTODO: массив массивов(arr[2][5]) -> isArrayOfObjects линейный массив arr[10]. Доступ по формулу i*n+j   ИЛИ   isArrayOfPointers массив указателей(pLvl = 2, arrSize = 2 * 8 * 5 * 4) Решение: юзать через классы
 		class Array : public Pointer

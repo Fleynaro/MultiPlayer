@@ -18,7 +18,7 @@ namespace CE
 				m_client(std::shared_ptr<TMultiplexedProtocol>(new TMultiplexedProtocol(getClient()->m_protocol, "DataTypeManager")))
 			{}
 
-			datatype::Id getId(Type::Type* type, bool ghidraType = true) {
+			datatype::Id getId(DataType::Type* type, bool ghidraType = true) {
 				ObjectHash objHash;
 				if (ghidraType && type->isSystem()) {
 					objHash.addValue(m_typeManager->getGhidraName(type));
@@ -29,7 +29,7 @@ namespace CE
 				return objHash.getHash();
 			}
 
-			shared::STypeUnit getTypeUnit(Type::Type* type) {
+			shared::STypeUnit getTypeUnit(DataType::Type* type) {
 				shared::STypeUnit typeUnitDesc;
 				typeUnitDesc.__set_typeId(getId(type));
 				typeUnitDesc.__set_pointerLvl(type->getPointerLvl());
@@ -37,7 +37,7 @@ namespace CE
 				return typeUnitDesc;
 			}
 
-			Type::Type* getType(const shared::STypeUnit& typeUnitDesc) {
+			DataType::Type* getType(const shared::STypeUnit& typeUnitDesc) {
 				return m_typeManager->getType(findTypeById(typeUnitDesc.typeId)->getType(), typeUnitDesc.pointerLvl, typeUnitDesc.arraySize);
 			}
 
@@ -50,14 +50,14 @@ namespace CE
 				return returnDefType ? m_typeManager->getDefaultType() : nullptr;
 			}
 
-			datatype::SDataType buildDescToRemove(Type::Type* type) {
+			datatype::SDataType buildDescToRemove(DataType::Type* type) {
 				datatype::SDataType typeDesc;
 				typeDesc.__set_id(getId(type));
 				typeDesc.__set_size(0);
 				return typeDesc;
 			}
 
-			datatype::SDataType buildTypeDesc(Type::UserType* type) {
+			datatype::SDataType buildTypeDesc(DataType::UserType* type) {
 				datatype::SDataType typeDesc;
 				typeDesc.__set_id(getId(type));
 				typeDesc.__set_group((datatype::DataTypeGroup::type)type->getGroup());
@@ -67,7 +67,7 @@ namespace CE
 				return typeDesc;
 			}
 
-			datatype::SDataTypeTypedef buildDesc(Type::Typedef* Typedef) {
+			datatype::SDataTypeTypedef buildDesc(DataType::Typedef* Typedef) {
 				datatype::SDataTypeTypedef typedefDesc;
 				typedefDesc.__set_type(buildTypeDesc(Typedef));
 				typedefDesc.refType.__set_typeId(Typedef->getRefType()->getId());
@@ -76,7 +76,7 @@ namespace CE
 				return typedefDesc;
 			}
 
-			datatype::SDataTypeEnum buildDesc(Type::Enum* enumeration) {
+			datatype::SDataTypeEnum buildDesc(DataType::Enum* enumeration) {
 				datatype::SDataTypeEnum enumDesc;
 				enumDesc.__set_type(buildTypeDesc(enumeration));
 				for (auto& field : enumeration->getFieldDict()) {
@@ -88,7 +88,7 @@ namespace CE
 				return enumDesc;
 			}
 
-			datatype::SDataTypeStructure buildDesc(Type::Class* Class) {
+			datatype::SDataTypeStructure buildDesc(DataType::Class* Class) {
 				datatype::SDataTypeStructure structDesc;
 				structDesc.__set_type(buildTypeDesc(Class));
 
@@ -97,7 +97,7 @@ namespace CE
 					datatype::SDataTypeStructureField structFieldDesc;
 					structFieldDesc.__set_name("vtable");
 					structFieldDesc.__set_offset(0);
-					Type::Void vtableType;
+					DataType::Void vtableType;
 					structFieldDesc.type.__set_typeId(getId(&vtableType));
 					structFieldDesc.type.__set_pointerLvl(1);
 					structFieldDesc.type.__set_arraySize(0);
@@ -107,7 +107,7 @@ namespace CE
 				}
 
 				if (Class->getBaseClass() != nullptr) {
-					Type::Class* baseClass = Class->getBaseClass();
+					DataType::Class* baseClass = Class->getBaseClass();
 					datatype::SDataTypeStructureField structFieldDesc;
 					structFieldDesc.__set_name(baseClass->getName());
 					structFieldDesc.__set_offset(curOffset);
@@ -119,7 +119,7 @@ namespace CE
 					curOffset += baseClass->getSizeWithoutVTable();
 				}
 
-				Class->iterateFields([&](int offset, Type::Class::Field* field_) {
+				Class->iterateFields([&](int offset, DataType::Class::Field* field_) {
 					auto& field = *field_;
 					datatype::SDataTypeStructureField structFieldDesc;
 					structFieldDesc.__set_name(field.getName());
@@ -135,21 +135,21 @@ namespace CE
 				return structDesc;
 			}
 
-			void change(Type::UserType* type, const datatype::SDataType& typeDesc) {
+			void change(DataType::UserType* type, const datatype::SDataType& typeDesc) {
 				type->setName(typeDesc.name);
 				if (typeDesc.desc != "{pull}") {
 					type->setDesc(typeDesc.desc);
 				}
 			}
 
-			void change(Type::Typedef* Typedef, const datatype::SDataTypeTypedef& typdefDesc) {
+			void change(DataType::Typedef* Typedef, const datatype::SDataTypeTypedef& typdefDesc) {
 				auto ref_type = findTypeById(typdefDesc.refType.typeId);
 				if (ref_type != nullptr) {
 					Typedef->setRefType(getType(typdefDesc.refType));
 				}
 			}
 
-			void change(Type::Enum* enumeration, const datatype::SDataTypeEnum& enumDesc) {
+			void change(DataType::Enum* enumeration, const datatype::SDataTypeEnum& enumDesc) {
 				enumeration->setSize(enumDesc.type.size);
 				enumeration->deleteAll();
 				for (auto& field : enumDesc.fields) {
@@ -157,7 +157,7 @@ namespace CE
 				}
 			}
 
-			void change(Type::Class* Class, const datatype::SDataTypeStructure& structDesc) {
+			void change(DataType::Class* Class, const datatype::SDataTypeStructure& structDesc) {
 				int curField = 0;
 				if (structDesc.fields.size() >= 1) {
 					auto& vtable = structDesc.fields[curField];
@@ -174,8 +174,8 @@ namespace CE
 					if (baseClass.type.pointerLvl == 0 && baseClass.type.arraySize == 0) {
 						if (baseClass.comment.find("{base class}") != std::string::npos) {
 							auto type = findTypeById(baseClass.type.typeId)->getType();
-							if (type->getGroup() == Type::Type::Class) {
-								Class->setBaseClass(static_cast<Type::Class*>(type));
+							if (type->getGroup() == DataType::Type::Class) {
+								Class->setBaseClass(static_cast<DataType::Class*>(type));
 								curField++;
 							}
 						}
@@ -255,7 +255,7 @@ namespace CE
 				else {
 					if (type->getType()->isUserDefined() && (int)type->getType()->getGroup() == (int)dataType.group) {
 						type->change([&] {
-							change(static_cast<Type::UserType*>(type->getType()), dataType);
+							change(static_cast<DataType::UserType*>(type->getType()), dataType);
 						});
 					}
 					else {
@@ -369,15 +369,15 @@ namespace CE
 				return hash;
 			}
 
-			datatype::Hash getHash(Type::Type* type) {
+			datatype::Hash getHash(DataType::Type* type) {
 				switch (type->getGroup())
 				{
-				case Type::Type::Typedef:
-					return getHash(buildDesc(static_cast<Type::Typedef*>(type))).getHash();
-				case Type::Type::Enum:
-					return getHash(buildDesc(static_cast<Type::Enum*>(type))).getHash();
-				case Type::Type::Class:
-					return getHash(buildDesc(static_cast<Type::Class*>(type))).getHash();
+				case DataType::Type::Typedef:
+					return getHash(buildDesc(static_cast<DataType::Typedef*>(type))).getHash();
+				case DataType::Type::Enum:
+					return getHash(buildDesc(static_cast<DataType::Enum*>(type))).getHash();
+				case DataType::Type::Class:
+					return getHash(buildDesc(static_cast<DataType::Class*>(type))).getHash();
 				}
 				return 0;
 			}
@@ -386,7 +386,7 @@ namespace CE
 				HashMap hashmap;
 				for (auto& it : m_typeManager->getTypes()) {
 					if (it.second->getType()->isUserDefined()) {
-						auto type = static_cast<Type::UserType*>(it.second->getType());
+						auto type = static_cast<DataType::UserType*>(it.second->getType());
 						if (type->isGhidraUnit()) {
 							hashmap.insert(std::make_pair(getId(type), getHash(type)));
 						}

@@ -1,11 +1,12 @@
 #pragma once
 #include "../Shared.h"
+#include <DB/DomainObject.h>
 
 namespace CE
 {
-	namespace Type
+	namespace DataType
 	{
-		class Type : public IDesc
+		class Type : public DB::DomainObject
 		{
 		protected:
 			virtual ~Type() {}
@@ -18,6 +19,11 @@ namespace CE
 				Typedef,
 				Signature
 			};
+
+			virtual std::string getName() = 0;
+			virtual std::string getDesc() {
+				return "Not desc.";
+			}
 
 			virtual Group getGroup() = 0;
 
@@ -36,8 +42,6 @@ namespace CE
 			virtual std::string getViewValue(void* addr);
 
 			virtual std::string getViewValue(uint64_t value);
-
-
 
 			Type* getBaseType(bool refType = true, bool dereferencedType = true);
 

@@ -37,7 +37,7 @@ namespace GUI::Widget
 			class ClassContent : public TreeNode
 			{
 			public:
-				class Byte : public CE::Type::Byte
+				class Byte : public CE::DataType::Byte
 				{
 				public:
 					Byte(int maxBytesCount)
@@ -55,11 +55,11 @@ namespace GUI::Widget
 					int m_maxBytesCount;
 				};
 
-				class ByteGroup : public CE::Type::Array
+				class ByteGroup : public CE::DataType::Array
 				{
 				public:
 					ByteGroup(int bytesCount)
-						: CE::Type::Array(new Byte(bytesCount), bytesCount)
+						: CE::DataType::Array(new Byte(bytesCount), bytesCount)
 					{}
 
 					std::string getViewValue(void* addr) override {
@@ -70,7 +70,7 @@ namespace GUI::Widget
 				class TypeViewValue : public Elements::Text::ColoredText
 				{
 				public:
-					TypeViewValue(CE::Type::Type* type, void* addr, ColorRGBA color)
+					TypeViewValue(CE::DataType::Type* type, void* addr, ColorRGBA color)
 						: m_type(type), m_addr(addr), Elements::Text::ColoredText("", color)
 					{}
 
@@ -112,7 +112,7 @@ namespace GUI::Widget
 						}
 					}
 				private:
-					CE::Type::Type* m_type;
+					CE::DataType::Type* m_type;
 					void* m_addr;
 					PopupContainer* m_valueEditor = nullptr;
 				};
@@ -121,7 +121,7 @@ namespace GUI::Widget
 					: public TreeNode
 				{
 				public:
-					EmptyField(ClassContent* classContent, int relOffset, CE::Type::Type* type)
+					EmptyField(ClassContent* classContent, int relOffset, CE::DataType::Type* type)
 						: m_classContent(classContent), m_relOffset(relOffset), m_type(type)
 					{
 						addFlags(ImGuiTreeNodeFlags_FramePadding);
@@ -185,7 +185,7 @@ namespace GUI::Widget
 
 					ClassContent* m_classContent;
 					int m_relOffset;
-					CE::Type::Type* m_type;
+					CE::DataType::Type* m_type;
 				protected:
 					Container* m_headBaseInfo = nullptr;
 					Events::SpecialEventType::EventHandlerType* m_eventClick;
@@ -196,7 +196,7 @@ namespace GUI::Widget
 					: public EmptyField
 				{
 				public:
-					Field(ClassContent* classContent, int relOffset, Type::Class::Field* field)
+					Field(ClassContent* classContent, int relOffset, DataType::Class::Field* field)
 						: EmptyField(classContent, relOffset, field->getType()), m_field(field)
 					{}
 
@@ -204,7 +204,7 @@ namespace GUI::Widget
 						return m_field->getName();
 					}
 				private:
-					Type::Class::Field* m_field;
+					DataType::Class::Field* m_field;
 				};
 
 				class ArrayItem
@@ -255,11 +255,11 @@ namespace GUI::Widget
 						return m_arrayField->m_relOffset + getOffset();
 					}
 
-					CE::Type::Array* getArrayType() {
-						return static_cast<CE::Type::Array*>(m_arrayField->m_type);
+					CE::DataType::Array* getArrayType() {
+						return static_cast<CE::DataType::Array*>(m_arrayField->m_type);
 					}
 
-					CE::Type::Type* getArrayItemType() {
+					CE::DataType::Type* getArrayItemType() {
 						return getArrayType()->getType();
 					}
 
@@ -415,7 +415,7 @@ namespace GUI::Widget
 				}
 
 				//MY TODO: float, double, string
-				CE::Type::Type* predictTypeAtAddress(void* addr, int maxSize = 8, int level = 1) {
+				CE::DataType::Type* predictTypeAtAddress(void* addr, int maxSize = 8, int level = 1) {
 					auto alignment = reinterpret_cast<byte&>(addr) % 8;
 
 					if (alignment != 0 && alignment <= maxSize || maxSize >= 8) {
@@ -425,7 +425,7 @@ namespace GUI::Widget
 								if (level <= 3) {
 									void* ptr = (void*)*(std::uintptr_t*)addr;
 									if (Address(ptr).canBeRead()) {
-										return new CE::Type::Pointer(predictTypeAtAddress(ptr, 8, level + 1));
+										return new CE::DataType::Pointer(predictTypeAtAddress(ptr, 8, level + 1));
 									}
 									break;
 								}
@@ -444,7 +444,7 @@ namespace GUI::Widget
 
 				void buildFields(Container* container, const std::string& name)
 				{
-					getClass()->iterateFields([&](int& relOffset, Type::Class::Field* classField)
+					getClass()->iterateFields([&](int& relOffset, DataType::Class::Field* classField)
 					{
 						void* fieldAddr = getAddressByRelOffset(relOffset);
 
@@ -465,7 +465,7 @@ namespace GUI::Widget
 							auto fieldType = classField->getType();
 							auto baseType = fieldType->getBaseType();
 
-							if (baseType->getGroup() == Type::Type::Group::Class)
+							if (baseType->getGroup() == DataType::Type::Group::Class)
 							{
 								auto apiBaseClassType = static_cast<API::Type::Class*>(m_class->getTypeManager()->getTypeById(baseType->getId()));
 								if (apiBaseClassType != nullptr) {
@@ -525,7 +525,7 @@ namespace GUI::Widget
 
 				void buildArrayItems(Field* field, int maxItems = 20)
 				{
-					auto arrayType = static_cast<CE::Type::Array*>(field->m_type);
+					auto arrayType = static_cast<CE::DataType::Array*>(field->m_type);
 					int arrItemsCount = arrayType->getArraySize();
 					for (int i = 0; i < min(maxItems, arrItemsCount); i++) {
 						field->addItem(new ArrayItem(field, i));
@@ -575,7 +575,7 @@ namespace GUI::Widget
 					m_baseAddr = addr;
 				}
 
-				Type::Class* getClass() {
+				DataType::Class* getClass() {
 					return m_class->getClass();
 				}
 
@@ -593,7 +593,7 @@ namespace GUI::Widget
 			ClassHierarchy(ClassEditor* classEditor, API::Type::Class* targetClass, void* baseAddr = nullptr)
 				: m_classEditor(classEditor), m_targetClass(targetClass), m_baseAddr(baseAddr)
 			{
-				m_targetClass->getClass()->iterateClasses([&](Type::Class* class_) {
+				m_targetClass->getClass()->iterateClasses([&](DataType::Class* class_) {
 					auto apiClassType = static_cast<API::Type::Class*>(m_targetClass->getTypeManager()->getTypeById(class_->getId()));
 					if (apiClassType != nullptr) {
 						ClassContent* classContent = new ClassContent(this, apiClassType, baseAddr != nullptr);
@@ -628,7 +628,7 @@ namespace GUI::Widget
 				m_baseAddr = addr;
 			}
 
-			ClassContent::EmptyField* getFieldLocationBy(CE::Type::Class* Class, int relOffset) {
+			ClassContent::EmptyField* getFieldLocationBy(CE::DataType::Class* Class, int relOffset) {
 				for (auto it : m_classContents) {
 					if (it->getClass() == Class) {
 						for (auto field : it->m_fields) {
@@ -698,7 +698,7 @@ namespace GUI::Widget
 				return true;
 			}
 
-			virtual bool checkFilter(API::Type::Class* Class, Type::Class::Field& field) = 0;
+			virtual bool checkFilter(API::Type::Class* Class, DataType::Class::Field& field) = 0;
 		};
 
 
@@ -901,7 +901,7 @@ namespace GUI::Widget
 				m_classEditor->updateCurrentClassContent();
 			}
 
-			Type::Class* getClass() {
+			DataType::Class* getClass() {
 				return m_class->getClass();
 			}
 		private:
@@ -1051,18 +1051,18 @@ namespace GUI::Widget
 				return getClass()->isDefaultField(m_field);
 			}
 
-			Type::Class* getClass() {
+			DataType::Class* getClass() {
 				return m_class->getClass();
 			}
 		private:
 			API::Type::Class* m_class;
 			int m_relOffset;
 			ClassEditor* m_classEditor;
-			Type::Class::Field* m_field;
+			DataType::Class::Field* m_field;
 
 			Elements::Input::Text* m_nameInput;
 			Elements::Generic::Checkbox* m_cb_isMoveFieldOnlyEnabled = nullptr;
-			Type::Type* m_typeInput;
+			DataType::Type* m_typeInput;
 			Window::DataTypeSelector* m_dataTypeSelector = nullptr;
 		};
 
@@ -1263,7 +1263,7 @@ namespace GUI::Widget
 			return m_cb_isHexDisplayEnabled->isSelected();
 		}
 
-		bool checkOnInputValue(Type::Class::Field& field, const std::string& value) {
+		bool checkOnInputValue(DataType::Class::Field& field, const std::string& value) {
 			return Generic::String::ToLower(field.getName())
 				.find(Generic::String::ToLower(value)) != std::string::npos;
 		}

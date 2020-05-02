@@ -77,25 +77,25 @@ int main2()
 			Ghidra::FunctionManager& funcManager = *client.m_functionManager;
 
 			auto EntityPosClass = sda->getTypeManager()->createClass("EntityPos", "")->getClass();
-			EntityPosClass->addField(0x0, "x", new Type::Float);
-			EntityPosClass->addField(0x4, "y", new Type::Float);
-			EntityPosClass->addField(0x8, "z", new Type::Float);
+			EntityPosClass->addField(0x0, "x", new DataType::Float);
+			EntityPosClass->addField(0x4, "y", new DataType::Float);
+			EntityPosClass->addField(0x8, "z", new DataType::Float);
 
 			auto EntityClass = sda->getTypeManager()->createClass("Entity", "EntityClass")->getClass();
 			EntityClass->addField(20, "position", EntityPosClass, "pos of entity");
-			EntityClass->addField(35, "arr", new Type::Array(new Type::Int32, 3), "some arr");
-			EntityClass->addField(60, "val2", new Type::Float, "some value");
+			EntityClass->addField(35, "arr", new DataType::Array(new DataType::Int32, 3), "some arr");
+			EntityClass->addField(60, "val2", new DataType::Float, "some value");
 			EntityClass->resize(0);
 
 			auto PedClass = sda->getTypeManager()->createClass("Ped", "PedClass")->getClass();
 			PedClass->setBaseClass(EntityClass);
-			PedClass->addField(30, "arr", new Type::Array(new Type::Int32, 40), "some big arr");
+			PedClass->addField(30, "arr", new DataType::Array(new DataType::Int32, 40), "some big arr");
 
 			dataTypeManager.buildDesc(EntityPosClass);
 			dataTypeManager.buildDesc(EntityClass);
 			dataTypeManager.buildDesc(PedClass);
 
-			Ghidra::datatype::Id id = dataTypeManager.getId(new Type::Array(new Type::Int8, 2));
+			Ghidra::datatype::Id id = dataTypeManager.getId(new DataType::Array(new DataType::Int8, 2));
 			auto type = dataTypeManager.findTypeById(id);
 
 			try {
@@ -116,9 +116,9 @@ int main2()
 				if (false) {
 					auto func = sda->getFunctionManager()->getFunctionById(4);
 					func->getDeclaration().getDesc().setName("AllocateMemory");
-					func->getSignature().setReturnType(new Type::Pointer(new Type::Void));
+					func->getSignature().setReturnType(new DataType::Pointer(new DataType::Void));
 					func->getDeclaration().deleteAllArguments();
-					func->getDeclaration().addArgument(new Type::Pointer(new Type::Void), "addr");
+					func->getDeclaration().addArgument(new DataType::Pointer(new DataType::Void), "addr");
 					func->getDeclaration().getDesc().setDesc("this allocate memory\nlol");
 
 					funcManager.push({
@@ -220,11 +220,11 @@ int main2()
 		CallGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
 		analysis2.doAnalyse();
 
-		function->getDeclaration().addArgument(new Type::Int32, "a");
-		function->getDeclaration().addArgument(new Type::Float, "x");
-		function->getDeclaration().addArgument(new Type::Float, "y");
-		function->getDeclaration().addArgument(new Type::Float, "z");
-		function->getDeclaration().addArgument(new Type::Int32, "c");
+		function->getDeclaration().addArgument(new DataType::Int32, "a");
+		function->getDeclaration().addArgument(new DataType::Float, "x");
+		function->getDeclaration().addArgument(new DataType::Float, "y");
+		function->getDeclaration().addArgument(new DataType::Float, "z");
+		function->getDeclaration().addArgument(new DataType::Int32, "c");
 
 		function->createHook();
 		auto hook = function->getHook();

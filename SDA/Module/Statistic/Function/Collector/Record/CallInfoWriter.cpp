@@ -12,7 +12,7 @@ void Record::CallInfoWriter::writeHeader(Type type) {
 	getStream().write(header);
 }
 
-bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* argAddrValue, CE::Type::Type* argType) {
+bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* argAddrValue, CE::DataType::Type* argType) {
 	//MYTODO: 1) массив указателей 2) массив чисел 3) указатель на указатель 4) указатель 5) не указатель(в стеке)
 	//MYTODO: узнать тип указателя: на стек, на кучу, массив ли?
 

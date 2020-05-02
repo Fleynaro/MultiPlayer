@@ -32,7 +32,7 @@ namespace CE::Stat::Function::Record
 
 		void writeHeader(Type type);
 
-		static bool writeTypeValue(Buffer::Stream& bufferStream, void* argAddrValue, CE::Type::Type* argType);
+		static bool writeTypeValue(Buffer::Stream& bufferStream, void* argAddrValue, CE::DataType::Type* argType);
 	protected:
 		CE::Trigger::Function::Trigger* m_trigger;
 		CE::Hook::DynHook* m_hook;

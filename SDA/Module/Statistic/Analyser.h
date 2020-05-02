@@ -116,7 +116,7 @@ namespace CE
 
 			void doAnalyse()
 			{
-				using namespace CE::Type;
+				using namespace CE::DataType;
 
 				if (m_rawValues.size() == 0)
 					return;
@@ -162,7 +162,7 @@ namespace CE
 
 			Histogram* createHistogram()
 			{
-				using namespace CE::Type;
+				using namespace CE::DataType;
 
 				Histogram* histogram = new Histogram;
 				switch (getSet())
@@ -218,18 +218,18 @@ namespace CE
 			}
 
 			bool isUndefined() {
-				return getSet() == Type::SystemType::Undefined;
+				return getSet() == DataType::SystemType::Undefined;
 			}
 
-			Type::SystemType::Set getSet() {
+			DataType::SystemType::Set getSet() {
 				return m_set;
 			}
 
-			Type::SystemType::Types getTypeId() {
+			DataType::SystemType::Types getTypeId() {
 				return m_typeId;
 			}
 
-			void setTypeId(Type::SystemType::Types typeId) {
+			void setTypeId(DataType::SystemType::Types typeId) {
 				m_typeId = typeId;
 			}
 		private:
@@ -306,8 +306,8 @@ namespace CE
 				return static_cast<int>(floor(log2(m_rawValues.size()))) + 1;
 			}
 		private:
-			Type::SystemType::Set m_set = Type::SystemType::Undefined;
-			Type::SystemType::Types m_typeId = Type::SystemType::Void;
+			DataType::SystemType::Set m_set = DataType::SystemType::Undefined;
+			DataType::SystemType::Types m_typeId = DataType::SystemType::Void;
 			std::map<uint64_t, int> m_rawValues;
 		};
 	};

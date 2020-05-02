@@ -3,7 +3,7 @@
 
 namespace CE
 {
-	namespace Type
+	namespace DataType
 	{
 		class Enum : public UserType
 		{

@@ -196,8 +196,14 @@
     <ClCompile Include="Module\Code\Type\SystemType.cpp" />
     <ClCompile Include="Module\Code\Type\Typedef.cpp" />
     <ClCompile Include="Module\Code\Type\UserType.cpp" />
+    <ClCompile Include="Module\DB\AbstractMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\ClassTypeMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\DataTypeMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\EnumTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionDeclMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionDefMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\TypedefTypeMapper.cpp" />
+    <ClCompile Include="Module\DB\Transaction.cpp" />
     <ClCompile Include="Module\FunctionTag\FunctionTag.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\CallGraph\CallGraph.cpp" />
@@ -250,8 +256,12 @@
     <ClInclude Include="Module\Code\Function\FunctionSignature.h" />
     <ClInclude Include="Module\DB\DomainObject.h" />
     <ClInclude Include="Module\DB\AbstractMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\ClassTypeMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\DataTypeMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\EnumTypeMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionDeclMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionDefMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\FunctionTag\FunctionTag.h" />
     <ClInclude Include="main.h" />

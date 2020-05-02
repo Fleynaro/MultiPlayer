@@ -13,7 +13,7 @@ namespace GUI::Units
 		public Attribute::Font<Type>
 	{
 	public:
-		Type(CE::Type::Type* type, Events::ClickEventType::EventHandlerType* eventHandler = nullptr)
+		Type(CE::DataType::Type* type, Events::ClickEventType::EventHandlerType* eventHandler = nullptr)
 			:
 			m_type(type),
 			Events::OnLeftMouseClick<Type>(this, this, eventHandler)
@@ -45,7 +45,7 @@ namespace GUI::Units
 			return m_type->getDisplayName();
 		}
 
-		static std::string getTooltipDesc(CE::Type::Type* type, bool sizeLimit = true) {
+		static std::string getTooltipDesc(CE::DataType::Type* type, bool sizeLimit = true) {
 			std::string info =
 				"Name: " + type->getDisplayName() + " (Id: "+ std::to_string(type->getId()) +")" +
 				"\nGroup: " + getGroupName(type->getGroup()) +
@@ -56,19 +56,19 @@ namespace GUI::Units
 			{
 				info += "\n\n";
 				
-				if (auto Typedef = dynamic_cast<CE::Type::Typedef*>(type->getBaseType(false))) {
+				if (auto Typedef = dynamic_cast<CE::DataType::Typedef*>(type->getBaseType(false))) {
 					if (Typedef->getRefType() != nullptr) {
 						info += "Source: " + Typedef->getRefType()->getDisplayName() + "\n";
 					}
 				}
-				else if (auto Enum = dynamic_cast<CE::Type::Enum*>(type->getBaseType())) {
+				else if (auto Enum = dynamic_cast<CE::DataType::Enum*>(type->getBaseType())) {
 					info += "enum " + Enum->getName() + " {\n";
 					for (auto& field : Enum->getFieldDict()) {
 						info += "\t" + field.second + " = " + std::to_string(field.first) + ",\n";
 					}
 					info += "};";
 				}
-				else if (auto Class = dynamic_cast<CE::Type::Class*>(type->getBaseType())) {
+				else if (auto Class = dynamic_cast<CE::DataType::Class*>(type->getBaseType())) {
 					info += "class " + Class->getName() + " ";
 
 					if (Class->getBaseClass() != nullptr) {
@@ -82,7 +82,7 @@ namespace GUI::Units
 					int limitCount = sizeLimit * 10;
 
 					//fields
-					Class->iterateFieldsWithOffset([&](CE::Type::Class* class_, int offset, CE::Type::Class::Field* field) {
+					Class->iterateFieldsWithOffset([&](CE::DataType::Class* class_, int offset, CE::DataType::Class::Field* field) {
 						if (class_ != Class)
 							return true;
 
@@ -151,6 +151,6 @@ namespace GUI::Units
 			return groupName[groupId];
 		}
 	private:
-		CE::Type::Type* m_type;
+		CE::DataType::Type* m_type;
 	};
 };

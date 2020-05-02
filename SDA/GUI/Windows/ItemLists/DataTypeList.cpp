@@ -30,7 +30,7 @@ TestStructA::TestStructA() {
 
 
 void GUI::Widget::DataTypeList::ListView::TypeItem::openControlPanel() {
-	if (m_type->getType()->getGroup() != Type::Type::Class)
+	if (m_type->getType()->getGroup() != DataType::Type::Class)
 		return;
 
 	Widget::ClassEditor* classEditor = new Widget::ClassEditor;

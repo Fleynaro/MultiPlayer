@@ -3,7 +3,7 @@
 
 namespace CE
 {
-	namespace Type
+	namespace DataType
 	{
 		class UserType : public Type, public IGhidraUnit
 		{
@@ -22,10 +22,6 @@ namespace CE
 
 			int getArraySize() override {
 				return 0;
-			}
-
-			int getId() override {
-				return m_id;
 			}
 
 			std::string getDisplayName() override {

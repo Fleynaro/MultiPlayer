@@ -299,11 +299,11 @@ namespace GUI::Widget
 			delete m_selectDataTypeEventHandler;
 		}
 
-		void setSelectedType(CE::Type::Type* selectedType) {
+		void setSelectedType(CE::DataType::Type* selectedType) {
 			m_selectedType = selectedType;
 		}
 
-		CE::Type::Type* getSelectedType() {
+		CE::DataType::Type* getSelectedType() {
 			return m_selectedType;
 		}
 
@@ -358,7 +358,7 @@ namespace GUI::Widget
 		DataTypeList::ListView* m_dataTypeListView;
 		DataTypeList::ListView* m_dataTypeShortListView;
 		Container* m_dataTypeShortList;
-		CE::Type::Type* m_selectedType = nullptr;
+		CE::DataType::Type* m_selectedType = nullptr;
 		Widget::DataTypeEventType::EventHandlerType* m_selectDataTypeEventHandler;
 	};
 };
@@ -447,18 +447,18 @@ namespace GUI::Window
 			m_preview->setText(m_type->getDisplayName());
 		}
 
-		void setType(CE::Type::Type* type) {
+		void setType(CE::DataType::Type* type) {
 			m_dataTypeInput->setSelectedType(type->getBaseType());
 			m_pointerInput->setInputValue(type->getPointerLvl());
 			m_arrayInput->setInputValue(type->getArraySize());
 			updatePreview();
 		}
 
-		CE::Type::Type* getType() {
+		CE::DataType::Type* getType() {
 			return m_type;
 		}
 	private:
-		CE::Type::Type* m_type = nullptr;
+		CE::DataType::Type* m_type = nullptr;
 		TypeManager* m_typeManager;
 		Widget::DataTypeInput* m_dataTypeInput;
 		Elements::Input::Int* m_pointerInput;

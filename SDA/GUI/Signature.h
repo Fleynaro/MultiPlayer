@@ -261,7 +261,7 @@ namespace GUI::Units
 		class Type : public Units::Type
 		{
 		public:
-			Type(int id, CE::Type::Type* type, Events::ClickEventType::EventHandlerType* eventHandler)
+			Type(int id, CE::DataType::Type* type, Events::ClickEventType::EventHandlerType* eventHandler)
 				: m_id(id), Units::Type(type, eventHandler)
 			{}
 
@@ -354,7 +354,7 @@ namespace GUI::Units
 				.sameLine(0.f);
 		}
 
-		void buildArgument(int idx, const std::string& name, CE::Type::Type* type, bool isFinal = false)
+		void buildArgument(int idx, const std::string& name, CE::DataType::Type* type, bool isFinal = false)
 		{
 			std::string argName = " " + name + (!isFinal ? ", " : "");
 			(*this)

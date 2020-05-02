@@ -49,7 +49,7 @@ namespace CE
 			return id;
 		}
 
-		Variable::Global* createGVar(Type::Type* type, void* addr, std::string name, std::string desc = "") {
+		Variable::Global* createGVar(DataType::Type* type, void* addr, std::string name, std::string desc = "") {
 			int id = getNewId();
 			auto gvar = new Variable::Global(type, addr, id, name, desc);
 			m_gvars[id] = gvar;
@@ -64,7 +64,7 @@ namespace CE
 
 			while (query.executeStep())
 			{
-				Type::Type* type = getProgramModule()->getTypeManager()->getType(
+				DataType::Type* type = getProgramModule()->getTypeManager()->getType(
 					query.getColumn("type_id"),
 					query.getColumn("pointer_lvl"),
 					query.getColumn("array_size")

@@ -1,4 +1,5 @@
 #include "test.h"
+#include <CallGraph/CallGraph.h>
 using namespace CE;
 
 class ProgramModuleFixture : public ::testing::Test {
@@ -34,12 +35,16 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
     {
         auto funcManager = m_programModule->getFunctionManager();
         auto declManager = funcManager->getFunctionDeclManager();
-        void* funcAddr = &setRot;
+        ASSERT_EQ(funcManager->getItemsCount(), 0);
 
-        EXPECT_EQ(funcManager->getItemsCount(), 0);
-
-        auto decl = declManager->createFunctionDecl(g_testFuncName, "set rot to an entity");
-        auto function = m_programModule->getFunctionManager()->createFunction(funcAddr, { Function::AddressRange(&setRot, 200) }, decl);
+        auto function1 = funcManager->createFunction(&setRot,       { Function::AddressRange(&setRot, 200) },       declManager->createFunctionDecl(g_testFuncName, "set rot to an entity"));
+        auto function2 = funcManager->createFunction(&changeGvar,   { Function::AddressRange(&changeGvar, 10) },    declManager->createFunctionDecl("changeGvar", ""));
+        auto function3 = funcManager->createFunction(&rand,         { Function::AddressRange(&rand, 300) },         declManager->createFunctionDecl("rand", ""));
+        auto function4 = funcManager->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) },  declManager->createFunctionDecl("setPlayerPos", ""));
+        auto function5 = funcManager->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) },  declManager->createFunctionDecl("setPlayerVel", ""));
+        
+        m_programModule->getFunctionManager()->buildFunctionBodies();
+        m_programModule->getFunctionManager()->buildFunctionBasicInfo();
     }
 
     tr->commit();
@@ -50,20 +55,39 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     //for functions
     {
         auto funcManager = m_programModule->getFunctionManager();
-        EXPECT_EQ(funcManager->getItemsCount(), 1);
+        EXPECT_EQ(funcManager->getItemsCount(), 5);
         
-        FunctionManager::Iterator it(funcManager);
-        ASSERT_EQ(it.hasNext(), true);
-        auto func = it.next();
+        auto func = funcManager->getFunctionAt(&setRot);
         ASSERT_EQ(func->getDeclaration().getFunctions().size(), 1);
         ASSERT_EQ(func->getRangeList().size(), 1);
         ASSERT_EQ(func->getRangeList().begin()->getMinAddress(), &setRot);
         ASSERT_EQ(func->getName(), g_testFuncName);
-        EXPECT_EQ(it.hasNext(), false);
     }
 
     //remove test database
-    m_programModule->remove();
+    //m_programModule->remove();
+}
+
+TEST_F(ProgramModuleFixture, Test_FunctionAnalysis)
+{
+    auto funcManager = m_programModule->getFunctionManager();
+    EXPECT_EQ(funcManager->getItemsCount(), 5);
+
+    auto function1 = funcManager->getFunctionAt(&setRot);
+    ASSERT_NE(function1, nullptr);
+
+    CallGraph::FunctionBodyBuilder bodyBuilder(function1);
+    bodyBuilder.build();
+
+    auto body = function1->getBody();
+    ASSERT_EQ(body->getFunctionsReferTo().size(), 1);
+    
+    auto& nodes = body->getNodeList();
+    ASSERT_EQ(nodes.size(), 7);
+
+    //funcManager->buildFunctionBasicInfo();
+    //auto& info = body->getBasicInfo();
+    //ASSERT_EQ(info.m_calculatedFuncCount, 7);
 }
 
 
@@ -108,5 +132,11 @@ int setRot(int a, float x, float y, float z, int c)
 
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
+
+    Hook::init();
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+    DebugOutput_Console = true;
+
 	return RUN_ALL_TESTS();
 }

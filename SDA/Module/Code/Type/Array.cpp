@@ -1,18 +1,20 @@
 #include "Array.h"
 
+using namespace CE;
+using namespace CE::DataType;
 
-std::string CE::Type::Array::getDisplayName() {
+std::string Array::getDisplayName() {
 	return getType()->getDisplayName() + "[" + std::to_string(getArraySize()) + "]";
 }
 
-int CE::Type::Array::getSize() {
+int Array::getSize() {
 	return getArraySize() * getType()->getSize();
 }
 
-int CE::Type::Array::getArraySize() {
+int Array::getArraySize() {
 	return static_cast<int>(m_arraySize);
 }
 
-int CE::Type::Array::getItemSize() {
+int Array::getItemSize() {
 	return getType()->getSize();
 }

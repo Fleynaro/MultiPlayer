@@ -1,8 +1,10 @@
 #include "AbstractType.h"
 #include "Type.h"
 
+using namespace CE;
+using namespace CE::DataType;
 
-void CE::Type::Type::free() {
+void Type::free() {
 	m_ownerCount--;
 	if (m_ownerCount == 0) {
 		m_isDeleted = true;
@@ -15,65 +17,65 @@ void CE::Type::Type::free() {
 	}
 }
 
-std::string CE::Type::Type::getViewValue(void* addr) {
+std::string Type::getViewValue(void* addr) {
 	uint64_t mask = 0x0;
 	for (int i = 0; i < max(8, getSize()); i++)
 		mask |= 0xFF << i;
 	return std::to_string(*(uint64_t*)addr & mask);
 }
 
-std::string CE::Type::Type::getViewValue(uint64_t value) {
+std::string Type::getViewValue(uint64_t value) {
 	return getViewValue(&value);
 }
 
-CE::Type::Type* CE::Type::Type::getBaseType(bool refType, bool dereferencedType) {
+Type* Type::getBaseType(bool refType, bool dereferencedType) {
 	if (dereferencedType) {
-		if (auto pointerType = dynamic_cast<CE::Type::Pointer*>(this)) {
+		if (auto pointerType = dynamic_cast<Pointer*>(this)) {
 			return pointerType->getType()->getBaseType();
 		}
-		if (auto arrayType = dynamic_cast<CE::Type::Array*>(this)) {
+		if (auto arrayType = dynamic_cast<Array*>(this)) {
 			return arrayType->getType()->getBaseType();
 		}
 	}
 	if (refType) {
-		if (auto typeDef = dynamic_cast<CE::Type::Typedef*>(this)) {
+		if (auto typeDef = dynamic_cast<DataType::Typedef*>(this)) {
 			return typeDef->getRefType()->getBaseType();
 		}
 	}
 	return this;
 }
 
-bool CE::Type::Type::isSystem() {
+bool Type::isSystem() {
 	return !isUserDefined();
 }
 
-bool CE::Type::Type::isPointer() {
+bool Type::isPointer() {
 	return getPointerLvl() != 0;
 }
 
-bool CE::Type::Type::isArray() {
+bool Type::isArray() {
 	return getArraySize() != 0;
 }
 
-bool CE::Type::Type::isArrayOfPointers() {
+bool Type::isArrayOfPointers() {
 	return isArray() && getPointerLvl() > 1;
 }
 
-bool CE::Type::Type::isArrayOfObjects() {
+bool Type::isArrayOfObjects() {
 	return isArray() && getPointerLvl() == 1;
 }
 
-bool CE::Type::Type::isString() {
+bool Type::isString() {
 	if (getPointerLvl() == 0)
 		return false;
 	auto id = getBaseType()->getId();
-	return id == CE::Type::SystemType::Char || id == CE::Type::SystemType::WChar;
+	return id == SystemType::Char || id == SystemType::WChar;
 }
 
-bool CE::Type::Type::isSigned() {
+bool Type::isSigned() {
 	return false;
 }
 
-void CE::Type::Type::addOwner() {
+void Type::addOwner() {
 	m_ownerCount++;
 }

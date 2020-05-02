@@ -4,7 +4,7 @@
 #include "../Function/MethodDeclaration.h"
 #include "../VTable/VTable.h"
 
-namespace CE::Type
+namespace CE::DataType
 {
 	class Class : public UserType
 	{

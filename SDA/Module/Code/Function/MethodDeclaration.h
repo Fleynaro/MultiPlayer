@@ -3,7 +3,7 @@
 
 namespace CE
 {
-	namespace Type {
+	namespace DataType {
 		class Class;
 	};
 
@@ -12,7 +12,7 @@ namespace CE
 		class MethodDecl : public FunctionDecl
 		{
 		public:
-			MethodDecl(FunctionDeclManager* manager, Type::Class* Class, std::string name, std::string desc = "");
+			MethodDecl(FunctionDeclManager* manager, DataType::Class* Class, std::string name, std::string desc = "");
 
 			MethodDecl(FunctionDeclManager* manager, std::string name, std::string desc = "");
 
@@ -20,9 +20,9 @@ namespace CE
 
 			std::string getName() override;
 
-			void setClass(Type::Class* Class);
+			void setClass(DataType::Class* Class);
 
-			Type::Class* getClass();
+			DataType::Class* getClass();
 
 			Role getRole() override;
 
@@ -30,7 +30,7 @@ namespace CE
 
 			bool isVirtual();
 		private:
-			Type::Class* m_class;
+			DataType::Class* m_class;
 			Role m_role = Role::Method;
 		};
 	};

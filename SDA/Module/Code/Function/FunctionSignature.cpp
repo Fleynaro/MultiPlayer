@@ -8,7 +8,7 @@ Signature::~Signature() {
 		m_returnType->free();
 }
 
-void Signature::setReturnType(Type::Type* returnType) {
+void Signature::setReturnType(DataType::Type* returnType) {
 	if (m_returnType != nullptr)
 		m_returnType->free();
 	m_returnType = returnType;
@@ -16,7 +16,7 @@ void Signature::setReturnType(Type::Type* returnType) {
 	//m_retTypeChanged = true;
 }
 
-CE::Type::Type* Signature::getReturnType() {
+CE::DataType::Type* Signature::getReturnType() {
 	return m_returnType;
 }
 
@@ -24,12 +24,12 @@ Signature::ArgTypeList& Signature::getArgList() {
 	return m_args;
 }
 
-void Signature::addArgument(Type::Type* type) {
+void Signature::addArgument(DataType::Type* type) {
 	type->addOwner();
 	m_args.push_back(type);
 }
 
-void Signature::changeArgument(int id, Type::Type* type) {
+void Signature::changeArgument(int id, DataType::Type* type) {
 	m_args[id]->free();
 	type->addOwner();
 	m_args[id] = type;

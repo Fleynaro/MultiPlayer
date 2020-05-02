@@ -17,7 +17,7 @@ namespace CE::Trigger::Function::Filter::Cmp
 		}
 
 		bool checkFilterAfter(CE::Hook::DynHook* hook) override {
-			using namespace CE::Type;
+			using namespace CE::DataType;
 
 			auto function = (CE::Function::Function*)hook->getUserPtr();
 			auto type = function->getSignature().getReturnType();

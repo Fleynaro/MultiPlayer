@@ -1,6 +1,9 @@
 #include "Pointer.h"
 
-CE::Type::Pointer::Pointer(Type* type)
+using namespace CE;
+using namespace CE::DataType;
+
+Pointer::Pointer(Type* type)
 	: m_type(type)
 {
 	if (type->isArray())
@@ -8,50 +11,46 @@ CE::Type::Pointer::Pointer(Type* type)
 	m_type->addOwner();
 }
 
-CE::Type::Pointer::~Pointer() {
+Pointer::~Pointer() {
 	m_type->free();
 }
 
-CE::Type::Pointer::Group CE::Type::Pointer::getGroup() {
+Pointer::Group Pointer::getGroup() {
 	return getType()->getGroup();
 }
 
-bool CE::Type::Pointer::isUserDefined() {
+bool Pointer::isUserDefined() {
 	return getType()->isUserDefined();
 }
 
-int CE::Type::Pointer::getId() {
-	return getType()->getId();
-}
-
-std::string CE::Type::Pointer::getName() {
+std::string Pointer::getName() {
 	return getType()->getName();
 }
 
-std::string CE::Type::Pointer::getDesc() {
+std::string Pointer::getDesc() {
 	return getType()->getDesc();
 }
 
-std::string CE::Type::Pointer::getDisplayName() {
+std::string Pointer::getDisplayName() {
 	return getType()->getDisplayName() + "*";
 }
 
-int CE::Type::Pointer::getSize() {
+int Pointer::getSize() {
 	return 8;
 }
 
-std::string CE::Type::Pointer::getViewValue(void* addr) {
+std::string Pointer::getViewValue(void* addr) {
 	return "(" + getDisplayName() + ")0x" + Generic::String::NumberToHex(*(uint64_t*)addr);
 }
 
-CE::Type::Type* CE::Type::Pointer::getType() {
+Type* Pointer::getType() {
 	return m_type;
 }
 
-int CE::Type::Pointer::getPointerLvl() {
+int Pointer::getPointerLvl() {
 	return getType()->getPointerLvl() + 1;
 }
 
-int CE::Type::Pointer::getArraySize() {
+int Pointer::getArraySize() {
 	return 0;
 }

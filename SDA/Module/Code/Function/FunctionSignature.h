@@ -8,27 +8,27 @@ namespace CE
 		class Signature
 		{
 		public:
-			using ArgTypeList = std::vector<Type::Type*>;
+			using ArgTypeList = std::vector<DataType::Type*>;
 
 			Signature() {}
 			~Signature();
 
-			void setReturnType(Type::Type* returnType);
+			void setReturnType(DataType::Type* returnType);
 
-			Type::Type* getReturnType();
+			DataType::Type* getReturnType();
 
 			ArgTypeList& getArgList();
 
-			void addArgument(Type::Type* type);
+			void addArgument(DataType::Type* type);
 
-			void changeArgument(int id, Type::Type* type);
+			void changeArgument(int id, DataType::Type* type);
 
 			void removeLastArgument();
 
 			void deleteAllArguments();
 		private:
 			ArgTypeList m_args;
-			Type::Type* m_returnType = nullptr;
+			DataType::Type* m_returnType = nullptr;
 		};
 	};
 };

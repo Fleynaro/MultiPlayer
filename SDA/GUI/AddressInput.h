@@ -200,21 +200,21 @@ namespace GUI
 		class NumericInput : public Input
 		{
 		public:
-			NumericInput(CE::Address address, CE::Type::Type* type)
+			NumericInput(CE::Address address, CE::DataType::Type* type)
 				: Input(address), m_type(type)
 			{
 				auto basicType = m_type->getBaseType()->getId();
 
-				if (basicType != Type::SystemType::Void)
+				if (basicType != DataType::SystemType::Void)
 				{
-					if (basicType == Type::SystemType::Bool) {
+					if (basicType == DataType::SystemType::Bool) {
 						m_valueInput = new Elements::Generic::Checkbox("", m_address.get<bool>());
 					}
-					else if (basicType == Type::SystemType::Float) {
+					else if (basicType == DataType::SystemType::Float) {
 						m_valueInput = (new Elements::Input::Float)
 							->setInputValue(m_address.get<float>());
 					}
-					else if (basicType == Type::SystemType::Double) {
+					else if (basicType == DataType::SystemType::Double) {
 						m_valueInput = (new Elements::Input::Double)
 							->setInputValue(m_address.get<double>());
 					}
@@ -250,14 +250,14 @@ namespace GUI
 				m_valueInput->setReadOnly(toggle);
 			}
 		private:
-			CE::Type::Type* m_type;
+			CE::DataType::Type* m_type;
 			Elements::Input::IInput* m_valueInput;
 		};
 
 		class EnumInput : public Input
 		{
 		public:
-			EnumInput(CE::Address address, CE::Type::Enum* enumeration)
+			EnumInput(CE::Address address, CE::DataType::Enum* enumeration)
 				: Input(address), m_enumeration(enumeration)
 			{
 				addItem(m_valueInput = new Elements::Input::FilterInt);
@@ -283,7 +283,7 @@ namespace GUI
 				m_valueInput->setReadOnly(toggle);
 			}
 		private:
-			CE::Type::Enum* m_enumeration;
+			CE::DataType::Enum* m_enumeration;
 			Elements::Input::FilterInt* m_valueInput;
 		};
 
@@ -296,7 +296,7 @@ namespace GUI
 			bool m_dereference = false;
 		};
 
-		AddressValueEditor(void* address, CE::Type::Type* type = new CE::Type::UInt64, Style style = Style())
+		AddressValueEditor(void* address, CE::DataType::Type* type = new CE::DataType::UInt64, Style style = Style())
 			: m_address(address), m_type(type), m_style(style)
 		{
 			m_eventUpdate = Events::Listener(
@@ -382,15 +382,15 @@ namespace GUI
 			if (getCurPointerLvl() > 0) {
 				m_valueInput = new PointerInput(getAddress());
 			}
-			else if (m_type->getGroup() == Type::Type::Simple || m_type->getGroup() == Type::Type::Typedef) {
+			else if (m_type->getGroup() == DataType::Type::Simple || m_type->getGroup() == DataType::Type::Typedef) {
 				if (m_type->isString()) {
-					m_valueInput = new TextInput(getAddress(), m_type->getBaseType()->getId() == Type::SystemType::WChar);
+					m_valueInput = new TextInput(getAddress(), m_type->getBaseType()->getId() == DataType::SystemType::WChar);
 				}
 
 				if(m_valueInput == nullptr)
 					m_valueInput = new NumericInput(getAddress(), m_type->getBaseType());
 			}
-			else if (auto Enum = dynamic_cast<CE::Type::Enum*>(m_type->getBaseType())) {
+			else if (auto Enum = dynamic_cast<CE::DataType::Enum*>(m_type->getBaseType())) {
 				m_valueInput = new EnumInput(getAddress(), Enum);
 			}
 
@@ -421,7 +421,7 @@ namespace GUI
 				}
 			}
 
-			if (m_type->getGroup() == Type::Type::Class) {
+			if (m_type->getGroup() == DataType::Type::Class) {
 				newLine()
 				.text("Link to class editor.");
 			}
@@ -435,7 +435,7 @@ namespace GUI
 		}
 
 		int getMaxPossibleDereferenceLevel() {
-			bool isVoid = m_type->getId() == Type::SystemType::Void;
+			bool isVoid = m_type->getId() == DataType::SystemType::Void;
 			return max(0, min(3, m_type->getPointerLvl() - isVoid - m_type->isArray() - 1));
 		}
 
@@ -518,7 +518,7 @@ namespace GUI
 
 			int offset = 0;
 			if (m_type->isArray()) {
-				offset = m_arrayIndex * static_cast<Type::Array*>(m_type)->getItemSize();
+				offset = m_arrayIndex * static_cast<DataType::Array*>(m_type)->getItemSize();
 			}
 			return (void*)((std::uintptr_t)m_address + offset);
 		}
@@ -528,7 +528,7 @@ namespace GUI
 			m_ptrLevel = ptrLevel;
 		}
 
-		void setType(CE::Type::Type* type) {
+		void setType(CE::DataType::Type* type) {
 			if (m_type != nullptr)
 				m_type->free();
 			m_type = type;
@@ -543,7 +543,7 @@ namespace GUI
 		int m_arrayIndex = 0;
 		int m_ptrLevel = 0;
 		Style m_style;
-		CE::Type::Type* m_type;
+		CE::DataType::Type* m_type;
 		Events::SpecialEventType::EventHandlerType* m_eventUpdate;
 		Container* m_protectContainer = nullptr;
 		Elements::Generic::Checkbox* m_cb_protect_Read = nullptr;
@@ -557,7 +557,7 @@ namespace GUI
 		: public Container
 	{
 	public:
-		IntegralValueInput(uint64_t value = 0, CE::Type::Type* type = new CE::Type::UInt64)
+		IntegralValueInput(uint64_t value = 0, CE::DataType::Type* type = new CE::DataType::UInt64)
 			: m_value(value)
 		{
 			AddressValueEditor::Style style;
@@ -569,7 +569,7 @@ namespace GUI
 			addItem(m_addressValueEditor = new AddressValueEditor(&m_value, type, style));
 		}
 
-		void changeType(CE::Type::Type* type) {
+		void changeType(CE::DataType::Type* type) {
 			m_addressValueEditor->setType(type);
 			m_addressValueEditor->rebuild();
 		}
