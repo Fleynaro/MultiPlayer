@@ -35,6 +35,10 @@ namespace CE
 				WChar
 			};
 
+			SystemType()
+				: Type(nullptr)
+			{}
+
 			DB::Id getId() override {
 				return getTypeId();
 			}

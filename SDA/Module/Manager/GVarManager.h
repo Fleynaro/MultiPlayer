@@ -71,7 +71,7 @@ namespace CE
 				);
 
 				if (type == nullptr) {
-					type = getProgramModule()->getTypeManager()->getDefaultType()->getType();
+					type = getProgramModule()->getTypeManager()->getDefaultType();
 				}
 
 				Variable::Global* gvar = new Variable::Global(

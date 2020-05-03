@@ -5,9 +5,31 @@ using namespace DB;
 using namespace CE;
 using namespace CE::DataType;
 
+TypedefTypeMapper::TypedefTypeMapper(DataTypeMapper* parentMapper)
+	: ChildAbstractMapper(parentMapper)
+{}
+
+void TypedefTypeMapper::loadTypedefs(Database * db) {
+	SQLite::Statement query(*db, "SELECT * FROM sda_typedefs");
+
+	while (query.executeStep())
+	{
+		auto type = getParentMapper()->getManager()->getTypeById(query.getColumn("type_id"));
+		if (auto Typedef = dynamic_cast<DataType::Typedef*>(type)) {
+			auto refType = getParentMapper()->getManager()->getType(
+				query.getColumn("ref_type_id"),
+				query.getColumn("pointer_lvl"),
+				query.getColumn("array_size"));
+			if (refType != nullptr)
+				Typedef->setRefType(refType);
+		}
+	}
+}
+
 IDomainObject* TypedefTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	auto type = new DataType::Typedef(
+		getParentMapper()->getManager(),
 		getParentMapper()->getManager()->getDefaultType(),
 		query.getColumn("name"),
 		query.getColumn("desc")
@@ -18,7 +40,7 @@ IDomainObject* TypedefTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 void TypedefTypeMapper::doInsert(Database* db, IDomainObject* obj)
 {
 	auto Typedef = static_cast<DataType::Typedef*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_typedefs (type_id, ref_type_id, pointer_lvl, array_size) VALUES(?2, ?3, ?4)");
+	SQLite::Statement query(*db, "INSERT INTO sda_typedefs (ref_type_id, pointer_lvl, array_size) VALUES(?2, ?3, ?4)");
 	bind(query, *Typedef);
 	query.exec();
 	AbstractMapper::setNewId(db, obj);

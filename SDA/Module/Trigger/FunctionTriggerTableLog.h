@@ -65,7 +65,7 @@ namespace CE::Trigger::Function
 			: m_type(type), m_rawValue(rawValue), m_rawData(rawData)
 		{
 			if (m_rawData != nullptr) {
-				m_type = new CE::DataType::Pointer(m_type->getBaseType());
+				m_type = new CE::DataType::Pointer(m_type->getTypeManager(), m_type->getBaseType());
 			}
 		}
 
@@ -180,7 +180,6 @@ namespace CE::Trigger::Function
 		}
 
 		std::list<Value> getArgValues(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook) {
-			using namespace CE::Type;
 			std::list<Value> values;
 			auto& argTypes = funcDef->getDeclaration().getSignature().getArgList();
 			for (int argIdx = 1; argIdx <= min(hook->getArgCount(), argTypes.size()); argIdx++) {
@@ -203,7 +202,6 @@ namespace CE::Trigger::Function
 		}
 
 		Value getRetValue(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook) {
-			using namespace CE::Type;
 			auto retType = funcDef->getDeclaration().getSignature().getReturnType();
 			void* rawData = nullptr;
 

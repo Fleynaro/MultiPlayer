@@ -151,7 +151,6 @@ create table sda_types
         unique,
     desc    TEXT
 );
-UPDATE SQLITE_SEQUENCE SET seq = 1000 WHERE name = 'sda_types';
 
 create table sda_vtable_funcs
 (

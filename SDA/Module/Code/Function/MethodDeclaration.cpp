@@ -1,5 +1,6 @@
 #include "MethodDeclaration.h"
 #include "../Type/Class.h"
+#include <Manager/FunctionDeclManager.h>
 
 //using namespace CE::Function;
 
@@ -23,10 +24,10 @@ void CE::Function::MethodDecl::setClass(DataType::Class* Class)
 {
 	if (getSignature().getArgList().size() > 0) {
 		getSignature().getArgList()[0]->free();
-		getSignature().getArgList()[0] = new DataType::Pointer(Class);
+		getSignature().getArgList()[0] = new DataType::Pointer(getManager()->getProgramModule()->getTypeManager(), Class);
 	}
 	else {
-		addArgument(new DataType::Pointer(Class), "this");
+		addArgument(new DataType::Pointer(getManager()->getProgramModule()->getTypeManager(), Class), "this");
 	}
 }
 

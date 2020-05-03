@@ -8,13 +8,9 @@ namespace CE
 	class AbstractManager
 	{
 	public:
-		AbstractManager(ProgramModule* programModule)
-			: m_programModule(programModule)
-		{}
+		AbstractManager(ProgramModule* programModule);
 		
-		ProgramModule* getProgramModule() {
-			return m_programModule;
-		}
+		ProgramModule* getProgramModule();
 	private:
 		ProgramModule* m_programModule;
 	};
@@ -43,38 +39,17 @@ namespace CE
 			ItemMapType::iterator m_end;
 		};
 
-		AbstractItemManager(ProgramModule* programModule)
-			: AbstractManager(programModule)
-		{}
+		AbstractItemManager(ProgramModule* programModule);
 
-		void onLoaded(DB::IDomainObject* obj) override {
-			m_items.insert(std::make_pair(obj->getId(), obj));
-		}
+		void onLoaded(DB::IDomainObject* obj) override;
 
-		void onChangeBeforeCommit(DB::IDomainObject* obj, ChangeType type) override {
-			switch (type)
-			{
-			case Inserted:
-				m_items.insert(std::make_pair(obj->getId(), obj));
-				break;
-			case Removed:
-				m_items.erase(obj->getId());
-				break;
-			}
-		}
+		void onChangeBeforeCommit(DB::IDomainObject* obj, ChangeType type) override;
 
-		void onChangeAfterCommit(DB::IDomainObject* obj, ChangeType type) override {
-		}
+		void onChangeAfterCommit(DB::IDomainObject* obj, ChangeType type) override;
 		
-		DB::IDomainObject* find(DB::Id id) override {
-			if (m_items.find(id) == m_items.end())
-				return nullptr;
-			return m_items[id];
-		}
+		DB::IDomainObject* find(DB::Id id) override;
 
-		int getItemsCount() {
-			return (int)m_items.size();
-		}
+		int getItemsCount();
 	protected:
 		ItemMapType m_items;
 	};

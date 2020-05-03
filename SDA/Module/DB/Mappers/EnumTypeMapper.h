@@ -13,9 +13,9 @@ namespace DB
 
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 	protected:
-		void saveEnumFields(Database* db, DataType::Enum* Enum);
+		void saveEnumFields(Database* db, CE::DataType::Enum* Enum);
 
-		void loadFieldsForEnum(Database* db, DataType::Enum* Enum);
+		void loadFieldsForEnum(Database* db, CE::DataType::Enum* Enum);
 
 
 		void doInsert(Database* db, IDomainObject* obj) override;

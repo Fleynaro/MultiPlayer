@@ -208,6 +208,7 @@
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\CallGraph\CallGraph.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
+    <ClCompile Include="Module\Manager\AbstractManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDeclManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDefManager.cpp" />
     <ClCompile Include="Module\Manager\ProgramModule.cpp" />
@@ -226,7 +227,6 @@
     <ClCompile Include="Module\GhidraSync\Ghidra\include\ghidra_types.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_constants.cpp" />
     <ClCompile Include="Module\GhidraSync\Ghidra\include\shared_types.cpp" />
-    <ClCompile Include="Module\Manager\Manager.cpp" />
     <ClCompile Include="Module\Manager\TypeManager.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\Analyser.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\avx.cpp" />

@@ -8,6 +8,7 @@ using namespace CE::DataType;
 IDomainObject* EnumTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	auto type = new DataType::Enum(
+		getParentMapper()->getManager(),
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);

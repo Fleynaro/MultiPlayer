@@ -14,13 +14,9 @@ namespace CE
 		class Pointer : public Type
 		{
 		public:
-			Pointer(Type* type);
+			Pointer(TypeManager* typeManager, Type* type);
 
 			~Pointer();
-
-			DB::Id getId() override;
-
-			void setId(DB::Id id) override;
 
 			Group getGroup() override;
 
@@ -46,9 +42,9 @@ namespace CE
 
 			void setId(DB::Id id) override;
 
-			DB::AbstractMapper* getMapper() override;
+			DB::IMapper* getMapper() override;
 
-			void setMapper(DB::AbstractMapper* mapper) override;
+			void setMapper(DB::IMapper* mapper) override;
 		private:
 			Type* m_type;
 		};

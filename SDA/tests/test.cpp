@@ -43,11 +43,35 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
         auto function4 = funcManager->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) },  declManager->createFunctionDecl("setPlayerPos", ""));
         auto function5 = funcManager->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) },  declManager->createFunctionDecl("setPlayerVel", ""));
         
-        m_programModule->getFunctionManager()->buildFunctionBodies();
-        m_programModule->getFunctionManager()->buildFunctionBasicInfo();
+        //m_programModule->getFunctionManager()->buildFunctionBodies();
+        //m_programModule->getFunctionManager()->buildFunctionBasicInfo();
     }
 
-    tr->commit();
+    //for types
+    {
+        auto typeManager = m_programModule->getTypeManager();
+
+        //enumeration
+        auto enumeration = typeManager->createEnum("EntityType", "this is a enumeration");
+        enumeration->addField("PED", 1);
+        enumeration->addField("CAR", 2);
+        enumeration->addField("VEHICLE", 3);
+
+        //typedef
+        auto tdef = typeManager->createTypedef(enumeration, "ObjectType");
+
+        //class
+        auto entity = typeManager->createClass("Entity", "this is a class type");
+        entity->addField(20, "type", tdef, "position of entity");
+    }
+
+    try {
+        tr->commit();
+    }
+    catch (std::exception& e) {
+        DebugOutput("Transaction commit: " + std::string(e.what()));
+        ASSERT_EQ(0, 1);
+    }
 }
 
 TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
@@ -62,6 +86,18 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         ASSERT_EQ(func->getRangeList().size(), 1);
         ASSERT_EQ(func->getRangeList().begin()->getMinAddress(), &setRot);
         ASSERT_EQ(func->getName(), g_testFuncName);
+    }
+
+    //for types
+    {
+        auto typeManager = m_programModule->getTypeManager();
+
+        auto type = typeManager->getTypeByName("Entity");
+        ASSERT_NE(type, nullptr);
+        ASSERT_EQ(type->getGroup(), DataType::Type::Class);
+        if (auto entity = dynamic_cast<DataType::Class*>(type)) {
+            ASSERT_EQ(entity->getAllFieldCount(), 1);
+        }
     }
 
     //remove test database

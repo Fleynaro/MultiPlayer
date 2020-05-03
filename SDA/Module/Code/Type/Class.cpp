@@ -36,8 +36,8 @@ Type* Class::Field::getType() {
 	return m_type;
 }
 
-Class::Class(std::string name, std::string desc)
-	: UserType(name, desc)
+Class::Class(TypeManager* typeManager, std::string name, std::string desc)
+	: UserType(typeManager, name, desc)
 {}
 
 Class::~Class() {

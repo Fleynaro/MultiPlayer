@@ -10,6 +10,8 @@ namespace CE
 		Также есть сигнатуры функций - тоже тип.
 		Есть обертки - это массив и указатель.
 	*/
+	class TypeManager;
+
 	namespace DataType
 	{
 		class Type : public DB::IDomainObject
@@ -26,7 +28,12 @@ namespace CE
 				Signature
 			};
 
+			Type(TypeManager* typeManager)
+				: m_typeManager(typeManager)
+			{}
+
 			virtual std::string getName() = 0;
+
 			virtual std::string getDesc() {
 				return "Not desc.";
 			}
@@ -44,7 +51,7 @@ namespace CE
 			virtual bool isUserDefined() = 0;
 
 			virtual void free() {
-				m_ownerCount--;
+				/*m_ownerCount--;
 				if (m_ownerCount == 0) {
 					m_isDeleted = true;
 					delete this;
@@ -53,7 +60,7 @@ namespace CE
 					if (m_isDeleted)
 						throw std::logic_error("Double deleting. Trying to delete already deleted type.");
 					else throw std::logic_error("m_ownerCount < 0. The lack of calling addOwner somewhere.");
-				}
+				}*/
 			}
 
 			virtual std::string getViewValue(void* addr);
@@ -77,11 +84,18 @@ namespace CE
 			virtual bool isSigned();
 
 			void addOwner() {
-				m_ownerCount++;
+				
+			}
+
+			void setTypeManager(TypeManager* typeManager) {
+				m_typeManager = typeManager;
+			}
+
+			TypeManager* getTypeManager() {
+				return m_typeManager;
 			}
 		private:
-			int m_ownerCount = 0;
-			bool m_isDeleted = false;
+			TypeManager* m_typeManager;
 		};
 	};
 };

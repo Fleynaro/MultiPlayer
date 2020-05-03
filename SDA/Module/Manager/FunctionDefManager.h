@@ -24,18 +24,6 @@ namespace CE
 	{
 	public:
 		using Iterator = AbstractIterator<Function::Function>;
-		/*class Iterator : public IIterator<Function::Function*>
-		{
-		public:
-			Iterator(FunctionManager* manager);
-
-			bool hasNext() override;
-
-			Function::Function* next() override;
-		private:
-			ItemMapType::iterator m_iterator;
-			ItemMapType::iterator m_end;
-		};*/
 
 		FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager);
 

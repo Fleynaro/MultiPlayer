@@ -9,8 +9,8 @@ namespace CE
 		class Array : public Pointer
 		{
 		public:
-			Array(Type* type, uint64_t arraySize)
-				: Pointer(type), m_arraySize(arraySize)
+			Array(TypeManager* typeManager, Type* type, uint64_t arraySize)
+				: Pointer(typeManager, type), m_arraySize(arraySize)
 			{}
 
 			std::string getDisplayName() override;

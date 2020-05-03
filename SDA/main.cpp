@@ -76,26 +76,26 @@ int main2()
 			Ghidra::DataTypeManager& dataTypeManager = *client.m_dataTypeManager;
 			Ghidra::FunctionManager& funcManager = *client.m_functionManager;
 
-			auto EntityPosClass = sda->getTypeManager()->createClass("EntityPos", "")->getClass();
+			auto EntityPosClass = sda->getTypeManager()->createClass("EntityPos", "");
 			EntityPosClass->addField(0x0, "x", new DataType::Float);
 			EntityPosClass->addField(0x4, "y", new DataType::Float);
 			EntityPosClass->addField(0x8, "z", new DataType::Float);
 
-			auto EntityClass = sda->getTypeManager()->createClass("Entity", "EntityClass")->getClass();
+			auto EntityClass = sda->getTypeManager()->createClass("Entity", "EntityClass");
 			EntityClass->addField(20, "position", EntityPosClass, "pos of entity");
-			EntityClass->addField(35, "arr", new DataType::Array(new DataType::Int32, 3), "some arr");
+			EntityClass->addField(35, "arr", new DataType::Array(sda->getTypeManager(), new DataType::Int32, 3), "some arr");
 			EntityClass->addField(60, "val2", new DataType::Float, "some value");
 			EntityClass->resize(0);
 
-			auto PedClass = sda->getTypeManager()->createClass("Ped", "PedClass")->getClass();
+			auto PedClass = sda->getTypeManager()->createClass("Ped", "PedClass");
 			PedClass->setBaseClass(EntityClass);
-			PedClass->addField(30, "arr", new DataType::Array(new DataType::Int32, 40), "some big arr");
+			PedClass->addField(30, "arr", new DataType::Array(sda->getTypeManager(), new DataType::Int32, 40), "some big arr");
 
 			dataTypeManager.buildDesc(EntityPosClass);
 			dataTypeManager.buildDesc(EntityClass);
 			dataTypeManager.buildDesc(PedClass);
 
-			Ghidra::datatype::Id id = dataTypeManager.getId(new DataType::Array(new DataType::Int8, 2));
+			Ghidra::datatype::Id id = dataTypeManager.getId(new DataType::Array(sda->getTypeManager(), new DataType::Int8, 2));
 			auto type = dataTypeManager.findTypeById(id);
 
 			try {
@@ -116,9 +116,9 @@ int main2()
 				if (false) {
 					auto func = sda->getFunctionManager()->getFunctionById(4);
 					func->getDeclaration().getDesc().setName("AllocateMemory");
-					func->getSignature().setReturnType(new DataType::Pointer(new DataType::Void));
+					func->getSignature().setReturnType(new DataType::Pointer(sda->getTypeManager(), new DataType::Void));
 					func->getDeclaration().deleteAllArguments();
-					func->getDeclaration().addArgument(new DataType::Pointer(new DataType::Void), "addr");
+					func->getDeclaration().addArgument(new DataType::Pointer(sda->getTypeManager(), new DataType::Void), "addr");
 					func->getDeclaration().getDesc().setDesc("this allocate memory\nlol");
 
 					funcManager.push({
@@ -138,7 +138,7 @@ int main2()
 			}
 
 			return 0;
-			auto enumeration = sda->getTypeManager()->createEnum("EntityType", "lolldlsaldlas 2020!")->getEnum();
+			auto enumeration = sda->getTypeManager()->createEnum("EntityType", "lolldlsaldlas 2020!");
 			enumeration->addField("PED", 1);
 			enumeration->addField("CAR", 130);
 			enumeration->addField("VEHICLE", 0x93522223);
@@ -305,7 +305,7 @@ int main2()
 		auto method = sda->getFunctionManager()->getFunctionById(3);
 
 
-		printf("%s | %s\n", method->getSigName().c_str(), sda->getTypeManager()->getTypeById(11)->getType()->getName());
+		printf("%s | %s\n", method->getSigName().c_str(), sda->getTypeManager()->getTypeById(11)->getName());
 	}
 	catch (std::exception& e) {
 		DebugOutput("exception: " + std::string(e.what()));

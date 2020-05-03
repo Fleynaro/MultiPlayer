@@ -1,22 +1,36 @@
 #include "ClassTypeMapper.h"
+#include <Code/Type/Class.h>
 #include <Manager/TypeManager.h>
 #include <Manager/FunctionDefManager.h>
 #include <Manager/VTableManager.h>
 
 using namespace DB;
 using namespace CE;
-using namespace CE::DataType;
+
+void ClassTypeMapper::loadClasses(Database* db)
+{
+	TypeManager::Iterator it(getParentMapper()->getManager());
+	while (it.hasNext()) {
+		auto type = it.next();
+		if (auto Class = dynamic_cast<DataType::Class*>(type)) {
+			loadInfoForClass(db, Class);
+			loadMethodsForClass(db, Class);
+			loadFieldsForClass(db, Class);
+		}
+	}
+}
 
 IDomainObject* ClassTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	auto type = new DataType::Class(
+		getParentMapper()->getManager(),
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
 	return type;
 }
 
-void ClassTypeMapper::loadInfoForClass(Database* db, DataType::Class* Class)
+void DB::ClassTypeMapper::loadInfoForClass(Database* db, DataType::Class* Class)
 {
 	SQLite::Statement query(*db, "SELECT * FROM sda_classes WHERE class_id=?1");
 	query.bind(1, Class->getId());

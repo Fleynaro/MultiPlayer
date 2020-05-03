@@ -92,15 +92,3 @@ Ghidra::FunctionManager* FunctionManager::getGhidraManager() {
 bool FunctionManager::isGhidraManagerWorking() {
 	return getGhidraManager() != nullptr;
 }
-
-//FunctionManager::Iterator::Iterator(FunctionManager* manager)
-//	: m_iterator(manager->m_items.begin()), m_end(manager->m_items.end())
-//{}
-//
-//bool FunctionManager::Iterator::hasNext() {
-//	return m_iterator != m_end;
-//}
-//
-//Function::Function* FunctionManager::Iterator::next() {
-//	return static_cast<Function::Function*>((m_iterator++)->second);
-//}

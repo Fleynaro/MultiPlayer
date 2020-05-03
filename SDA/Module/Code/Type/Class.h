@@ -34,7 +34,7 @@ namespace CE::DataType
 		using FieldDict = std::map<int, Field*>;
 		using MethodList = std::list<Function::MethodDecl*>;
 			
-		Class(std::string name, std::string desc = "");
+		Class(TypeManager* typeManager, std::string name, std::string desc = "");
 
 		~Class();
 

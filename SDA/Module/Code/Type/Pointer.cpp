@@ -3,20 +3,12 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Pointer::Pointer(Type* type)
-	: m_type(type)
+Pointer::Pointer(TypeManager* typeManager, Type* type)
+	: Type(typeManager), m_type(type)
 {
 	if (type->isArray())
 		throw std::logic_error("Pointer cannot point at an array.");
 	m_type->addOwner();
-}
-
-DB::Id Pointer::getId() {
-	return m_type->getId();
-}
-
-void Pointer::setId(DB::Id id) {
-	m_type->setId(id);
 }
 
 Pointer::~Pointer() {
@@ -71,10 +63,10 @@ void Pointer::setId(DB::Id id) {
 	return m_type->setId(id);
 }
 
-DB::AbstractMapper* Pointer::getMapper() {
+DB::IMapper* Pointer::getMapper() {
 	return m_type->getMapper();
 }
 
-void Pointer::setMapper(DB::AbstractMapper* mapper) {
+void Pointer::setMapper(DB::IMapper* mapper) {
 	m_type->setMapper(mapper);
 }

@@ -9,8 +9,8 @@ namespace CE
 		class UserType : public Type, public IGhidraUnit
 		{
 		public:
-			UserType(std::string name, std::string desc = "")
-				: m_name(name), m_desc(desc)
+			UserType(TypeManager* typeManager, std::string name, std::string desc = "")
+				: Type(typeManager), m_name(name), m_desc(desc)
 			{}
 
 			bool isUserDefined() override {

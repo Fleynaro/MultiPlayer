@@ -21,9 +21,9 @@ namespace DB
 
 		DataTypeMapper(IRepository* repository);
 
-		void loadAll() {
+		void loadAll();
 
-		}
+		void loadAllClasses();
 
 		CE::TypeManager* getManager();
 	protected:

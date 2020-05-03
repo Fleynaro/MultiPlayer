@@ -46,7 +46,6 @@ void ProgramModule::initTransaction() {
 void ProgramModule::load()
 {
 	getTypeManager()->loadTypes();
-	getTypeManager()->loadTypedefs();
 	getGVarManager()->loadGVars();
 	getFunctionManager()->loadFunctions();
 	getVTableManager()->loadVTables();
@@ -86,6 +85,11 @@ void ProgramModule::createGeneralDataBase()
 		return;
 	}
 	m_db->exec(res.getData());
+	
+	Database db(m_db->getFilename(), SQLite::OPEN_READWRITE);
+	db.exec("UPDATE SQLITE_SEQUENCE SET seq = 1000 WHERE name = 'sda_types'");
+	auto c = db.getTotalChanges();
+	c = 0;
 }
 
 void ProgramModule::initDataBase(std::string filename)

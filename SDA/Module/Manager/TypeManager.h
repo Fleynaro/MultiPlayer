@@ -22,7 +22,7 @@ namespace CE
 
 		void addSystemTypes();
 
-		inline static std::vector<std::pair<std::string, DataType::Type*>> ghidraTypes = {
+		inline static std::vector<std::pair<std::string, DataType::SystemType*>> ghidraTypes = {
 			std::make_pair("void", new CE::DataType::Void),
 			std::make_pair("unicode", new CE::DataType::Void),
 			std::make_pair("string", new CE::DataType::Void),
@@ -56,6 +56,12 @@ namespace CE
 
 		void addGhidraSystemTypes();
 
+		void loadTypes();
+
+		void loadClasses();
+
+		const std::string& getGhidraTypeName(DataType::Type* type);
+
 		DataType::Typedef* createTypedef(DataType::Type* refType, const std::string& name, const std::string& desc = "");
 
 		DataType::Enum* createEnum(const std::string& name, const std::string& desc = "");
@@ -67,6 +73,8 @@ namespace CE
 		DataType::Type* getDefaultReturnType();
 
 		DataType::Type* getTypeById(DB::Id id);
+
+		DataType::Type* getTypeByName(const std::string& typeName);
 
 		DataType::Type* getType(DataType::Type* type, int pointer_lvl = 0, int array_size = 0);
 

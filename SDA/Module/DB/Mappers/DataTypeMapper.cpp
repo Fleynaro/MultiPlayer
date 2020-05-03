@@ -9,10 +9,25 @@ using namespace CE;
 using namespace CE::DataType;
 
 
-DataTypeMapper::DataTypeMapper(IRepository* repository) {
+DataTypeMapper::DataTypeMapper(IRepository* repository)
+	: AbstractMapper(repository)
+{
 	m_enumTypeMapper = new EnumTypeMapper(this);
 	m_classTypeMapper = new ClassTypeMapper(this);
 	m_typedefTypeMapper = new TypedefTypeMapper(this);
+}
+
+void DataTypeMapper::loadAll() {
+	auto& db = getManager()->getProgramModule()->getDB();
+	Statement query(db, "SELECT * FROM sda_types");
+	load(&db, query);
+
+	m_typedefTypeMapper->loadTypedefs(&db);
+}
+
+void DataTypeMapper::loadAllClasses() {
+	auto& db = getManager()->getProgramModule()->getDB();
+	m_classTypeMapper->loadClasses(&db);
 }
 
 CE::TypeManager* DataTypeMapper::getManager() {
@@ -43,14 +58,14 @@ IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
 
 void DataTypeMapper::doInsert(Database* db, IDomainObject* obj) {
 	auto type = static_cast<CE::DataType::Type*>(obj);
-	SQLite::Statement query(*db, "INSERT INTO sda_types (group, name, desc) VALUES(?2, ?3, ?4)");
+	SQLite::Statement query(*db, "INSERT INTO sda_types (`group`, name, desc) VALUES(?2, ?3, ?4)");
 	bind(query, *type);
 	query.exec();
 }
 
 void DataTypeMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto type = static_cast<CE::DataType::Type*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_types (id, group, name, desc) VALUES(?1, ?2, ?3, ?4)");
+	SQLite::Statement query(*db, "REPLACE INTO sda_types (id, `group`, name, desc) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, type->getId());
 	bind(query, *type);
 	query.exec();
