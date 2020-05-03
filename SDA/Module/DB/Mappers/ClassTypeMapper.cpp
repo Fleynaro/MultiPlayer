@@ -7,10 +7,9 @@ using namespace DB;
 using namespace CE;
 using namespace CE::DataType;
 
-DomainObject* ClassTypeMapper::doLoad(Database* db, SQLite::Statement& query)
+IDomainObject* ClassTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	auto type = new DataType::Class(
-		query.getColumn("id"),
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
@@ -30,7 +29,7 @@ void ClassTypeMapper::loadInfoForClass(Database* db, DataType::Class* Class)
 	}
 	auto baseClass = getParentMapper()->getManager()->getTypeById(query.getColumn("base_class_id"));
 	if (baseClass != nullptr) {
-		Class->setBaseClass(static_cast<DataType::Class*>(baseClass->getType()));
+		Class->setBaseClass(static_cast<DataType::Class*>(baseClass));
 	}
 	Class->resize(query.getColumn("size"));
 }
@@ -119,7 +118,7 @@ void ClassTypeMapper::saveClassMethods(Database* db, DataType::Class* Class)
 	}
 }
 
-void ClassTypeMapper::doInsert(Database* db, DomainObject* obj)
+void ClassTypeMapper::doInsert(Database* db, IDomainObject* obj)
 {
 	auto Class = static_cast<DataType::Class*>(obj);
 	SQLite::Statement query(*db, "INSERT INTO sda_classes (base_class_id, size, vtable_id) VALUES(?2, ?3, ?4)");
@@ -128,7 +127,7 @@ void ClassTypeMapper::doInsert(Database* db, DomainObject* obj)
 	AbstractMapper::setNewId(db, obj);
 }
 
-void ClassTypeMapper::doUpdate(Database* db, DomainObject* obj)
+void ClassTypeMapper::doUpdate(Database* db, IDomainObject* obj)
 {
 	auto Class = static_cast<DataType::Class*>(obj);
 	SQLite::Statement query(*db, "REPLACE INTO sda_classes (class_id, base_class_id, size, vtable_id) VALUES(?1, ?2, ?3, ?4)");
@@ -137,7 +136,7 @@ void ClassTypeMapper::doUpdate(Database* db, DomainObject* obj)
 	query.exec();
 }
 
-void ClassTypeMapper::doRemove(Database* db, DomainObject* obj)
+void ClassTypeMapper::doRemove(Database* db, IDomainObject* obj)
 {
 	SQLite::Statement query(*db, "DELETE FROM sda_classes WHERE class_id=?1");
 	query.bind(1, obj->getId());

@@ -35,6 +35,10 @@ namespace CE
 				WChar
 			};
 
+			DB::Id getId() override {
+				return getTypeId();
+			}
+
 			virtual Types getTypeId() = 0;
 
 			virtual Set getSet() = 0;

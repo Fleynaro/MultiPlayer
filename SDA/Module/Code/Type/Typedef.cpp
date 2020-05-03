@@ -3,8 +3,8 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Typedef::Typedef(Type* refType, int id, const std::string& name, const std::string& desc)
-	: UserType(id, name, desc)
+Typedef::Typedef(Type* refType, const std::string& name, const std::string& desc)
+	: UserType(name, desc)
 {
 	setRefType(refType);
 }

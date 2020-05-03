@@ -13,34 +13,38 @@ void DB::AbstractMapper::load(Database* db, Statement& query) {
 		if (obj != nullptr) {
 			if (m_repository != nullptr)
 				m_repository->onLoaded(obj);
-			obj->m_mapper = this;
+			obj->setMapper(this);
 		}
 	}
 }
 
-void DB::AbstractMapper::insert(Database* db, DomainObject* obj) {
+void DB::AbstractMapper::insert(Database* db, IDomainObject* obj) {
 	if (m_repository != nullptr)
 		m_repository->onChangeAfterCommit(obj, IRepository::Inserted);
 	doInsert(db, obj);
 }
 
-void DB::AbstractMapper::update(Database* db, DomainObject* obj) {
+void DB::AbstractMapper::update(Database* db, IDomainObject* obj) {
 	if (m_repository != nullptr)
 		m_repository->onChangeAfterCommit(obj, IRepository::Updated);
 	doUpdate(db, obj);
 }
 
-void DB::AbstractMapper::remove(Database* db, DomainObject* obj) {
+void DB::AbstractMapper::remove(Database* db, IDomainObject* obj) {
 	if (m_repository != nullptr)
 		m_repository->onChangeAfterCommit(obj, IRepository::Removed);
 	doRemove(db, obj);
 }
 
-DB::DomainObject* DB::AbstractMapper::find(Id id) {
+DB::IRepository* DB::AbstractMapper::getRepository() {
+	return m_repository;
+}
+
+DB::IDomainObject* DB::AbstractMapper::find(Id id) {
 	return m_repository->find(id);
 }
 
-void DB::AbstractMapper::setNewId(Database* db, DomainObject* obj) {
+void DB::AbstractMapper::setNewId(Database* db, IDomainObject* obj) {
 	auto id = (Id)db->getLastInsertRowid();
 	if (!id) {
 		return;
@@ -49,17 +53,25 @@ void DB::AbstractMapper::setNewId(Database* db, DomainObject* obj) {
 	obj->setId(id);
 }
 
-void DB::ChildAbstractMapper::insert(Database* db, DomainObject* obj) {
+DB::ChildAbstractMapper::ChildAbstractMapper(IMapper* parentMapper)
+	: m_parentMapper(parentMapper)
+{}
+
+void DB::ChildAbstractMapper::insert(Database* db, IDomainObject* obj) {
 	m_parentMapper->insert(db, obj);
 	doInsert(db, obj);
 }
 
-void DB::ChildAbstractMapper::update(Database* db, DomainObject* obj) {
+void DB::ChildAbstractMapper::update(Database* db, IDomainObject* obj) {
 	m_parentMapper->update(db, obj);
 	doUpdate(db, obj);
 }
 
-void DB::ChildAbstractMapper::remove(Database* db, DomainObject* obj) {
+void DB::ChildAbstractMapper::remove(Database* db, IDomainObject* obj) {
 	m_parentMapper->remove(db, obj);
 	doRemove(db, obj);
+}
+
+DB::IRepository* DB::ChildAbstractMapper::getRepository() {
+	return m_parentMapper->getRepository();
 }

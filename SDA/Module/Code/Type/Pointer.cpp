@@ -11,6 +11,14 @@ Pointer::Pointer(Type* type)
 	m_type->addOwner();
 }
 
+DB::Id Pointer::getId() {
+	return m_type->getId();
+}
+
+void Pointer::setId(DB::Id id) {
+	m_type->setId(id);
+}
+
 Pointer::~Pointer() {
 	m_type->free();
 }
@@ -53,4 +61,20 @@ int Pointer::getPointerLvl() {
 
 int Pointer::getArraySize() {
 	return 0;
+}
+
+DB::Id Pointer::getId() {
+	return m_type->getId();
+}
+
+void Pointer::setId(DB::Id id) {
+	return m_type->setId(id);
+}
+
+DB::AbstractMapper* Pointer::getMapper() {
+	return m_type->getMapper();
+}
+
+void Pointer::setMapper(DB::AbstractMapper* mapper) {
+	m_type->setMapper(mapper);
 }

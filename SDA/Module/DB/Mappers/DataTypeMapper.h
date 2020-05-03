@@ -27,13 +27,13 @@ namespace DB
 
 		CE::TypeManager* getManager();
 	protected:
-		DomainObject* doLoad(Database* db, SQLite::Statement& query) override;
+		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
-		void doInsert(Database* db, DomainObject* obj) override;
+		void doInsert(Database* db, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, DomainObject* obj) override;
+		void doUpdate(Database* db, IDomainObject* obj) override;
 
-		void doRemove(Database* db, DomainObject* obj) override;
+		void doRemove(Database* db, IDomainObject* obj) override;
 
 	private:
 		void bind(SQLite::Statement& query, CE::DataType::Type& type);

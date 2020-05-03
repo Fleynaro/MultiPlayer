@@ -8,9 +8,9 @@ namespace DB
 	class ITransaction
 	{
 	public:
-		virtual void markAsNew(DomainObject* obj) = 0;
-		virtual void markAsDirty(DomainObject* obj) = 0;
-		virtual void markAsRemoved(DomainObject* obj) = 0;
+		virtual void markAsNew(IDomainObject* obj) = 0;
+		virtual void markAsDirty(IDomainObject* obj) = 0;
+		virtual void markAsRemoved(IDomainObject* obj) = 0;
 		virtual void commit() = 0;
 	};
 
@@ -19,17 +19,17 @@ namespace DB
 	public:
 		Transaction(Database* db);
 
-		void markAsNew(DomainObject* obj) override;
+		void markAsNew(IDomainObject* obj) override;
 
-		void markAsDirty(DomainObject* obj) override;
+		void markAsDirty(IDomainObject* obj) override;
 
-		void markAsRemoved(DomainObject* obj) override;
+		void markAsRemoved(IDomainObject* obj) override;
 
 		void commit() override;
 	private:
 		Database* m_db;
-		std::list<DomainObject*> m_insertedObjs;
-		std::list<DomainObject*> m_updatedObjs;
-		std::list<DomainObject*> m_removedObjs;
+		std::list<IDomainObject*> m_insertedObjs;
+		std::list<IDomainObject*> m_updatedObjs;
+		std::list<IDomainObject*> m_removedObjs;
 	};
 };

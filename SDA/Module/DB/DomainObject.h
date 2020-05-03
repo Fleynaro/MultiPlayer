@@ -6,28 +6,41 @@ namespace DB
 {
 	using Id = int;
 
-	class AbstractMapper;
-	class DomainObject
+	class IMapper;
+	class IDomainObject
 	{
 	public:
-		AbstractMapper* m_mapper = nullptr;
+		virtual ~IDomainObject() {}
+		virtual Id getId() = 0;
+		virtual void setId(Id id) {}
+		virtual IMapper* getMapper() { return nullptr; }
+		virtual void setMapper(IMapper* mapper) {}
+	};
 
+	class DomainObject : public IDomainObject
+	{
+	public:
 		DomainObject(Id id = 0)
 			: m_id(id)
 		{}
 
-		virtual ~DomainObject() {
-
-		}
-
-		Id getId() {
+		Id getId() override {
 			return m_id;
 		}
 
-		void setId(Id id) {
+		void setId(Id id) override {
 			m_id = id;
+		}
+
+		IMapper* getMapper() override {
+			return m_mapper;
+		}
+
+		void setMapper(IMapper* mapper) override {
+			m_mapper = mapper;
 		}
 	private:
 		Id m_id;
+		IMapper* m_mapper = nullptr;
 	};
 };

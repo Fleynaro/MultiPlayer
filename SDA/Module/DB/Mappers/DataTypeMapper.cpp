@@ -19,31 +19,36 @@ CE::TypeManager* DataTypeMapper::getManager() {
 	return static_cast<CE::TypeManager*>(m_repository);
 }
 
-DomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
-	DataType::Type* type = nullptr;
+IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
+	IDomainObject* obj = nullptr;
 
-	int t = query.getColumn("group");
-	switch (t)
+	int group = query.getColumn("group");
+	switch (group)
 	{
 	case DataType::Type::Group::Typedef:
-		return m_typedefTypeMapper->doLoad(db, query);
-		
+		obj = m_typedefTypeMapper->doLoad(db, query);
+		break;
 	case DataType::Type::Group::Enum:
-		return m_enumTypeMapper->doLoad(db, query);
-
+		obj = m_enumTypeMapper->doLoad(db, query);
+		break;
 	case DataType::Type::Group::Class:
-		return m_classTypeMapper->doLoad(db, query);
+		obj = m_classTypeMapper->doLoad(db, query);
+		break;
 	}
+
+	if (obj != nullptr)
+		obj->setId(query.getColumn("id"));
+	return obj;
 }
 
-void DataTypeMapper::doInsert(Database* db, DomainObject* obj) {
+void DataTypeMapper::doInsert(Database* db, IDomainObject* obj) {
 	auto type = static_cast<CE::DataType::Type*>(obj);
 	SQLite::Statement query(*db, "INSERT INTO sda_types (group, name, desc) VALUES(?2, ?3, ?4)");
 	bind(query, *type);
 	query.exec();
 }
 
-void DataTypeMapper::doUpdate(Database* db, DomainObject* obj) {
+void DataTypeMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto type = static_cast<CE::DataType::Type*>(obj);
 	SQLite::Statement query(*db, "REPLACE INTO sda_types (id, group, name, desc) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, type->getId());
@@ -51,7 +56,7 @@ void DataTypeMapper::doUpdate(Database* db, DomainObject* obj) {
 	query.exec();
 }
 
-void DataTypeMapper::doRemove(Database* db, DomainObject* obj) {
+void DataTypeMapper::doRemove(Database* db, IDomainObject* obj) {
 	SQLite::Statement query(*db, "DELETE FROM sda_types WHERE id=?1");
 	query.bind(1, obj->getId());
 	query.exec();

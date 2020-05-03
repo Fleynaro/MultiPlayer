@@ -4,19 +4,6 @@
 using namespace CE;
 using namespace CE::DataType;
 
-void Type::free() {
-	m_ownerCount--;
-	if (m_ownerCount == 0) {
-		m_isDeleted = true;
-		delete this;
-	}
-	else if (m_ownerCount < 0) {
-		if (m_isDeleted)
-			throw std::logic_error("Double deleting. Trying to delete already deleted type.");
-		else throw std::logic_error("m_ownerCount < 0. The lack of calling addOwner somewhere.");
-	}
-}
-
 std::string Type::getViewValue(void* addr) {
 	uint64_t mask = 0x0;
 	for (int i = 0; i < max(8, getSize()); i++)
@@ -76,6 +63,3 @@ bool Type::isSigned() {
 	return false;
 }
 
-void Type::addOwner() {
-	m_ownerCount++;
-}

@@ -19,7 +19,7 @@ CE::FunctionDeclManager* FunctionDeclMapper::getManager() {
 	return static_cast<CE::FunctionDeclManager*>(m_repository);
 }
 
-DomainObject* FunctionDeclMapper::doLoad(Database* db, SQLite::Statement& query) {
+IDomainObject* FunctionDeclMapper::doLoad(Database* db, SQLite::Statement& query) {
 	Function::FunctionDecl* decl;
 	auto decl_role = (Function::FunctionDecl::Role)(int)query.getColumn("role");
 	Id decl_id = query.getColumn("decl_id");
@@ -51,7 +51,7 @@ DomainObject* FunctionDeclMapper::doLoad(Database* db, SQLite::Statement& query)
 	);
 
 	if (type == nullptr) {
-		type = getManager()->getProgramModule()->getTypeManager()->getDefaultReturnType()->getType();
+		type = getManager()->getProgramModule()->getTypeManager()->getDefaultReturnType();
 	}
 	decl->getSignature().setReturnType(type);
 	loadFunctionDeclArguments(db, *decl);
@@ -71,7 +71,7 @@ void FunctionDeclMapper::loadFunctionDeclArguments(Database* db, CE::Function::F
 		);
 
 		if (type == nullptr) {
-			type = getManager()->getProgramModule()->getTypeManager()->getDefaultType()->getType();
+			type = getManager()->getProgramModule()->getTypeManager()->getDefaultType();
 		}
 
 		decl.addArgument(type, query.getColumn("name"));
@@ -102,7 +102,7 @@ void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::F
 	}
 }
 
-void FunctionDeclMapper::doInsert(Database* db, DomainObject* obj) {
+void FunctionDeclMapper::doInsert(Database* db, IDomainObject* obj) {
 	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
 
 	SQLite::Statement query(*db, "INSERT INTO sda_func_decls (name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
@@ -113,7 +113,7 @@ void FunctionDeclMapper::doInsert(Database* db, DomainObject* obj) {
 	saveFunctionDeclArguments(db, decl);
 }
 
-void FunctionDeclMapper::doUpdate(Database* db, DomainObject* obj) {
+void FunctionDeclMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
 
 	SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
@@ -124,7 +124,7 @@ void FunctionDeclMapper::doUpdate(Database* db, DomainObject* obj) {
 	saveFunctionDeclArguments(db, decl);
 }
 
-void FunctionDeclMapper::doRemove(Database* db, DomainObject* obj) {
+void FunctionDeclMapper::doRemove(Database* db, IDomainObject* obj) {
 	Statement query(*db, "DELETE FROM sda_func_decls WHERE decl_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();

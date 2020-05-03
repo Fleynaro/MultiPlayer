@@ -1,6 +1,7 @@
 #pragma once
 #include "AbstractType.h"
 
+
 namespace CE
 {
 	namespace DataType
@@ -8,8 +9,8 @@ namespace CE
 		class UserType : public Type, public IGhidraUnit
 		{
 		public:
-			UserType(int id, std::string name, std::string desc = "")
-				: m_id(id), m_name(name), m_desc(desc)
+			UserType(std::string name, std::string desc = "")
+				: m_name(name), m_desc(desc)
 			{}
 
 			bool isUserDefined() override {
@@ -51,12 +52,28 @@ namespace CE
 			void setGhidraUnit(bool toggle) override {
 				m_ghidraUnit = toggle;
 			}
+
+			DB::Id getId() override {
+				return m_id;
+			}
+
+			void setId(DB::Id id) override {
+				m_id = id;
+			}
+
+			DB::IMapper* getMapper() override {
+				return m_mapper;
+			}
+
+			void setMapper(DB::IMapper* mapper) override {
+				m_mapper = mapper;
+			}
 		private:
-			int m_id;
 			std::string m_name;
 			std::string m_desc;
 			bool m_ghidraUnit = true;
-
+			DB::Id m_id;
+			DB::IMapper* m_mapper = nullptr;
 		};
 	};
 };

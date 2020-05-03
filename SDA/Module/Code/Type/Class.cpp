@@ -1,48 +1,51 @@
 #include "Class.h"
 
-CE::DataType::Class::Field::Field(const std::string& name, Type* type, std::string desc)
+using namespace CE;
+using namespace CE::DataType;
+
+Class::Field::Field(const std::string& name, Type* type, std::string desc)
 	: m_name(name), m_desc(desc)
 {
 	setType(type);
 }
 
-CE::DataType::Class::Field::~Field() {
+Class::Field::~Field() {
 	m_type->free();
 }
 
-std::string& CE::DataType::Class::Field::getName() {
+std::string& Class::Field::getName() {
 	return m_name;
 }
 
-void CE::DataType::Class::Field::setName(const std::string& name) {
+void Class::Field::setName(const std::string& name) {
 	m_name = name;
 }
 
-std::string& CE::DataType::Class::Field::getDesc() {
+std::string& Class::Field::getDesc() {
 	return m_desc;
 }
 
-void CE::DataType::Class::Field::setType(Type* type) {
+void Class::Field::setType(Type* type) {
 	if (m_type != nullptr)
 		m_type->free();
 	m_type = type;
 	m_type->addOwner();
 }
 
-CE::DataType::Type* CE::DataType::Class::Field::getType() {
+Type* Class::Field::getType() {
 	return m_type;
 }
 
-CE::DataType::Class::Class(int id, std::string name, std::string desc)
-	: UserType(id, name, desc)
+Class::Class(std::string name, std::string desc)
+	: UserType(name, desc)
 {}
 
-CE::DataType::Class::~Class() {
+Class::~Class() {
 	for (auto it : m_fields)
 		delete it.second;
 }
 
-bool CE::DataType::Class::iterateFields(const std::function<bool(Class*, int&, Field*)>& callback, bool emptyFields)
+bool Class::iterateFields(const std::function<bool(Class*, int&, Field*)>& callback, bool emptyFields)
 {
 	if (getBaseClass() != nullptr) {
 		if (!getBaseClass()->iterateFields(callback, emptyFields))
@@ -54,15 +57,15 @@ bool CE::DataType::Class::iterateFields(const std::function<bool(Class*, int&, F
 		}, emptyFields);
 }
 
-CE::DataType::Class::Group CE::DataType::Class::getGroup() {
+Class::Group Class::getGroup() {
 	return Group::Class;
 }
 
-int CE::DataType::Class::getSize() {
+int Class::getSize() {
 	return getSizeWithoutVTable() + hasVTable() * 0x8;
 }
 
-int CE::DataType::Class::getSizeWithoutVTable() {
+int Class::getSizeWithoutVTable() {
 	int result = 0;
 	if (getBaseClass() != nullptr) {
 		result += getBaseClass()->getSizeWithoutVTable();
@@ -70,42 +73,42 @@ int CE::DataType::Class::getSizeWithoutVTable() {
 	return result + getRelSize();
 }
 
-int CE::DataType::Class::getRelSize() {
+int Class::getRelSize() {
 	return m_size;
 }
 
-void CE::DataType::Class::resize(int size) {
+void Class::resize(int size) {
 	m_size = size;
 }
 
-CE::DataType::Class::MethodList& CE::DataType::Class::getMethodList() {
+Class::MethodList& Class::getMethodList() {
 	return m_methods;
 }
 
-CE::DataType::Class::FieldDict& CE::DataType::Class::getFieldDict() {
+Class::FieldDict& Class::getFieldDict() {
 	return m_fields;
 }
 
-void CE::DataType::Class::addMethod(Function::MethodDecl* method) {
+void Class::addMethod(Function::MethodDecl* method) {
 	getMethodList().push_back(method);
 	method->setClass(this);
 }
 
-int CE::DataType::Class::getAllMethodCount() {
+int Class::getAllMethodCount() {
 	return static_cast<int>(getMethodList().size()) +
 		(getBaseClass() != nullptr ? getBaseClass()->getAllMethodCount() : 0);
 }
 
-int CE::DataType::Class::getAllFieldCount() {
+int Class::getAllFieldCount() {
 	return static_cast<int>(getFieldDict().size()) +
 		(getBaseClass() != nullptr ? getBaseClass()->getAllFieldCount() : 0);
 }
 
-int CE::DataType::Class::getBaseOffset() {
+int Class::getBaseOffset() {
 	return getBaseClass() != nullptr ? getBaseClass()->getRelSize() + getBaseClass()->getBaseOffset() : 0;
 }
 
-bool CE::DataType::Class::iterateClasses(std::function<bool(Class*)> callback)
+bool Class::iterateClasses(std::function<bool(Class*)> callback)
 {
 	if (getBaseClass() != nullptr) {
 		if (!getBaseClass()->iterateClasses(callback))
@@ -115,7 +118,7 @@ bool CE::DataType::Class::iterateClasses(std::function<bool(Class*)> callback)
 	return callback(this);
 }
 
-bool CE::DataType::Class::iterateAllMethods(std::function<bool(Function::MethodDecl*)> callback)
+bool Class::iterateAllMethods(std::function<bool(Function::MethodDecl*)> callback)
 {
 	if (getBaseClass() != nullptr) {
 		if (!getBaseClass()->iterateAllMethods(callback))
@@ -129,7 +132,7 @@ bool CE::DataType::Class::iterateAllMethods(std::function<bool(Function::MethodD
 	return true;
 }
 
-bool CE::DataType::Class::iterateMethods(std::function<bool(Function::MethodDecl*)> callback)
+bool Class::iterateMethods(std::function<bool(Function::MethodDecl*)> callback)
 {
 	std::set<std::string> methods;
 	return iterateAllMethods([&](Function::MethodDecl* method) {
@@ -142,7 +145,7 @@ bool CE::DataType::Class::iterateMethods(std::function<bool(Function::MethodDecl
 		});
 }
 
-bool CE::DataType::Class::iterateFields(const std::function<bool(int&, Field*)>& callback, bool emptyFields)
+bool Class::iterateFields(const std::function<bool(int&, Field*)>& callback, bool emptyFields)
 {
 	if (!emptyFields) {
 		for (auto& it : m_fields) {
@@ -167,7 +170,7 @@ bool CE::DataType::Class::iterateFields(const std::function<bool(int&, Field*)>&
 	return true;
 }
 
-bool CE::DataType::Class::iterateFieldsWithOffset(std::function<bool(Class*, int, Field*)> callback, bool emptyFields)
+bool Class::iterateFieldsWithOffset(std::function<bool(Class*, int, Field*)> callback, bool emptyFields)
 {
 	int curClassBase = hasVTable() * 0x8;
 	Class* curClass = nullptr;
@@ -180,37 +183,37 @@ bool CE::DataType::Class::iterateFieldsWithOffset(std::function<bool(Class*, int
 		}, emptyFields);
 }
 
-CE::DataType::Class* CE::DataType::Class::getBaseClass() {
+Class* Class::getBaseClass() {
 	return m_base;
 }
 
-void CE::DataType::Class::setBaseClass(Class* base) {
+void Class::setBaseClass(Class* base) {
 	m_base = base;
 }
 
-CE::Function::VTable* CE::DataType::Class::getVtable() {
+CE::Function::VTable* Class::getVtable() {
 	if (m_vtable != nullptr && getBaseClass() != nullptr) {
 		return getBaseClass()->getVtable();
 	}
 	return m_vtable;
 }
 
-bool CE::DataType::Class::hasVTable() {
+bool Class::hasVTable() {
 	return getVtable() != nullptr;
 }
 
-void CE::DataType::Class::setVtable(Function::VTable* vtable) {
+void Class::setVtable(Function::VTable* vtable) {
 	m_vtable = vtable;
 }
 
-int CE::DataType::Class::getSizeByLastField() {
+int Class::getSizeByLastField() {
 	if (m_fields.size() == 0)
 		return 0;
 	auto lastField = --m_fields.end();
 	return lastField->first + lastField->second->getType()->getSize();
 }
 
-std::pair<CE::DataType::Class*, int> CE::DataType::Class::getFieldLocationByOffset(int offset) {
+std::pair<Class*, int> Class::getFieldLocationByOffset(int offset) {
 	std::pair<Class*, int> result(nullptr, -1);
 	int curOffset = hasVTable() * 0x8;
 	iterateClasses([&](Class* Class) {
@@ -226,7 +229,7 @@ std::pair<CE::DataType::Class*, int> CE::DataType::Class::getFieldLocationByOffs
 	return result;
 }
 
-int CE::DataType::Class::getNextEmptyBytesCount(int startByteIdx) {
+int Class::getNextEmptyBytesCount(int startByteIdx) {
 	auto it = m_fields.upper_bound(startByteIdx);
 	if (it != m_fields.end()) {
 		return it->first - startByteIdx;
@@ -234,7 +237,7 @@ int CE::DataType::Class::getNextEmptyBytesCount(int startByteIdx) {
 	return m_size - startByteIdx;
 }
 
-bool CE::DataType::Class::areEmptyFields(int startByteIdx, int size) {
+bool Class::areEmptyFields(int startByteIdx, int size) {
 	if (startByteIdx < 0 || size <= 0)
 		return false;
 
@@ -244,16 +247,16 @@ bool CE::DataType::Class::areEmptyFields(int startByteIdx, int size) {
 	return getFieldIterator(startByteIdx) == m_fields.end();
 }
 
-CE::DataType::Class::Field* CE::DataType::Class::getDefaultField() {
+Class::Field* Class::getDefaultField() {
 	static Field defaultField = Field("undefined", new Byte);
 	return &defaultField;
 }
 
-bool CE::DataType::Class::isDefaultField(Field* field) {
+bool Class::isDefaultField(Field* field) {
 	return field == getDefaultField();
 }
 
-std::pair<int, CE::DataType::Class::Field*> CE::DataType::Class::getField(int relOffset) {
+std::pair<int, Class::Field*> Class::getField(int relOffset) {
 	auto it = getFieldIterator(relOffset);
 	if (it != m_fields.end()) {
 		return std::make_pair(it->first, it->second);
@@ -261,7 +264,7 @@ std::pair<int, CE::DataType::Class::Field*> CE::DataType::Class::getField(int re
 	return std::make_pair(-1, getDefaultField());
 }
 
-CE::DataType::Class::FieldDict::iterator CE::DataType::Class::getFieldIterator(int relOffset) {
+Class::FieldDict::iterator Class::getFieldIterator(int relOffset) {
 	auto it = m_fields.lower_bound(relOffset);
 	if (it != m_fields.end()) {
 		if (it->first <= relOffset && it->first + it->second->getType()->getSize() > relOffset) {
@@ -271,13 +274,13 @@ CE::DataType::Class::FieldDict::iterator CE::DataType::Class::getFieldIterator(i
 	return m_fields.end();
 }
 
-void CE::DataType::Class::moveField_(int relOffset, int bytesCount) {
+void Class::moveField_(int relOffset, int bytesCount) {
 	auto field_ = m_fields.extract(relOffset);
 	field_.key() += bytesCount;
 	m_fields.insert(std::move(field_));
 }
 
-bool CE::DataType::Class::moveField(int relOffset, int bytesCount) {
+bool Class::moveField(int relOffset, int bytesCount) {
 	auto field = getFieldIterator(relOffset);
 	if (field == m_fields.end())
 		return false;
@@ -295,7 +298,7 @@ bool CE::DataType::Class::moveField(int relOffset, int bytesCount) {
 	return true;
 }
 
-bool CE::DataType::Class::moveFields(int relOffset, int bytesCount) {
+bool Class::moveFields(int relOffset, int bytesCount) {
 	int firstOffset = relOffset;
 	int lastOffset = m_size - 1;
 	if (!areEmptyFields((bytesCount > 0 ? lastOffset : firstOffset) - std::abs(bytesCount), std::abs(bytesCount)))
@@ -316,12 +319,12 @@ bool CE::DataType::Class::moveFields(int relOffset, int bytesCount) {
 	return true;
 }
 
-void CE::DataType::Class::addField(int relOffset, std::string name, Type* type, const std::string& desc) {
+void Class::addField(int relOffset, std::string name, Type* type, const std::string& desc) {
 	m_fields.insert(std::make_pair(relOffset, new Field(name, type, desc)));
 	m_size = max(m_size, relOffset + type->getSize());
 }
 
-bool CE::DataType::Class::removeField(int relOffset) {
+bool Class::removeField(int relOffset) {
 	auto it = getFieldIterator(relOffset);
 	if (it != m_fields.end()) {
 		delete it->second;

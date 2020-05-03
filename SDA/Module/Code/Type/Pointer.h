@@ -18,6 +18,10 @@ namespace CE
 
 			~Pointer();
 
+			DB::Id getId() override;
+
+			void setId(DB::Id id) override;
+
 			Group getGroup() override;
 
 			bool isUserDefined() override;
@@ -37,6 +41,14 @@ namespace CE
 			int getPointerLvl() override;
 
 			int getArraySize() override;
+
+			DB::Id getId() override;
+
+			void setId(DB::Id id) override;
+
+			DB::AbstractMapper* getMapper() override;
+
+			void setMapper(DB::AbstractMapper* mapper) override;
 		private:
 			Type* m_type;
 		};

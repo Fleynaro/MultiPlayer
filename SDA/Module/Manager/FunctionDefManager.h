@@ -23,7 +23,8 @@ namespace CE
 	class FunctionManager : public AbstractItemManager
 	{
 	public:
-		class Iterator : public IIterator<Function::Function*>
+		using Iterator = AbstractIterator<Function::Function>;
+		/*class Iterator : public IIterator<Function::Function*>
 		{
 		public:
 			Iterator(FunctionManager* manager);
@@ -34,7 +35,7 @@ namespace CE
 		private:
 			ItemMapType::iterator m_iterator;
 			ItemMapType::iterator m_end;
-		};
+		};*/
 
 		FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager);
 

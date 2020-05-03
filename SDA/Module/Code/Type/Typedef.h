@@ -8,7 +8,7 @@ namespace CE
 		class Typedef : public UserType
 		{
 		public:
-			Typedef(Type* refType, int id, const std::string& name, const std::string& desc = "");
+			Typedef(Type* refType, const std::string& name, const std::string& desc = "");
 
 			Group getGroup() override;
 

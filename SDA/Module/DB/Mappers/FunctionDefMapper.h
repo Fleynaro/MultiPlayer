@@ -16,7 +16,7 @@ namespace DB
 
 		CE::FunctionManager* getManager();
 	protected:
-		DomainObject* doLoad(Database* db, SQLite::Statement& query) override;
+		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
 		void loadFunctionRanges(Database* db, CE::Function::FunctionDefinition& definition);
 
@@ -169,11 +169,11 @@ namespace DB
 			}
 		}*/
 
-		void doInsert(Database* db, DomainObject* obj) override;
+		void doInsert(Database* db, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, DomainObject* obj) override;
+		void doUpdate(Database* db, IDomainObject* obj) override;
 
-		void doRemove(Database* db, DomainObject* obj) override;
+		void doRemove(Database* db, IDomainObject* obj) override;
 
 	private:
 		void bind(SQLite::Statement& query, CE::Function::FunctionDefinition& def);

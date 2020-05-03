@@ -3,6 +3,10 @@
 using namespace CE;
 using namespace CE::DataType;
 
+Enum::Enum(std::string name, std::string desc)
+	: UserType(name, desc)
+{}
+
 int Enum::getSize() {
 	return m_size;
 }

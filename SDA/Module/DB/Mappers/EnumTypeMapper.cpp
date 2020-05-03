@@ -5,10 +5,9 @@ using namespace DB;
 using namespace CE;
 using namespace CE::DataType;
 
-DomainObject* EnumTypeMapper::doLoad(Database* db, SQLite::Statement& query)
+IDomainObject* EnumTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	auto type = new DataType::Enum(
-		query.getColumn("id"),
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
@@ -46,17 +45,17 @@ void EnumTypeMapper::loadFieldsForEnum(Database* db, DataType::Enum* Enum)
 	}
 }
 
-void EnumTypeMapper::doInsert(Database* db, DomainObject* obj)
+void EnumTypeMapper::doInsert(Database* db, IDomainObject* obj)
 {
 	saveEnumFields(db, static_cast<DataType::Enum*>(obj));
 }
 
-void EnumTypeMapper::doUpdate(Database* db, DomainObject* obj)
+void EnumTypeMapper::doUpdate(Database* db, IDomainObject* obj)
 {
 	saveEnumFields(db, static_cast<DataType::Enum*>(obj));
 }
 
-void EnumTypeMapper::doRemove(Database* db, DomainObject* obj)
+void EnumTypeMapper::doRemove(Database* db, IDomainObject* obj)
 {
 	
 }

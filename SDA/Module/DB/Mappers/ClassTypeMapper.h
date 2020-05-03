@@ -23,7 +23,7 @@ namespace DB
 			}
 		}
 
-		DomainObject* doLoad(Database* db, SQLite::Statement& query);
+		IDomainObject* doLoad(Database* db, SQLite::Statement& query);
 	protected:
 		void loadInfoForClass(Database* db, DataType::Class* Class);
 
@@ -35,11 +35,11 @@ namespace DB
 
 		void saveClassMethods(Database* db, DataType::Class* Class);
 
-		void doInsert(Database* db, DomainObject* obj) override;
+		void doInsert(Database* db, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, DomainObject* obj) override;
+		void doUpdate(Database* db, IDomainObject* obj) override;
 
-		void doRemove(Database* db, DomainObject* obj) override;
+		void doRemove(Database* db, IDomainObject* obj) override;
 
 	private:
 		void bind(SQLite::Statement& query, CE::DataType::Class& type);

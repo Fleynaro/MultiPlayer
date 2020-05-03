@@ -23,8 +23,8 @@ void FunctionManager::loadFunctions() {
 
 Function::Function* FunctionManager::createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, addr, ranges, decl);
-	def->getSignature().setReturnType(getProgramModule()->getTypeManager()->getDefaultReturnType()->getType());
-	def->m_mapper = m_funcDefMapper;
+	def->getSignature().setReturnType(getProgramModule()->getTypeManager()->getDefaultReturnType());
+	def->setMapper(m_funcDefMapper);
 	getProgramModule()->getTransaction()->markAsNew(def);
 	return def;
 }
@@ -93,14 +93,14 @@ bool FunctionManager::isGhidraManagerWorking() {
 	return getGhidraManager() != nullptr;
 }
 
-FunctionManager::Iterator::Iterator(FunctionManager* manager)
-	: m_iterator(manager->m_items.begin()), m_end(manager->m_items.end())
-{}
-
-bool FunctionManager::Iterator::hasNext() {
-	return m_iterator != m_end;
-}
-
-Function::Function* FunctionManager::Iterator::next() {
-	return static_cast<Function::Function*>((m_iterator++)->second);
-}
+//FunctionManager::Iterator::Iterator(FunctionManager* manager)
+//	: m_iterator(manager->m_items.begin()), m_end(manager->m_items.end())
+//{}
+//
+//bool FunctionManager::Iterator::hasNext() {
+//	return m_iterator != m_end;
+//}
+//
+//Function::Function* FunctionManager::Iterator::next() {
+//	return static_cast<Function::Function*>((m_iterator++)->second);
+//}

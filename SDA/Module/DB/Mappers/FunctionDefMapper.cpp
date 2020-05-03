@@ -18,7 +18,7 @@ CE::FunctionManager* FunctionDefMapper::getManager() {
 	return static_cast<CE::FunctionManager*>(m_repository);
 }
 
-DomainObject* FunctionDefMapper::doLoad(Database* db, SQLite::Statement& query) {
+IDomainObject* FunctionDefMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int def_id = query.getColumn("def_id");
 	int def_offset = query.getColumn("offset");
 	int decl_id = query.getColumn("decl_id");
@@ -76,7 +76,7 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 	}
 }
 
-void FunctionDefMapper::doInsert(Database* db, DomainObject* obj) {
+void FunctionDefMapper::doInsert(Database* db, IDomainObject* obj) {
 	auto& def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
 	SQLite::Statement query(*db, "INSERT INTO sda_func_defs (decl_id, offset)\
@@ -87,7 +87,7 @@ void FunctionDefMapper::doInsert(Database* db, DomainObject* obj) {
 	saveFunctionRanges(db, def);
 }
 
-void FunctionDefMapper::doUpdate(Database* db, DomainObject* obj) {
+void FunctionDefMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto& def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
 	SQLite::Statement query(*db, "REPLACE INTO sda_func_defs (def_id, decl_id, offset)\
@@ -98,7 +98,7 @@ void FunctionDefMapper::doUpdate(Database* db, DomainObject* obj) {
 	saveFunctionRanges(db, def);
 }
 
-void FunctionDefMapper::doRemove(Database* db, DomainObject* obj) {
+void FunctionDefMapper::doRemove(Database* db, IDomainObject* obj) {
 	SQLite::Statement query(*db, "DELETE FROM sda_func_defs WHERE def_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
