@@ -32,13 +32,13 @@ namespace CE
 			shared::STypeUnit getTypeUnit(DataType::Type* type) {
 				shared::STypeUnit typeUnitDesc;
 				typeUnitDesc.__set_typeId(getId(type));
-				typeUnitDesc.__set_pointerLvl(type->getPointerLvl());
-				typeUnitDesc.__set_arraySize(type->getArraySize());
+				/*typeUnitDesc.__set_pointerLvl(type->getPointerLvl());
+				typeUnitDesc.__set_arraySize(type->getArraySize());*/
 				return typeUnitDesc;
 			}
 
 			DataType::Type* getType(const shared::STypeUnit& typeUnitDesc) {
-				return m_typeManager->getType(findTypeById(typeUnitDesc.typeId), typeUnitDesc.pointerLvl, typeUnitDesc.arraySize);
+				return nullptr;//m_typeManager->getType(findTypeById(typeUnitDesc.typeId), typeUnitDesc.pointerLvl, typeUnitDesc.arraySize);
 			}
 
 			DataType::Type* findTypeById(datatype::Id id, bool returnDefType = true) {
@@ -73,8 +73,8 @@ namespace CE
 				datatype::SDataTypeTypedef typedefDesc;
 				typedefDesc.__set_type(buildTypeDesc(Typedef));
 				typedefDesc.refType.__set_typeId(Typedef->getRefType()->getId());
-				typedefDesc.refType.__set_pointerLvl(Typedef->getRefType()->getPointerLvl());
-				typedefDesc.refType.__set_arraySize(Typedef->getRefType()->getArraySize());
+				/*typedefDesc.refType.__set_pointerLvl(Typedef->getRefType()->getPointerLvl());
+				typedefDesc.refType.__set_arraySize(Typedef->getRefType()->getArraySize());*/
 				return typedefDesc;
 			}
 
@@ -126,9 +126,9 @@ namespace CE
 					datatype::SDataTypeStructureField structFieldDesc;
 					structFieldDesc.__set_name(field.getName());
 					structFieldDesc.__set_offset(curOffset + offset);
-					structFieldDesc.type.__set_typeId(getId(field.getType()));
+					/*structFieldDesc.type.__set_typeId(getId(field.getType()));
 					structFieldDesc.type.__set_pointerLvl(field.getType()->getPointerLvl());
-					structFieldDesc.type.__set_arraySize(field.getType()->getArraySize());
+					structFieldDesc.type.__set_arraySize(field.getType()->getArraySize());*/
 					structFieldDesc.__set_comment(field.getDesc());
 					structDesc.fields.push_back(structFieldDesc);
 					return true;
@@ -147,7 +147,7 @@ namespace CE
 			void change(DataType::Typedef* Typedef, const datatype::SDataTypeTypedef& typdefDesc) {
 				auto ref_type = findTypeById(typdefDesc.refType.typeId);
 				if (ref_type != nullptr) {
-					Typedef->setRefType(getType(typdefDesc.refType));
+					/*Typedef->setRefType(getType(typdefDesc.refType));*/
 				}
 			}
 
@@ -186,7 +186,7 @@ namespace CE
 
 				for (int i = curField; i < structDesc.fields.size(); i++) {
 					auto& field = structDesc.fields[i];
-					Class->addField(field.offset, field.name, getType(field.type), field.comment);
+					/*Class->addField(field.offset, field.name, getType(field.type), field.comment);*/
 				}
 			}
 
@@ -244,7 +244,7 @@ namespace CE
 					switch (dataType.group)
 					{
 					case datatype::DataTypeGroup::Typedef:
-						type = m_typeManager->createTypedef(m_typeManager->getDefaultType(), dataType.name, dataType.desc);
+						type = m_typeManager->createTypedef(DataType::GetUnit(m_typeManager->getDefaultType()), dataType.name, dataType.desc);
 						break;
 					case datatype::DataTypeGroup::Enum:
 						type = m_typeManager->createEnum(dataType.name, dataType.desc);

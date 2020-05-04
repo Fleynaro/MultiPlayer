@@ -12,7 +12,7 @@ void Record::CallInfoWriter::writeHeader(Type type) {
 	getStream().write(header);
 }
 
-bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* argAddrValue, CE::DataType::Type* argType) {
+bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* argAddrValue, CE::DataTypePtr argType) {
 	//MYTODO: 1) массив указателей 2) массив чисел 3) указатель на указатель 4) указатель 5) не указатель(в стеке)
 	//MYTODO: узнать тип указателя: на стек, на кучу, массив ли?
 
@@ -28,7 +28,7 @@ bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* 
 
 	//Block 2: calculate size of the object
 	int size;
-	if (argType->isArrayOfObjects()) {
+	if (true /*argType->isArrayOfObjects()*/) {
 		size = argType->getSize();
 	}
 	else if (argType->isString()) {

@@ -2,6 +2,14 @@
 #include <CallGraph/CallGraph.h>
 using namespace CE;
 
+TEST(DataType, Parsing)
+{
+    ASSERT_EQ(DataType::GetPointerLevelStr(DataType::GetUnit(new DataType::Float, "*")), "[1]");
+    ASSERT_EQ(DataType::GetPointerLevelStr(DataType::GetUnit(new DataType::Float, "***")), "[1][1][1]");
+    ASSERT_EQ(DataType::GetPointerLevelStr(DataType::GetUnit(new DataType::Float, "[3][5]")), "[3][5]");
+    ASSERT_EQ(DataType::GetPointerLevelStr(DataType::GetUnit(new DataType::Float, "(**[10][5])*")), "[1][10][5][1][1]");
+}
+
 class ProgramModuleFixture : public ::testing::Test {
 public:
     ProgramModuleFixture() {
@@ -58,11 +66,13 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
         enumeration->addField("VEHICLE", 3);
 
         //typedef
-        auto tdef = typeManager->createTypedef(enumeration, "ObjectType");
+        auto tdef = typeManager->createTypedef(DataType::GetUnit(enumeration), "ObjectType");
 
         //class
         auto entity = typeManager->createClass("Entity", "this is a class type");
-        entity->addField(20, "type", tdef, "position of entity");
+        entity->addField(20, "type", DataType::GetUnit(tdef), "position of entity");
+        auto tPos = DataType::GetUnit(typeManager->getTypeByName("float"), "[3]");
+        entity->addField(30, "pos", tPos, "position of entity");
     }
 
     try {
@@ -98,7 +108,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
             ASSERT_NE(type, nullptr);
             ASSERT_EQ(type->getGroup(), DataType::Type::Class);
             if (auto entity = dynamic_cast<DataType::Class*>(type)) {
-                ASSERT_EQ(entity->getAllFieldCount(), 1);
+                ASSERT_EQ(entity->getAllFieldCount(), 2);
             }
         }
 
@@ -110,7 +120,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
             if (auto objType = dynamic_cast<DataType::Typedef*>(type)) {
                 ASSERT_NE(objType->getRefType(), nullptr);
                 ASSERT_EQ(objType->getRefType()->getGroup(), DataType::Type::Enum);
-                if (auto refType = dynamic_cast<DataType::Enum*>(objType->getRefType())) {
+                if (auto refType = dynamic_cast<DataType::Enum*>(objType->getRefType()->getType())) {
                     ASSERT_EQ(refType->getFieldDict().size(), 3);
                 }
             }

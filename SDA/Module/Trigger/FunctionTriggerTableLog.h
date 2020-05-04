@@ -56,16 +56,17 @@ namespace CE::Trigger::Function
 	class Value
 	{
 	public:
-		CE::DataType::Type* m_type = nullptr;
+		CE::DataTypePtr m_type = nullptr;
 		uint64_t m_rawValue = 0;
 
 		Value() = default;
 
-		Value(CE::DataType::Type* type, uint64_t rawValue, void* rawData = nullptr)
+		Value(CE::DataTypePtr type, uint64_t rawValue, void* rawData = nullptr)
 			: m_type(type), m_rawValue(rawValue), m_rawData(rawData)
 		{
 			if (m_rawData != nullptr) {
-				m_type = new CE::DataType::Pointer(m_type->getTypeManager(), m_type->getBaseType());
+				//mytodo: так можно?
+				m_type = CE::DataType::GetUnit(m_type->getType(), "*");
 			}
 		}
 
@@ -216,7 +217,7 @@ namespace CE::Trigger::Function
 			);
 		}
 
-		void getExtraValue(void* addrValue, CE::DataType::Type* argType, void*& dest) {
+		void getExtraValue(void* addrValue, CE::DataTypePtr argType, void*& dest) {
 			do {
 				dest = m_allocator.getStream().getNext();
 				if (!Stat::Function::Record::CallInfoWriter::writeTypeValue(m_allocator.getStream(), addrValue, argType)) {

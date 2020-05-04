@@ -17,11 +17,11 @@ bool Unit::isUserDefined() {
 }
 
 bool Unit::isPointer() {
-	return getPointerLevel() > 0;
+	return getPointerLvl() > 0;
 }
 
-int Unit::getPointerLevel() {
-	return m_levels.size();
+int Unit::getPointerLvl() {
+	return (int)m_levels.size();
 }
 
 std::vector<int>& Unit::getPointerLevels() {
@@ -76,12 +76,12 @@ void Unit::setMapper(DB::IMapper* mapper) {
 	(arr**[5])*			<=>			arr[1][5][1][1]
 	((arr[5])*[10])*	<=>			arr[1][10][1][5]
 */
-std::vector<int> parseLevelsStr(const std::string& str) {
+std::vector<int> CE::DataType::ParsePointerLevelsStr(const std::string& str) {
 	std::vector<int> result;
 	std::list<int> seq;
 
 	int lastClosedSquareBracketIdx = 0;
-	int idx = str.length() - 1;
+	int idx = (int)str.length() - 1;
 	while (idx >= 0) {
 		auto ch = str[idx];
 
@@ -116,23 +116,14 @@ std::vector<int> parseLevelsStr(const std::string& str) {
 }
 
 std::string CE::DataType::GetPointerLevelStr(DataTypePtr type) {
-	std::string result = type->getName();
-	bool hasSquareBracket = false;
+	std::string result = "";
 	for (auto arrSize : type->getPointerLevels()) {
-		if (arrSize == 1) {
-			if(hasSquareBracket)
-				result = "(" + result + ")*";
-			else result = result + "*";
-		}
-		else {
-			result = result + "["+ std::to_string(arrSize) +"]";
-			hasSquareBracket = true;
-		}
+		result = result + "["+ std::to_string(arrSize) +"]";
 	}
 	return result;
 }
 
 DataTypePtr CE::DataType::GetUnit(DataType::Type* type, const std::string& levels) {
-	auto levels_list = parseLevelsStr(levels);
-	return std::make_shared<DataType::Unit>(new DataType::Unit(type, levels_list));
+	auto levels_list = ParsePointerLevelsStr(levels);
+	return std::make_shared<DataType::Unit>(type, levels_list);
 }

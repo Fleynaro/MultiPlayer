@@ -22,7 +22,7 @@ std::string CE::Function::MethodDecl::getName() {
 
 void CE::Function::MethodDecl::setClass(DataType::Class* Class)
 {
-	auto typeUnit = DataType::getUnit(Class, "*");
+	auto typeUnit = DataType::GetUnit(Class, "*");
 	if (getSignature().getArgList().size() > 0) {
 		getSignature().setArgument(0, typeUnit);
 	}

@@ -16,7 +16,7 @@ namespace CE
 
 			bool isPointer() override;
 
-			int getPointerLevel();
+			int getPointerLvl();
 
 			std::vector<int>& getPointerLevels();
 
@@ -51,5 +51,6 @@ namespace CE
 	{
 		DataTypePtr GetUnit(DataType::Type* type, const std::string& levels = "");
 		std::string GetPointerLevelStr(DataTypePtr type);
+		std::vector<int> ParsePointerLevelsStr(const std::string& str);
 	};
 };

@@ -62,7 +62,7 @@ namespace CE
 
 		const std::string& getGhidraTypeName(DataType::Type* type);
 
-		DataType::Typedef* createTypedef(DataType::Type* refType, const std::string& name, const std::string& desc = "");
+		DataType::Typedef* createTypedef(DataTypePtr refType, const std::string& name, const std::string& desc = "");
 
 		DataType::Enum* createEnum(const std::string& name, const std::string& desc = "");
 

@@ -62,13 +62,13 @@ namespace CE
 				funcDesc.__set_comment(function->getComment());
 
 				auto& signature = function->getSignature();
-				funcDesc.signature.__set_returnType(
+				/*funcDesc.signature.__set_returnType(
 					getClient()->m_dataTypeManager->getTypeUnit(signature.getReturnType())
-				);
+				);*/
 				for (int i = 0; i < signature.getArgList().size(); i++) {
 					auto argType = signature.getArgList()[i];
 					auto argName = function->getArgNameList()[i];
-					funcDesc.signature.arguments.push_back(getClient()->m_dataTypeManager->getTypeUnit(argType));
+					/*funcDesc.signature.arguments.push_back(getClient()->m_dataTypeManager->getTypeUnit(argType));*/
 					funcDesc.argumentNames.push_back(argName);
 				}
 
@@ -110,14 +110,14 @@ namespace CE
 				function->getDeclaration().getDesc().setDesc(funcDesc.comment);
 
 				auto& signature = function->getSignature();
-				signature.setReturnType(
+				/*signature.setReturnType(
 					getClient()->m_dataTypeManager->getType(funcDesc.signature.returnType)
-				);
+				);*/
 
 				function->getDeclaration().deleteAllArguments();
 				auto& args = funcDesc.signature.arguments;
 				for (int i = 0; i < args.size(); i++) {
-					function->getDeclaration().addArgument(getClient()->m_dataTypeManager->getType(args[i]), funcDesc.argumentNames[i]);
+					/*function->getDeclaration().addArgument(getClient()->m_dataTypeManager->getType(args[i]), funcDesc.argumentNames[i]);*/
 				}
 
 				function->getRangeList().clear();

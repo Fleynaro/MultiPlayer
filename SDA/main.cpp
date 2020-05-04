@@ -70,99 +70,6 @@ int main2()
 		sda->initGhidraClient();
 		sda->load();
 
-		if(false)
-		{
-			Ghidra::Client client(sda);
-			Ghidra::DataTypeManager& dataTypeManager = *client.m_dataTypeManager;
-			Ghidra::FunctionManager& funcManager = *client.m_functionManager;
-
-			auto EntityPosClass = sda->getTypeManager()->createClass("EntityPos", "");
-			EntityPosClass->addField(0x0, "x", new DataType::Float);
-			EntityPosClass->addField(0x4, "y", new DataType::Float);
-			EntityPosClass->addField(0x8, "z", new DataType::Float);
-
-			auto EntityClass = sda->getTypeManager()->createClass("Entity", "EntityClass");
-			EntityClass->addField(20, "position", EntityPosClass, "pos of entity");
-			EntityClass->addField(35, "arr", new DataType::Array(sda->getTypeManager(), new DataType::Int32, 3), "some arr");
-			EntityClass->addField(60, "val2", new DataType::Float, "some value");
-			EntityClass->resize(0);
-
-			auto PedClass = sda->getTypeManager()->createClass("Ped", "PedClass");
-			PedClass->setBaseClass(EntityClass);
-			PedClass->addField(30, "arr", new DataType::Array(sda->getTypeManager(), new DataType::Int32, 40), "some big arr");
-
-			dataTypeManager.buildDesc(EntityPosClass);
-			dataTypeManager.buildDesc(EntityClass);
-			dataTypeManager.buildDesc(PedClass);
-
-			Ghidra::datatype::Id id = dataTypeManager.getId(new DataType::Array(sda->getTypeManager(), new DataType::Int8, 2));
-			auto type = dataTypeManager.findTypeById(id);
-
-			try {
-				dataTypeManager.updateAll();
-				/*dataTypeManager.updateTypedefs(Ghidra::DataTypeManager::HashMap());
-				dataTypeManager.updateTypedefs(dataTypeManager.generateHashMap());
-				dataTypeManager.updateTypedefs(dataTypeManager.generateHashMap());*/
-				/*dataTypeManager.updateEnums(Ghidra::DataTypeManager::HashMap());
-				dataTypeManager.updateEnums(dataTypeManager.generateHashMap());
-				dataTypeManager.updateEnums(dataTypeManager.generateHashMap());*/
-				/*dataTypeManager.updateStructures(Ghidra::DataTypeManager::HashMap());
-				dataTypeManager.updateStructures(dataTypeManager.generateHashMap());
-				dataTypeManager.updateStructures(dataTypeManager.generateHashMap());*/
-
-				funcManager.update(funcManager.generateHashMap());
-				funcManager.update(funcManager.generateHashMap());
-
-				if (false) {
-					auto func = sda->getFunctionManager()->getFunctionById(4);
-					func->getDeclaration().getDesc().setName("AllocateMemory");
-					func->getSignature().setReturnType(new DataType::Pointer(sda->getTypeManager(), new DataType::Void));
-					func->getDeclaration().deleteAllArguments();
-					func->getDeclaration().addArgument(new DataType::Pointer(sda->getTypeManager(), new DataType::Void), "addr");
-					func->getDeclaration().getDesc().setDesc("this allocate memory\nlol");
-
-					funcManager.push({
-						funcManager.buildDesc(func)
-						});
-				}
-
-				dataTypeManager.push({
-					dataTypeManager.buildDesc(EntityPosClass),
-					dataTypeManager.buildDesc(EntityClass),
-					dataTypeManager.buildDesc(PedClass)
-					});
-				//dataTypeManager.updateStructures();
-			}
-			catch (TException& tx) {
-				DebugOutput("exception: " + std::string(tx.what()));
-			}
-
-			return 0;
-			auto enumeration = sda->getTypeManager()->createEnum("EntityType", "lolldlsaldlas 2020!");
-			enumeration->addField("PED", 1);
-			enumeration->addField("CAR", 130);
-			enumeration->addField("VEHICLE", 0x93522223);
-
-			try {
-				dataTypeManager.push({
-					dataTypeManager.buildDesc(enumeration)
-					});
-
-				/*auto structures = dataTypeManager.pullStructures(
-					Ghidra::HashMap()
-				);
-
-				auto enums = dataTypeManager.pullEnums(
-					Ghidra::HashMap()
-				);*/
-				int a = 5;
-			}
-			catch (TException& tx) {
-				DebugOutput("exception: " + std::string(tx.what()));
-			}
-			return 0;
-		}
-
 		auto declManager = sda->getFunctionManager()->getFunctionDeclManager();
 		auto function = sda->getFunctionManager()->createFunction(&setRot2, { Function::AddressRange(&setRot2, 200) }, declManager->createFunctionDecl("setRot", "get rot of entity"));
 		auto functiondb2 = sda->getFunctionManager()->createFunction(&changeGvar2, { Function::AddressRange(&changeGvar2, 40) }, declManager->createFunctionDecl("changeGvar", ""));
@@ -219,12 +126,6 @@ int main2()
 
 		CallGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
 		analysis2.doAnalyse();
-
-		function->getDeclaration().addArgument(new DataType::Int32, "a");
-		function->getDeclaration().addArgument(new DataType::Float, "x");
-		function->getDeclaration().addArgument(new DataType::Float, "y");
-		function->getDeclaration().addArgument(new DataType::Float, "z");
-		function->getDeclaration().addArgument(new DataType::Int32, "c");
 
 		function->createHook();
 		auto hook = function->getHook();

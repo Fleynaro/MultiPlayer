@@ -41,7 +41,7 @@ void TypeManager::addSystemTypes() {
 
 void TypeManager::addGhidraSystemTypes() {
 	for (const auto& it : ghidraTypes) {
-		createTypedef(it.second, it.first);
+		createTypedef(DataType::GetUnit(it.second), it.first);
 	}
 }
 
@@ -62,7 +62,7 @@ const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {
 	return getGhidraTypeName(getDefaultType());
 }
 
-DataType::Typedef* TypeManager::createTypedef(DataType::Type* refType, const std::string& name, const std::string& desc) {
+DataType::Typedef* TypeManager::createTypedef(DataTypePtr refType, const std::string& name, const std::string& desc) {
 	auto type = new DataType::Typedef(this, refType, name, desc);
 	type->setMapper(m_dataTypeMapper->m_typedefTypeMapper);
 	getProgramModule()->getTransaction()->markAsNew(type);

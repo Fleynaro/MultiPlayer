@@ -48,7 +48,7 @@ namespace CE::Trigger::Function
 		};
 	};
 
-	static uint64_t GetArgumentValue(CE::DataType::Type* type, CE::Hook::DynHook* hook, int argIdx) {
+	static uint64_t GetArgumentValue(CE::DataTypePtr type, CE::Hook::DynHook* hook, int argIdx) {
 		using namespace CE::DataType;
 		if (auto sysType = dynamic_cast<SystemType*>(type->getBaseType(true, false))) {
 			if (argIdx <= 4 && sysType->getSet() == SystemType::Real)
@@ -57,7 +57,7 @@ namespace CE::Trigger::Function
 		return hook->getArgumentValue(argIdx);
 	}
 
-	static uint64_t GetReturnValue(CE::DataType::Type* type, CE::Hook::DynHook* hook) {
+	static uint64_t GetReturnValue(CE::DataTypePtr type, CE::Hook::DynHook* hook) {
 		using namespace CE::DataType;
 		if (auto sysType = dynamic_cast<SystemType*>(type->getBaseType(true, false))) {
 			if (sysType->getSet() == SystemType::Real)
