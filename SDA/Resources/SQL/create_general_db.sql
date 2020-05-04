@@ -13,8 +13,7 @@ create table sda_class_fields
     rel_offset  INTEGER,
     name        TEXT,
     type_id     INTEGER not null,
-    pointer_lvl INTEGER not null,
-    array_size  INTEGER not null,
+    pointer_lvl TEXT,
     primary key (class_id, rel_offset)
 );
 
@@ -48,8 +47,7 @@ create table sda_func_arguments
     decl_id     INTEGER,
     name        TEXT,
     type_id     INTEGER not null,
-    pointer_lvl INTEGER not null,
-    array_size  INTEGER not null,
+    pointer_lvl TEXT,
     primary key (id, decl_id)
 );
 
@@ -61,8 +59,7 @@ create table sda_func_decls
         unique,
     role            INTEGER,
     ret_type_id     INTEGER not null,
-    ret_pointer_lvl INTEGER not null,
-    ret_array_size  INTEGER not null,
+    ret_pointer_lvl TEXT,
     desc            TEXT
 );
 
@@ -107,8 +104,7 @@ create table sda_gvars
     name        TEXT,
     offset      INTEGER,
     type_id     INTEGER,
-    pointer_lvl INTEGER,
-    array_size  INTEGER,
+    pointer_lvl TEXT,
     desc        TEXT
 );
 
@@ -138,8 +134,7 @@ create table sda_typedefs
     type_id     INTEGER
         primary key,
     ref_type_id INTEGER,
-    pointer_lvl INTEGER,
-    array_size  INTEGER
+    pointer_lvl TEXT
 );
 
 create table sda_types

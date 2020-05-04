@@ -1,7 +1,5 @@
 #pragma once
-#include "../Type/AbstractType.h"
-#include "../Type/Pointer.h"
-#include "../Type/Array.h"
+#include "../Type/TypeUnit.h"
 
 namespace CE
 {
@@ -10,21 +8,21 @@ namespace CE
 		class Variable
 		{
 		public:
-			Variable(DataType::Type* type)
+			Variable(DataTypePtr type)
 				: m_type(type)
 			{}
 
-			DataType::Type* getType() {
+			DataTypePtr getType() {
 				return m_type;
 			}
 		private:
-			DataType::Type* m_type;
+			DataTypePtr m_type;
 		};
 
 		class Global : public Variable, public Desc
 		{
 		public:
-			Global(DataType::Type* type, void* addr, int id, std::string name, std::string desc = "")
+			Global(DataTypePtr type, void* addr, int id, std::string name, std::string desc = "")
 				: Variable(type), m_addr(addr), Desc(id, name, desc)
 			{}
 
@@ -38,7 +36,7 @@ namespace CE
 		class Local : public Variable
 		{
 		public:
-			Local(DataType::Type* type, void* addr)
+			Local(DataTypePtr type, void* addr)
 				: Variable(type), m_addr(addr)
 			{}
 

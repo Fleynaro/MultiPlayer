@@ -189,10 +189,9 @@
     <ClCompile Include="Module\Code\Function\FunctionDefinition.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionSignature.cpp" />
     <ClCompile Include="Module\Code\Type\AbstractType.cpp" />
-    <ClCompile Include="Module\Code\Type\Array.cpp" />
     <ClCompile Include="Module\Code\Type\Class.cpp" />
     <ClCompile Include="Module\Code\Type\Enum.cpp" />
-    <ClCompile Include="Module\Code\Type\Pointer.cpp" />
+    <ClCompile Include="Module\Code\Type\TypeUnit.cpp" />
     <ClCompile Include="Module\Code\Type\SystemType.cpp" />
     <ClCompile Include="Module\Code\Type\Typedef.cpp" />
     <ClCompile Include="Module\Code\Type\UserType.cpp" />
@@ -270,10 +269,9 @@
     <ClInclude Include="Module\Code\Code.h" />
     <ClInclude Include="Module\Code\Function\MethodDeclaration.h" />
     <ClInclude Include="Module\Code\Shared.h" />
-    <ClInclude Include="Module\Code\Type\Array.h" />
     <ClInclude Include="Module\Code\Type\Class.h" />
     <ClInclude Include="Module\Code\Type\Enum.h" />
-    <ClInclude Include="Module\Code\Type\Pointer.h" />
+    <ClInclude Include="Module\Code\Type\TypeUnit.h" />
     <ClInclude Include="Module\Code\Type\SystemType.h" />
     <ClInclude Include="Module\Code\Type\AbstractType.h" />
     <ClInclude Include="Module\Code\Type\Type.h" />

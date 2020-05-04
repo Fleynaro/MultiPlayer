@@ -3,14 +3,10 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Class::Field::Field(const std::string& name, Type* type, std::string desc)
+Class::Field::Field(const std::string& name, DataTypePtr type, std::string desc)
 	: m_name(name), m_desc(desc)
 {
 	setType(type);
-}
-
-Class::Field::~Field() {
-	m_type->free();
 }
 
 std::string& Class::Field::getName() {
@@ -25,14 +21,11 @@ std::string& Class::Field::getDesc() {
 	return m_desc;
 }
 
-void Class::Field::setType(Type* type) {
-	if (m_type != nullptr)
-		m_type->free();
+void Class::Field::setType(DataTypePtr type) {
 	m_type = type;
-	m_type->addOwner();
 }
 
-Type* Class::Field::getType() {
+DataTypePtr Class::Field::getType() {
 	return m_type;
 }
 
@@ -248,7 +241,7 @@ bool Class::areEmptyFields(int startByteIdx, int size) {
 }
 
 Class::Field* Class::getDefaultField() {
-	static Field defaultField = Field("undefined", new Byte);
+	static Field defaultField = Field("undefined", DataType::GetUnit(new Byte));
 	return &defaultField;
 }
 
@@ -319,7 +312,7 @@ bool Class::moveFields(int relOffset, int bytesCount) {
 	return true;
 }
 
-void Class::addField(int relOffset, std::string name, Type* type, const std::string& desc) {
+void Class::addField(int relOffset, std::string name, DataTypePtr type, const std::string& desc) {
 	m_fields.insert(std::make_pair(relOffset, new Field(name, type, desc)));
 	m_size = max(m_size, relOffset + type->getSize());
 }

@@ -4,6 +4,10 @@
 using namespace CE;
 using namespace CE::DataType;
 
+bool Type::isPointer() {
+	return false;
+}
+
 std::string Type::getViewValue(void* addr) {
 	uint64_t mask = 0x0;
 	for (int i = 0; i < max(8, getSize()); i++)
@@ -17,11 +21,8 @@ std::string Type::getViewValue(uint64_t value) {
 
 Type* Type::getBaseType(bool refType, bool dereferencedType) {
 	if (dereferencedType) {
-		if (auto pointerType = dynamic_cast<Pointer*>(this)) {
-			return pointerType->getType()->getBaseType();
-		}
-		if (auto arrayType = dynamic_cast<Array*>(this)) {
-			return arrayType->getType()->getBaseType();
+		if (auto unit = dynamic_cast<DataType::Unit*>(this)) {
+			return unit->getType()->getBaseType();
 		}
 	}
 	if (refType) {
@@ -36,24 +37,8 @@ bool Type::isSystem() {
 	return !isUserDefined();
 }
 
-bool Type::isPointer() {
-	return getPointerLvl() != 0;
-}
-
-bool Type::isArray() {
-	return getArraySize() != 0;
-}
-
-bool Type::isArrayOfPointers() {
-	return isArray() && getPointerLvl() > 1;
-}
-
-bool Type::isArrayOfObjects() {
-	return isArray() && getPointerLvl() == 1;
-}
-
 bool Type::isString() {
-	if (getPointerLvl() == 0)
+	if (!isPointer())
 		return false;
 	auto id = getBaseType()->getId();
 	return id == SystemType::Char || id == SystemType::WChar;
@@ -61,5 +46,13 @@ bool Type::isString() {
 
 bool Type::isSigned() {
 	return false;
+}
+
+void Type::setTypeManager(TypeManager* typeManager) {
+	m_typeManager = typeManager;
+}
+
+TypeManager* Type::getTypeManager() {
+	return m_typeManager;
 }
 

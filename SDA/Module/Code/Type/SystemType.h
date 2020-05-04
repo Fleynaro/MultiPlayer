@@ -58,14 +58,6 @@ namespace CE
 			bool isUserDefined() override {
 				return false;
 			}
-
-			int getPointerLvl() override {
-				return 0;
-			}
-
-			int getArraySize() override {
-				return 0;
-			}
 		};
 
 		class Void : public SystemType

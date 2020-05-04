@@ -78,16 +78,12 @@ void ClassTypeMapper::loadFieldsForClass(Database* db, DataType::Class* Class) {
 
 	while (query.executeStep())
 	{
-		auto type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getType(
-			query.getColumn("type_id"),
-			query.getColumn("pointer_lvl"),
-			query.getColumn("array_size")
-		);
-
+		auto type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getTypeById(query.getColumn("type_id"));
 		if (type == nullptr) {
 			type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getDefaultType();
 		}
-		Class->addField(query.getColumn("rel_offset"), query.getColumn("name"), type);
+
+		Class->addField(query.getColumn("rel_offset"), query.getColumn("name"), DataType::GetUnit(type, query.getColumn("pointer_lvl")));
 	}
 }
 
@@ -101,13 +97,12 @@ void ClassTypeMapper::saveClassFields(Database* db, DataType::Class* Class)
 
 	{
 		Class->iterateFields([&](int offset, DataType::Class::Field* field) {
-			SQLite::Statement query(*db, "INSERT INTO sda_class_fields (class_id, rel_offset, name, type_id, pointer_lvl, array_size) VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
+			SQLite::Statement query(*db, "INSERT INTO sda_class_fields (class_id, rel_offset, name, type_id, pointer_lvl) VALUES(?1, ?2, ?3, ?4, ?5)");
 			query.bind(1, Class->getId());
 			query.bind(2, offset);
 			query.bind(3, field->getName());
 			query.bind(4, field->getType()->getId());
-			query.bind(5, field->getType()->getPointerLvl());
-			query.bind(6, field->getType()->getArraySize());
+			query.bind(5, DataType::GetPointerLevelStr(field->getType()));
 			query.exec();
 			return true;
 			});

@@ -8,7 +8,7 @@ namespace CE
 		class Typedef : public UserType
 		{
 		public:
-			Typedef(TypeManager* typeManager, Type* refType, const std::string& name, const std::string& desc = "");
+			Typedef(TypeManager* typeManager, DataTypePtr refType, const std::string& name, const std::string& desc = "");
 
 			Group getGroup() override;
 
@@ -16,15 +16,11 @@ namespace CE
 
 			std::string getViewValue(void* addr) override;
 
-			int getPointerLvl() override;
+			void setRefType(DataTypePtr refType);
 
-			int getArraySize() override;
-
-			void setRefType(Type* refType);
-
-			Type* getRefType();
+			DataTypePtr getRefType();
 		private:
-			Type* m_refType = nullptr;
+			DataTypePtr m_refType;
 		};
 	};
 };

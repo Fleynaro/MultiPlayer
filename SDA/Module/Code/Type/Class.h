@@ -12,9 +12,7 @@ namespace CE::DataType
 		class Field
 		{
 		public:
-			Field(const std::string& name, Type* type, std::string desc = "");
-
-			~Field();
+			Field(const std::string& name, DataTypePtr type, std::string desc = "");
 
 			std::string& getName();
 
@@ -22,13 +20,13 @@ namespace CE::DataType
 
 			std::string& getDesc();
 
-			void setType(Type* type);
+			void setType(DataTypePtr type);
 
-			Type* getType();
+			DataTypePtr getType();
 		private:
 			std::string m_name;
 			std::string m_desc;
-			Type* m_type = nullptr;
+			DataTypePtr m_type;
 		};
 
 		using FieldDict = std::map<int, Field*>;
@@ -107,7 +105,7 @@ namespace CE::DataType
 
 		bool moveFields(int relOffset, int bytesCount);
 
-		void addField(int relOffset, std::string name, Type* type, const std::string& desc = "");
+		void addField(int relOffset, std::string name, DataTypePtr type, const std::string& desc = "");
 
 		bool removeField(int relOffset);
 	private:

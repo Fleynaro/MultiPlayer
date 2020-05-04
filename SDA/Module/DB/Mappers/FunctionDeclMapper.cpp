@@ -41,19 +41,15 @@ IDomainObject* FunctionDeclMapper::doLoad(Database* db, SQLite::Statement& query
 		);
 		static_cast<Function::MethodDecl*>(decl)->setRole((Function::MethodDecl::Role)(int)query.getColumn("role"));
 	}
-
 	decl->setId(decl_id);
 
-	DataType::Type* type = getManager()->getProgramModule()->getTypeManager()->getType(
-		query.getColumn("ret_type_id"),
-		query.getColumn("ret_pointer_lvl"),
-		query.getColumn("ret_array_size")
-	);
-
+	auto type = getManager()->getProgramModule()->getTypeManager()->getTypeById(query.getColumn("ret_type_id"));
 	if (type == nullptr) {
 		type = getManager()->getProgramModule()->getTypeManager()->getDefaultReturnType();
 	}
-	decl->getSignature().setReturnType(type);
+
+	decl->getSignature().setReturnType(
+		DataType::GetUnit(type, query.getColumn("ret_pointer_lvl")));
 	loadFunctionDeclArguments(db, *decl);
 	return decl;
 }
@@ -64,17 +60,12 @@ void FunctionDeclMapper::loadFunctionDeclArguments(Database* db, CE::Function::F
 
 	while (query.executeStep())
 	{
-		DataType::Type* type = getManager()->getProgramModule()->getTypeManager()->getType(
-			query.getColumn("type_id"),
-			query.getColumn("pointer_lvl"),
-			query.getColumn("array_size")
-		);
-
+		auto type = getManager()->getProgramModule()->getTypeManager()->getTypeById(query.getColumn("type_id"));
 		if (type == nullptr) {
 			type = getManager()->getProgramModule()->getTypeManager()->getDefaultType();
 		}
 
-		decl.addArgument(type, query.getColumn("name"));
+		decl.addArgument(DataType::GetUnit(type, query.getColumn("pointer_lvl")), query.getColumn("name"));
 	}
 }
 
@@ -88,14 +79,13 @@ void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::F
 	{
 		int id = 0;
 		for (auto type : decl.getSignature().getArgList()) {
-			SQLite::Statement query(*db, "INSERT INTO sda_func_arguments (decl_id, id, name, type_id, pointer_lvl, array_size) \
-					VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
+			SQLite::Statement query(*db, "INSERT INTO sda_func_arguments (decl_id, id, name, type_id, pointer_lvl) \
+					VALUES(?1, ?2, ?3, ?4, ?5)");
 			query.bind(1, decl.getId());
 			query.bind(2, id);
 			query.bind(3, decl.getArgNameList()[id]);
 			query.bind(4, type->getId());
-			query.bind(5, type->getPointerLvl());
-			query.bind(6, type->getArraySize());
+			query.bind(5, DataType::GetPointerLevelStr(type));
 			query.exec();
 			id++;
 		}
@@ -105,8 +95,8 @@ void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::F
 void FunctionDeclMapper::doInsert(Database* db, IDomainObject* obj) {
 	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
 
-	SQLite::Statement query(*db, "INSERT INTO sda_func_decls (name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
-				VALUES(?2, ?3, ?4, ?5, ?6, ?7)");
+	SQLite::Statement query(*db, "INSERT INTO sda_func_decls (name, role, ret_type_id, ret_pointer_lvl, desc)\
+				VALUES(?2, ?3, ?4, ?5, ?6)");
 	bind(query, decl);
 	query.exec();
 	setNewId(db, obj);
@@ -116,8 +106,8 @@ void FunctionDeclMapper::doInsert(Database* db, IDomainObject* obj) {
 void FunctionDeclMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
 
-	SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, ret_array_size, desc)\
-				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");
+	SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, desc)\
+				VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
 	query.bind(1, obj->getId());
 	bind(query, decl);
 	query.exec();
@@ -134,7 +124,6 @@ void FunctionDeclMapper::bind(SQLite::Statement& query, CE::Function::FunctionDe
 	query.bind(2, decl.getName());
 	query.bind(3, (int)decl.getRole());
 	query.bind(4, decl.getSignature().getReturnType()->getId());
-	query.bind(5, decl.getSignature().getReturnType()->getPointerLvl());
-	query.bind(6, decl.getSignature().getReturnType()->getArraySize());
-	query.bind(7, decl.getDesc().getDesc());
+	query.bind(5, DataType::GetPointerLevelStr(decl.getSignature().getReturnType()));
+	query.bind(6, decl.getDesc().getDesc());
 }

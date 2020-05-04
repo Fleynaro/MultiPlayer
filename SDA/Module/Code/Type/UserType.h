@@ -1,5 +1,5 @@
 #pragma once
-#include "AbstractType.h"
+#include "TypeUnit.h"
 
 
 namespace CE
@@ -9,65 +9,31 @@ namespace CE
 		class UserType : public Type, public IGhidraUnit
 		{
 		public:
-			UserType(TypeManager* typeManager, std::string name, std::string desc = "")
-				: Type(typeManager), m_name(name), m_desc(desc)
-			{}
+			UserType(TypeManager* typeManager, std::string name, std::string desc = "");
 
-			bool isUserDefined() override {
-				return true;
-			}
+			bool isUserDefined() override;
 
-			int getPointerLvl() override {
-				return 0;
-			}
+			std::string getDisplayName() override;
 
-			int getArraySize() override {
-				return 0;
-			}
+			std::string getName() override;
 
-			std::string getDisplayName() override {
-				return getName();
-			}
+			std::string getDesc() override;
 
-			std::string getName() override {
-				return m_name;
-			}
+			void setName(const std::string& name);
 
-			std::string getDesc() override {
-				return m_desc;
-			}
+			void setDesc(const std::string& desc);
 
-			void setName(const std::string& name) {
-				m_name = name;
-			}
+			bool isGhidraUnit() override;
 
-			void setDesc(const std::string& desc) {
-				m_desc = desc;
-			}
+			void setGhidraUnit(bool toggle) override;
 
-			bool isGhidraUnit() override {
-				return m_ghidraUnit;
-			}
+			DB::Id getId() override;
 
-			void setGhidraUnit(bool toggle) override {
-				m_ghidraUnit = toggle;
-			}
+			void setId(DB::Id id) override;
 
-			DB::Id getId() override {
-				return m_id;
-			}
+			DB::IMapper* getMapper() override;
 
-			void setId(DB::Id id) override {
-				m_id = id;
-			}
-
-			DB::IMapper* getMapper() override {
-				return m_mapper;
-			}
-
-			void setMapper(DB::IMapper* mapper) override {
-				m_mapper = mapper;
-			}
+			void setMapper(DB::IMapper* mapper) override;
 		private:
 			std::string m_name;
 			std::string m_desc;

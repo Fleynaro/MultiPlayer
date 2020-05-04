@@ -5,5 +5,4 @@
 #include "Class.h"
 #include "Enum.h"
 
-#include "Pointer.h"
-#include "Array.h"
+#include "TypeUnit.h"

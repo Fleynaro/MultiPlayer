@@ -92,6 +92,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     {
         auto typeManager = m_programModule->getTypeManager();
 
+        //for class
         {
             auto type = typeManager->getTypeByName("Entity");
             ASSERT_NE(type, nullptr);
@@ -101,6 +102,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
             }
         }
 
+        //for typedef & enumeration
         {
             auto type = typeManager->getTypeByName("ObjectType");
             ASSERT_NE(type, nullptr);

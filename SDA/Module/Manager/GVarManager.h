@@ -17,14 +17,13 @@ namespace CE
 			using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
-			SQLite::Statement query(db, "REPLACE INTO sda_gvars (id, name, offset, type_id, pointer_lvl, array_size, desc) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");
+			SQLite::Statement query(db, "REPLACE INTO sda_gvars (id, name, offset, type_id, pointer_lvl, desc) VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
 			query.bind(1, gVar->getId());
 			query.bind(2, gVar->getName());
 			query.bind(3, getProgramModule()->toRelAddr(gVar->getAddress()));
 			query.bind(4, gVar->getType()->getId());
-			query.bind(5, gVar->getType()->getPointerLvl());
-			query.bind(6, gVar->getType()->getArraySize());
-			query.bind(7, gVar->getDesc());
+			query.bind(5, DataType::GetPointerLevelStr(gVar->getType()));
+			query.bind(6, gVar->getDesc());
 			query.exec();
 		}
 
@@ -49,12 +48,12 @@ namespace CE
 			return id;
 		}
 
-		Variable::Global* createGVar(DataType::Type* type, void* addr, std::string name, std::string desc = "") {
+		/*Variable::Global* createGVar(DataType::Type* type, void* addr, std::string name, std::string desc = "") {
 			int id = getNewId();
 			auto gvar = new Variable::Global(type, addr, id, name, desc);
 			m_gvars[id] = gvar;
 			return gvar;
-		}
+		}*/
 
 		void loadGVars() {
 			using namespace SQLite;
@@ -64,18 +63,13 @@ namespace CE
 
 			while (query.executeStep())
 			{
-				DataType::Type* type = getProgramModule()->getTypeManager()->getType(
-					query.getColumn("type_id"),
-					query.getColumn("pointer_lvl"),
-					query.getColumn("array_size")
-				);
-
+				DataType::Type* type = getProgramModule()->getTypeManager()->getTypeById(query.getColumn("type_id"));
 				if (type == nullptr) {
 					type = getProgramModule()->getTypeManager()->getDefaultType();
 				}
 
 				Variable::Global* gvar = new Variable::Global(
-					type,
+					DataType::GetUnit(type, query.getColumn("pointer_lvl")),
 					getProgramModule()->toAbsAddr(query.getColumn("offset")),
 					query.getColumn("id"),
 					query.getColumn("name"),

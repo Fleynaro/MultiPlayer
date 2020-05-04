@@ -22,12 +22,12 @@ std::string CE::Function::MethodDecl::getName() {
 
 void CE::Function::MethodDecl::setClass(DataType::Class* Class)
 {
+	auto typeUnit = DataType::getUnit(Class, "*");
 	if (getSignature().getArgList().size() > 0) {
-		getSignature().getArgList()[0]->free();
-		getSignature().getArgList()[0] = new DataType::Pointer(getManager()->getProgramModule()->getTypeManager(), Class);
+		getSignature().setArgument(0, typeUnit);
 	}
 	else {
-		addArgument(new DataType::Pointer(getManager()->getProgramModule()->getTypeManager(), Class), "this");
+		addArgument(typeUnit, "this");
 	}
 }
 

@@ -107,27 +107,6 @@ DataType::Type* TypeManager::getTypeByName(const std::string& typeName)
 	return nullptr;
 }
 
-DataType::Type* TypeManager::getType(DataType::Type* type, int pointer_lvl, int array_size) {
-	if (pointer_lvl > 0) {
-		for (int i = 0; i < pointer_lvl; i++) {
-			type = new DataType::Pointer(this, type);
-		}
-	}
-
-	if (array_size > 0) {
-		type = new DataType::Array(this, type, array_size);
-	}
-	return type;
-}
-
-DataType::Type* TypeManager::getType(int type_id, int pointer_lvl, int array_size) {
-	auto type = getTypeById(type_id);
-	if (type != nullptr) {
-		type = getType(type, pointer_lvl, array_size);
-	}
-	return type;
-}
-
 void TypeManager::setGhidraManager(Ghidra::DataTypeManager* ghidraManager) {
 	m_ghidraManager = ghidraManager;
 }
