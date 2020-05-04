@@ -61,6 +61,7 @@ void DataTypeMapper::doInsert(Database* db, IDomainObject* obj) {
 	SQLite::Statement query(*db, "INSERT INTO sda_types (`group`, name, desc) VALUES(?2, ?3, ?4)");
 	bind(query, *type);
 	query.exec();
+	AbstractMapper::setNewId(db, obj);
 }
 
 void DataTypeMapper::doUpdate(Database* db, IDomainObject* obj) {

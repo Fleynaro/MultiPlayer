@@ -39,11 +39,7 @@ IDomainObject* TypedefTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 
 void TypedefTypeMapper::doInsert(Database* db, IDomainObject* obj)
 {
-	auto Typedef = static_cast<DataType::Typedef*>(obj);
-	SQLite::Statement query(*db, "INSERT INTO sda_typedefs (ref_type_id, pointer_lvl, array_size) VALUES(?2, ?3, ?4)");
-	bind(query, *Typedef);
-	query.exec();
-	AbstractMapper::setNewId(db, obj);
+	doUpdate(db, obj);
 }
 
 void TypedefTypeMapper::doUpdate(Database* db, IDomainObject* obj)

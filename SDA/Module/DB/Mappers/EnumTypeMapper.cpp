@@ -12,6 +12,7 @@ IDomainObject* EnumTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
+	type->setId(query.getColumn("id"));
 	loadFieldsForEnum(db, static_cast<DataType::Enum*>(type));
 	return type;
 }
@@ -48,7 +49,7 @@ void EnumTypeMapper::loadFieldsForEnum(Database* db, DataType::Enum* Enum)
 
 void EnumTypeMapper::doInsert(Database* db, IDomainObject* obj)
 {
-	saveEnumFields(db, static_cast<DataType::Enum*>(obj));
+	doUpdate(db, obj);
 }
 
 void EnumTypeMapper::doUpdate(Database* db, IDomainObject* obj)

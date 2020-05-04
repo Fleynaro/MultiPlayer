@@ -92,11 +92,26 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     {
         auto typeManager = m_programModule->getTypeManager();
 
-        auto type = typeManager->getTypeByName("Entity");
-        ASSERT_NE(type, nullptr);
-        ASSERT_EQ(type->getGroup(), DataType::Type::Class);
-        if (auto entity = dynamic_cast<DataType::Class*>(type)) {
-            ASSERT_EQ(entity->getAllFieldCount(), 1);
+        {
+            auto type = typeManager->getTypeByName("Entity");
+            ASSERT_NE(type, nullptr);
+            ASSERT_EQ(type->getGroup(), DataType::Type::Class);
+            if (auto entity = dynamic_cast<DataType::Class*>(type)) {
+                ASSERT_EQ(entity->getAllFieldCount(), 1);
+            }
+        }
+
+        {
+            auto type = typeManager->getTypeByName("ObjectType");
+            ASSERT_NE(type, nullptr);
+            ASSERT_EQ(type->getGroup(), DataType::Type::Typedef);
+            if (auto objType = dynamic_cast<DataType::Typedef*>(type)) {
+                ASSERT_NE(objType->getRefType(), nullptr);
+                ASSERT_EQ(objType->getRefType()->getGroup(), DataType::Type::Enum);
+                if (auto refType = dynamic_cast<DataType::Enum*>(objType->getRefType())) {
+                    ASSERT_EQ(refType->getFieldDict().size(), 3);
+                }
+            }
         }
     }
 

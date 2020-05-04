@@ -74,6 +74,13 @@ void ProgramModule::initGhidraClient()
 	getTypeManager()->setGhidraManager(m_client->m_dataTypeManager);
 }
 
+void reserveForSystemTypes(Database &db) {
+	SQLite::Transaction tr(db);
+	for(int i = 0; i < 100; i ++)
+		db.exec("INSERT INTO sda_types (name) VALUES ('reserved_f" + std::to_string(i) + "')");
+	tr.commit();
+}
+
 void ProgramModule::createGeneralDataBase()
 {
 	using namespace SQLite;
@@ -85,11 +92,7 @@ void ProgramModule::createGeneralDataBase()
 		return;
 	}
 	m_db->exec(res.getData());
-	
-	Database db(m_db->getFilename(), SQLite::OPEN_READWRITE);
-	db.exec("UPDATE SQLITE_SEQUENCE SET seq = 1000 WHERE name = 'sda_types'");
-	auto c = db.getTotalChanges();
-	c = 0;
+	reserveForSystemTypes(*m_db);
 }
 
 void ProgramModule::initDataBase(std::string filename)

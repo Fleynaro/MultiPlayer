@@ -78,7 +78,7 @@ void ClassTypeMapper::loadFieldsForClass(Database* db, DataType::Class* Class) {
 
 	while (query.executeStep())
 	{
-		DataType::Type* type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getType(
+		auto type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getType(
 			query.getColumn("type_id"),
 			query.getColumn("pointer_lvl"),
 			query.getColumn("array_size")
@@ -134,11 +134,7 @@ void ClassTypeMapper::saveClassMethods(Database* db, DataType::Class* Class)
 
 void ClassTypeMapper::doInsert(Database* db, IDomainObject* obj)
 {
-	auto Class = static_cast<DataType::Class*>(obj);
-	SQLite::Statement query(*db, "INSERT INTO sda_classes (base_class_id, size, vtable_id) VALUES(?2, ?3, ?4)");
-	bind(query, *Class);
-	query.exec();
-	AbstractMapper::setNewId(db, obj);
+	doUpdate(db, obj);
 }
 
 void ClassTypeMapper::doUpdate(Database* db, IDomainObject* obj)
@@ -148,6 +144,7 @@ void ClassTypeMapper::doUpdate(Database* db, IDomainObject* obj)
 	query.bind(1, Class->getId());
 	bind(query, *Class);
 	query.exec();
+	saveClassFields(db, Class);
 }
 
 void ClassTypeMapper::doRemove(Database* db, IDomainObject* obj)
