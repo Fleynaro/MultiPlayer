@@ -18,8 +18,6 @@ namespace CE
 
 			std::string getSigName() override;
 
-			std::string getName() override;
-
 			void setClass(DataType::Class* Class);
 
 			DataType::Class* getClass();

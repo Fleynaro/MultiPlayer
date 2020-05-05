@@ -38,11 +38,11 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
 {
     EXPECT_GE(m_programModule->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 20);
     auto tr = m_programModule->getTransaction();
+    auto funcManager = m_programModule->getFunctionManager();
+    auto declManager = funcManager->getFunctionDeclManager();
 
     //for functions
     {
-        auto funcManager = m_programModule->getFunctionManager();
-        auto declManager = funcManager->getFunctionDeclManager();
         ASSERT_EQ(funcManager->getItemsCount(), 0);
 
         auto function1 = funcManager->createFunction(&setRot,       { Function::AddressRange(&setRot, 200) },       declManager->createFunctionDecl(g_testFuncName, "set rot to an entity"));
@@ -81,6 +81,13 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
         entity->addField(30, "pos", tPos, "position of entity");
         entity->addField(50, "screen", DataType::GetUnit(screen), "screen of entity");
         ASSERT_EQ(entity->getSize(), 58);
+
+        //derrived class
+        auto ped = typeManager->createClass("Ped", "this is a derrived class type");
+        ped->setBaseClass(entity);
+        ped->addField(100, "head_angle", DataType::GetUnit(typeManager->getTypeByName("float")));
+        auto methodDecl = declManager->createMethodDecl("getHeadAngle");
+        ped->addMethod(methodDecl);
     }
 
     try {
@@ -127,6 +134,18 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
             ASSERT_EQ(type->getGroup(), DataType::Type::Class);
             if (auto entity = dynamic_cast<DataType::Class*>(type)) {
                 ASSERT_EQ(entity->getFields().size(), 3);
+            }
+        }
+
+        //for derrived class
+        {
+            auto type = typeManager->getTypeByName("Ped");
+            ASSERT_NE(type, nullptr);
+            ASSERT_EQ(type->getGroup(), DataType::Type::Class);
+            if (auto ped = dynamic_cast<DataType::Class*>(type)) {
+                ASSERT_NE(ped->getBaseClass(), nullptr);
+                ASSERT_EQ(ped->getFields().size(), 2);
+                ASSERT_EQ(ped->getMethods().size(), 1);
             }
         }
 

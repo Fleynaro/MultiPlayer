@@ -33,8 +33,28 @@ Class* Class::getBaseClass() {
 	return m_base;
 }
 
-void Class::setBaseClass(Class* base) {
+void Class::setBaseClass(Class* base, bool createBaseClassField) {
 	m_base = base;
+
+	if (createBaseClassField) {
+		int baseClassOffset = 0x0;
+		if (m_vtable != nullptr) {
+			if (m_base != nullptr && m_base->m_vtable == nullptr) {
+				baseClassOffset = 0x8;
+			}
+		}
+		
+		auto oldSize = getSize();
+		if (oldSize < base->getSize()) {
+			resize(base->getSize());
+		}
+		if (!areEmptyFields(baseClassOffset, base->getSize())) {
+			resize(oldSize);
+			throw std::exception("set base class");
+		}
+
+		addField(baseClassOffset, "base", GetUnit(base), "{this field created automatically}");
+	}
 }
 
 CE::Function::VTable* Class::getVtable() {
@@ -42,10 +62,6 @@ CE::Function::VTable* Class::getVtable() {
 		return getBaseClass()->getVtable();
 	}
 	return m_vtable;
-}
-
-bool Class::hasVTable() {
-	return getVtable() != nullptr;
 }
 
 void Class::setVtable(Function::VTable* vtable) {

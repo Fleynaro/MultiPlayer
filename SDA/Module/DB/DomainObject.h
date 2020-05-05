@@ -11,6 +11,7 @@ namespace DB
 	{
 	public:
 		virtual ~IDomainObject() {}
+		virtual bool isCommited() { return getId() != 0; }
 		virtual Id getId() = 0;
 		virtual void setId(Id id) {}
 		virtual IMapper* getMapper() { return nullptr; }
@@ -20,25 +21,15 @@ namespace DB
 	class DomainObject : public IDomainObject
 	{
 	public:
-		DomainObject(Id id = 0)
-			: m_id(id)
-		{}
+		DomainObject(Id id = 0);
 
-		Id getId() override {
-			return m_id;
-		}
+		Id getId() override;
 
-		void setId(Id id) override {
-			m_id = id;
-		}
+		void setId(Id id) override;
 
-		IMapper* getMapper() override {
-			return m_mapper;
-		}
+		IMapper* getMapper() override;
 
-		void setMapper(IMapper* mapper) override {
-			m_mapper = mapper;
-		}
+		void setMapper(IMapper* mapper) override;
 	private:
 		Id m_id;
 		IMapper* m_mapper = nullptr;

@@ -23,7 +23,6 @@ void FunctionManager::loadFunctions() {
 
 Function::Function* FunctionManager::createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, addr, ranges, decl);
-	def->getSignature().setReturnType(DataType::GetUnit(getProgramModule()->getTypeManager()->getDefaultReturnType()));
 	def->setMapper(m_funcDefMapper);
 	getProgramModule()->getTransaction()->markAsNew(def);
 	return def;

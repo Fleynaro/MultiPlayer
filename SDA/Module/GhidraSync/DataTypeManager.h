@@ -95,7 +95,7 @@ namespace CE
 				structDesc.__set_type(buildTypeDesc(Class));
 
 				int curOffset = 0;
-				if (Class->hasVTable()) {
+				/*if (Class->hasVTable()) {
 					datatype::SDataTypeStructureField structFieldDesc;
 					structFieldDesc.__set_name("vtable");
 					structFieldDesc.__set_offset(0);
@@ -106,7 +106,7 @@ namespace CE
 					structFieldDesc.__set_comment("{vtable}");
 					structDesc.fields.push_back(structFieldDesc);
 					curOffset = 0x8;
-				}
+				}*/
 
 				if (Class->getBaseClass() != nullptr) {
 					DataType::Class* baseClass = Class->getBaseClass();

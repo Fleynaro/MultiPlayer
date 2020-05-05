@@ -1,11 +1,15 @@
 #include "FunctionDeclaration.h"
+#include <Manager/TypeManager.h>
+#include <Manager/FunctionDeclManager.h>
 
 using namespace CE;
 using namespace CE::Function;
 
 FunctionDecl::FunctionDecl(FunctionDeclManager* manager, const std::string& name, const std::string& desc)
 	: m_manager(manager), m_desc(0, name, desc)
-{}
+{
+	getSignature().setReturnType(DataType::GetUnit(m_manager->getProgramModule()->getTypeManager()->getDefaultReturnType()));
+}
 
 Desc& FunctionDecl::getDesc() {
 	return m_desc;

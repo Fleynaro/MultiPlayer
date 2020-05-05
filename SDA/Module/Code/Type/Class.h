@@ -77,11 +77,9 @@ namespace CE::DataType
 
 		Class* getBaseClass();
 
-		void setBaseClass(Class* base);
+		void setBaseClass(Class* base, bool createBaseClassField = true);
 
 		Function::VTable* getVtable();
-
-		bool hasVTable();
 
 		void setVtable(Function::VTable* vtable);
 	private:

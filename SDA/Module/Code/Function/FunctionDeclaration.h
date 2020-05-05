@@ -30,9 +30,9 @@ namespace CE
 
 			Desc& getDesc();
 
-			virtual std::string getSigName();
+			std::string getName();
 
-			virtual std::string getName();
+			virtual std::string getSigName();
 
 			Signature& getSignature();
 

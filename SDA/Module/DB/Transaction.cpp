@@ -37,7 +37,9 @@ void DB::Transaction::commit() {
 
 	for (auto obj : m_insertedObjs) {
 		if (obj->getMapper() != nullptr) {
-			obj->getMapper()->insert(m_db, obj);
+			if (!obj->isCommited()) {
+				obj->getMapper()->insert(m_db, obj);
+			}
 			m_updatedObjs.remove(obj);
 		}
 	}

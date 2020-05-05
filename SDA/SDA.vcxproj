@@ -197,6 +197,7 @@
     <ClCompile Include="Module\Code\Type\Typedef.cpp" />
     <ClCompile Include="Module\Code\Type\UserType.cpp" />
     <ClCompile Include="Module\DB\AbstractMapper.cpp" />
+    <ClCompile Include="Module\DB\DomainObject.cpp" />
     <ClCompile Include="Module\DB\Mappers\ClassTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\DataTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\EnumTypeMapper.cpp" />

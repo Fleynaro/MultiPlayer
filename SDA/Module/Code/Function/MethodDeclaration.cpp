@@ -13,11 +13,7 @@ CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, std::string n
 {}
 
 std::string CE::Function::MethodDecl::getSigName() {
-	return (isVirtual() ? "virtual " : "") + FunctionDecl::getSigName();
-}
-
-std::string CE::Function::MethodDecl::getName() {
-	return getClass()->getName() + "::" + FunctionDecl::getName();
+	return (isVirtual() ? "virtual " : "") + getClass()->getName() + "::" + FunctionDecl::getSigName();
 }
 
 void CE::Function::MethodDecl::setClass(DataType::Class* Class)
