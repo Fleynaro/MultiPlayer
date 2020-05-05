@@ -7,9 +7,7 @@ namespace DB
 	class EnumTypeMapper : public ChildAbstractMapper
 	{
 	public:
-		EnumTypeMapper(DataTypeMapper* parentMapper)
-			: ChildAbstractMapper(parentMapper)
-		{}
+		EnumTypeMapper(DataTypeMapper* parentMapper);
 
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 	protected:

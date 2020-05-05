@@ -5,6 +5,10 @@ using namespace DB;
 using namespace CE;
 using namespace CE::DataType;
 
+EnumTypeMapper::EnumTypeMapper(DataTypeMapper* parentMapper)
+	: ChildAbstractMapper(parentMapper)
+{}
+
 IDomainObject* EnumTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	auto type = new DataType::Enum(

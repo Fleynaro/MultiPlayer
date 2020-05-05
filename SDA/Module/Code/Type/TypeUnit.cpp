@@ -1,4 +1,5 @@
 #include "TypeUnit.h"
+#include "Typedef.h"
 #include "Utility/Generic.h"
 
 using namespace CE;
@@ -24,7 +25,12 @@ int Unit::getPointerLvl() {
 	return (int)m_levels.size();
 }
 
-std::vector<int>& Unit::getPointerLevels() {
+std::vector<int> Unit::getPointerLevels() {
+	if (auto Typedef = dynamic_cast<DataType::Typedef*>(m_type)) {
+		std::vector<int> result = Typedef->getRefType()->getPointerLevels();
+		result.insert(result.begin(), m_levels.begin(), m_levels.end());
+		return result;
+	}
 	return m_levels;
 }
 
@@ -41,7 +47,7 @@ std::string Unit::getDisplayName() {
 }
 
 int Unit::getSize() {
-	return 8;
+	return isPointer() ? sizeof(std::uintptr_t) : m_type->getSize();
 }
 
 std::string Unit::getViewValue(void* addr) {

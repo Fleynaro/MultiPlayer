@@ -7,31 +7,36 @@ create table sda_callnodes
     extra      BLOB
 );
 
-create table sda_class_fields
+create table sda_struct_fields
 (
-    class_id    INTEGER,
-    rel_offset  INTEGER,
-    name        TEXT,
-    type_id     INTEGER not null,
-    pointer_lvl TEXT,
-    primary key (class_id, rel_offset)
+    struct_id       INTEGER,
+    offset          INTEGER,
+    name            TEXT,
+    type_id         INTEGER not null,
+    pointer_lvl     TEXT,
+    primary key (struct_id, offset)
 );
 
 create table sda_class_methods
 (
-    class_id INTEGER,
-    decl_id  INTEGER,
-    def_id   INTEGER,
-    primary key (class_id, decl_id)
+    struct_id   INTEGER,
+    decl_id     INTEGER,
+    primary key (struct_id, decl_id)
+);
+
+create table sda_structures
+(
+    struct_id       INTEGER
+        primary key,
+    size            INTEGER
 );
 
 create table sda_classes
 (
-    class_id      INTEGER
+    struct_id       INTEGER
         primary key,
-    base_class_id INTEGER,
-    size          INTEGER,
-    vtable_id     INTEGER
+    base_struct_id  INTEGER,
+    vtable_id       INTEGER
 );
 
 create table sda_enum_fields

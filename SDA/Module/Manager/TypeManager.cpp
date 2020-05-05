@@ -2,6 +2,7 @@
 #include <GhidraSync/DataTypeManager.h>
 #include "TypeManager.h"
 #include <DB/Mappers/TypedefTypeMapper.h>
+#include <DB/Mappers/StructureTypeMapper.h>
 #include <DB/Mappers/ClassTypeMapper.h>
 #include <DB/Mappers/EnumTypeMapper.h>
 
@@ -50,7 +51,7 @@ void TypeManager::loadTypes() {
 }
 
 void TypeManager::loadClasses() {
-	m_dataTypeMapper->loadAllClasses();
+	m_dataTypeMapper->loadStructsAndClasses();
 }
 
 const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {
@@ -72,6 +73,13 @@ DataType::Typedef* TypeManager::createTypedef(DataTypePtr refType, const std::st
 DataType::Enum* TypeManager::createEnum(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Enum(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_enumTypeMapper);
+	getProgramModule()->getTransaction()->markAsNew(type);
+	return type;
+}
+
+DataType::Structure* TypeManager::createStructure(const std::string& name, const std::string& desc) {
+	auto type = new DataType::Structure(this, name, desc);
+	type->setMapper(m_dataTypeMapper->m_structureTypeMapper);
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
 }

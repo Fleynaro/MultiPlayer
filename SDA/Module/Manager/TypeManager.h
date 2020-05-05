@@ -66,6 +66,8 @@ namespace CE
 
 		DataType::Enum* createEnum(const std::string& name, const std::string& desc = "");
 
+		DataType::Structure* createStructure(const std::string& name, const std::string& desc);
+
 		DataType::Class* createClass(const std::string& name, const std::string& desc = "");
 
 		DataType::Type* getDefaultType();

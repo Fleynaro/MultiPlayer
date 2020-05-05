@@ -18,7 +18,7 @@ namespace CE
 
 			int getPointerLvl();
 
-			std::vector<int>& getPointerLevels();
+			std::vector<int> getPointerLevels();
 
 			std::string getName() override;
 

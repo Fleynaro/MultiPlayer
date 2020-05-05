@@ -1,5 +1,6 @@
 #include "DataTypeMapper.h"
 #include "EnumTypeMapper.h"
+#include "StructureTypeMapper.h"
 #include "ClassTypeMapper.h"
 #include "TypedefTypeMapper.h"
 #include <Manager/TypeManager.h>
@@ -13,7 +14,8 @@ DataTypeMapper::DataTypeMapper(IRepository* repository)
 	: AbstractMapper(repository)
 {
 	m_enumTypeMapper = new EnumTypeMapper(this);
-	m_classTypeMapper = new ClassTypeMapper(this);
+	m_structureTypeMapper = new StructureTypeMapper(this);
+	m_classTypeMapper = new ClassTypeMapper(m_structureTypeMapper);
 	m_typedefTypeMapper = new TypedefTypeMapper(this);
 }
 
@@ -25,8 +27,9 @@ void DataTypeMapper::loadAll() {
 	m_typedefTypeMapper->loadTypedefs(&db);
 }
 
-void DataTypeMapper::loadAllClasses() {
+void DataTypeMapper::loadStructsAndClasses() {
 	auto& db = getManager()->getProgramModule()->getDB();
+	m_structureTypeMapper->loadStructures(&db);
 	m_classTypeMapper->loadClasses(&db);
 }
 
@@ -45,6 +48,9 @@ IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
 		break;
 	case DataType::Type::Group::Enum:
 		obj = m_enumTypeMapper->doLoad(db, query);
+		break;
+	case DataType::Type::Group::Structure:
+		obj = m_structureTypeMapper->doLoad(db, query);
 		break;
 	case DataType::Type::Group::Class:
 		obj = m_classTypeMapper->doLoad(db, query);

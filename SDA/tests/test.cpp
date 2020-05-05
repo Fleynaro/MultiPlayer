@@ -68,11 +68,19 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
         //typedef
         auto tdef = typeManager->createTypedef(DataType::GetUnit(enumeration), "ObjectType");
 
+        //structure
+        auto screen = typeManager->createStructure("Screen", "this is a structure type");
+        screen->addField(0, "width", DataType::GetUnit(typeManager->getTypeByName("float")));
+        screen->addField(4, "height", DataType::GetUnit(typeManager->getTypeByName("float")));
+        ASSERT_EQ(screen->getSize(), 8);
+
         //class
         auto entity = typeManager->createClass("Entity", "this is a class type");
         entity->addField(20, "type", DataType::GetUnit(tdef), "position of entity");
         auto tPos = DataType::GetUnit(typeManager->getTypeByName("float"), "[3]");
         entity->addField(30, "pos", tPos, "position of entity");
+        entity->addField(50, "screen", DataType::GetUnit(screen), "screen of entity");
+        ASSERT_EQ(entity->getSize(), 58);
     }
 
     try {
@@ -102,13 +110,23 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     {
         auto typeManager = m_programModule->getTypeManager();
 
+        //for structure
+        {
+            auto type = typeManager->getTypeByName("Screen");
+            ASSERT_NE(type, nullptr);
+            ASSERT_EQ(type->getGroup(), DataType::Type::Structure);
+            if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
+                ASSERT_EQ(screen->getFields().size(), 2);
+            }
+        }
+
         //for class
         {
             auto type = typeManager->getTypeByName("Entity");
             ASSERT_NE(type, nullptr);
             ASSERT_EQ(type->getGroup(), DataType::Type::Class);
             if (auto entity = dynamic_cast<DataType::Class*>(type)) {
-                ASSERT_EQ(entity->getAllFieldCount(), 2);
+                ASSERT_EQ(entity->getFields().size(), 3);
             }
         }
 

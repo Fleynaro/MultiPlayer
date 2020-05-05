@@ -9,6 +9,7 @@ namespace CE {
 namespace DB
 {
 	class EnumTypeMapper;
+	class StructureTypeMapper;
 	class ClassTypeMapper;
 	class TypedefTypeMapper;
 
@@ -16,6 +17,7 @@ namespace DB
 	{
 	public:
 		EnumTypeMapper* m_enumTypeMapper;
+		StructureTypeMapper* m_structureTypeMapper;
 		ClassTypeMapper* m_classTypeMapper;
 		TypedefTypeMapper* m_typedefTypeMapper;
 
@@ -23,7 +25,7 @@ namespace DB
 
 		void loadAll();
 
-		void loadAllClasses();
+		void loadStructsAndClasses();
 
 		CE::TypeManager* getManager();
 	protected:

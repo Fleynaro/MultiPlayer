@@ -1,5 +1,5 @@
 #pragma once
-#include "DataTypeMapper.h"
+#include "StructureTypeMapper.h"
 
 namespace CE::DataType {
 	class Class;
@@ -10,23 +10,15 @@ namespace DB
 	class ClassTypeMapper : public ChildAbstractMapper
 	{
 	public:
-		ClassTypeMapper(DataTypeMapper* parentMapper)
-			: ChildAbstractMapper(parentMapper)
-		{}
+		ClassTypeMapper(StructureTypeMapper* parentMapper);
 
 		void loadClasses(Database* db);
 
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query);
 	protected:
-		void loadInfoForClass(Database* db, CE::DataType::Class* Class);
-
 		void loadMethodsForClass(Database* db, CE::DataType::Class* Class);
 
-		void loadFieldsForClass(Database* db, CE::DataType::Class* Class);
-
-		void saveClassFields(Database* db, CE::DataType::Class* Class);
-
-		void saveClassMethods(Database* db, CE::DataType::Class* Class);
+		void saveMethodsForClass(Database* db, CE::DataType::Class* Class);
 
 		void doInsert(Database* db, IDomainObject* obj) override;
 

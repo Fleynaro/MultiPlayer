@@ -1,76 +1,79 @@
 #pragma once
-#include "UserType.h"
+#include "Structure.h"
 #include "SystemType.h"
 #include "../Function/MethodDeclaration.h"
 #include "../VTable/VTable.h"
+#include <Utils/Iterator.h>
 
 namespace CE::DataType
 {
-	class Class : public UserType
+	/*
+		Класс - это структура, то есть набор байт в памяти
+		Наследование - это структура в структуре
+		Полиморфизм - ссылка на виртуальную таблицу в памяти
+		Сделать класс на основе структуры
+	*/
+
+	class Class : public Structure
 	{
 	public:
-		class Field
+		using MethodListType = std::list<Function::MethodDecl*>;
+
+		class MethodIterator : public IIterator<Function::MethodDecl*>
 		{
 		public:
-			Field(const std::string& name, DataTypePtr type, std::string desc = "");
+			MethodIterator(Class* Class)
+				: m_vtable(Class->getVtable())
+			{
+				m_classes = Class->getClassesInHierarchy();
+				updateIterator();
+			}
 
-			std::string& getName();
+			bool hasNext() override {
+				if(!(m_classes.size() != 0 && m_iterator != m_end))
+					return false;
+				if (m_signatures.count((*m_iterator)->getSigName()) != 0) {
+					next();
+					return hasNext();
+				}
+				return true;
+			}
 
-			void setName(const std::string& name);
+			Function::MethodDecl* next() override {
+				//vtable...
+				
+				if (m_iterator == m_end) {
+					m_classes.pop_front();
+					updateIterator();
+				}
 
-			std::string& getDesc();
-
-			void setType(DataTypePtr type);
-
-			DataTypePtr getType();
+				auto method = *m_iterator;
+				m_iterator++;
+				m_signatures.insert(method->getSigName());
+				return method;
+			}
 		private:
-			std::string m_name;
-			std::string m_desc;
-			DataTypePtr m_type;
+			Function::VTable* m_vtable;
+			std::list<Class*> m_classes;
+			MethodListType::iterator m_iterator;
+			MethodListType::iterator m_end;
+			std::set<std::string> m_signatures;
+
+			void updateIterator() {
+				m_iterator = m_classes.front()->getMethods().begin();
+				m_end = m_classes.front()->getMethods().begin();
+			}
 		};
 
-		using FieldDict = std::map<int, Field*>;
-		using MethodList = std::list<Function::MethodDecl*>;
-			
-		Class(TypeManager* typeManager, std::string name, std::string desc = "");
-
-		~Class();
+		Class(TypeManager* typeManager, const std::string& name, const std::string& desc = "");
 
 		Group getGroup() override;
 
-		int getSize() override;
-
-		int getSizeWithoutVTable();
-
-		int getRelSize();
-
-		void resize(int size);
-
-		MethodList& getMethodList();
-
-		FieldDict& getFieldDict();
+		MethodListType& getMethods();
 
 		void addMethod(Function::MethodDecl* method);
 
-		int getAllMethodCount();
-
-		int getAllFieldCount();
-
-		int getBaseOffset();
-
-		bool iterateClasses(std::function<bool(Class*)> callback);
-
-	private:
-		bool iterateAllMethods(std::function<bool(Function::MethodDecl*)> callback);
-
-	public:
-		bool iterateMethods(std::function<bool(Function::MethodDecl*)> callback);
-
-		bool iterateFields(const std::function<bool(int&, Field*)>& callback, bool emptyFields = false);
-
-		bool iterateFields(const std::function<bool(Class*, int&, Field*)>& callback, bool emptyFields = false);
-
-		bool iterateFieldsWithOffset(std::function<bool(Class*, int, Field*)> callback, bool emptyFields = false);
+		std::list<Class*> getClassesInHierarchy();
 
 		Class* getBaseClass();
 
@@ -81,38 +84,9 @@ namespace CE::DataType
 		bool hasVTable();
 
 		void setVtable(Function::VTable* vtable);
-
-		int getSizeByLastField();
-
-		std::pair<Class*, int> getFieldLocationByOffset(int offset);
-
-		int getNextEmptyBytesCount(int startByteIdx);
-
-		bool areEmptyFields(int startByteIdx, int size);
-
-		static Field* getDefaultField();
-
-		static bool isDefaultField(Field* field);
-
-		std::pair<int, Field*> getField(int relOffset);
-
-		FieldDict::iterator getFieldIterator(int relOffset);
-
 	private:
-		void moveField_(int relOffset, int bytesCount);
-	public:
-		bool moveField(int relOffset, int bytesCount);
-
-		bool moveFields(int relOffset, int bytesCount);
-
-		void addField(int relOffset, std::string name, DataTypePtr type, const std::string& desc = "");
-
-		bool removeField(int relOffset);
-	private:
-		int m_size = 0;
-		Function::VTable* m_vtable = nullptr;
+		Function::VTable* m_vtable = nullptr; //просто для галочки, по сути - это массив определенний undefined вирт. функций
 		Class* m_base = nullptr;
-		FieldDict m_fields;
-		MethodList m_methods;
+		MethodListType m_methods;
 	};
 };

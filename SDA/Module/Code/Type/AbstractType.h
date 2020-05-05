@@ -23,6 +23,7 @@ namespace CE
 			{
 				Simple,
 				Enum,
+				Structure,
 				Class,
 				Typedef,
 				Signature
