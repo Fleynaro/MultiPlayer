@@ -15,7 +15,7 @@ namespace CE::Trigger::Function
 	class Trigger : public AbstractTrigger
 	{
 	public:
-		Trigger(int id, const std::string& name, const std::string& desc = "");
+		Trigger(const std::string& name, const std::string& desc = "");
 
 		~Trigger();
 

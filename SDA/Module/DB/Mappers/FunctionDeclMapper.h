@@ -2,11 +2,6 @@
 #include <Code/Function/FunctionDeclaration.h>
 #include <Code/Function/MethodDeclaration.h>
 
-/*
-	1) сделать менеджер, зависимым от IRepository и абстрактного менеджера итемов
-	2) сделать транзакции
-*/
-
 namespace CE {
 	class FunctionDeclManager;
 };

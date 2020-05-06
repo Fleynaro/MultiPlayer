@@ -39,6 +39,10 @@ void ProgramModule::remove() {
 	}
 }
 
+bool ProgramModule::isDll() {
+	return !isExe();
+}
+
 void ProgramModule::initTransaction() {
 	m_transaction = new DB::Transaction(m_db);
 }
@@ -105,4 +109,88 @@ void ProgramModule::initDataBase(std::string filename)
 	}
 
 	initTransaction();
+}
+
+SQLite::Database& ProgramModule::getDB() {
+	return *m_db;
+}
+
+HMODULE ProgramModule::getHModule() {
+	return HMODULE(m_baseAddr);
+}
+
+TypeManager* ProgramModule::getTypeManager() {
+	return m_typeManager;
+}
+
+GVarManager* ProgramModule::getGVarManager() {
+	return m_gvarManager;
+}
+
+FunctionManager* ProgramModule::getFunctionManager() {
+	return m_functionManager;
+}
+
+VtableManager* ProgramModule::getVTableManager() {
+	return m_vtableManager;
+}
+
+TriggerManager* ProgramModule::getTriggerManager() {
+	return m_triggerManager;
+}
+
+TriggerGroupManager* ProgramModule::getTriggerGroupManager() {
+	return m_triggerGroupManager;
+}
+
+StatManager* ProgramModule::getStatManager() {
+	return m_statManager;
+}
+
+std::uintptr_t ProgramModule::getBaseAddr() {
+	return m_baseAddr;
+}
+
+void* ProgramModule::toAbsAddr(int offset) {
+	return offset == 0 ? nullptr : reinterpret_cast<void*>(getBaseAddr() + (std::uintptr_t)offset);
+}
+
+int ProgramModule::toRelAddr(void* addr) {
+	return addr == nullptr ? 0 : static_cast<int>((std::uintptr_t)addr - getBaseAddr());
+}
+
+DB::ITransaction* ProgramModule::getTransaction() {
+	return m_transaction;
+}
+
+FS::Directory& ProgramModule::getDirectory() {
+	return m_dir;
+}
+
+Ghidra::Client* ProgramModule::getGhidraClient() {
+	return m_client;
+}
+
+ProgramExe::ProgramExe(void* addr, FS::Directory dir)
+	: ProgramModule(addr, dir)
+{}
+
+bool ProgramExe::isExe() {
+	return true;
+}
+
+void ProgramExe::addDll(ProgramDll* dll) {
+	m_dlls.push_back(dll);
+}
+
+std::vector<ProgramDll*>& ProgramExe::getDlls() {
+	return m_dlls;
+}
+
+ProgramDll::ProgramDll(void* addr, FS::Directory dir)
+	: ProgramModule(addr, dir)
+{}
+
+bool ProgramDll::isExe() {
+	return false;
 }

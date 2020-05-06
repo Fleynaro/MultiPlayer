@@ -30,9 +30,7 @@ namespace CE
 
 		virtual bool isExe() = 0;
 
-		bool isDll() {
-			return !isExe();
-		}
+		bool isDll();
 
 		void initTransaction();
 
@@ -46,65 +44,35 @@ namespace CE
 
 		void initDataBase(std::string filename);
 
-		SQLite::Database& getDB() {
-			return *m_db;
-		}
+		SQLite::Database& getDB();
 
-		HMODULE getHModule() {
-			return HMODULE(m_baseAddr);
-		}
+		HMODULE getHModule();
 
-		TypeManager* getTypeManager() {
-			return m_typeManager;
-		}
+		TypeManager* getTypeManager();
 
-		GVarManager* getGVarManager() {
-			return m_gvarManager;
-		}
+		GVarManager* getGVarManager();
 
-		FunctionManager* getFunctionManager() {
-			return m_functionManager;
-		}
+		FunctionManager* getFunctionManager();
 
-		VtableManager* getVTableManager() {
-			return m_vtableManager;
-		}
+		VtableManager* getVTableManager();
 
-		TriggerManager* getTriggerManager() {
-			return m_triggerManager;
-		}
+		TriggerManager* getTriggerManager();
 
-		TriggerGroupManager* getTriggerGroupManager() {
-			return m_triggerGroupManager;
-		}
+		TriggerGroupManager* getTriggerGroupManager();
 
-		StatManager* getStatManager() {
-			return m_statManager;
-		}
+		StatManager* getStatManager();
 
-		std::uintptr_t getBaseAddr() {
-			return m_baseAddr;
-		}
+		std::uintptr_t getBaseAddr();
 
-		void* toAbsAddr(int offset) {
-			return offset == 0 ? nullptr : reinterpret_cast<void*>(getBaseAddr() + (std::uintptr_t)offset);
-		}
+		void* toAbsAddr(int offset);
 
-		int toRelAddr(void* addr) {
-			return addr == nullptr ? 0 : static_cast<int>((std::uintptr_t)addr - getBaseAddr());
-		}
+		int toRelAddr(void* addr);
 
-		DB::ITransaction* getTransaction() {
-			return m_transaction;
-		}
+		DB::ITransaction* getTransaction();
 
-		FS::Directory& getDirectory() {
-			return m_dir;
-		}
+		FS::Directory& getDirectory();
 
-		Ghidra::Client* getGhidraClient() {
-			return m_client;
-		}
+		Ghidra::Client* getGhidraClient();
 	private:
 		DB::ITransaction* m_transaction = nullptr;
 		SQLite::Database* m_db = nullptr;
@@ -124,33 +92,21 @@ namespace CE
 	class ProgramDll : public ProgramModule
 	{
 	public:
-		ProgramDll(void* addr, FS::Directory dir)
-			: ProgramModule(addr, dir)
-		{}
+		ProgramDll(void* addr, FS::Directory dir);
 
-		bool isExe() override {
-			return false;
-		}
+		bool isExe() override;
 	};
 
 	class ProgramExe : public ProgramModule
 	{
 	public:
-		ProgramExe(void* addr, FS::Directory dir)
-			: ProgramModule(addr, dir)
-		{}
+		ProgramExe(void* addr, FS::Directory dir);
 
-		bool isExe() override {
-			return true;
-		}
+		bool isExe() override;
 
-		void addDll(ProgramDll* dll) {
-			m_dlls.push_back(dll);
-		}
+		void addDll(ProgramDll* dll);
 
-		std::vector<ProgramDll*>& getDlls() {
-			return m_dlls;
-		}
+		std::vector<ProgramDll*>& getDlls();
 	private:
 		std::vector<ProgramDll*> m_dlls;
 	};

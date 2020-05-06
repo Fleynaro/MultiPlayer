@@ -7,22 +7,11 @@ namespace CE
 	class StatManager : public AbstractManager
 	{
 	public:
-		StatManager(ProgramModule* sda)
-			: AbstractManager(sda)
-		{
-			auto bufferDir = getProgramModule()->getDirectory().next("buffers");
-			bufferDir.createIfNotExists();
+		StatManager(ProgramModule* sda);
 
-			m_collector = new Stat::Function::Collector(bufferDir);
-		}
+		~StatManager();
 
-		~StatManager() {
-			delete m_collector;
-		}
-
-		Stat::Function::Collector* getCollector() {
-			return m_collector;
-		}
+		Stat::Function::Collector* getCollector();
 	private:
 		Stat::Function::Collector* m_collector;
 	};

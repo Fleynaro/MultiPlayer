@@ -127,7 +127,7 @@ CREATE TABLE "sda_trigger_groups" (
 
 create table sda_triggers
 (
-    id   INTEGER
+    trigger_id   INTEGER
         primary key,
     type INTEGER,
     name TEXT,

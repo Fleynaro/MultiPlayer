@@ -3,8 +3,8 @@
 
 using namespace CE::Trigger::Function;
 
-Trigger::Trigger(int id, const std::string& name, const std::string& desc)
-	: AbstractTrigger(id, name, desc)
+Trigger::Trigger(const std::string& name, const std::string& desc)
+	: AbstractTrigger(name, desc)
 {
 	m_compositeFilter = new Filter::ConditionFilter(Filter::Id::Condition_AND);
 }

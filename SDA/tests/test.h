@@ -1,6 +1,7 @@
 #pragma once
 //SDA
 #include <Program.h>
+#include <Trigger/FunctionTriggerTableLog.h>
 
 //gtest
 #define _DEBUG

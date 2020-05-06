@@ -20,6 +20,10 @@ namespace CE
 			: m_id(id), m_name(name), m_desc(desc)
 		{}
 
+		Desc(std::string name, std::string desc = "")
+			: m_name(name), m_desc(desc)
+		{}
+
 		int getId() override {
 			return m_id;
 		}

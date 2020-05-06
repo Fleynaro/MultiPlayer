@@ -1,4 +1,5 @@
 #pragma once
+#include <DB/DomainObject.h>
 #include <Code/Code.h>
 
 namespace CE::Trigger
@@ -8,37 +9,35 @@ namespace CE::Trigger
 		FunctionTrigger
 	};
 
-	class AbstractTrigger : public Desc
+	class AbstractTrigger : public DB::DomainObject
 	{
 	public:
-		AbstractTrigger(int id, std::string name, std::string desc = "")
-			: Desc(id, name, desc)
-		{}
+		AbstractTrigger(const std::string& name, const std::string& desc = "");
+
+		std::string getName();
 
 		virtual Type getType() = 0;
+
+		Desc& getDesc();
+	private:
+		Desc m_desc;
 	};
 };
 
 namespace CE::Trigger
 {
-	class TriggerGroup
+	class TriggerGroup : public DB::DomainObject
 	{
 	public:
-		TriggerGroup(int id, std::string name, std::string desc = "")
-			: m_desc(id, name, desc)
-		{}
+		TriggerGroup(const std::string& name, const std::string& desc = "");
 
-		void addTrigger(AbstractTrigger* trigger) {
-			m_triggers.push_back(trigger);
-		}
+		std::string getName();
 
-		std::list<AbstractTrigger*>& getTriggers() {
-			return m_triggers;
-		}
+		void addTrigger(AbstractTrigger* trigger);
 
-		Desc& getDesc() {
-			return m_desc;
-		}
+		std::list<AbstractTrigger*>& getTriggers();
+
+		Desc& getDesc();
 	private:
 		Desc m_desc;
 		std::list<AbstractTrigger*> m_triggers;

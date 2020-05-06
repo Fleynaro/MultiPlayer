@@ -38,6 +38,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
 {
     EXPECT_GE(m_programModule->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 20);
     auto tr = m_programModule->getTransaction();
+    auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
     auto declManager = funcManager->getFunctionDeclManager();
 
@@ -51,14 +52,17 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
         auto function4 = funcManager->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) },  declManager->createFunctionDecl("setPlayerPos", ""));
         auto function5 = funcManager->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) },  declManager->createFunctionDecl("setPlayerVel", ""));
         
+        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg1");
+        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg2");
+        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg3");
+        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg4");
+        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg5");
         //m_programModule->getFunctionManager()->buildFunctionBodies();
         //m_programModule->getFunctionManager()->buildFunctionBasicInfo();
     }
 
     //for types
     {
-        auto typeManager = m_programModule->getTypeManager();
-
         //enumeration
         auto enumeration = typeManager->createEnum("EntityType", "this is a enumeration");
         enumeration->addField("PED", 1);
@@ -90,6 +94,23 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
         ped->addMethod(methodDecl);
     }
 
+    //for triggers
+    {
+        auto trigger1 = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger1");
+        ASSERT_NE(trigger1, nullptr);
+        auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
+        auto filter2 = new Trigger::Function::Filter::Cmp::RetValue(0, Trigger::Function::Filter::Cmp::Ge);
+        trigger1->getFilters()->addFilter(filter1);
+        trigger1->getFilters()->addFilter(filter2);
+
+        auto trigger2 = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger2");
+        ASSERT_NE(trigger2, nullptr);
+
+        auto trGroup = m_programModule->getTriggerGroupManager()->createTriggerGroup("triggerTestGroup");
+        trGroup->addTrigger(trigger1);
+        trGroup->addTrigger(trigger2);
+    }
+
     try {
         tr->commit();
     }
@@ -107,6 +128,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         EXPECT_EQ(funcManager->getItemsCount(), 5);
         
         auto func = funcManager->getFunctionAt(&setRot);
+        ASSERT_EQ(func->getDeclaration().getArgNameList().size(), 5);
         ASSERT_EQ(func->getDeclaration().getFunctions().size(), 1);
         ASSERT_EQ(func->getRangeList().size(), 1);
         ASSERT_EQ(func->getRangeList().begin()->getMinAddress(), &setRot);
@@ -164,8 +186,97 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         }
     }
 
-    //remove test database
-    //m_programModule->remove();
+    //for triggers
+    {
+        auto trManager = m_programModule->getTriggerManager();
+        auto trGroupManager = m_programModule->getTriggerGroupManager();
+        
+        //for function trigger
+        {
+            auto trigger = trManager->getTriggerByName("testTrigger1");
+            ASSERT_NE(trigger, nullptr);
+            if (auto funcTrigger = dynamic_cast<Trigger::Function::Trigger*>(trigger)) {
+                ASSERT_EQ(funcTrigger->getFilters()->getFilters().size(), 2);
+                auto it = funcTrigger->getFilters()->getFilters().begin();
+                if (auto filter = dynamic_cast<Trigger::Function::Filter::Cmp::Argument*>(*(it++))) {
+                    ASSERT_EQ(filter->m_argId, 1);
+                    ASSERT_EQ(filter->m_value, 1);
+                    ASSERT_EQ(filter->m_operation, Trigger::Function::Filter::Cmp::Eq);
+                }
+                if (auto filter = dynamic_cast<Trigger::Function::Filter::Cmp::RetValue*>(*(it++))) {
+                    ASSERT_EQ(filter->m_operation, Trigger::Function::Filter::Cmp::Ge);
+                }
+            }
+        }
+
+        //for group trigger
+        {
+            auto group = trGroupManager->getTriggerGroupByName("triggerTestGroup");
+            ASSERT_NE(group, nullptr);
+            if (auto trgroup = dynamic_cast<Trigger::TriggerGroup*>(group)) {
+                ASSERT_EQ(trgroup->getTriggers().size(), 2);
+            }
+        }
+    }
+}
+
+TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
+{
+    auto funcManager = m_programModule->getFunctionManager();
+    EXPECT_EQ(funcManager->getItemsCount(), 5);
+
+    auto function = funcManager->getFunctionAt(&setRot);
+    ASSERT_NE(function, nullptr);
+
+    function->createHook();
+    auto hook = function->getHook();
+    ASSERT_NE(hook, nullptr);
+
+    hook->getDynHook()->enable();
+
+    auto trigger = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger1");
+    ASSERT_NE(trigger, nullptr);
+    auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
+    auto filter2 = new Trigger::Function::Filter::Cmp::RetValue(12, Trigger::Function::Filter::Cmp::Eq);
+    trigger->setTableLogEnable(true);
+    trigger->getFilters()->addFilter(filter1);
+    hook->addActiveTrigger(trigger);
+
+    //call hooked function
+    setRot(10, 2, 3, 4, 5);
+
+    //table log
+    {
+        using namespace CE::Trigger::Function;
+        auto tableLog = trigger->getTableLog();
+        auto result = tableLog->all();
+        ASSERT_EQ(result.getList().size(), 1);
+        auto it = result.getList().begin();
+        if (auto row = tableLog->getRow(*(it++))) {
+            ASSERT_EQ(std::get<TableLog::FunctionId>(*row), function->getId());
+            auto argsValues = std::get<TableLog::ArgValues>(*row);
+            ASSERT_EQ(argsValues.size(), 5);
+            auto argIt = argsValues.begin();
+            ASSERT_EQ((argIt++)->m_rawValue, 10);
+
+            auto fval = reinterpret_cast<float&>((argIt++)->m_rawValue);
+            ASSERT_EQ(fval, 2.0);
+        }
+    }
+
+    setRot(1, 2.6f, 3.7f, 4.8f, 500);
+    setRot(1, 20, 30, 400, 50000);
+
+    for (int i = 0; i < 1; i++)
+    {
+        std::thread t([i] {
+            for (int j = 0; j < 10; j++) {
+                setRot(10 + j, -10.f, 10.f, 888.4f, 999);
+                //Sleep(1);
+            }
+            });
+        t.detach();
+    }
 }
 
 TEST_F(ProgramModuleFixture, Test_FunctionAnalysis)
@@ -190,6 +301,11 @@ TEST_F(ProgramModuleFixture, Test_FunctionAnalysis)
     //ASSERT_EQ(info.m_calculatedFuncCount, 7);
 }
 
+TEST_F(ProgramModuleFixture, Test_RemoveDB)
+{
+    //remove test database
+    m_programModule->remove();
+}
 
 class SomeClass
 {
