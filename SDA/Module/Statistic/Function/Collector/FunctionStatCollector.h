@@ -1,6 +1,7 @@
 #pragma once
 #include "Record/BeforeCallInfo.h"
 #include "CollectingBufferSaver.h"
+#include <Utility/FileWrapper.h>
 
 //MY TODO: есть буферы какого-то размера. Есть класс-фабрика(аллокатор). Определить ид для буфера(синхра между ОЗУ и внешней памятью)
 //MY TODO: определить формат хранения заголовков в буферах

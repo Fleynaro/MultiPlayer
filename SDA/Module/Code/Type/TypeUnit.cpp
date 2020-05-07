@@ -1,4 +1,5 @@
 #include "TypeUnit.h"
+#include "SystemType.h"
 #include "Typedef.h"
 #include "Utility/Generic.h"
 
@@ -17,12 +18,12 @@ bool Unit::isUserDefined() {
 	return m_type->isUserDefined();
 }
 
-bool Unit::isPointer() {
-	return getPointerLvl() > 0;
+int Unit::getPointerLvl() {
+	return (int)getPointerLevels().size();
 }
 
-int Unit::getPointerLvl() {
-	return (int)m_levels.size();
+bool Unit::isPointer() {
+	return getPointerLvl() > 0;
 }
 
 std::vector<int> Unit::getPointerLevels() {
@@ -32,6 +33,13 @@ std::vector<int> Unit::getPointerLevels() {
 		return result;
 	}
 	return m_levels;
+}
+
+bool Unit::isString() {
+	if (!isPointer())
+		return false;
+	auto baseType = getBaseType();
+	return dynamic_cast<Char*>(baseType) || dynamic_cast<WChar*>(baseType);
 }
 
 std::string Unit::getName() {
@@ -47,7 +55,7 @@ std::string Unit::getDisplayName() {
 }
 
 int Unit::getSize() {
-	return isPointer() ? sizeof(std::uintptr_t) : m_type->getSize();
+	return getPointerLvl() > 0 ? sizeof(std::uintptr_t) : m_type->getSize();
 }
 
 std::string Unit::getViewValue(void* addr) {

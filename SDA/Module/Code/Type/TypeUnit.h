@@ -14,11 +14,13 @@ namespace CE
 
 			bool isUserDefined() override;
 
-			bool isPointer() override;
-
 			int getPointerLvl();
 
+			bool isPointer();
+
 			std::vector<int> getPointerLevels();
+
+			bool isString();
 
 			std::string getName() override;
 

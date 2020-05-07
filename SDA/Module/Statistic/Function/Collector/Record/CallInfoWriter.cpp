@@ -17,35 +17,26 @@ bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* 
 	//MYTODO: узнать тип указателя: на стек, на кучу, массив ли?
 
 	//Block 1: point to the begining of the object
-	if (argType->getPointerLvl() > 1) {
-		argAddrValue = Address::Dereference(argAddrValue, argType->getPointerLvl() - 1);
-		if (argAddrValue == nullptr)
-			return false;
+	DereferenceIterator it(argAddrValue, argType);
+	if(!it.hasNext())
+		return false;
+	auto firstItem = it.next();
+	void* pObject = firstItem.first;
+	int objSize = firstItem.second->getSize();
+
+	//Block 2: calculate size of the object if it is string
+	if (argType->isString()) {
+		char* str = (char*)pObject;
+		objSize = 0;
+		while (objSize < 100 && str[objSize] != '\0')
+			objSize++;
 	}
 
-	if (!Address(argAddrValue).canBeRead())
+	if (objSize == 0)
 		return false;
 
-	//Block 2: calculate size of the object
-	int size;
-	if (true /*argType->isArrayOfObjects()*/) {
-		size = argType->getSize();
-	}
-	else if (argType->isString()) {
-		char* str = (char*)argAddrValue;
-		size = 0;
-		while (size < 100 && str[size] != '\0')
-			size++;
-	}
-	else {
-		size = argType->getBaseType()->getSize();
-	}
-
-	if (size == 0)
-		return false;
-
-	bufferStream.write((USHORT)size);
-	bufferStream.writeFrom(argAddrValue, size);
+	bufferStream.write((USHORT)objSize);
+	bufferStream.writeFrom(pObject, objSize);
 	return true;
 }
 

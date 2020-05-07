@@ -25,7 +25,7 @@ namespace CE::Trigger::Function::Filter::Cmp
 				GetReturnValue(type, hook),
 				m_value,
 				m_operation,
-				type->getType()
+				type
 			);
 		}
 

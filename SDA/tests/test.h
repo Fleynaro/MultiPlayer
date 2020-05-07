@@ -14,4 +14,7 @@ void setPlayerVel();
 void changeGvar();
 int setRot(int a, float x, float y, float z, int c);
 
+typedef int* arrType;
+int sumArray(arrType arr[3][2], char* str);
+
 const char* g_testFuncName = "setRot";

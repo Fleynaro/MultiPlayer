@@ -43,8 +43,6 @@ namespace CE
 
 			virtual std::string getDisplayName() = 0;
 
-			virtual bool isPointer();
-
 			virtual int getSize() = 0;
 
 			virtual bool isUserDefined() = 0;
@@ -56,8 +54,6 @@ namespace CE
 			Type* getBaseType(bool refType = true, bool dereferencedType = true);
 
 			bool isSystem();
-
-			bool isString();
 
 			virtual bool isSigned();
 

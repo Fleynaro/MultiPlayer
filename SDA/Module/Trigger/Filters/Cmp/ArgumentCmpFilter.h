@@ -30,7 +30,7 @@ namespace CE::Trigger::Function::Filter::Cmp
 				GetArgumentValue(type, hook, m_argId),
 				m_value,
 				m_operation,
-				type->getType()
+				type
 			);
 		}
 

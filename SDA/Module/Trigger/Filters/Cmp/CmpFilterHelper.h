@@ -28,7 +28,7 @@ namespace CE::Trigger::Function::Filter::Cmp
 		return false;
 	}
 
-	static bool cmp(uint64_t op1, uint64_t op2, Operation operation, CE::DataType::Type* type)
+	static bool cmp(uint64_t op1, uint64_t op2, Operation operation, CE::DataTypePtr type)
 	{
 		using namespace CE::DataType;
 		if (!type->isPointer()) {

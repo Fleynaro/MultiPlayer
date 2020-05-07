@@ -1,5 +1,7 @@
 #pragma once
-#include <Manager/FunctionDefManager.h>
+#include <main.h>
+#include <Code/Type/TypeUnit.h>
+#include <Utils/Iterator.h>
 
 namespace CE
 {
@@ -22,6 +24,8 @@ namespace CE
 
 		Address dereference();
 
+		void addOffset(int offset);
+
 		template<typename T>
 		T& get();
 
@@ -41,9 +45,30 @@ namespace CE
 		void* m_addr;
 	};
 
-
 	template<typename T>
 	inline T& Address::get() {
 		return *(T*)m_addr;
 	}
+
+	using DereferenceIteratorItemType = std::pair<void*, DataType::Type*>;
+	class DereferenceIterator : public IIterator<DereferenceIteratorItemType>
+	{
+	public:
+		DereferenceIterator(Address addr, DataTypePtr type);
+
+		bool hasNext() override;
+
+		DereferenceIteratorItemType next() override;
+	private:
+		Address m_addr;
+		Address m_curAddr;
+		DataTypePtr m_type;
+		std::vector<int> m_levels;
+		std::vector<int> m_cur_levels;
+		bool m_isEnd = false;
+
+		void goNext();
+
+		Address dereference();
+	};
 };

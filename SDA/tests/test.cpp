@@ -51,12 +51,16 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
         auto function3 = funcManager->createFunction(&rand,         { Function::AddressRange(&rand, 300) },         declManager->createFunctionDecl("rand", ""));
         auto function4 = funcManager->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) },  declManager->createFunctionDecl("setPlayerPos", ""));
         auto function5 = funcManager->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) },  declManager->createFunctionDecl("setPlayerVel", ""));
+        auto function6 = funcManager->createFunction(&sumArray,     { Function::AddressRange(&sumArray, 30) },      declManager->createFunctionDecl("sumArray", ""));
         
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg1");
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg2");
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg3");
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg4");
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg5");
+
+        function6->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t"), "*[3][2]"), "arr");
+        function6->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("char"), "*"), "str");
         //m_programModule->getFunctionManager()->buildFunctionBodies();
         //m_programModule->getFunctionManager()->buildFunctionBasicInfo();
     }
@@ -125,7 +129,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     //for functions
     {
         auto funcManager = m_programModule->getFunctionManager();
-        EXPECT_EQ(funcManager->getItemsCount(), 5);
+        EXPECT_EQ(funcManager->getItemsCount(), 6);
         
         auto func = funcManager->getFunctionAt(&setRot);
         ASSERT_EQ(func->getDeclaration().getArgNameList().size(), 5);
@@ -222,8 +226,9 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
 
 TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
 {
+    auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
-    EXPECT_EQ(funcManager->getItemsCount(), 5);
+    EXPECT_EQ(funcManager->getItemsCount(), 6);
 
     auto function = funcManager->getFunctionAt(&setRot);
     ASSERT_NE(function, nullptr);
@@ -243,7 +248,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     hook->addActiveTrigger(trigger);
 
     //call hooked function
-    setRot(10, 2, 3, 4, 5);
+    auto retOrigValue = setRot(10, 2, 3, 4, 5);
 
     //table log
     {
@@ -256,11 +261,14 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
             ASSERT_EQ(std::get<TableLog::FunctionId>(*row), function->getId());
             auto argsValues = std::get<TableLog::ArgValues>(*row);
             ASSERT_EQ(argsValues.size(), 5);
+            ASSERT_EQ(std::get<TableLog::RetValue>(*row).m_rawValue, retOrigValue);
             auto argIt = argsValues.begin();
             ASSERT_EQ((argIt++)->m_rawValue, 10);
 
             auto fval = reinterpret_cast<float&>((argIt++)->m_rawValue);
             ASSERT_EQ(fval, 2.0);
+            fval = reinterpret_cast<float&>((argIt++)->m_rawValue);
+            ASSERT_EQ(fval, 3.0);
         }
     }
 
@@ -270,19 +278,95 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     for (int i = 0; i < 1; i++)
     {
         std::thread t([i] {
-            for (int j = 0; j < 10; j++) {
+            for (int j = 0; j < 100; j++) {
                 setRot(10 + j, -10.f, 10.f, 888.4f, 999);
                 //Sleep(1);
             }
             });
-        t.detach();
+        t.join();
+    }
+
+    //Pointer & array
+    function = funcManager->getFunctionAt(&sumArray);
+    ASSERT_NE(function, nullptr);
+    trigger = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger2");
+    trigger->setTableLogEnable(true);
+
+    function->createHook();
+    hook = function->getHook();
+    ASSERT_NE(hook, nullptr);
+    hook->getDynHook()->enable();
+
+    hook->addActiveTrigger(trigger);
+
+    int arr[3*2] = {1, 2, 3, 4, 5, 7};
+
+    //in the stack
+    arrType arr2[3][2] = {
+        {&arr[0], &arr[1]},
+        {&arr[2], &arr[3]},
+        {&arr[4], &arr[5]}
+    };
+
+    //in the pile
+    arrType** arr3 = new arrType * [3];
+    for (int i = 0; i < 3; i++) {
+        arr3[i] = new arrType[2];
+        for (int j = 0; j < 2; j++) {
+            arr3[i][j] = arr2[i][j];
+        }
+    }
+
+    const char* str = "hello, world!";
+    retOrigValue = sumArray(arr2, (char*)str);
+
+    //iterator 1
+    {
+        int i = 0;
+        DereferenceIterator it(arr3, function->getDeclaration().getSignature().getArgList()[0]);
+        while (it.hasNext()) {
+            auto item = it.next();
+            auto value = *(int*)item.first;
+            ASSERT_EQ(value, arr[i]);
+            i++;
+        }
+    }
+
+    //iterator 2
+    {
+        int i = 0;
+        DereferenceIterator it(&arr, DataType::GetUnit(typeManager->getTypeByName("int32_t"), "[6]"));
+        while (it.hasNext()) {
+            auto item = it.next();
+            auto value = *(int*)item.first;
+            ASSERT_EQ(value, arr[i]);
+            i++;
+        }
+    }
+
+
+    //table log
+    {
+        using namespace CE::Trigger::Function;
+        auto tableLog = trigger->getTableLog();
+        auto result = tableLog->all();
+        ASSERT_EQ(result.getList().size(), 1);
+        auto it = result.getList().begin();
+        if (auto row = tableLog->getRow(*(it++))) {
+            ASSERT_EQ(std::get<TableLog::FunctionId>(*row), function->getId());
+            auto argsValues = std::get<TableLog::ArgValues>(*row);
+            ASSERT_EQ(argsValues.size(), 2);
+            ASSERT_EQ(std::get<TableLog::RetValue>(*row).m_rawValue, retOrigValue);
+            
+            auto argIt = ++argsValues.begin();
+            ASSERT_EQ(std::string((char*)argIt->getRawData(), argIt->getRawDataSize()), std::string(str));
+        }
     }
 }
 
 TEST_F(ProgramModuleFixture, Test_FunctionAnalysis)
 {
     auto funcManager = m_programModule->getFunctionManager();
-    EXPECT_EQ(funcManager->getItemsCount(), 5);
 
     auto function1 = funcManager->getFunctionAt(&setRot);
     ASSERT_NE(function1, nullptr);
@@ -344,6 +428,17 @@ int setRot(int a, float x, float y, float z, int c)
     gVar = float(rand() % 10);
     changeGvar();
     return (int)result;
+}
+
+int sumArray(arrType arr[3][2], char* str)
+{
+    int sum = 0;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 2; j++) {
+            sum += *arr[i][j];
+        }
+    }
+    return sum;
 }
 
 int main(int argc, char** argv) {

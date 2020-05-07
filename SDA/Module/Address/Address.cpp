@@ -1,6 +1,8 @@
 #include "Address.h"
 
-bool CE::Address::canBeRead() {
+using namespace CE;
+
+bool Address::canBeRead() {
 	__try {
 		byte firstByte = *(byte*)m_addr;
 	}
@@ -11,21 +13,25 @@ bool CE::Address::canBeRead() {
 	return true;
 }
 
-HMODULE CE::Address::getModuleHandle() {
+HMODULE Address::getModuleHandle() {
 	return (HMODULE)getInfo().AllocationBase;
 }
 
-MEMORY_BASIC_INFORMATION CE::Address::getInfo() {
+MEMORY_BASIC_INFORMATION Address::getInfo() {
 	MEMORY_BASIC_INFORMATION mbi;
 	VirtualQuery(m_addr, &mbi, sizeof(mbi));
 	return mbi;
 }
 
-CE::Address CE::Address::dereference() {
+Address Address::dereference() {
 	return Address((void*)*(std::uintptr_t*)m_addr);
 }
 
-void CE::Address::setProtect(ProtectFlags flags, int size) {
+void Address::addOffset(int offset) {
+	(std::uintptr_t&)m_addr += offset;
+}
+
+void Address::setProtect(ProtectFlags flags, int size) {
 	DWORD new_ = PAGE_NOACCESS;
 	DWORD old_;
 
@@ -53,7 +59,7 @@ void CE::Address::setProtect(ProtectFlags flags, int size) {
 	VirtualProtect(m_addr, size, new_, &old_);
 }
 
-CE::Address::ProtectFlags CE::Address::getProtect() {
+Address::ProtectFlags Address::getProtect() {
 	auto protect = getInfo().Protect;
 	DWORD result = 0;
 
@@ -71,12 +77,72 @@ CE::Address::ProtectFlags CE::Address::getProtect() {
 	return (ProtectFlags)result;
 }
 
-void* CE::Address::Dereference(void* addr, int level)
+void* Address::Dereference(void* addr, int level)
 {
 	for (int i = 0; i < level; i++) {
 		if (!Address(addr).canBeRead())
 			return nullptr;
 		addr = (void*)*(std::uintptr_t*)addr;
 	}
+	return addr;
+}
+
+DereferenceIterator::DereferenceIterator(Address addr, DataTypePtr type)
+	: m_addr(addr), m_curAddr(nullptr), m_type(type)
+{
+	m_levels = m_type->getPointerLevels();
+	m_cur_levels = std::vector<int>(m_levels.size(), 0);
+
+	/*if (type->isString()) {
+		m_levels.pop_back();
+		m_levels.push_back(1);
+	}*/
+}
+
+bool DereferenceIterator::hasNext() {
+	if (m_isEnd)
+		return false;
+
+	m_curAddr = dereference();
+	if (!m_curAddr.canBeRead()) {
+		goNext();
+		return hasNext();
+	}
+
+	return true;
+}
+
+DereferenceIteratorItemType DereferenceIterator::next() {
+	auto result = std::make_pair(m_curAddr.getAddress(), m_type->getBaseType());
+	goNext();
+	return result;
+}
+
+void DereferenceIterator::goNext() {
+	int idx = (int)m_cur_levels.size() - 1;
+	while (idx >= 0) {
+		if (++m_cur_levels[idx] < m_levels[idx]) {
+			break;
+		}
+		m_cur_levels[idx] = 0;
+		idx--;
+	}
+	if (idx < 0) {
+		m_isEnd = true;
+	}
+}
+
+Address DereferenceIterator::dereference() {
+	int idx = 0;
+	Address addr = m_addr;
+	while (idx < (int)m_cur_levels.size() - 1) {
+		addr.addOffset(m_cur_levels[idx] * 0x8);
+		if (!addr.canBeRead()) {
+			return Address(nullptr);
+		}
+		addr = addr.dereference();
+		idx++;
+	}
+	addr.addOffset(m_cur_levels[idx] * m_type->getBaseType()->getSize());
 	return addr;
 }
