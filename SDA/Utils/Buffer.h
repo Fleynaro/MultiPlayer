@@ -6,11 +6,11 @@ class BufferOverflowException : public std::exception
 
 class Buffer
 {
+public:
     struct Header {
         int m_contentSize;
         int m_currentOffset;
     };
-public:
     Header m_header;
 
 private:

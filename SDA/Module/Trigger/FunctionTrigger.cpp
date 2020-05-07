@@ -1,10 +1,12 @@
 #include "FunctionTrigger.h"
 #include "FunctionTriggerTableLog.h"
+#include <Manager/TriggerManager.h>
+#include <Manager/StatManager.h>
 
 using namespace CE::Trigger::Function;
 
-Trigger::Trigger(const std::string& name, const std::string& desc)
-	: AbstractTrigger(name, desc)
+Trigger::Trigger(CE::TriggerManager* manager, const std::string& name, const std::string& desc)
+	: AbstractTrigger(manager, name, desc)
 {
 	m_compositeFilter = new Filter::ConditionFilter(Filter::Id::Condition_AND);
 }
@@ -55,8 +57,13 @@ void Trigger::actionAfter(CE::Hook::DynHook* hook) {
 	}
 }
 
-void Trigger::setStatCollector(CE::Stat::Function::Collector* collector) {
-	m_statCollector = collector;
+void Trigger::setStatCollectingEnable(bool toggle) {
+	if (!toggle) {
+		m_statCollector = nullptr;
+		return;
+	}
+
+	m_statCollector = getManager()->getProgramModule()->getStatManager()->getCollector();
 }
 
 void Trigger::setNotExecute(bool toggle) {

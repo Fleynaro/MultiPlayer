@@ -10,6 +10,7 @@ FunctionTriggerMapper::FunctionTriggerMapper(TriggerMapper* parentMapper)
 
 IDomainObject* FunctionTriggerMapper::doLoad(Database * db, SQLite::Statement & query) {
 	auto trigger = new Trigger::Function::Trigger(
+		getParentMapper()->getManager(),
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);

@@ -37,6 +37,8 @@ namespace DB
 
 		AbstractMapper(IRepository* repository = nullptr);
 
+		virtual Id getNextId() = 0;
+
 		void load(Database* db, Statement& query);
 
 		void insert(Database* db, IDomainObject* obj) override;
@@ -48,8 +50,6 @@ namespace DB
 		IRepository* getRepository() override;
 		
 		IDomainObject* find(Id id);
-
-		static void setNewId(Database* db, IDomainObject* obj);
 	protected:
 		virtual IDomainObject* doLoad(Database* db, Statement& query) = 0;
 		virtual void doInsert(Database* db, IDomainObject* obj) = 0;
@@ -77,4 +77,6 @@ namespace DB
 		virtual void doRemove(Database* db, IDomainObject* obj) = 0;
 		IMapper* m_parentMapper;
 	};
+
+	Id GenerateNextId(Database* db, const std::string& tableName);
 };

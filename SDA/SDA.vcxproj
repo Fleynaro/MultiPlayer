@@ -220,6 +220,9 @@
     <ClCompile Include="Module\Manager\StatManager.cpp" />
     <ClCompile Include="Module\Manager\TriggerGroupManager.cpp" />
     <ClCompile Include="Module\Manager\TriggerManager.cpp" />
+    <ClCompile Include="Module\Statistic\Function\Analysis\FunctionStatAnalyser.cpp" />
+    <ClCompile Include="Module\Statistic\Function\Analysis\SignatureAnalysisProvider.cpp" />
+    <ClCompile Include="Module\Statistic\Function\Collector\CollectingBufferSaver.cpp" />
     <ClCompile Include="Module\Statistic\Function\Collector\FunctionStatCollector.cpp" />
     <ClCompile Include="Module\Code\Function\MethodDeclaration.cpp" />
     <ClCompile Include="Module\Disassembler\Disassembler.cpp" />
@@ -242,6 +245,12 @@
     <ClCompile Include="Module\Statistic\Function\Collector\Record\BeforeCallInfo.cpp" />
     <ClCompile Include="Module\Statistic\Function\Collector\Record\CallInfoWriter.cpp" />
     <ClCompile Include="Module\Trigger\AbstractTrigger.cpp" />
+    <ClCompile Include="Module\Trigger\Filters\AbstractCompositeFilter.cpp" />
+    <ClCompile Include="Module\Trigger\Filters\AbstractFilter.cpp" />
+    <ClCompile Include="Module\Trigger\Filters\Cmp\ArgumentCmpFilter.cpp" />
+    <ClCompile Include="Module\Trigger\Filters\Cmp\ReturnValueArgumentFilter.cpp" />
+    <ClCompile Include="Module\Trigger\Filters\ConditionFilter.cpp" />
+    <ClCompile Include="Module\Trigger\Filters\OtherFilters.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTrigger.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTriggerHook.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTriggerTableLog.cpp" />
@@ -250,6 +259,7 @@
     <ClCompile Include="Utility\Generic.cpp" />
     <ClCompile Include="Utils\BitStream.cpp" />
     <ClCompile Include="Utils\Buffer.cpp" />
+    <ClCompile Include="Utils\BufferStreamRecorder.cpp" />
     <ClCompile Include="Utils\ObjectHash.cpp" />
     <ClCompile Include="Vendor\imgui\imgui.cpp" />
     <ClCompile Include="Vendor\imgui\imgui_demo.cpp" />

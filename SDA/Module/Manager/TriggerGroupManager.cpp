@@ -15,8 +15,9 @@ void TriggerGroupManager::loadTriggerGroups()
 }
 
 Trigger::TriggerGroup* TriggerGroupManager::createTriggerGroup(const std::string& name, const std::string& desc) {
-	auto group = new Trigger::TriggerGroup(name, desc);
+	auto group = new Trigger::TriggerGroup(this, name, desc);
 	group->setMapper(m_triggerGroupMapper);
+	group->setId(m_triggerGroupMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(group);
 	return group;
 }

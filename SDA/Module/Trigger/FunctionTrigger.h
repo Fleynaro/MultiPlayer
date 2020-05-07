@@ -15,7 +15,7 @@ namespace CE::Trigger::Function
 	class Trigger : public AbstractTrigger
 	{
 	public:
-		Trigger(const std::string& name, const std::string& desc = "");
+		Trigger(TriggerManager* manager, const std::string& name, const std::string& desc = "");
 
 		~Trigger();
 
@@ -25,7 +25,7 @@ namespace CE::Trigger::Function
 
 		void actionAfter(CE::Hook::DynHook* hook);
 
-		void setStatCollector(CE::Stat::Function::Collector* collector);
+		void setStatCollectingEnable(bool toggle);
 
 		void setNotExecute(bool toggle);
 

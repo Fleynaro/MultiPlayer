@@ -66,6 +66,7 @@ const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {
 DataType::Typedef* TypeManager::createTypedef(DataTypePtr refType, const std::string& name, const std::string& desc) {
 	auto type = new DataType::Typedef(this, refType, name, desc);
 	type->setMapper(m_dataTypeMapper->m_typedefTypeMapper);
+	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
 }
@@ -73,6 +74,7 @@ DataType::Typedef* TypeManager::createTypedef(DataTypePtr refType, const std::st
 DataType::Enum* TypeManager::createEnum(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Enum(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_enumTypeMapper);
+	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
 }
@@ -80,6 +82,7 @@ DataType::Enum* TypeManager::createEnum(const std::string& name, const std::stri
 DataType::Structure* TypeManager::createStructure(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Structure(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_structureTypeMapper);
+	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
 }
@@ -87,6 +90,7 @@ DataType::Structure* TypeManager::createStructure(const std::string& name, const
 DataType::Class* TypeManager::createClass(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Class(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_classTypeMapper);
+	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
 }

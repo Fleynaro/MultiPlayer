@@ -11,8 +11,9 @@ TriggerManager::TriggerManager(ProgramModule* module)
 }
 
 Trigger::Function::Trigger* TriggerManager::createFunctionTrigger(const std::string& name, const std::string& desc) {
-	auto trigger = new Trigger::Function::Trigger(name, desc);
+	auto trigger = new Trigger::Function::Trigger(this, name, desc);
 	trigger->setMapper(m_triggerMapper->m_functionTriggerMapper);
+	trigger->setId(m_triggerMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(trigger);
 	return trigger;
 }

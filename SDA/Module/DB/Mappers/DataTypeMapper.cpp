@@ -33,6 +33,11 @@ void DataTypeMapper::loadStructsAndClasses() {
 	m_classTypeMapper->loadClasses(&db);
 }
 
+Id DataTypeMapper::getNextId() {
+	auto& db = getManager()->getProgramModule()->getDB();
+	return GenerateNextId(&db, "sda_types");
+}
+
 CE::TypeManager* DataTypeMapper::getManager() {
 	return static_cast<CE::TypeManager*>(m_repository);
 }
@@ -63,11 +68,7 @@ IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
 }
 
 void DataTypeMapper::doInsert(Database* db, IDomainObject* obj) {
-	auto type = static_cast<CE::DataType::Type*>(obj);
-	SQLite::Statement query(*db, "INSERT INTO sda_types (`group`, name, desc) VALUES(?2, ?3, ?4)");
-	bind(query, *type);
-	query.exec();
-	AbstractMapper::setNewId(db, obj);
+	doUpdate(db, obj);
 }
 
 void DataTypeMapper::doUpdate(Database* db, IDomainObject* obj) {

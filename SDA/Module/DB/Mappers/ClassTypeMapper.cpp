@@ -68,10 +68,6 @@ void ClassTypeMapper::saveMethodsForClass(Database* db, DataType::Class* Class)
 
 	{
 		for (auto method : Class->getMethods()) {
-			if (!method->isCommited()) {
-				method->getMapper()->insert(db, method);
-			}
-
 			SQLite::Statement query(*db, "INSERT INTO sda_class_methods (struct_id, decl_id) VALUES(?1, ?2)");
 			query.bind(1, Class->getId());
 			query.bind(2, method->getId());
@@ -88,10 +84,6 @@ void ClassTypeMapper::doInsert(Database* db, IDomainObject* obj)
 void ClassTypeMapper::doUpdate(Database* db, IDomainObject* obj)
 {
 	auto Class = static_cast<DataType::Class*>(obj);
-
-	if (Class->getBaseClass() != nullptr && !Class->getBaseClass()->isCommited()) {
-		Class->getBaseClass()->getMapper()->insert(db, Class->getBaseClass());
-	}
 
 	SQLite::Statement query(*db, "REPLACE INTO sda_classes (struct_id, base_struct_id, vtable_id) VALUES(?1, ?2, ?3)");
 	query.bind(1, Class->getId());

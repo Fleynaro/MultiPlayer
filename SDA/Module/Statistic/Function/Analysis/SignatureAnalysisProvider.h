@@ -25,9 +25,15 @@ namespace CE::Stat::Function::Analyser
 			for (int i = 0; i < argHeader.m_argCount; i++)
 			{
 				auto argInfo = reader.readArgument();
-				auto value = argInfo.m_value;
+				auto value = (int&)argInfo.m_value;
 				float val = (float&)argInfo.m_xmmValue;
 				val = 0.0;
+
+				if (argInfo.m_extraData != nullptr) {
+					
+					std::string str((char*)argInfo.m_extraData, argInfo.m_extraDataSize);
+					auto len = str.length();
+				}
 			}
 		}
 

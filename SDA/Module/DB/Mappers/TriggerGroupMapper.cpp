@@ -16,6 +16,11 @@ void TriggerGroupMapper::loadAll()
 	load(&db, query);
 }
 
+Id TriggerGroupMapper::getNextId() {
+	auto& db = getManager()->getProgramModule()->getDB();
+	return GenerateNextId(&db, "sda_trigger_groups");
+}
+
 TriggerGroupManager* TriggerGroupMapper::getManager()
 {
 	return static_cast<TriggerGroupManager*>(m_repository);
@@ -24,6 +29,7 @@ TriggerGroupManager* TriggerGroupMapper::getManager()
 IDomainObject* TriggerGroupMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	auto group = new Trigger::TriggerGroup(
+		getManager(),
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
@@ -65,18 +71,13 @@ void TriggerGroupMapper::loadTriggersForGroup(Database* db, Trigger::TriggerGrou
 
 void TriggerGroupMapper::doInsert(Database* db, IDomainObject* obj)
 {
-	auto group = static_cast<Trigger::TriggerGroup*>(obj);
-	SQLite::Statement query(*db, "INSERT INTO sda_trigger_groups(name, desc) VALUES(?2, ?3)");
-	bind(query, *group);
-	query.exec();
-	setNewId(db, obj);
-	saveTriggersForGroup(db, group);
+	doUpdate(db, obj);
 }
 
 void TriggerGroupMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto group = static_cast<Trigger::TriggerGroup*>(obj);
 	SQLite::Statement query(*db, "REPLACE INTO sda_trigger_groups(group_id, name, desc) VALUES(?1, ?2, ?3)");
-	query.bind(1, group->getDesc().getId());
+	query.bind(1, group->getId());
 	bind(query, *group);
 	query.exec();
 	saveTriggersForGroup(db, group);

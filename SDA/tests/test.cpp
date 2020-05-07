@@ -129,7 +129,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     //for functions
     {
         auto funcManager = m_programModule->getFunctionManager();
-        EXPECT_EQ(funcManager->getItemsCount(), 6);
+        ASSERT_EQ(funcManager->getItemsCount(), 6);
         
         auto func = funcManager->getFunctionAt(&setRot);
         ASSERT_EQ(func->getDeclaration().getArgNameList().size(), 5);
@@ -227,6 +227,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
 TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
 {
     auto typeManager = m_programModule->getTypeManager();
+    auto statManager = m_programModule->getStatManager();
     auto funcManager = m_programModule->getFunctionManager();
     EXPECT_EQ(funcManager->getItemsCount(), 6);
 
@@ -243,6 +244,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     ASSERT_NE(trigger, nullptr);
     auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
     auto filter2 = new Trigger::Function::Filter::Cmp::RetValue(12, Trigger::Function::Filter::Cmp::Eq);
+    //trigger->setStatCollectingEnable(true);
     trigger->setTableLogEnable(true);
     trigger->getFilters()->addFilter(filter1);
     hook->addActiveTrigger(trigger);
@@ -290,6 +292,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     function = funcManager->getFunctionAt(&sumArray);
     ASSERT_NE(function, nullptr);
     trigger = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger2");
+    trigger->setStatCollectingEnable(true);
     trigger->setTableLogEnable(true);
 
     function->createHook();
@@ -362,6 +365,19 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
             ASSERT_EQ(std::string((char*)argIt->getRawData(), argIt->getRawDataSize()), std::string(str));
         }
     }
+
+    statManager->getCollector()->getBufferManager()->save();
+}
+
+#include <Statistic/Function/Analysis/SignatureAnalysisProvider.h>
+TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
+{
+    auto statManager = m_programModule->getStatManager();
+    auto loader = new Stat::Function::BufferLoader(statManager->getCollector()->getBufferManager());
+    loader->loadAllBuffers();
+    auto provider = new Stat::Function::Analyser::SignatureAnalysisProvider;
+    auto analyser = new Stat::Function::Analyser::Analyser(provider, loader);
+    analyser->startAnalysis();
 }
 
 TEST_F(ProgramModuleFixture, Test_FunctionAnalysis)

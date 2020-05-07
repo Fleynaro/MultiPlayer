@@ -4,22 +4,15 @@
 class StreamRecordWriter
 {
 public:
-	StreamRecordWriter()
-	{}
+	StreamRecordWriter();
 
-	int getWrittenLength() {
-		return getStream().getOffset();
-	}
+	int getWrittenLength();
 
 	virtual void write() = 0;
 
-	Buffer::Stream& getStream() {
-		return m_bufferStream;
-	}
+	Buffer::Stream& getStream();
 
-	void setBufferStream(Buffer::Stream bufferStream) {
-		m_bufferStream = bufferStream;
-	}
+	void setBufferStream(Buffer::Stream bufferStream);
 private:
 	Buffer::Stream m_bufferStream;
 };
@@ -27,25 +20,13 @@ private:
 class StreamRecord
 {
 public:
-	StreamRecord(Buffer::Stream* bufferStream, StreamRecordWriter* streamRecordWriter)
-		: m_bufferStream(bufferStream), m_streamRecordWriter(streamRecordWriter)
-	{}
+	StreamRecord(Buffer::Stream* bufferStream, StreamRecordWriter* streamRecordWriter);
 
-	void write() {
-		writeHeader();
-		m_streamRecordWriter->setBufferStream(m_bufferStream);
-		m_streamRecordWriter->write();
-		writeEnd();
-	}
+	void write();
 private:
-	void writeHeader() {
-		m_size = m_bufferStream->getNext<int>();
-		m_bufferStream->write(0);
-	}
+	void writeHeader();
 
-	void writeEnd() {
-		*m_size = m_streamRecordWriter->getWrittenLength();
-	}
+	void writeEnd();
 protected:
 	Buffer::Stream* m_bufferStream;
 	StreamRecordWriter* m_streamRecordWriter;
@@ -54,32 +35,17 @@ protected:
 
 class BufferIterator {
 public:
-	BufferIterator(Buffer* buffer)
-		: m_buffer(buffer), m_bufferStream(buffer)
-	{
-		countSize();
-	}
+	BufferIterator(Buffer* buffer);
 
-	bool hasNext() {//MYTODO: check offset
-		return m_curSize > 0 && getOffset() + static_cast<UINT>(m_curSize) <= static_cast<UINT>(m_buffer->getContentOffset());
-	}
+	bool hasNext();
 
-	Buffer::Stream getStream() {
-		Buffer::Stream bufferStream = m_bufferStream;
-		m_bufferStream.move(m_curSize);
-		countSize();
-		return bufferStream;
-	}
+	Buffer::Stream getStream();
 
-	int getOffset() {
-		return m_bufferStream.getOffset();
-	}
+	int getOffset();
 private:
 	Buffer* m_buffer;
 	Buffer::Stream m_bufferStream;
 	int m_curSize;
 
-	void countSize() {
-		m_curSize = m_bufferStream.read<int>();
-	}
+	void countSize();
 };

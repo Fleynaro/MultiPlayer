@@ -3,8 +3,8 @@
 using namespace CE;
 using namespace CE::Trigger;
 
-AbstractTrigger::AbstractTrigger(const std::string& name, const std::string& desc)
-	: m_desc(name, desc)
+AbstractTrigger::AbstractTrigger(TriggerManager* triggerManager, const std::string& name, const std::string& desc)
+	: m_manager(triggerManager), m_desc(name, desc)
 {}
 
 std::string AbstractTrigger::getName() {
@@ -15,8 +15,12 @@ Desc& AbstractTrigger::getDesc() {
 	return m_desc;
 }
 
-TriggerGroup::TriggerGroup(const std::string& name, const std::string& desc)
-	: m_desc(name, desc)
+TriggerManager* AbstractTrigger::getManager() {
+	return m_manager;
+}
+
+TriggerGroup::TriggerGroup(TriggerGroupManager* triggerGroupManager, const std::string& name, const std::string& desc)
+	: m_manager(triggerGroupManager), m_desc(name, desc)
 {}
 
 std::string TriggerGroup::getName() {
@@ -33,4 +37,8 @@ std::list<AbstractTrigger*>& TriggerGroup::getTriggers() {
 
 Desc& TriggerGroup::getDesc() {
 	return m_desc;
+}
+
+TriggerGroupManager* TriggerGroup::getManager() {
+	return m_manager;
 }

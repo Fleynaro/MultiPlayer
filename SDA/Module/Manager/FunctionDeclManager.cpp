@@ -16,6 +16,7 @@ void FunctionDeclManager::loadFunctionDecls() {
 Function::FunctionDecl* FunctionDeclManager::createFunctionDecl(std::string name, std::string desc) {
 	auto decl = new Function::FunctionDecl(this, name, desc);
 	decl->setMapper(m_funcDeclMapper);
+	decl->setId(m_funcDeclMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(decl);
 	return decl;
 }
@@ -23,6 +24,7 @@ Function::FunctionDecl* FunctionDeclManager::createFunctionDecl(std::string name
 Function::MethodDecl* FunctionDeclManager::createMethodDecl(std::string name, std::string desc) {
 	auto decl = new Function::MethodDecl(this, name, desc);
 	decl->setMapper(m_funcDeclMapper);
+	decl->setId(m_funcDeclMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(decl);
 	return decl;
 }

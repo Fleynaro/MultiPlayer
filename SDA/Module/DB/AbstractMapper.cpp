@@ -44,13 +44,21 @@ DB::IDomainObject* DB::AbstractMapper::find(Id id) {
 	return m_repository->find(id);
 }
 
-void DB::AbstractMapper::setNewId(Database* db, IDomainObject* obj) {
-	auto id = (Id)db->getLastInsertRowid();
-	if (!id) {
-		return;
-		//throw std::exception();
+DB::Id DB::GenerateNextId(Database* db, const std::string& tableName) {
+	SQLite::Statement query(*db, "SELECT seq FROM SQLITE_SEQUENCE WHERE name=?1");
+	query.bind(1, tableName);
+	if (query.executeStep()) {
+		SQLite::Statement query_update(*db, "UPDATE SQLITE_SEQUENCE SET seq=seq+1 WHERE name=?1");
+		query_update.bind(1, tableName);
+		query_update.exec();
+		return (DB::Id)query.getColumn("seq") + 1;
 	}
-	obj->setId(id);
+	else {
+		SQLite::Statement query(*db, "INSERT INTO SQLITE_SEQUENCE (name, seq) VALUES (?1, 1)");
+		query.bind(1, tableName);
+		query.exec();
+	}
+	return 1;
 }
 
 DB::ChildAbstractMapper::ChildAbstractMapper(IMapper* parentMapper)

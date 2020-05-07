@@ -15,6 +15,11 @@ void FunctionDeclMapper::loadAll() {
 	load(&db, query);
 }
 
+Id FunctionDeclMapper::getNextId() {
+	auto& db = getManager()->getProgramModule()->getDB();
+	return GenerateNextId(&db, "sda_func_decls");
+}
+
 CE::FunctionDeclManager* FunctionDeclMapper::getManager() {
 	return static_cast<CE::FunctionDeclManager*>(m_repository);
 }
@@ -69,12 +74,6 @@ void FunctionDeclMapper::loadFunctionDeclArguments(Database* db, CE::Function::F
 	}
 }
 
-void commitType(Database* db, CE::DataTypePtr type) {
-	if (!type->isCommited()) {
-		type->getMapper()->insert(db, type->getType());
-	}
-}
-
 void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::FunctionDecl& decl) {
 	{
 		SQLite::Statement query(*db, "DELETE FROM sda_func_arguments WHERE decl_id=?1");
@@ -85,8 +84,6 @@ void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::F
 	{
 		int id = 0;
 		for (auto type : decl.getSignature().getArgList()) {
-			commitType(db, type);
-
 			SQLite::Statement query(*db, "INSERT INTO sda_func_arguments (decl_id, id, name, type_id, pointer_lvl) \
 					VALUES(?1, ?2, ?3, ?4, ?5)");
 			query.bind(1, decl.getId());
@@ -101,20 +98,11 @@ void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::F
 }
 
 void FunctionDeclMapper::doInsert(Database* db, IDomainObject* obj) {
-	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
-	commitType(db, decl.getSignature().getReturnType());
-
-	SQLite::Statement query(*db, "INSERT INTO sda_func_decls (name, role, ret_type_id, ret_pointer_lvl, desc)\
-				VALUES(?2, ?3, ?4, ?5, ?6)");
-	bind(query, decl);
-	query.exec();
-	setNewId(db, obj);
-	saveFunctionDeclArguments(db, decl);
+	doUpdate(db, obj);
 }
 
 void FunctionDeclMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
-	commitType(db, decl.getSignature().getReturnType());
 
 	SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, desc)\
 				VALUES(?1, ?2, ?3, ?4, ?5, ?6)");

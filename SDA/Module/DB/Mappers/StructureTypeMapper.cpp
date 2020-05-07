@@ -56,10 +56,6 @@ void StructureTypeMapper::saveFieldsForStructure(Database* db, CE::DataType::Str
 	{
 		for (auto& it : structure->getFields()) {
 			auto field = it.second;
-			if (!field->getType()->isCommited()) {
-				field->getType()->getMapper()->insert(db, field->getType()->getType());
-			}
-
 			SQLite::Statement query(*db, "INSERT INTO sda_struct_fields (struct_id, offset, name, type_id, pointer_lvl) VALUES(?1, ?2, ?3, ?4, ?5)");
 			query.bind(1, structure->getId());
 			query.bind(2, field->getOffset());

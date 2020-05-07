@@ -143,6 +143,8 @@ Address DereferenceIterator::dereference() {
 		addr = addr.dereference();
 		idx++;
 	}
-	addr.addOffset(m_cur_levels[idx] * m_type->getBaseType()->getSize());
+	if (m_cur_levels.size() > 0) {
+		addr.addOffset(m_cur_levels[idx] * m_type->getBaseType()->getSize());
+	}
 	return addr;
 }

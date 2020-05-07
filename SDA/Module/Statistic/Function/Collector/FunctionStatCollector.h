@@ -66,16 +66,18 @@ namespace CE::Stat::Function
 
 		~BufferManager();
 
-		//select needed buffer for the trigger and add record into that using StreamRecordWriter
-		void write(CE::Trigger::Function::Trigger* trigger, StreamRecordWriter* writer);
+		void save();
 
-		void saveTriggerBuffer(int triggerId);
+		//select needed buffer for the trigger and add record into that using StreamRecordWriter
+		void write(Trigger::Function::Trigger* trigger, StreamRecordWriter* writer);
+
+		void saveTriggerBuffer(Trigger::Function::Trigger* trigger);
 
 		int m_savedBufferCount;
 		int m_bufferSizeMb;
 		FS::Directory m_dir;
 	private:
-		std::map<int, TriggerBuffer*> m_triggerBuffers;
+		std::map<Trigger::Function::Trigger*, TriggerBuffer*> m_triggerBuffers;
 		std::mutex m_bufferMutex;
 	};
 
@@ -84,7 +86,7 @@ namespace CE::Stat::Function
 	{
 		friend class BufferManager;
 	public:
-		TriggerBuffer(BufferManager* bufferManager, CE::Trigger::Function::Trigger* trigger, int bufferSizeMb);
+		TriggerBuffer(BufferManager* bufferManager, Trigger::Function::Trigger* trigger, int bufferSizeMb);
 
 		~TriggerBuffer();
 
@@ -92,7 +94,7 @@ namespace CE::Stat::Function
 		void write(StreamRecordWriter* writer);
 	private:
 		BufferManager* m_bufferManager;
-		CE::Trigger::Function::Trigger* m_trigger;
+		Trigger::Function::Trigger* m_trigger;
 		Buffer* m_currentBuffer;
 		Buffer::Stream m_bufferStream;
 		std::list<BufferSaver*> m_savers;
@@ -118,10 +120,10 @@ namespace CE::Stat::Function
 		~Collector();
 
 		//add record described calling(before) the function into the collector
-		void addBeforeCallInfo(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook);
+		void addBeforeCallInfo(Trigger::Function::Trigger* trigger, Hook::DynHook* hook);
 
 		//add record described calling(after) the function into the collector
-		void addAfterCallInfo(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook);
+		void addAfterCallInfo(Trigger::Function::Trigger* trigger, Hook::DynHook* hook);
 
 		BufferManager* getBufferManager();
 	private:

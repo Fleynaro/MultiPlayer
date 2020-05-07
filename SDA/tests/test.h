@@ -2,6 +2,7 @@
 //SDA
 #include <Program.h>
 #include <Trigger/FunctionTriggerTableLog.h>
+#include <Statistic/Function/Analysis/FunctionStatAnalyser.h>
 
 //gtest
 #define _DEBUG

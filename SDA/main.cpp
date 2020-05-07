@@ -137,7 +137,7 @@ int main2()
 		auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
 		//auto filter1 = new Trigger::Function::Filter::Cmp::RetValue(12, Trigger::Function::Filter::Cmp::Eq);
 
-		//trigger->setStatCollector(sda->getStatManager()->getCollector());
+		//trigger->setStatCollectingEnable(sda->getStatManager()->getCollector());
 		trigger->getFilters()->addFilter(filter1);
 		hook->addActiveTrigger(trigger);
 

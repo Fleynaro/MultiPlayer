@@ -15,6 +15,8 @@ namespace DB
 
 		void loadAll();
 
+		Id getNextId() override;
+
 		CE::FunctionDeclManager* getManager();
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;

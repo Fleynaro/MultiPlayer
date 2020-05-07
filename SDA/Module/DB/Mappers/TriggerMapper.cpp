@@ -18,6 +18,11 @@ void TriggerMapper::loadAll()
 	load(&db, query);
 }
 
+Id TriggerMapper::getNextId() {
+	auto& db = getManager()->getProgramModule()->getDB();
+	return GenerateNextId(&db, "sda_triggers");
+}
+
 TriggerManager* TriggerMapper::getManager()
 {
 	return static_cast<TriggerManager*>(m_repository);
@@ -42,11 +47,7 @@ IDomainObject* TriggerMapper::doLoad(Database* db, SQLite::Statement& query)
 
 void TriggerMapper::doInsert(Database* db, IDomainObject* obj)
 {
-	auto trigger = static_cast<Trigger::AbstractTrigger*>(obj);
-	SQLite::Statement query(*db, "INSERT INTO sda_triggers(type, name, desc) VALUES(?2, ?3, ?4)");
-	bind(query, *trigger);
-	query.exec();
-	setNewId(db, obj);
+	doUpdate(db, obj);
 }
 
 void TriggerMapper::doUpdate(Database* db, IDomainObject* obj) {

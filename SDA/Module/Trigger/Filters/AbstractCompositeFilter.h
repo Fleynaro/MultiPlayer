@@ -6,38 +6,19 @@ namespace CE::Trigger::Function::Filter
 	class AbstractCompositeFilter : public AbstractFilter
 	{
 	public:
-		AbstractCompositeFilter(std::list<AbstractFilter*> filters = {})
-			: m_filters(filters)
-		{}
+		AbstractCompositeFilter(std::list<AbstractFilter*> filters = {});
 
-		~AbstractCompositeFilter() {
-			for (auto filter : m_filters) {
-				delete filter;
-			}
-		}
+		~AbstractCompositeFilter();
 
-		void serialize(BitStream& bt)
-		{
-			bt.write(static_cast<int>(m_filters.size()));
-		}
+		void serialize(BitStream& bt) override;
 
-		void deserialize(BitStream& bt)
-		{
-			m_filtersSavedCount = bt.read<int>();
-		}
+		void deserialize(BitStream& bt) override;
 
-		void addFilter(AbstractFilter* filter) {
-			m_filters.push_back(filter);
-		}
+		void addFilter(AbstractFilter* filter);
 
-		void removeFilter(AbstractFilter* filter) {
-			m_filters.remove(filter);
-			delete filter;
-		}
+		void removeFilter(AbstractFilter* filter);
 
-		auto& getFilters() {
-			return m_filters;
-		}
+		auto& getFilters();
 
 		int m_filtersSavedCount = -1;
 	protected:

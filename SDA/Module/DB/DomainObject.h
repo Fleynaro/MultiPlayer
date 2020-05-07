@@ -11,7 +11,6 @@ namespace DB
 	{
 	public:
 		virtual ~IDomainObject() {}
-		virtual bool isCommited() { return getId() != 0; }
 		virtual Id getId() = 0;
 		virtual void setId(Id id) {}
 		virtual IMapper* getMapper() { return nullptr; }

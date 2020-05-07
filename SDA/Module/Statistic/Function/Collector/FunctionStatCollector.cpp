@@ -1,7 +1,8 @@
 #include "FunctionStatCollector.h"
 #include <Trigger/FunctionTrigger.h>
 
-using namespace CE::Stat::Function;
+using namespace CE;
+using namespace Stat::Function;
 
 BufferManager::BufferManager(FS::Directory dir, int bufferSizeMb)
 	: m_dir(dir), m_bufferSizeMb(bufferSizeMb)
@@ -11,30 +12,33 @@ BufferManager::BufferManager(FS::Directory dir, int bufferSizeMb)
 }
 
 BufferManager::~BufferManager() {
+	save();
+}
+
+void BufferManager::save() {
 	for (auto it : m_triggerBuffers) {
 		saveTriggerBuffer(it.first);
 	}
 }
 
-void BufferManager::write(CE::Trigger::Function::Trigger* trigger, StreamRecordWriter* writer) {
-	auto id = trigger->getId();
+void BufferManager::write(Trigger::Function::Trigger* trigger, StreamRecordWriter* writer) {
 	m_bufferMutex.lock();
-	if (m_triggerBuffers.find(id) == m_triggerBuffers.end()) {
-		m_triggerBuffers.insert(std::make_pair(id, new TriggerBuffer(this, trigger, m_bufferSizeMb)));
+	if (m_triggerBuffers.find(trigger) == m_triggerBuffers.end()) {
+		m_triggerBuffers.insert(std::make_pair(trigger, new TriggerBuffer(this, trigger, m_bufferSizeMb)));
 	}
-	m_triggerBuffers[id]->write(writer);
+	m_triggerBuffers[trigger]->write(writer);
 	m_bufferMutex.unlock();
 }
 
-void BufferManager::saveTriggerBuffer(int triggerId) {
-	m_triggerBuffers[triggerId]->saveCurBuffer();
+void BufferManager::saveTriggerBuffer(Trigger::Function::Trigger* trigger) {
+	m_triggerBuffers[trigger]->saveCurBuffer();
 
-	while (m_triggerBuffers[triggerId]->getWorkedSaverCount() > 0) {
+	while (m_triggerBuffers[trigger]->getWorkedSaverCount() > 0) {
 		Sleep(100);
 	}
 
-	delete m_triggerBuffers[triggerId];
-	m_triggerBuffers.erase(triggerId);
+	delete m_triggerBuffers[trigger];
+	m_triggerBuffers.erase(trigger);
 }
 
 
@@ -42,7 +46,7 @@ void BufferManager::saveTriggerBuffer(int triggerId) {
 
 
 
-TriggerBuffer::TriggerBuffer(BufferManager* bufferManager, CE::Trigger::Function::Trigger* trigger, int bufferSizeMb)
+TriggerBuffer::TriggerBuffer(BufferManager* bufferManager, Trigger::Function::Trigger* trigger, int bufferSizeMb)
 	: m_bufferManager(bufferManager), m_trigger(trigger), m_bufferSizeMb(bufferSizeMb)
 {
 	createNewBuffer();
@@ -107,13 +111,13 @@ Collector::~Collector() {
 	delete m_bufferManager;
 }
 
-void Collector::addBeforeCallInfo(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+void Collector::addBeforeCallInfo(Trigger::Function::Trigger* trigger, Hook::DynHook* hook)
 {
 	auto writer = Record::BeforeCallInfo::Writer(trigger, hook);
 	m_bufferManager->write(trigger, &writer);
 }
 
-void Collector::addAfterCallInfo(CE::Trigger::Function::Trigger* trigger, CE::Hook::DynHook* hook)
+void Collector::addAfterCallInfo(Trigger::Function::Trigger* trigger, Hook::DynHook* hook)
 {
 
 }

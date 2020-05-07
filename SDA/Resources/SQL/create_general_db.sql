@@ -119,16 +119,16 @@ CREATE TABLE "sda_trigger_group_triggers" (
 );
 
 CREATE TABLE "sda_trigger_groups" (
-	"group_id"	INTEGER,
+	"group_id"	INTEGER
+        primary key autoincrement,
 	"name"	TEXT,
-	"desc"	TEXT,
-	PRIMARY KEY("group_id")
+	"desc"	TEXT
 );
 
 create table sda_triggers
 (
     trigger_id   INTEGER
-        primary key,
+        primary key autoincrement,
     type INTEGER,
     name TEXT,
     desc TEXT
@@ -151,6 +151,8 @@ create table sda_types
         unique,
     desc    TEXT
 );
+INSERT INTO sda_types (name) VALUES ('reserved');
+UPDATE SQLITE_SEQUENCE SET seq=1000 WHERE name='sda_types';
 
 create table sda_vtable_funcs
 (

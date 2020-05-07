@@ -25,44 +25,24 @@ namespace CE::Trigger::Function
 		public:
 			virtual Id getId() = 0;
 
-			virtual bool checkFilterBefore(CE::Hook::DynHook* hook) {
-				return m_beforeDefFilter;
-			}
-			virtual bool checkFilterAfter(CE::Hook::DynHook* hook) {
-				return m_afterDefFilter;
-			}
+			virtual bool checkFilterBefore(CE::Hook::DynHook* hook);
+
+			virtual bool checkFilterAfter(CE::Hook::DynHook* hook);
 
 			virtual void serialize(BitStream& bt) {};
+
 			virtual void deserialize(BitStream& bt) {};
 
-			void setBeforeDefaultFilter(bool toggle) {
-				m_beforeDefFilter = toggle;
-			}
+			void setBeforeDefaultFilter(bool toggle);
 
-			void setAfterDefaultFilter(bool toggle) {
-				m_afterDefFilter = toggle;
-			}
+			void setAfterDefaultFilter(bool toggle);
 		private:
 			bool m_beforeDefFilter = false;
 			bool m_afterDefFilter = false;
 		};
 	};
 
-	static uint64_t GetArgumentValue(CE::DataTypePtr type, CE::Hook::DynHook* hook, int argIdx) {
-		using namespace CE::DataType;
-		if (auto sysType = dynamic_cast<SystemType*>(type->getBaseType(true, false))) {
-			if (argIdx <= 4 && sysType->getSet() == SystemType::Real)
-				return hook->getXmmArgumentValue(argIdx);
-		}
-		return hook->getArgumentValue(argIdx);
-	}
+	uint64_t GetArgumentValue(CE::DataTypePtr type, CE::Hook::DynHook* hook, int argIdx);
 
-	static uint64_t GetReturnValue(CE::DataTypePtr type, CE::Hook::DynHook* hook) {
-		using namespace CE::DataType;
-		if (auto sysType = dynamic_cast<SystemType*>(type->getBaseType(true, false))) {
-			if (sysType->getSet() == SystemType::Real)
-				return hook->getXmmReturnValue();
-		}
-		return hook->getReturnValue();
-	}
+	uint64_t GetReturnValue(CE::DataTypePtr type, CE::Hook::DynHook* hook);
 };

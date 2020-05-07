@@ -5,6 +5,8 @@ DB::DomainObject::DomainObject(Id id)
 {}
 
 DB::Id DB::DomainObject::getId() {
+	if (m_id == 0)
+		throw std::logic_error("id = 0");
 	return m_id;
 }
 

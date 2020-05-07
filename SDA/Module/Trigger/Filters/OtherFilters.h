@@ -8,48 +8,27 @@ namespace CE::Trigger::Function::Filter
 	public:
 		Empty() {}
 
-		Id getId() override {
-			return Id::Empty;
-		}
+		Id getId() override;
 
-		bool checkFilterBefore(CE::Hook::DynHook* hook) override {
-			return true;
-		}
+		bool checkFilterBefore(CE::Hook::DynHook* hook) override;
 
-		bool checkFilterAfter(CE::Hook::DynHook* hook) override {
-			return true;
-		}
+		bool checkFilterAfter(CE::Hook::DynHook* hook) override;
 	};
 
 	class Object : public AbstractFilter
 	{
 	public:
 		Object() = default;
-		Object(void* addr)
-			: m_addr(addr)
-		{}
 
-		Id getId() override {
-			return Id::Object;
-		}
+		Object(void* addr);
 
-		bool checkFilterBefore(CE::Hook::DynHook* hook) override {
-			return hook->getArgumentValue<void*>(1) == m_addr;
-		}
+		Id getId() override;
 
-		void serialize(BitStream& bt)
-		{
-			Data data;
-			data.m_addr = m_addr;
-			bt.write(&data, sizeof(Data));
-		}
+		bool checkFilterBefore(CE::Hook::DynHook* hook) override;
 
-		void deserialize(BitStream& bt)
-		{
-			Data data;
-			bt.read(&data, sizeof(Data));
-			m_addr = data.m_addr;
-		}
+		void serialize(BitStream& bt) override;
+
+		void deserialize(BitStream& bt) override;
 
 		void* m_addr = nullptr;
 	private:

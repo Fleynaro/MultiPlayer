@@ -14,6 +14,11 @@ void FunctionDefMapper::loadAll() {
 	load(&db, query);
 }
 
+Id FunctionDefMapper::getNextId() {
+	auto& db = getManager()->getProgramModule()->getDB();
+	return GenerateNextId(&db, "sda_func_defs");
+}
+
 CE::FunctionManager* FunctionDefMapper::getManager() {
 	return static_cast<CE::FunctionManager*>(m_repository);
 }
@@ -77,14 +82,7 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 }
 
 void FunctionDefMapper::doInsert(Database* db, IDomainObject* obj) {
-	auto& def = *static_cast<CE::Function::FunctionDefinition*>(obj);
-
-	SQLite::Statement query(*db, "INSERT INTO sda_func_defs (decl_id, offset)\
-				VALUES(?2, ?3)");
-	bind(query, def);
-	query.exec();
-	setNewId(db, obj);
-	saveFunctionRanges(db, def);
+	doUpdate(db, obj);
 }
 
 void FunctionDefMapper::doUpdate(Database* db, IDomainObject* obj) {

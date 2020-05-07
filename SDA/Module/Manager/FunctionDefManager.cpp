@@ -24,6 +24,7 @@ void FunctionManager::loadFunctions() {
 Function::Function* FunctionManager::createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, addr, ranges, decl);
 	def->setMapper(m_funcDefMapper);
+	def->setId(m_funcDefMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(def);
 	return def;
 }

@@ -9,57 +9,23 @@ namespace CE::Trigger::Function::Filter::Cmp
 	public:
 
 		Argument() = default;
-		Argument(int argId, uint64_t value, Operation operation)
-			: m_argId(argId), m_value(value), m_operation(operation)
-		{}
 
-		Id getId() override {
-			return Id::Argument;
-		}
+		Argument(int argId, uint64_t value, Operation operation);
 
-		bool checkFilterBefore(CE::Hook::DynHook* hook) override {
-			using namespace CE::DataType;
+		Id getId() override;
 
-			auto function = (CE::Function::FunctionDefinition*)hook->getUserPtr();
-			auto& argList = function->getDeclaration().getSignature().getArgList();
-			if (m_argId > argList.size())
-				return false;
-
-			auto type = argList[m_argId - 1];
-			return cmp(
-				GetArgumentValue(type, hook, m_argId),
-				m_value,
-				m_operation,
-				type
-			);
-		}
+		bool checkFilterBefore(CE::Hook::DynHook* hook) override;
 
 		template<typename T = uint64_t>
 		void setValue(T value) {
 			(T&)m_value = value;
 		}
 
-		void setOperation(Operation operation) {
-			m_operation = operation;
-		}
+		void setOperation(Operation operation);
 
-		void serialize(BitStream& bt)
-		{
-			Data data;
-			data.m_argId = m_argId;
-			data.m_value = m_value;
-			data.m_operation = m_operation;
-			bt.write(&data, sizeof(Data));
-		}
+		void serialize(BitStream& bt) override;
 
-		void deserialize(BitStream& bt)
-		{
-			Data data;
-			bt.read(&data, sizeof(Data));
-			m_argId = data.m_argId;
-			m_value = data.m_value;
-			m_operation = data.m_operation;
-		}
+		void deserialize(BitStream& bt) override;
 
 		int m_argId = 1;
 		uint64_t m_value = 0;

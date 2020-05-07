@@ -27,6 +27,8 @@ namespace DB
 
 		void loadStructsAndClasses();
 
+		Id getNextId() override;
+
 		CE::TypeManager* getManager();
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
