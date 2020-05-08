@@ -31,6 +31,6 @@ void AbstractCompositeFilter::removeFilter(AbstractFilter* filter) {
 	delete filter;
 }
 
-auto& AbstractCompositeFilter::getFilters() {
+std::list<AbstractFilter*>& AbstractCompositeFilter::getFilters() {
 	return m_filters;
 }

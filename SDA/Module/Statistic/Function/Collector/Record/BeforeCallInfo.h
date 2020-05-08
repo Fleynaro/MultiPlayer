@@ -32,8 +32,12 @@ namespace CE::Stat::Function::Record::BeforeCallInfo
 		struct ArgInfo {
 			uint64_t m_value;
 			uint64_t m_xmmValue;
-			USHORT m_extraDataSize = 0;
-			BYTE* m_extraData = nullptr;
+			struct {
+				BYTE* Data = nullptr;
+				USHORT Size = 0;
+				DataType::Type::Group Group;
+				bool IsString = false;
+			} m_extraData;
 			bool m_hasXmmValue = false;
 		};
 

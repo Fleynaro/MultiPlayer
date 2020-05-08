@@ -58,11 +58,11 @@ bool Value::isString() const {
 void* Value::getRawData() const {
 	if (m_rawData == nullptr)
 		return nullptr;
-	return (void*)((std::uintptr_t)m_rawData + sizeof(USHORT));
+	return (void*)((std::uintptr_t)m_rawData + sizeof(USHORT) + sizeof(BYTE));
 }
 
 USHORT Value::getRawDataSize() {
-	return *(USHORT*)m_rawData;
+	return *(USHORT*)((std::uintptr_t)m_rawData + sizeof(BYTE));
 }
 
 //TimeData

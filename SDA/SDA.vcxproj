@@ -221,7 +221,7 @@
     <ClCompile Include="Module\Manager\TriggerGroupManager.cpp" />
     <ClCompile Include="Module\Manager\TriggerManager.cpp" />
     <ClCompile Include="Module\Statistic\Function\Analysis\FunctionStatAnalyser.cpp" />
-    <ClCompile Include="Module\Statistic\Function\Analysis\SignatureAnalysisProvider.cpp" />
+    <ClCompile Include="Module\Statistic\Function\Analysis\Providers\SignatureAnalysisProvider.cpp" />
     <ClCompile Include="Module\Statistic\Function\Collector\CollectingBufferSaver.cpp" />
     <ClCompile Include="Module\Statistic\Function\Collector\FunctionStatCollector.cpp" />
     <ClCompile Include="Module\Code\Function\MethodDeclaration.cpp" />
@@ -337,10 +337,11 @@
     <ClInclude Include="Module\Address\Address.h" />
     <ClInclude Include="Module\Statistic\Analyser.h" />
     <ClInclude Include="Module\Statistic\Function\Analysis\FunctionStatAnalyser.h" />
+    <ClInclude Include="Module\Statistic\Function\Analysis\Providers\StringSearchProvider.h" />
     <ClInclude Include="Module\Statistic\Function\Collector\CollectingBufferSaver.h" />
     <ClInclude Include="Module\Statistic\Function\Collector\FunctionStatCollector.h" />
     <ClInclude Include="Module\Statistic\Function\Analysis\IAnalysisProvider.h" />
-    <ClInclude Include="Module\Statistic\Function\Analysis\SignatureAnalysisProvider.h" />
+    <ClInclude Include="Module\Statistic\Function\Analysis\Providers\SignatureAnalysisProvider.h" />
     <ClInclude Include="Module\Statistic\Function\Collector\Record\BeforeCallInfo.h" />
     <ClInclude Include="Module\Statistic\Function\Collector\Record\CallInfoWriter.h" />
     <ClInclude Include="Module\Trigger\FunctionFilterFactory.h" />

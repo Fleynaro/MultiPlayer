@@ -18,7 +18,7 @@ namespace CE::Trigger::Function::Filter
 
 		void removeFilter(AbstractFilter* filter);
 
-		auto& getFilters();
+		std::list<AbstractFilter*>& getFilters();
 
 		int m_filtersSavedCount = -1;
 	protected:

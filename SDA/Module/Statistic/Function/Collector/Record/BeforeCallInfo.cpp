@@ -18,8 +18,11 @@ Reader::ArgInfo Reader::readArgument() {
 	}
 
 	if (m_argHeader->m_argExtraBits >> (m_curArgIdx - 1) & 0b1) {
-		argInfo.m_extraDataSize = getStream().read<USHORT>();
-		argInfo.m_extraData = getStream().readPtr(argInfo.m_extraDataSize);
+		auto typeShortInfo = getStream().read<BYTE>();
+		argInfo.m_extraData.Group = DataType::Type::Group(typeShortInfo & 0xF);
+		argInfo.m_extraData.IsString = bool(typeShortInfo >> 4 & 0b1);
+		argInfo.m_extraData.Size = getStream().read<USHORT>();
+		argInfo.m_extraData.Data = getStream().readPtr(argInfo.m_extraData.Size);
 	}
 
 	m_curArgIdx++;
@@ -68,13 +71,6 @@ void Writer::writeArgument(int argIdx) {
 }
 
 void Writer::writeArgumentExtra(int argIdx, void* argAddrValue) {
-	/*
-	Могут содержаться в регистре:
-	1) Числа
-	2) Указатели, массивы, объекты в стеке -> ссылка
-	Итог: все представимя в виде числа 8 байтового
-	Задача: 8 байт -> массив байт(нач. адрес и размер)
-	*/
 	auto& argTypes = getFunctionDef()->getDeclaration().getSignature().getArgList();
 	if (argIdx > argTypes.size())
 		return;

@@ -13,13 +13,16 @@ void Analyser::Analyser::startAnalysis() {
 
 void Analyser::Analyser::manager() {
 
+	m_mutex.lock();
 	while (auto buffer = m_bufferLoader->getBuffer())
 	{
 		auto bufferAnalyser = new BufferAnalyser(buffer, m_analysisProvider);
-		m_mutex.lock();
 		m_bufferAnaylysers.push_back(bufferAnalyser);
-		m_mutex.unlock();
-		bufferAnalyser->startAnalysis();
+	}
+	m_mutex.unlock();
+
+	for (auto it : m_bufferAnaylysers) {
+		it->startAnalysis();
 
 		while (getTotalSize() > 1024 * 1024 * 100) {
 			Sleep(100);
@@ -28,6 +31,8 @@ void Analyser::Analyser::manager() {
 }
 
 float Analyser::Analyser::getProgress() {
+	if (m_bufferAnaylysers.size() == 0)
+		return 0.0f;
 	float totalPorgress = 0.0;
 	m_mutex.lock();
 	for (auto it : m_bufferAnaylysers) {
@@ -71,7 +76,7 @@ void Analyser::BufferAnalyser::analyse() {
 		auto stream = it.getStream();
 		auto& header = stream.read<Record::Header>();
 		m_analysisProvider->handle(header, stream);
-		m_progress = min(float(it.getOffset()) / m_buffer->getContentOffset(), 1.0);
+		m_progress = min(float(it.getOffset()) / m_buffer->getContentOffset(), 1.0f);
 	}
 	m_progress = 1.0;
 }

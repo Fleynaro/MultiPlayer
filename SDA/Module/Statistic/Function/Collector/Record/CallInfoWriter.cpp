@@ -23,6 +23,7 @@ bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* 
 	auto firstItem = it.next();
 	void* pObject = firstItem.first;
 	int objSize = firstItem.second->getSize();
+	bool isString = false;
 
 	//Block 2: calculate size of the object if it is string
 	if (argType->isString()) {
@@ -30,11 +31,14 @@ bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* 
 		objSize = 0;
 		while (objSize < 100 && str[objSize] != '\0')
 			objSize++;
+		isString = true;
 	}
 
 	if (objSize == 0)
 		return false;
 
+	BYTE typeShortInfo = argType->getBaseType()->getGroup() & 0xF | ((byte)isString << 4);
+	bufferStream.write(typeShortInfo);
 	bufferStream.write((USHORT)objSize);
 	bufferStream.writeFrom(pObject, objSize);
 	return true;

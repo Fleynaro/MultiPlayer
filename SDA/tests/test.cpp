@@ -244,7 +244,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     ASSERT_NE(trigger, nullptr);
     auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
     auto filter2 = new Trigger::Function::Filter::Cmp::RetValue(12, Trigger::Function::Filter::Cmp::Eq);
-    //trigger->setStatCollectingEnable(true);
+    trigger->setStatCollectingEnable(true);
     trigger->setTableLogEnable(true);
     trigger->getFilters()->addFilter(filter1);
     hook->addActiveTrigger(trigger);
@@ -321,7 +321,10 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     }
 
     const char* str = "hello, world!";
-    retOrigValue = sumArray(arr2, (char*)str);
+    for (size_t i = 0; i < 100; i++)
+    {
+        retOrigValue = sumArray(arr2, (char*)str);
+    }
 
     //iterator 1
     {
@@ -353,7 +356,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
         using namespace CE::Trigger::Function;
         auto tableLog = trigger->getTableLog();
         auto result = tableLog->all();
-        ASSERT_EQ(result.getList().size(), 1);
+        ASSERT_EQ(result.getList().size(), 100);
         auto it = result.getList().begin();
         if (auto row = tableLog->getRow(*(it++))) {
             ASSERT_EQ(std::get<TableLog::FunctionId>(*row), function->getId());
@@ -369,15 +372,24 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     statManager->getCollector()->getBufferManager()->save();
 }
 
-#include <Statistic/Function/Analysis/SignatureAnalysisProvider.h>
+#include <Statistic/Function/Analysis/Providers/SignatureAnalysisProvider.h>
+#include <Statistic/Function/Analysis/Providers/StringSearchProvider.h>
 TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
 {
     auto statManager = m_programModule->getStatManager();
     auto loader = new Stat::Function::BufferLoader(statManager->getCollector()->getBufferManager());
     loader->loadAllBuffers();
-    auto provider = new Stat::Function::Analyser::SignatureAnalysisProvider;
+    auto provider = new Stat::Function::Analyser::StringSearchProvider("hello");
     auto analyser = new Stat::Function::Analyser::Analyser(provider, loader);
     analyser->startAnalysis();
+
+    while (analyser->isWorking()) {
+        fflush(stdout);
+        printf("\nanalysis progress: %.0f%%\n", analyser->getProgress() * 100.0f);
+        Sleep(1);
+    }
+
+    ASSERT_EQ(provider->getFoundRecords().size(), 100);
 }
 
 TEST_F(ProgramModuleFixture, Test_FunctionAnalysis)

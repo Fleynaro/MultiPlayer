@@ -1,5 +1,5 @@
 #pragma once
-#include "IAnalysisProvider.h"
+#include "../IAnalysisProvider.h"
 
 namespace CE::Stat::Function::Analyser
 {
@@ -28,12 +28,6 @@ namespace CE::Stat::Function::Analyser
 				auto value = (int&)argInfo.m_value;
 				float val = (float&)argInfo.m_xmmValue;
 				val = 0.0;
-
-				if (argInfo.m_extraData != nullptr) {
-					
-					std::string str((char*)argInfo.m_extraData, argInfo.m_extraDataSize);
-					auto len = str.length();
-				}
 			}
 		}
 
