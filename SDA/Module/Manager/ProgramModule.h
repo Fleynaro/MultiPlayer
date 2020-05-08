@@ -26,8 +26,6 @@ namespace CE
 
 		~ProgramModule();
 
-		void remove();
-
 		virtual bool isExe() = 0;
 
 		bool isDll();

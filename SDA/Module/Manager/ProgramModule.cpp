@@ -29,16 +29,6 @@ ProgramModule::~ProgramModule() {
 		delete m_db;
 }
 
-void ProgramModule::remove() {
-	if (m_db == nullptr)
-		return;
-	auto file = FS::File(m_db->getFilename());
-	delete m_db;
-	m_db = nullptr;
-	if (file.remove()) {
-	}
-}
-
 bool ProgramModule::isDll() {
 	return !isExe();
 }

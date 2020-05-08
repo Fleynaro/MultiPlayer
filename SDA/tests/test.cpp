@@ -13,6 +13,7 @@ TEST(DataType, Parsing)
 class ProgramModuleFixture : public ::testing::Test {
 public:
     ProgramModuleFixture() {
+        getCurrentDir().createIfNotExists();
         m_programModule = new ProgramExe(GetModuleHandle(NULL), getCurrentDir());
 
         m_programModule->initDataBase("database.db");
@@ -22,13 +23,20 @@ public:
     }
 
     ~ProgramModuleFixture() {
-        delete m_programModule;
+        if(m_programModule != nullptr)
+            delete m_programModule;
     }
 
     FS::Directory getCurrentDir() {
         char filename[MAX_PATH];
         GetModuleFileName(NULL, filename, MAX_PATH);
-        return FS::File(filename).getDirectory();
+        return FS::File(filename).getDirectory().next("test");
+    }
+
+    void clear() {
+        delete m_programModule;
+        m_programModule = nullptr;
+        getCurrentDir().removeAll();
     }
 
     CE::ProgramModule* m_programModule;
@@ -384,8 +392,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
     analyser->startAnalysis();
 
     while (analyser->isWorking()) {
-        fflush(stdout);
-        printf("\nanalysis progress: %.0f%%\n", analyser->getProgress() * 100.0f);
+        printf("\nanalysis progress: %.0f%%", analyser->getProgress() * 100.0f);
         Sleep(1);
     }
 
@@ -416,7 +423,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionAnalysis)
 TEST_F(ProgramModuleFixture, Test_RemoveDB)
 {
     //remove test database
-    m_programModule->remove();
+    clear();
 }
 
 class SomeClass

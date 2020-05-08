@@ -15,6 +15,8 @@ namespace CE::Stat::Function
 		void loadAllBuffers();
 
 		Buffer* getBuffer();
+
+		int getBuffersCount();
 	private:
 		BufferManager* m_bufferManager;
 		FS::Directory::itemList m_bufferFiles;
@@ -56,6 +58,7 @@ namespace CE::Stat::Function
 			std::thread m_threadManager;
 			std::mutex m_mutex;
 			std::list<BufferAnalyser*> m_bufferAnaylysers;
+			int m_totalBuffersCount = 0;
 			IAnalysisProvider* m_analysisProvider;
 		};
 	};

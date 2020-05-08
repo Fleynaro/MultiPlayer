@@ -7,22 +7,23 @@ Analyser::Analyser::Analyser(IAnalysisProvider* analysisProvider, BufferLoader* 
 {}
 
 void Analyser::Analyser::startAnalysis() {
+	if (m_bufferLoader->getBuffersCount() == 0) {
+		throw std::exception("buffers count = 0");
+	}
+	m_bufferAnaylysers.clear();
+	m_totalBuffersCount = m_bufferLoader->getBuffersCount();
 	m_threadManager = std::thread(&Analyser::manager, this);
 	m_threadManager.detach();
 }
 
 void Analyser::Analyser::manager() {
-
-	m_mutex.lock();
 	while (auto buffer = m_bufferLoader->getBuffer())
 	{
 		auto bufferAnalyser = new BufferAnalyser(buffer, m_analysisProvider);
+		m_mutex.lock();
 		m_bufferAnaylysers.push_back(bufferAnalyser);
-	}
-	m_mutex.unlock();
-
-	for (auto it : m_bufferAnaylysers) {
-		it->startAnalysis();
+		m_mutex.unlock();
+		bufferAnalyser->startAnalysis();
 
 		while (getTotalSize() > 1024 * 1024 * 100) {
 			Sleep(100);
@@ -31,15 +32,13 @@ void Analyser::Analyser::manager() {
 }
 
 float Analyser::Analyser::getProgress() {
-	if (m_bufferAnaylysers.size() == 0)
-		return 0.0f;
 	float totalPorgress = 0.0;
 	m_mutex.lock();
 	for (auto it : m_bufferAnaylysers) {
 		totalPorgress += it->getProgress();
 	}
 	m_mutex.unlock();
-	return totalPorgress / m_bufferAnaylysers.size();
+	return totalPorgress / m_totalBuffersCount;
 }
 
 int Analyser::Analyser::getTotalSize() {
@@ -115,4 +114,8 @@ Buffer* BufferLoader::getBuffer() {
 		return buffer;
 	}
 	return nullptr;
+}
+
+int BufferLoader::getBuffersCount() {
+	return (int)m_bufferFiles.size();
 }
