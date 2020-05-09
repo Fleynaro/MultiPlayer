@@ -1,5 +1,6 @@
 #pragma once
-#include <CallGraph/CallGraph.h>
+#include <CodeGraph/Iterator/CallGraphIterator.h>
+#include <CodeGraph/Iterator/FunctionBodyIterator.h>
 
 namespace CE
 {
@@ -224,7 +225,7 @@ namespace CE
 				CallGraphIterator iter(m_funcManager);
 				iter.iterate([&](Node::Node* node, CallStack& stack)
 				{
-					if(node->isFunctionBody())
+					if(auto funcBody = dynamic_cast<Node::FunctionBody*>(node))
 					{
 						while (!tags.empty()) {
 							if (tags.front().first >= stack.size()) {
@@ -234,8 +235,6 @@ namespace CE
 							break;
 						}
 
-						auto funcBody = static_cast<Node::FunctionBody*>(node);
-						
 						TagCollection tempCollection;
 						for (auto it : tags) {
 							tempCollection.add(it.second);
@@ -314,8 +313,8 @@ namespace CE
 				}
 
 				using namespace CallGraph;
-				FunctionIterator pass(function->getBody());
-				pass.iterateCallStack([&](Node::Node* node, CallStack& stack)
+				FunctionBodyIterator it(function->getBody());
+				it.iterateCallStack([&](Node::Node* node, CallStack& stack)
 				{
 					auto funcNode = static_cast<Node::FunctionNode*>(node);
 					if (!funcNode->isNotCalculated()) {
@@ -329,7 +328,7 @@ namespace CE
 						}
 					}
 					return true;
-				}, FunctionIterator::Filter::FunctionNode);
+				}, FunctionBodyIterator::Filter::FunctionNode);
 
 				return collection;
 			}

@@ -15,6 +15,13 @@ void setPlayerVel();
 void changeGvar();
 int setRot(int a, float x, float y, float z, int c);
 
+int calculateFunctionSize(byte* addr) {
+	int size = 0;
+	while (addr[size] != 0xCC)
+		size++;
+	return size;
+}
+
 typedef int* arrType;
 int sumArray(arrType arr[3][2], char* str);
 

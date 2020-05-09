@@ -1,7 +1,8 @@
 #include "FunctionDefManager.h"
 #include <DB/Mappers/FunctionDefMapper.h>
 #include <GhidraSync/FunctionManager.h>
-#include <CallGraph/CallGraph.h>
+#include <CodeGraph/FunctionBodyBuilder.h>
+#include <CodeGraph/Analysis/GenericAnalysis.h>
 
 using namespace CE;
 

@@ -184,6 +184,16 @@
     <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
     <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
     <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
+    <ClCompile Include="Module\CodeGraph\Analysis\CompareFunctionBodies.cpp" />
+    <ClCompile Include="Module\CodeGraph\Analysis\ContextDistance.cpp" />
+    <ClCompile Include="Module\CodeGraph\Analysis\GenericAnalysis.cpp" />
+    <ClCompile Include="Module\CodeGraph\FunctionBodyBuilder.cpp" />
+    <ClCompile Include="Module\CodeGraph\Iterator\CallGraphIterator.cpp" />
+    <ClCompile Include="Module\CodeGraph\Iterator\FunctionBodyIterator.cpp" />
+    <ClCompile Include="Module\CodeGraph\Nodes\BodyNode.cpp" />
+    <ClCompile Include="Module\CodeGraph\CallStack.cpp" />
+    <ClCompile Include="Module\CodeGraph\Nodes\GenericNodes.cpp" />
+    <ClCompile Include="Module\CodeGraph\Nodes\Node.cpp" />
     <ClCompile Include="Module\Code\Function\AddressRange.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionDeclaration.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionDefinition.cpp" />
@@ -209,9 +219,7 @@
     <ClCompile Include="Module\DB\Mappers\TriggerMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TypedefTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Transaction.cpp" />
-    <ClCompile Include="Module\FunctionTag\FunctionTag.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
-    <ClCompile Include="Module\CallGraph\CallGraph.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
     <ClCompile Include="Module\Manager\AbstractManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDeclManager.cpp" />
@@ -270,6 +278,16 @@
     <ClCompile Include="Vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Module\CodeGraph\Analysis\CompareFunctionBodies.h" />
+    <ClInclude Include="Module\CodeGraph\Analysis\ContextDistance.h" />
+    <ClInclude Include="Module\CodeGraph\Analysis\GenericAnalysis.h" />
+    <ClInclude Include="Module\CodeGraph\FunctionBodyBuilder.h" />
+    <ClInclude Include="Module\CodeGraph\Iterator\CallGraphIterator.h" />
+    <ClInclude Include="Module\CodeGraph\Iterator\FunctionBodyIterator.h" />
+    <ClInclude Include="Module\CodeGraph\Nodes\BodyNode.h" />
+    <ClInclude Include="Module\CodeGraph\CallStack.h" />
+    <ClInclude Include="Module\CodeGraph\Nodes\GenericNodes.h" />
+    <ClInclude Include="Module\CodeGraph\Nodes\Node.h" />
     <ClInclude Include="Module\Code\Function\AddressRange.h" />
     <ClInclude Include="Module\Code\Function\FunctionDeclaration.h" />
     <ClInclude Include="Module\Code\Function\FunctionDefinition.h" />
@@ -291,7 +309,6 @@
     <ClInclude Include="Module\FunctionTag\FunctionTag.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Module\Assembler\Assembler.h" />
-    <ClInclude Include="Module\CallGraph\CallGraph.h" />
     <ClInclude Include="Module\Code\Code.h" />
     <ClInclude Include="Module\Code\Function\MethodDeclaration.h" />
     <ClInclude Include="Module\Code\Shared.h" />

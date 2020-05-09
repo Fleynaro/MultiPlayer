@@ -1,6 +1,6 @@
 #include "FunctionDefinition.h"
 #include "Module/Trigger/FunctionTrigger.h"
-#include <CallGraph/CallGraph.h>
+#include <CodeGraph/Nodes/BodyNode.h>
 #include <Manager/FunctionDefManager.h>
 
 using namespace CE;

@@ -1,5 +1,4 @@
 #include "test.h"
-#include <CallGraph/CallGraph.h>
 using namespace CE;
 
 TEST(DataType, Parsing)
@@ -12,7 +11,10 @@ TEST(DataType, Parsing)
 
 class ProgramModuleFixture : public ::testing::Test {
 public:
-    ProgramModuleFixture() {
+    ProgramModuleFixture(bool isClear = false) {
+        if (isClear) {
+            clear();
+        }
         getCurrentDir().createIfNotExists();
         m_programModule = new ProgramExe(GetModuleHandle(NULL), getCurrentDir());
 
@@ -34,15 +36,24 @@ public:
     }
 
     void clear() {
-        delete m_programModule;
-        m_programModule = nullptr;
+        if (m_programModule != nullptr) {
+            delete m_programModule;
+            m_programModule = nullptr;
+        }
         getCurrentDir().removeAll();
     }
 
     CE::ProgramModule* m_programModule;
 };
 
-TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
+class ProgramModuleFixtureStart : public ProgramModuleFixture {
+public:
+    ProgramModuleFixtureStart()
+        : ProgramModuleFixture(true)
+    {}
+};
+
+TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
 {
     EXPECT_GE(m_programModule->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 20);
     auto tr = m_programModule->getTransaction();
@@ -54,12 +65,12 @@ TEST_F(ProgramModuleFixture, Test_DataBaseCreatedAndFilled)
     {
         ASSERT_EQ(funcManager->getItemsCount(), 0);
 
-        auto function1 = funcManager->createFunction(&setRot,       { Function::AddressRange(&setRot, 200) },       declManager->createFunctionDecl(g_testFuncName, "set rot to an entity"));
-        auto function2 = funcManager->createFunction(&changeGvar,   { Function::AddressRange(&changeGvar, 10) },    declManager->createFunctionDecl("changeGvar", ""));
-        auto function3 = funcManager->createFunction(&rand,         { Function::AddressRange(&rand, 300) },         declManager->createFunctionDecl("rand", ""));
-        auto function4 = funcManager->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, 10) },  declManager->createFunctionDecl("setPlayerPos", ""));
-        auto function5 = funcManager->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, 10) },  declManager->createFunctionDecl("setPlayerVel", ""));
-        auto function6 = funcManager->createFunction(&sumArray,     { Function::AddressRange(&sumArray, 30) },      declManager->createFunctionDecl("sumArray", ""));
+        auto function1 = funcManager->createFunction(&setRot,       { Function::AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                 declManager->createFunctionDecl(g_testFuncName, "set rot to an entity"));
+        auto function2 = funcManager->createFunction(&changeGvar,   { Function::AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },         declManager->createFunctionDecl("changeGvar", ""));
+        auto function3 = funcManager->createFunction(&rand,         { Function::AddressRange(&rand, calculateFunctionSize((byte*)&rand)) },                     declManager->createFunctionDecl("rand", ""));
+        auto function4 = funcManager->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, calculateFunctionSize((byte*)&setPlayerPos)) },     declManager->createFunctionDecl("setPlayerPos", ""));
+        auto function5 = funcManager->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, calculateFunctionSize((byte*)&setPlayerVel)) },     declManager->createFunctionDecl("setPlayerVel", ""));
+        auto function6 = funcManager->createFunction(&sumArray,     { Function::AddressRange(&sumArray, calculateFunctionSize((byte*)&sumArray)) },             declManager->createFunctionDecl("sumArray", ""));
         
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg1");
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg2");
@@ -399,25 +410,28 @@ TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
     ASSERT_EQ(provider->getFoundRecords().size(), 100);
 }
 
-TEST_F(ProgramModuleFixture, Test_FunctionAnalysis)
+#include <CodeGraph/Analysis/CompareFunctionBodies.h>
+#include <CodeGraph/Analysis/ContextDistance.h>
+#include <CodeGraph/Analysis/GenericAnalysis.h>
+#include <CodeGraph/FunctionBodyBuilder.h>
+TEST_F(ProgramModuleFixture, Test_CodeGraph)
 {
+    using namespace CallGraph;
     auto funcManager = m_programModule->getFunctionManager();
 
-    auto function1 = funcManager->getFunctionAt(&setRot);
-    ASSERT_NE(function1, nullptr);
+    auto function = funcManager->getFunctionAt(&setRot);
+    ASSERT_NE(function, nullptr);
 
-    CallGraph::FunctionBodyBuilder bodyBuilder(function1);
-    bodyBuilder.build();
+    FunctionBodyBuilder builder(function);
+    builder.build();
 
-    auto body = function1->getBody();
-    ASSERT_EQ(body->getFunctionsReferTo().size(), 1);
-    
-    auto& nodes = body->getNodeList();
-    ASSERT_EQ(nodes.size(), 7);
 
-    //funcManager->buildFunctionBasicInfo();
-    //auto& info = body->getBasicInfo();
-    //ASSERT_EQ(info.m_calculatedFuncCount, 7);
+    CallGraphIterator it(funcManager);
+    it.iterate([&](Node::Node* node, CallStack& stack)
+        {
+            
+            return true;
+        });
 }
 
 TEST_F(ProgramModuleFixture, Test_RemoveDB)

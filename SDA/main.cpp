@@ -1,6 +1,5 @@
 ﻿#include <Program.h>
 #include <SdaInterface.h>
-#include <CallGraph/CallGraph.h>
 #include <FunctionTag/FunctionTag.h>
 
 Program* g_program = nullptr;
@@ -80,16 +79,14 @@ int main2()
 		//sda->getFunctionManager()->saveFunction(*functiondb2->getFunction());
 
 		sda->getFunctionManager()->buildFunctionBodies();
-		
-		CallGraph::Analyser::Generic analysis(function);
-		analysis.doAnalyse();
+	
 
 		{
 			using namespace CallGraph;
 			CallGraphIterator iter(sda->getFunctionManager());
 			iter.iterate([&](Node::Node* node, CallStack& stack)
 			{
-				if (!node->isFunctionBody() && !node->isVMethod() && !node->isGlobalVar())
+				/*if (!node->isFunctionBody() && !node->isVMethod() && !node->isGlobalVar())
 					return true;
 
 				std::string line = "";
@@ -112,7 +109,7 @@ int main2()
 				}
 
 				line += "\n";
-				printf(line.c_str());
+				printf(line.c_str());*/
 				return true;
 			});
 		}
@@ -124,8 +121,8 @@ int main2()
 		manager.calculateAllTags();
 		auto collection = manager.getTagCollection(functiondb5);
 
-		CallGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
-		analysis2.doAnalyse();
+		/*CallGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
+		analysis2.doAnalyse();*/
 
 		function->createHook();
 		auto hook = function->getHook();
