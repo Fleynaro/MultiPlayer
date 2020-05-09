@@ -85,14 +85,14 @@ bool FunctionDefinition::hasBody() {
 	return m_funcBody != nullptr;
 }
 
-CallGraph::Unit::FunctionBody* FunctionDefinition::getBody() {
+CallGraph::Node::FunctionBody* FunctionDefinition::getBody() {
 	if (m_funcBody == nullptr) {
-		m_funcBody = new CallGraph::Unit::FunctionBody(this);
+		m_funcBody = new CallGraph::Node::FunctionBody(this);
 	}
 	return m_funcBody;
 }
 
-void FunctionDefinition::setBody(CallGraph::Unit::FunctionBody* body) {
+void FunctionDefinition::setBody(CallGraph::Node::FunctionBody* body) {
 	if (m_funcBody != nullptr) {
 		delete m_funcBody;
 	}

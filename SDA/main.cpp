@@ -87,7 +87,7 @@ int main2()
 		{
 			using namespace CallGraph;
 			CallGraphIterator iter(sda->getFunctionManager());
-			iter.iterate([&](Unit::Node* node, CallStack& stack)
+			iter.iterate([&](Node::Node* node, CallStack& stack)
 			{
 				if (!node->isFunctionBody() && !node->isVMethod() && !node->isGlobalVar())
 					return true;
@@ -101,7 +101,7 @@ int main2()
 					if (stack.size() == 1) {
 						line += ">>> ";
 					}
-					auto funcBody = static_cast<Unit::FunctionBody*>(node);
+					auto funcBody = static_cast<Node::FunctionBody*>(node);
 					line += funcBody->getFunction()->getName();
 				}
 				if (node->isGlobalVar()) {

@@ -1,0 +1,425 @@
+[33mcommit 6a1cb1e85c85c6a74afca66f21a30e5400514915[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m)[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Mar 13 13:14:04 2020 +0500
+
+    events system remade. args tuple
+
+[33mcommit 37a32be796c73a24f3287fe59245a0f2912b5b94[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Mar 13 12:52:03 2020 +0500
+
+    function trigger editro
+
+[33mcommit 45095279be1b26d12983c04abb85fa37f65d4823[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Mon Mar 9 13:13:33 2020 +0500
+
+    previous commit was tested; trigger list & input made
+
+[33mcommit f098e5e80117c0dadcb9fb0f676c80a9de92c759[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Mon Mar 9 01:45:50 2020 +0500
+
+    function list decorator, trigger groups without test
+
+[33mcommit 34fe7bd46db00fd1b784feaceace1289a1cb7cd1[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Mar 7 19:25:47 2020 +0500
+
+    buffer writing made. buffer reading also made.
+
+[33mcommit 9e67cb09d042c29ad0e9d78101395d32f5a1f0ce[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Mar 6 22:27:41 2020 +0500
+
+    buffer writer reader for call info
+
+[33mcommit 3843b05576efea11704e4ea7d116308a03eb4b6c[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Mar 6 01:07:08 2020 +0500
+
+    buffer remade, stat collector begin remade
+
+[33mcommit 289bdd470ee397128567f084f8efec9754cc51b6[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Wed Mar 4 01:14:39 2020 +0500
+
+    bugBuffer todo list
+
+[33mcommit 36b5f6b46085533beced2f1cbdc0ac0773eda5bc[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Mar 3 23:41:30 2020 +0500
+
+    todo created + bigbuffers test project
+
+[33mcommit 32dd89c52be72ccb8a5af5001ae6047693ecd5e5[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Mar 1 17:12:46 2020 +0500
+
+    address value editor fully made and tested: +enums & strings; also some improvements
+
+[33mcommit be954b15234df2cf4b2c47676b5edc4b14d38fc2[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 29 23:03:55 2020 +0500
+
+    address value editor made and tested
+
+[33mcommit bb0c2f767e7baf2280586bacc4fcdd8ebf3daee3[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 29 00:50:13 2020 +0500
+
+    class editor with tab bar
+
+[33mcommit 6590cc6a78cf94833085bf70089cbb8a0da5b5f2[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Feb 28 13:11:38 2020 +0500
+
+    class editor: some fixes, array viewer, updating only class content
+
+[33mcommit b2c992f42a7fce94e3598a314b22159753530b45[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Feb 28 01:46:21 2020 +0500
+
+    array item in class editor
+
+[33mcommit c429009c744d06006cd396229184686f0b0ff40d[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Feb 25 13:37:00 2020 +0500
+
+    some fixes & changes with class editor
+
+[33mcommit 8f11efe95470d67c55abe372ba8f08160b5f57e4[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Mon Feb 24 13:33:41 2020 +0500
+
+    class editor made: need to fix some troubles, make method editor, ...
+
+[33mcommit 2cd99f737be5ef1fe1e599ca9977cd8389396bef[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 23 01:12:25 2020 +0500
+
+    class editor: class field selection/editor, data type selector, ... without testing
+
+[33mcommit 72773863037c07359ebbbf5861ab7ea484c81ada[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 22 16:46:17 2020 +0500
+
+    class editor: empty fields, address input
+
+[33mcommit 53910259684da8d939493a8e9ac30d455da8fb89[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Feb 21 19:28:22 2020 +0500
+
+    address input/class editor panel begin developing
+
+[33mcommit 73b7178261f370de1a68e170d898128523de92ee[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Feb 21 02:07:00 2020 +0500
+
+    address access violation check in class editor
+
+[33mcommit e84674a14682a3cfd9f8229dc89cd13a9e50b959[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Thu Feb 20 21:19:25 2020 +0500
+
+    class editor: restrucutred code + value view
+
+[33mcommit 224da75b0ee11f35e978d8db4f1d9217af32dd4f[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Wed Feb 19 01:50:46 2020 +0500
+
+    class editor made 50%. crash on getAllFieldCount
+
+[33mcommit bbe86a4f92a1bdcfda76cded29e14625d02a0298[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Feb 18 11:25:06 2020 +0500
+
+    data types info loaded from ghidra; class editor begin developing
+
+[33mcommit f5596418a27905de23b3f39f28532039f1962702[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Feb 18 01:51:21 2020 +0500
+
+    ui bug fixed, some changes
+
+[33mcommit 8a8679555bc1a4872a58494a566b135d1a950346[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Mon Feb 17 01:57:30 2020 +0500
+
+    a lot of bugs fixed, alert window made
+
+[33mcommit c25594a0fed3dd0f5837c6549a5f9717400cc87d[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 16 01:22:21 2020 +0500
+
+    base things remade: inheritance, events
+
+[33mcommit 5e5fc79908f95de70956a83508c9db653408b665[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 15 15:10:58 2020 +0500
+
+    function tag viewer and creator/updater made
+
+[33mcommit 912457730fd82c8bf468dbc88dc447967b40e3af[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Feb 14 13:10:38 2020 +0500
+
+    bugs fixed. tag selector works well. tree node ex now
+
+[33mcommit 9f7726361e8b6b3d9aa308f8eb0ff0cc018150f5[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Feb 14 01:14:58 2020 +0500
+
+    function tag tree viewer made + short view for input text
+
+[33mcommit d76f7419941fdc253d2e42934ad4f37f899761a4[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Thu Feb 13 11:11:06 2020 +0500
+
+    func tag tree view: 80%
+
+[33mcommit 32ff953df65956b8554483a8402f92f2d52449cc[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Thu Feb 13 01:25:02 2020 +0500
+
+    function tag list/creator/shortcut begin developing; genericAll stack analyser made
+
+[33mcommit a2c752970ebcbfa3c295f0e8faae824af88d6d94[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Wed Feb 12 10:39:04 2020 +0500
+
+    function and data type list changed and fixed
+
+[33mcommit b64686b07d982d58ab977ec1de18af602d558d15[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Mon Feb 10 01:08:41 2020 +0500
+
+    call tree as another view and search in it made and they works well
+
+[33mcommit 7637f419f7f334ec8e7bf5a818c9ea19915034c0[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 9 22:27:03 2020 +0500
+
+    view interface for itemlist to make different output: like a list or a tree
+
+[33mcommit 4c276ccf71e364f6e249c491e617f19bbd4fe95c[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 9 14:42:55 2020 +0500
+
+    func shortcut info made well
+
+[33mcommit 65d18beca3099a2ec17c0bd8cc470956f2fd12b6[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 9 13:42:27 2020 +0500
+
+    shortcut: trouble with table view
+
+[33mcommit 2fd2776db9dfe871c296794baf61992ef0e30f7e[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 9 01:18:49 2020 +0500
+
+    function call stack viewer made a bit
+
+[33mcommit 341f5d2ee39764e575d875dc99c123494f40a2aa[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 8 21:09:25 2020 +0500
+
+    function selector made
+
+[33mcommit eb257489d1f2e4de4da20e3a737c5df161e8c143[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 8 19:39:04 2020 +0500
+
+    event hook message
+
+[33mcommit 49867ce7f6ad42c1e5110880651ccd8d89db4dd6[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 8 15:47:29 2020 +0500
+
+    text filter, onUpdate, visible(lazy init) and other
+
+[33mcommit 0da40efa3d5ca6d5d5307bd8d8802e3a1e7e4a89[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 8 11:40:07 2020 +0500
+
+    popup window that shown when an item hovered
+
+[33mcommit 43b315e7418ddfd33e953f0c65f45e36c93a32b6[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Feb 7 01:37:47 2020 +0500
+
+    filters can be added by users and condition made
+
+[33mcommit ddd923ff7c403d453707b3ead6529c63c221d34c[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Thu Feb 6 20:41:06 2020 +0500
+
+    filters condition and todo list
+
+[33mcommit 057d85127dc4046bd4765bc34336278f57774d85[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 2 23:58:51 2020 +0500
+
+    some fixes to last commit
+
+[33mcommit fcdc185600f9eaaab0165ad69f610f75deae2038[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 2 22:44:54 2020 +0500
+
+    event handling remade. +injector and loader as project to sln
+
+[33mcommit 45909bd58fd2faddfc23707a9e55d18e2368245c[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 2 18:36:05 2020 +0500
+
+    project window made
+
+[33mcommit e1f78afabca8d0d56c7609ec2155ca8406a0b505[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Feb 2 01:07:21 2020 +0500
+
+    control panel gui made. func filters made
+
+[33mcommit 58cc8c5dc311232751e132e50f333265bf5681b1[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 1 17:17:17 2020 +0500
+
+    analyser context distance made
+
+[33mcommit e66b5d92379135ba3c18a74f91fbd993c3821ef6[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Feb 1 10:36:19 2020 +0500
+
+    compare analyser made
+
+[33mcommit 1a6e37908f9127c4d24b5f2a046cc0ceb5de55a3[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Jan 31 01:08:59 2020 +0500
+
+    function tag system added. need to test
+
+[33mcommit 35a81c3b4b9c03f54a707bfd8c6a20b94b621347[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Wed Jan 29 01:33:31 2020 +0500
+
+    callgraph iterator begin developing
+
+[33mcommit 13f09e259e599d4a2690232d13a263fa49191d95[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Jan 28 22:08:03 2020 +0500
+
+    changing function class structure
+
+[33mcommit fbb5de007841f4d7dda9fcdc12fb4cb039d27186[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Jan 28 18:13:39 2020 +0500
+
+    function declaration remaking
+
+[33mcommit 1440e4b432a961c43bda236086b8beed54f7efa6[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Jan 28 01:23:46 2020 +0500
+
+    + function declaration
+
+[33mcommit cea7a95209419a47673330baeed138680f5c0cac[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Wed Jan 22 00:47:01 2020 +0500
+
+    callgraph analyser begin developing
+
+[33mcommit 5df94aa74490b0af6b270ce28a0391b5557b3a85[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Jan 21 19:01:56 2020 +0500
+
+    compiling to GTA5/FastLoader folder
+
+[33mcommit b56aebe527b5bbcd20b27a0c31263c9a57de7d75[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Mon Jan 20 00:22:57 2020 +0500
+
+    function signature and data type viewer made.
+
+[33mcommit a5238f0ae308d22e8ac153afe51081ee5bfbe14d[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Jan 19 19:28:03 2020 +0500
+
+    ItemList made. + functions and data type lists begin developing
+
+[33mcommit b19b3109c92fbc887ddcb5348b8b12ef3387b775[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Jan 19 00:46:05 2020 +0500
+
+    Function body builder released.
+
+[33mcommit 50a3937a407a3f3f944fb45a29dc9ace18c88e09[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Jan 18 19:14:38 2020 +0500
+
+    Disassembler decoder released. Can work with that
+
+[33mcommit 8ab937d7d78cbe046cd738248a363bd4e08e4374[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Jan 18 01:26:29 2020 +0500
+
+    added sync monitors. creating databases when project creating.
+
+[33mcommit 393b947f92f8347d9248c103ad01a46400ee78ad[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Jan 17 10:05:07 2020 +0500
+
+    RE Bullet added. ProjectManager window and classes made.
+
+[33mcommit 46ed4c9f2eb38f73ee4bedf832cace1873f3f6a4[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Tue Jan 14 01:16:34 2020 +0500
+
+    User interface drawn well. SdaInterface changed and can be successfully used
+
+[33mcommit 87f7950732c7082d3dee85e48ee2fda8674c3c54[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Mon Jan 13 00:32:11 2020 +0500
+
+    ProjectManager begin developing. GUI imported, some classes created
+
+[33mcommit c1f99a4a19c251e070419ebde2fa2c4bf974bd25[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sun Jan 12 22:38:22 2020 +0500
+
+    sharing GUI between projects
+
+[33mcommit 98d6f35f0ab8c64622449ef12db0bb772bb63044[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Sat Jan 11 00:38:14 2020 +0500
+
+    SDA importing to mp: begining
+
+[33mcommit b1ace97a3cc98b0fb71c7d010ccb61dcc7632fb3[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Jan 10 23:41:30 2020 +0500
+
+    SDA File structure made successfully
+
+[33mcommit f0d985d9b666cc18019d5f8f40b8264a56c41624[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Jan 10 22:53:12 2020 +0500
+
+    sda.h splited on multiple separated files
+
+[33mcommit 575ebb35dcaf7a72109a14266ced57317ffabb0a[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Jan 10 20:18:21 2020 +0500
+
+    SDA module integrated
+
+[33mcommit 58cf2640108f81215ee647e654539069654a9406[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Jan 10 19:12:01 2020 +0500
+
+    Initial commit: all files from local dir to send to remote one
+
+[33mcommit 65b6afad0d0b21bbc09081fdcd2a4aaeb2f1e196[m
+Author: Fleynaro <dariusjohnson555@gmail.com>
+Date:   Fri Jan 10 19:01:37 2020 +0500
+
+    Initial commit

@@ -10,7 +10,7 @@ namespace CE
 		class Hook;
 	};
 
-	namespace CallGraph::Unit
+	namespace CallGraph::Node
 	{
 		class FunctionBody;
 	};
@@ -62,9 +62,9 @@ namespace CE
 
 			bool hasBody();
 
-			CallGraph::Unit::FunctionBody* getBody();
+			CallGraph::Node::FunctionBody* getBody();
 
-			void setBody(CallGraph::Unit::FunctionBody* body);
+			void setBody(CallGraph::Node::FunctionBody* body);
 
 			bool isGhidraUnit() override;
 
@@ -76,7 +76,7 @@ namespace CE
 			AddressRangeList m_ranges;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionDecl* m_decl;
-			CallGraph::Unit::FunctionBody* m_funcBody = nullptr;
+			CallGraph::Node::FunctionBody* m_funcBody = nullptr;
 			bool m_ghidraUnit = true;
 			FunctionManager* m_manager;
 		};

@@ -2,7 +2,7 @@
 
 using namespace CE;
 
-void CallGraph::Unit::NodeGroup::addNode(Node* node) {
+void CallGraph::Node::NodeGroup::addNode(Node* node) {
 	getNodeList().push_back(node);
 	node->setParent(this);
 

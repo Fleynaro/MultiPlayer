@@ -222,7 +222,7 @@ namespace CE
 				
 				using namespace CallGraph;
 				CallGraphIterator iter(m_funcManager);
-				iter.iterate([&](Unit::Node* node, CallStack& stack)
+				iter.iterate([&](Node::Node* node, CallStack& stack)
 				{
 					if(node->isFunctionBody())
 					{
@@ -234,7 +234,7 @@ namespace CE
 							break;
 						}
 
-						auto funcBody = static_cast<Unit::FunctionBody*>(node);
+						auto funcBody = static_cast<Node::FunctionBody*>(node);
 						
 						TagCollection tempCollection;
 						for (auto it : tags) {
@@ -315,9 +315,9 @@ namespace CE
 
 				using namespace CallGraph;
 				FunctionIterator pass(function->getBody());
-				pass.iterateCallStack([&](Unit::Node* node, CallStack& stack)
+				pass.iterateCallStack([&](Node::Node* node, CallStack& stack)
 				{
-					auto funcNode = static_cast<Unit::FunctionNode*>(node);
+					auto funcNode = static_cast<Node::FunctionNode*>(node);
 					if (!funcNode->isNotCalculated()) {
 						auto gCollection = getGlobalTagCollectionByDecl(funcNode->getFunction()->getDeclarationPtr());
 						if (gCollection != nullptr) {
