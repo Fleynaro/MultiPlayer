@@ -1,7 +1,7 @@
 #include "CompareFunctionBodies.h"
 
-using namespace CE::CallGraph;
-using namespace CE::CallGraph::Analyser;
+using namespace CE::CodeGraph;
+using namespace CE::CodeGraph::Analyser;
 
 CompareFunctionBodies::CompareFunctionBodies(Node::FunctionBody* funcBody1, Node::FunctionBody* funcBody2) {
 	m_funcBody[0] = funcBody1;

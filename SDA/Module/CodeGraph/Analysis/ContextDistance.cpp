@@ -2,7 +2,7 @@
 #include <Manager/FunctionDefManager.h>
 
 using namespace CE;
-using namespace CE::CallGraph;
+using namespace CE::CodeGraph;
 
 ContextDistance::ContextDistance(FunctionManager* funcManager, Node::FunctionBody* funcBody1, Node::FunctionBody* funcBody2)
 	: m_funcManager(funcManager)

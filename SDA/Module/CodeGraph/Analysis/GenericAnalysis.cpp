@@ -2,8 +2,8 @@
 #include <Manager/FunctionDefManager.h>
 
 using namespace CE;
-using namespace CE::CallGraph;
-using namespace CE::CallGraph::Analyser;
+using namespace CE::CodeGraph;
+using namespace CE::CodeGraph::Analyser;
 
 Node::FunctionBody::BasicInfo GenericAll::iterateCallStack(Node::FunctionBody* body, CallStack& stack)
 {

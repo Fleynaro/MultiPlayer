@@ -2,7 +2,7 @@
 #include <Manager/FunctionDefManager.h>
 
 using namespace CE;
-using namespace CE::CallGraph;
+using namespace CE::CodeGraph;
 
 CallGraphIterator::CallGraphIterator(FunctionManager* funcManager)
 	: m_funcManager(funcManager)

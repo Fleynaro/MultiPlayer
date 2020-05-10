@@ -44,7 +44,7 @@ int FunctionDefinition::getOffset() {
 	return getManager()->getProgramModule()->toRelAddr(getAddress());
 }
 
-AddressRangeList& FunctionDefinition::getRangeList() {
+AddressRangeList& FunctionDefinition::getAddressRangeList() {
 	return m_ranges;
 }
 
@@ -85,14 +85,14 @@ bool FunctionDefinition::hasBody() {
 	return m_funcBody != nullptr;
 }
 
-CallGraph::Node::FunctionBody* FunctionDefinition::getBody() {
+CodeGraph::Node::FunctionBody* FunctionDefinition::getBody() {
 	if (m_funcBody == nullptr) {
-		m_funcBody = new CallGraph::Node::FunctionBody(this);
+		m_funcBody = new CodeGraph::Node::FunctionBody(this);
 	}
 	return m_funcBody;
 }
 
-void FunctionDefinition::setBody(CallGraph::Node::FunctionBody* body) {
+void FunctionDefinition::setBody(CodeGraph::Node::FunctionBody* body) {
 	if (m_funcBody != nullptr) {
 		delete m_funcBody;
 	}

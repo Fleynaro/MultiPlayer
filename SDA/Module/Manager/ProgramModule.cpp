@@ -1,7 +1,7 @@
 #include "ProgramModule.h"
 #include "Manager.h"
 #include <GhidraSync/GhidraSync.h>
-//#include <FunctionTag/FunctionTag.h>
+#include <FunctionTag/FunctionTag.h>
 #include <Utility/Resource.h>
 
 using namespace CE;

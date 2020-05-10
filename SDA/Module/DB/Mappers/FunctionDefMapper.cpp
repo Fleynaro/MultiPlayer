@@ -68,7 +68,7 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 
 	{
 		int order_id = 0;
-		for (auto& range : definition.getRangeList()) {
+		for (auto& range : definition.getAddressRangeList()) {
 			SQLite::Statement query(*db, "INSERT INTO sda_func_ranges (def_id, order_id, min_offset, max_offset) \
 					VALUES(?1, ?2, ?3, ?4)");
 			query.bind(1, definition.getId());

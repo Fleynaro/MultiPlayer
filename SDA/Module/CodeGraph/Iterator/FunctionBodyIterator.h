@@ -2,7 +2,7 @@
 #include "../Nodes/BodyNode.h"
 #include "../CallStack.h"
 
-namespace CE::CallGraph
+namespace CE::CodeGraph
 {
 	class FunctionBodyIterator
 	{

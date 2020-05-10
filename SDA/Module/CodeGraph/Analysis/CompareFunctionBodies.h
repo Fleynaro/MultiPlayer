@@ -1,7 +1,7 @@
 #pragma once
 #include "../Iterator/FunctionBodyIterator.h"
 
-namespace CE::CallGraph::Analyser
+namespace CE::CodeGraph::Analyser
 {
 	class CompareFunctionBodies
 	{

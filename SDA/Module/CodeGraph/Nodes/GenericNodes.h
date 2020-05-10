@@ -11,7 +11,7 @@ namespace CE {
 	};
 };
 
-namespace CE::CallGraph::Node
+namespace CE::CodeGraph::Node
 {
 	class LeafNode : public Node
 	{

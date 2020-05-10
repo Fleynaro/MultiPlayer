@@ -5,7 +5,7 @@ namespace CE {
 	class FunctionManager;
 };
 
-namespace CE::CallGraph::Analyser
+namespace CE::CodeGraph::Analyser
 {
 	class GenericAll
 	{

@@ -153,8 +153,8 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         auto func = funcManager->getFunctionAt(&setRot);
         ASSERT_EQ(func->getDeclaration().getArgNameList().size(), 5);
         ASSERT_EQ(func->getDeclaration().getFunctions().size(), 1);
-        ASSERT_EQ(func->getRangeList().size(), 1);
-        ASSERT_EQ(func->getRangeList().begin()->getMinAddress(), &setRot);
+        ASSERT_EQ(func->getAddressRangeList().size(), 1);
+        ASSERT_EQ(func->getAddressRangeList().begin()->getMinAddress(), &setRot);
         ASSERT_EQ(func->getName(), g_testFuncName);
     }
 
@@ -416,13 +416,13 @@ TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
 #include <CodeGraph/FunctionBodyBuilder.h>
 TEST_F(ProgramModuleFixture, Test_CodeGraph)
 {
-    using namespace CallGraph;
+    using namespace CodeGraph;
     auto funcManager = m_programModule->getFunctionManager();
 
     auto function = funcManager->getFunctionAt(&setRot);
     ASSERT_NE(function, nullptr);
 
-    FunctionBodyBuilder builder(function);
+    FunctionBodyBuilder builder(function->getBody(), function->getAddressRangeList(), funcManager);
     builder.build();
 
 

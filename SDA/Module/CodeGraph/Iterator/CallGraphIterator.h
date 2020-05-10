@@ -5,7 +5,7 @@ namespace CE {
 	class FunctionManager;
 };
 
-namespace CE::CallGraph
+namespace CE::CodeGraph
 {
 	class CallGraphIterator
 	{

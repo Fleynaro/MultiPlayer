@@ -82,7 +82,7 @@ int main2()
 	
 
 		{
-			using namespace CallGraph;
+			using namespace CodeGraph;
 			CallGraphIterator iter(sda->getFunctionManager());
 			iter.iterate([&](Node::Node* node, CallStack& stack)
 			{
@@ -121,7 +121,7 @@ int main2()
 		manager.calculateAllTags();
 		auto collection = manager.getTagCollection(functiondb5);
 
-		/*CallGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
+		/*CodeGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
 		analysis2.doAnalyse();*/
 
 		function->createHook();

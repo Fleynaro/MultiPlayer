@@ -2,7 +2,7 @@
 #include <Code/Function/FunctionDefinition.h>
 
 using namespace CE;
-using namespace CE::CallGraph::Node;
+using namespace CE::CodeGraph::Node;
 
 Type Cycle::getGroup() {
 	return Type::Cycle;

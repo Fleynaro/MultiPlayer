@@ -63,14 +63,14 @@ void FunctionManager::buildFunctionBodies() {
 		auto func = (Function::Function*)it.second;
 		if (func->getBody()->getNodeList().size() > 0)
 			continue;
-		CallGraph::FunctionBodyBuilder bodyBuilder(func);
+		CodeGraph::FunctionBodyBuilder bodyBuilder(func->getBody(), func->getAddressRangeList(), this);
 		bodyBuilder.build();
 	}
 }
 
 void FunctionManager::buildFunctionBasicInfo()
 {
-	CallGraph::Analyser::GenericAll analyser(this);
+	CodeGraph::Analyser::GenericAll analyser(this);
 	analyser.doAnalyse();
 }
 

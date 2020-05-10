@@ -1,7 +1,7 @@
 #pragma once
 #include <main.h>
 
-namespace CE::CallGraph::Node
+namespace CE::CodeGraph::Node
 {
 	enum class Type
 	{
@@ -48,6 +48,6 @@ namespace CE::CallGraph::Node
 	};
 };
 
-namespace CE::CallGraph {
+namespace CE::CodeGraph {
 	void IterateNodeGroup(const std::function<bool(Node::Node*)>& callback, Node::Node* node, bool isLeft = true);
 };

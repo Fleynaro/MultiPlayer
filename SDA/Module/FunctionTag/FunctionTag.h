@@ -221,7 +221,7 @@ namespace CE
 				addUserTags();
 				std::deque<std::pair<int, Tag*>> tags;
 				
-				using namespace CallGraph;
+				using namespace CodeGraph;
 				CallGraphIterator iter(m_funcManager);
 				iter.iterate([&](Node::Node* node, CallStack& stack)
 				{
@@ -312,7 +312,7 @@ namespace CE
 					collection.add(*globalCollection);
 				}
 
-				using namespace CallGraph;
+				using namespace CodeGraph;
 				FunctionBodyIterator it(function->getBody());
 				it.iterateCallStack([&](Node::Node* node, CallStack& stack)
 				{

@@ -1,7 +1,7 @@
 #pragma once
 #include "Nodes/BodyNode.h"
 
-namespace CE::CallGraph
+namespace CE::CodeGraph
 {
 	class CallStack
 	{

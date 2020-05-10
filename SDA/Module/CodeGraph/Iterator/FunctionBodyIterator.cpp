@@ -1,6 +1,6 @@
 #include "FunctionBodyIterator.h"
 
-using namespace CE::CallGraph;
+using namespace CE::CodeGraph;
 
 FunctionBodyIterator::FunctionBodyIterator(Node::FunctionBody* funcBody, bool isLeft)
 	: m_funcBody(funcBody), m_isLeft(isLeft)

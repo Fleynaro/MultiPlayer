@@ -72,7 +72,7 @@ namespace CE
 					funcDesc.argumentNames.push_back(argName);
 				}
 
-				for (auto& range : function->getRangeList()) {
+				for (auto& range : function->getAddressRangeList()) {
 					function::SFunctionRange rangeDesc;
 					rangeDesc.__set_minOffset(getClient()->getProgramModule()->toRelAddr(range.getMinAddress()));
 					rangeDesc.__set_maxOffset(getClient()->getProgramModule()->toRelAddr(range.getMaxAddress()));
@@ -120,8 +120,8 @@ namespace CE
 					/*function->getDeclaration().addArgument(getClient()->m_dataTypeManager->getType(args[i]), funcDesc.argumentNames[i]);*/
 				}
 
-				function->getRangeList().clear();
-				function->getRangeList() = getFunctionRanges(funcDesc.ranges);
+				function->getAddressRangeList().clear();
+				function->getAddressRangeList() = getFunctionRanges(funcDesc.ranges);
 			}
 
 			Function::Function* changeOrCreate(const function::SFunction& funcDesc) {

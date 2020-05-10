@@ -24,9 +24,9 @@ namespace DB
 
 		void saveFunctionRanges(Database* db, CE::Function::FunctionDefinition& definition);
 
-		/*void FunctionManager::saveFunctionNodeGroup(Function::FunctionDefinition& definition, CallGraph::Unit::NodeGroup* nodeGroup, int& id) {
+		/*void FunctionManager::saveFunctionNodeGroup(Function::FunctionDefinition& definition, CodeGraph::Unit::NodeGroup* nodeGroup, int& id) {
 			using namespace SQLite;
-			using namespace CallGraph;
+			using namespace CodeGraph;
 
 			SQLite::Database& db = getProgramModule()->getDB();
 			bool goToParent = false;
@@ -108,7 +108,7 @@ namespace DB
 
 		void loadFunctionBody(API::Function::Function* function) {
 			using namespace CE;
-			using namespace CallGraph;
+			using namespace CodeGraph;
 
 			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "SELECT * FROM sda_callnodes WHERE def_id=?1 GROUP BY id");

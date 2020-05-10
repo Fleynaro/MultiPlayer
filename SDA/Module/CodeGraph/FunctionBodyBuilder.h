@@ -1,19 +1,23 @@
 #pragma once
 #include "Nodes/BodyNode.h"
-#include <Code/Function/FunctionDefinition.h>
+#include <Code/Function/AddressRange.h>
 
-namespace CE::CallGraph
+namespace CE {
+	class FunctionManager;
+};
+
+namespace CE::CodeGraph
 {
 	class FunctionBodyBuilder
 	{
 	public:
-		FunctionBodyBuilder(Function::Function* function);
+		FunctionBodyBuilder(Node::FunctionBody* body, Function::AddressRangeList addressRangeList, FunctionManager* funcManager);
 
 		void build();
-
-		Node::FunctionBody* getFunctionBody();
 	private:
-		Function::Function* m_function;
+		Node::FunctionBody* m_funcBody;
+		Function::AddressRangeList m_addressRangeList;
+		FunctionManager* m_funcManager;
 
 		void build(Function::AddressRange& range);
 	};

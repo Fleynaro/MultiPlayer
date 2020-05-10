@@ -3,7 +3,7 @@
 #include "BodyNode.h"
 #include <Code/Function/FunctionDefinition.h>
 
-using namespace CE::CallGraph::Node;
+using namespace CE::CodeGraph::Node;
 
 Type NodeGroup::getGroup() {
 	return Type::NodeGroup;
@@ -51,7 +51,7 @@ Node* Node::getFunctionBodyNode() {
 	return m_parent;
 }
 
-void CE::CallGraph::IterateNodeGroup(const std::function<bool(Node::Node*)>& callback, Node::Node* node, bool isLeft)
+void CE::CodeGraph::IterateNodeGroup(const std::function<bool(Node::Node*)>& callback, Node::Node* node, bool isLeft)
 {
 	if (isLeft) {
 		if (!callback(node))

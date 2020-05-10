@@ -3,7 +3,7 @@
 #include "Iterator/FunctionBodyIterator.h"
 
 using namespace CE;
-using namespace CE::CallGraph;
+using namespace CE::CodeGraph;
 
 bool CallStack::has(Node::FunctionBody* body) {
 	for (auto it : m_stack) {

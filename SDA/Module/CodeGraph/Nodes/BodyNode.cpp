@@ -1,7 +1,7 @@
 #include "BodyNode.h"
 
 using namespace CE;
-using namespace CE::CallGraph::Node;
+using namespace CE::CodeGraph::Node;
 
 FunctionBody::FunctionBody(Function::FunctionDefinition* function)
 	: m_function(function)

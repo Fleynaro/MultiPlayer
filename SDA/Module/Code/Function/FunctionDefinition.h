@@ -10,7 +10,7 @@ namespace CE
 		class Hook;
 	};
 
-	namespace CallGraph::Node
+	namespace CodeGraph::Node
 	{
 		class FunctionBody;
 	};
@@ -44,7 +44,7 @@ namespace CE
 
 			int getOffset();
 
-			AddressRangeList& getRangeList();
+			AddressRangeList& getAddressRangeList();
 
 			void addRange(AddressRange range);
 
@@ -62,9 +62,9 @@ namespace CE
 
 			bool hasBody();
 
-			CallGraph::Node::FunctionBody* getBody();
+			CodeGraph::Node::FunctionBody* getBody();
 
-			void setBody(CallGraph::Node::FunctionBody* body);
+			void setBody(CodeGraph::Node::FunctionBody* body);
 
 			bool isGhidraUnit() override;
 
@@ -76,7 +76,7 @@ namespace CE
 			AddressRangeList m_ranges;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionDecl* m_decl;
-			CallGraph::Node::FunctionBody* m_funcBody = nullptr;
+			CodeGraph::Node::FunctionBody* m_funcBody = nullptr;
 			bool m_ghidraUnit = true;
 			FunctionManager* m_manager;
 		};

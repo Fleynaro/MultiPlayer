@@ -1,7 +1,7 @@
 #pragma once
 #include "GenericNodes.h"
 
-namespace CE::CallGraph::Node
+namespace CE::CodeGraph::Node
 {
 	class FunctionBody;
 	class AbstractBodyNode : public NodeGroup
