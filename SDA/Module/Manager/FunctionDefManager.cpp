@@ -58,13 +58,16 @@ FunctionDeclManager* FunctionManager::getFunctionDeclManager() {
 	return m_funcDeclManager;
 }
 
+#include <Address/Address.h>
 void FunctionManager::buildFunctionBodies() {
-	for (auto it : m_items) {
-		auto func = (Function::Function*)it.second;
+	Iterator it(this);
+	while (it.hasNext()) {
+		auto func = it.next();
 		if (func->getBody()->getNodeList().size() > 0)
 			continue;
 		CodeGraph::FunctionBodyBuilder bodyBuilder(func->getBody(), func->getAddressRangeList(), this);
-		bodyBuilder.build();
+		if(Address(func->getAddress()).canBeRead())
+			bodyBuilder.build();
 	}
 }
 
@@ -74,11 +77,11 @@ void FunctionManager::buildFunctionBasicInfo()
 	analyser.doAnalyse();
 }
 
-void FunctionManager::setFunctionTagManager(Function::Tag::Manager* manager) {
+void FunctionManager::setFunctionTagManager(FunctionTagManager* manager) {
 	m_tagManager = manager;
 }
 
-Function::Tag::Manager* FunctionManager::getFunctionTagManager() {
+FunctionTagManager* FunctionManager::getFunctionTagManager() {
 	return m_tagManager;
 }
 

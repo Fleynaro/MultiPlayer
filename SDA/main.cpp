@@ -116,10 +116,10 @@ int main2()
 
 		auto fMan = sda->getFunctionManager();
 
-		Function::Tag::Manager manager(sda->getFunctionManager());
+	/*	Function::Tag::Manager manager(sda->getFunctionManager());
 		manager.loadTags();
 		manager.calculateAllTags();
-		auto collection = manager.getTagCollection(functiondb5);
+		auto collection = manager.getTagCollection(functiondb5);*/
 
 		/*CodeGraph::Analyser::ContextDistance analysis2(sda->getFunctionManager(), functiondb5->getBody(), functiondb6->getBody());
 		analysis2.doAnalyse();*/

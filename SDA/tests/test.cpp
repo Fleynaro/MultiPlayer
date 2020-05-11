@@ -18,10 +18,16 @@ public:
         getCurrentDir().createIfNotExists();
         m_programModule = new ProgramExe(GetModuleHandle(NULL), getCurrentDir());
 
+        auto f = &rand;
+
         m_programModule->initDataBase("database.db");
         m_programModule->initManagers();
         m_programModule->initGhidraClient();
         m_programModule->load();
+
+        m_programModule->getFunctionManager()->buildFunctionBodies();
+        m_programModule->getFunctionManager()->buildFunctionBasicInfo();
+        m_programModule->getFunctionTagManager()->calculateAllTags();
     }
 
     ~ProgramModuleFixture() {
@@ -80,8 +86,13 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
 
         function6->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t"), "*[3][2]"), "arr");
         function6->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("char"), "*"), "str");
-        //m_programModule->getFunctionManager()->buildFunctionBodies();
-        //m_programModule->getFunctionManager()->buildFunctionBasicInfo();
+
+        //for function tags
+        {
+            auto tagManager = m_programModule->getFunctionTagManager();
+            tagManager->createUserTag(function1->getDeclarationPtr(), tagManager->m_getTag, "tag1", "test GET tag1");
+            tagManager->createUserTag(function2->getDeclarationPtr(), tagManager->m_setTag, "tag2", "test SET tag2");
+        }
     }
 
     //for types
@@ -156,6 +167,12 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         ASSERT_EQ(func->getAddressRangeList().size(), 1);
         ASSERT_EQ(func->getAddressRangeList().begin()->getMinAddress(), &setRot);
         ASSERT_EQ(func->getName(), g_testFuncName);
+
+        //for function tags
+        {
+            auto tagManager = m_programModule->getFunctionTagManager();
+            ASSERT_EQ(tagManager->getItemsCount(), 2 + 2);
+        }
     }
 
     //for types

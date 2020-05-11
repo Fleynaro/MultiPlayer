@@ -1,5 +1,5 @@
 #pragma once
-#include <Manager/Manager.h>
+#include <Manager/Managers.h>
 #include <GhidraSync/GhidraSync.h>
 #include <Utility/DebugView.h>
 

@@ -21,7 +21,7 @@ DataTypeMapper::DataTypeMapper(IRepository* repository)
 
 void DataTypeMapper::loadAll() {
 	auto& db = getManager()->getProgramModule()->getDB();
-	Statement query(db, "SELECT * FROM sda_types");
+	Statement query(db, "SELECT * FROM sda_types WHERE id >= 1000");
 	load(&db, query);
 
 	m_typedefTypeMapper->loadTypedefs(&db);

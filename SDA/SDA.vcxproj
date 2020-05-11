@@ -213,6 +213,7 @@
     <ClCompile Include="Module\DB\Mappers\EnumTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionDeclMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionDefMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\FunctionTagMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionTriggerMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\StructureTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TriggerGroupMapper.cpp" />
@@ -224,9 +225,12 @@
     <ClCompile Include="Module\Disassembler\DisasmDecoder.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmInstructions.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmOperand.cpp" />
+    <ClCompile Include="Module\FunctionTag\FunctionTag.cpp" />
+    <ClCompile Include="Module\FunctionTag\FunctionTagCollection.cpp" />
     <ClCompile Include="Module\Manager\AbstractManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDeclManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDefManager.cpp" />
+    <ClCompile Include="Module\Manager\FunctionTagManager.cpp" />
     <ClCompile Include="Module\Manager\ProgramModule.cpp" />
     <ClCompile Include="Module\Manager\StatManager.cpp" />
     <ClCompile Include="Module\Manager\TriggerGroupManager.cpp" />
@@ -302,6 +306,7 @@
     <ClInclude Include="Module\DB\Mappers\EnumTypeMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionDeclMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionDefMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\FunctionTagMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionTriggerMapper.h" />
     <ClInclude Include="Module\DB\Mappers\StructureTypeMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TriggerGroupMapper.h" />
@@ -328,6 +333,7 @@
     <ClInclude Include="Module\Code\Variable\Variable.h" />
     <ClInclude Include="Module\Code\VTable\VTable.h" />
     <ClInclude Include="Module\DynHook\DynHook.h" />
+    <ClInclude Include="Module\FunctionTag\FunctionTagCollection.h" />
     <ClInclude Include="Module\GhidraSync\AbstractManager.h" />
     <ClInclude Include="Module\GhidraSync\DataTypeManager.h" />
     <ClInclude Include="Module\GhidraSync\FunctionManager.h" />
@@ -345,8 +351,9 @@
     <ClInclude Include="Module\Manager\AbstractManager.h" />
     <ClInclude Include="Module\Manager\FunctionDeclManager.h" />
     <ClInclude Include="Module\Manager\FunctionDefManager.h" />
+    <ClInclude Include="Module\Manager\FunctionTagManager.h" />
     <ClInclude Include="Module\Manager\GVarManager.h" />
-    <ClInclude Include="Module\Manager\Manager.h" />
+    <ClInclude Include="Module\Manager\Managers.h" />
     <ClInclude Include="Module\Manager\ProgramModule.h" />
     <ClInclude Include="Module\Manager\StatManager.h" />
     <ClInclude Include="Module\Manager\TriggerGroupManager.h" />

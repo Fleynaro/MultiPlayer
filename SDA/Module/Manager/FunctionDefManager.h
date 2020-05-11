@@ -15,10 +15,7 @@ namespace CE
 		class FunctionManager;
 	};
 
-	namespace Function::Tag
-	{
-		class Manager;
-	};
+	class FunctionTagManager;
 
 	class FunctionManager : public AbstractItemManager
 	{
@@ -47,9 +44,9 @@ namespace CE
 
 		void buildFunctionBasicInfo();
 
-		void setFunctionTagManager(Function::Tag::Manager* manager);
+		void setFunctionTagManager(FunctionTagManager* manager);
 
-		Function::Tag::Manager* getFunctionTagManager();
+		FunctionTagManager* getFunctionTagManager();
 
 		void setGhidraManager(Ghidra::FunctionManager* ghidraManager);
 
@@ -59,8 +56,8 @@ namespace CE
 	private:
 		FunctionDeclManager* m_funcDeclManager;
 		Ghidra::FunctionManager* m_ghidraManager;
+		FunctionTagManager* m_tagManager;
 		Function::Function* m_defFunction = nullptr;
-		Function::Tag::Manager* m_tagManager;
 		DB::FunctionDefMapper* m_funcDefMapper;
 	};
 

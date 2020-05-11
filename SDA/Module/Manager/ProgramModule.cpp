@@ -1,8 +1,10 @@
 #include "ProgramModule.h"
-#include "Manager.h"
 #include <GhidraSync/GhidraSync.h>
 #include <FunctionTag/FunctionTag.h>
 #include <Utility/Resource.h>
+
+//managers
+#include "Managers.h"
 
 using namespace CE;
 
@@ -44,7 +46,7 @@ void ProgramModule::load()
 	getFunctionManager()->loadFunctions();
 	getVTableManager()->loadVTables();
 	getTypeManager()->loadClasses();
-	//getFunctionManager()->getFunctionTagManager()->loadTags();
+	getFunctionTagManager()->loadUserTags();
 	getTriggerManager()->loadTriggers();
 	getTriggerGroupManager()->loadTriggerGroups();
 }
@@ -58,7 +60,7 @@ void ProgramModule::initManagers()
 	m_triggerManager = new TriggerManager(this);
 	m_triggerGroupManager = new TriggerGroupManager(this);
 	m_statManager = new StatManager(this);
-	//m_functionManager->setFunctionTagManager(new Function::Tag::Manager(m_functionManager));
+	m_functionManager->setFunctionTagManager(new FunctionTagManager(this, m_functionManager));
 }
 
 void ProgramModule::initGhidraClient()
@@ -111,6 +113,14 @@ GVarManager* ProgramModule::getGVarManager() {
 
 FunctionManager* ProgramModule::getFunctionManager() {
 	return m_functionManager;
+}
+
+FunctionDeclManager* ProgramModule::getFunctionDeclManager() {
+	return m_functionManager->getFunctionDeclManager();
+}
+
+FunctionTagManager* ProgramModule::getFunctionTagManager() {
+	return m_functionManager->getFunctionTagManager();
 }
 
 VtableManager* ProgramModule::getVTableManager() {

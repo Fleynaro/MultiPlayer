@@ -9,10 +9,13 @@ namespace CE
 	class TypeManager;
 	class GVarManager;
 	class FunctionManager;
+	class FunctionDeclManager;
+	class FunctionTagManager;
 	class VtableManager;
 	class TriggerManager;
 	class TriggerGroupManager;
 	class StatManager;
+
 
 	namespace Ghidra
 	{
@@ -51,6 +54,10 @@ namespace CE
 		GVarManager* getGVarManager();
 
 		FunctionManager* getFunctionManager();
+
+		FunctionDeclManager* getFunctionDeclManager();
+
+		FunctionTagManager* getFunctionTagManager();
 
 		VtableManager* getVTableManager();
 

@@ -94,6 +94,9 @@ create table sda_func_tags
     name          TEXT,
     desc          TEXT
 );
+INSERT INTO sda_func_tags (name) VALUES ('get');
+INSERT INTO sda_func_tags (name) VALUES ('set');
+
 
 CREATE TABLE "sda_func_trigger_filters" (
 	"trigger_id"	INTEGER,
