@@ -1,13 +1,13 @@
 #pragma once
 #include <Code/Function/FunctionDeclaration.h>
 #include <DB/DomainObject.h>
-#include "../Code/Shared.h"
+#include <Utils/Description.h>
 
 
 //MY TODO: конфликтные теги, дефолтные теги set,get(реентерабельность),краш
 namespace CE::Function::Tag
 {
-	class Tag : public DB::DomainObject
+	class Tag : public DB::DomainObject, public Descrtiption
 	{
 	public:
 		enum Type
@@ -16,20 +16,15 @@ namespace CE::Function::Tag
 			SET
 		};
 
-		Tag(Tag* parent, const std::string& name, const std::string& desc = "");
+		Tag(Tag* parent, const std::string& name, const std::string& comment = "");
 
 		virtual Type getType() = 0;
 
 		bool isUser();
 
 		Tag* getParent();
-
-		Desc& getDesc();
 	protected:
 		Tag* m_parent;
-
-	private:
-		Desc m_desc;
 	};
 
 	class GetTag : public Tag
@@ -51,9 +46,9 @@ namespace CE::Function::Tag
 	class UserTag : public Tag
 	{
 	public:
-		UserTag(Tag* parent, const std::string& name, const std::string& desc = "");
+		UserTag(Tag* parent, const std::string& name, const std::string& comment = "");
 
-		UserTag(FunctionDecl* decl, Tag* parent, const std::string& name, const std::string& desc = "");
+		UserTag(FunctionDecl* decl, Tag* parent, const std::string& name, const std::string& comment = "");
 
 		void setParent(Tag* parent);
 

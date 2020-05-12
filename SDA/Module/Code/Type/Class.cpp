@@ -3,8 +3,8 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Class::Class(TypeManager* typeManager, const std::string& name, const std::string& desc)
-	: Structure(typeManager, name, desc)
+Class::Class(TypeManager* typeManager, const std::string& name, const std::string& comment)
+	: Structure(typeManager, name, comment)
 {}
 
 Type::Group Class::getGroup() {

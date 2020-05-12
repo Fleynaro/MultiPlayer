@@ -1,5 +1,5 @@
 #pragma once
-#include "../Shared.h"
+#include <Utils/Description.h>
 #include <DB/DomainObject.h>
 
 namespace CE
@@ -14,7 +14,7 @@ namespace CE
 
 	namespace DataType
 	{
-		class Type : public DB::IDomainObject
+		class Type : public DB::IDomainObject, public Descrtiption
 		{
 		protected:
 			virtual ~Type() {}
@@ -29,15 +29,9 @@ namespace CE
 				Signature
 			};
 
-			Type(TypeManager* typeManager)
-				: m_typeManager(typeManager)
+			Type(TypeManager* typeManager, const std::string& name, const std::string& comment)
+				: m_typeManager(typeManager), Descrtiption(name, comment)
 			{}
-
-			virtual std::string getName() = 0;
-
-			virtual std::string getDesc() {
-				return "Not desc.";
-			}
 
 			virtual Group getGroup() = 0;
 

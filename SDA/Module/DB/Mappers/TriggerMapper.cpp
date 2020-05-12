@@ -68,6 +68,6 @@ void TriggerMapper::doRemove(Database* db, IDomainObject* obj)
 void TriggerMapper::bind(SQLite::Statement& query, Trigger::AbstractTrigger& tr)
 {
 	query.bind(2, tr.getType());
-	query.bind(3, tr.getDesc().getName());
-	query.bind(4, tr.getDesc().getDesc());
+	query.bind(3, tr.getName());
+	query.bind(4, tr.getComment());
 }

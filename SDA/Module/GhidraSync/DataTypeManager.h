@@ -65,7 +65,7 @@ namespace CE
 				typeDesc.__set_group((datatype::DataTypeGroup::type)type->getGroup());
 				typeDesc.__set_size(type->getSize());
 				typeDesc.__set_name(type->getName());
-				typeDesc.__set_desc(type->getDesc());
+				typeDesc.__set_desc(type->getComment());
 				return typeDesc;
 			}
 
@@ -140,7 +140,7 @@ namespace CE
 			void change(DataType::UserType* type, const datatype::SDataType& typeDesc) {
 				type->setName(typeDesc.name);
 				if (typeDesc.desc != "{pull}") {
-					type->setDesc(typeDesc.desc);
+					type->setComment(typeDesc.desc);
 				}
 			}
 

@@ -3,8 +3,8 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Enum::Enum(TypeManager* typeManager, std::string name, std::string desc)
-	: UserType(typeManager, name, desc)
+Enum::Enum(TypeManager* typeManager, const std::string& name, const std::string& comment)
+	: UserType(typeManager, name, comment)
 {}
 
 int Enum::getSize() {

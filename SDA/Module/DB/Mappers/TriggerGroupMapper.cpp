@@ -96,6 +96,6 @@ void TriggerGroupMapper::doRemove(Database* db, IDomainObject* obj)
 
 void TriggerGroupMapper::bind(SQLite::Statement& query, Trigger::TriggerGroup& group)
 {
-	query.bind(2, group.getDesc().getName());
-	query.bind(3, group.getDesc().getDesc());
+	query.bind(2, group.getName());
+	query.bind(3, group.getComment());
 }

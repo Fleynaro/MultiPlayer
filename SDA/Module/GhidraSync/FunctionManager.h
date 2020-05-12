@@ -1,6 +1,7 @@
 #pragma once
 #include "AbstractManager.h"
 #include <Manager/FunctionDefManager.h>
+#include <Manager/ProcessModuleManager.h>
 #include "DataTypeManager.h"
 
 namespace CE
@@ -23,7 +24,7 @@ namespace CE
 				/*ObjectHash objHash;
 				objHash.addValue(m_functionManager->getFunctionOffset(function));
 				return objHash.getHash();*/
-				return function->getOffset();
+				return 0;//function->getOffset();
 			}
 
 			Function::Function* findFunctionById(function::Id id, bool returnDefType = true) {
@@ -74,8 +75,8 @@ namespace CE
 
 				for (auto& range : function->getAddressRangeList()) {
 					function::SFunctionRange rangeDesc;
-					rangeDesc.__set_minOffset(getClient()->getProgramModule()->toRelAddr(range.getMinAddress()));
-					rangeDesc.__set_maxOffset(getClient()->getProgramModule()->toRelAddr(range.getMaxAddress()));
+					rangeDesc.__set_minOffset(getClient()->getProgramModule()->getProcessModuleManager()->getMainModule()->toRelAddr(range.getMinAddress()));
+					rangeDesc.__set_maxOffset(getClient()->getProgramModule()->getProcessModuleManager()->getMainModule()->toRelAddr(range.getMaxAddress()));
 					funcDesc.ranges.push_back(rangeDesc);
 				}
 
@@ -94,20 +95,20 @@ namespace CE
 				return result;
 			}
 
-			Function::AddressRangeList getFunctionRanges(const std::vector<function::SFunctionRange>& rangeDescs) {
-				Function::AddressRangeList ranges;
+			AddressRangeList getFunctionRanges(const std::vector<function::SFunctionRange>& rangeDescs) {
+				AddressRangeList ranges;
 				for (auto& range : rangeDescs) {
-					ranges.push_back(Function::AddressRange(
-						getClient()->getProgramModule()->toAbsAddr(range.minOffset),
-						getClient()->getProgramModule()->toAbsAddr(range.maxOffset)
+					ranges.push_back(AddressRange(
+						getClient()->getProgramModule()->getProcessModuleManager()->getMainModule()->toAbsAddr(range.minOffset),
+						getClient()->getProgramModule()->getProcessModuleManager()->getMainModule()->toAbsAddr(range.maxOffset)
 					));
 				}
 				return ranges;
 			}
 
 			void change(Function::Function* function, const function::SFunction& funcDesc) {
-				function->getDeclaration().getDesc().setName(funcDesc.name);
-				function->getDeclaration().getDesc().setDesc(funcDesc.comment);
+				function->getDeclaration().setName(funcDesc.name);
+				function->getDeclaration().setComment(funcDesc.comment);
 
 				auto& signature = function->getSignature();
 				/*signature.setReturnType(
@@ -127,7 +128,7 @@ namespace CE
 			Function::Function* changeOrCreate(const function::SFunction& funcDesc) {
 				Function::Function* function = findFunctionById(funcDesc.id, false);
 				if (function == nullptr) {
-					function = m_functionManager->createFunction(getClient()->getProgramModule()->toAbsAddr(funcDesc.ranges[0].minOffset), {}, m_functionManager->getFunctionDeclManager()->createFunctionDecl("", ""));
+					function = m_functionManager->createFunction(getClient()->getProgramModule()->getProcessModuleManager()->getMainModule(), {}, m_functionManager->getFunctionDeclManager()->createFunctionDecl("", ""));
 				}
 
 				//MYTODO: transaction change

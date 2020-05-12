@@ -3,12 +3,12 @@
 using namespace CE;
 using namespace CE::Function::Tag;
 
-UserTag::UserTag(Tag* parent, const std::string& name, const std::string& desc)
-	: Tag(parent, name, desc)
+UserTag::UserTag(Tag* parent, const std::string& name, const std::string& comment)
+	: Tag(parent, name, comment)
 {}
 
-UserTag::UserTag(Function::FunctionDecl* decl, Tag* parent, const std::string& name, const std::string& desc)
-	: m_decl(decl), Tag(parent, name, desc)
+UserTag::UserTag(Function::FunctionDecl* decl, Tag* parent, const std::string& name, const std::string& comment)
+	: m_decl(decl), Tag(parent, name, comment)
 {}
 
 void UserTag::setParent(Tag* parent) {
@@ -51,8 +51,8 @@ Tag::Type GetTag::getType() {
 	return GET;
 }
 
-Tag::Tag(Tag* parent, const std::string& name, const std::string& desc)
-	: m_parent(parent), m_desc(name, desc)
+Tag::Tag(Tag* parent, const std::string& name, const std::string& comment)
+	: m_parent(parent), Descrtiption(name, comment)
 {}
 
 bool Tag::isUser() {
@@ -63,6 +63,3 @@ Tag* Tag::getParent() {
 	return m_parent;
 }
 
-Desc& Tag::getDesc() {
-	return m_desc;
-}

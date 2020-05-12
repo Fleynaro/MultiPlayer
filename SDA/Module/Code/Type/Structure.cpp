@@ -4,8 +4,8 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Structure::Field::Field(Structure* structure, const std::string& name, DataTypePtr type, int offset, std::string desc)
-	: m_structure(structure), m_name(name), m_offset(offset), m_desc(desc)
+Structure::Field::Field(Structure* structure, const std::string& name, DataTypePtr type, int offset, const std::string& comment)
+	: m_structure(structure), m_offset(offset), Descrtiption(name, comment)
 {
 	setType(type);
 }
@@ -18,18 +18,6 @@ bool Structure::Field::isDefault() {
 	return m_structure->getDefaultField() == this;
 }
 
-std::string& Structure::Field::getName() {
-	return m_name;
-}
-
-void Structure::Field::setName(const std::string& name) {
-	m_name = name;
-}
-
-std::string& Structure::Field::getDesc() {
-	return m_desc;
-}
-
 void Structure::Field::setType(DataTypePtr type) {
 	m_type = type;
 }
@@ -38,8 +26,8 @@ DataTypePtr Structure::Field::getType() {
 	return m_type;
 }
 
-Structure::Structure(TypeManager* typeManager, const std::string& name, const std::string& desc)
-	: UserType(typeManager, name, desc)
+Structure::Structure(TypeManager* typeManager, const std::string& name, const std::string& comment)
+	: UserType(typeManager, name, comment)
 {
 	m_defaultField = new Field(this, "undefined", GetUnit(getTypeManager()->getTypeByName("byte")), -1);
 }

@@ -45,7 +45,7 @@ public:
 	void open() {
 		auto moduleDir = getDirectory().next("Exe");
 		moduleDir.createIfNotExists();
-		m_programExe = new CE::ProgramExe(GetModuleHandle(NULL), moduleDir);
+		m_program = new CE::ProgramModule(moduleDir);
 		load();
 	}
 
@@ -55,24 +55,24 @@ public:
 		}
 
 		try {
-			getProgramExe()->initDataBase("general.db");
-			getProgramExe()->initManagers();
-			getProgramExe()->initGhidraClient();
-			getProgramExe()->load();
+			getProgramModule()->initDataBase("general.db");
+			getProgramModule()->initManagers();
+			getProgramModule()->initGhidraClient();
+			getProgramModule()->load();
 
-			auto dataTypeGhidraManager = getProgramExe()->getTypeManager()->getGhidraManager();
+			auto dataTypeGhidraManager = getProgramModule()->getTypeManager()->getGhidraManager();
 			dataTypeGhidraManager->updateAll();
 			auto hashMap = dataTypeGhidraManager->generateHashMap();
 			dataTypeGhidraManager->updateTypedefs(hashMap);
 			dataTypeGhidraManager->updateEnums(hashMap);
 			dataTypeGhidraManager->updateStructures(hashMap);
 
-			auto functionGhidraManager = getProgramExe()->getFunctionManager()->getGhidraManager();
+			auto functionGhidraManager = getProgramModule()->getFunctionManager()->getGhidraManager();
 			functionGhidraManager->update(
 				functionGhidraManager->generateHashMap()
 			);
-			getProgramExe()->getFunctionManager()->buildFunctionBodies();
-			getProgramExe()->getFunctionManager()->buildFunctionBasicInfo();
+			getProgramModule()->getFunctionManager()->buildFunctionBodies();
+			getProgramModule()->getFunctionManager()->buildFunctionBasicInfo();
 
 		}
 		catch (std::exception & e) {
@@ -100,13 +100,13 @@ public:
 		return m_name;
 	}
 
-	CE::ProgramExe* getProgramExe() {
-		return m_programExe;
+	CE::ProgramModule* getProgramModule() {
+		return m_program;
 	}
 private:
 	std::string m_name;
 	std::string m_desc;
 	FS::Directory m_dir;
 
-	CE::ProgramExe* m_programExe = nullptr;
+	CE::ProgramModule* m_program = nullptr;
 };

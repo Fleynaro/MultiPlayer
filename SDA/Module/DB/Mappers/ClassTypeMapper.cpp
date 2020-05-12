@@ -103,7 +103,7 @@ void ClassTypeMapper::bind(SQLite::Statement& query, CE::DataType::Class& type)
 {
 	query.bind(2, type.getBaseClass() != nullptr ? type.getBaseClass()->getId() : 0);
 	auto vtable = type.getVtable();
-	query.bind(3, vtable == nullptr ? 0 : vtable->getId());
+	//query.bind(3, vtable == nullptr ? 0 : vtable->getId());
 }
 
 DataTypeMapper* ClassTypeMapper::getParentMapper() {

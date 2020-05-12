@@ -16,7 +16,7 @@ public:
             clear();
         }
         getCurrentDir().createIfNotExists();
-        m_programModule = new ProgramExe(GetModuleHandle(NULL), getCurrentDir());
+        m_programModule = new ProgramModule(getCurrentDir());
 
         auto f = &rand;
 
@@ -66,17 +66,26 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
     auto declManager = funcManager->getFunctionDeclManager();
+    ProccessModule* kernel32;
+    ProccessModule* ucrtbase;
+
+    //for proceses
+    {
+        kernel32 = m_programModule->getProcessModuleManager()->createProcessModule("kernel32.dll", "core");
+        ucrtbase = m_programModule->getProcessModuleManager()->createProcessModule("ucrtbase.dll", "main dll");
+    }
 
     //for functions
     {
         ASSERT_EQ(funcManager->getItemsCount(), 0);
+        auto module = m_programModule->getProcessModuleManager()->getMainModule();
 
-        auto function1 = funcManager->createFunction(&setRot,       { Function::AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                 declManager->createFunctionDecl(g_testFuncName, "set rot to an entity"));
-        auto function2 = funcManager->createFunction(&changeGvar,   { Function::AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },         declManager->createFunctionDecl("changeGvar", ""));
-        auto function3 = funcManager->createFunction(&rand,         { Function::AddressRange(&rand, calculateFunctionSize((byte*)&rand)) },                     declManager->createFunctionDecl("rand", ""));
-        auto function4 = funcManager->createFunction(&setPlayerPos, { Function::AddressRange(&setPlayerPos, calculateFunctionSize((byte*)&setPlayerPos)) },     declManager->createFunctionDecl("setPlayerPos", ""));
-        auto function5 = funcManager->createFunction(&setPlayerVel, { Function::AddressRange(&setPlayerVel, calculateFunctionSize((byte*)&setPlayerVel)) },     declManager->createFunctionDecl("setPlayerVel", ""));
-        auto function6 = funcManager->createFunction(&sumArray,     { Function::AddressRange(&sumArray, calculateFunctionSize((byte*)&sumArray)) },             declManager->createFunctionDecl("sumArray", ""));
+        auto function1 = funcManager->createFunction(module,    { AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                 declManager->createFunctionDecl(g_testFuncName, "set rot to an entity"));
+        auto function2 = funcManager->createFunction(module,    { AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },         declManager->createFunctionDecl("changeGvar", ""));
+        auto function3 = funcManager->createFunction(ucrtbase,  { AddressRange(&rand, calculateFunctionSize((byte*)&rand)) },                     declManager->createFunctionDecl("rand", ""));
+        auto function4 = funcManager->createFunction(module,    { AddressRange(&setPlayerPos, calculateFunctionSize((byte*)&setPlayerPos)) },     declManager->createFunctionDecl("setPlayerPos", ""));
+        auto function5 = funcManager->createFunction(module,    { AddressRange(&setPlayerVel, calculateFunctionSize((byte*)&setPlayerVel)) },     declManager->createFunctionDecl("setPlayerVel", ""));
+        auto function6 = funcManager->createFunction(module,    { AddressRange(&sumArray, calculateFunctionSize((byte*)&sumArray)) },             declManager->createFunctionDecl("sumArray", ""));
         
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg1");
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg2");
@@ -454,7 +463,7 @@ TEST_F(ProgramModuleFixture, Test_CodeGraph)
 TEST_F(ProgramModuleFixture, Test_RemoveDB)
 {
     //remove test database
-    clear();
+    //clear();
 }
 
 class SomeClass

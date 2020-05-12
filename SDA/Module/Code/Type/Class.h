@@ -65,7 +65,7 @@ namespace CE::DataType
 			}
 		};
 
-		Class(TypeManager* typeManager, const std::string& name, const std::string& desc = "");
+		Class(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
 
 		Group getGroup() override;
 

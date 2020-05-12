@@ -89,5 +89,5 @@ void DataTypeMapper::bind(SQLite::Statement& query, CE::DataType::Type& type)
 {
 	query.bind(2, (int)type.getGroup());
 	query.bind(3, type.getName());
-	query.bind(4, type.getDesc());
+	query.bind(4, type.getComment());
 }

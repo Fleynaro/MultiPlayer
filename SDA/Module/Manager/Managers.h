@@ -1,6 +1,7 @@
 #pragma once
 
 //all managers
+#include "ProcessModuleManager.h"
 #include "TypeManager.h"
 #include "FunctionDefManager.h"
 #include "FunctionTagManager.h"

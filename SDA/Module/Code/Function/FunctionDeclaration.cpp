@@ -6,17 +6,13 @@ using namespace CE;
 using namespace CE::Function;
 
 FunctionDecl::FunctionDecl(FunctionDeclManager* manager, const std::string& name, const std::string& desc)
-	: m_manager(manager), m_desc(0, name, desc)
+	: m_manager(manager), Descrtiption(name, desc)
 {
 	getSignature().setReturnType(DataType::GetUnit(m_manager->getProgramModule()->getTypeManager()->getDefaultReturnType()));
 }
 
-Desc& FunctionDecl::getDesc() {
-	return m_desc;
-}
-
 std::string FunctionDecl::getSigName() {
-	std::string name = getSignature().getReturnType()->getDisplayName() + " " + m_desc.getName() + "(";
+	std::string name = getSignature().getReturnType()->getDisplayName() + " " + getName() + "(";
 
 	auto& argList = getSignature().getArgList();
 	for (int i = 0; i < argList.size(); i++) {
@@ -27,10 +23,6 @@ std::string FunctionDecl::getSigName() {
 		name.pop_back();
 	}
 	return name + ")";
-}
-
-std::string FunctionDecl::getName() {
-	return m_desc.getName();
 }
 
 Signature& FunctionDecl::getSignature() {

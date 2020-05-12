@@ -19,7 +19,7 @@ void FunctionUserTagMapper::loadAll()
 
 Id FunctionUserTagMapper::getNextId() {
 	auto& db = getManager()->getProgramModule()->getDB();
-	return GenerateNextId(&db, "sda_func_decls");
+	return GenerateNextId(&db, "sda_func_tags");
 }
 
 IDomainObject* FunctionUserTagMapper::doLoad(Database* db, SQLite::Statement& query)
@@ -71,6 +71,6 @@ void FunctionUserTagMapper::bind(SQLite::Statement& query, CE::Function::Tag::Us
 {
 	query.bind(2, tag.getParent()->getId());
 	query.bind(3, tag.isDefinedForDecl() ? tag.getDeclaration()->getId() : 0);
-	query.bind(4, tag.getDesc().getName());
-	query.bind(5, tag.getDesc().getDesc());
+	query.bind(4, tag.getName());
+	query.bind(5, tag.getComment());
 }

@@ -184,6 +184,8 @@
     <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
     <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
     <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
+    <ClCompile Include="Module\Address\ObjectLocation.cpp" />
+    <ClCompile Include="Module\Address\ProcessModule.cpp" />
     <ClCompile Include="Module\CodeGraph\Analysis\CompareFunctionBodies.cpp" />
     <ClCompile Include="Module\CodeGraph\Analysis\ContextDistance.cpp" />
     <ClCompile Include="Module\CodeGraph\Analysis\GenericAnalysis.cpp" />
@@ -194,7 +196,7 @@
     <ClCompile Include="Module\CodeGraph\CallStack.cpp" />
     <ClCompile Include="Module\CodeGraph\Nodes\GenericNodes.cpp" />
     <ClCompile Include="Module\CodeGraph\Nodes\Node.cpp" />
-    <ClCompile Include="Module\Code\Function\AddressRange.cpp" />
+    <ClCompile Include="Module\Address\AddressRange.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionDeclaration.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionDefinition.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionSignature.cpp" />
@@ -215,6 +217,7 @@
     <ClCompile Include="Module\DB\Mappers\FunctionDefMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionTagMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionTriggerMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\ProcessModuleMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\StructureTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TriggerGroupMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TriggerMapper.cpp" />
@@ -231,6 +234,7 @@
     <ClCompile Include="Module\Manager\FunctionDeclManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDefManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionTagManager.cpp" />
+    <ClCompile Include="Module\Manager\ProcessModuleManager.cpp" />
     <ClCompile Include="Module\Manager\ProgramModule.cpp" />
     <ClCompile Include="Module\Manager\StatManager.cpp" />
     <ClCompile Include="Module\Manager\TriggerGroupManager.cpp" />
@@ -284,6 +288,8 @@
     <ClCompile Include="Vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Module\Address\ObjectLocation.h" />
+    <ClInclude Include="Module\Address\ProcessModule.h" />
     <ClInclude Include="Module\CodeGraph\Analysis\CompareFunctionBodies.h" />
     <ClInclude Include="Module\CodeGraph\Analysis\ContextDistance.h" />
     <ClInclude Include="Module\CodeGraph\Analysis\GenericAnalysis.h" />
@@ -294,7 +300,7 @@
     <ClInclude Include="Module\CodeGraph\CallStack.h" />
     <ClInclude Include="Module\CodeGraph\Nodes\GenericNodes.h" />
     <ClInclude Include="Module\CodeGraph\Nodes\Node.h" />
-    <ClInclude Include="Module\Code\Function\AddressRange.h" />
+    <ClInclude Include="Module\Address\AddressRange.h" />
     <ClInclude Include="Module\Code\Function\FunctionDeclaration.h" />
     <ClInclude Include="Module\Code\Function\FunctionDefinition.h" />
     <ClInclude Include="Module\Code\Function\FunctionSignature.h" />
@@ -308,6 +314,7 @@
     <ClInclude Include="Module\DB\Mappers\FunctionDefMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionTagMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionTriggerMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\ProcessModuleMapper.h" />
     <ClInclude Include="Module\DB\Mappers\StructureTypeMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TriggerGroupMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TriggerMapper.h" />
@@ -321,7 +328,6 @@
     <ClInclude Include="Module\Assembler\Assembler.h" />
     <ClInclude Include="Module\Code\Code.h" />
     <ClInclude Include="Module\Code\Function\MethodDeclaration.h" />
-    <ClInclude Include="Module\Code\Shared.h" />
     <ClInclude Include="Module\Code\Type\Class.h" />
     <ClInclude Include="Module\Code\Type\Enum.h" />
     <ClInclude Include="Module\Code\Type\TypeUnit.h" />
@@ -348,12 +354,14 @@
     <ClInclude Include="Module\GhidraSync\Ghidra\include\ghidra_types.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\shared_constants.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\shared_types.h" />
+    <ClInclude Include="Module\GhidraSync\IGhidraObject.h" />
     <ClInclude Include="Module\Manager\AbstractManager.h" />
     <ClInclude Include="Module\Manager\FunctionDeclManager.h" />
     <ClInclude Include="Module\Manager\FunctionDefManager.h" />
     <ClInclude Include="Module\Manager\FunctionTagManager.h" />
     <ClInclude Include="Module\Manager\GVarManager.h" />
     <ClInclude Include="Module\Manager\Managers.h" />
+    <ClInclude Include="Module\Manager\ProcessModuleManager.h" />
     <ClInclude Include="Module\Manager\ProgramModule.h" />
     <ClInclude Include="Module\Manager\StatManager.h" />
     <ClInclude Include="Module\Manager\TriggerGroupManager.h" />
@@ -398,6 +406,7 @@
     <ClInclude Include="Utils\BitStream.h" />
     <ClInclude Include="Utils\Buffer.h" />
     <ClInclude Include="Utils\BufferStreamRecorder.h" />
+    <ClInclude Include="Utils\Description.h" />
     <ClInclude Include="Utils\ITaskMonitor.h" />
     <ClInclude Include="Utils\Iterator.h" />
     <ClInclude Include="Utils\MultipleAction.h" />

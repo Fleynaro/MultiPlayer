@@ -5,7 +5,7 @@
 using namespace CE;
 using namespace CE::CodeGraph;
 
-FunctionBodyBuilder::FunctionBodyBuilder(Node::FunctionBody* body, Function::AddressRangeList addressRangeList, FunctionManager* funcManager)
+FunctionBodyBuilder::FunctionBodyBuilder(Node::FunctionBody* body, AddressRangeList addressRangeList, FunctionManager* funcManager)
 	: m_funcBody(body), m_addressRangeList(addressRangeList), m_funcManager(funcManager)
 {}
 
@@ -16,7 +16,7 @@ void FunctionBodyBuilder::build()
 	}
 }
 
-void FunctionBodyBuilder::build(Function::AddressRange& range)
+void FunctionBodyBuilder::build(AddressRange& range)
 {
 	using namespace CE::Disassembler;
 	using namespace CE::CodeGraph::Node;

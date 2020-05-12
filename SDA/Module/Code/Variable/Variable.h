@@ -19,11 +19,11 @@ namespace CE
 			DataTypePtr m_type;
 		};
 
-		class Global : public Variable, public Desc
+		class Global : public Variable, public Descrtiption
 		{
 		public:
 			Global(DataTypePtr type, void* addr, int id, std::string name, std::string desc = "")
-				: Variable(type), m_addr(addr), Desc(id, name, desc)
+				: Variable(type), m_addr(addr), Descrtiption(name, desc)
 			{}
 
 			void* getAddress() {

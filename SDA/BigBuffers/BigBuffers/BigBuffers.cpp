@@ -144,50 +144,61 @@ int main2(int argc, char** argv)
     return 0;
 }
 
+//extern "C"
+//{
+//    __declspec(dllimport) int sum(int a, int b);
+//}
 
 
-//Unit tests
-int sum(int a, int b) {
-    return a + b;
-}
+#include <winnt.h>
 
-TEST(BasicFunc, Sum) {
-    ASSERT_EQ(5, sum(2, 3));
-}
 
-class myTestFixture1 : public ::testing::Test {
-public:
-    myTestFixture1() {
-        
+void shellcode_export_finder(BYTE* moduleBase)
+{
+    PIMAGE_DOS_HEADER dosHdr = (PIMAGE_DOS_HEADER)moduleBase;
+    PIMAGE_NT_HEADERS ntHdr = (PIMAGE_NT_HEADERS)(moduleBase + dosHdr->e_lfanew);
+    PIMAGE_EXPORT_DIRECTORY pExports;
+    uint32_t i, NumberOfFuncNames;
+    uint32_t* AddressOfNames;
+  
+    
+    pExports = (PIMAGE_EXPORT_DIRECTORY)(moduleBase + ntHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+
+    if (pExports != NULL) {
+        NumberOfFuncNames = pExports->NumberOfNames;
+        AddressOfNames = (uint32_t*)(moduleBase + pExports->AddressOfNames);
+
+        for (i = 0; i < NumberOfFuncNames; ++i) {
+            char* funcName = (char*)(moduleBase + *AddressOfNames);
+            if (funcName != NULL) {
+                
+                auto AddressOfNameOrdinals = (uint16_t*)(moduleBase + pExports->AddressOfNameOrdinals);
+                auto AddressOfFunctions = (uint32_t*)(moduleBase + pExports->AddressOfFunctions);
+
+                auto idx = AddressOfNameOrdinals[i];
+                auto funcAddr = (void*)(moduleBase + AddressOfFunctions[idx]);
+
+                if (std::string(funcName) == "UnlockFile") {
+                    auto addr = &UnlockFile;
+                    int b = 5;
+                }
+                printf("Export: %s\n", funcName);
+            }
+            else {
+                int bb = 5;
+            }
+            AddressOfNames++;
+        }
     }
 
-    void SetUp() {
-        int a = 5;
-        m_list.push_back(5);
-    }
-
-    void TearDown() {
-        int b = 5;
-    }
-
-    ~myTestFixture1() {
-       
-    }
-
-    std::list<int> m_list;
-};
-
-TEST_F(myTestFixture1, UnitTest1) {
-    ASSERT_GT(m_list.size(), 0);
+    return;
 }
-
-TEST_F(myTestFixture1, UnitTest2) {
-    ASSERT_GT(m_list.size(), 0);
-}
-
 
 int main(int argc, char** argv)
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    auto r = rand();
+
+    HMODULE lib = LoadLibraryEx(L"kernel32.dll", NULL, DONT_RESOLVE_DLL_REFERENCES);
+    shellcode_export_finder((BYTE*)lib);
+    return 0;
 }

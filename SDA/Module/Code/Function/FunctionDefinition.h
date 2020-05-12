@@ -1,7 +1,8 @@
 #pragma once
 #include "FunctionDeclaration.h"
 #include "MethodDeclaration.h"
-#include "AddressRange.h"
+#include <Address/AddressRange.h>
+#include <GhidraSync/IGhidraObject.h>
 
 namespace CE
 {
@@ -16,19 +17,24 @@ namespace CE
 	};
 
 	class FunctionManager;
+	class ProccessModule;
 
 	namespace Function
 	{
-		class FunctionDefinition : public DB::DomainObject, public IGhidraUnit
+		class FunctionDefinition : public DB::DomainObject, public IDescription, public IGhidraObject
 		{
 		public:
 			using ArgList = std::vector<Variable::Param>;
 
-			FunctionDefinition(FunctionManager* manager, void* addr, AddressRangeList ranges, FunctionDecl* decl);
+			FunctionDefinition(FunctionManager* manager, ProccessModule* module, AddressRangeList ranges, FunctionDecl* decl);
 
-			std::string getName();
+			const std::string getName() override;
 
-			std::string getComment();
+			const std::string getComment() override;
+
+			void setName(const std::string& name) override;
+
+			void setComment(const std::string& comment) override;
 
 			std::string getSigName();
 
@@ -41,8 +47,6 @@ namespace CE
 			virtual void call(ArgList args) {}
 
 			void* getAddress();
-
-			int getOffset();
 
 			AddressRangeList& getAddressRangeList();
 
@@ -70,9 +74,11 @@ namespace CE
 
 			void setGhidraUnit(bool toggle) override;
 
+			ProccessModule* getProccessModule();
+
 			FunctionManager* getManager();
 		private:
-			void* m_addr;
+			ProccessModule* m_module;
 			AddressRangeList m_ranges;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionDecl* m_decl;

@@ -13,20 +13,15 @@ namespace CE::Trigger
 		FunctionTrigger
 	};
 
-	class AbstractTrigger : public DB::DomainObject
+	class AbstractTrigger : public DB::DomainObject, public Descrtiption
 	{
 	public:
-		AbstractTrigger(TriggerManager* triggerManager, const std::string& name, const std::string& desc = "");
-
-		std::string getName();
+		AbstractTrigger(TriggerManager* triggerManager, const std::string& name, const std::string& comment = "");
 
 		virtual Type getType() = 0;
 
-		Desc& getDesc();
-
 		TriggerManager* getManager();
 	private:
-		Desc m_desc;
 		TriggerManager* m_manager;
 	};
 };
@@ -37,22 +32,17 @@ namespace CE {
 
 namespace CE::Trigger
 {
-	class TriggerGroup : public DB::DomainObject
+	class TriggerGroup : public DB::DomainObject, public Descrtiption
 	{
 	public:
-		TriggerGroup(TriggerGroupManager* triggerGroupManager, const std::string& name, const std::string& desc = "");
-
-		std::string getName();
+		TriggerGroup(TriggerGroupManager* triggerGroupManager, const std::string& name, const std::string& comment = "");
 
 		void addTrigger(AbstractTrigger* trigger);
 
 		std::list<AbstractTrigger*>& getTriggers();
 
-		Desc& getDesc();
-
 		TriggerGroupManager* getManager();
 	private:
-		Desc m_desc;
 		std::list<AbstractTrigger*> m_triggers;
 		TriggerGroupManager* m_manager;
 	};

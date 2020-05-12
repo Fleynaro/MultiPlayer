@@ -1,3 +1,14 @@
+create table sda_process_modules
+(
+    module_id         INTEGER
+        primary key autoincrement,
+    name            TEXT
+        unique,
+    desc            TEXT
+);
+
+INSERT INTO sda_process_modules VALUES (1, 'main', '');
+
 create table sda_callnodes
 (
     def_id     INTEGER,
@@ -73,8 +84,7 @@ create table sda_func_defs
     def_id  INTEGER
         primary key autoincrement,
     decl_id INTEGER,
-    offset  INTEGER
-        unique
+    module_id  INTEGER
 );
 
 create table sda_func_ranges

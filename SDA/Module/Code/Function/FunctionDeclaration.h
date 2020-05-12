@@ -2,6 +2,7 @@
 #include <DB/DomainObject.h>
 #include <DB/AbstractMapper.h>
 #include "FunctionSignature.h"
+#include <Utils/Description.h>
 
 namespace CE
 {
@@ -12,7 +13,7 @@ namespace CE
 		using ArgNameList = std::vector<std::string>;
 		class FunctionDefinition;
 
-		class FunctionDecl : public DB::DomainObject
+		class FunctionDecl : public DB::DomainObject, public Descrtiption
 		{
 		public:
 			enum class Role
@@ -27,10 +28,6 @@ namespace CE
 			};
 
 			FunctionDecl(FunctionDeclManager* manager, const std::string& name, const std::string& desc = "");
-
-			Desc& getDesc();
-
-			std::string getName();
 
 			virtual std::string getSigName();
 
@@ -58,7 +55,6 @@ namespace CE
 
 			static bool isFunction(Role role);
 		private:
-			Desc m_desc;
 			Signature m_signature;
 			ArgNameList m_argNames;
 			FunctionDeclManager* m_manager;

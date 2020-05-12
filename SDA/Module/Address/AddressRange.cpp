@@ -1,6 +1,6 @@
 #include "AddressRange.h"
 
-using namespace CE::Function;
+using namespace CE;
 
 AddressRange::AddressRange(void* min_addr, void* max_addr)
 	: m_min_addr(min_addr), m_max_addr(max_addr)

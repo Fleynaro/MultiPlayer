@@ -5,13 +5,13 @@ namespace CE
 {
 	namespace Function
 	{
-		class VTable : public Desc
+		class VTable : public Descrtiption
 		{
 		public:
 			using vMethodList = std::vector<CE::Function::MethodDecl*>;
 
 			VTable(void* addr, int id, std::string name, std::string desc = "")
-				: m_addr(addr), Desc(id, name, desc)
+				: m_addr(addr), Descrtiption(name, desc)
 			{}
 
 			inline vMethodList& getVMethodList() {

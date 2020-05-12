@@ -6,16 +6,10 @@ namespace CE::DataType
 	class Structure : public UserType
 	{
 	public:
-		class Field
+		class Field : public Descrtiption
 		{
 		public:
-			Field(Structure* structure, const std::string& name, DataTypePtr type, int offset, std::string desc = "");
-
-			std::string& getName();
-
-			void setName(const std::string& name);
-
-			std::string& getDesc();
+			Field(Structure* structure, const std::string& name, DataTypePtr type, int offset, const std::string& comment = "");
 
 			void setType(DataTypePtr type);
 
@@ -25,8 +19,6 @@ namespace CE::DataType
 
 			bool isDefault();
 		private:
-			std::string m_name;
-			std::string m_desc;
 			DataTypePtr m_type;
 			int m_offset;
 			Structure* m_structure;
@@ -34,7 +26,7 @@ namespace CE::DataType
 
 		using FieldMapType = std::map<int, Field*>;
 
-		Structure(TypeManager* typeManager, const std::string& name, const std::string& desc = "");
+		Structure(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
 
 		~Structure();
 

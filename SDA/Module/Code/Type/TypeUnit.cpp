@@ -7,7 +7,7 @@ using namespace CE;
 using namespace CE::DataType;
 
 Unit::Unit(DataType::Type* type, std::vector<int> levels)
-	: Type(type->getTypeManager()), m_type(type), m_levels(levels)
+	: Type(type->getTypeManager(), "", ""), m_type(type), m_levels(levels)
 {}
 
 Unit::Group Unit::getGroup() {
@@ -42,12 +42,22 @@ bool Unit::isString() {
 	return dynamic_cast<Char*>(baseType) || dynamic_cast<WChar*>(baseType);
 }
 
-std::string Unit::getName() {
+const std::string Unit::getName() {
 	return m_type->getName();
 }
 
-std::string Unit::getDesc() {
-	return m_type->getDesc();
+const std::string Unit::getComment() {
+	return m_type->getComment();
+}
+
+void Unit::setName(const std::string& name)
+{
+	m_type->setName(name);
+}
+
+void Unit::setComment(const std::string& comment)
+{
+	m_type->setComment(comment);
 }
 
 std::string Unit::getDisplayName() {

@@ -26,3 +26,11 @@ typedef int* arrType;
 int sumArray(arrType arr[3][2], char* str);
 
 const char* g_testFuncName = "setRot";
+
+
+
+/*
+	MYTODO:
+	1) сделать библиотечные функции как для DLL, так и для LIB
+	2) в строителе тел функций сделать распознавание библиотечных функций
+*/

@@ -2,46 +2,51 @@
 #include "Module/Trigger/FunctionTrigger.h"
 #include <CodeGraph/Nodes/BodyNode.h>
 #include <Manager/FunctionDefManager.h>
+#include <Address/ProcessModule.h>
 
 using namespace CE;
 using namespace CE::Function;
 
-FunctionDefinition::FunctionDefinition(FunctionManager* manager, void* addr, AddressRangeList ranges, FunctionDecl* decl)
-	: m_manager(manager), m_addr(addr), m_ranges(ranges), m_decl(decl)
+FunctionDefinition::FunctionDefinition(FunctionManager* manager, ProccessModule* module, AddressRangeList ranges, FunctionDecl* decl)
+	: m_manager(manager), m_module(module), m_ranges(ranges), m_decl(decl)
 {
 	decl->getFunctions().push_back(this);
 }
 
-std::string CE::Function::FunctionDefinition::getName() {
-	return getDeclaration().getDesc().getName();
+const std::string FunctionDefinition::getName() {
+	return getDeclaration().getName();
 }
 
-std::string CE::Function::FunctionDefinition::getComment() {
-	return getDeclaration().getDesc().getDesc();
+const std::string FunctionDefinition::getComment() {
+	return getDeclaration().getComment();
 }
 
-std::string CE::Function::FunctionDefinition::getSigName() {
+void FunctionDefinition::setName(const std::string& name) {
+	getDeclaration().setName(name);
+}
+
+void FunctionDefinition::setComment(const std::string& comment) {
+	getDeclaration().setComment(comment);
+}
+
+std::string FunctionDefinition::getSigName() {
 	return getDeclaration().getSigName();
 }
 
-bool CE::Function::FunctionDefinition::isFunction() {
+bool FunctionDefinition::isFunction() {
 	return getDeclaration().isFunction();
 }
 
-Signature& CE::Function::FunctionDefinition::getSignature() {
+Signature& FunctionDefinition::getSignature() {
 	return getDeclaration().getSignature();
 }
 
-ArgNameList& CE::Function::FunctionDefinition::getArgNameList() {
+ArgNameList& FunctionDefinition::getArgNameList() {
 	return getDeclaration().getArgNameList();
 }
 
 void* FunctionDefinition::getAddress() {
-	return m_addr;
-}
-
-int FunctionDefinition::getOffset() {
-	return getManager()->getProgramModule()->toRelAddr(getAddress());
+	return m_ranges.begin()->getMinAddress();
 }
 
 AddressRangeList& FunctionDefinition::getAddressRangeList() {
@@ -105,6 +110,10 @@ bool FunctionDefinition::isGhidraUnit() {
 
 void FunctionDefinition::setGhidraUnit(bool toggle) {
 	m_ghidraUnit = toggle;
+}
+
+ProccessModule* FunctionDefinition::getProccessModule() {
+	return m_module;
 }
 
 FunctionManager* FunctionDefinition::getManager() {

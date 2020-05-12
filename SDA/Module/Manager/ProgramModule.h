@@ -1,11 +1,13 @@
 #pragma once
 #include <DB/Transaction.h>
 #include <Utility/FileWrapper.h>
+#include <Address/ProcessModule.h>
 
 using namespace SQLite;
 
 namespace CE
 {
+	class ProcessModuleManager;
 	class TypeManager;
 	class GVarManager;
 	class FunctionManager;
@@ -16,7 +18,6 @@ namespace CE
 	class TriggerGroupManager;
 	class StatManager;
 
-
 	namespace Ghidra
 	{
 		class Client;
@@ -25,13 +26,9 @@ namespace CE
 	class ProgramModule
 	{
 	public:
-		ProgramModule(void* addr, FS::Directory dir);
+		ProgramModule(FS::Directory dir);
 
 		~ProgramModule();
-
-		virtual bool isExe() = 0;
-
-		bool isDll();
 
 		void initTransaction();
 
@@ -47,7 +44,7 @@ namespace CE
 
 		SQLite::Database& getDB();
 
-		HMODULE getHModule();
+		ProcessModuleManager* getProcessModuleManager();
 
 		TypeManager* getTypeManager();
 
@@ -67,12 +64,6 @@ namespace CE
 
 		StatManager* getStatManager();
 
-		std::uintptr_t getBaseAddr();
-
-		void* toAbsAddr(int offset);
-
-		int toRelAddr(void* addr);
-
 		DB::ITransaction* getTransaction();
 
 		FS::Directory& getDirectory();
@@ -81,9 +72,9 @@ namespace CE
 	private:
 		DB::ITransaction* m_transaction = nullptr;
 		SQLite::Database* m_db = nullptr;
-		std::uintptr_t m_baseAddr;
 		FS::Directory m_dir;
 
+		ProcessModuleManager* m_processModuleManager = nullptr;
 		TypeManager* m_typeManager = nullptr;
 		GVarManager* m_gvarManager = nullptr;
 		FunctionManager* m_functionManager = nullptr;
@@ -92,27 +83,5 @@ namespace CE
 		TriggerGroupManager* m_triggerGroupManager = nullptr;
 		StatManager* m_statManager = nullptr;
 		Ghidra::Client* m_client = nullptr;
-	};
-
-	class ProgramDll : public ProgramModule
-	{
-	public:
-		ProgramDll(void* addr, FS::Directory dir);
-
-		bool isExe() override;
-	};
-
-	class ProgramExe : public ProgramModule
-	{
-	public:
-		ProgramExe(void* addr, FS::Directory dir);
-
-		bool isExe() override;
-
-		void addDll(ProgramDll* dll);
-
-		std::vector<ProgramDll*>& getDlls();
-	private:
-		std::vector<ProgramDll*> m_dlls;
 	};
 };

@@ -123,5 +123,5 @@ void FunctionDeclMapper::bind(SQLite::Statement& query, CE::Function::FunctionDe
 	query.bind(3, (int)decl.getRole());
 	query.bind(4, decl.getSignature().getReturnType()->getId());
 	query.bind(5, DataType::GetPointerLevelStr(decl.getSignature().getReturnType()));
-	query.bind(6, decl.getDesc().getDesc());
+	query.bind(6, decl.getComment());
 }

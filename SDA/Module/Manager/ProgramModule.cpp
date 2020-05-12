@@ -8,12 +8,13 @@
 
 using namespace CE;
 
-ProgramModule::ProgramModule(void* addr, FS::Directory dir)
-	: m_baseAddr((std::uintptr_t)addr), m_dir(dir)
+ProgramModule::ProgramModule(FS::Directory dir)
+	: m_dir(dir)
 {}
 
 ProgramModule::~ProgramModule() {
 	if (m_typeManager != nullptr) {
+		delete m_processModuleManager;
 		delete m_functionManager;
 		delete m_statManager;
 		delete m_gvarManager;
@@ -31,20 +32,17 @@ ProgramModule::~ProgramModule() {
 		delete m_db;
 }
 
-bool ProgramModule::isDll() {
-	return !isExe();
-}
-
 void ProgramModule::initTransaction() {
 	m_transaction = new DB::Transaction(m_db);
 }
 
 void ProgramModule::load()
 {
+	getProcessModuleManager()->loadProcessModules();
 	getTypeManager()->loadTypes();
 	getGVarManager()->loadGVars();
 	getFunctionManager()->loadFunctions();
-	getVTableManager()->loadVTables();
+	//getVTableManager()->loadVTables();
 	getTypeManager()->loadClasses();
 	getFunctionTagManager()->loadUserTags();
 	getTriggerManager()->loadTriggers();
@@ -53,6 +51,7 @@ void ProgramModule::load()
 
 void ProgramModule::initManagers()
 {
+	m_processModuleManager = new ProcessModuleManager(this);
 	m_typeManager = new TypeManager(this);
 	m_functionManager = new FunctionManager(this, new FunctionDeclManager(this));
 	m_gvarManager = new GVarManager(this);
@@ -99,8 +98,8 @@ SQLite::Database& ProgramModule::getDB() {
 	return *m_db;
 }
 
-HMODULE ProgramModule::getHModule() {
-	return HMODULE(m_baseAddr);
+ProcessModuleManager* ProgramModule::getProcessModuleManager() {
+	return m_processModuleManager;
 }
 
 TypeManager* ProgramModule::getTypeManager() {
@@ -139,18 +138,6 @@ StatManager* ProgramModule::getStatManager() {
 	return m_statManager;
 }
 
-std::uintptr_t ProgramModule::getBaseAddr() {
-	return m_baseAddr;
-}
-
-void* ProgramModule::toAbsAddr(int offset) {
-	return offset == 0 ? nullptr : reinterpret_cast<void*>(getBaseAddr() + (std::uintptr_t)offset);
-}
-
-int ProgramModule::toRelAddr(void* addr) {
-	return addr == nullptr ? 0 : static_cast<int>((std::uintptr_t)addr - getBaseAddr());
-}
-
 DB::ITransaction* ProgramModule::getTransaction() {
 	return m_transaction;
 }
@@ -161,28 +148,4 @@ FS::Directory& ProgramModule::getDirectory() {
 
 Ghidra::Client* ProgramModule::getGhidraClient() {
 	return m_client;
-}
-
-ProgramExe::ProgramExe(void* addr, FS::Directory dir)
-	: ProgramModule(addr, dir)
-{}
-
-bool ProgramExe::isExe() {
-	return true;
-}
-
-void ProgramExe::addDll(ProgramDll* dll) {
-	m_dlls.push_back(dll);
-}
-
-std::vector<ProgramDll*>& ProgramExe::getDlls() {
-	return m_dlls;
-}
-
-ProgramDll::ProgramDll(void* addr, FS::Directory dir)
-	: ProgramModule(addr, dir)
-{}
-
-bool ProgramDll::isExe() {
-	return false;
 }

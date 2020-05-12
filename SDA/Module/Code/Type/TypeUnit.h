@@ -22,9 +22,13 @@ namespace CE
 
 			bool isString();
 
-			std::string getName() override;
+			const std::string getName() override;
 
-			std::string getDesc() override;
+			const std::string getComment() override;
+
+			void setName(const std::string& name) override;
+
+			void setComment(const std::string& comment) override;
 
 			std::string getDisplayName() override;
 

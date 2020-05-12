@@ -3,8 +3,8 @@
 using namespace CE;
 using namespace CE::DataType;
 
-UserType::UserType(TypeManager* typeManager, std::string name, std::string desc)
-	: Type(typeManager), m_name(name), m_desc(desc)
+UserType::UserType(TypeManager* typeManager, const std::string& name, const std::string& comment)
+	: Type(typeManager, name, comment)
 {}
 
 bool UserType::isUserDefined() {
@@ -13,22 +13,6 @@ bool UserType::isUserDefined() {
 
 std::string UserType::getDisplayName() {
 	return getName();
-}
-
-std::string UserType::getName() {
-	return m_name;
-}
-
-std::string UserType::getDesc() {
-	return m_desc;
-}
-
-void UserType::setName(const std::string& name) {
-	m_name = name;
-}
-
-void UserType::setDesc(const std::string& desc) {
-	m_desc = desc;
 }
 
 bool UserType::isGhidraUnit() {

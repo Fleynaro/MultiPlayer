@@ -22,8 +22,8 @@ void FunctionManager::loadFunctions() {
 	m_funcDefMapper->loadAll();
 }
 
-Function::Function* FunctionManager::createFunction(void* addr, Function::AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
-	auto def = new Function::Function(this, addr, ranges, decl);
+Function::Function* FunctionManager::createFunction(ProccessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
+	auto def = new Function::Function(this, module, ranges, decl);
 	def->setMapper(m_funcDefMapper);
 	def->setId(m_funcDefMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(def);
@@ -40,7 +40,7 @@ Function::Function* FunctionManager::getDefaultFunction() {
 }
 
 Function::Function* FunctionManager::getFunctionById(DB::Id id) {
-	return (Function::Function*)find(id);
+	return static_cast<Function::Function*>(find(id));
 }
 
 Function::Function* FunctionManager::getFunctionAt(void* addr) {

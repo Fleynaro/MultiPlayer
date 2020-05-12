@@ -1,5 +1,6 @@
 #include "FunctionDefMapper.h"
 #include <Manager/FunctionDefManager.h>
+#include <Manager/ProcessModuleManager.h>
 
 using namespace DB;
 using namespace CE;
@@ -25,18 +26,20 @@ CE::FunctionManager* FunctionDefMapper::getManager() {
 
 IDomainObject* FunctionDefMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int def_id = query.getColumn("def_id");
-	int def_offset = query.getColumn("offset");
 	int decl_id = query.getColumn("decl_id");
+	int module_id = query.getColumn("module_id");
 
 	auto decl = getManager()->getFunctionDeclManager()->getFunctionDeclById(decl_id);
 	if (decl == nullptr)
 		return nullptr;
 
+	auto module = getManager()->getProgramModule()->getProcessModuleManager()->getProcessModuleById(module_id);
+
 	auto definition =
 		new Function::FunctionDefinition(
 			getManager(),
-			getManager()->getProgramModule()->toAbsAddr(def_offset),
-			Function::AddressRangeList(),
+			module,
+			AddressRangeList(),
 			decl
 		);
 
@@ -52,9 +55,9 @@ void FunctionDefMapper::loadFunctionRanges(Database* db, CE::Function::FunctionD
 
 	while (query.executeStep())
 	{
-		definition.addRange(Function::AddressRange(
-			getManager()->getProgramModule()->toAbsAddr(query.getColumn("min_offset")),
-			getManager()->getProgramModule()->toAbsAddr(query.getColumn("max_offset"))
+		definition.addRange(AddressRange(
+			definition.getProccessModule()->toAbsAddr(query.getColumn("min_offset")),
+			definition.getProccessModule()->toAbsAddr(query.getColumn("max_offset"))
 		));
 	}
 }
@@ -73,8 +76,8 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 					VALUES(?1, ?2, ?3, ?4)");
 			query.bind(1, definition.getId());
 			query.bind(2, order_id);
-			query.bind(3, getManager()->getProgramModule()->toRelAddr(range.getMinAddress()));
-			query.bind(4, getManager()->getProgramModule()->toRelAddr(range.getMaxAddress()));
+			query.bind(3, definition.getProccessModule()->toRelAddr(range.getMinAddress()));
+			query.bind(4, definition.getProccessModule()->toRelAddr(range.getMaxAddress()));
 			query.exec();
 			order_id++;
 		}
@@ -88,7 +91,7 @@ void FunctionDefMapper::doInsert(Database* db, IDomainObject* obj) {
 void FunctionDefMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto& def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
-	SQLite::Statement query(*db, "REPLACE INTO sda_func_defs (def_id, decl_id, offset)\
+	SQLite::Statement query(*db, "REPLACE INTO sda_func_defs (def_id, decl_id, module_id)\
 				VALUES(?1, ?2, ?3)");
 	query.bind(1, def.getId());
 	bind(query, def);
@@ -104,5 +107,5 @@ void FunctionDefMapper::doRemove(Database* db, IDomainObject* obj) {
 
 void FunctionDefMapper::bind(SQLite::Statement& query, CE::Function::FunctionDefinition& def) {
 	query.bind(2, def.getDeclaration().getId());
-	query.bind(3, getManager()->getProgramModule()->toRelAddr(def.getAddress()));
+	query.bind(3, def.getProccessModule()->getId());
 }

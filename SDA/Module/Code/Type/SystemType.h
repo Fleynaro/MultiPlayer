@@ -36,7 +36,7 @@ namespace CE
 			};
 
 			SystemType()
-				: Type(nullptr)
+				: Type(nullptr, "", "")
 			{}
 
 			DB::Id getId() override {
@@ -67,11 +67,11 @@ namespace CE
 				return SystemType::Void;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "void";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "void is a special return type for functions only";
 			}
 
@@ -91,11 +91,11 @@ namespace CE
 				return SystemType::Bool;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "bool";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "bool is a byte type";
 			}
 
@@ -119,11 +119,11 @@ namespace CE
 				return SystemType::Byte;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "byte";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "byte is a byte type";
 			}
 
@@ -143,11 +143,11 @@ namespace CE
 				return SystemType::Int8;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "int8_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "int8_t is a byte type";
 			}
 
@@ -175,11 +175,11 @@ namespace CE
 				return SystemType::Int16;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "int16_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "int16_t is 2 byte type";
 			}
 
@@ -207,11 +207,11 @@ namespace CE
 				return SystemType::Int32;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "int32_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "int32_t is 4 byte type";
 			}
 
@@ -239,11 +239,11 @@ namespace CE
 				return SystemType::Int64;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "int64_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "int64_t is 8 byte type";
 			}
 
@@ -271,11 +271,11 @@ namespace CE
 				return SystemType::UInt16;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "uint16_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "int16_t is 2 byte unsigned type";
 			}
 
@@ -295,11 +295,11 @@ namespace CE
 				return SystemType::UInt32;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "uint32_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "int32_t is 4 byte unsigned type";
 			}
 
@@ -319,11 +319,11 @@ namespace CE
 				return SystemType::UInt64;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "uint64_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "int64_t is 8 byte unsigned type";
 			}
 
@@ -343,11 +343,11 @@ namespace CE
 				return SystemType::UInt64;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "uint128_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "int128_t is 16 byte unsigned type";
 			}
 
@@ -371,11 +371,11 @@ namespace CE
 				return SystemType::Float;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "float";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "float is 4 byte type";
 			}
 
@@ -403,11 +403,11 @@ namespace CE
 				return SystemType::Double;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "double";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "double is 8 byte type";
 			}
 
@@ -435,11 +435,11 @@ namespace CE
 				return SystemType::Char;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "char";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "char is a byte type that used for ASCII strings";
 			}
 
@@ -459,11 +459,11 @@ namespace CE
 				return SystemType::WChar;
 			}
 
-			std::string getName() override {
+			const std::string getName() override {
 				return "wchar_t";
 			}
 
-			std::string getDesc() override {
+			const std::string getComment() override {
 				return "wchar_t is a byte type that used for UNICODE strings";
 			}
 

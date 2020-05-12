@@ -5,8 +5,8 @@
 
 using namespace CE::Trigger::Function;
 
-Trigger::Trigger(CE::TriggerManager* manager, const std::string& name, const std::string& desc)
-	: AbstractTrigger(manager, name, desc)
+Trigger::Trigger(CE::TriggerManager* manager, const std::string& name, const std::string& comment)
+	: AbstractTrigger(manager, name, comment)
 {
 	m_compositeFilter = new Filter::ConditionFilter(Filter::Id::Condition_AND);
 }

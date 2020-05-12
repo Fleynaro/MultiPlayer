@@ -16,7 +16,7 @@ namespace CE
 		void saveGVar(Variable::Global* gVar) {
 			using namespace SQLite;
 
-			SQLite::Database& db = getProgramModule()->getDB();
+			/*SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "REPLACE INTO sda_gvars (id, name, offset, type_id, pointer_lvl, desc) VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
 			query.bind(1, gVar->getId());
 			query.bind(2, gVar->getName());
@@ -24,11 +24,11 @@ namespace CE
 			query.bind(4, gVar->getType()->getId());
 			query.bind(5, DataType::GetPointerLevelStr(gVar->getType()));
 			query.bind(6, gVar->getDesc());
-			query.exec();
+			query.exec();*/
 		}
 
 		void removeGVar(Variable::Global* gVar) {
-			using namespace SQLite;
+			/*using namespace SQLite;
 
 			SQLite::Database& db = getProgramModule()->getDB();
 			SQLite::Statement query(db, "DELETE FROM sda_gvars WHERE id=?1");
@@ -38,7 +38,7 @@ namespace CE
 			auto it = m_gvars.find(gVar->getId());
 			if (it != m_gvars.end()) {
 				m_gvars.erase(it);
-			}
+			}*/
 		}
 
 		int getNewId() {
@@ -68,7 +68,7 @@ namespace CE
 					type = getProgramModule()->getTypeManager()->getDefaultType();
 				}
 
-				Variable::Global* gvar = new Variable::Global(
+				/*Variable::Global* gvar = new Variable::Global(
 					DataType::GetUnit(type, query.getColumn("pointer_lvl")),
 					getProgramModule()->toAbsAddr(query.getColumn("offset")),
 					query.getColumn("id"),
@@ -76,12 +76,12 @@ namespace CE
 					query.getColumn("desc")
 				);
 
-				addGVar(gvar);
+				addGVar(gvar);*/
 			}
 		}
 
 		void addGVar(Variable::Global* gvar) {
-			m_gvars.insert(std::make_pair(gvar->getId(), gvar));
+			/*m_gvars.insert(std::make_pair(gvar->getId(), gvar));*/
 		}
 
 		inline Variable::Global* getGVarById(int id) {
