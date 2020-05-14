@@ -1,6 +1,7 @@
 #include "FunctionBodyBuilder.h"
 #include <Disassembler/DisasmDecoder.h>
 #include <Manager/FunctionDefManager.h>
+#include <Address/Address.h>
 
 using namespace CE;
 using namespace CE::CodeGraph;
@@ -25,11 +26,12 @@ void FunctionBodyBuilder::build(AddressRange& range)
 	Decoder decoder(range.getMinAddress(), static_cast<int>(range.getSize()));
 	decoder.decode([&](Code::Instruction* instruction)
 		{
+			using namespace Code;
 			void* curAddr = (void*)decoder.getCurrentAddress();
 
-			if (auto instr = dynamic_cast<Code::Instructions::Generic*>(instruction))
+			if (auto instr = dynamic_cast<Instructions::Generic*>(instruction))
 			{
-				if (auto instr = dynamic_cast<Code::Instructions::GenericWithOperands*>(instruction))
+				if (auto instr = dynamic_cast<Instructions::GenericWithOperands*>(instruction))
 				{
 					if (instr->getOperand(0).isCalculatedAddress()) {
 						nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Write, curAddr));
@@ -39,7 +41,7 @@ void FunctionBodyBuilder::build(AddressRange& range)
 					}
 				}
 			}
-			else if (auto instr = dynamic_cast<Code::Instructions::BasicManipulation*>(instruction))
+			else if (auto instr = dynamic_cast<Instructions::BasicManipulation*>(instruction))
 			{
 				if (instr->getOperand(0).isCalculatedAddress()) {
 					nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Write, curAddr));
@@ -48,10 +50,19 @@ void FunctionBodyBuilder::build(AddressRange& range)
 					nodeGroup->addNode(new GlobalVarNode(nullptr, GlobalVarNode::Read, curAddr));
 				}
 			}
-			else if (auto instr = dynamic_cast<Code::Instructions::JumpInstruction*>(instruction))
+			else if (auto instr = dynamic_cast<Instructions::JumpInstruction*>(instruction))
 			{
 				if (instr->hasAbsoluteAddr()) {
-					auto calledFunc = m_funcManager->getFunctionAt(instr->getAbsoluteAddr());
+					auto funcAddr = instr->getAbsoluteAddr();
+					if (instr->getOperand(0).getType() == Operand::Pointer) {
+						if (Address(funcAddr).canBeRead()) {
+							funcAddr = (void*)*reinterpret_cast<std::uintptr_t*>(funcAddr);
+						}
+						else {
+							funcAddr = nullptr;
+						}
+					}
+					auto calledFunc = m_funcManager->getFunctionAt(funcAddr);
 
 					if (instruction->getMnemonicId() != ZYDIS_MNEMONIC_CALL) {
 						//if it is the same function within the function address range

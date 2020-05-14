@@ -2,12 +2,12 @@ create table sda_process_modules
 (
     module_id         INTEGER
         primary key autoincrement,
-    name            TEXT
-        unique,
+    filename        TEXT,
+    name            TEXT,
     desc            TEXT
 );
 
-INSERT INTO sda_process_modules VALUES (1, 'main', '');
+INSERT INTO sda_process_modules VALUES (1, '', 'main', '');
 
 create table sda_callnodes
 (
@@ -74,6 +74,7 @@ create table sda_func_decls
     name            TEXT
         unique,
     role            INTEGER,
+    exported        INTEGER,
     ret_type_id     INTEGER not null,
     ret_pointer_lvl TEXT,
     desc            TEXT

@@ -7,7 +7,7 @@
 using namespace CE;
 using namespace CE::Function;
 
-FunctionDefinition::FunctionDefinition(FunctionManager* manager, ProccessModule* module, AddressRangeList ranges, FunctionDecl* decl)
+FunctionDefinition::FunctionDefinition(FunctionManager* manager, ProcessModule* module, AddressRangeList ranges, FunctionDecl* decl)
 	: m_manager(manager), m_module(module), m_ranges(ranges), m_decl(decl)
 {
 	decl->getFunctions().push_back(this);
@@ -104,6 +104,14 @@ void FunctionDefinition::setBody(CodeGraph::Node::FunctionBody* body) {
 	m_funcBody = body;
 }
 
+void FunctionDefinition::setExported(bool toggle) {
+	getDeclaration().setExported(toggle);
+}
+
+bool FunctionDefinition::isExported() {
+	return getDeclaration().isExported();
+}
+
 bool FunctionDefinition::isGhidraUnit() {
 	return m_ghidraUnit;
 }
@@ -112,7 +120,7 @@ void FunctionDefinition::setGhidraUnit(bool toggle) {
 	m_ghidraUnit = toggle;
 }
 
-ProccessModule* FunctionDefinition::getProccessModule() {
+ProcessModule* FunctionDefinition::getProcessModule() {
 	return m_module;
 }
 

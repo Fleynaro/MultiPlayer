@@ -45,6 +45,14 @@ bool FunctionDecl::isFunction(Role role) {
 	return role == Role::Function;
 }
 
+void FunctionDecl::setExported(bool toggle) {
+	m_exported = toggle;
+}
+
+bool FunctionDecl::isExported() {
+	return m_exported;
+}
+
 FunctionDeclManager* FunctionDecl::getManager() {
 	return m_manager;
 }

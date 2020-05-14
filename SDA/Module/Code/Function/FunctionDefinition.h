@@ -17,7 +17,7 @@ namespace CE
 	};
 
 	class FunctionManager;
-	class ProccessModule;
+	class ProcessModule;
 
 	namespace Function
 	{
@@ -26,7 +26,7 @@ namespace CE
 		public:
 			using ArgList = std::vector<Variable::Param>;
 
-			FunctionDefinition(FunctionManager* manager, ProccessModule* module, AddressRangeList ranges, FunctionDecl* decl);
+			FunctionDefinition(FunctionManager* manager, ProcessModule* module, AddressRangeList ranges, FunctionDecl* decl);
 
 			const std::string getName() override;
 
@@ -70,15 +70,19 @@ namespace CE
 
 			void setBody(CodeGraph::Node::FunctionBody* body);
 
+			void setExported(bool toggle);
+
+			bool isExported();
+
 			bool isGhidraUnit() override;
 
 			void setGhidraUnit(bool toggle) override;
 
-			ProccessModule* getProccessModule();
+			ProcessModule* getProcessModule();
 
 			FunctionManager* getManager();
 		private:
-			ProccessModule* m_module;
+			ProcessModule* m_module;
 			AddressRangeList m_ranges;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionDecl* m_decl;

@@ -24,7 +24,7 @@ namespace CE::Function::Tag
 
 		bool empty();
 
-		std::list<Tag*>& getTagList();
+		std::list<Tag*>& getTags();
 	private:
 		std::list<Tag*> m_tagList;
 	};

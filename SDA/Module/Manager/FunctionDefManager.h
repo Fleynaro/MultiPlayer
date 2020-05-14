@@ -28,7 +28,7 @@ namespace CE
 
 		void loadFunctions();
 
-		Function::Function* createFunction(ProccessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl);
+		Function::Function* createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl);
 
 		void createDefaultFunction();
 

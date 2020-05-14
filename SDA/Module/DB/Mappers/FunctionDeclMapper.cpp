@@ -47,6 +47,7 @@ IDomainObject* FunctionDeclMapper::doLoad(Database* db, SQLite::Statement& query
 		static_cast<Function::MethodDecl*>(decl)->setRole((Function::MethodDecl::Role)(int)query.getColumn("role"));
 	}
 	decl->setId(decl_id);
+	decl->setExported((bool)(int)query.getColumn("exported"));
 
 	auto type = getManager()->getProgramModule()->getTypeManager()->getTypeById(query.getColumn("ret_type_id"));
 	if (type == nullptr) {
@@ -104,8 +105,8 @@ void FunctionDeclMapper::doInsert(Database* db, IDomainObject* obj) {
 void FunctionDeclMapper::doUpdate(Database* db, IDomainObject* obj) {
 	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
 
-	SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, ret_type_id, ret_pointer_lvl, desc)\
-				VALUES(?1, ?2, ?3, ?4, ?5, ?6)");
+	SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, exported, ret_type_id, ret_pointer_lvl, desc)\
+				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");
 	query.bind(1, obj->getId());
 	bind(query, decl);
 	query.exec();
@@ -121,7 +122,8 @@ void FunctionDeclMapper::doRemove(Database* db, IDomainObject* obj) {
 void FunctionDeclMapper::bind(SQLite::Statement& query, CE::Function::FunctionDecl& decl) {
 	query.bind(2, decl.getName());
 	query.bind(3, (int)decl.getRole());
-	query.bind(4, decl.getSignature().getReturnType()->getId());
-	query.bind(5, DataType::GetPointerLevelStr(decl.getSignature().getReturnType()));
-	query.bind(6, decl.getComment());
+	query.bind(4, (int)decl.isExported());
+	query.bind(5, decl.getSignature().getReturnType()->getId());
+	query.bind(6, DataType::GetPointerLevelStr(decl.getSignature().getReturnType()));
+	query.bind(7, decl.getComment());
 }

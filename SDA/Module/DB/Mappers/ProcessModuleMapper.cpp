@@ -30,11 +30,11 @@ ProcessModuleManager* ProcessModuleMapper::getManager()
 IDomainObject* ProcessModuleMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	IDomainObject* obj = nullptr;
-	std::string moduleName = query.getColumn("name");
-	obj = new ProccessModule(
+	std::string fileName = query.getColumn("filename");
+	obj = new ProcessModule(
 		getManager(),
-		GetModuleHandle(moduleName.c_str()),
-		moduleName,
+		GetModuleHandle(fileName.c_str()),
+		query.getColumn("name"),
 		query.getColumn("desc")
 	);
 	obj->setId(query.getColumn("module_id"));
@@ -48,8 +48,8 @@ void ProcessModuleMapper::doInsert(Database* db, IDomainObject* obj)
 
 void ProcessModuleMapper::doUpdate(Database* db, IDomainObject* obj)
 {
-	auto module = static_cast<ProccessModule*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_process_modules(module_id, name, desc) VALUES(?1, ?2, ?3)");
+	auto module = static_cast<ProcessModule*>(obj);
+	SQLite::Statement query(*db, "REPLACE INTO sda_process_modules(module_id, filename, name, desc) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, module->getId());
 	bind(query, *module);
 	query.exec();
@@ -62,8 +62,9 @@ void ProcessModuleMapper::doRemove(Database* db, IDomainObject* obj)
 	query.exec();
 }
 
-void ProcessModuleMapper::bind(SQLite::Statement& query, CE::ProccessModule& module)
+void ProcessModuleMapper::bind(SQLite::Statement& query, CE::ProcessModule& module)
 {
-	query.bind(2, module.getName());
-	query.bind(3, module.getComment());
+	query.bind(2, module.getFile().getFilename());
+	query.bind(3, module.getName());
+	query.bind(4, module.getComment());
 }

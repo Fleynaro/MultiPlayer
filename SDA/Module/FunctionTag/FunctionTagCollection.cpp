@@ -14,25 +14,25 @@ TagCollection::TagCollection(TagCollection* collection)
 }
 
 void TagCollection::add(TagCollection& collection) {
-	for (auto tag : collection.getTagList()) {
+	for (auto tag : collection.getTags()) {
 		add(tag);
 	}
 }
 
 void TagCollection::add(Tag* tag) {
-	getTagList().push_back(tag);
+	getTags().push_back(tag);
 }
 
 void TagCollection::remove(Tag* tag) {
-	getTagList().remove(tag);
+	getTags().remove(tag);
 }
 
 void TagCollection::clear() {
-	getTagList().clear();
+	getTags().clear();
 }
 
 bool TagCollection::contains(Tag* tag) {
-	for (auto tag_ : getTagList()) {
+	for (auto tag_ : getTags()) {
 		if (tag == tag_)
 			return true;
 	}
@@ -40,7 +40,7 @@ bool TagCollection::contains(Tag* tag) {
 }
 
 bool TagCollection::contains(TagCollection& collection) {
-	for (auto tag : collection.getTagList()) {
+	for (auto tag : collection.getTags()) {
 		if (!contains(tag))
 			return false;
 	}
@@ -48,9 +48,9 @@ bool TagCollection::contains(TagCollection& collection) {
 }
 
 bool TagCollection::empty() {
-	return getTagList().empty();
+	return getTags().empty();
 }
 
-std::list<Tag*>& TagCollection::getTagList() {
+std::list<Tag*>& TagCollection::getTags() {
 	return m_tagList;
 }

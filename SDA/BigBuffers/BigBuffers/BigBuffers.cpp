@@ -194,11 +194,41 @@ void shellcode_export_finder(BYTE* moduleBase)
     return;
 }
 
+#include <psapi.h>
+int PrintModules()
+{
+    HMODULE hMods[1024];
+    HANDLE hProcess;
+    DWORD cbNeeded;
+    unsigned int i;
+    hProcess = GetCurrentProcess();
+    if (NULL == hProcess)
+        return 1;
+
+    if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded))
+    {
+        for (i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
+        {
+            TCHAR szModName[MAX_PATH];
+            if (GetModuleFileNameEx(hProcess, hMods[i], szModName,
+                sizeof(szModName) / sizeof(TCHAR)))
+            {
+                printf("\t%s (0x%08X)\n", szModName, hMods[i]);
+            }
+        }
+    }
+
+    return 0;
+}
+
 int main(int argc, char** argv)
 {
     auto r = rand();
 
-    HMODULE lib = LoadLibraryEx(L"kernel32.dll", NULL, DONT_RESOLVE_DLL_REFERENCES);
+    HMODULE lib = LoadLibraryEx("kernel32.dll", NULL, DONT_RESOLVE_DLL_REFERENCES);
     shellcode_export_finder((BYTE*)lib);
+
+    PrintModules();
+
     return 0;
 }

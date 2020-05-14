@@ -184,7 +184,6 @@
     <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
     <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
     <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
-    <ClCompile Include="Module\Address\ObjectLocation.cpp" />
     <ClCompile Include="Module\Address\ProcessModule.cpp" />
     <ClCompile Include="Module\CodeGraph\Analysis\CompareFunctionBodies.cpp" />
     <ClCompile Include="Module\CodeGraph\Analysis\ContextDistance.cpp" />
@@ -288,7 +287,6 @@
     <ClCompile Include="Vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Module\Address\ObjectLocation.h" />
     <ClInclude Include="Module\Address\ProcessModule.h" />
     <ClInclude Include="Module\CodeGraph\Analysis\CompareFunctionBodies.h" />
     <ClInclude Include="Module\CodeGraph\Analysis\ContextDistance.h" />

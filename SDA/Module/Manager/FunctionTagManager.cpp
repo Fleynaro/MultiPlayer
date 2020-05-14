@@ -62,7 +62,7 @@ void FunctionTagManager::calculateAllTags() {
 
 				auto gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclarationPtr());
 				if (gCollection != nullptr) {
-					for (auto tag : gCollection->getTagList()) {
+					for (auto tag : gCollection->getTags()) {
 						if (tag->getType() == Tag::GET) {
 							tags.push_front(std::make_pair(stack.size(), tag));
 						}
@@ -125,7 +125,7 @@ TagCollection FunctionTagManager::getTagCollection(Function::Function* function)
 			if (!funcNode->isNotCalculated()) {
 				auto gCollection = getGlobalTagCollectionByDecl(funcNode->getFunction()->getDeclarationPtr());
 				if (gCollection != nullptr) {
-					for (auto tag : gCollection->getTagList()) {
+					for (auto tag : gCollection->getTags()) {
 						if (tag->getType() == Tag::SET && !collection.contains(tag)) {
 							collection.add(tag);
 						}

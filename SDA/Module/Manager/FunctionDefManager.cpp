@@ -22,7 +22,7 @@ void FunctionManager::loadFunctions() {
 	m_funcDefMapper->loadAll();
 }
 
-Function::Function* FunctionManager::createFunction(ProccessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
+Function::Function* FunctionManager::createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, module, ranges, decl);
 	def->setMapper(m_funcDefMapper);
 	def->setId(m_funcDefMapper->getNextId());

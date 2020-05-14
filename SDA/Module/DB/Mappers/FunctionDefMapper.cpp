@@ -56,8 +56,8 @@ void FunctionDefMapper::loadFunctionRanges(Database* db, CE::Function::FunctionD
 	while (query.executeStep())
 	{
 		definition.addRange(AddressRange(
-			definition.getProccessModule()->toAbsAddr(query.getColumn("min_offset")),
-			definition.getProccessModule()->toAbsAddr(query.getColumn("max_offset"))
+			definition.getProcessModule()->toAbsAddr(query.getColumn("min_offset")),
+			definition.getProcessModule()->toAbsAddr(query.getColumn("max_offset"))
 		));
 	}
 }
@@ -76,8 +76,8 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 					VALUES(?1, ?2, ?3, ?4)");
 			query.bind(1, definition.getId());
 			query.bind(2, order_id);
-			query.bind(3, definition.getProccessModule()->toRelAddr(range.getMinAddress()));
-			query.bind(4, definition.getProccessModule()->toRelAddr(range.getMaxAddress()));
+			query.bind(3, definition.getProcessModule()->toRelAddr(range.getMinAddress()));
+			query.bind(4, definition.getProcessModule()->toRelAddr(range.getMaxAddress()));
 			query.exec();
 			order_id++;
 		}
@@ -107,5 +107,5 @@ void FunctionDefMapper::doRemove(Database* db, IDomainObject* obj) {
 
 void FunctionDefMapper::bind(SQLite::Statement& query, CE::Function::FunctionDefinition& def) {
 	query.bind(2, def.getDeclaration().getId());
-	query.bind(3, def.getProccessModule()->getId());
+	query.bind(3, def.getProcessModule()->getId());
 }

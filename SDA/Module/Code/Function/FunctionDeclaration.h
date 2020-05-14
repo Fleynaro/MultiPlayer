@@ -51,6 +51,10 @@ namespace CE
 				return m_functions;
 			}
 
+			void setExported(bool toggle);
+
+			bool isExported();
+
 			FunctionDeclManager* getManager();
 
 			static bool isFunction(Role role);
@@ -59,6 +63,7 @@ namespace CE
 			ArgNameList m_argNames;
 			FunctionDeclManager* m_manager;
 			std::list<FunctionDefinition*> m_functions;
+			bool m_exported = false;
 		};
 	};
 };

@@ -2,7 +2,7 @@
 #include <DB/AbstractMapper.h>
 
 namespace CE {
-	class ProccessModule;
+	class ProcessModule;
 	class ProcessModuleManager;
 };
 
@@ -28,6 +28,6 @@ namespace DB
 		void doRemove(Database* db, IDomainObject* obj) override;
 
 	private:
-		void bind(SQLite::Statement& query, CE::ProccessModule& module);
+		void bind(SQLite::Statement& query, CE::ProcessModule& module);
 	};
 };

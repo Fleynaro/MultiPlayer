@@ -66,17 +66,28 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
     auto declManager = funcManager->getFunctionDeclManager();
-    ProccessModule* kernel32;
-    ProccessModule* ucrtbase;
+    auto modulesManager = m_programModule->getProcessModuleManager();
+    ProcessModule* kernel32;
+    ProcessModule* ucrtbase;
 
-    //for proceses
+    //for processes
     {
-        kernel32 = m_programModule->getProcessModuleManager()->createProcessModule("kernel32.dll", "core");
-        ucrtbase = m_programModule->getProcessModuleManager()->createProcessModule("ucrtbase.dll", "main dll");
+        auto modules = modulesManager->getCurrentlyLoadedModules();
+        for (auto it : modules) {
+            if (!modulesManager->findProcessModule(it)) {
+                modulesManager->createProcessModule(it);
+            }
+        }
+
+        kernel32 = modulesManager->getProcessModuleByName("kernel32.dll");
+        ASSERT_NE(kernel32, nullptr);
+        ucrtbase = modulesManager->getProcessModuleByName("ucrtbase.dll");
+        ASSERT_NE(ucrtbase, nullptr);
     }
 
     //for functions
     {
+        auto tagManager = m_programModule->getFunctionTagManager();
         ASSERT_EQ(funcManager->getItemsCount(), 0);
         auto module = m_programModule->getProcessModuleManager()->getMainModule();
 
@@ -86,6 +97,15 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         auto function4 = funcManager->createFunction(module,    { AddressRange(&setPlayerPos, calculateFunctionSize((byte*)&setPlayerPos)) },     declManager->createFunctionDecl("setPlayerPos", ""));
         auto function5 = funcManager->createFunction(module,    { AddressRange(&setPlayerVel, calculateFunctionSize((byte*)&setPlayerVel)) },     declManager->createFunctionDecl("setPlayerVel", ""));
         auto function6 = funcManager->createFunction(module,    { AddressRange(&sumArray, calculateFunctionSize((byte*)&sumArray)) },             declManager->createFunctionDecl("sumArray", ""));
+        
+        auto libExportedFunctions = kernel32->getExportedFunctions();
+        for (auto it : libExportedFunctions) {
+            if (it.first != "GetErrorMode")
+                continue;
+            auto function = funcManager->createFunction(ucrtbase, { AddressRange(it.second, calculateFunctionSize((byte*)it.second)) }, declManager->createFunctionDecl(it.first, "exported function from kernel32.dll"));
+            tagManager->createUserTag(function->getDeclarationPtr(), tagManager->m_setTag, "WinAPI", "From kernel32.dll");
+            function->setExported(true);
+        }
         
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg1");
         function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg2");
@@ -98,7 +118,6 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
 
         //for function tags
         {
-            auto tagManager = m_programModule->getFunctionTagManager();
             tagManager->createUserTag(function1->getDeclarationPtr(), tagManager->m_getTag, "tag1", "test GET tag1");
             tagManager->createUserTag(function2->getDeclarationPtr(), tagManager->m_setTag, "tag2", "test SET tag2");
         }
@@ -168,7 +187,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     //for functions
     {
         auto funcManager = m_programModule->getFunctionManager();
-        ASSERT_EQ(funcManager->getItemsCount(), 6);
+        ASSERT_EQ(funcManager->getItemsCount(), 7);
         
         auto func = funcManager->getFunctionAt(&setRot);
         ASSERT_EQ(func->getDeclaration().getArgNameList().size(), 5);
@@ -180,7 +199,10 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         //for function tags
         {
             auto tagManager = m_programModule->getFunctionTagManager();
-            ASSERT_EQ(tagManager->getItemsCount(), 2 + 2);
+            ASSERT_EQ(tagManager->getItemsCount(), 3 + 2);
+
+            auto tags = tagManager->getTagCollection(func);
+            ASSERT_EQ(tags.getTags().size(), 3);
         }
     }
 
@@ -274,8 +296,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     auto typeManager = m_programModule->getTypeManager();
     auto statManager = m_programModule->getStatManager();
     auto funcManager = m_programModule->getFunctionManager();
-    EXPECT_EQ(funcManager->getItemsCount(), 6);
-
+    
     auto function = funcManager->getFunctionAt(&setRot);
     ASSERT_NE(function, nullptr);
 
@@ -502,7 +523,8 @@ int setRot(int a, float x, float y, float z, int c)
     setPlayerPos();
     gVar = float(rand() % 10);
     changeGvar();
-    return (int)result;
+    auto errorMode = GetErrorMode();
+    return (int)result + errorMode;
 }
 
 int sumArray(arrType arr[3][2], char* str)

@@ -11,7 +11,7 @@ namespace CE
 	class ProcessModuleManager : public AbstractItemManager
 	{
 	public:
-		using Iterator = AbstractIterator<ProccessModule>;
+		using Iterator = AbstractIterator<ProcessModule>;
 
 		ProcessModuleManager(ProgramModule* module);
 
@@ -19,15 +19,21 @@ namespace CE
 
 		void loadProcessModules();
 
-		ProccessModule* createProcessModule(const std::string& name, const std::string& comment = "");
+		ProcessModule* createProcessModule(HMODULE hModule, const std::string& comment = "");
 
-		ProccessModule* getProcessModuleById(DB::Id id);
+		ProcessModule* createProcessModule(FS::File file, const std::string& comment = "");
 
-		ProccessModule* getProcessModuleByName(const std::string& name);
+		ProcessModule* getProcessModuleById(DB::Id id);
 
-		ProccessModule* getMainModule();
+		ProcessModule* getProcessModuleByName(const std::string& name);
+
+		ProcessModule* findProcessModule(HMODULE hModule);
+
+		ProcessModule* getMainModule();
+
+		std::list<HMODULE> getCurrentlyLoadedModules();
 	private:
-		ProccessModule* m_mainModule;
-		DB::ProcessModuleMapper* m_proccessModuleMapper;
+		ProcessModule* m_mainModule;
+		DB::ProcessModuleMapper* m_processModuleMapper;
 	};
 };
