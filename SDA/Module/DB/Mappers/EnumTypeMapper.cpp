@@ -21,17 +21,17 @@ IDomainObject* EnumTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 	return type;
 }
 
-void EnumTypeMapper::saveEnumFields(Database* db, DataType::Enum* Enum)
+void EnumTypeMapper::saveEnumFields(TransactionContext* ctx, DataType::Enum* Enum)
 {
 	{
-		SQLite::Statement query(*db, "DELETE FROM sda_enum_fields WHERE enum_id=?1");
+		SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_enum_fields WHERE enum_id=?1");
 		query.bind(1, Enum->getId());
 		query.exec();
 	}
 
 	{
 		for (auto it : Enum->getFieldDict()) {
-			SQLite::Statement query(*db, "INSERT INTO sda_enum_fields (enum_id, name, value) VALUES(?1, ?2, ?3)");
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_enum_fields (enum_id, name, value) VALUES(?1, ?2, ?3)");
 			query.bind(1, Enum->getId());
 			query.bind(2, it.second);
 			query.bind(3, it.first);
@@ -51,17 +51,17 @@ void EnumTypeMapper::loadFieldsForEnum(Database* db, DataType::Enum* Enum)
 	}
 }
 
-void EnumTypeMapper::doInsert(Database* db, IDomainObject* obj)
+void EnumTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 {
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void EnumTypeMapper::doUpdate(Database* db, IDomainObject* obj)
+void EnumTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
-	saveEnumFields(db, static_cast<DataType::Enum*>(obj));
+	saveEnumFields(ctx, static_cast<DataType::Enum*>(obj));
 }
 
-void EnumTypeMapper::doRemove(Database* db, IDomainObject* obj)
+void EnumTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
 	
 }

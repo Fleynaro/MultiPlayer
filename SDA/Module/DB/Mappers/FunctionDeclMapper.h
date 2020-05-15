@@ -23,13 +23,13 @@ namespace DB
 
 		void loadFunctionDeclArguments(Database* db, CE::Function::FunctionDecl& decl);
 
-		void saveFunctionDeclArguments(Database* db, CE::Function::FunctionDecl& decl);
+		void saveFunctionDeclArguments(TransactionContext* ctx, CE::Function::FunctionDecl& decl);
 
-		void doInsert(Database* db, IDomainObject* obj) override;
+		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, IDomainObject* obj) override;
+		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doRemove(Database* db, IDomainObject* obj) override;
+		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
 		void bind(SQLite::Statement& query, CE::Function::FunctionDecl& decl);

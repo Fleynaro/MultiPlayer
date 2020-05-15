@@ -31,5 +31,7 @@ namespace DB
 		std::list<IDomainObject*> m_insertedObjs;
 		std::list<IDomainObject*> m_updatedObjs;
 		std::list<IDomainObject*> m_removedObjs;
+
+		Id createSaveRecord();
 	};
 };

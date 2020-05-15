@@ -23,15 +23,15 @@ namespace DB
 
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 	protected:
-		void doInsert(Database* db, IDomainObject* obj) override;
+		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, IDomainObject* obj) override;
+		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doRemove(Database* db, IDomainObject* obj) override;
+		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 	private:
-		void saveFiltersForFuncTrigger(Database* db, CE::Trigger::Function::Trigger* trigger);
+		void saveFiltersForFuncTrigger(TransactionContext* ctx, CE::Trigger::Function::Trigger* trigger);
 
-		void saveFiltersForFuncTriggerRec(Database* db, DB::Id trigger_id, int filter_idx, CE::Trigger::Function::Filter::AbstractFilter* filter);
+		void saveFiltersForFuncTriggerRec(TransactionContext* ctx, DB::Id trigger_id, int filter_idx, CE::Trigger::Function::Filter::AbstractFilter* filter);
 
 		void loadFiltersForFuncTrigger(Database* db, CE::Trigger::Function::Trigger* trigger);
 

@@ -1,4 +1,5 @@
 #include "Transaction.h"
+#include <chrono>
 
 using namespace SQLite;
 
@@ -33,26 +34,39 @@ void DB::Transaction::markAsRemoved(IDomainObject* obj) {
 void DB::Transaction::commit() {
 	SQLite::Transaction transaction(*m_db);
 
-	//MYTODO: ид еще не присвоился объекту, а объект везде используется => не использовать в программе ID объектов
+	TransactionContext ctx;
+	ctx.m_saveId = createSaveRecord();
+	ctx.m_db = m_db;
 
 	for (auto obj : m_insertedObjs) {
 		if (obj->getMapper() != nullptr) {
-			obj->getMapper()->insert(m_db, obj);
+			obj->getMapper()->insert(&ctx, obj);
 			m_updatedObjs.remove(obj);
 		}
 	}
 
 	for (auto obj : m_updatedObjs) {
 		if (obj->getMapper() != nullptr)
-			obj->getMapper()->update(m_db, obj);
+			obj->getMapper()->update(&ctx, obj);
 	}
 
 	for (auto obj : m_removedObjs) {
 		if (obj->getMapper() != nullptr) {
-			obj->getMapper()->remove(m_db, obj);
+			obj->getMapper()->remove(&ctx, obj);
 			delete obj;
 		}
 	}
-
+	
 	transaction.commit();
+}
+
+DB::Id DB::Transaction::createSaveRecord() {
+	using namespace std::chrono;
+	SQLite::Statement query(*m_db, "INSERT INTO sda_saves (date, insertsCount, updatesCount, deletesCount) VALUES(?1, ?2, ?3, ?4)");
+	query.bind(1, duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
+	query.bind(2, (int)m_insertedObjs.size());
+	query.bind(3, (int)m_updatedObjs.size());
+	query.bind(4, (int)m_removedObjs.size());
+	query.exec();
+	return (DB::Id)m_db->getLastInsertRowid();
 }

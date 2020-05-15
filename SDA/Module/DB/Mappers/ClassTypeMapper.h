@@ -18,13 +18,13 @@ namespace DB
 	protected:
 		void loadMethodsForClass(Database* db, CE::DataType::Class* Class);
 
-		void saveMethodsForClass(Database* db, CE::DataType::Class* Class);
+		void saveMethodsForClass(TransactionContext* ctx, CE::DataType::Class* Class);
 
-		void doInsert(Database* db, IDomainObject* obj) override;
+		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, IDomainObject* obj) override;
+		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doRemove(Database* db, IDomainObject* obj) override;
+		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
 		void bind(SQLite::Statement& query, CE::DataType::Class& type);

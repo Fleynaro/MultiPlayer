@@ -38,16 +38,16 @@ IDomainObject* TriggerGroupMapper::doLoad(Database* db, SQLite::Statement& query
 	return group;
 }
 
-void TriggerGroupMapper::saveTriggersForGroup(Database* db, Trigger::TriggerGroup* group) {
+void TriggerGroupMapper::saveTriggersForGroup(TransactionContext* ctx, Trigger::TriggerGroup* group) {
 	{
-		SQLite::Statement query(*db, "DELETE FROM sda_trigger_group_triggers WHERE group_id=?1");
+		SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_trigger_group_triggers WHERE group_id=?1");
 		query.bind(1, group->getId());
 		query.exec();
 	}
 
 	{
 		for (const auto& trigger : group->getTriggers()) {
-			SQLite::Statement query(*db, "INSERT INTO sda_trigger_group_triggers (group_id, trigger_id) VALUES(?1, ?2)");
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_trigger_group_triggers (group_id, trigger_id) VALUES(?1, ?2)");
 			query.bind(1, group->getId());
 			query.bind(2, trigger->getId());
 			query.exec();
@@ -69,29 +69,29 @@ void TriggerGroupMapper::loadTriggersForGroup(Database* db, Trigger::TriggerGrou
 	}
 }
 
-void TriggerGroupMapper::doInsert(Database* db, IDomainObject* obj)
+void TriggerGroupMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 {
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void TriggerGroupMapper::doUpdate(Database* db, IDomainObject* obj) {
+void TriggerGroupMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto group = static_cast<Trigger::TriggerGroup*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_trigger_groups(group_id, name, desc) VALUES(?1, ?2, ?3)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_trigger_groups(group_id, name, desc) VALUES(?1, ?2, ?3)");
 	query.bind(1, group->getId());
 	bind(query, *group);
 	query.exec();
-	saveTriggersForGroup(db, group);
+	saveTriggersForGroup(ctx, group);
 }
 
-void TriggerGroupMapper::doRemove(Database* db, IDomainObject* obj)
+void TriggerGroupMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
 	auto group = static_cast<Trigger::TriggerGroup*>(obj);
-	Statement query(*db, "DELETE FROM sda_trigger_groups WHERE group_id=?1");
+	Statement query(*ctx->m_db, "DELETE FROM sda_trigger_groups WHERE group_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 
 	group->getTriggers().clear();
-	saveTriggersForGroup(db, group);
+	saveTriggersForGroup(ctx, group);
 }
 
 void TriggerGroupMapper::bind(SQLite::Statement& query, Trigger::TriggerGroup& group)

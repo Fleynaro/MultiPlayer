@@ -67,20 +67,21 @@ IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
 	return obj;
 }
 
-void DataTypeMapper::doInsert(Database* db, IDomainObject* obj) {
-	doUpdate(db, obj);
+void DataTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
+	doUpdate(ctx, obj);
 }
 
-void DataTypeMapper::doUpdate(Database* db, IDomainObject* obj) {
+void DataTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto type = static_cast<CE::DataType::Type*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_types (id, `group`, name, desc) VALUES(?1, ?2, ?3, ?4)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_types (id, `group`, name, desc, save_id) VALUES(?1, ?2, ?3, ?4, ?5)");
 	query.bind(1, type->getId());
 	bind(query, *type);
+	query.bind(5, ctx->m_saveId);
 	query.exec();
 }
 
-void DataTypeMapper::doRemove(Database* db, IDomainObject* obj) {
-	SQLite::Statement query(*db, "DELETE FROM sda_types WHERE id=?1");
+void DataTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
+	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_types WHERE id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

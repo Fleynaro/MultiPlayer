@@ -11,16 +11,16 @@ namespace DB
 
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 	protected:
-		void saveEnumFields(Database* db, CE::DataType::Enum* Enum);
+		void saveEnumFields(TransactionContext* ctx, CE::DataType::Enum* Enum);
 
 		void loadFieldsForEnum(Database* db, CE::DataType::Enum* Enum);
 
 
-		void doInsert(Database* db, IDomainObject* obj) override;
+		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, IDomainObject* obj) override;
+		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doRemove(Database* db, IDomainObject* obj) override;
+		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
 		void bind(SQLite::Statement& query, CE::DataType::Enum& type);

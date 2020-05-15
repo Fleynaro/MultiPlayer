@@ -34,23 +34,23 @@ IDomainObject* TypedefTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 	return type;
 }
 
-void TypedefTypeMapper::doInsert(Database* db, IDomainObject* obj)
+void TypedefTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 {
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void TypedefTypeMapper::doUpdate(Database* db, IDomainObject* obj)
+void TypedefTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
 	auto Typedef = static_cast<DataType::Typedef*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_typedefs (type_id, ref_type_id, pointer_lvl) VALUES(?1, ?2, ?3)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_typedefs (type_id, ref_type_id, pointer_lvl) VALUES(?1, ?2, ?3)");
 	query.bind(1, Typedef->getId());
 	bind(query, *Typedef);
 	query.exec();
 }
 
-void TypedefTypeMapper::doRemove(Database* db, IDomainObject* obj)
+void TypedefTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
-	SQLite::Statement query(*db, "DELETE FROM sda_typedefs WHERE type_id=?1");
+	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_typedefs WHERE type_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

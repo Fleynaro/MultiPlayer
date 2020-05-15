@@ -19,36 +19,36 @@ IDomainObject* FunctionTriggerMapper::doLoad(Database * db, SQLite::Statement & 
 	return trigger;
 }
 
-void FunctionTriggerMapper::doInsert(Database* db, IDomainObject* obj) {
-	doUpdate(db, obj);
+void FunctionTriggerMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
+	doUpdate(ctx, obj);
 }
 
-void FunctionTriggerMapper::doUpdate(Database* db, IDomainObject* obj) {
+void FunctionTriggerMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto tr = static_cast<Trigger::Function::Trigger*>(obj);
-	saveFiltersForFuncTrigger(db, tr);
+	saveFiltersForFuncTrigger(ctx, tr);
 }
 
-void FunctionTriggerMapper::doRemove(Database* db, IDomainObject* obj) {
+void FunctionTriggerMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
 	auto tr = static_cast<Trigger::Function::Trigger*>(obj);
 	//tr->getFilters()->getFilters().clear();
-	saveFiltersForFuncTrigger(db, tr);
+	saveFiltersForFuncTrigger(ctx, tr);
 }
 
-void FunctionTriggerMapper::saveFiltersForFuncTrigger(Database* db, Trigger::Function::Trigger* trigger) {
-	SQLite::Statement query(*db, "DELETE FROM sda_func_trigger_filters WHERE trigger_id=?1");
+void FunctionTriggerMapper::saveFiltersForFuncTrigger(TransactionContext* ctx, Trigger::Function::Trigger* trigger) {
+	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_func_trigger_filters WHERE trigger_id=?1");
 	query.bind(1, trigger->getId());
 	query.exec();
-	saveFiltersForFuncTriggerRec(db, trigger->getId(), 1, trigger->getFilters());
+	saveFiltersForFuncTriggerRec(ctx, trigger->getId(), 1, trigger->getFilters());
 }
 
-void FunctionTriggerMapper::saveFiltersForFuncTriggerRec(Database* db, DB::Id trigger_id, int filter_idx, Trigger::Function::Filter::AbstractFilter* filter) {
+void FunctionTriggerMapper::saveFiltersForFuncTriggerRec(TransactionContext* ctx, DB::Id trigger_id, int filter_idx, Trigger::Function::Filter::AbstractFilter* filter) {
 	using namespace Trigger::Function::Filter;
 
 	if (filter_idx != 1) {
 		BitStream bs;
 		filter->serialize(bs);
 
-		SQLite::Statement query(*db, "INSERT INTO sda_func_trigger_filters (trigger_id, filter_id, filter_idx, data) VALUES(?1, ?2, ?3, ?4)");
+		SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_func_trigger_filters (trigger_id, filter_id, filter_idx, data) VALUES(?1, ?2, ?3, ?4)");
 		query.bind(1, trigger_id);
 		query.bind(2, (int)filter->getId());
 		query.bind(3, filter_idx);
@@ -58,7 +58,7 @@ void FunctionTriggerMapper::saveFiltersForFuncTriggerRec(Database* db, DB::Id tr
 
 	if (auto compositeFilter = dynamic_cast<AbstractCompositeFilter*>(filter)) {
 		for (const auto& filter : compositeFilter->getFilters()) {
-			saveFiltersForFuncTriggerRec(db, trigger_id, filter_idx + 1, filter);
+			saveFiltersForFuncTriggerRec(ctx, trigger_id, filter_idx + 1, filter);
 		}
 	}
 }

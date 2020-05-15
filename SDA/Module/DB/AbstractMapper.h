@@ -6,6 +6,12 @@ namespace DB
 {
 	using namespace SQLite;
 
+	struct TransactionContext
+	{
+		Id m_saveId;
+		Database* m_db;
+	};
+
 	class IRepository
 	{
 	public:
@@ -24,9 +30,9 @@ namespace DB
 	class IMapper
 	{
 	public:
-		virtual void insert(Database* db, IDomainObject* obj) = 0;
-		virtual void update(Database* db, IDomainObject* obj) = 0;
-		virtual void remove(Database* db, IDomainObject* obj) = 0;
+		virtual void insert(TransactionContext* ctx, IDomainObject* obj) = 0;
+		virtual void update(TransactionContext* ctx, IDomainObject* obj) = 0;
+		virtual void remove(TransactionContext* ctx, IDomainObject* obj) = 0;
 		virtual IRepository* getRepository() = 0;
 	};
 
@@ -41,20 +47,20 @@ namespace DB
 
 		void load(Database* db, Statement& query);
 
-		void insert(Database* db, IDomainObject* obj) override;
+		void insert(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void update(Database* db, IDomainObject* obj) override;
+		void update(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void remove(Database* db, IDomainObject* obj) override;
+		void remove(TransactionContext* ctx, IDomainObject* obj) override;
 
 		IRepository* getRepository() override;
 		
 		IDomainObject* find(Id id);
 	protected:
 		virtual IDomainObject* doLoad(Database* db, Statement& query) = 0;
-		virtual void doInsert(Database* db, IDomainObject* obj) = 0;
-		virtual void doUpdate(Database* db, IDomainObject* obj) = 0;
-		virtual void doRemove(Database* db, IDomainObject* obj) = 0;
+		virtual void doInsert(TransactionContext* ctx, IDomainObject* obj) = 0;
+		virtual void doUpdate(TransactionContext* ctx, IDomainObject* obj) = 0;
+		virtual void doRemove(TransactionContext* ctx, IDomainObject* obj) = 0;
 	};
 
 	class ChildAbstractMapper : public IMapper
@@ -64,17 +70,17 @@ namespace DB
 
 		virtual IDomainObject* doLoad(Database* db, Statement& query) = 0;
 
-		void insert(Database* db, IDomainObject* obj);
+		void insert(TransactionContext* ctx, IDomainObject* obj);
 
-		void update(Database* db, IDomainObject* obj);
+		void update(TransactionContext* ctx, IDomainObject* obj);
 
-		void remove(Database* db, IDomainObject* obj);
+		void remove(TransactionContext* ctx, IDomainObject* obj);
 
 		IRepository* getRepository() override;
 	protected:
-		virtual void doInsert(Database* db, IDomainObject* obj) = 0;
-		virtual void doUpdate(Database* db, IDomainObject* obj) = 0;
-		virtual void doRemove(Database* db, IDomainObject* obj) = 0;
+		virtual void doInsert(TransactionContext* ctx, IDomainObject* obj) = 0;
+		virtual void doUpdate(TransactionContext* ctx, IDomainObject* obj) = 0;
+		virtual void doRemove(TransactionContext* ctx, IDomainObject* obj) = 0;
 		IMapper* m_parentMapper;
 	};
 

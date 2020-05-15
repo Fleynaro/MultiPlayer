@@ -75,9 +75,9 @@ void FunctionDeclMapper::loadFunctionDeclArguments(Database* db, CE::Function::F
 	}
 }
 
-void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::FunctionDecl& decl) {
+void FunctionDeclMapper::saveFunctionDeclArguments(TransactionContext* ctx, CE::Function::FunctionDecl& decl) {
 	{
-		SQLite::Statement query(*db, "DELETE FROM sda_func_arguments WHERE decl_id=?1");
+		SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_func_arguments WHERE decl_id=?1");
 		query.bind(1, decl.getId());
 		query.exec();
 	}
@@ -85,7 +85,7 @@ void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::F
 	{
 		int id = 0;
 		for (auto type : decl.getSignature().getArgList()) {
-			SQLite::Statement query(*db, "INSERT INTO sda_func_arguments (decl_id, id, name, type_id, pointer_lvl) \
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_func_arguments (decl_id, id, name, type_id, pointer_lvl) \
 					VALUES(?1, ?2, ?3, ?4, ?5)");
 			query.bind(1, decl.getId());
 			query.bind(2, id);
@@ -98,23 +98,24 @@ void FunctionDeclMapper::saveFunctionDeclArguments(Database* db, CE::Function::F
 	}
 }
 
-void FunctionDeclMapper::doInsert(Database* db, IDomainObject* obj) {
-	doUpdate(db, obj);
+void FunctionDeclMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
+	doUpdate(ctx, obj);
 }
 
-void FunctionDeclMapper::doUpdate(Database* db, IDomainObject* obj) {
+void FunctionDeclMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto& decl = *static_cast<CE::Function::FunctionDecl*>(obj);
 
-	SQLite::Statement query(*db, "REPLACE INTO sda_func_decls (decl_id, name, role, exported, ret_type_id, ret_pointer_lvl, desc)\
-				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_func_decls (decl_id, name, role, exported, ret_type_id, ret_pointer_lvl, desc, save_id)\
+				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)");
 	query.bind(1, obj->getId());
 	bind(query, decl);
+	query.bind(8, ctx->m_saveId);
 	query.exec();
-	saveFunctionDeclArguments(db, decl);
+	saveFunctionDeclArguments(ctx, decl);
 }
 
-void FunctionDeclMapper::doRemove(Database* db, IDomainObject* obj) {
-	Statement query(*db, "DELETE FROM sda_func_decls WHERE decl_id=?1");
+void FunctionDeclMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
+	Statement query(*ctx->m_db, "DELETE FROM sda_func_decls WHERE decl_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

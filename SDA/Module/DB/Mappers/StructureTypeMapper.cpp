@@ -46,9 +46,9 @@ void StructureTypeMapper::loadFieldsForStructure(Database* db, CE::DataType::Str
 	}
 }
 
-void StructureTypeMapper::saveFieldsForStructure(Database* db, CE::DataType::Structure* structure) {
+void StructureTypeMapper::saveFieldsForStructure(TransactionContext* ctx, CE::DataType::Structure* structure) {
 	{
-		SQLite::Statement query(*db, "DELETE FROM sda_struct_fields WHERE struct_id=?1");
+		SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_struct_fields WHERE struct_id=?1");
 		query.bind(1, structure->getId());
 		query.exec();
 	}
@@ -56,7 +56,7 @@ void StructureTypeMapper::saveFieldsForStructure(Database* db, CE::DataType::Str
 	{
 		for (auto& it : structure->getFields()) {
 			auto field = it.second;
-			SQLite::Statement query(*db, "INSERT INTO sda_struct_fields (struct_id, offset, name, type_id, pointer_lvl) VALUES(?1, ?2, ?3, ?4, ?5)");
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_struct_fields (struct_id, offset, name, type_id, pointer_lvl) VALUES(?1, ?2, ?3, ?4, ?5)");
 			query.bind(1, structure->getId());
 			query.bind(2, field->getOffset());
 			query.bind(3, field->getName());
@@ -67,24 +67,24 @@ void StructureTypeMapper::saveFieldsForStructure(Database* db, CE::DataType::Str
 	}
 }
 
-void StructureTypeMapper::doInsert(Database* db, IDomainObject* obj)
+void StructureTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 {
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void StructureTypeMapper::doUpdate(Database* db, IDomainObject* obj)
+void StructureTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
 	auto structure = static_cast<DataType::Structure*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_structures (struct_id, size) VALUES(?1, ?2)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_structures (struct_id, size) VALUES(?1, ?2)");
 	query.bind(1, structure->getId());
 	bind(query, *structure);
 	query.exec();
-	saveFieldsForStructure(db, structure);
+	saveFieldsForStructure(ctx, structure);
 }
 
-void StructureTypeMapper::doRemove(Database* db, IDomainObject* obj)
+void StructureTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
-	SQLite::Statement query(*db, "DELETE FROM sda_structures WHERE struct_id=?1");
+	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_structures WHERE struct_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

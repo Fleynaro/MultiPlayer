@@ -22,7 +22,7 @@ namespace DB
 
 		void loadFunctionRanges(Database* db, CE::Function::FunctionDefinition& definition);
 
-		void saveFunctionRanges(Database* db, CE::Function::FunctionDefinition& definition);
+		void saveFunctionRanges(TransactionContext* ctx, CE::Function::FunctionDefinition& definition);
 
 		/*void FunctionManager::saveFunctionNodeGroup(Function::FunctionDefinition& definition, CodeGraph::Unit::NodeGroup* nodeGroup, int& id) {
 			using namespace SQLite;
@@ -171,11 +171,11 @@ namespace DB
 			}
 		}*/
 
-		void doInsert(Database* db, IDomainObject* obj) override;
+		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, IDomainObject* obj) override;
+		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doRemove(Database* db, IDomainObject* obj) override;
+		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
 		void bind(SQLite::Statement& query, CE::Function::FunctionDefinition& def);

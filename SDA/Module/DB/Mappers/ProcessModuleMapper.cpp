@@ -41,23 +41,23 @@ IDomainObject* ProcessModuleMapper::doLoad(Database* db, SQLite::Statement& quer
 	return obj;
 }
 
-void ProcessModuleMapper::doInsert(Database* db, IDomainObject* obj)
+void ProcessModuleMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 {
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void ProcessModuleMapper::doUpdate(Database* db, IDomainObject* obj)
+void ProcessModuleMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
 	auto module = static_cast<ProcessModule*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_process_modules(module_id, filename, name, desc) VALUES(?1, ?2, ?3, ?4)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_process_modules(module_id, filename, name, desc) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, module->getId());
 	bind(query, *module);
 	query.exec();
 }
 
-void ProcessModuleMapper::doRemove(Database* db, IDomainObject* obj)
+void ProcessModuleMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
-	Statement query(*db, "DELETE FROM sda_process_modules WHERE module_id=?1");
+	Statement query(*ctx->m_db, "DELETE FROM sda_process_modules WHERE module_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

@@ -45,24 +45,24 @@ CE::FunctionTagManager* FunctionUserTagMapper::getManager()
 	return static_cast<CE::FunctionTagManager*>(m_repository);
 }
 
-void FunctionUserTagMapper::doInsert(Database* db, IDomainObject* obj)
+void FunctionUserTagMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 {
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void FunctionUserTagMapper::doUpdate(Database* db, IDomainObject* obj)
+void FunctionUserTagMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
 	auto userTag = static_cast<CE::Function::Tag::UserTag*>(obj);
 
-	SQLite::Statement query(*db, "REPLACE INTO sda_func_tags (tag_id, parent_tag_id, decl_id, name, desc) VALUES(?1, ?2, ?3, ?4, ?5)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_func_tags (tag_id, parent_tag_id, decl_id, name, desc) VALUES(?1, ?2, ?3, ?4, ?5)");
 	query.bind(1, userTag->getId());
 	bind(query, *userTag);
 	query.exec();
 }
 
-void FunctionUserTagMapper::doRemove(Database* db, IDomainObject* obj)
+void FunctionUserTagMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
-	Statement query(*db, "DELETE FROM sda_func_tags WHERE tag_id=?1"); //OR parent_tag_id=?1
+	Statement query(*ctx->m_db, "DELETE FROM sda_func_tags WHERE tag_id=?1"); //OR parent_tag_id=?1
 	query.bind(1, obj->getId());
 	query.exec();
 }

@@ -58,17 +58,17 @@ void ClassTypeMapper::loadMethodsForClass(Database* db, DataType::Class* Class)
 	}
 }
 
-void ClassTypeMapper::saveMethodsForClass(Database* db, DataType::Class* Class)
+void ClassTypeMapper::saveMethodsForClass(TransactionContext* ctx, DataType::Class* Class)
 {
 	{
-		SQLite::Statement query(*db, "DELETE FROM sda_class_methods WHERE struct_id=?1");
+		SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_class_methods WHERE struct_id=?1");
 		query.bind(1, Class->getId());
 		query.exec();
 	}
 
 	{
 		for (auto method : Class->getMethods()) {
-			SQLite::Statement query(*db, "INSERT INTO sda_class_methods (struct_id, decl_id) VALUES(?1, ?2)");
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_class_methods (struct_id, decl_id) VALUES(?1, ?2)");
 			query.bind(1, Class->getId());
 			query.bind(2, method->getId());
 			query.exec();
@@ -76,25 +76,25 @@ void ClassTypeMapper::saveMethodsForClass(Database* db, DataType::Class* Class)
 	}
 }
 
-void ClassTypeMapper::doInsert(Database* db, IDomainObject* obj)
+void ClassTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 {
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void ClassTypeMapper::doUpdate(Database* db, IDomainObject* obj)
+void ClassTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
 	auto Class = static_cast<DataType::Class*>(obj);
 
-	SQLite::Statement query(*db, "REPLACE INTO sda_classes (struct_id, base_struct_id, vtable_id) VALUES(?1, ?2, ?3)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_classes (struct_id, base_struct_id, vtable_id) VALUES(?1, ?2, ?3)");
 	query.bind(1, Class->getId());
 	bind(query, *Class);
 	query.exec();
-	saveMethodsForClass(db, Class);
+	saveMethodsForClass(ctx, Class);
 }
 
-void ClassTypeMapper::doRemove(Database* db, IDomainObject* obj)
+void ClassTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
-	SQLite::Statement query(*db, "DELETE FROM sda_classes WHERE struct_id=?1");
+	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_classes WHERE struct_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

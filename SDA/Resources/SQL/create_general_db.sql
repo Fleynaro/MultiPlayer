@@ -1,3 +1,24 @@
+create table sda_saves
+(
+    save_id         INTEGER
+        primary key autoincrement,
+    date            INTEGER,
+    insertsCount    INTEGER,
+    updatesCount    INTEGER,
+    deletesCount    INTEGER
+);
+
+create table sda_ghidra_commits
+(
+    commit_id         INTEGER
+        primary key autoincrement,
+    date            INTEGER,
+    comment         TEXT,
+    insertsCount    INTEGER,
+    updatesCount    INTEGER,
+    deletesCount    INTEGER
+);
+
 create table sda_process_modules
 (
     module_id         INTEGER
@@ -77,7 +98,9 @@ create table sda_func_decls
     exported        INTEGER,
     ret_type_id     INTEGER not null,
     ret_pointer_lvl TEXT,
-    desc            TEXT
+    desc            TEXT,
+    save_id             INTEGER,
+    ghidra_commit_id    INTEGER
 );
 
 create table sda_func_defs
@@ -85,7 +108,9 @@ create table sda_func_defs
     def_id  INTEGER
         primary key autoincrement,
     decl_id INTEGER,
-    module_id  INTEGER
+    module_id  INTEGER,
+    save_id             INTEGER,
+    ghidra_commit_id    INTEGER
 );
 
 create table sda_func_ranges
@@ -124,7 +149,9 @@ create table sda_gvars
     offset      INTEGER,
     type_id     INTEGER,
     pointer_lvl TEXT,
-    desc        TEXT
+    desc        TEXT,
+    save_id             INTEGER,
+    ghidra_commit_id    INTEGER
 );
 
 CREATE TABLE "sda_trigger_group_triggers" (
@@ -163,7 +190,9 @@ create table sda_types
     "group" INTEGER,
     name    TEXT
         unique,
-    desc    TEXT
+    desc    TEXT,
+    save_id             INTEGER,
+    ghidra_commit_id    INTEGER
 );
 INSERT INTO sda_types (name) VALUES ('reserved');
 UPDATE SQLITE_SEQUENCE SET seq=1000 WHERE name='sda_types';
@@ -182,6 +211,8 @@ create table sda_vtables
         primary key autoincrement,
     name   TEXT,
     offset INTEGER,
-    desc   TEXT
+    desc   TEXT,
+    save_id             INTEGER,
+    ghidra_commit_id    INTEGER
 );
 

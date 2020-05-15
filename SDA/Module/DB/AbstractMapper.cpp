@@ -18,22 +18,22 @@ void DB::AbstractMapper::load(Database* db, Statement& query) {
 	}
 }
 
-void DB::AbstractMapper::insert(Database* db, IDomainObject* obj) {
+void DB::AbstractMapper::insert(TransactionContext* ctx, IDomainObject* obj) {
 	if (m_repository != nullptr)
 		m_repository->onChangeAfterCommit(obj, IRepository::Inserted);
-	doInsert(db, obj);
+	doInsert(ctx, obj);
 }
 
-void DB::AbstractMapper::update(Database* db, IDomainObject* obj) {
+void DB::AbstractMapper::update(TransactionContext* ctx, IDomainObject* obj) {
 	if (m_repository != nullptr)
 		m_repository->onChangeAfterCommit(obj, IRepository::Updated);
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void DB::AbstractMapper::remove(Database* db, IDomainObject* obj) {
+void DB::AbstractMapper::remove(TransactionContext* ctx, IDomainObject* obj) {
 	if (m_repository != nullptr)
 		m_repository->onChangeAfterCommit(obj, IRepository::Removed);
-	doRemove(db, obj);
+	doRemove(ctx, obj);
 }
 
 DB::IRepository* DB::AbstractMapper::getRepository() {
@@ -65,19 +65,19 @@ DB::ChildAbstractMapper::ChildAbstractMapper(IMapper* parentMapper)
 	: m_parentMapper(parentMapper)
 {}
 
-void DB::ChildAbstractMapper::insert(Database* db, IDomainObject* obj) {
-	m_parentMapper->insert(db, obj);
-	doInsert(db, obj);
+void DB::ChildAbstractMapper::insert(TransactionContext* ctx, IDomainObject* obj) {
+	m_parentMapper->insert(ctx, obj);
+	doInsert(ctx, obj);
 }
 
-void DB::ChildAbstractMapper::update(Database* db, IDomainObject* obj) {
-	m_parentMapper->update(db, obj);
-	doUpdate(db, obj);
+void DB::ChildAbstractMapper::update(TransactionContext* ctx, IDomainObject* obj) {
+	m_parentMapper->update(ctx, obj);
+	doUpdate(ctx, obj);
 }
 
-void DB::ChildAbstractMapper::remove(Database* db, IDomainObject* obj) {
-	m_parentMapper->remove(db, obj);
-	doRemove(db, obj);
+void DB::ChildAbstractMapper::remove(TransactionContext* ctx, IDomainObject* obj) {
+	m_parentMapper->remove(ctx, obj);
+	doRemove(ctx, obj);
 }
 
 DB::IRepository* DB::ChildAbstractMapper::getRepository() {

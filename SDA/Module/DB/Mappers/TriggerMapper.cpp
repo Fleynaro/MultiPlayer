@@ -45,22 +45,22 @@ IDomainObject* TriggerMapper::doLoad(Database* db, SQLite::Statement& query)
 	return obj;
 }
 
-void TriggerMapper::doInsert(Database* db, IDomainObject* obj)
+void TriggerMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 {
-	doUpdate(db, obj);
+	doUpdate(ctx, obj);
 }
 
-void TriggerMapper::doUpdate(Database* db, IDomainObject* obj) {
+void TriggerMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto trigger = static_cast<Trigger::AbstractTrigger*>(obj);
-	SQLite::Statement query(*db, "REPLACE INTO sda_triggers(trigger_id, type, name, desc) VALUES(?1, ?2, ?3, ?4)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_triggers(trigger_id, type, name, desc) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, trigger->getId());
 	bind(query, *trigger);
 	query.exec();
 }
 
-void TriggerMapper::doRemove(Database* db, IDomainObject* obj)
+void TriggerMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
-	Statement query(*db, "DELETE FROM sda_triggers WHERE trigger_id=?1");
+	Statement query(*ctx->m_db, "DELETE FROM sda_triggers WHERE trigger_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

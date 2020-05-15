@@ -24,15 +24,15 @@ namespace DB
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
-		void saveTriggersForGroup(Database* db, CE::Trigger::TriggerGroup* group);
+		void saveTriggersForGroup(TransactionContext* ctx, CE::Trigger::TriggerGroup* group);
 
 		void loadTriggersForGroup(Database* db, CE::Trigger::TriggerGroup* group);
 
-		void doInsert(Database* db, IDomainObject* obj) override;
+		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doUpdate(Database* db, IDomainObject* obj) override;
+		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;
 
-		void doRemove(Database* db, IDomainObject* obj) override;
+		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
 		void bind(SQLite::Statement& query, CE::Trigger::TriggerGroup& group);

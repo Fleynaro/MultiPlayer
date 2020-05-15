@@ -62,9 +62,9 @@ void FunctionDefMapper::loadFunctionRanges(Database* db, CE::Function::FunctionD
 	}
 }
 
-void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionDefinition& definition) {
+void FunctionDefMapper::saveFunctionRanges(TransactionContext* ctx, CE::Function::FunctionDefinition& definition) {
 	{
-		SQLite::Statement query(*db, "DELETE FROM sda_func_ranges WHERE def_id=?1");
+		SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_func_ranges WHERE def_id=?1");
 		query.bind(1, definition.getId());
 		query.exec();
 	}
@@ -72,7 +72,7 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 	{
 		int order_id = 0;
 		for (auto& range : definition.getAddressRangeList()) {
-			SQLite::Statement query(*db, "INSERT INTO sda_func_ranges (def_id, order_id, min_offset, max_offset) \
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_func_ranges (def_id, order_id, min_offset, max_offset) \
 					VALUES(?1, ?2, ?3, ?4)");
 			query.bind(1, definition.getId());
 			query.bind(2, order_id);
@@ -84,23 +84,24 @@ void FunctionDefMapper::saveFunctionRanges(Database* db, CE::Function::FunctionD
 	}
 }
 
-void FunctionDefMapper::doInsert(Database* db, IDomainObject* obj) {
-	doUpdate(db, obj);
+void FunctionDefMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
+	doUpdate(ctx, obj);
 }
 
-void FunctionDefMapper::doUpdate(Database* db, IDomainObject* obj) {
+void FunctionDefMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto& def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
-	SQLite::Statement query(*db, "REPLACE INTO sda_func_defs (def_id, decl_id, module_id)\
-				VALUES(?1, ?2, ?3)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_func_defs (def_id, decl_id, module_id, save_id)\
+				VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, def.getId());
 	bind(query, def);
+	query.bind(4, ctx->m_saveId);
 	query.exec();
-	saveFunctionRanges(db, def);
+	saveFunctionRanges(ctx, def);
 }
 
-void FunctionDefMapper::doRemove(Database* db, IDomainObject* obj) {
-	SQLite::Statement query(*db, "DELETE FROM sda_func_defs WHERE def_id=?1");
+void FunctionDefMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
+	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_func_defs WHERE def_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }
