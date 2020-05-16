@@ -1,12 +1,14 @@
 #pragma once
 #include "GhidraDataPacket.h"
+#include <SQLiteCpp/SQLiteCpp.h>
 
 namespace CE::Ghidra
 {
 	struct SyncContext
 	{
-		Id m_syncId;
+		int m_syncId;
 		DataPacket* m_dataPacket;
+		SQLite::Database* m_db;
 	};
 
 	class IMapper

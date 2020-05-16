@@ -232,6 +232,7 @@
     <ClCompile Include="Module\GhidraSync\GhidraClient.cpp" />
     <ClCompile Include="Module\GhidraSync\GhidraDataPacket.cpp" />
     <ClCompile Include="Module\GhidraSync\GhidraObject.cpp" />
+    <ClCompile Include="Module\GhidraSync\GhidraObjectLoader.cpp" />
     <ClCompile Include="Module\GhidraSync\GhidraSyncCommitment.cpp" />
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraFunctionDefMapper.cpp" />
     <ClCompile Include="Module\Manager\AbstractManager.cpp" />
@@ -343,12 +344,10 @@
     <ClInclude Include="Module\Code\VTable\VTable.h" />
     <ClInclude Include="Module\DynHook\DynHook.h" />
     <ClInclude Include="Module\FunctionTag\FunctionTagCollection.h" />
-    <ClInclude Include="Module\GhidraSync\AbstractManager.h" />
-    <ClInclude Include="Module\GhidraSync\DataTypeManager.h" />
-    <ClInclude Include="Module\GhidraSync\FunctionManager.h" />
     <ClInclude Include="Module\GhidraSync\GhidraAbstractMapper.h" />
     <ClInclude Include="Module\GhidraSync\GhidraClient.h" />
     <ClInclude Include="Module\GhidraSync\GhidraDataPacket.h" />
+    <ClInclude Include="Module\GhidraSync\GhidraObjectLoader.h" />
     <ClInclude Include="Module\GhidraSync\GhidraSync.h" />
     <ClInclude Include="Module\GhidraSync\GhidraSyncCommitment.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\DataTypeManagerService.h" />

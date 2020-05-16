@@ -19,14 +19,23 @@ void FunctionDefMapper::load(DataPacket * dataPacket) {
 	}
 }
 
+void markObjectAsSynced(SyncContext* ctx, Function::Function* func) {
+	SQLite::Statement query(*ctx->m_db, "UPDATE sda_func_defs SET ghidra_sync_id=?1 WHERE def_id=?2");
+	query.bind(1, ctx->m_syncId);
+	query.bind(2, func->getId());
+	query.exec();
+}
+
 void FunctionDefMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto desc = buildDesc(static_cast<Function::Function*>(obj));
-	ctx->m_dataPacket->m_functions.push_back(desc);
+	auto func = static_cast<Function::Function*>(obj);
+	ctx->m_dataPacket->m_functions.push_back(buildDesc(func));
+	markObjectAsSynced(ctx, func);
 }
 
 void FunctionDefMapper::remove(SyncContext* ctx, IObject* obj) {
-	auto desc = buildDescToRemove(static_cast<Function::Function*>(obj));
-	ctx->m_dataPacket->m_functions.push_back(desc);
+	auto func = static_cast<Function::Function*>(obj);
+	ctx->m_dataPacket->m_functions.push_back(buildDescToRemove(func));
+	markObjectAsSynced(ctx, func);
 }
 
 AddressRangeList FunctionDefMapper::getRangesFromDesc(const std::vector<function::SFunctionRange>& rangeDescs) {

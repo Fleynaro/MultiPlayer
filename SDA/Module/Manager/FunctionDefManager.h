@@ -1,10 +1,15 @@
 #pragma once
 #include "AbstractManager.h"
 #include <Code/Function/FunctionDefinition.h>
+#include <GhidraSync/GhidraDataPacket.h>
 #include "FunctionDeclManager.h"
 #include <Utils/Iterator.h>
 
 namespace DB {
+	class FunctionDefMapper;
+};
+
+namespace CE::Ghidra {
 	class FunctionDefMapper;
 };
 
@@ -16,12 +21,15 @@ namespace CE
 	{
 	public:
 		using Iterator = AbstractIterator<Function::Function>;
+		Ghidra::FunctionDefMapper* m_ghidraFunctionDefMapper;
 
 		FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager);
 
 		~FunctionManager();
 
 		void loadFunctions();
+
+		void loadFunctionsFrom(Ghidra::DataPacket* dataPacket);
 
 		Function::Function* createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl);
 

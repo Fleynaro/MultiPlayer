@@ -9,15 +9,10 @@ namespace CE::Ghidra
 {
 	using namespace ghidra;
 
-	class FunctionDefMapper;
 	class Sync
 	{
 	public:
-		FunctionDefMapper* m_functionDefMapper;
-
 		Sync(CE::ProgramModule* programModule);
-
-		~Sync();
 
 		Client* getClient();
 

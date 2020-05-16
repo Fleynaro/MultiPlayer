@@ -1,6 +1,7 @@
 #include "FunctionDefMapper.h"
 #include <Manager/FunctionDefManager.h>
 #include <Manager/ProcessModuleManager.h>
+#include <GhidraSync/Mappers/GhidraFunctionDefMapper.h>
 
 using namespace DB;
 using namespace CE;
@@ -45,6 +46,7 @@ IDomainObject* FunctionDefMapper::doLoad(Database* db, SQLite::Statement& query)
 
 	
 	definition->setId(def_id);
+	definition->setGhidraMapper(getManager()->m_ghidraFunctionDefMapper);
 	loadFunctionRanges(db, *definition);
 	return definition;
 }

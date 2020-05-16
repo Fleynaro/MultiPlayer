@@ -1,12 +1,6 @@
 #pragma once
 #include "GhidraObject.h"
-
-namespace ghidra {
-	namespace function {
-		class SFunction;
-		class FunctionManagerServiceClient;
-	};
-};
+#include "FunctionManagerService.h"
 
 namespace CE::Ghidra
 {

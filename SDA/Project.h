@@ -55,7 +55,7 @@ public:
 		}
 
 		try {
-			getProgramModule()->initDataBase("general.db");
+			/*getProgramModule()->initDataBase("general.db");
 			getProgramModule()->initManagers();
 			getProgramModule()->initGhidraClient();
 			getProgramModule()->load();
@@ -72,7 +72,7 @@ public:
 				functionGhidraManager->generateHashMap()
 			);
 			getProgramModule()->getFunctionManager()->buildFunctionBodies();
-			getProgramModule()->getFunctionManager()->buildFunctionBasicInfo();
+			getProgramModule()->getFunctionManager()->buildFunctionBasicInfo();*/
 
 		}
 		catch (std::exception & e) {

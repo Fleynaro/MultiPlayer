@@ -1,5 +1,4 @@
 #pragma once
-#include <GhidraSync/DataTypeManager.h>
 #include "TypeManager.h"
 #include <DB/Mappers/TypedefTypeMapper.h>
 #include <DB/Mappers/StructureTypeMapper.h>

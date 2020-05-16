@@ -22,7 +22,6 @@ public:
 
         m_programModule->initDataBase("database.db");
         m_programModule->initManagers();
-        m_programModule->initGhidraClient();
         m_programModule->load();
 
         m_programModule->getFunctionManager()->buildFunctionBodies();
@@ -479,6 +478,26 @@ TEST_F(ProgramModuleFixture, Test_CodeGraph)
             
             return true;
         });
+}
+
+#include <GhidraSync/GhidraSyncCommitment.h>
+TEST_F(ProgramModuleFixture, Test_GhidraSync)
+{
+    using namespace Ghidra;
+    auto sync = m_programModule->getGhidraSync();
+    auto funcManager = m_programModule->getFunctionManager();
+
+    SyncCommitment SyncCommitment(&m_programModule->getDB(), sync->getDataPacketTransferProvider());
+
+    auto function = funcManager->getFunctionAt(&setRot);
+    SyncCommitment.upsert(function);
+
+    try {
+        SyncCommitment.commit();
+    }
+    catch (std::exception) {
+        printf("\n*****************\nGhidra not started!!! Impossible to send data packet.\n*****************\n");
+    }
 }
 
 TEST_F(ProgramModuleFixture, Test_RemoveDB)

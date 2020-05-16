@@ -10,11 +10,13 @@ FunctionManager::FunctionManager(ProgramModule* module, FunctionDeclManager* fun
 	: AbstractItemManager(module), m_funcDeclManager(funcDeclManager)
 {
 	m_funcDefMapper = new DB::FunctionDefMapper(this);
+	m_ghidraFunctionDefMapper = new Ghidra::FunctionDefMapper(this);
 	createDefaultFunction();
 }
 
 FunctionManager::~FunctionManager() {
 	delete m_funcDeclManager;
+	delete m_ghidraFunctionDefMapper;
 }
 
 void FunctionManager::loadFunctions() {
@@ -22,10 +24,14 @@ void FunctionManager::loadFunctions() {
 	m_funcDefMapper->loadAll();
 }
 
+void FunctionManager::loadFunctionsFrom(Ghidra::DataPacket* dataPacket) {
+	m_ghidraFunctionDefMapper->load(dataPacket);
+}
+
 Function::Function* FunctionManager::createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, module, ranges, decl);
 	def->setMapper(m_funcDefMapper);
-	def->setGhidraMapper(getProgramModule()->getGhidraSync()->m_functionDefMapper);
+	def->setGhidraMapper(m_ghidraFunctionDefMapper);
 	def->setId(m_funcDefMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(def);
 	return def;

@@ -1,13 +1,10 @@
 #pragma once
 #include <GhidraSync/GhidraAbstractMapper.h>
+#include <Code/Function/FunctionDefinition.h>
 #include "FunctionManagerService.h"
 
 namespace CE {
 	class FunctionManager;
-
-	namespace Function {
-		class Function;
-	};
 };
 
 namespace CE::Ghidra

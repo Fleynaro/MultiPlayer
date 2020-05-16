@@ -1,6 +1,5 @@
 #include "GhidraDataPacket.h"
 #include "GhidraClient.h"
-#include "FunctionManagerService.h"
 
 using namespace CE;
 using namespace CE::Ghidra;
