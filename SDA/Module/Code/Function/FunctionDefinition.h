@@ -2,7 +2,7 @@
 #include "FunctionDeclaration.h"
 #include "MethodDeclaration.h"
 #include <Address/AddressRange.h>
-#include <GhidraSync/IGhidraObject.h>
+#include <GhidraSync/GhidraObject.h>
 
 namespace CE
 {
@@ -21,7 +21,7 @@ namespace CE
 
 	namespace Function
 	{
-		class FunctionDefinition : public DB::DomainObject, public IDescription, public IGhidraObject
+		class FunctionDefinition : public DB::DomainObject, public Ghidra::Object, public IDescription
 		{
 		public:
 			using ArgList = std::vector<Variable::Param>;
@@ -74,9 +74,7 @@ namespace CE
 
 			bool isExported();
 
-			bool isGhidraUnit() override;
-
-			void setGhidraUnit(bool toggle) override;
+			Ghidra::Id getGhidraId() override;
 
 			ProcessModule* getProcessModule();
 
@@ -87,7 +85,6 @@ namespace CE
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionDecl* m_decl;
 			CodeGraph::Node::FunctionBody* m_funcBody = nullptr;
-			bool m_ghidraUnit = true;
 			FunctionManager* m_manager;
 		};
 

@@ -1,12 +1,12 @@
 #pragma once
 #include "TypeUnit.h"
-#include <GhidraSync/IGhidraObject.h>
+#include <GhidraSync/GhidraObject.h>
 
 namespace CE
 {
 	namespace DataType
 	{
-		class UserType : public Type, public IGhidraObject
+		class UserType : public Type, public Ghidra::Object
 		{
 		public:
 			UserType(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
@@ -15,9 +15,7 @@ namespace CE
 
 			std::string getDisplayName() override;
 
-			bool isGhidraUnit() override;
-
-			void setGhidraUnit(bool toggle) override;
+			Ghidra::Id getGhidraId() override;
 
 			DB::Id getId() override;
 
@@ -27,7 +25,6 @@ namespace CE
 
 			void setMapper(DB::IMapper* mapper) override;
 		private:
-			bool m_ghidraUnit = true;
 			DB::Id m_id;
 			DB::IMapper* m_mapper = nullptr;
 		};

@@ -1,6 +1,6 @@
 #include "FunctionDefManager.h"
 #include <DB/Mappers/FunctionDefMapper.h>
-#include <GhidraSync/FunctionManager.h>
+#include <GhidraSync/Mappers/GhidraFunctionDefMapper.h>
 #include <CodeGraph/FunctionBodyBuilder.h>
 #include <CodeGraph/Analysis/GenericAnalysis.h>
 
@@ -25,6 +25,7 @@ void FunctionManager::loadFunctions() {
 Function::Function* FunctionManager::createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
 	auto def = new Function::Function(this, module, ranges, decl);
 	def->setMapper(m_funcDefMapper);
+	def->setGhidraMapper(getProgramModule()->getGhidraSync()->m_functionDefMapper);
 	def->setId(m_funcDefMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(def);
 	return def;
@@ -41,6 +42,18 @@ Function::Function* FunctionManager::getDefaultFunction() {
 
 Function::Function* FunctionManager::getFunctionById(DB::Id id) {
 	return static_cast<Function::Function*>(find(id));
+}
+
+Function::Function* FunctionManager::getFunctionByGhidraId(Ghidra::Id id)
+{
+	Iterator it(this);
+	while (it.hasNext()) {
+		auto function = it.next();
+		if (function->getGhidraId() == id) {
+			return function;
+		}
+	}
+	return nullptr;
 }
 
 Function::Function* FunctionManager::getFunctionAt(void* addr) {
@@ -85,14 +98,3 @@ FunctionTagManager* FunctionManager::getFunctionTagManager() {
 	return m_tagManager;
 }
 
-void FunctionManager::setGhidraManager(Ghidra::FunctionManager* ghidraManager) {
-	m_ghidraManager = ghidraManager;
-}
-
-Ghidra::FunctionManager* FunctionManager::getGhidraManager() {
-	return m_ghidraManager;
-}
-
-bool FunctionManager::isGhidraManagerWorking() {
-	return getGhidraManager() != nullptr;
-}

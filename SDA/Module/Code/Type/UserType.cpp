@@ -1,4 +1,5 @@
 #include "UserType.h"
+#include <Utils/ObjectHash.h>
 
 using namespace CE;
 using namespace CE::DataType;
@@ -15,12 +16,11 @@ std::string UserType::getDisplayName() {
 	return getName();
 }
 
-bool UserType::isGhidraUnit() {
-	return m_ghidraUnit;
-}
-
-void UserType::setGhidraUnit(bool toggle) {
-	m_ghidraUnit = toggle;
+Ghidra::Id UserType::getGhidraId()
+{
+	ObjectHash objHash;
+	objHash.addValue(getName());
+	return objHash.getHash();
 }
 
 DB::Id UserType::getId() {

@@ -10,6 +10,7 @@ namespace DB
 	{
 		Id m_saveId;
 		Database* m_db;
+		bool m_notDelete = true;
 	};
 
 	class IRepository

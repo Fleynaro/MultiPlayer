@@ -21,7 +21,7 @@ DataTypeMapper::DataTypeMapper(IRepository* repository)
 
 void DataTypeMapper::loadAll() {
 	auto& db = getManager()->getProgramModule()->getDB();
-	Statement query(db, "SELECT * FROM sda_types WHERE id >= 1000");
+	Statement query(db, "SELECT * FROM sda_types WHERE id >= 1000 AND deleted = 0");
 	load(&db, query);
 
 	m_typedefTypeMapper->loadTypedefs(&db);
@@ -81,7 +81,9 @@ void DataTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void DataTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
-	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_types WHERE id=?1");
+	std::string action_query_text =
+		ctx->m_notDelete ? "UPDATE sda_types SET deleted=1" : "DELETE FROM sda_types";
+	Statement query(*ctx->m_db, action_query_text + " WHERE id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

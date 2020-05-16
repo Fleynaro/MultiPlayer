@@ -10,11 +10,6 @@ namespace DB {
 
 namespace CE
 {
-	namespace Ghidra
-	{
-		class FunctionManager;
-	};
-
 	class FunctionTagManager;
 
 	class FunctionManager : public AbstractItemManager
@@ -36,6 +31,8 @@ namespace CE
 
 		Function::Function* getFunctionById(DB::Id id);
 
+		Function::Function* getFunctionByGhidraId(Ghidra::Id id);
+
 		Function::Function* getFunctionAt(void* addr);
 
 		FunctionDeclManager* getFunctionDeclManager();
@@ -47,15 +44,8 @@ namespace CE
 		void setFunctionTagManager(FunctionTagManager* manager);
 
 		FunctionTagManager* getFunctionTagManager();
-
-		void setGhidraManager(Ghidra::FunctionManager* ghidraManager);
-
-		Ghidra::FunctionManager* getGhidraManager();
-
-		bool isGhidraManagerWorking();
 	private:
 		FunctionDeclManager* m_funcDeclManager;
-		Ghidra::FunctionManager* m_ghidraManager;
 		FunctionTagManager* m_tagManager;
 		Function::Function* m_defFunction = nullptr;
 		DB::FunctionDefMapper* m_funcDefMapper;

@@ -10,7 +10,9 @@ using namespace CE;
 
 ProgramModule::ProgramModule(FS::Directory dir)
 	: m_dir(dir)
-{}
+{
+	m_ghidraSync = new Ghidra::Sync(this);
+}
 
 ProgramModule::~ProgramModule() {
 	if (m_typeManager != nullptr) {
@@ -23,8 +25,8 @@ ProgramModule::~ProgramModule() {
 		delete m_vtableManager;
 		delete m_typeManager;
 	}
-	if (m_client != nullptr) {
-		delete m_client;
+	if (m_ghidraSync != nullptr) {
+		delete m_ghidraSync;
 	}
 	if (m_transaction != nullptr)
 		delete m_transaction;
@@ -60,13 +62,6 @@ void ProgramModule::initManagers()
 	m_triggerGroupManager = new TriggerGroupManager(this);
 	m_statManager = new StatManager(this);
 	m_functionManager->setFunctionTagManager(new FunctionTagManager(this, m_functionManager));
-}
-
-void ProgramModule::initGhidraClient()
-{
-	m_client = new Ghidra::Client(this);
-	getFunctionManager()->setGhidraManager(m_client->m_functionManager);
-	getTypeManager()->setGhidraManager(m_client->m_dataTypeManager);
 }
 
 void ProgramModule::createGeneralDataBase()
@@ -146,6 +141,7 @@ FS::Directory& ProgramModule::getDirectory() {
 	return m_dir;
 }
 
-Ghidra::Client* ProgramModule::getGhidraClient() {
-	return m_client;
+Ghidra::Sync* ProgramModule::getGhidraSync() {
+	return m_ghidraSync;
 }
+

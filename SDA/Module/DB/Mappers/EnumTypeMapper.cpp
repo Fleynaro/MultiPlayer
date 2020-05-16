@@ -63,7 +63,8 @@ void EnumTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 
 void EnumTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
-	
+	if (ctx->m_notDelete)
+		return;
 }
 
 void EnumTypeMapper::bind(SQLite::Statement& query, CE::DataType::Enum& type)

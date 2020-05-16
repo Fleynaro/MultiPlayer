@@ -84,6 +84,8 @@ void StructureTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 
 void StructureTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
+	if (ctx->m_notDelete)
+		return;
 	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_structures WHERE struct_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();

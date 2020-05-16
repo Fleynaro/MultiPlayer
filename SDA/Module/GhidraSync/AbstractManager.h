@@ -41,7 +41,10 @@ namespace CE
 				initManagers();
 			}
 
-			void initManagers();
+			void initManagers() {
+				m_dataTypeManager = new DataTypeManager(getProgramModule()->getTypeManager(), this);
+				m_functionManager = new FunctionManager(getProgramModule()->getFunctionManager(), this);
+			}
 
 			ProgramModule* getProgramModule() {
 				return m_module;

@@ -11,7 +11,7 @@ FunctionDeclMapper::FunctionDeclMapper(IRepository* repository)
 
 void FunctionDeclMapper::loadAll() {
 	auto& db = getManager()->getProgramModule()->getDB();
-	Statement query(db, "SELECT * FROM sda_func_decls");
+	Statement query(db, "SELECT * FROM sda_func_decls WHERE deleted=0");
 	load(&db, query);
 }
 
@@ -115,7 +115,9 @@ void FunctionDeclMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void FunctionDeclMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
-	Statement query(*ctx->m_db, "DELETE FROM sda_func_decls WHERE decl_id=?1");
+	std::string action_query_text =
+		ctx->m_notDelete ? "UPDATE sda_func_decls SET deleted=1" : "DELETE FROM sda_func_decls";
+	Statement query(*ctx->m_db, action_query_text + " WHERE decl_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

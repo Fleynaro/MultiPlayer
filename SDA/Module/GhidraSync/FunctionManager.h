@@ -182,7 +182,7 @@ namespace CE
 				CE::FunctionManager::Iterator it(m_functionManager);
 				while (it.hasNext()) {
 					auto function = it.next();
-					if (function->isGhidraUnit()) {
+					if (function->doesSyncWithGhidra()) {
 						hashmap.insert(std::make_pair(getId(function), getHash(function)));
 					}
 				}

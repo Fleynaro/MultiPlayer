@@ -229,6 +229,11 @@
     <ClCompile Include="Module\Disassembler\DisasmOperand.cpp" />
     <ClCompile Include="Module\FunctionTag\FunctionTag.cpp" />
     <ClCompile Include="Module\FunctionTag\FunctionTagCollection.cpp" />
+    <ClCompile Include="Module\GhidraSync\GhidraClient.cpp" />
+    <ClCompile Include="Module\GhidraSync\GhidraDataPacket.cpp" />
+    <ClCompile Include="Module\GhidraSync\GhidraObject.cpp" />
+    <ClCompile Include="Module\GhidraSync\GhidraSyncCommitment.cpp" />
+    <ClCompile Include="Module\GhidraSync\Mappers\GhidraFunctionDefMapper.cpp" />
     <ClCompile Include="Module\Manager\AbstractManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDeclManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDefManager.cpp" />
@@ -341,7 +346,11 @@
     <ClInclude Include="Module\GhidraSync\AbstractManager.h" />
     <ClInclude Include="Module\GhidraSync\DataTypeManager.h" />
     <ClInclude Include="Module\GhidraSync\FunctionManager.h" />
+    <ClInclude Include="Module\GhidraSync\GhidraAbstractMapper.h" />
+    <ClInclude Include="Module\GhidraSync\GhidraClient.h" />
+    <ClInclude Include="Module\GhidraSync\GhidraDataPacket.h" />
     <ClInclude Include="Module\GhidraSync\GhidraSync.h" />
+    <ClInclude Include="Module\GhidraSync\GhidraSyncCommitment.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\DataTypeManagerService.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\datatype_constants.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\datatype_types.h" />
@@ -352,7 +361,8 @@
     <ClInclude Include="Module\GhidraSync\Ghidra\include\ghidra_types.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\shared_constants.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\shared_types.h" />
-    <ClInclude Include="Module\GhidraSync\IGhidraObject.h" />
+    <ClInclude Include="Module\GhidraSync\GhidraObject.h" />
+    <ClInclude Include="Module\GhidraSync\Mappers\GhidraFunctionDefMapper.h" />
     <ClInclude Include="Module\Manager\AbstractManager.h" />
     <ClInclude Include="Module\Manager\FunctionDeclManager.h" />
     <ClInclude Include="Module\Manager\FunctionDefManager.h" />

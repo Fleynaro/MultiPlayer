@@ -2,6 +2,7 @@
 #include <DB/Transaction.h>
 #include <Utility/FileWrapper.h>
 #include <Address/ProcessModule.h>
+#include <GhidraSync/GhidraSync.h>
 
 using namespace SQLite;
 
@@ -36,8 +37,6 @@ namespace CE
 
 		void initManagers();
 
-		void initGhidraClient();
-
 		void createGeneralDataBase();
 
 		void initDataBase(std::string filename);
@@ -68,7 +67,8 @@ namespace CE
 
 		FS::Directory& getDirectory();
 
-		Ghidra::Client* getGhidraClient();
+		Ghidra::Sync* getGhidraSync();
+
 	private:
 		DB::ITransaction* m_transaction = nullptr;
 		SQLite::Database* m_db = nullptr;
@@ -82,6 +82,6 @@ namespace CE
 		TriggerManager* m_triggerManager = nullptr;
 		TriggerGroupManager* m_triggerGroupManager = nullptr;
 		StatManager* m_statManager = nullptr;
-		Ghidra::Client* m_client = nullptr;
+		Ghidra::Sync* m_ghidraSync;
 	};
 };

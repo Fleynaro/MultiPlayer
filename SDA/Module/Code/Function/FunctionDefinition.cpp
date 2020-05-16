@@ -112,12 +112,9 @@ bool FunctionDefinition::isExported() {
 	return getDeclaration().isExported();
 }
 
-bool FunctionDefinition::isGhidraUnit() {
-	return m_ghidraUnit;
-}
-
-void FunctionDefinition::setGhidraUnit(bool toggle) {
-	m_ghidraUnit = toggle;
+Ghidra::Id FunctionDefinition::getGhidraId()
+{
+	return (Ghidra::Id)getProcessModule()->toRelAddr(getAddress());
 }
 
 ProcessModule* FunctionDefinition::getProcessModule() {

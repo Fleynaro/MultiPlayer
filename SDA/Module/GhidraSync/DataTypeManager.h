@@ -383,7 +383,7 @@ namespace CE
 					auto type = it.next();
 					if (type->isUserDefined()) {
 						auto usertype = static_cast<DataType::UserType*>(type);
-						if (usertype->isGhidraUnit()) {
+						if (usertype->doesSyncWithGhidra()) {
 							hashmap.insert(std::make_pair(getId(type), getHash(type)));
 						}
 					}

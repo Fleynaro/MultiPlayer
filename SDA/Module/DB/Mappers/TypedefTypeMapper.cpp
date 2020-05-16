@@ -50,6 +50,8 @@ void TypedefTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 
 void TypedefTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
+	if (ctx->m_notDelete)
+		return;
 	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_typedefs WHERE type_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();

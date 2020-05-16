@@ -221,14 +221,39 @@ int PrintModules()
     return 0;
 }
 
+class A {
+public:
+    int x = 5;
+    virtual int get() { return x; }
+};
+
+class B {
+public:
+    int y = 3;
+    virtual int get2() { return 0; }
+};
+
+class C : public A, public B {
+public:
+    int y = 3;
+    int get() override { return y; }
+};
+
+class D : public A {
+public:
+    int f = 3;
+};
+
 int main(int argc, char** argv)
 {
-    auto r = rand();
+    A* a = new C;
+    if (auto rrr = dynamic_cast<B*>(a)) {
+        int b = 5;
+    }
 
-    HMODULE lib = LoadLibraryEx("kernel32.dll", NULL, DONT_RESOLVE_DLL_REFERENCES);
-    shellcode_export_finder((BYTE*)lib);
-
-    PrintModules();
-
+    A* d = new D;
+    if (auto rrr = dynamic_cast<B*>(d)) {
+        int b = 7;
+    }
     return 0;
 }

@@ -11,7 +11,7 @@ FunctionDefMapper::FunctionDefMapper(CE::FunctionManager* repository)
 
 void FunctionDefMapper::loadAll() {
 	auto& db = getManager()->getProgramModule()->getDB();
-	Statement query(db, "SELECT * FROM sda_func_defs");
+	Statement query(db, "SELECT * FROM sda_func_defs WHERE deleted=0");
 	load(&db, query);
 }
 
@@ -101,7 +101,9 @@ void FunctionDefMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void FunctionDefMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
-	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_func_defs WHERE def_id=?1");
+	std::string action_query_text =
+		ctx->m_notDelete ? "UPDATE sda_func_defs SET deleted=1" : "DELETE FROM sda_func_defs";
+	Statement query(*ctx->m_db, action_query_text + " WHERE def_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }
