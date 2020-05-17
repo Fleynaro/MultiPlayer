@@ -18,7 +18,7 @@ namespace CE::Ghidra
 
 		DataPacketTransferProvider* getDataPacketTransferProvider();
 
-		void load(DataPacket* dataPacket);
+		void load(DataSyncPacket* dataPacket);
 	private:
 		CE::ProgramModule* m_programModule;
 		Client* m_client;

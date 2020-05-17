@@ -21,7 +21,7 @@ namespace ghidra { namespace function {
 class FunctionManagerServiceIf {
  public:
   virtual ~FunctionManagerServiceIf() {}
-  virtual void pull(std::vector<SFunction> & _return, const HashMap& hashmap) = 0;
+  virtual void pull(std::vector<SFunction> & _return) = 0;
   virtual void push(const std::vector<SFunction> & functions) = 0;
 };
 
@@ -52,7 +52,7 @@ class FunctionManagerServiceIfSingletonFactory : virtual public FunctionManagerS
 class FunctionManagerServiceNull : virtual public FunctionManagerServiceIf {
  public:
   virtual ~FunctionManagerServiceNull() {}
-  void pull(std::vector<SFunction> & /* _return */, const HashMap& /* hashmap */) {
+  void pull(std::vector<SFunction> & /* _return */) {
     return;
   }
   void push(const std::vector<SFunction> & /* functions */) {
@@ -60,10 +60,6 @@ class FunctionManagerServiceNull : virtual public FunctionManagerServiceIf {
   }
 };
 
-typedef struct _FunctionManagerService_pull_args__isset {
-  _FunctionManagerService_pull_args__isset() : hashmap(false) {}
-  bool hashmap :1;
-} _FunctionManagerService_pull_args__isset;
 
 class FunctionManagerService_pull_args {
  public:
@@ -74,16 +70,9 @@ class FunctionManagerService_pull_args {
   }
 
   virtual ~FunctionManagerService_pull_args() throw();
-  HashMap hashmap;
 
-  _FunctionManagerService_pull_args__isset __isset;
-
-  void __set_hashmap(const HashMap& val);
-
-  bool operator == (const FunctionManagerService_pull_args & rhs) const
+  bool operator == (const FunctionManagerService_pull_args & /* rhs */) const
   {
-    if (!(hashmap == rhs.hashmap))
-      return false;
     return true;
   }
   bool operator != (const FunctionManagerService_pull_args &rhs) const {
@@ -103,7 +92,6 @@ class FunctionManagerService_pull_pargs {
 
 
   virtual ~FunctionManagerService_pull_pargs() throw();
-  const HashMap* hashmap;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -275,8 +263,8 @@ class FunctionManagerServiceClient : virtual public FunctionManagerServiceIf {
   apache::thrift::stdcxx::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
-  void pull(std::vector<SFunction> & _return, const HashMap& hashmap);
-  void send_pull(const HashMap& hashmap);
+  void pull(std::vector<SFunction> & _return);
+  void send_pull();
   void recv_pull(std::vector<SFunction> & _return);
   void push(const std::vector<SFunction> & functions);
   void send_push(const std::vector<SFunction> & functions);
@@ -331,13 +319,13 @@ class FunctionManagerServiceMultiface : virtual public FunctionManagerServiceIf 
     ifaces_.push_back(iface);
   }
  public:
-  void pull(std::vector<SFunction> & _return, const HashMap& hashmap) {
+  void pull(std::vector<SFunction> & _return) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
-      ifaces_[i]->pull(_return, hashmap);
+      ifaces_[i]->pull(_return);
     }
-    ifaces_[i]->pull(_return, hashmap);
+    ifaces_[i]->pull(_return);
     return;
   }
 
@@ -380,8 +368,8 @@ class FunctionManagerServiceConcurrentClient : virtual public FunctionManagerSer
   apache::thrift::stdcxx::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
-  void pull(std::vector<SFunction> & _return, const HashMap& hashmap);
-  int32_t send_pull(const HashMap& hashmap);
+  void pull(std::vector<SFunction> & _return);
+  int32_t send_pull();
   void recv_pull(std::vector<SFunction> & _return, const int32_t seqid);
   void push(const std::vector<SFunction> & functions);
   int32_t send_push(const std::vector<SFunction> & functions);

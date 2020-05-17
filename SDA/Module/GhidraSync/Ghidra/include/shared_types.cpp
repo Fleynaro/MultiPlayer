@@ -22,12 +22,8 @@ void STypeUnit::__set_typeId(const Id val) {
   this->typeId = val;
 }
 
-void STypeUnit::__set_pointerLvl(const int32_t val) {
-  this->pointerLvl = val;
-}
-
-void STypeUnit::__set_arraySize(const int32_t val) {
-  this->arraySize = val;
+void STypeUnit::__set_pointerLvls(const std::vector<int16_t> & val) {
+  this->pointerLvls = val;
 }
 std::ostream& operator<<(std::ostream& out, const STypeUnit& obj)
 {
@@ -66,17 +62,21 @@ uint32_t STypeUnit::read(::apache::thrift::protocol::TProtocol* iprot) {
         }
         break;
       case 2:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->pointerLvl);
-          this->__isset.pointerLvl = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 3:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          xfer += iprot->readI32(this->arraySize);
-          this->__isset.arraySize = true;
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->pointerLvls.clear();
+            uint32_t _size0;
+            ::apache::thrift::protocol::TType _etype3;
+            xfer += iprot->readListBegin(_etype3, _size0);
+            this->pointerLvls.resize(_size0);
+            uint32_t _i4;
+            for (_i4 = 0; _i4 < _size0; ++_i4)
+            {
+              xfer += iprot->readI16(this->pointerLvls[_i4]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.pointerLvls = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -102,12 +102,16 @@ uint32_t STypeUnit::write(::apache::thrift::protocol::TProtocol* oprot) const {
   xfer += oprot->writeI64(this->typeId);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("pointerLvl", ::apache::thrift::protocol::T_I32, 2);
-  xfer += oprot->writeI32(this->pointerLvl);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("arraySize", ::apache::thrift::protocol::T_I32, 3);
-  xfer += oprot->writeI32(this->arraySize);
+  xfer += oprot->writeFieldBegin("pointerLvls", ::apache::thrift::protocol::T_LIST, 2);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_I16, static_cast<uint32_t>(this->pointerLvls.size()));
+    std::vector<int16_t> ::const_iterator _iter5;
+    for (_iter5 = this->pointerLvls.begin(); _iter5 != this->pointerLvls.end(); ++_iter5)
+    {
+      xfer += oprot->writeI16((*_iter5));
+    }
+    xfer += oprot->writeListEnd();
+  }
   xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
@@ -118,30 +122,26 @@ uint32_t STypeUnit::write(::apache::thrift::protocol::TProtocol* oprot) const {
 void swap(STypeUnit &a, STypeUnit &b) {
   using ::std::swap;
   swap(a.typeId, b.typeId);
-  swap(a.pointerLvl, b.pointerLvl);
-  swap(a.arraySize, b.arraySize);
+  swap(a.pointerLvls, b.pointerLvls);
   swap(a.__isset, b.__isset);
 }
 
-STypeUnit::STypeUnit(const STypeUnit& other0) {
-  typeId = other0.typeId;
-  pointerLvl = other0.pointerLvl;
-  arraySize = other0.arraySize;
-  __isset = other0.__isset;
+STypeUnit::STypeUnit(const STypeUnit& other6) {
+  typeId = other6.typeId;
+  pointerLvls = other6.pointerLvls;
+  __isset = other6.__isset;
 }
-STypeUnit& STypeUnit::operator=(const STypeUnit& other1) {
-  typeId = other1.typeId;
-  pointerLvl = other1.pointerLvl;
-  arraySize = other1.arraySize;
-  __isset = other1.__isset;
+STypeUnit& STypeUnit::operator=(const STypeUnit& other7) {
+  typeId = other7.typeId;
+  pointerLvls = other7.pointerLvls;
+  __isset = other7.__isset;
   return *this;
 }
 void STypeUnit::printTo(std::ostream& out) const {
   using ::apache::thrift::to_string;
   out << "STypeUnit(";
   out << "typeId=" << to_string(typeId);
-  out << ", " << "pointerLvl=" << to_string(pointerLvl);
-  out << ", " << "arraySize=" << to_string(arraySize);
+  out << ", " << "pointerLvls=" << to_string(pointerLvls);
   out << ")";
 }
 

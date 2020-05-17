@@ -4,6 +4,10 @@
 #include <DB/Mappers/StructureTypeMapper.h>
 #include <DB/Mappers/ClassTypeMapper.h>
 #include <DB/Mappers/EnumTypeMapper.h>
+#include <GhidraSync/Mappers/GhidraTypedefTypeMapper.h>
+#include <GhidraSync/Mappers/GhidraStructureTypeMapper.h>
+#include <GhidraSync/Mappers/GhidraClassTypeMapper.h>
+#include <GhidraSync/Mappers/GhidraEnumTypeMapper.h>
 #include <Utils/ObjectHash.h>
 
 using namespace CE;
@@ -12,7 +16,13 @@ TypeManager::TypeManager(ProgramModule* module)
 	: AbstractItemManager(module)
 {
 	m_dataTypeMapper = new DB::DataTypeMapper(this);
+	m_ghidraDataTypeMapper = new Ghidra::DataTypeMapper(this);
 	addSystemTypes();
+}
+
+TypeManager::~TypeManager() {
+	delete m_dataTypeMapper;
+	delete m_ghidraDataTypeMapper;
 }
 
 void TypeManager::addSystemTypes() {
@@ -54,6 +64,10 @@ void TypeManager::loadClasses() {
 	m_dataTypeMapper->loadStructsAndClasses();
 }
 
+void TypeManager::loadTypesFrom(Ghidra::DataSyncPacket* dataPacket) {
+	m_ghidraDataTypeMapper->load(dataPacket);
+}
+
 const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {
 	for (const auto& it : ghidraTypes) {
 		if (it.second->getId() == type->getId()) {
@@ -66,6 +80,7 @@ const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {
 DataType::Typedef* TypeManager::createTypedef(DataTypePtr refType, const std::string& name, const std::string& desc) {
 	auto type = new DataType::Typedef(this, refType, name, desc);
 	type->setMapper(m_dataTypeMapper->m_typedefTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_typedefTypeMapper);
 	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
@@ -74,6 +89,7 @@ DataType::Typedef* TypeManager::createTypedef(DataTypePtr refType, const std::st
 DataType::Enum* TypeManager::createEnum(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Enum(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_enumTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_enumTypeMapper);
 	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
@@ -82,6 +98,7 @@ DataType::Enum* TypeManager::createEnum(const std::string& name, const std::stri
 DataType::Structure* TypeManager::createStructure(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Structure(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_structureTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_structureTypeMapper);
 	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
@@ -90,6 +107,7 @@ DataType::Structure* TypeManager::createStructure(const std::string& name, const
 DataType::Class* TypeManager::createClass(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Class(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_classTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_classTypeMapper);
 	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;
@@ -138,16 +156,4 @@ Ghidra::Id TypeManager::getGhidraId(DataType::Type* type) {
 	ObjectHash objHash;
 	objHash.addValue(getGhidraTypeName(type));
 	return objHash.getHash();
-}
-
-void TypeManager::setGhidraManager(Ghidra::DataTypeManager* ghidraManager) {
-	m_ghidraManager = ghidraManager;
-}
-
-Ghidra::DataTypeManager* TypeManager::getGhidraManager() {
-	return m_ghidraManager;
-}
-
-bool TypeManager::isGhidraManagerWorking() {
-	return getGhidraManager() != nullptr;
 }

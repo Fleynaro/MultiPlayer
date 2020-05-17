@@ -26,8 +26,9 @@ struct DataTypeGroup {
     Simple = 0,
     Enum = 1,
     Structure = 2,
-    Typedef = 3,
-    Signature = 4
+    Class = 3,
+    Typedef = 4,
+    Signature = 5
   };
 };
 
@@ -37,17 +38,13 @@ std::ostream& operator<<(std::ostream& out, const DataTypeGroup::type& val);
 
 typedef int64_t Id;
 
-typedef int64_t Hash;
-
-typedef std::map<Id, Hash>  HashMap;
-
-class SDataTypeBase;
-
 class SDataType;
 
 class SDataTypeStructureField;
 
 class SDataTypeStructure;
+
+class SDataTypeClass;
 
 class SDataTypeEnumField;
 
@@ -55,65 +52,11 @@ class SDataTypeEnum;
 
 class SDataTypeTypedef;
 
-typedef struct _SDataTypeBase__isset {
-  _SDataTypeBase__isset() : id(false), name(false), group(false) {}
-  bool id :1;
-  bool name :1;
-  bool group :1;
-} _SDataTypeBase__isset;
-
-class SDataTypeBase : public virtual ::apache::thrift::TBase {
- public:
-
-  SDataTypeBase(const SDataTypeBase&);
-  SDataTypeBase& operator=(const SDataTypeBase&);
-  SDataTypeBase() : id(0), name(), group((DataTypeGroup::type)0) {
-  }
-
-  virtual ~SDataTypeBase() throw();
-  Id id;
-  std::string name;
-  DataTypeGroup::type group;
-
-  _SDataTypeBase__isset __isset;
-
-  void __set_id(const Id val);
-
-  void __set_name(const std::string& val);
-
-  void __set_group(const DataTypeGroup::type val);
-
-  bool operator == (const SDataTypeBase & rhs) const
-  {
-    if (!(id == rhs.id))
-      return false;
-    if (!(name == rhs.name))
-      return false;
-    if (!(group == rhs.group))
-      return false;
-    return true;
-  }
-  bool operator != (const SDataTypeBase &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const SDataTypeBase & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-  virtual void printTo(std::ostream& out) const;
-};
-
-void swap(SDataTypeBase &a, SDataTypeBase &b);
-
-std::ostream& operator<<(std::ostream& out, const SDataTypeBase& obj);
-
 typedef struct _SDataType__isset {
-  _SDataType__isset() : id(false), name(false), desc(false), group(false), size(false) {}
+  _SDataType__isset() : id(false), name(false), comment(false), group(false), size(false) {}
   bool id :1;
   bool name :1;
-  bool desc :1;
+  bool comment :1;
   bool group :1;
   bool size :1;
 } _SDataType__isset;
@@ -123,13 +66,13 @@ class SDataType : public virtual ::apache::thrift::TBase {
 
   SDataType(const SDataType&);
   SDataType& operator=(const SDataType&);
-  SDataType() : id(0), name(), desc(), group((DataTypeGroup::type)0), size(0) {
+  SDataType() : id(0), name(), comment(), group((DataTypeGroup::type)0), size(0) {
   }
 
   virtual ~SDataType() throw();
   Id id;
   std::string name;
-  std::string desc;
+  std::string comment;
   DataTypeGroup::type group;
   int32_t size;
 
@@ -139,7 +82,7 @@ class SDataType : public virtual ::apache::thrift::TBase {
 
   void __set_name(const std::string& val);
 
-  void __set_desc(const std::string& val);
+  void __set_comment(const std::string& val);
 
   void __set_group(const DataTypeGroup::type val);
 
@@ -151,7 +94,7 @@ class SDataType : public virtual ::apache::thrift::TBase {
       return false;
     if (!(name == rhs.name))
       return false;
-    if (!(desc == rhs.desc))
+    if (!(comment == rhs.comment))
       return false;
     if (!(group == rhs.group))
       return false;
@@ -282,6 +225,48 @@ class SDataTypeStructure : public virtual ::apache::thrift::TBase {
 void swap(SDataTypeStructure &a, SDataTypeStructure &b);
 
 std::ostream& operator<<(std::ostream& out, const SDataTypeStructure& obj);
+
+typedef struct _SDataTypeClass__isset {
+  _SDataTypeClass__isset() : structType(false) {}
+  bool structType :1;
+} _SDataTypeClass__isset;
+
+class SDataTypeClass : public virtual ::apache::thrift::TBase {
+ public:
+
+  SDataTypeClass(const SDataTypeClass&);
+  SDataTypeClass& operator=(const SDataTypeClass&);
+  SDataTypeClass() {
+  }
+
+  virtual ~SDataTypeClass() throw();
+  SDataTypeStructure structType;
+
+  _SDataTypeClass__isset __isset;
+
+  void __set_structType(const SDataTypeStructure& val);
+
+  bool operator == (const SDataTypeClass & rhs) const
+  {
+    if (!(structType == rhs.structType))
+      return false;
+    return true;
+  }
+  bool operator != (const SDataTypeClass &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SDataTypeClass & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(SDataTypeClass &a, SDataTypeClass &b);
+
+std::ostream& operator<<(std::ostream& out, const SDataTypeClass& obj);
 
 typedef struct _SDataTypeEnumField__isset {
   _SDataTypeEnumField__isset() : name(false), value(false) {}

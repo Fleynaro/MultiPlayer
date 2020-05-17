@@ -17,6 +17,7 @@ int _kDataTypeGroupValues[] = {
   DataTypeGroup::Simple,
   DataTypeGroup::Enum,
   DataTypeGroup::Structure,
+  DataTypeGroup::Class,
   DataTypeGroup::Typedef,
   DataTypeGroup::Signature
 };
@@ -24,10 +25,11 @@ const char* _kDataTypeGroupNames[] = {
   "Simple",
   "Enum",
   "Structure",
+  "Class",
   "Typedef",
   "Signature"
 };
-const std::map<int, const char*> _DataTypeGroup_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(5, _kDataTypeGroupValues, _kDataTypeGroupNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
+const std::map<int, const char*> _DataTypeGroup_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(6, _kDataTypeGroupValues, _kDataTypeGroupNames), ::apache::thrift::TEnumIterator(-1, NULL, NULL));
 
 std::ostream& operator<<(std::ostream& out, const DataTypeGroup::type& val) {
   std::map<int, const char*>::const_iterator it = _DataTypeGroup_VALUES_TO_NAMES.find(val);
@@ -37,140 +39,6 @@ std::ostream& operator<<(std::ostream& out, const DataTypeGroup::type& val) {
     out << static_cast<int>(val);
   }
   return out;
-}
-
-
-SDataTypeBase::~SDataTypeBase() throw() {
-}
-
-
-void SDataTypeBase::__set_id(const Id val) {
-  this->id = val;
-}
-
-void SDataTypeBase::__set_name(const std::string& val) {
-  this->name = val;
-}
-
-void SDataTypeBase::__set_group(const DataTypeGroup::type val) {
-  this->group = val;
-}
-std::ostream& operator<<(std::ostream& out, const SDataTypeBase& obj)
-{
-  obj.printTo(out);
-  return out;
-}
-
-
-uint32_t SDataTypeBase::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_I64) {
-          xfer += iprot->readI64(this->id);
-          this->__isset.id = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 2:
-        if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readString(this->name);
-          this->__isset.name = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 3:
-        if (ftype == ::apache::thrift::protocol::T_I32) {
-          int32_t ecast0;
-          xfer += iprot->readI32(ecast0);
-          this->group = (DataTypeGroup::type)ecast0;
-          this->__isset.group = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t SDataTypeBase::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-  xfer += oprot->writeStructBegin("SDataTypeBase");
-
-  xfer += oprot->writeFieldBegin("id", ::apache::thrift::protocol::T_I64, 1);
-  xfer += oprot->writeI64(this->id);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("name", ::apache::thrift::protocol::T_STRING, 2);
-  xfer += oprot->writeString(this->name);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("group", ::apache::thrift::protocol::T_I32, 3);
-  xfer += oprot->writeI32((int32_t)this->group);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-void swap(SDataTypeBase &a, SDataTypeBase &b) {
-  using ::std::swap;
-  swap(a.id, b.id);
-  swap(a.name, b.name);
-  swap(a.group, b.group);
-  swap(a.__isset, b.__isset);
-}
-
-SDataTypeBase::SDataTypeBase(const SDataTypeBase& other1) {
-  id = other1.id;
-  name = other1.name;
-  group = other1.group;
-  __isset = other1.__isset;
-}
-SDataTypeBase& SDataTypeBase::operator=(const SDataTypeBase& other2) {
-  id = other2.id;
-  name = other2.name;
-  group = other2.group;
-  __isset = other2.__isset;
-  return *this;
-}
-void SDataTypeBase::printTo(std::ostream& out) const {
-  using ::apache::thrift::to_string;
-  out << "SDataTypeBase(";
-  out << "id=" << to_string(id);
-  out << ", " << "name=" << to_string(name);
-  out << ", " << "group=" << to_string(group);
-  out << ")";
 }
 
 
@@ -186,8 +54,8 @@ void SDataType::__set_name(const std::string& val) {
   this->name = val;
 }
 
-void SDataType::__set_desc(const std::string& val) {
-  this->desc = val;
+void SDataType::__set_comment(const std::string& val) {
+  this->comment = val;
 }
 
 void SDataType::__set_group(const DataTypeGroup::type val) {
@@ -243,17 +111,17 @@ uint32_t SDataType::read(::apache::thrift::protocol::TProtocol* iprot) {
         break;
       case 3:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readString(this->desc);
-          this->__isset.desc = true;
+          xfer += iprot->readString(this->comment);
+          this->__isset.comment = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
       case 4:
         if (ftype == ::apache::thrift::protocol::T_I32) {
-          int32_t ecast3;
-          xfer += iprot->readI32(ecast3);
-          this->group = (DataTypeGroup::type)ecast3;
+          int32_t ecast0;
+          xfer += iprot->readI32(ecast0);
+          this->group = (DataTypeGroup::type)ecast0;
           this->__isset.group = true;
         } else {
           xfer += iprot->skip(ftype);
@@ -292,8 +160,8 @@ uint32_t SDataType::write(::apache::thrift::protocol::TProtocol* oprot) const {
   xfer += oprot->writeString(this->name);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("desc", ::apache::thrift::protocol::T_STRING, 3);
-  xfer += oprot->writeString(this->desc);
+  xfer += oprot->writeFieldBegin("comment", ::apache::thrift::protocol::T_STRING, 3);
+  xfer += oprot->writeString(this->comment);
   xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldBegin("group", ::apache::thrift::protocol::T_I32, 4);
@@ -313,27 +181,27 @@ void swap(SDataType &a, SDataType &b) {
   using ::std::swap;
   swap(a.id, b.id);
   swap(a.name, b.name);
-  swap(a.desc, b.desc);
+  swap(a.comment, b.comment);
   swap(a.group, b.group);
   swap(a.size, b.size);
   swap(a.__isset, b.__isset);
 }
 
-SDataType::SDataType(const SDataType& other4) {
-  id = other4.id;
-  name = other4.name;
-  desc = other4.desc;
-  group = other4.group;
-  size = other4.size;
-  __isset = other4.__isset;
+SDataType::SDataType(const SDataType& other1) {
+  id = other1.id;
+  name = other1.name;
+  comment = other1.comment;
+  group = other1.group;
+  size = other1.size;
+  __isset = other1.__isset;
 }
-SDataType& SDataType::operator=(const SDataType& other5) {
-  id = other5.id;
-  name = other5.name;
-  desc = other5.desc;
-  group = other5.group;
-  size = other5.size;
-  __isset = other5.__isset;
+SDataType& SDataType::operator=(const SDataType& other2) {
+  id = other2.id;
+  name = other2.name;
+  comment = other2.comment;
+  group = other2.group;
+  size = other2.size;
+  __isset = other2.__isset;
   return *this;
 }
 void SDataType::printTo(std::ostream& out) const {
@@ -341,7 +209,7 @@ void SDataType::printTo(std::ostream& out) const {
   out << "SDataType(";
   out << "id=" << to_string(id);
   out << ", " << "name=" << to_string(name);
-  out << ", " << "desc=" << to_string(desc);
+  out << ", " << "comment=" << to_string(comment);
   out << ", " << "group=" << to_string(group);
   out << ", " << "size=" << to_string(size);
   out << ")";
@@ -474,19 +342,19 @@ void swap(SDataTypeStructureField &a, SDataTypeStructureField &b) {
   swap(a.__isset, b.__isset);
 }
 
-SDataTypeStructureField::SDataTypeStructureField(const SDataTypeStructureField& other6) {
-  offset = other6.offset;
-  name = other6.name;
-  comment = other6.comment;
-  type = other6.type;
-  __isset = other6.__isset;
+SDataTypeStructureField::SDataTypeStructureField(const SDataTypeStructureField& other3) {
+  offset = other3.offset;
+  name = other3.name;
+  comment = other3.comment;
+  type = other3.type;
+  __isset = other3.__isset;
 }
-SDataTypeStructureField& SDataTypeStructureField::operator=(const SDataTypeStructureField& other7) {
-  offset = other7.offset;
-  name = other7.name;
-  comment = other7.comment;
-  type = other7.type;
-  __isset = other7.__isset;
+SDataTypeStructureField& SDataTypeStructureField::operator=(const SDataTypeStructureField& other4) {
+  offset = other4.offset;
+  name = other4.name;
+  comment = other4.comment;
+  type = other4.type;
+  __isset = other4.__isset;
   return *this;
 }
 void SDataTypeStructureField::printTo(std::ostream& out) const {
@@ -551,14 +419,14 @@ uint32_t SDataTypeStructure::read(::apache::thrift::protocol::TProtocol* iprot) 
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->fields.clear();
-            uint32_t _size8;
-            ::apache::thrift::protocol::TType _etype11;
-            xfer += iprot->readListBegin(_etype11, _size8);
-            this->fields.resize(_size8);
-            uint32_t _i12;
-            for (_i12 = 0; _i12 < _size8; ++_i12)
+            uint32_t _size5;
+            ::apache::thrift::protocol::TType _etype8;
+            xfer += iprot->readListBegin(_etype8, _size5);
+            this->fields.resize(_size5);
+            uint32_t _i9;
+            for (_i9 = 0; _i9 < _size5; ++_i9)
             {
-              xfer += this->fields[_i12].read(iprot);
+              xfer += this->fields[_i9].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -591,10 +459,10 @@ uint32_t SDataTypeStructure::write(::apache::thrift::protocol::TProtocol* oprot)
   xfer += oprot->writeFieldBegin("fields", ::apache::thrift::protocol::T_LIST, 2);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->fields.size()));
-    std::vector<SDataTypeStructureField> ::const_iterator _iter13;
-    for (_iter13 = this->fields.begin(); _iter13 != this->fields.end(); ++_iter13)
+    std::vector<SDataTypeStructureField> ::const_iterator _iter10;
+    for (_iter10 = this->fields.begin(); _iter10 != this->fields.end(); ++_iter10)
     {
-      xfer += (*_iter13).write(oprot);
+      xfer += (*_iter10).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -612,15 +480,15 @@ void swap(SDataTypeStructure &a, SDataTypeStructure &b) {
   swap(a.__isset, b.__isset);
 }
 
-SDataTypeStructure::SDataTypeStructure(const SDataTypeStructure& other14) {
-  type = other14.type;
-  fields = other14.fields;
-  __isset = other14.__isset;
+SDataTypeStructure::SDataTypeStructure(const SDataTypeStructure& other11) {
+  type = other11.type;
+  fields = other11.fields;
+  __isset = other11.__isset;
 }
-SDataTypeStructure& SDataTypeStructure::operator=(const SDataTypeStructure& other15) {
-  type = other15.type;
-  fields = other15.fields;
-  __isset = other15.__isset;
+SDataTypeStructure& SDataTypeStructure::operator=(const SDataTypeStructure& other12) {
+  type = other12.type;
+  fields = other12.fields;
+  __isset = other12.__isset;
   return *this;
 }
 void SDataTypeStructure::printTo(std::ostream& out) const {
@@ -628,6 +496,98 @@ void SDataTypeStructure::printTo(std::ostream& out) const {
   out << "SDataTypeStructure(";
   out << "type=" << to_string(type);
   out << ", " << "fields=" << to_string(fields);
+  out << ")";
+}
+
+
+SDataTypeClass::~SDataTypeClass() throw() {
+}
+
+
+void SDataTypeClass::__set_structType(const SDataTypeStructure& val) {
+  this->structType = val;
+}
+std::ostream& operator<<(std::ostream& out, const SDataTypeClass& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t SDataTypeClass::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->structType.read(iprot);
+          this->__isset.structType = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t SDataTypeClass::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("SDataTypeClass");
+
+  xfer += oprot->writeFieldBegin("structType", ::apache::thrift::protocol::T_STRUCT, 1);
+  xfer += this->structType.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(SDataTypeClass &a, SDataTypeClass &b) {
+  using ::std::swap;
+  swap(a.structType, b.structType);
+  swap(a.__isset, b.__isset);
+}
+
+SDataTypeClass::SDataTypeClass(const SDataTypeClass& other13) {
+  structType = other13.structType;
+  __isset = other13.__isset;
+}
+SDataTypeClass& SDataTypeClass::operator=(const SDataTypeClass& other14) {
+  structType = other14.structType;
+  __isset = other14.__isset;
+  return *this;
+}
+void SDataTypeClass::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "SDataTypeClass(";
+  out << "structType=" << to_string(structType);
   out << ")";
 }
 
@@ -724,15 +684,15 @@ void swap(SDataTypeEnumField &a, SDataTypeEnumField &b) {
   swap(a.__isset, b.__isset);
 }
 
-SDataTypeEnumField::SDataTypeEnumField(const SDataTypeEnumField& other16) {
+SDataTypeEnumField::SDataTypeEnumField(const SDataTypeEnumField& other15) {
+  name = other15.name;
+  value = other15.value;
+  __isset = other15.__isset;
+}
+SDataTypeEnumField& SDataTypeEnumField::operator=(const SDataTypeEnumField& other16) {
   name = other16.name;
   value = other16.value;
   __isset = other16.__isset;
-}
-SDataTypeEnumField& SDataTypeEnumField::operator=(const SDataTypeEnumField& other17) {
-  name = other17.name;
-  value = other17.value;
-  __isset = other17.__isset;
   return *this;
 }
 void SDataTypeEnumField::printTo(std::ostream& out) const {
@@ -795,14 +755,14 @@ uint32_t SDataTypeEnum::read(::apache::thrift::protocol::TProtocol* iprot) {
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->fields.clear();
-            uint32_t _size18;
-            ::apache::thrift::protocol::TType _etype21;
-            xfer += iprot->readListBegin(_etype21, _size18);
-            this->fields.resize(_size18);
-            uint32_t _i22;
-            for (_i22 = 0; _i22 < _size18; ++_i22)
+            uint32_t _size17;
+            ::apache::thrift::protocol::TType _etype20;
+            xfer += iprot->readListBegin(_etype20, _size17);
+            this->fields.resize(_size17);
+            uint32_t _i21;
+            for (_i21 = 0; _i21 < _size17; ++_i21)
             {
-              xfer += this->fields[_i22].read(iprot);
+              xfer += this->fields[_i21].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -835,10 +795,10 @@ uint32_t SDataTypeEnum::write(::apache::thrift::protocol::TProtocol* oprot) cons
   xfer += oprot->writeFieldBegin("fields", ::apache::thrift::protocol::T_LIST, 2);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->fields.size()));
-    std::vector<SDataTypeEnumField> ::const_iterator _iter23;
-    for (_iter23 = this->fields.begin(); _iter23 != this->fields.end(); ++_iter23)
+    std::vector<SDataTypeEnumField> ::const_iterator _iter22;
+    for (_iter22 = this->fields.begin(); _iter22 != this->fields.end(); ++_iter22)
     {
-      xfer += (*_iter23).write(oprot);
+      xfer += (*_iter22).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -856,15 +816,15 @@ void swap(SDataTypeEnum &a, SDataTypeEnum &b) {
   swap(a.__isset, b.__isset);
 }
 
-SDataTypeEnum::SDataTypeEnum(const SDataTypeEnum& other24) {
+SDataTypeEnum::SDataTypeEnum(const SDataTypeEnum& other23) {
+  type = other23.type;
+  fields = other23.fields;
+  __isset = other23.__isset;
+}
+SDataTypeEnum& SDataTypeEnum::operator=(const SDataTypeEnum& other24) {
   type = other24.type;
   fields = other24.fields;
   __isset = other24.__isset;
-}
-SDataTypeEnum& SDataTypeEnum::operator=(const SDataTypeEnum& other25) {
-  type = other25.type;
-  fields = other25.fields;
-  __isset = other25.__isset;
   return *this;
 }
 void SDataTypeEnum::printTo(std::ostream& out) const {
@@ -968,15 +928,15 @@ void swap(SDataTypeTypedef &a, SDataTypeTypedef &b) {
   swap(a.__isset, b.__isset);
 }
 
-SDataTypeTypedef::SDataTypeTypedef(const SDataTypeTypedef& other26) {
+SDataTypeTypedef::SDataTypeTypedef(const SDataTypeTypedef& other25) {
+  type = other25.type;
+  refType = other25.refType;
+  __isset = other25.__isset;
+}
+SDataTypeTypedef& SDataTypeTypedef::operator=(const SDataTypeTypedef& other26) {
   type = other26.type;
   refType = other26.refType;
   __isset = other26.__isset;
-}
-SDataTypeTypedef& SDataTypeTypedef::operator=(const SDataTypeTypedef& other27) {
-  type = other27.type;
-  refType = other27.refType;
-  __isset = other27.__isset;
   return *this;
 }
 void SDataTypeTypedef::printTo(std::ostream& out) const {

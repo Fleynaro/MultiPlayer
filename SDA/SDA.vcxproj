@@ -234,7 +234,12 @@
     <ClCompile Include="Module\GhidraSync\GhidraObject.cpp" />
     <ClCompile Include="Module\GhidraSync\GhidraObjectLoader.cpp" />
     <ClCompile Include="Module\GhidraSync\GhidraSyncCommitment.cpp" />
+    <ClCompile Include="Module\GhidraSync\Mappers\GhidraClassTypeMapper.cpp" />
+    <ClCompile Include="Module\GhidraSync\Mappers\GhidraDataTypeMapper.cpp" />
+    <ClCompile Include="Module\GhidraSync\Mappers\GhidraEnumTypeMapper.cpp" />
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraFunctionDefMapper.cpp" />
+    <ClCompile Include="Module\GhidraSync\Mappers\GhidraStructureTypeMapper.cpp" />
+    <ClCompile Include="Module\GhidraSync\Mappers\GhidraTypedefTypeMapper.cpp" />
     <ClCompile Include="Module\Manager\AbstractManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDeclManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionDefManager.cpp" />
@@ -361,7 +366,12 @@
     <ClInclude Include="Module\GhidraSync\Ghidra\include\shared_constants.h" />
     <ClInclude Include="Module\GhidraSync\Ghidra\include\shared_types.h" />
     <ClInclude Include="Module\GhidraSync\GhidraObject.h" />
+    <ClInclude Include="Module\GhidraSync\Mappers\GhidraClassTypeMapper.h" />
+    <ClInclude Include="Module\GhidraSync\Mappers\GhidraDataTypeMapper.h" />
+    <ClInclude Include="Module\GhidraSync\Mappers\GhidraEnumTypeMapper.h" />
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraFunctionDefMapper.h" />
+    <ClInclude Include="Module\GhidraSync\Mappers\GhidraStructureTypeMapper.h" />
+    <ClInclude Include="Module\GhidraSync\Mappers\GhidraTypedefTypeMapper.h" />
     <ClInclude Include="Module\Manager\AbstractManager.h" />
     <ClInclude Include="Module\Manager\FunctionDeclManager.h" />
     <ClInclude Include="Module\Manager\FunctionDefManager.h" />

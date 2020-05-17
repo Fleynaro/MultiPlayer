@@ -23,10 +23,6 @@ namespace ghidra { namespace function {
 
 typedef int64_t Id;
 
-typedef int64_t Hash;
-
-typedef std::map<Id, Hash>  HashMap;
-
 class SFunctionRange;
 
 class SFunctionSignature;

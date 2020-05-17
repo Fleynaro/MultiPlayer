@@ -96,14 +96,14 @@ uint32_t DataTypeManagerService_pull_result::read(::apache::thrift::protocol::TP
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->success.clear();
-            uint32_t _size28;
-            ::apache::thrift::protocol::TType _etype31;
-            xfer += iprot->readListBegin(_etype31, _size28);
-            this->success.resize(_size28);
-            uint32_t _i32;
-            for (_i32 = 0; _i32 < _size28; ++_i32)
+            uint32_t _size27;
+            ::apache::thrift::protocol::TType _etype30;
+            xfer += iprot->readListBegin(_etype30, _size27);
+            this->success.resize(_size27);
+            uint32_t _i31;
+            for (_i31 = 0; _i31 < _size27; ++_i31)
             {
-              xfer += this->success[_i32].read(iprot);
+              xfer += this->success[_i31].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -134,10 +134,10 @@ uint32_t DataTypeManagerService_pull_result::write(::apache::thrift::protocol::T
     xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_LIST, 0);
     {
       xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->success.size()));
-      std::vector<SDataTypeBase> ::const_iterator _iter33;
-      for (_iter33 = this->success.begin(); _iter33 != this->success.end(); ++_iter33)
+      std::vector<SDataType> ::const_iterator _iter32;
+      for (_iter32 = this->success.begin(); _iter32 != this->success.end(); ++_iter32)
       {
-        xfer += (*_iter33).write(oprot);
+        xfer += (*_iter32).write(oprot);
       }
       xfer += oprot->writeListEnd();
     }
@@ -178,14 +178,14 @@ uint32_t DataTypeManagerService_pull_presult::read(::apache::thrift::protocol::T
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             (*(this->success)).clear();
-            uint32_t _size34;
-            ::apache::thrift::protocol::TType _etype37;
-            xfer += iprot->readListBegin(_etype37, _size34);
-            (*(this->success)).resize(_size34);
-            uint32_t _i38;
-            for (_i38 = 0; _i38 < _size34; ++_i38)
+            uint32_t _size33;
+            ::apache::thrift::protocol::TType _etype36;
+            xfer += iprot->readListBegin(_etype36, _size33);
+            (*(this->success)).resize(_size33);
+            uint32_t _i37;
+            for (_i37 = 0; _i37 < _size33; ++_i37)
             {
-              xfer += (*(this->success))[_i38].read(iprot);
+              xfer += (*(this->success))[_i37].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -230,35 +230,7 @@ uint32_t DataTypeManagerService_pullTypedefs_args::read(::apache::thrift::protoc
     if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_MAP) {
-          {
-            this->hashmap.clear();
-            uint32_t _size39;
-            ::apache::thrift::protocol::TType _ktype40;
-            ::apache::thrift::protocol::TType _vtype41;
-            xfer += iprot->readMapBegin(_ktype40, _vtype41, _size39);
-            uint32_t _i43;
-            for (_i43 = 0; _i43 < _size39; ++_i43)
-            {
-              Id _key44;
-              xfer += iprot->readI64(_key44);
-              Hash& _val45 = this->hashmap[_key44];
-              xfer += iprot->readI64(_val45);
-            }
-            xfer += iprot->readMapEnd();
-          }
-          this->__isset.hashmap = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
+    xfer += iprot->skip(ftype);
     xfer += iprot->readFieldEnd();
   }
 
@@ -271,19 +243,6 @@ uint32_t DataTypeManagerService_pullTypedefs_args::write(::apache::thrift::proto
   uint32_t xfer = 0;
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("DataTypeManagerService_pullTypedefs_args");
-
-  xfer += oprot->writeFieldBegin("hashmap", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->hashmap.size()));
-    std::map<Id, Hash> ::const_iterator _iter46;
-    for (_iter46 = this->hashmap.begin(); _iter46 != this->hashmap.end(); ++_iter46)
-    {
-      xfer += oprot->writeI64(_iter46->first);
-      xfer += oprot->writeI64(_iter46->second);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -299,19 +258,6 @@ uint32_t DataTypeManagerService_pullTypedefs_pargs::write(::apache::thrift::prot
   uint32_t xfer = 0;
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("DataTypeManagerService_pullTypedefs_pargs");
-
-  xfer += oprot->writeFieldBegin("hashmap", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_I64, static_cast<uint32_t>((*(this->hashmap)).size()));
-    std::map<Id, Hash> ::const_iterator _iter47;
-    for (_iter47 = (*(this->hashmap)).begin(); _iter47 != (*(this->hashmap)).end(); ++_iter47)
-    {
-      xfer += oprot->writeI64(_iter47->first);
-      xfer += oprot->writeI64(_iter47->second);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -348,14 +294,14 @@ uint32_t DataTypeManagerService_pullTypedefs_result::read(::apache::thrift::prot
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->success.clear();
-            uint32_t _size48;
-            ::apache::thrift::protocol::TType _etype51;
-            xfer += iprot->readListBegin(_etype51, _size48);
-            this->success.resize(_size48);
-            uint32_t _i52;
-            for (_i52 = 0; _i52 < _size48; ++_i52)
+            uint32_t _size38;
+            ::apache::thrift::protocol::TType _etype41;
+            xfer += iprot->readListBegin(_etype41, _size38);
+            this->success.resize(_size38);
+            uint32_t _i42;
+            for (_i42 = 0; _i42 < _size38; ++_i42)
             {
-              xfer += this->success[_i52].read(iprot);
+              xfer += this->success[_i42].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -386,10 +332,10 @@ uint32_t DataTypeManagerService_pullTypedefs_result::write(::apache::thrift::pro
     xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_LIST, 0);
     {
       xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->success.size()));
-      std::vector<SDataTypeTypedef> ::const_iterator _iter53;
-      for (_iter53 = this->success.begin(); _iter53 != this->success.end(); ++_iter53)
+      std::vector<SDataTypeTypedef> ::const_iterator _iter43;
+      for (_iter43 = this->success.begin(); _iter43 != this->success.end(); ++_iter43)
       {
-        xfer += (*_iter53).write(oprot);
+        xfer += (*_iter43).write(oprot);
       }
       xfer += oprot->writeListEnd();
     }
@@ -430,14 +376,14 @@ uint32_t DataTypeManagerService_pullTypedefs_presult::read(::apache::thrift::pro
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             (*(this->success)).clear();
-            uint32_t _size54;
-            ::apache::thrift::protocol::TType _etype57;
-            xfer += iprot->readListBegin(_etype57, _size54);
-            (*(this->success)).resize(_size54);
-            uint32_t _i58;
-            for (_i58 = 0; _i58 < _size54; ++_i58)
+            uint32_t _size44;
+            ::apache::thrift::protocol::TType _etype47;
+            xfer += iprot->readListBegin(_etype47, _size44);
+            (*(this->success)).resize(_size44);
+            uint32_t _i48;
+            for (_i48 = 0; _i48 < _size44; ++_i48)
             {
-              xfer += (*(this->success))[_i58].read(iprot);
+              xfer += (*(this->success))[_i48].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -482,35 +428,7 @@ uint32_t DataTypeManagerService_pullStructures_args::read(::apache::thrift::prot
     if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_MAP) {
-          {
-            this->hashmap.clear();
-            uint32_t _size59;
-            ::apache::thrift::protocol::TType _ktype60;
-            ::apache::thrift::protocol::TType _vtype61;
-            xfer += iprot->readMapBegin(_ktype60, _vtype61, _size59);
-            uint32_t _i63;
-            for (_i63 = 0; _i63 < _size59; ++_i63)
-            {
-              Id _key64;
-              xfer += iprot->readI64(_key64);
-              Hash& _val65 = this->hashmap[_key64];
-              xfer += iprot->readI64(_val65);
-            }
-            xfer += iprot->readMapEnd();
-          }
-          this->__isset.hashmap = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
+    xfer += iprot->skip(ftype);
     xfer += iprot->readFieldEnd();
   }
 
@@ -523,19 +441,6 @@ uint32_t DataTypeManagerService_pullStructures_args::write(::apache::thrift::pro
   uint32_t xfer = 0;
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("DataTypeManagerService_pullStructures_args");
-
-  xfer += oprot->writeFieldBegin("hashmap", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->hashmap.size()));
-    std::map<Id, Hash> ::const_iterator _iter66;
-    for (_iter66 = this->hashmap.begin(); _iter66 != this->hashmap.end(); ++_iter66)
-    {
-      xfer += oprot->writeI64(_iter66->first);
-      xfer += oprot->writeI64(_iter66->second);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -551,19 +456,6 @@ uint32_t DataTypeManagerService_pullStructures_pargs::write(::apache::thrift::pr
   uint32_t xfer = 0;
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("DataTypeManagerService_pullStructures_pargs");
-
-  xfer += oprot->writeFieldBegin("hashmap", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_I64, static_cast<uint32_t>((*(this->hashmap)).size()));
-    std::map<Id, Hash> ::const_iterator _iter67;
-    for (_iter67 = (*(this->hashmap)).begin(); _iter67 != (*(this->hashmap)).end(); ++_iter67)
-    {
-      xfer += oprot->writeI64(_iter67->first);
-      xfer += oprot->writeI64(_iter67->second);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -600,14 +492,14 @@ uint32_t DataTypeManagerService_pullStructures_result::read(::apache::thrift::pr
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->success.clear();
-            uint32_t _size68;
-            ::apache::thrift::protocol::TType _etype71;
-            xfer += iprot->readListBegin(_etype71, _size68);
-            this->success.resize(_size68);
-            uint32_t _i72;
-            for (_i72 = 0; _i72 < _size68; ++_i72)
+            uint32_t _size49;
+            ::apache::thrift::protocol::TType _etype52;
+            xfer += iprot->readListBegin(_etype52, _size49);
+            this->success.resize(_size49);
+            uint32_t _i53;
+            for (_i53 = 0; _i53 < _size49; ++_i53)
             {
-              xfer += this->success[_i72].read(iprot);
+              xfer += this->success[_i53].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -638,10 +530,10 @@ uint32_t DataTypeManagerService_pullStructures_result::write(::apache::thrift::p
     xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_LIST, 0);
     {
       xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->success.size()));
-      std::vector<SDataTypeStructure> ::const_iterator _iter73;
-      for (_iter73 = this->success.begin(); _iter73 != this->success.end(); ++_iter73)
+      std::vector<SDataTypeStructure> ::const_iterator _iter54;
+      for (_iter54 = this->success.begin(); _iter54 != this->success.end(); ++_iter54)
       {
-        xfer += (*_iter73).write(oprot);
+        xfer += (*_iter54).write(oprot);
       }
       xfer += oprot->writeListEnd();
     }
@@ -682,14 +574,212 @@ uint32_t DataTypeManagerService_pullStructures_presult::read(::apache::thrift::p
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             (*(this->success)).clear();
-            uint32_t _size74;
-            ::apache::thrift::protocol::TType _etype77;
-            xfer += iprot->readListBegin(_etype77, _size74);
-            (*(this->success)).resize(_size74);
-            uint32_t _i78;
-            for (_i78 = 0; _i78 < _size74; ++_i78)
+            uint32_t _size55;
+            ::apache::thrift::protocol::TType _etype58;
+            xfer += iprot->readListBegin(_etype58, _size55);
+            (*(this->success)).resize(_size55);
+            uint32_t _i59;
+            for (_i59 = 0; _i59 < _size55; ++_i59)
             {
-              xfer += (*(this->success))[_i78].read(iprot);
+              xfer += (*(this->success))[_i59].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.success = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+
+DataTypeManagerService_pullClasses_args::~DataTypeManagerService_pullClasses_args() throw() {
+}
+
+
+uint32_t DataTypeManagerService_pullClasses_args::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    xfer += iprot->skip(ftype);
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t DataTypeManagerService_pullClasses_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("DataTypeManagerService_pullClasses_args");
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+
+DataTypeManagerService_pullClasses_pargs::~DataTypeManagerService_pullClasses_pargs() throw() {
+}
+
+
+uint32_t DataTypeManagerService_pullClasses_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("DataTypeManagerService_pullClasses_pargs");
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+
+DataTypeManagerService_pullClasses_result::~DataTypeManagerService_pullClasses_result() throw() {
+}
+
+
+uint32_t DataTypeManagerService_pullClasses_result::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 0:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->success.clear();
+            uint32_t _size60;
+            ::apache::thrift::protocol::TType _etype63;
+            xfer += iprot->readListBegin(_etype63, _size60);
+            this->success.resize(_size60);
+            uint32_t _i64;
+            for (_i64 = 0; _i64 < _size60; ++_i64)
+            {
+              xfer += this->success[_i64].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.success = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t DataTypeManagerService_pullClasses_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
+
+  uint32_t xfer = 0;
+
+  xfer += oprot->writeStructBegin("DataTypeManagerService_pullClasses_result");
+
+  if (this->__isset.success) {
+    xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_LIST, 0);
+    {
+      xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->success.size()));
+      std::vector<SDataTypeClass> ::const_iterator _iter65;
+      for (_iter65 = this->success.begin(); _iter65 != this->success.end(); ++_iter65)
+      {
+        xfer += (*_iter65).write(oprot);
+      }
+      xfer += oprot->writeListEnd();
+    }
+    xfer += oprot->writeFieldEnd();
+  }
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+
+DataTypeManagerService_pullClasses_presult::~DataTypeManagerService_pullClasses_presult() throw() {
+}
+
+
+uint32_t DataTypeManagerService_pullClasses_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 0:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            (*(this->success)).clear();
+            uint32_t _size66;
+            ::apache::thrift::protocol::TType _etype69;
+            xfer += iprot->readListBegin(_etype69, _size66);
+            (*(this->success)).resize(_size66);
+            uint32_t _i70;
+            for (_i70 = 0; _i70 < _size66; ++_i70)
+            {
+              xfer += (*(this->success))[_i70].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -734,35 +824,7 @@ uint32_t DataTypeManagerService_pullEnums_args::read(::apache::thrift::protocol:
     if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_MAP) {
-          {
-            this->hashmap.clear();
-            uint32_t _size79;
-            ::apache::thrift::protocol::TType _ktype80;
-            ::apache::thrift::protocol::TType _vtype81;
-            xfer += iprot->readMapBegin(_ktype80, _vtype81, _size79);
-            uint32_t _i83;
-            for (_i83 = 0; _i83 < _size79; ++_i83)
-            {
-              Id _key84;
-              xfer += iprot->readI64(_key84);
-              Hash& _val85 = this->hashmap[_key84];
-              xfer += iprot->readI64(_val85);
-            }
-            xfer += iprot->readMapEnd();
-          }
-          this->__isset.hashmap = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
+    xfer += iprot->skip(ftype);
     xfer += iprot->readFieldEnd();
   }
 
@@ -775,19 +837,6 @@ uint32_t DataTypeManagerService_pullEnums_args::write(::apache::thrift::protocol
   uint32_t xfer = 0;
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("DataTypeManagerService_pullEnums_args");
-
-  xfer += oprot->writeFieldBegin("hashmap", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->hashmap.size()));
-    std::map<Id, Hash> ::const_iterator _iter86;
-    for (_iter86 = this->hashmap.begin(); _iter86 != this->hashmap.end(); ++_iter86)
-    {
-      xfer += oprot->writeI64(_iter86->first);
-      xfer += oprot->writeI64(_iter86->second);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -803,19 +852,6 @@ uint32_t DataTypeManagerService_pullEnums_pargs::write(::apache::thrift::protoco
   uint32_t xfer = 0;
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("DataTypeManagerService_pullEnums_pargs");
-
-  xfer += oprot->writeFieldBegin("hashmap", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_I64, static_cast<uint32_t>((*(this->hashmap)).size()));
-    std::map<Id, Hash> ::const_iterator _iter87;
-    for (_iter87 = (*(this->hashmap)).begin(); _iter87 != (*(this->hashmap)).end(); ++_iter87)
-    {
-      xfer += oprot->writeI64(_iter87->first);
-      xfer += oprot->writeI64(_iter87->second);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -852,14 +888,14 @@ uint32_t DataTypeManagerService_pullEnums_result::read(::apache::thrift::protoco
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->success.clear();
-            uint32_t _size88;
-            ::apache::thrift::protocol::TType _etype91;
-            xfer += iprot->readListBegin(_etype91, _size88);
-            this->success.resize(_size88);
-            uint32_t _i92;
-            for (_i92 = 0; _i92 < _size88; ++_i92)
+            uint32_t _size71;
+            ::apache::thrift::protocol::TType _etype74;
+            xfer += iprot->readListBegin(_etype74, _size71);
+            this->success.resize(_size71);
+            uint32_t _i75;
+            for (_i75 = 0; _i75 < _size71; ++_i75)
             {
-              xfer += this->success[_i92].read(iprot);
+              xfer += this->success[_i75].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -890,10 +926,10 @@ uint32_t DataTypeManagerService_pullEnums_result::write(::apache::thrift::protoc
     xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_LIST, 0);
     {
       xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->success.size()));
-      std::vector<SDataTypeEnum> ::const_iterator _iter93;
-      for (_iter93 = this->success.begin(); _iter93 != this->success.end(); ++_iter93)
+      std::vector<SDataTypeEnum> ::const_iterator _iter76;
+      for (_iter76 = this->success.begin(); _iter76 != this->success.end(); ++_iter76)
       {
-        xfer += (*_iter93).write(oprot);
+        xfer += (*_iter76).write(oprot);
       }
       xfer += oprot->writeListEnd();
     }
@@ -934,14 +970,14 @@ uint32_t DataTypeManagerService_pullEnums_presult::read(::apache::thrift::protoc
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             (*(this->success)).clear();
-            uint32_t _size94;
-            ::apache::thrift::protocol::TType _etype97;
-            xfer += iprot->readListBegin(_etype97, _size94);
-            (*(this->success)).resize(_size94);
-            uint32_t _i98;
-            for (_i98 = 0; _i98 < _size94; ++_i98)
+            uint32_t _size77;
+            ::apache::thrift::protocol::TType _etype80;
+            xfer += iprot->readListBegin(_etype80, _size77);
+            (*(this->success)).resize(_size77);
+            uint32_t _i81;
+            for (_i81 = 0; _i81 < _size77; ++_i81)
             {
-              xfer += (*(this->success))[_i98].read(iprot);
+              xfer += (*(this->success))[_i81].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -992,14 +1028,14 @@ uint32_t DataTypeManagerService_push_args::read(::apache::thrift::protocol::TPro
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->types.clear();
-            uint32_t _size99;
-            ::apache::thrift::protocol::TType _etype102;
-            xfer += iprot->readListBegin(_etype102, _size99);
-            this->types.resize(_size99);
-            uint32_t _i103;
-            for (_i103 = 0; _i103 < _size99; ++_i103)
+            uint32_t _size82;
+            ::apache::thrift::protocol::TType _etype85;
+            xfer += iprot->readListBegin(_etype85, _size82);
+            this->types.resize(_size82);
+            uint32_t _i86;
+            for (_i86 = 0; _i86 < _size82; ++_i86)
             {
-              xfer += this->types[_i103].read(iprot);
+              xfer += this->types[_i86].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -1028,10 +1064,10 @@ uint32_t DataTypeManagerService_push_args::write(::apache::thrift::protocol::TPr
   xfer += oprot->writeFieldBegin("types", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->types.size()));
-    std::vector<SDataType> ::const_iterator _iter104;
-    for (_iter104 = this->types.begin(); _iter104 != this->types.end(); ++_iter104)
+    std::vector<SDataType> ::const_iterator _iter87;
+    for (_iter87 = this->types.begin(); _iter87 != this->types.end(); ++_iter87)
     {
-      xfer += (*_iter104).write(oprot);
+      xfer += (*_iter87).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -1055,10 +1091,10 @@ uint32_t DataTypeManagerService_push_pargs::write(::apache::thrift::protocol::TP
   xfer += oprot->writeFieldBegin("types", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>((*(this->types)).size()));
-    std::vector<SDataType> ::const_iterator _iter105;
-    for (_iter105 = (*(this->types)).begin(); _iter105 != (*(this->types)).end(); ++_iter105)
+    std::vector<SDataType> ::const_iterator _iter88;
+    for (_iter88 = (*(this->types)).begin(); _iter88 != (*(this->types)).end(); ++_iter88)
     {
-      xfer += (*_iter105).write(oprot);
+      xfer += (*_iter88).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -1176,14 +1212,14 @@ uint32_t DataTypeManagerService_pushTypedefs_args::read(::apache::thrift::protoc
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->typedefs.clear();
-            uint32_t _size106;
-            ::apache::thrift::protocol::TType _etype109;
-            xfer += iprot->readListBegin(_etype109, _size106);
-            this->typedefs.resize(_size106);
-            uint32_t _i110;
-            for (_i110 = 0; _i110 < _size106; ++_i110)
+            uint32_t _size89;
+            ::apache::thrift::protocol::TType _etype92;
+            xfer += iprot->readListBegin(_etype92, _size89);
+            this->typedefs.resize(_size89);
+            uint32_t _i93;
+            for (_i93 = 0; _i93 < _size89; ++_i93)
             {
-              xfer += this->typedefs[_i110].read(iprot);
+              xfer += this->typedefs[_i93].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -1212,10 +1248,10 @@ uint32_t DataTypeManagerService_pushTypedefs_args::write(::apache::thrift::proto
   xfer += oprot->writeFieldBegin("typedefs", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->typedefs.size()));
-    std::vector<SDataTypeTypedef> ::const_iterator _iter111;
-    for (_iter111 = this->typedefs.begin(); _iter111 != this->typedefs.end(); ++_iter111)
+    std::vector<SDataTypeTypedef> ::const_iterator _iter94;
+    for (_iter94 = this->typedefs.begin(); _iter94 != this->typedefs.end(); ++_iter94)
     {
-      xfer += (*_iter111).write(oprot);
+      xfer += (*_iter94).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -1239,10 +1275,10 @@ uint32_t DataTypeManagerService_pushTypedefs_pargs::write(::apache::thrift::prot
   xfer += oprot->writeFieldBegin("typedefs", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>((*(this->typedefs)).size()));
-    std::vector<SDataTypeTypedef> ::const_iterator _iter112;
-    for (_iter112 = (*(this->typedefs)).begin(); _iter112 != (*(this->typedefs)).end(); ++_iter112)
+    std::vector<SDataTypeTypedef> ::const_iterator _iter95;
+    for (_iter95 = (*(this->typedefs)).begin(); _iter95 != (*(this->typedefs)).end(); ++_iter95)
     {
-      xfer += (*_iter112).write(oprot);
+      xfer += (*_iter95).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -1360,14 +1396,14 @@ uint32_t DataTypeManagerService_pushStructures_args::read(::apache::thrift::prot
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->structures.clear();
-            uint32_t _size113;
-            ::apache::thrift::protocol::TType _etype116;
-            xfer += iprot->readListBegin(_etype116, _size113);
-            this->structures.resize(_size113);
-            uint32_t _i117;
-            for (_i117 = 0; _i117 < _size113; ++_i117)
+            uint32_t _size96;
+            ::apache::thrift::protocol::TType _etype99;
+            xfer += iprot->readListBegin(_etype99, _size96);
+            this->structures.resize(_size96);
+            uint32_t _i100;
+            for (_i100 = 0; _i100 < _size96; ++_i100)
             {
-              xfer += this->structures[_i117].read(iprot);
+              xfer += this->structures[_i100].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -1396,10 +1432,10 @@ uint32_t DataTypeManagerService_pushStructures_args::write(::apache::thrift::pro
   xfer += oprot->writeFieldBegin("structures", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->structures.size()));
-    std::vector<SDataTypeStructure> ::const_iterator _iter118;
-    for (_iter118 = this->structures.begin(); _iter118 != this->structures.end(); ++_iter118)
+    std::vector<SDataTypeStructure> ::const_iterator _iter101;
+    for (_iter101 = this->structures.begin(); _iter101 != this->structures.end(); ++_iter101)
     {
-      xfer += (*_iter118).write(oprot);
+      xfer += (*_iter101).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -1423,10 +1459,10 @@ uint32_t DataTypeManagerService_pushStructures_pargs::write(::apache::thrift::pr
   xfer += oprot->writeFieldBegin("structures", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>((*(this->structures)).size()));
-    std::vector<SDataTypeStructure> ::const_iterator _iter119;
-    for (_iter119 = (*(this->structures)).begin(); _iter119 != (*(this->structures)).end(); ++_iter119)
+    std::vector<SDataTypeStructure> ::const_iterator _iter102;
+    for (_iter102 = (*(this->structures)).begin(); _iter102 != (*(this->structures)).end(); ++_iter102)
     {
-      xfer += (*_iter119).write(oprot);
+      xfer += (*_iter102).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -1515,6 +1551,190 @@ uint32_t DataTypeManagerService_pushStructures_presult::read(::apache::thrift::p
 }
 
 
+DataTypeManagerService_pushClasses_args::~DataTypeManagerService_pushClasses_args() throw() {
+}
+
+
+uint32_t DataTypeManagerService_pushClasses_args::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->classes.clear();
+            uint32_t _size103;
+            ::apache::thrift::protocol::TType _etype106;
+            xfer += iprot->readListBegin(_etype106, _size103);
+            this->classes.resize(_size103);
+            uint32_t _i107;
+            for (_i107 = 0; _i107 < _size103; ++_i107)
+            {
+              xfer += this->classes[_i107].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.classes = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t DataTypeManagerService_pushClasses_args::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("DataTypeManagerService_pushClasses_args");
+
+  xfer += oprot->writeFieldBegin("classes", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->classes.size()));
+    std::vector<SDataTypeClass> ::const_iterator _iter108;
+    for (_iter108 = this->classes.begin(); _iter108 != this->classes.end(); ++_iter108)
+    {
+      xfer += (*_iter108).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+
+DataTypeManagerService_pushClasses_pargs::~DataTypeManagerService_pushClasses_pargs() throw() {
+}
+
+
+uint32_t DataTypeManagerService_pushClasses_pargs::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("DataTypeManagerService_pushClasses_pargs");
+
+  xfer += oprot->writeFieldBegin("classes", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>((*(this->classes)).size()));
+    std::vector<SDataTypeClass> ::const_iterator _iter109;
+    for (_iter109 = (*(this->classes)).begin(); _iter109 != (*(this->classes)).end(); ++_iter109)
+    {
+      xfer += (*_iter109).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+
+DataTypeManagerService_pushClasses_result::~DataTypeManagerService_pushClasses_result() throw() {
+}
+
+
+uint32_t DataTypeManagerService_pushClasses_result::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    xfer += iprot->skip(ftype);
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t DataTypeManagerService_pushClasses_result::write(::apache::thrift::protocol::TProtocol* oprot) const {
+
+  uint32_t xfer = 0;
+
+  xfer += oprot->writeStructBegin("DataTypeManagerService_pushClasses_result");
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+
+DataTypeManagerService_pushClasses_presult::~DataTypeManagerService_pushClasses_presult() throw() {
+}
+
+
+uint32_t DataTypeManagerService_pushClasses_presult::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    xfer += iprot->skip(ftype);
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+
 DataTypeManagerService_pushEnums_args::~DataTypeManagerService_pushEnums_args() throw() {
 }
 
@@ -1544,14 +1764,14 @@ uint32_t DataTypeManagerService_pushEnums_args::read(::apache::thrift::protocol:
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->enums.clear();
-            uint32_t _size120;
-            ::apache::thrift::protocol::TType _etype123;
-            xfer += iprot->readListBegin(_etype123, _size120);
-            this->enums.resize(_size120);
-            uint32_t _i124;
-            for (_i124 = 0; _i124 < _size120; ++_i124)
+            uint32_t _size110;
+            ::apache::thrift::protocol::TType _etype113;
+            xfer += iprot->readListBegin(_etype113, _size110);
+            this->enums.resize(_size110);
+            uint32_t _i114;
+            for (_i114 = 0; _i114 < _size110; ++_i114)
             {
-              xfer += this->enums[_i124].read(iprot);
+              xfer += this->enums[_i114].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -1580,10 +1800,10 @@ uint32_t DataTypeManagerService_pushEnums_args::write(::apache::thrift::protocol
   xfer += oprot->writeFieldBegin("enums", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->enums.size()));
-    std::vector<SDataTypeEnum> ::const_iterator _iter125;
-    for (_iter125 = this->enums.begin(); _iter125 != this->enums.end(); ++_iter125)
+    std::vector<SDataTypeEnum> ::const_iterator _iter115;
+    for (_iter115 = this->enums.begin(); _iter115 != this->enums.end(); ++_iter115)
     {
-      xfer += (*_iter125).write(oprot);
+      xfer += (*_iter115).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -1607,10 +1827,10 @@ uint32_t DataTypeManagerService_pushEnums_pargs::write(::apache::thrift::protoco
   xfer += oprot->writeFieldBegin("enums", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>((*(this->enums)).size()));
-    std::vector<SDataTypeEnum> ::const_iterator _iter126;
-    for (_iter126 = (*(this->enums)).begin(); _iter126 != (*(this->enums)).end(); ++_iter126)
+    std::vector<SDataTypeEnum> ::const_iterator _iter116;
+    for (_iter116 = (*(this->enums)).begin(); _iter116 != (*(this->enums)).end(); ++_iter116)
     {
-      xfer += (*_iter126).write(oprot);
+      xfer += (*_iter116).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -1698,7 +1918,7 @@ uint32_t DataTypeManagerService_pushEnums_presult::read(::apache::thrift::protoc
   return xfer;
 }
 
-void DataTypeManagerServiceClient::pull(std::vector<SDataTypeBase> & _return)
+void DataTypeManagerServiceClient::pull(std::vector<SDataType> & _return)
 {
   send_pull();
   recv_pull(_return);
@@ -1717,7 +1937,7 @@ void DataTypeManagerServiceClient::send_pull()
   oprot_->getTransport()->flush();
 }
 
-void DataTypeManagerServiceClient::recv_pull(std::vector<SDataTypeBase> & _return)
+void DataTypeManagerServiceClient::recv_pull(std::vector<SDataType> & _return)
 {
 
   int32_t rseqid = 0;
@@ -1755,19 +1975,18 @@ void DataTypeManagerServiceClient::recv_pull(std::vector<SDataTypeBase> & _retur
   throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "pull failed: unknown result");
 }
 
-void DataTypeManagerServiceClient::pullTypedefs(std::vector<SDataTypeTypedef> & _return, const HashMap& hashmap)
+void DataTypeManagerServiceClient::pullTypedefs(std::vector<SDataTypeTypedef> & _return)
 {
-  send_pullTypedefs(hashmap);
+  send_pullTypedefs();
   recv_pullTypedefs(_return);
 }
 
-void DataTypeManagerServiceClient::send_pullTypedefs(const HashMap& hashmap)
+void DataTypeManagerServiceClient::send_pullTypedefs()
 {
   int32_t cseqid = 0;
   oprot_->writeMessageBegin("pullTypedefs", ::apache::thrift::protocol::T_CALL, cseqid);
 
   DataTypeManagerService_pullTypedefs_pargs args;
-  args.hashmap = &hashmap;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -1813,19 +2032,18 @@ void DataTypeManagerServiceClient::recv_pullTypedefs(std::vector<SDataTypeTypede
   throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "pullTypedefs failed: unknown result");
 }
 
-void DataTypeManagerServiceClient::pullStructures(std::vector<SDataTypeStructure> & _return, const HashMap& hashmap)
+void DataTypeManagerServiceClient::pullStructures(std::vector<SDataTypeStructure> & _return)
 {
-  send_pullStructures(hashmap);
+  send_pullStructures();
   recv_pullStructures(_return);
 }
 
-void DataTypeManagerServiceClient::send_pullStructures(const HashMap& hashmap)
+void DataTypeManagerServiceClient::send_pullStructures()
 {
   int32_t cseqid = 0;
   oprot_->writeMessageBegin("pullStructures", ::apache::thrift::protocol::T_CALL, cseqid);
 
   DataTypeManagerService_pullStructures_pargs args;
-  args.hashmap = &hashmap;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -1871,19 +2089,75 @@ void DataTypeManagerServiceClient::recv_pullStructures(std::vector<SDataTypeStru
   throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "pullStructures failed: unknown result");
 }
 
-void DataTypeManagerServiceClient::pullEnums(std::vector<SDataTypeEnum> & _return, const HashMap& hashmap)
+void DataTypeManagerServiceClient::pullClasses(std::vector<SDataTypeClass> & _return)
 {
-  send_pullEnums(hashmap);
+  send_pullClasses();
+  recv_pullClasses(_return);
+}
+
+void DataTypeManagerServiceClient::send_pullClasses()
+{
+  int32_t cseqid = 0;
+  oprot_->writeMessageBegin("pullClasses", ::apache::thrift::protocol::T_CALL, cseqid);
+
+  DataTypeManagerService_pullClasses_pargs args;
+  args.write(oprot_);
+
+  oprot_->writeMessageEnd();
+  oprot_->getTransport()->writeEnd();
+  oprot_->getTransport()->flush();
+}
+
+void DataTypeManagerServiceClient::recv_pullClasses(std::vector<SDataTypeClass> & _return)
+{
+
+  int32_t rseqid = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TMessageType mtype;
+
+  iprot_->readMessageBegin(fname, mtype, rseqid);
+  if (mtype == ::apache::thrift::protocol::T_EXCEPTION) {
+    ::apache::thrift::TApplicationException x;
+    x.read(iprot_);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+    throw x;
+  }
+  if (mtype != ::apache::thrift::protocol::T_REPLY) {
+    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+  }
+  if (fname.compare("pullClasses") != 0) {
+    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+  }
+  DataTypeManagerService_pullClasses_presult result;
+  result.success = &_return;
+  result.read(iprot_);
+  iprot_->readMessageEnd();
+  iprot_->getTransport()->readEnd();
+
+  if (result.__isset.success) {
+    // _return pointer has now been filled
+    return;
+  }
+  throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "pullClasses failed: unknown result");
+}
+
+void DataTypeManagerServiceClient::pullEnums(std::vector<SDataTypeEnum> & _return)
+{
+  send_pullEnums();
   recv_pullEnums(_return);
 }
 
-void DataTypeManagerServiceClient::send_pullEnums(const HashMap& hashmap)
+void DataTypeManagerServiceClient::send_pullEnums()
 {
   int32_t cseqid = 0;
   oprot_->writeMessageBegin("pullEnums", ::apache::thrift::protocol::T_CALL, cseqid);
 
   DataTypeManagerService_pullEnums_pargs args;
-  args.hashmap = &hashmap;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -2088,6 +2362,59 @@ void DataTypeManagerServiceClient::recv_pushStructures()
   return;
 }
 
+void DataTypeManagerServiceClient::pushClasses(const std::vector<SDataTypeClass> & classes)
+{
+  send_pushClasses(classes);
+  recv_pushClasses();
+}
+
+void DataTypeManagerServiceClient::send_pushClasses(const std::vector<SDataTypeClass> & classes)
+{
+  int32_t cseqid = 0;
+  oprot_->writeMessageBegin("pushClasses", ::apache::thrift::protocol::T_CALL, cseqid);
+
+  DataTypeManagerService_pushClasses_pargs args;
+  args.classes = &classes;
+  args.write(oprot_);
+
+  oprot_->writeMessageEnd();
+  oprot_->getTransport()->writeEnd();
+  oprot_->getTransport()->flush();
+}
+
+void DataTypeManagerServiceClient::recv_pushClasses()
+{
+
+  int32_t rseqid = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TMessageType mtype;
+
+  iprot_->readMessageBegin(fname, mtype, rseqid);
+  if (mtype == ::apache::thrift::protocol::T_EXCEPTION) {
+    ::apache::thrift::TApplicationException x;
+    x.read(iprot_);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+    throw x;
+  }
+  if (mtype != ::apache::thrift::protocol::T_REPLY) {
+    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+  }
+  if (fname.compare("pushClasses") != 0) {
+    iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+    iprot_->readMessageEnd();
+    iprot_->getTransport()->readEnd();
+  }
+  DataTypeManagerService_pushClasses_presult result;
+  result.read(iprot_);
+  iprot_->readMessageEnd();
+  iprot_->getTransport()->readEnd();
+
+  return;
+}
+
 void DataTypeManagerServiceClient::pushEnums(const std::vector<SDataTypeEnum> & enums)
 {
   send_pushEnums(enums);
@@ -2237,7 +2564,7 @@ void DataTypeManagerServiceProcessor::process_pullTypedefs(int32_t seqid, ::apac
 
   DataTypeManagerService_pullTypedefs_result result;
   try {
-    iface_->pullTypedefs(result.success, args.hashmap);
+    iface_->pullTypedefs(result.success);
     result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
@@ -2291,7 +2618,7 @@ void DataTypeManagerServiceProcessor::process_pullStructures(int32_t seqid, ::ap
 
   DataTypeManagerService_pullStructures_result result;
   try {
-    iface_->pullStructures(result.success, args.hashmap);
+    iface_->pullStructures(result.success);
     result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
@@ -2322,6 +2649,60 @@ void DataTypeManagerServiceProcessor::process_pullStructures(int32_t seqid, ::ap
   }
 }
 
+void DataTypeManagerServiceProcessor::process_pullClasses(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
+{
+  void* ctx = NULL;
+  if (this->eventHandler_.get() != NULL) {
+    ctx = this->eventHandler_->getContext("DataTypeManagerService.pullClasses", callContext);
+  }
+  ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "DataTypeManagerService.pullClasses");
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->preRead(ctx, "DataTypeManagerService.pullClasses");
+  }
+
+  DataTypeManagerService_pullClasses_args args;
+  args.read(iprot);
+  iprot->readMessageEnd();
+  uint32_t bytes = iprot->getTransport()->readEnd();
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->postRead(ctx, "DataTypeManagerService.pullClasses", bytes);
+  }
+
+  DataTypeManagerService_pullClasses_result result;
+  try {
+    iface_->pullClasses(result.success);
+    result.__isset.success = true;
+  } catch (const std::exception& e) {
+    if (this->eventHandler_.get() != NULL) {
+      this->eventHandler_->handlerError(ctx, "DataTypeManagerService.pullClasses");
+    }
+
+    ::apache::thrift::TApplicationException x(e.what());
+    oprot->writeMessageBegin("pullClasses", ::apache::thrift::protocol::T_EXCEPTION, seqid);
+    x.write(oprot);
+    oprot->writeMessageEnd();
+    oprot->getTransport()->writeEnd();
+    oprot->getTransport()->flush();
+    return;
+  }
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->preWrite(ctx, "DataTypeManagerService.pullClasses");
+  }
+
+  oprot->writeMessageBegin("pullClasses", ::apache::thrift::protocol::T_REPLY, seqid);
+  result.write(oprot);
+  oprot->writeMessageEnd();
+  bytes = oprot->getTransport()->writeEnd();
+  oprot->getTransport()->flush();
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->postWrite(ctx, "DataTypeManagerService.pullClasses", bytes);
+  }
+}
+
 void DataTypeManagerServiceProcessor::process_pullEnums(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
 {
   void* ctx = NULL;
@@ -2345,7 +2726,7 @@ void DataTypeManagerServiceProcessor::process_pullEnums(int32_t seqid, ::apache:
 
   DataTypeManagerService_pullEnums_result result;
   try {
-    iface_->pullEnums(result.success, args.hashmap);
+    iface_->pullEnums(result.success);
     result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
@@ -2535,6 +2916,59 @@ void DataTypeManagerServiceProcessor::process_pushStructures(int32_t seqid, ::ap
   }
 }
 
+void DataTypeManagerServiceProcessor::process_pushClasses(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
+{
+  void* ctx = NULL;
+  if (this->eventHandler_.get() != NULL) {
+    ctx = this->eventHandler_->getContext("DataTypeManagerService.pushClasses", callContext);
+  }
+  ::apache::thrift::TProcessorContextFreer freer(this->eventHandler_.get(), ctx, "DataTypeManagerService.pushClasses");
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->preRead(ctx, "DataTypeManagerService.pushClasses");
+  }
+
+  DataTypeManagerService_pushClasses_args args;
+  args.read(iprot);
+  iprot->readMessageEnd();
+  uint32_t bytes = iprot->getTransport()->readEnd();
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->postRead(ctx, "DataTypeManagerService.pushClasses", bytes);
+  }
+
+  DataTypeManagerService_pushClasses_result result;
+  try {
+    iface_->pushClasses(args.classes);
+  } catch (const std::exception& e) {
+    if (this->eventHandler_.get() != NULL) {
+      this->eventHandler_->handlerError(ctx, "DataTypeManagerService.pushClasses");
+    }
+
+    ::apache::thrift::TApplicationException x(e.what());
+    oprot->writeMessageBegin("pushClasses", ::apache::thrift::protocol::T_EXCEPTION, seqid);
+    x.write(oprot);
+    oprot->writeMessageEnd();
+    oprot->getTransport()->writeEnd();
+    oprot->getTransport()->flush();
+    return;
+  }
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->preWrite(ctx, "DataTypeManagerService.pushClasses");
+  }
+
+  oprot->writeMessageBegin("pushClasses", ::apache::thrift::protocol::T_REPLY, seqid);
+  result.write(oprot);
+  oprot->writeMessageEnd();
+  bytes = oprot->getTransport()->writeEnd();
+  oprot->getTransport()->flush();
+
+  if (this->eventHandler_.get() != NULL) {
+    this->eventHandler_->postWrite(ctx, "DataTypeManagerService.pushClasses", bytes);
+  }
+}
+
 void DataTypeManagerServiceProcessor::process_pushEnums(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext)
 {
   void* ctx = NULL;
@@ -2595,7 +3029,7 @@ void DataTypeManagerServiceProcessor::process_pushEnums(int32_t seqid, ::apache:
   return processor;
 }
 
-void DataTypeManagerServiceConcurrentClient::pull(std::vector<SDataTypeBase> & _return)
+void DataTypeManagerServiceConcurrentClient::pull(std::vector<SDataType> & _return)
 {
   int32_t seqid = send_pull();
   recv_pull(_return, seqid);
@@ -2618,7 +3052,7 @@ int32_t DataTypeManagerServiceConcurrentClient::send_pull()
   return cseqid;
 }
 
-void DataTypeManagerServiceConcurrentClient::recv_pull(std::vector<SDataTypeBase> & _return, const int32_t seqid)
+void DataTypeManagerServiceConcurrentClient::recv_pull(std::vector<SDataType> & _return, const int32_t seqid)
 {
 
   int32_t rseqid = 0;
@@ -2678,20 +3112,19 @@ void DataTypeManagerServiceConcurrentClient::recv_pull(std::vector<SDataTypeBase
   } // end while(true)
 }
 
-void DataTypeManagerServiceConcurrentClient::pullTypedefs(std::vector<SDataTypeTypedef> & _return, const HashMap& hashmap)
+void DataTypeManagerServiceConcurrentClient::pullTypedefs(std::vector<SDataTypeTypedef> & _return)
 {
-  int32_t seqid = send_pullTypedefs(hashmap);
+  int32_t seqid = send_pullTypedefs();
   recv_pullTypedefs(_return, seqid);
 }
 
-int32_t DataTypeManagerServiceConcurrentClient::send_pullTypedefs(const HashMap& hashmap)
+int32_t DataTypeManagerServiceConcurrentClient::send_pullTypedefs()
 {
   int32_t cseqid = this->sync_.generateSeqId();
   ::apache::thrift::async::TConcurrentSendSentry sentry(&this->sync_);
   oprot_->writeMessageBegin("pullTypedefs", ::apache::thrift::protocol::T_CALL, cseqid);
 
   DataTypeManagerService_pullTypedefs_pargs args;
-  args.hashmap = &hashmap;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -2762,20 +3195,19 @@ void DataTypeManagerServiceConcurrentClient::recv_pullTypedefs(std::vector<SData
   } // end while(true)
 }
 
-void DataTypeManagerServiceConcurrentClient::pullStructures(std::vector<SDataTypeStructure> & _return, const HashMap& hashmap)
+void DataTypeManagerServiceConcurrentClient::pullStructures(std::vector<SDataTypeStructure> & _return)
 {
-  int32_t seqid = send_pullStructures(hashmap);
+  int32_t seqid = send_pullStructures();
   recv_pullStructures(_return, seqid);
 }
 
-int32_t DataTypeManagerServiceConcurrentClient::send_pullStructures(const HashMap& hashmap)
+int32_t DataTypeManagerServiceConcurrentClient::send_pullStructures()
 {
   int32_t cseqid = this->sync_.generateSeqId();
   ::apache::thrift::async::TConcurrentSendSentry sentry(&this->sync_);
   oprot_->writeMessageBegin("pullStructures", ::apache::thrift::protocol::T_CALL, cseqid);
 
   DataTypeManagerService_pullStructures_pargs args;
-  args.hashmap = &hashmap;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -2846,20 +3278,102 @@ void DataTypeManagerServiceConcurrentClient::recv_pullStructures(std::vector<SDa
   } // end while(true)
 }
 
-void DataTypeManagerServiceConcurrentClient::pullEnums(std::vector<SDataTypeEnum> & _return, const HashMap& hashmap)
+void DataTypeManagerServiceConcurrentClient::pullClasses(std::vector<SDataTypeClass> & _return)
 {
-  int32_t seqid = send_pullEnums(hashmap);
+  int32_t seqid = send_pullClasses();
+  recv_pullClasses(_return, seqid);
+}
+
+int32_t DataTypeManagerServiceConcurrentClient::send_pullClasses()
+{
+  int32_t cseqid = this->sync_.generateSeqId();
+  ::apache::thrift::async::TConcurrentSendSentry sentry(&this->sync_);
+  oprot_->writeMessageBegin("pullClasses", ::apache::thrift::protocol::T_CALL, cseqid);
+
+  DataTypeManagerService_pullClasses_pargs args;
+  args.write(oprot_);
+
+  oprot_->writeMessageEnd();
+  oprot_->getTransport()->writeEnd();
+  oprot_->getTransport()->flush();
+
+  sentry.commit();
+  return cseqid;
+}
+
+void DataTypeManagerServiceConcurrentClient::recv_pullClasses(std::vector<SDataTypeClass> & _return, const int32_t seqid)
+{
+
+  int32_t rseqid = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TMessageType mtype;
+
+  // the read mutex gets dropped and reacquired as part of waitForWork()
+  // The destructor of this sentry wakes up other clients
+  ::apache::thrift::async::TConcurrentRecvSentry sentry(&this->sync_, seqid);
+
+  while(true) {
+    if(!this->sync_.getPending(fname, mtype, rseqid)) {
+      iprot_->readMessageBegin(fname, mtype, rseqid);
+    }
+    if(seqid == rseqid) {
+      if (mtype == ::apache::thrift::protocol::T_EXCEPTION) {
+        ::apache::thrift::TApplicationException x;
+        x.read(iprot_);
+        iprot_->readMessageEnd();
+        iprot_->getTransport()->readEnd();
+        sentry.commit();
+        throw x;
+      }
+      if (mtype != ::apache::thrift::protocol::T_REPLY) {
+        iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+        iprot_->readMessageEnd();
+        iprot_->getTransport()->readEnd();
+      }
+      if (fname.compare("pullClasses") != 0) {
+        iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+        iprot_->readMessageEnd();
+        iprot_->getTransport()->readEnd();
+
+        // in a bad state, don't commit
+        using ::apache::thrift::protocol::TProtocolException;
+        throw TProtocolException(TProtocolException::INVALID_DATA);
+      }
+      DataTypeManagerService_pullClasses_presult result;
+      result.success = &_return;
+      result.read(iprot_);
+      iprot_->readMessageEnd();
+      iprot_->getTransport()->readEnd();
+
+      if (result.__isset.success) {
+        // _return pointer has now been filled
+        sentry.commit();
+        return;
+      }
+      // in a bad state, don't commit
+      throw ::apache::thrift::TApplicationException(::apache::thrift::TApplicationException::MISSING_RESULT, "pullClasses failed: unknown result");
+    }
+    // seqid != rseqid
+    this->sync_.updatePending(fname, mtype, rseqid);
+
+    // this will temporarily unlock the readMutex, and let other clients get work done
+    this->sync_.waitForWork(seqid);
+  } // end while(true)
+}
+
+void DataTypeManagerServiceConcurrentClient::pullEnums(std::vector<SDataTypeEnum> & _return)
+{
+  int32_t seqid = send_pullEnums();
   recv_pullEnums(_return, seqid);
 }
 
-int32_t DataTypeManagerServiceConcurrentClient::send_pullEnums(const HashMap& hashmap)
+int32_t DataTypeManagerServiceConcurrentClient::send_pullEnums()
 {
   int32_t cseqid = this->sync_.generateSeqId();
   ::apache::thrift::async::TConcurrentSendSentry sentry(&this->sync_);
   oprot_->writeMessageBegin("pullEnums", ::apache::thrift::protocol::T_CALL, cseqid);
 
   DataTypeManagerService_pullEnums_pargs args;
-  args.hashmap = &hashmap;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -3149,6 +3663,84 @@ void DataTypeManagerServiceConcurrentClient::recv_pushStructures(const int32_t s
         throw TProtocolException(TProtocolException::INVALID_DATA);
       }
       DataTypeManagerService_pushStructures_presult result;
+      result.read(iprot_);
+      iprot_->readMessageEnd();
+      iprot_->getTransport()->readEnd();
+
+      sentry.commit();
+      return;
+    }
+    // seqid != rseqid
+    this->sync_.updatePending(fname, mtype, rseqid);
+
+    // this will temporarily unlock the readMutex, and let other clients get work done
+    this->sync_.waitForWork(seqid);
+  } // end while(true)
+}
+
+void DataTypeManagerServiceConcurrentClient::pushClasses(const std::vector<SDataTypeClass> & classes)
+{
+  int32_t seqid = send_pushClasses(classes);
+  recv_pushClasses(seqid);
+}
+
+int32_t DataTypeManagerServiceConcurrentClient::send_pushClasses(const std::vector<SDataTypeClass> & classes)
+{
+  int32_t cseqid = this->sync_.generateSeqId();
+  ::apache::thrift::async::TConcurrentSendSentry sentry(&this->sync_);
+  oprot_->writeMessageBegin("pushClasses", ::apache::thrift::protocol::T_CALL, cseqid);
+
+  DataTypeManagerService_pushClasses_pargs args;
+  args.classes = &classes;
+  args.write(oprot_);
+
+  oprot_->writeMessageEnd();
+  oprot_->getTransport()->writeEnd();
+  oprot_->getTransport()->flush();
+
+  sentry.commit();
+  return cseqid;
+}
+
+void DataTypeManagerServiceConcurrentClient::recv_pushClasses(const int32_t seqid)
+{
+
+  int32_t rseqid = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TMessageType mtype;
+
+  // the read mutex gets dropped and reacquired as part of waitForWork()
+  // The destructor of this sentry wakes up other clients
+  ::apache::thrift::async::TConcurrentRecvSentry sentry(&this->sync_, seqid);
+
+  while(true) {
+    if(!this->sync_.getPending(fname, mtype, rseqid)) {
+      iprot_->readMessageBegin(fname, mtype, rseqid);
+    }
+    if(seqid == rseqid) {
+      if (mtype == ::apache::thrift::protocol::T_EXCEPTION) {
+        ::apache::thrift::TApplicationException x;
+        x.read(iprot_);
+        iprot_->readMessageEnd();
+        iprot_->getTransport()->readEnd();
+        sentry.commit();
+        throw x;
+      }
+      if (mtype != ::apache::thrift::protocol::T_REPLY) {
+        iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+        iprot_->readMessageEnd();
+        iprot_->getTransport()->readEnd();
+      }
+      if (fname.compare("pushClasses") != 0) {
+        iprot_->skip(::apache::thrift::protocol::T_STRUCT);
+        iprot_->readMessageEnd();
+        iprot_->getTransport()->readEnd();
+
+        // in a bad state, don't commit
+        using ::apache::thrift::protocol::TProtocolException;
+        throw TProtocolException(TProtocolException::INVALID_DATA);
+      }
+      DataTypeManagerService_pushClasses_presult result;
       result.read(iprot_);
       iprot_->readMessageEnd();
       iprot_->getTransport()->readEnd();

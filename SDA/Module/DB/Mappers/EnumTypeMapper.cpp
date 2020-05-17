@@ -1,5 +1,6 @@
 #include "EnumTypeMapper.h"
 #include <Manager/TypeManager.h>
+#include <GhidraSync/Mappers/GhidraEnumTypeMapper.h>
 
 using namespace DB;
 using namespace CE;
@@ -17,6 +18,7 @@ IDomainObject* EnumTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 		query.getColumn("desc")
 	);
 	type->setId(query.getColumn("id"));
+	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_enumTypeMapper);
 	loadFieldsForEnum(db, static_cast<DataType::Enum*>(type));
 	return type;
 }

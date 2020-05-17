@@ -12,12 +12,14 @@ namespace CE::Ghidra
 	using namespace ghidra;
 	using namespace ghidra::function;
 
+	class DataTypeMapper;
+
 	class FunctionDefMapper : public IMapper
 	{
 	public:
-		FunctionDefMapper(CE::FunctionManager* functionManager);
+		FunctionDefMapper(CE::FunctionManager* functionManager, DataTypeMapper* dataTypeMapper);
 
-		void load(DataPacket* dataPacket) override;
+		void load(DataSyncPacket* dataPacket) override;
 
 		void upsert(SyncContext* ctx, IObject* obj) override;
 
@@ -25,6 +27,7 @@ namespace CE::Ghidra
 
 	private:
 		CE::FunctionManager* m_functionManager;
+		DataTypeMapper* m_dataTypeMapper;
 		
 		AddressRangeList getRangesFromDesc(const std::vector<function::SFunctionRange>& rangeDescs);
 

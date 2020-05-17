@@ -485,12 +485,19 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
 {
     using namespace Ghidra;
     auto sync = m_programModule->getGhidraSync();
+    auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
 
     SyncCommitment SyncCommitment(&m_programModule->getDB(), sync->getDataPacketTransferProvider());
 
     auto function = funcManager->getFunctionAt(&setRot);
+    ASSERT_NE(function, nullptr);
     SyncCommitment.upsert(function);
+
+    auto type = typeManager->getTypeByName("Screen");
+    if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
+        SyncCommitment.upsert(screen);
+    }
 
     try {
         SyncCommitment.commit();

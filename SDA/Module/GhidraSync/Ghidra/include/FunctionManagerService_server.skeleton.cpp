@@ -20,7 +20,7 @@ class FunctionManagerServiceHandler : virtual public FunctionManagerServiceIf {
     // Your initialization goes here
   }
 
-  void pull(std::vector<SFunction> & _return, const HashMap& hashmap) {
+  void pull(std::vector<SFunction> & _return) {
     // Your implementation goes here
     printf("pull\n");
   }

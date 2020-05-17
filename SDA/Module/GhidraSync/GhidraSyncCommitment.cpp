@@ -16,7 +16,7 @@ void SyncCommitment::remove(IObject* obj) {
 }
 
 void SyncCommitment::commit() {
-	DataPacket dataPacket;
+	DataSyncPacket dataPacket;
 	SyncContext ctx;
 	SQLite::Transaction transaction(*m_db);
 

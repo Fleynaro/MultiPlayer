@@ -20,22 +20,27 @@ class DataTypeManagerServiceHandler : virtual public DataTypeManagerServiceIf {
     // Your initialization goes here
   }
 
-  void pull(std::vector<SDataTypeBase> & _return) {
+  void pull(std::vector<SDataType> & _return) {
     // Your implementation goes here
     printf("pull\n");
   }
 
-  void pullTypedefs(std::vector<SDataTypeTypedef> & _return, const HashMap& hashmap) {
+  void pullTypedefs(std::vector<SDataTypeTypedef> & _return) {
     // Your implementation goes here
     printf("pullTypedefs\n");
   }
 
-  void pullStructures(std::vector<SDataTypeStructure> & _return, const HashMap& hashmap) {
+  void pullStructures(std::vector<SDataTypeStructure> & _return) {
     // Your implementation goes here
     printf("pullStructures\n");
   }
 
-  void pullEnums(std::vector<SDataTypeEnum> & _return, const HashMap& hashmap) {
+  void pullClasses(std::vector<SDataTypeClass> & _return) {
+    // Your implementation goes here
+    printf("pullClasses\n");
+  }
+
+  void pullEnums(std::vector<SDataTypeEnum> & _return) {
     // Your implementation goes here
     printf("pullEnums\n");
   }
@@ -53,6 +58,11 @@ class DataTypeManagerServiceHandler : virtual public DataTypeManagerServiceIf {
   void pushStructures(const std::vector<SDataTypeStructure> & structures) {
     // Your implementation goes here
     printf("pushStructures\n");
+  }
+
+  void pushClasses(const std::vector<SDataTypeClass> & classes) {
+    // Your implementation goes here
+    printf("pushClasses\n");
   }
 
   void pushEnums(const std::vector<SDataTypeEnum> & enums) {

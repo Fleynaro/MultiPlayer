@@ -3,6 +3,7 @@
 #include <Manager/TypeManager.h>
 #include <Manager/FunctionDefManager.h>
 #include <Manager/VTableManager.h>
+#include <GhidraSync/Mappers/GhidraClassTypeMapper.h>
 
 using namespace DB;
 using namespace CE;
@@ -41,6 +42,7 @@ IDomainObject* ClassTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
+	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_classTypeMapper);
 	return type;
 }
 

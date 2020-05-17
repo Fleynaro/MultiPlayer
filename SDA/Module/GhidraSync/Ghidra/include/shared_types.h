@@ -25,10 +25,9 @@ typedef int64_t Id;
 class STypeUnit;
 
 typedef struct _STypeUnit__isset {
-  _STypeUnit__isset() : typeId(false), pointerLvl(false), arraySize(false) {}
+  _STypeUnit__isset() : typeId(false), pointerLvls(false) {}
   bool typeId :1;
-  bool pointerLvl :1;
-  bool arraySize :1;
+  bool pointerLvls :1;
 } _STypeUnit__isset;
 
 class STypeUnit : public virtual ::apache::thrift::TBase {
@@ -36,29 +35,24 @@ class STypeUnit : public virtual ::apache::thrift::TBase {
 
   STypeUnit(const STypeUnit&);
   STypeUnit& operator=(const STypeUnit&);
-  STypeUnit() : typeId(0), pointerLvl(0), arraySize(0) {
+  STypeUnit() : typeId(0) {
   }
 
   virtual ~STypeUnit() throw();
   Id typeId;
-  int32_t pointerLvl;
-  int32_t arraySize;
+  std::vector<int16_t>  pointerLvls;
 
   _STypeUnit__isset __isset;
 
   void __set_typeId(const Id val);
 
-  void __set_pointerLvl(const int32_t val);
-
-  void __set_arraySize(const int32_t val);
+  void __set_pointerLvls(const std::vector<int16_t> & val);
 
   bool operator == (const STypeUnit & rhs) const
   {
     if (!(typeId == rhs.typeId))
       return false;
-    if (!(pointerLvl == rhs.pointerLvl))
-      return false;
-    if (!(arraySize == rhs.arraySize))
+    if (!(pointerLvls == rhs.pointerLvls))
       return false;
     return true;
   }

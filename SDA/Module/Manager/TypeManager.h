@@ -6,6 +6,10 @@ namespace DB {
 	class DataTypeMapper;
 };
 
+namespace CE::Ghidra {
+	class DataTypeMapper;
+};
+
 namespace CE
 {
 	namespace Ghidra
@@ -17,8 +21,11 @@ namespace CE
 	{
 	public:
 		using Iterator = AbstractIterator<DataType::Type>;
+		Ghidra::DataTypeMapper* m_ghidraDataTypeMapper;
 
 		TypeManager(ProgramModule* module);
+
+		~TypeManager();
 
 		void addSystemTypes();
 
@@ -60,6 +67,8 @@ namespace CE
 
 		void loadClasses();
 
+		void loadTypesFrom(Ghidra::DataSyncPacket* dataPacket);
+
 		const std::string& getGhidraTypeName(DataType::Type* type);
 
 		DataType::Typedef* createTypedef(DataTypePtr refType, const std::string& name, const std::string& desc = "");
@@ -81,14 +90,7 @@ namespace CE
 		DataType::Type* getTypeByGhidraId(Ghidra::Id id);
 
 		Ghidra::Id getGhidraId(DataType::Type* type);
-
-		void setGhidraManager(Ghidra::DataTypeManager* ghidraManager);
-
-		Ghidra::DataTypeManager* getGhidraManager();
-
-		bool isGhidraManagerWorking();
 	private:
 		DB::DataTypeMapper* m_dataTypeMapper;
-		Ghidra::DataTypeManager* m_ghidraManager;
 	};
 };

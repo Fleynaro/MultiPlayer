@@ -1,4 +1,5 @@
 #include "FunctionDefManager.h"
+#include "TypeManager.h"
 #include <DB/Mappers/FunctionDefMapper.h>
 #include <GhidraSync/Mappers/GhidraFunctionDefMapper.h>
 #include <CodeGraph/FunctionBodyBuilder.h>
@@ -10,7 +11,7 @@ FunctionManager::FunctionManager(ProgramModule* module, FunctionDeclManager* fun
 	: AbstractItemManager(module), m_funcDeclManager(funcDeclManager)
 {
 	m_funcDefMapper = new DB::FunctionDefMapper(this);
-	m_ghidraFunctionDefMapper = new Ghidra::FunctionDefMapper(this);
+	m_ghidraFunctionDefMapper = new Ghidra::FunctionDefMapper(this, getProgramModule()->getTypeManager()->m_ghidraDataTypeMapper);
 	createDefaultFunction();
 }
 
@@ -24,7 +25,7 @@ void FunctionManager::loadFunctions() {
 	m_funcDefMapper->loadAll();
 }
 
-void FunctionManager::loadFunctionsFrom(Ghidra::DataPacket* dataPacket) {
+void FunctionManager::loadFunctionsFrom(Ghidra::DataSyncPacket* dataPacket) {
 	m_ghidraFunctionDefMapper->load(dataPacket);
 }
 

@@ -1,6 +1,7 @@
 #include "StructureTypeMapper.h"
 #include <Manager/TypeManager.h>
 #include <Code/Type/Structure.h>
+#include <GhidraSync/Mappers/GhidraStructureTypeMapper.h>
 
 using namespace DB;
 using namespace CE;
@@ -28,6 +29,7 @@ IDomainObject* StructureTypeMapper::doLoad(Database* db, SQLite::Statement& quer
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
+	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_structureTypeMapper);
 	return type;
 }
 

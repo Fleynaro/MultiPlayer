@@ -1,15 +1,16 @@
 #include "GhidraFunctionDefMapper.h"
+#include "GhidraDataTypeMapper.h"
 #include <Manager/FunctionDefManager.h>
 #include <Manager/ProcessModuleManager.h>
 
 using namespace CE;
 using namespace CE::Ghidra;
 
-FunctionDefMapper::FunctionDefMapper(CE::FunctionManager* functionManager)
-	: m_functionManager(functionManager)
+FunctionDefMapper::FunctionDefMapper(CE::FunctionManager* functionManager, DataTypeMapper* dataTypeMapper)
+	: m_functionManager(functionManager), m_dataTypeMapper(dataTypeMapper)
 {}
 
-void FunctionDefMapper::load(DataPacket * dataPacket) {
+void FunctionDefMapper::load(DataSyncPacket * dataPacket) {
 	for (auto funcDesc : dataPacket->m_functions) {
 		auto function = m_functionManager->getFunctionByGhidraId(funcDesc.id);
 		if (function == nullptr) {
@@ -54,14 +55,14 @@ void FunctionDefMapper::changeFunctionByDesc(Function::Function* function, const
 	function->getDeclaration().setComment(funcDesc.comment);
 
 	auto& signature = function->getSignature();
-	/*signature.setReturnType(
-	getClient()->m_dataTypeManager->getType(funcDesc.signature.returnType)
-	);*/
+	signature.setReturnType(
+		m_dataTypeMapper->getTypeByDesc(funcDesc.signature.returnType)
+	);
 
 	function->getDeclaration().deleteAllArguments();
 	auto& args = funcDesc.signature.arguments;
 	for (int i = 0; i < args.size(); i++) {
-		/*function->getDeclaration().addArgument(getClient()->m_dataTypeManager->getType(args[i]), funcDesc.argumentNames[i]);*/
+		function->getDeclaration().addArgument(m_dataTypeMapper->getTypeByDesc(args[i]), funcDesc.argumentNames[i]);
 	}
 
 	function->getAddressRangeList().clear();
@@ -93,13 +94,13 @@ function::SFunction FunctionDefMapper::buildDesc(Function::Function* function) {
 	funcDesc.__set_comment(function->getComment());
 
 	auto& signature = function->getSignature();
-	/*funcDesc.signature.__set_returnType(
-	getClient()->m_dataTypeManager->getTypeUnit(signature.getReturnType())
-	);*/
+	funcDesc.signature.__set_returnType(
+		m_dataTypeMapper->buildTypeUnitDesc(signature.getReturnType())
+	);
 	for (int i = 0; i < signature.getArgList().size(); i++) {
 		auto argType = signature.getArgList()[i];
 		auto argName = function->getArgNameList()[i];
-		/*funcDesc.signature.arguments.push_back(getClient()->m_dataTypeManager->getTypeUnit(argType));*/
+		funcDesc.signature.arguments.push_back(m_dataTypeMapper->buildTypeUnitDesc(argType));
 		funcDesc.argumentNames.push_back(argName);
 	}
 

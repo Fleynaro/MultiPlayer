@@ -21,13 +21,15 @@ namespace ghidra { namespace datatype {
 class DataTypeManagerServiceIf {
  public:
   virtual ~DataTypeManagerServiceIf() {}
-  virtual void pull(std::vector<SDataTypeBase> & _return) = 0;
-  virtual void pullTypedefs(std::vector<SDataTypeTypedef> & _return, const HashMap& hashmap) = 0;
-  virtual void pullStructures(std::vector<SDataTypeStructure> & _return, const HashMap& hashmap) = 0;
-  virtual void pullEnums(std::vector<SDataTypeEnum> & _return, const HashMap& hashmap) = 0;
+  virtual void pull(std::vector<SDataType> & _return) = 0;
+  virtual void pullTypedefs(std::vector<SDataTypeTypedef> & _return) = 0;
+  virtual void pullStructures(std::vector<SDataTypeStructure> & _return) = 0;
+  virtual void pullClasses(std::vector<SDataTypeClass> & _return) = 0;
+  virtual void pullEnums(std::vector<SDataTypeEnum> & _return) = 0;
   virtual void push(const std::vector<SDataType> & types) = 0;
   virtual void pushTypedefs(const std::vector<SDataTypeTypedef> & typedefs) = 0;
   virtual void pushStructures(const std::vector<SDataTypeStructure> & structures) = 0;
+  virtual void pushClasses(const std::vector<SDataTypeClass> & classes) = 0;
   virtual void pushEnums(const std::vector<SDataTypeEnum> & enums) = 0;
 };
 
@@ -58,16 +60,19 @@ class DataTypeManagerServiceIfSingletonFactory : virtual public DataTypeManagerS
 class DataTypeManagerServiceNull : virtual public DataTypeManagerServiceIf {
  public:
   virtual ~DataTypeManagerServiceNull() {}
-  void pull(std::vector<SDataTypeBase> & /* _return */) {
+  void pull(std::vector<SDataType> & /* _return */) {
     return;
   }
-  void pullTypedefs(std::vector<SDataTypeTypedef> & /* _return */, const HashMap& /* hashmap */) {
+  void pullTypedefs(std::vector<SDataTypeTypedef> & /* _return */) {
     return;
   }
-  void pullStructures(std::vector<SDataTypeStructure> & /* _return */, const HashMap& /* hashmap */) {
+  void pullStructures(std::vector<SDataTypeStructure> & /* _return */) {
     return;
   }
-  void pullEnums(std::vector<SDataTypeEnum> & /* _return */, const HashMap& /* hashmap */) {
+  void pullClasses(std::vector<SDataTypeClass> & /* _return */) {
+    return;
+  }
+  void pullEnums(std::vector<SDataTypeEnum> & /* _return */) {
     return;
   }
   void push(const std::vector<SDataType> & /* types */) {
@@ -77,6 +82,9 @@ class DataTypeManagerServiceNull : virtual public DataTypeManagerServiceIf {
     return;
   }
   void pushStructures(const std::vector<SDataTypeStructure> & /* structures */) {
+    return;
+  }
+  void pushClasses(const std::vector<SDataTypeClass> & /* classes */) {
     return;
   }
   void pushEnums(const std::vector<SDataTypeEnum> & /* enums */) {
@@ -135,11 +143,11 @@ class DataTypeManagerService_pull_result {
   }
 
   virtual ~DataTypeManagerService_pull_result() throw();
-  std::vector<SDataTypeBase>  success;
+  std::vector<SDataType>  success;
 
   _DataTypeManagerService_pull_result__isset __isset;
 
-  void __set_success(const std::vector<SDataTypeBase> & val);
+  void __set_success(const std::vector<SDataType> & val);
 
   bool operator == (const DataTypeManagerService_pull_result & rhs) const
   {
@@ -168,7 +176,7 @@ class DataTypeManagerService_pull_presult {
 
 
   virtual ~DataTypeManagerService_pull_presult() throw();
-  std::vector<SDataTypeBase> * success;
+  std::vector<SDataType> * success;
 
   _DataTypeManagerService_pull_presult__isset __isset;
 
@@ -176,10 +184,6 @@ class DataTypeManagerService_pull_presult {
 
 };
 
-typedef struct _DataTypeManagerService_pullTypedefs_args__isset {
-  _DataTypeManagerService_pullTypedefs_args__isset() : hashmap(false) {}
-  bool hashmap :1;
-} _DataTypeManagerService_pullTypedefs_args__isset;
 
 class DataTypeManagerService_pullTypedefs_args {
  public:
@@ -190,16 +194,9 @@ class DataTypeManagerService_pullTypedefs_args {
   }
 
   virtual ~DataTypeManagerService_pullTypedefs_args() throw();
-  HashMap hashmap;
 
-  _DataTypeManagerService_pullTypedefs_args__isset __isset;
-
-  void __set_hashmap(const HashMap& val);
-
-  bool operator == (const DataTypeManagerService_pullTypedefs_args & rhs) const
+  bool operator == (const DataTypeManagerService_pullTypedefs_args & /* rhs */) const
   {
-    if (!(hashmap == rhs.hashmap))
-      return false;
     return true;
   }
   bool operator != (const DataTypeManagerService_pullTypedefs_args &rhs) const {
@@ -219,7 +216,6 @@ class DataTypeManagerService_pullTypedefs_pargs {
 
 
   virtual ~DataTypeManagerService_pullTypedefs_pargs() throw();
-  const HashMap* hashmap;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -280,10 +276,6 @@ class DataTypeManagerService_pullTypedefs_presult {
 
 };
 
-typedef struct _DataTypeManagerService_pullStructures_args__isset {
-  _DataTypeManagerService_pullStructures_args__isset() : hashmap(false) {}
-  bool hashmap :1;
-} _DataTypeManagerService_pullStructures_args__isset;
 
 class DataTypeManagerService_pullStructures_args {
  public:
@@ -294,16 +286,9 @@ class DataTypeManagerService_pullStructures_args {
   }
 
   virtual ~DataTypeManagerService_pullStructures_args() throw();
-  HashMap hashmap;
 
-  _DataTypeManagerService_pullStructures_args__isset __isset;
-
-  void __set_hashmap(const HashMap& val);
-
-  bool operator == (const DataTypeManagerService_pullStructures_args & rhs) const
+  bool operator == (const DataTypeManagerService_pullStructures_args & /* rhs */) const
   {
-    if (!(hashmap == rhs.hashmap))
-      return false;
     return true;
   }
   bool operator != (const DataTypeManagerService_pullStructures_args &rhs) const {
@@ -323,7 +308,6 @@ class DataTypeManagerService_pullStructures_pargs {
 
 
   virtual ~DataTypeManagerService_pullStructures_pargs() throw();
-  const HashMap* hashmap;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -384,10 +368,98 @@ class DataTypeManagerService_pullStructures_presult {
 
 };
 
-typedef struct _DataTypeManagerService_pullEnums_args__isset {
-  _DataTypeManagerService_pullEnums_args__isset() : hashmap(false) {}
-  bool hashmap :1;
-} _DataTypeManagerService_pullEnums_args__isset;
+
+class DataTypeManagerService_pullClasses_args {
+ public:
+
+  DataTypeManagerService_pullClasses_args(const DataTypeManagerService_pullClasses_args&);
+  DataTypeManagerService_pullClasses_args& operator=(const DataTypeManagerService_pullClasses_args&);
+  DataTypeManagerService_pullClasses_args() {
+  }
+
+  virtual ~DataTypeManagerService_pullClasses_args() throw();
+
+  bool operator == (const DataTypeManagerService_pullClasses_args & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const DataTypeManagerService_pullClasses_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const DataTypeManagerService_pullClasses_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class DataTypeManagerService_pullClasses_pargs {
+ public:
+
+
+  virtual ~DataTypeManagerService_pullClasses_pargs() throw();
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _DataTypeManagerService_pullClasses_result__isset {
+  _DataTypeManagerService_pullClasses_result__isset() : success(false) {}
+  bool success :1;
+} _DataTypeManagerService_pullClasses_result__isset;
+
+class DataTypeManagerService_pullClasses_result {
+ public:
+
+  DataTypeManagerService_pullClasses_result(const DataTypeManagerService_pullClasses_result&);
+  DataTypeManagerService_pullClasses_result& operator=(const DataTypeManagerService_pullClasses_result&);
+  DataTypeManagerService_pullClasses_result() {
+  }
+
+  virtual ~DataTypeManagerService_pullClasses_result() throw();
+  std::vector<SDataTypeClass>  success;
+
+  _DataTypeManagerService_pullClasses_result__isset __isset;
+
+  void __set_success(const std::vector<SDataTypeClass> & val);
+
+  bool operator == (const DataTypeManagerService_pullClasses_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const DataTypeManagerService_pullClasses_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const DataTypeManagerService_pullClasses_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _DataTypeManagerService_pullClasses_presult__isset {
+  _DataTypeManagerService_pullClasses_presult__isset() : success(false) {}
+  bool success :1;
+} _DataTypeManagerService_pullClasses_presult__isset;
+
+class DataTypeManagerService_pullClasses_presult {
+ public:
+
+
+  virtual ~DataTypeManagerService_pullClasses_presult() throw();
+  std::vector<SDataTypeClass> * success;
+
+  _DataTypeManagerService_pullClasses_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 
 class DataTypeManagerService_pullEnums_args {
  public:
@@ -398,16 +470,9 @@ class DataTypeManagerService_pullEnums_args {
   }
 
   virtual ~DataTypeManagerService_pullEnums_args() throw();
-  HashMap hashmap;
 
-  _DataTypeManagerService_pullEnums_args__isset __isset;
-
-  void __set_hashmap(const HashMap& val);
-
-  bool operator == (const DataTypeManagerService_pullEnums_args & rhs) const
+  bool operator == (const DataTypeManagerService_pullEnums_args & /* rhs */) const
   {
-    if (!(hashmap == rhs.hashmap))
-      return false;
     return true;
   }
   bool operator != (const DataTypeManagerService_pullEnums_args &rhs) const {
@@ -427,7 +492,6 @@ class DataTypeManagerService_pullEnums_pargs {
 
 
   virtual ~DataTypeManagerService_pullEnums_pargs() throw();
-  const HashMap* hashmap;
 
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
 
@@ -746,6 +810,92 @@ class DataTypeManagerService_pushStructures_presult {
 
 };
 
+typedef struct _DataTypeManagerService_pushClasses_args__isset {
+  _DataTypeManagerService_pushClasses_args__isset() : classes(false) {}
+  bool classes :1;
+} _DataTypeManagerService_pushClasses_args__isset;
+
+class DataTypeManagerService_pushClasses_args {
+ public:
+
+  DataTypeManagerService_pushClasses_args(const DataTypeManagerService_pushClasses_args&);
+  DataTypeManagerService_pushClasses_args& operator=(const DataTypeManagerService_pushClasses_args&);
+  DataTypeManagerService_pushClasses_args() {
+  }
+
+  virtual ~DataTypeManagerService_pushClasses_args() throw();
+  std::vector<SDataTypeClass>  classes;
+
+  _DataTypeManagerService_pushClasses_args__isset __isset;
+
+  void __set_classes(const std::vector<SDataTypeClass> & val);
+
+  bool operator == (const DataTypeManagerService_pushClasses_args & rhs) const
+  {
+    if (!(classes == rhs.classes))
+      return false;
+    return true;
+  }
+  bool operator != (const DataTypeManagerService_pushClasses_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const DataTypeManagerService_pushClasses_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class DataTypeManagerService_pushClasses_pargs {
+ public:
+
+
+  virtual ~DataTypeManagerService_pushClasses_pargs() throw();
+  const std::vector<SDataTypeClass> * classes;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class DataTypeManagerService_pushClasses_result {
+ public:
+
+  DataTypeManagerService_pushClasses_result(const DataTypeManagerService_pushClasses_result&);
+  DataTypeManagerService_pushClasses_result& operator=(const DataTypeManagerService_pushClasses_result&);
+  DataTypeManagerService_pushClasses_result() {
+  }
+
+  virtual ~DataTypeManagerService_pushClasses_result() throw();
+
+  bool operator == (const DataTypeManagerService_pushClasses_result & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const DataTypeManagerService_pushClasses_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const DataTypeManagerService_pushClasses_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class DataTypeManagerService_pushClasses_presult {
+ public:
+
+
+  virtual ~DataTypeManagerService_pushClasses_presult() throw();
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 typedef struct _DataTypeManagerService_pushEnums_args__isset {
   _DataTypeManagerService_pushEnums_args__isset() : enums(false) {}
   bool enums :1;
@@ -857,17 +1007,20 @@ class DataTypeManagerServiceClient : virtual public DataTypeManagerServiceIf {
   apache::thrift::stdcxx::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
-  void pull(std::vector<SDataTypeBase> & _return);
+  void pull(std::vector<SDataType> & _return);
   void send_pull();
-  void recv_pull(std::vector<SDataTypeBase> & _return);
-  void pullTypedefs(std::vector<SDataTypeTypedef> & _return, const HashMap& hashmap);
-  void send_pullTypedefs(const HashMap& hashmap);
+  void recv_pull(std::vector<SDataType> & _return);
+  void pullTypedefs(std::vector<SDataTypeTypedef> & _return);
+  void send_pullTypedefs();
   void recv_pullTypedefs(std::vector<SDataTypeTypedef> & _return);
-  void pullStructures(std::vector<SDataTypeStructure> & _return, const HashMap& hashmap);
-  void send_pullStructures(const HashMap& hashmap);
+  void pullStructures(std::vector<SDataTypeStructure> & _return);
+  void send_pullStructures();
   void recv_pullStructures(std::vector<SDataTypeStructure> & _return);
-  void pullEnums(std::vector<SDataTypeEnum> & _return, const HashMap& hashmap);
-  void send_pullEnums(const HashMap& hashmap);
+  void pullClasses(std::vector<SDataTypeClass> & _return);
+  void send_pullClasses();
+  void recv_pullClasses(std::vector<SDataTypeClass> & _return);
+  void pullEnums(std::vector<SDataTypeEnum> & _return);
+  void send_pullEnums();
   void recv_pullEnums(std::vector<SDataTypeEnum> & _return);
   void push(const std::vector<SDataType> & types);
   void send_push(const std::vector<SDataType> & types);
@@ -878,6 +1031,9 @@ class DataTypeManagerServiceClient : virtual public DataTypeManagerServiceIf {
   void pushStructures(const std::vector<SDataTypeStructure> & structures);
   void send_pushStructures(const std::vector<SDataTypeStructure> & structures);
   void recv_pushStructures();
+  void pushClasses(const std::vector<SDataTypeClass> & classes);
+  void send_pushClasses(const std::vector<SDataTypeClass> & classes);
+  void recv_pushClasses();
   void pushEnums(const std::vector<SDataTypeEnum> & enums);
   void send_pushEnums(const std::vector<SDataTypeEnum> & enums);
   void recv_pushEnums();
@@ -899,10 +1055,12 @@ class DataTypeManagerServiceProcessor : public ::apache::thrift::TDispatchProces
   void process_pull(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_pullTypedefs(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_pullStructures(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_pullClasses(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_pullEnums(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_push(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_pushTypedefs(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_pushStructures(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_pushClasses(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_pushEnums(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   DataTypeManagerServiceProcessor(::apache::thrift::stdcxx::shared_ptr<DataTypeManagerServiceIf> iface) :
@@ -910,10 +1068,12 @@ class DataTypeManagerServiceProcessor : public ::apache::thrift::TDispatchProces
     processMap_["pull"] = &DataTypeManagerServiceProcessor::process_pull;
     processMap_["pullTypedefs"] = &DataTypeManagerServiceProcessor::process_pullTypedefs;
     processMap_["pullStructures"] = &DataTypeManagerServiceProcessor::process_pullStructures;
+    processMap_["pullClasses"] = &DataTypeManagerServiceProcessor::process_pullClasses;
     processMap_["pullEnums"] = &DataTypeManagerServiceProcessor::process_pullEnums;
     processMap_["push"] = &DataTypeManagerServiceProcessor::process_push;
     processMap_["pushTypedefs"] = &DataTypeManagerServiceProcessor::process_pushTypedefs;
     processMap_["pushStructures"] = &DataTypeManagerServiceProcessor::process_pushStructures;
+    processMap_["pushClasses"] = &DataTypeManagerServiceProcessor::process_pushClasses;
     processMap_["pushEnums"] = &DataTypeManagerServiceProcessor::process_pushEnums;
   }
 
@@ -943,7 +1103,7 @@ class DataTypeManagerServiceMultiface : virtual public DataTypeManagerServiceIf 
     ifaces_.push_back(iface);
   }
  public:
-  void pull(std::vector<SDataTypeBase> & _return) {
+  void pull(std::vector<SDataType> & _return) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
@@ -953,33 +1113,43 @@ class DataTypeManagerServiceMultiface : virtual public DataTypeManagerServiceIf 
     return;
   }
 
-  void pullTypedefs(std::vector<SDataTypeTypedef> & _return, const HashMap& hashmap) {
+  void pullTypedefs(std::vector<SDataTypeTypedef> & _return) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
-      ifaces_[i]->pullTypedefs(_return, hashmap);
+      ifaces_[i]->pullTypedefs(_return);
     }
-    ifaces_[i]->pullTypedefs(_return, hashmap);
+    ifaces_[i]->pullTypedefs(_return);
     return;
   }
 
-  void pullStructures(std::vector<SDataTypeStructure> & _return, const HashMap& hashmap) {
+  void pullStructures(std::vector<SDataTypeStructure> & _return) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
-      ifaces_[i]->pullStructures(_return, hashmap);
+      ifaces_[i]->pullStructures(_return);
     }
-    ifaces_[i]->pullStructures(_return, hashmap);
+    ifaces_[i]->pullStructures(_return);
     return;
   }
 
-  void pullEnums(std::vector<SDataTypeEnum> & _return, const HashMap& hashmap) {
+  void pullClasses(std::vector<SDataTypeClass> & _return) {
     size_t sz = ifaces_.size();
     size_t i = 0;
     for (; i < (sz - 1); ++i) {
-      ifaces_[i]->pullEnums(_return, hashmap);
+      ifaces_[i]->pullClasses(_return);
     }
-    ifaces_[i]->pullEnums(_return, hashmap);
+    ifaces_[i]->pullClasses(_return);
+    return;
+  }
+
+  void pullEnums(std::vector<SDataTypeEnum> & _return) {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->pullEnums(_return);
+    }
+    ifaces_[i]->pullEnums(_return);
     return;
   }
 
@@ -1008,6 +1178,15 @@ class DataTypeManagerServiceMultiface : virtual public DataTypeManagerServiceIf 
       ifaces_[i]->pushStructures(structures);
     }
     ifaces_[i]->pushStructures(structures);
+  }
+
+  void pushClasses(const std::vector<SDataTypeClass> & classes) {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->pushClasses(classes);
+    }
+    ifaces_[i]->pushClasses(classes);
   }
 
   void pushEnums(const std::vector<SDataTypeEnum> & enums) {
@@ -1049,17 +1228,20 @@ class DataTypeManagerServiceConcurrentClient : virtual public DataTypeManagerSer
   apache::thrift::stdcxx::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
-  void pull(std::vector<SDataTypeBase> & _return);
+  void pull(std::vector<SDataType> & _return);
   int32_t send_pull();
-  void recv_pull(std::vector<SDataTypeBase> & _return, const int32_t seqid);
-  void pullTypedefs(std::vector<SDataTypeTypedef> & _return, const HashMap& hashmap);
-  int32_t send_pullTypedefs(const HashMap& hashmap);
+  void recv_pull(std::vector<SDataType> & _return, const int32_t seqid);
+  void pullTypedefs(std::vector<SDataTypeTypedef> & _return);
+  int32_t send_pullTypedefs();
   void recv_pullTypedefs(std::vector<SDataTypeTypedef> & _return, const int32_t seqid);
-  void pullStructures(std::vector<SDataTypeStructure> & _return, const HashMap& hashmap);
-  int32_t send_pullStructures(const HashMap& hashmap);
+  void pullStructures(std::vector<SDataTypeStructure> & _return);
+  int32_t send_pullStructures();
   void recv_pullStructures(std::vector<SDataTypeStructure> & _return, const int32_t seqid);
-  void pullEnums(std::vector<SDataTypeEnum> & _return, const HashMap& hashmap);
-  int32_t send_pullEnums(const HashMap& hashmap);
+  void pullClasses(std::vector<SDataTypeClass> & _return);
+  int32_t send_pullClasses();
+  void recv_pullClasses(std::vector<SDataTypeClass> & _return, const int32_t seqid);
+  void pullEnums(std::vector<SDataTypeEnum> & _return);
+  int32_t send_pullEnums();
   void recv_pullEnums(std::vector<SDataTypeEnum> & _return, const int32_t seqid);
   void push(const std::vector<SDataType> & types);
   int32_t send_push(const std::vector<SDataType> & types);
@@ -1070,6 +1252,9 @@ class DataTypeManagerServiceConcurrentClient : virtual public DataTypeManagerSer
   void pushStructures(const std::vector<SDataTypeStructure> & structures);
   int32_t send_pushStructures(const std::vector<SDataTypeStructure> & structures);
   void recv_pushStructures(const int32_t seqid);
+  void pushClasses(const std::vector<SDataTypeClass> & classes);
+  int32_t send_pushClasses(const std::vector<SDataTypeClass> & classes);
+  void recv_pushClasses(const int32_t seqid);
   void pushEnums(const std::vector<SDataTypeEnum> & enums);
   int32_t send_pushEnums(const std::vector<SDataTypeEnum> & enums);
   void recv_pushEnums(const int32_t seqid);

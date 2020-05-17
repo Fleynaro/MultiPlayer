@@ -29,7 +29,7 @@ namespace CE
 
 		void loadFunctions();
 
-		void loadFunctionsFrom(Ghidra::DataPacket* dataPacket);
+		void loadFunctionsFrom(Ghidra::DataSyncPacket* dataPacket);
 
 		Function::Function* createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl);
 

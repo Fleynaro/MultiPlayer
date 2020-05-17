@@ -1,5 +1,6 @@
 #include "TypedefTypeMapper.h"
 #include <Manager/TypeManager.h>
+#include <GhidraSync/Mappers/GhidraTypedefTypeMapper.h>
 
 using namespace DB;
 using namespace CE;
@@ -31,6 +32,7 @@ IDomainObject* TypedefTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
+	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_typedefTypeMapper);
 	return type;
 }
 

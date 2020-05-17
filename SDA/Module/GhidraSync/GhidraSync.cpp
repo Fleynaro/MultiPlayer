@@ -1,6 +1,7 @@
 #include "GhidraSync.h"
 #include "GhidraClient.h"
 #include <Manager/FunctionDefManager.h>
+#include <Manager/TypeManager.h>
 
 using namespace CE;
 using namespace CE::Ghidra;
@@ -20,6 +21,7 @@ DataPacketTransferProvider* Sync::getDataPacketTransferProvider() {
 	return m_dataPacketTransferProvider;
 }
 
-void Sync::load(DataPacket* dataPacket) {
+void Sync::load(DataSyncPacket* dataPacket) {
 	m_programModule->getFunctionManager()->loadFunctionsFrom(dataPacket);
+	m_programModule->getTypeManager()->loadTypesFrom(dataPacket);
 }

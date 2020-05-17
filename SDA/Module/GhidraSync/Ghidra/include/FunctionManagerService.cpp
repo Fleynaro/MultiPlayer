@@ -32,35 +32,7 @@ uint32_t FunctionManagerService_pull_args::read(::apache::thrift::protocol::TPro
     if (ftype == ::apache::thrift::protocol::T_STOP) {
       break;
     }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_MAP) {
-          {
-            this->hashmap.clear();
-            uint32_t _size24;
-            ::apache::thrift::protocol::TType _ktype25;
-            ::apache::thrift::protocol::TType _vtype26;
-            xfer += iprot->readMapBegin(_ktype25, _vtype26, _size24);
-            uint32_t _i28;
-            for (_i28 = 0; _i28 < _size24; ++_i28)
-            {
-              Id _key29;
-              xfer += iprot->readI64(_key29);
-              Hash& _val30 = this->hashmap[_key29];
-              xfer += iprot->readI64(_val30);
-            }
-            xfer += iprot->readMapEnd();
-          }
-          this->__isset.hashmap = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
+    xfer += iprot->skip(ftype);
     xfer += iprot->readFieldEnd();
   }
 
@@ -73,19 +45,6 @@ uint32_t FunctionManagerService_pull_args::write(::apache::thrift::protocol::TPr
   uint32_t xfer = 0;
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("FunctionManagerService_pull_args");
-
-  xfer += oprot->writeFieldBegin("hashmap", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->hashmap.size()));
-    std::map<Id, Hash> ::const_iterator _iter31;
-    for (_iter31 = this->hashmap.begin(); _iter31 != this->hashmap.end(); ++_iter31)
-    {
-      xfer += oprot->writeI64(_iter31->first);
-      xfer += oprot->writeI64(_iter31->second);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -101,19 +60,6 @@ uint32_t FunctionManagerService_pull_pargs::write(::apache::thrift::protocol::TP
   uint32_t xfer = 0;
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("FunctionManagerService_pull_pargs");
-
-  xfer += oprot->writeFieldBegin("hashmap", ::apache::thrift::protocol::T_MAP, 1);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_I64, static_cast<uint32_t>((*(this->hashmap)).size()));
-    std::map<Id, Hash> ::const_iterator _iter32;
-    for (_iter32 = (*(this->hashmap)).begin(); _iter32 != (*(this->hashmap)).end(); ++_iter32)
-    {
-      xfer += oprot->writeI64(_iter32->first);
-      xfer += oprot->writeI64(_iter32->second);
-    }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -150,14 +96,14 @@ uint32_t FunctionManagerService_pull_result::read(::apache::thrift::protocol::TP
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->success.clear();
-            uint32_t _size33;
-            ::apache::thrift::protocol::TType _etype36;
-            xfer += iprot->readListBegin(_etype36, _size33);
-            this->success.resize(_size33);
-            uint32_t _i37;
-            for (_i37 = 0; _i37 < _size33; ++_i37)
+            uint32_t _size24;
+            ::apache::thrift::protocol::TType _etype27;
+            xfer += iprot->readListBegin(_etype27, _size24);
+            this->success.resize(_size24);
+            uint32_t _i28;
+            for (_i28 = 0; _i28 < _size24; ++_i28)
             {
-              xfer += this->success[_i37].read(iprot);
+              xfer += this->success[_i28].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -188,10 +134,10 @@ uint32_t FunctionManagerService_pull_result::write(::apache::thrift::protocol::T
     xfer += oprot->writeFieldBegin("success", ::apache::thrift::protocol::T_LIST, 0);
     {
       xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->success.size()));
-      std::vector<SFunction> ::const_iterator _iter38;
-      for (_iter38 = this->success.begin(); _iter38 != this->success.end(); ++_iter38)
+      std::vector<SFunction> ::const_iterator _iter29;
+      for (_iter29 = this->success.begin(); _iter29 != this->success.end(); ++_iter29)
       {
-        xfer += (*_iter38).write(oprot);
+        xfer += (*_iter29).write(oprot);
       }
       xfer += oprot->writeListEnd();
     }
@@ -232,14 +178,14 @@ uint32_t FunctionManagerService_pull_presult::read(::apache::thrift::protocol::T
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             (*(this->success)).clear();
-            uint32_t _size39;
-            ::apache::thrift::protocol::TType _etype42;
-            xfer += iprot->readListBegin(_etype42, _size39);
-            (*(this->success)).resize(_size39);
-            uint32_t _i43;
-            for (_i43 = 0; _i43 < _size39; ++_i43)
+            uint32_t _size30;
+            ::apache::thrift::protocol::TType _etype33;
+            xfer += iprot->readListBegin(_etype33, _size30);
+            (*(this->success)).resize(_size30);
+            uint32_t _i34;
+            for (_i34 = 0; _i34 < _size30; ++_i34)
             {
-              xfer += (*(this->success))[_i43].read(iprot);
+              xfer += (*(this->success))[_i34].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -290,14 +236,14 @@ uint32_t FunctionManagerService_push_args::read(::apache::thrift::protocol::TPro
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->functions.clear();
-            uint32_t _size44;
-            ::apache::thrift::protocol::TType _etype47;
-            xfer += iprot->readListBegin(_etype47, _size44);
-            this->functions.resize(_size44);
-            uint32_t _i48;
-            for (_i48 = 0; _i48 < _size44; ++_i48)
+            uint32_t _size35;
+            ::apache::thrift::protocol::TType _etype38;
+            xfer += iprot->readListBegin(_etype38, _size35);
+            this->functions.resize(_size35);
+            uint32_t _i39;
+            for (_i39 = 0; _i39 < _size35; ++_i39)
             {
-              xfer += this->functions[_i48].read(iprot);
+              xfer += this->functions[_i39].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -326,10 +272,10 @@ uint32_t FunctionManagerService_push_args::write(::apache::thrift::protocol::TPr
   xfer += oprot->writeFieldBegin("functions", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->functions.size()));
-    std::vector<SFunction> ::const_iterator _iter49;
-    for (_iter49 = this->functions.begin(); _iter49 != this->functions.end(); ++_iter49)
+    std::vector<SFunction> ::const_iterator _iter40;
+    for (_iter40 = this->functions.begin(); _iter40 != this->functions.end(); ++_iter40)
     {
-      xfer += (*_iter49).write(oprot);
+      xfer += (*_iter40).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -353,10 +299,10 @@ uint32_t FunctionManagerService_push_pargs::write(::apache::thrift::protocol::TP
   xfer += oprot->writeFieldBegin("functions", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>((*(this->functions)).size()));
-    std::vector<SFunction> ::const_iterator _iter50;
-    for (_iter50 = (*(this->functions)).begin(); _iter50 != (*(this->functions)).end(); ++_iter50)
+    std::vector<SFunction> ::const_iterator _iter41;
+    for (_iter41 = (*(this->functions)).begin(); _iter41 != (*(this->functions)).end(); ++_iter41)
     {
-      xfer += (*_iter50).write(oprot);
+      xfer += (*_iter41).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -444,19 +390,18 @@ uint32_t FunctionManagerService_push_presult::read(::apache::thrift::protocol::T
   return xfer;
 }
 
-void FunctionManagerServiceClient::pull(std::vector<SFunction> & _return, const HashMap& hashmap)
+void FunctionManagerServiceClient::pull(std::vector<SFunction> & _return)
 {
-  send_pull(hashmap);
+  send_pull();
   recv_pull(_return);
 }
 
-void FunctionManagerServiceClient::send_pull(const HashMap& hashmap)
+void FunctionManagerServiceClient::send_pull()
 {
   int32_t cseqid = 0;
   oprot_->writeMessageBegin("pull", ::apache::thrift::protocol::T_CALL, cseqid);
 
   FunctionManagerService_pull_pargs args;
-  args.hashmap = &hashmap;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();
@@ -597,7 +542,7 @@ void FunctionManagerServiceProcessor::process_pull(int32_t seqid, ::apache::thri
 
   FunctionManagerService_pull_result result;
   try {
-    iface_->pull(result.success, args.hashmap);
+    iface_->pull(result.success);
     result.__isset.success = true;
   } catch (const std::exception& e) {
     if (this->eventHandler_.get() != NULL) {
@@ -688,20 +633,19 @@ void FunctionManagerServiceProcessor::process_push(int32_t seqid, ::apache::thri
   return processor;
 }
 
-void FunctionManagerServiceConcurrentClient::pull(std::vector<SFunction> & _return, const HashMap& hashmap)
+void FunctionManagerServiceConcurrentClient::pull(std::vector<SFunction> & _return)
 {
-  int32_t seqid = send_pull(hashmap);
+  int32_t seqid = send_pull();
   recv_pull(_return, seqid);
 }
 
-int32_t FunctionManagerServiceConcurrentClient::send_pull(const HashMap& hashmap)
+int32_t FunctionManagerServiceConcurrentClient::send_pull()
 {
   int32_t cseqid = this->sync_.generateSeqId();
   ::apache::thrift::async::TConcurrentSendSentry sentry(&this->sync_);
   oprot_->writeMessageBegin("pull", ::apache::thrift::protocol::T_CALL, cseqid);
 
   FunctionManagerService_pull_pargs args;
-  args.hashmap = &hashmap;
   args.write(oprot_);
 
   oprot_->writeMessageEnd();

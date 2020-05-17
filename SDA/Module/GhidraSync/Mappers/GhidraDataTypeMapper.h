@@ -20,13 +20,15 @@ namespace CE::Ghidra
 	class DataTypeMapper : public IMapper
 	{
 	public:
-		DataTypeMapper(CE::TypeManager* typeManager)
-			: m_typeManager(typeManager)
-		{}
+		EnumTypeMapper* m_enumTypeMapper;
+		StructureTypeMapper* m_structureTypeMapper;
+		ClassTypeMapper* m_classTypeMapper;
+		TypedefTypeMapper* m_typedefTypeMapper;
+		CE::TypeManager* m_typeManager;
 
-		void load(DataPacket* dataPacket) override {
+		DataTypeMapper(CE::TypeManager* typeManager);
 
-		}
+		void load(DataSyncPacket* dataPacket) override;
 
 		void upsert(SyncContext* ctx, IObject* obj) override;
 
@@ -38,9 +40,8 @@ namespace CE::Ghidra
 
 		shared::STypeUnit buildTypeUnitDesc(DataTypePtr type);
 
-		DataTypePtr* getTypeByDesc(const shared::STypeUnit& typeUnitDesc);
+		DataTypePtr getTypeByDesc(const shared::STypeUnit& typeUnitDesc);
 
-	private:
-		CE::TypeManager* m_typeManager;
+		void changeUserTypeByDesc(DataType::UserType* type, const datatype::SDataType& typeDesc);
 	};
 };
