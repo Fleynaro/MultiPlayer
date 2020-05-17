@@ -52,7 +52,7 @@ void TypeManager::addSystemTypes() {
 
 void TypeManager::addGhidraSystemTypes() {
 	for (const auto& it : ghidraTypes) {
-		createTypedef(DataType::GetUnit(it.second), it.first);
+		createTypedef(it.first)->setRefType(DataType::GetUnit(it.second));
 	}
 }
 
@@ -64,8 +64,9 @@ void TypeManager::loadClasses() {
 	m_dataTypeMapper->loadStructsAndClasses();
 }
 
-void TypeManager::loadTypesFrom(Ghidra::DataSyncPacket* dataPacket) {
-	m_ghidraDataTypeMapper->load(dataPacket);
+void TypeManager::loadTypesFrom(ghidra::packet::SDataLightSyncPacket* dataLightPacket, ghidra::packet::SDataFullSyncPacket* dataFullPacket) {
+	m_ghidraDataTypeMapper->load(dataLightPacket);
+	m_ghidraDataTypeMapper->load(dataFullPacket);
 }
 
 const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {
@@ -77,8 +78,8 @@ const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {
 	return getGhidraTypeName(getDefaultType());
 }
 
-DataType::Typedef* TypeManager::createTypedef(DataTypePtr refType, const std::string& name, const std::string& desc) {
-	auto type = new DataType::Typedef(this, refType, name, desc);
+DataType::Typedef* TypeManager::createTypedef(const std::string& name, const std::string& desc) {
+	auto type = new DataType::Typedef(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_typedefTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_typedefTypeMapper);
 	type->setId(m_dataTypeMapper->getNextId());

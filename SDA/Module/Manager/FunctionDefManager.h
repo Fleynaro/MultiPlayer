@@ -1,7 +1,6 @@
 #pragma once
 #include "AbstractManager.h"
 #include <Code/Function/FunctionDefinition.h>
-#include <GhidraSync/GhidraDataPacket.h>
 #include "FunctionDeclManager.h"
 #include <Utils/Iterator.h>
 
@@ -29,7 +28,7 @@ namespace CE
 
 		void loadFunctions();
 
-		void loadFunctionsFrom(Ghidra::DataSyncPacket* dataPacket);
+		void loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
 		Function::Function* createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl);
 

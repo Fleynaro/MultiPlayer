@@ -8,19 +8,16 @@ ClassTypeMapper::ClassTypeMapper(StructureTypeMapper* structTypeMapper)
 	: m_structTypeMapper(structTypeMapper)
 {}
 
-void ClassTypeMapper::load(DataSyncPacket* dataPacket) {
-	for (auto classDesc : dataPacket->m_classes) {
+void ClassTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
+	for (auto classDesc : dataPacket->classes) {
 		auto type = m_structTypeMapper->m_dataTypeMapper->m_typeManager->getTypeByGhidraId(classDesc.structType.type.id);
-		if (type == nullptr) {
-			type = m_structTypeMapper->m_dataTypeMapper->m_typeManager->createClass(classDesc.structType.type.name, classDesc.structType.type.comment);
-		}
 		changeClassByDesc(static_cast<DataType::Class*>(type), classDesc);
 	}
 }
 
 void ClassTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
 	auto type = static_cast<DataType::Class*>(obj);
-	ctx->m_dataPacket->m_classes.push_back(buildDesc(type));
+	ctx->m_dataPacket->classes.push_back(buildDesc(type));
 	m_structTypeMapper->upsert(ctx, obj);
 }
 

@@ -67,11 +67,11 @@ namespace CE
 
 		void loadClasses();
 
-		void loadTypesFrom(Ghidra::DataSyncPacket* dataPacket);
+		void loadTypesFrom(ghidra::packet::SDataLightSyncPacket* dataLightPacket, ghidra::packet::SDataFullSyncPacket* dataFullPacket);
 
 		const std::string& getGhidraTypeName(DataType::Type* type);
 
-		DataType::Typedef* createTypedef(DataTypePtr refType, const std::string& name, const std::string& desc = "");
+		DataType::Typedef* createTypedef(const std::string& name, const std::string& desc = "");
 
 		DataType::Enum* createEnum(const std::string& name, const std::string& desc = "");
 

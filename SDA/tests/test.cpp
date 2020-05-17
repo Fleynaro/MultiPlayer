@@ -131,7 +131,8 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         enumeration->addField("VEHICLE", 3);
 
         //typedef
-        auto tdef = typeManager->createTypedef(DataType::GetUnit(enumeration), "ObjectType");
+        auto tdef = typeManager->createTypedef("ObjectType");
+        tdef->setRefType(DataType::GetUnit(enumeration));
 
         //structure
         auto screen = typeManager->createStructure("Screen", "this is a structure type");
@@ -488,7 +489,7 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
 
-    SyncCommitment SyncCommitment(&m_programModule->getDB(), sync->getDataPacketTransferProvider());
+    SyncCommitment SyncCommitment(sync);
 
     auto function = funcManager->getFunctionAt(&setRot);
     ASSERT_NE(function, nullptr);

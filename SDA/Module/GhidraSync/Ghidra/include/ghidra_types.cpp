@@ -11,6 +11,390 @@
 
 #include <thrift/TToString.h>
 
+namespace ghidra { namespace packet {
 
 
+SDataLightSyncPacket::~SDataLightSyncPacket() throw() {
+}
 
+
+void SDataLightSyncPacket::__set_types(const std::vector< ::ghidra::datatype::SDataType> & val) {
+  this->types = val;
+}
+std::ostream& operator<<(std::ostream& out, const SDataLightSyncPacket& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t SDataLightSyncPacket::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->types.clear();
+            uint32_t _size0;
+            ::apache::thrift::protocol::TType _etype3;
+            xfer += iprot->readListBegin(_etype3, _size0);
+            this->types.resize(_size0);
+            uint32_t _i4;
+            for (_i4 = 0; _i4 < _size0; ++_i4)
+            {
+              xfer += this->types[_i4].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.types = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t SDataLightSyncPacket::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("SDataLightSyncPacket");
+
+  xfer += oprot->writeFieldBegin("types", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->types.size()));
+    std::vector< ::ghidra::datatype::SDataType> ::const_iterator _iter5;
+    for (_iter5 = this->types.begin(); _iter5 != this->types.end(); ++_iter5)
+    {
+      xfer += (*_iter5).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(SDataLightSyncPacket &a, SDataLightSyncPacket &b) {
+  using ::std::swap;
+  swap(a.types, b.types);
+  swap(a.__isset, b.__isset);
+}
+
+SDataLightSyncPacket::SDataLightSyncPacket(const SDataLightSyncPacket& other6) {
+  types = other6.types;
+  __isset = other6.__isset;
+}
+SDataLightSyncPacket& SDataLightSyncPacket::operator=(const SDataLightSyncPacket& other7) {
+  types = other7.types;
+  __isset = other7.__isset;
+  return *this;
+}
+void SDataLightSyncPacket::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "SDataLightSyncPacket(";
+  out << "types=" << to_string(types);
+  out << ")";
+}
+
+
+SDataFullSyncPacket::~SDataFullSyncPacket() throw() {
+}
+
+
+void SDataFullSyncPacket::__set_typedefs(const std::vector< ::ghidra::datatype::SDataTypeTypedef> & val) {
+  this->typedefs = val;
+}
+
+void SDataFullSyncPacket::__set_classes(const std::vector< ::ghidra::datatype::SDataTypeClass> & val) {
+  this->classes = val;
+}
+
+void SDataFullSyncPacket::__set_structures(const std::vector< ::ghidra::datatype::SDataTypeStructure> & val) {
+  this->structures = val;
+}
+
+void SDataFullSyncPacket::__set_enums(const std::vector< ::ghidra::datatype::SDataTypeEnum> & val) {
+  this->enums = val;
+}
+
+void SDataFullSyncPacket::__set_functions(const std::vector< ::ghidra::function::SFunction> & val) {
+  this->functions = val;
+}
+std::ostream& operator<<(std::ostream& out, const SDataFullSyncPacket& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t SDataFullSyncPacket::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->typedefs.clear();
+            uint32_t _size8;
+            ::apache::thrift::protocol::TType _etype11;
+            xfer += iprot->readListBegin(_etype11, _size8);
+            this->typedefs.resize(_size8);
+            uint32_t _i12;
+            for (_i12 = 0; _i12 < _size8; ++_i12)
+            {
+              xfer += this->typedefs[_i12].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.typedefs = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->classes.clear();
+            uint32_t _size13;
+            ::apache::thrift::protocol::TType _etype16;
+            xfer += iprot->readListBegin(_etype16, _size13);
+            this->classes.resize(_size13);
+            uint32_t _i17;
+            for (_i17 = 0; _i17 < _size13; ++_i17)
+            {
+              xfer += this->classes[_i17].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.classes = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 3:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->structures.clear();
+            uint32_t _size18;
+            ::apache::thrift::protocol::TType _etype21;
+            xfer += iprot->readListBegin(_etype21, _size18);
+            this->structures.resize(_size18);
+            uint32_t _i22;
+            for (_i22 = 0; _i22 < _size18; ++_i22)
+            {
+              xfer += this->structures[_i22].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.structures = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 4:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->enums.clear();
+            uint32_t _size23;
+            ::apache::thrift::protocol::TType _etype26;
+            xfer += iprot->readListBegin(_etype26, _size23);
+            this->enums.resize(_size23);
+            uint32_t _i27;
+            for (_i27 = 0; _i27 < _size23; ++_i27)
+            {
+              xfer += this->enums[_i27].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.enums = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 5:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->functions.clear();
+            uint32_t _size28;
+            ::apache::thrift::protocol::TType _etype31;
+            xfer += iprot->readListBegin(_etype31, _size28);
+            this->functions.resize(_size28);
+            uint32_t _i32;
+            for (_i32 = 0; _i32 < _size28; ++_i32)
+            {
+              xfer += this->functions[_i32].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.functions = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t SDataFullSyncPacket::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("SDataFullSyncPacket");
+
+  xfer += oprot->writeFieldBegin("typedefs", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->typedefs.size()));
+    std::vector< ::ghidra::datatype::SDataTypeTypedef> ::const_iterator _iter33;
+    for (_iter33 = this->typedefs.begin(); _iter33 != this->typedefs.end(); ++_iter33)
+    {
+      xfer += (*_iter33).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("classes", ::apache::thrift::protocol::T_LIST, 2);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->classes.size()));
+    std::vector< ::ghidra::datatype::SDataTypeClass> ::const_iterator _iter34;
+    for (_iter34 = this->classes.begin(); _iter34 != this->classes.end(); ++_iter34)
+    {
+      xfer += (*_iter34).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("structures", ::apache::thrift::protocol::T_LIST, 3);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->structures.size()));
+    std::vector< ::ghidra::datatype::SDataTypeStructure> ::const_iterator _iter35;
+    for (_iter35 = this->structures.begin(); _iter35 != this->structures.end(); ++_iter35)
+    {
+      xfer += (*_iter35).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("enums", ::apache::thrift::protocol::T_LIST, 4);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->enums.size()));
+    std::vector< ::ghidra::datatype::SDataTypeEnum> ::const_iterator _iter36;
+    for (_iter36 = this->enums.begin(); _iter36 != this->enums.end(); ++_iter36)
+    {
+      xfer += (*_iter36).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("functions", ::apache::thrift::protocol::T_LIST, 5);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->functions.size()));
+    std::vector< ::ghidra::function::SFunction> ::const_iterator _iter37;
+    for (_iter37 = this->functions.begin(); _iter37 != this->functions.end(); ++_iter37)
+    {
+      xfer += (*_iter37).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(SDataFullSyncPacket &a, SDataFullSyncPacket &b) {
+  using ::std::swap;
+  swap(a.typedefs, b.typedefs);
+  swap(a.classes, b.classes);
+  swap(a.structures, b.structures);
+  swap(a.enums, b.enums);
+  swap(a.functions, b.functions);
+  swap(a.__isset, b.__isset);
+}
+
+SDataFullSyncPacket::SDataFullSyncPacket(const SDataFullSyncPacket& other38) {
+  typedefs = other38.typedefs;
+  classes = other38.classes;
+  structures = other38.structures;
+  enums = other38.enums;
+  functions = other38.functions;
+  __isset = other38.__isset;
+}
+SDataFullSyncPacket& SDataFullSyncPacket::operator=(const SDataFullSyncPacket& other39) {
+  typedefs = other39.typedefs;
+  classes = other39.classes;
+  structures = other39.structures;
+  enums = other39.enums;
+  functions = other39.functions;
+  __isset = other39.__isset;
+  return *this;
+}
+void SDataFullSyncPacket::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "SDataFullSyncPacket(";
+  out << "typedefs=" << to_string(typedefs);
+  out << ", " << "classes=" << to_string(classes);
+  out << ", " << "structures=" << to_string(structures);
+  out << ", " << "enums=" << to_string(enums);
+  out << ", " << "functions=" << to_string(functions);
+  out << ")";
+}
+
+}} // namespace

@@ -3,11 +3,9 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Typedef::Typedef(TypeManager* typeManager, DataTypePtr refType, const std::string& name, const std::string& comment)
+Typedef::Typedef(TypeManager* typeManager, const std::string& name, const std::string& comment)
 	: UserType(typeManager, name, comment)
-{
-	setRefType(refType);
-}
+{}
 
 Typedef::Group Typedef::getGroup() {
 	return Group::Typedef;

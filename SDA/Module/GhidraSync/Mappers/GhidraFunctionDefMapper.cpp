@@ -10,8 +10,8 @@ FunctionDefMapper::FunctionDefMapper(CE::FunctionManager* functionManager, DataT
 	: m_functionManager(functionManager), m_dataTypeMapper(dataTypeMapper)
 {}
 
-void FunctionDefMapper::load(DataSyncPacket * dataPacket) {
-	for (auto funcDesc : dataPacket->m_functions) {
+void FunctionDefMapper::load(packet::SDataFullSyncPacket* dataPacket) {
+	for (auto funcDesc : dataPacket->functions) {
 		auto function = m_functionManager->getFunctionByGhidraId(funcDesc.id);
 		if (function == nullptr) {
 			function = m_functionManager->createFunction(m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule(), {}, m_functionManager->getFunctionDeclManager()->createFunctionDecl("", ""));
@@ -29,13 +29,13 @@ void markObjectAsSynced(SyncContext* ctx, Function::Function* func) {
 
 void FunctionDefMapper::upsert(SyncContext* ctx, IObject* obj) {
 	auto func = static_cast<Function::Function*>(obj);
-	ctx->m_dataPacket->m_functions.push_back(buildDesc(func));
+	ctx->m_dataPacket->functions.push_back(buildDesc(func));
 	markObjectAsSynced(ctx, func);
 }
 
 void FunctionDefMapper::remove(SyncContext* ctx, IObject* obj) {
 	auto func = static_cast<Function::Function*>(obj);
-	ctx->m_dataPacket->m_functions.push_back(buildDescToRemove(func));
+	ctx->m_dataPacket->functions.push_back(buildDescToRemove(func));
 	markObjectAsSynced(ctx, func);
 }
 

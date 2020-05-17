@@ -1,5 +1,6 @@
 #pragma once
 #include "GhidraAbstractMapper.h"
+#include "GhidraClient.h"
 
 namespace CE {
 	class ProgramModule;
@@ -14,14 +15,16 @@ namespace CE::Ghidra
 	public:
 		Sync(CE::ProgramModule* programModule);
 
+		~Sync();
+
+		ProgramModule* getProgramModule();
+
 		Client* getClient();
 
-		DataPacketTransferProvider* getDataPacketTransferProvider();
-
-		void load(DataSyncPacket* dataPacket);
+		packet::DataSyncPacketManagerServiceClient* getDataSyncPacketManagerServiceClient();
 	private:
 		CE::ProgramModule* m_programModule;
 		Client* m_client;
-		DataPacketTransferProvider* m_dataPacketTransferProvider;
+		packet::DataSyncPacketManagerServiceClient* m_dataSyncPacketManagerServiceClient;
 	};
 };

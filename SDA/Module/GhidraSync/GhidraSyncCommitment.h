@@ -1,12 +1,12 @@
 #pragma once
-#include "GhidraAbstractMapper.h"
+#include "GhidraSync.h"
 
 namespace CE::Ghidra
 {
 	class SyncCommitment
 	{
 	public:
-		SyncCommitment(SQLite::Database* db, DataPacketTransferProvider* provider);
+		SyncCommitment(Sync* sync);
 
 		void upsert(IObject* obj);
 
@@ -15,8 +15,7 @@ namespace CE::Ghidra
 		void commit();
 		
 	private:
-		SQLite::Database* m_db;
-		DataPacketTransferProvider* m_provider;
+		Sync* m_sync;
 		std::list<IObject*> m_upsertedObjs;
 		std::list<IObject*> m_removedObjs;
 

@@ -53,16 +53,3 @@ struct SDataTypeTypedef {
 	1: SDataType type,
 	2: shared.STypeUnit refType
 }
-
-service DataTypeManagerService {
-	list<SDataType> pull(),
-	list<SDataTypeTypedef> pullTypedefs(),
-	list<SDataTypeStructure> pullStructures(),
-	list<SDataTypeClass> pullClasses(),
-	list<SDataTypeEnum> pullEnums(),
-	void push(1:list<SDataType> types),
-	void pushTypedefs(1:list<SDataTypeTypedef> typedefs),
-	void pushStructures(1:list<SDataTypeStructure> structures),
-	void pushClasses(1:list<SDataTypeClass> classes),
-	void pushEnums(1:list<SDataTypeEnum> enums)
-}

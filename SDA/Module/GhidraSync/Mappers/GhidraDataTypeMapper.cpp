@@ -17,7 +17,31 @@ DataTypeMapper::DataTypeMapper(CE::TypeManager* typeManager)
 	m_typedefTypeMapper = new TypedefTypeMapper(this);
 }
 
-void DataTypeMapper::load(DataSyncPacket * dataPacket) {
+void DataTypeMapper::load(packet::SDataLightSyncPacket* dataPacket) {
+	for (auto typeDesc : dataPacket->types) {
+		auto type = m_typeManager->getTypeByGhidraId(typeDesc.id);
+		if (type != nullptr)
+			continue;
+
+		switch (typeDesc.group)
+		{
+			case DataTypeGroup::Typedef:
+				m_typeManager->createTypedef(typeDesc.name, typeDesc.comment);
+				break;
+			case DataTypeGroup::Enum:
+				m_typeManager->createEnum(typeDesc.name, typeDesc.comment);
+				break;
+			case DataTypeGroup::Structure:
+				m_typeManager->createStructure(typeDesc.name, typeDesc.comment);
+				break;
+			case DataTypeGroup::Class:
+				m_typeManager->createClass(typeDesc.name, typeDesc.comment);
+				break;
+		}
+	}
+}
+
+void DataTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	m_enumTypeMapper->load(dataPacket);
 	m_structureTypeMapper->load(dataPacket);
 	m_classTypeMapper->load(dataPacket);

@@ -25,7 +25,7 @@ void FunctionManager::loadFunctions() {
 	m_funcDefMapper->loadAll();
 }
 
-void FunctionManager::loadFunctionsFrom(Ghidra::DataSyncPacket* dataPacket) {
+void FunctionManager::loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dataPacket) {
 	m_ghidraFunctionDefMapper->load(dataPacket);
 }
 

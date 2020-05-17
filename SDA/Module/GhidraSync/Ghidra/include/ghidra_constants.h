@@ -9,7 +9,7 @@
 
 #include "ghidra_types.h"
 
-
+namespace ghidra { namespace packet {
 
 class ghidraConstants {
  public:
@@ -19,6 +19,6 @@ class ghidraConstants {
 
 extern const ghidraConstants g_ghidra_constants;
 
-
+}} // namespace
 
 #endif

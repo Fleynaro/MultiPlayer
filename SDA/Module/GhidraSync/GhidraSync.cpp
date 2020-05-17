@@ -1,5 +1,4 @@
 #include "GhidraSync.h"
-#include "GhidraClient.h"
 #include <Manager/FunctionDefManager.h>
 #include <Manager/TypeManager.h>
 
@@ -10,18 +9,23 @@ Sync::Sync(CE::ProgramModule* programModule)
 	: m_programModule(programModule)
 {
 	m_client = new Client;
-	m_dataPacketTransferProvider = new DataPacketTransferProvider(m_client);
+	m_dataSyncPacketManagerServiceClient = new packet::DataSyncPacketManagerServiceClient(
+		std::shared_ptr<TMultiplexedProtocol>(new TMultiplexedProtocol(m_client->m_protocol, "DataSyncPacketManager")));
+}
+
+Sync::~Sync() {
+	delete m_client;
+	delete m_dataSyncPacketManagerServiceClient;
+}
+
+ProgramModule* Sync::getProgramModule() {
+	return m_programModule;
 }
 
 Client* Sync::getClient() {
 	return m_client;
 }
 
-DataPacketTransferProvider* Sync::getDataPacketTransferProvider() {
-	return m_dataPacketTransferProvider;
-}
-
-void Sync::load(DataSyncPacket* dataPacket) {
-	m_programModule->getFunctionManager()->loadFunctionsFrom(dataPacket);
-	m_programModule->getTypeManager()->loadTypesFrom(dataPacket);
+packet::DataSyncPacketManagerServiceClient* Sync::getDataSyncPacketManagerServiceClient() {
+	return m_dataSyncPacketManagerServiceClient;
 }

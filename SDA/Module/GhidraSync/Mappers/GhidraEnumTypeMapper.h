@@ -9,7 +9,7 @@ namespace CE::Ghidra
 	public:
 		EnumTypeMapper(DataTypeMapper* dataTypeMapper);
 
-		void load(DataSyncPacket* dataPacket) override;
+		void load(packet::SDataFullSyncPacket* dataPacket) override;
 
 		void upsert(SyncContext* ctx, IObject* obj) override;
 

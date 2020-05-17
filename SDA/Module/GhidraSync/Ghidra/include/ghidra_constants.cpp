@@ -6,12 +6,12 @@
  */
 #include "ghidra_constants.h"
 
-
+namespace ghidra { namespace packet {
 
 const ghidraConstants g_ghidra_constants;
 
 ghidraConstants::ghidraConstants() {
 }
 
-
+}} // namespace
 

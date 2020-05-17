@@ -8,19 +8,16 @@ EnumTypeMapper::EnumTypeMapper(DataTypeMapper* dataTypeMapper)
 	: m_dataTypeMapper(dataTypeMapper)
 {}
 
-void EnumTypeMapper::load(DataSyncPacket* dataPacket) {
-	for (auto enumDesc : dataPacket->m_enums) {
+void EnumTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
+	for (auto enumDesc : dataPacket->enums) {
 		auto type = m_dataTypeMapper->m_typeManager->getTypeByGhidraId(enumDesc.type.id);
-		if (type == nullptr) {
-			type = m_dataTypeMapper->m_typeManager->createEnum(enumDesc.type.name, enumDesc.type.comment);
-		}
 		changeEnumByDesc(static_cast<DataType::Enum*>(type), enumDesc);
 	}
 }
 
 void EnumTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
 	auto type = static_cast<DataType::Enum*>(obj);
-	ctx->m_dataPacket->m_enums.push_back(buildDesc(type));
+	ctx->m_dataPacket->enums.push_back(buildDesc(type));
 	m_dataTypeMapper->upsert(ctx, obj);
 }
 

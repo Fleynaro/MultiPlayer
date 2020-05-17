@@ -1,10 +1,11 @@
 #include "GhidraSyncCommitment.h"
+#include <Manager/ProgramModule.h>
 
 using namespace CE;
 using namespace CE::Ghidra;
 
-SyncCommitment::SyncCommitment(SQLite::Database* db, DataPacketTransferProvider* provider)
-	: m_db(db), m_provider(provider)
+SyncCommitment::SyncCommitment(Sync* sync)
+	: m_sync(sync)
 {}
 
 void SyncCommitment::upsert(IObject* obj) {
@@ -16,13 +17,14 @@ void SyncCommitment::remove(IObject* obj) {
 }
 
 void SyncCommitment::commit() {
-	DataSyncPacket dataPacket;
+	packet::SDataFullSyncPacket dataPacket;
 	SyncContext ctx;
-	SQLite::Transaction transaction(*m_db);
+	auto& db = m_sync->getProgramModule()->getDB();
+	SQLite::Transaction transaction(db);
 
 	ctx.m_syncId = createSyncRecord();
 	ctx.m_dataPacket = &dataPacket;
-	ctx.m_db = m_db;
+	ctx.m_db = &db;
 
 	for (auto obj : m_upsertedObjs) {
 		obj->getGhidraMapper()->upsert(&ctx, obj);
@@ -33,16 +35,19 @@ void SyncCommitment::commit() {
 	}
 
 	transaction.commit();
-	m_provider->sendDataPacket(&dataPacket);
+	
+	Transport tr(m_sync->getClient());
+	m_sync->getDataSyncPacketManagerServiceClient()->sendFullSyncPacket(dataPacket);
 }
 
 int SyncCommitment::createSyncRecord() {
 	using namespace std::chrono;
-	SQLite::Statement query(*m_db, "INSERT INTO sda_ghidra_sync (date, type, comment, objectsCount) VALUES(?1, ?2, ?3, ?4)");
+	auto& db = m_sync->getProgramModule()->getDB();
+	SQLite::Statement query(db, "INSERT INTO sda_ghidra_sync (date, type, comment, objectsCount) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
 	query.bind(2, 1);
 	query.bind(3, "");
 	query.bind(4, (int)m_upsertedObjs.size() + (int)m_removedObjs.size());
 	query.exec();
-	return (int)m_db->getLastInsertRowid();
+	return (int)db.getLastInsertRowid();
 }

@@ -1,7 +1,6 @@
 #pragma once
 #include <GhidraSync/GhidraAbstractMapper.h>
 #include <Code/Type/UserType.h>
-#include "DataTypeManagerService.h"
 
 namespace CE {
 	class TypeManager;
@@ -28,7 +27,9 @@ namespace CE::Ghidra
 
 		DataTypeMapper(CE::TypeManager* typeManager);
 
-		void load(DataSyncPacket* dataPacket) override;
+		void load(packet::SDataLightSyncPacket* dataPacket) override;
+
+		void load(packet::SDataFullSyncPacket* dataPacket) override;
 
 		void upsert(SyncContext* ctx, IObject* obj) override;
 

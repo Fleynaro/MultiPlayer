@@ -20,8 +20,120 @@
 #include "function_types.h"
 
 
+namespace ghidra { namespace packet {
 
+class SDataLightSyncPacket;
 
+class SDataFullSyncPacket;
 
+typedef struct _SDataLightSyncPacket__isset {
+  _SDataLightSyncPacket__isset() : types(false) {}
+  bool types :1;
+} _SDataLightSyncPacket__isset;
+
+class SDataLightSyncPacket : public virtual ::apache::thrift::TBase {
+ public:
+
+  SDataLightSyncPacket(const SDataLightSyncPacket&);
+  SDataLightSyncPacket& operator=(const SDataLightSyncPacket&);
+  SDataLightSyncPacket() {
+  }
+
+  virtual ~SDataLightSyncPacket() throw();
+  std::vector< ::ghidra::datatype::SDataType>  types;
+
+  _SDataLightSyncPacket__isset __isset;
+
+  void __set_types(const std::vector< ::ghidra::datatype::SDataType> & val);
+
+  bool operator == (const SDataLightSyncPacket & rhs) const
+  {
+    if (!(types == rhs.types))
+      return false;
+    return true;
+  }
+  bool operator != (const SDataLightSyncPacket &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SDataLightSyncPacket & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(SDataLightSyncPacket &a, SDataLightSyncPacket &b);
+
+std::ostream& operator<<(std::ostream& out, const SDataLightSyncPacket& obj);
+
+typedef struct _SDataFullSyncPacket__isset {
+  _SDataFullSyncPacket__isset() : typedefs(false), classes(false), structures(false), enums(false), functions(false) {}
+  bool typedefs :1;
+  bool classes :1;
+  bool structures :1;
+  bool enums :1;
+  bool functions :1;
+} _SDataFullSyncPacket__isset;
+
+class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
+ public:
+
+  SDataFullSyncPacket(const SDataFullSyncPacket&);
+  SDataFullSyncPacket& operator=(const SDataFullSyncPacket&);
+  SDataFullSyncPacket() {
+  }
+
+  virtual ~SDataFullSyncPacket() throw();
+  std::vector< ::ghidra::datatype::SDataTypeTypedef>  typedefs;
+  std::vector< ::ghidra::datatype::SDataTypeClass>  classes;
+  std::vector< ::ghidra::datatype::SDataTypeStructure>  structures;
+  std::vector< ::ghidra::datatype::SDataTypeEnum>  enums;
+  std::vector< ::ghidra::function::SFunction>  functions;
+
+  _SDataFullSyncPacket__isset __isset;
+
+  void __set_typedefs(const std::vector< ::ghidra::datatype::SDataTypeTypedef> & val);
+
+  void __set_classes(const std::vector< ::ghidra::datatype::SDataTypeClass> & val);
+
+  void __set_structures(const std::vector< ::ghidra::datatype::SDataTypeStructure> & val);
+
+  void __set_enums(const std::vector< ::ghidra::datatype::SDataTypeEnum> & val);
+
+  void __set_functions(const std::vector< ::ghidra::function::SFunction> & val);
+
+  bool operator == (const SDataFullSyncPacket & rhs) const
+  {
+    if (!(typedefs == rhs.typedefs))
+      return false;
+    if (!(classes == rhs.classes))
+      return false;
+    if (!(structures == rhs.structures))
+      return false;
+    if (!(enums == rhs.enums))
+      return false;
+    if (!(functions == rhs.functions))
+      return false;
+    return true;
+  }
+  bool operator != (const SDataFullSyncPacket &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SDataFullSyncPacket & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(SDataFullSyncPacket &a, SDataFullSyncPacket &b);
+
+std::ostream& operator<<(std::ostream& out, const SDataFullSyncPacket& obj);
+
+}} // namespace
 
 #endif

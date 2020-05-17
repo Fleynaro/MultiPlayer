@@ -23,8 +23,3 @@ struct SFunction {
 	5: SFunctionSignature signature
 	6: list<SFunctionRange> ranges
 }
-
-service FunctionManagerService {
-	list<SFunction> pull(),
-	void push(1:list<SFunction> functions)
-}

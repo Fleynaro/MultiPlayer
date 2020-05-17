@@ -28,7 +28,6 @@ IDomainObject* TypedefTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
 	auto type = new DataType::Typedef(
 		getParentMapper()->getManager(),
-		DataType::GetUnit(getParentMapper()->getManager()->getDefaultType()),
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
