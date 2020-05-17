@@ -4,28 +4,21 @@ namespace java sda.ghidra.datatype
 namespace cpp ghidra.datatype
 
 typedef i64 Id
-typedef i64 Hash
-typedef map<Id,Hash> HashMap
 
 enum DataTypeGroup
 {
 	Simple,
 	Enum,
 	Structure,
+	Class,
 	Typedef,
 	Signature
-}
-
-struct SDataTypeBase {
-	1: Id id,
-	2: string name,
-	3: DataTypeGroup group
 }
 
 struct SDataType {
 	1: Id id,
 	2: string name,
-	3: string desc,
+	3: string comment,
 	4: DataTypeGroup group,
 	5: i32 size
 }
@@ -40,6 +33,10 @@ struct SDataTypeStructureField {
 struct SDataTypeStructure {
 	1: SDataType type,
 	2: list<SDataTypeStructureField> fields
+}
+
+struct SDataTypeClass {
+	1: SDataTypeStructure structType
 }
 
 struct SDataTypeEnumField {
@@ -58,12 +55,14 @@ struct SDataTypeTypedef {
 }
 
 service DataTypeManagerService {
-	list<SDataTypeBase> pull(),
-	list<SDataTypeTypedef> pullTypedefs(1:HashMap hashmap),
-	list<SDataTypeStructure> pullStructures(1:HashMap hashmap),
-	list<SDataTypeEnum> pullEnums(1:HashMap hashmap)
+	list<SDataType> pull(),
+	list<SDataTypeTypedef> pullTypedefs(),
+	list<SDataTypeStructure> pullStructures(),
+	list<SDataTypeClass> pullClasses(),
+	list<SDataTypeEnum> pullEnums(),
 	void push(1:list<SDataType> types),
 	void pushTypedefs(1:list<SDataTypeTypedef> typedefs),
 	void pushStructures(1:list<SDataTypeStructure> structures),
+	void pushClasses(1:list<SDataTypeClass> classes),
 	void pushEnums(1:list<SDataTypeEnum> enums)
 }

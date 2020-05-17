@@ -78,6 +78,10 @@ namespace CE
 
 		DataType::Type* getTypeByName(const std::string& typeName);
 
+		DataType::Type* getTypeByGhidraId(Ghidra::Id id);
+
+		Ghidra::Id getGhidraId(DataType::Type* type);
+
 		void setGhidraManager(Ghidra::DataTypeManager* ghidraManager);
 
 		Ghidra::DataTypeManager* getGhidraManager();

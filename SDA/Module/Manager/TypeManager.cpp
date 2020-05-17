@@ -4,6 +4,7 @@
 #include <DB/Mappers/StructureTypeMapper.h>
 #include <DB/Mappers/ClassTypeMapper.h>
 #include <DB/Mappers/EnumTypeMapper.h>
+#include <Utils/ObjectHash.h>
 
 using namespace CE;
 
@@ -116,6 +117,27 @@ DataType::Type* TypeManager::getTypeByName(const std::string& typeName)
 		}
 	}
 	return nullptr;
+}
+
+DataType::Type* TypeManager::getTypeByGhidraId(Ghidra::Id id) {
+	Iterator it(this);
+	while (it.hasNext()) {
+		auto type = it.next();
+		if (getGhidraId(type) == id) {
+			return type;
+		}
+	}
+	return nullptr;
+}
+
+Ghidra::Id TypeManager::getGhidraId(DataType::Type* type) {
+	if (auto userType = dynamic_cast<DataType::UserType*>(type)) {
+		return userType->getGhidraId();
+	}
+	
+	ObjectHash objHash;
+	objHash.addValue(getGhidraTypeName(type));
+	return objHash.getHash();
 }
 
 void TypeManager::setGhidraManager(Ghidra::DataTypeManager* ghidraManager) {

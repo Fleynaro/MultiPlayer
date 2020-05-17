@@ -4,8 +4,6 @@ namespace java sda.ghidra.function
 namespace cpp ghidra.function
 
 typedef i64 Id
-typedef i64 Hash
-typedef map<Id,Hash> HashMap
 
 struct SFunctionRange {
 	1: i32 minOffset,
@@ -27,6 +25,6 @@ struct SFunction {
 }
 
 service FunctionManagerService {
-	list<SFunction> pull(1:HashMap hashmap),
+	list<SFunction> pull(),
 	void push(1:list<SFunction> functions)
 }

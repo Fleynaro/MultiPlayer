@@ -4,6 +4,10 @@
 using namespace CE;
 using namespace CE::DataType;
 
+Type::Type(TypeManager* typeManager, const std::string& name, const std::string& comment)
+	: m_typeManager(typeManager), Descrtiption(name, comment)
+{}
+
 std::string Type::getViewValue(void* addr) {
 	uint64_t mask = 0x0;
 	for (int i = 0; i < max(8, getSize()); i++)

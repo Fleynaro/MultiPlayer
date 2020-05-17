@@ -1,6 +1,5 @@
 #pragma once
 #include "TypeUnit.h"
-#include <GhidraSync/GhidraObject.h>
 
 namespace CE
 {

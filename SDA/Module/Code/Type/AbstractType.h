@@ -1,6 +1,7 @@
 #pragma once
 #include <Utils/Description.h>
 #include <DB/DomainObject.h>
+#include <GhidraSync/GhidraObject.h>
 
 namespace CE
 {
@@ -29,9 +30,7 @@ namespace CE
 				Signature
 			};
 
-			Type(TypeManager* typeManager, const std::string& name, const std::string& comment)
-				: m_typeManager(typeManager), Descrtiption(name, comment)
-			{}
+			Type(TypeManager* typeManager, const std::string& name, const std::string& comment);
 
 			virtual Group getGroup() = 0;
 

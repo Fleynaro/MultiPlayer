@@ -1,6 +1,7 @@
 #pragma once
 #include "GhidraObject.h"
 #include "FunctionManagerService.h"
+#include "DataTypeManagerService.h"
 
 namespace CE::Ghidra
 {
@@ -8,6 +9,9 @@ namespace CE::Ghidra
 	struct DataPacket
 	{
 		std::vector<function::SFunction> m_functions;
+		std::vector<datatype::SDataTypeTypedef> m_typedefs;
+		std::vector<datatype::SDataTypeEnum> m_enums;
+		std::vector<datatype::SDataTypeStructure> m_structs;
 	};
 
 	class Client;
