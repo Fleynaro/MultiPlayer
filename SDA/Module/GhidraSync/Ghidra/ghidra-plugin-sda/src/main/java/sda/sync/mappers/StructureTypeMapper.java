@@ -9,7 +9,6 @@ import sda.sync.IMapper;
 import sda.sync.SyncContext;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class StructureTypeMapper implements IMapper {
 
@@ -25,20 +24,20 @@ public class StructureTypeMapper implements IMapper {
     public void load(SDataFullSyncPacket dataPacket) {
         for(SDataTypeStructure structureDesc : dataPacket.getStructures()) {
             DataType type = dataTypeMapper.findDataTypeByGhidraId(structureDesc.getType().getId());
-            changeStructureByDesc((StructureDataType)type, structureDesc);
+            changeStructureByDesc((Structure)type, structureDesc);
         }
     }
 
-    public void upsert(SyncContext ctx, StructureDataType type) {
+    public void upsert(SyncContext ctx, Structure type) {
         ctx.dataPacket.getStructures().add(buildDesc(type));
         dataTypeMapper.upsert(ctx, type);
     }
 
-    public SDataTypeStructure buildDesc(StructureDataType Structure) {
+    public SDataTypeStructure buildDesc(Structure structure) {
         SDataTypeStructure StructureDesc = new SDataTypeStructure();
-        StructureDesc.setType(dataTypeMapper.buildDesc(Structure));
+        StructureDesc.setType(dataTypeMapper.buildDesc(structure));
 
-        DataTypeComponent[] components = Structure.getDefinedComponents();
+        DataTypeComponent[] components = structure.getDefinedComponents();
         StructureDesc.setFields(new ArrayList<>());
         for(DataTypeComponent component : components) {
             SDataTypeStructureField field = new SDataTypeStructureField();
@@ -53,7 +52,7 @@ public class StructureTypeMapper implements IMapper {
         return StructureDesc;
     }
 
-    public void changeStructureByDesc(StructureDataType structure, SDataTypeStructure structDesc) {
+    public void changeStructureByDesc(Structure structure, SDataTypeStructure structDesc) {
         dataTypeMapper.changeTypeByDesc(structure, structDesc.getType());
 
         structure.deleteAll();

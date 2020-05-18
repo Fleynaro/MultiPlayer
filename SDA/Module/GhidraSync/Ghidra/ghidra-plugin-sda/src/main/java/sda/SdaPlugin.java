@@ -47,16 +47,10 @@ public class SdaPlugin extends ProgramPlugin {
 
     @Override
     protected void programOpened(Program program) {
-        DebugConsole.info(this, "program " + program.getName() + " opened.");
+        DebugConsole.info(this, "program " + program.getName() + " opened(ver = 2).");
         sda = new Sda(program);
         server = new Server(sda, 9090);
         server.start();
-
-
-        if(false) {
-
-            int a = 5;
-        }
 
         if(false) {
             int id = program.startTransaction("SDA: change enums");

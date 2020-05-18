@@ -28,6 +28,7 @@ namespace CE
 				UInt16,
 				UInt32,
 				UInt64,
+				UInt128,
 				Float,
 				Double,
 
@@ -340,7 +341,7 @@ namespace CE
 		{
 		public:
 			Types getTypeId() override {
-				return SystemType::UInt64;
+				return SystemType::UInt128;
 			}
 
 			const std::string getName() override {

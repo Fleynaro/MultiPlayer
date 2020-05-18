@@ -1,7 +1,7 @@
 package sda.sync.mappers;
 
 import ghidra.program.model.data.DataType;
-import ghidra.program.model.data.StructureDataType;
+import ghidra.program.model.data.Structure;
 import sda.Sda;
 import sda.ghidra.datatype.SDataTypeClass;
 import sda.ghidra.packet.SDataFullSyncPacket;
@@ -22,23 +22,23 @@ public class ClassTypeMapper implements IMapper {
     public void load(SDataFullSyncPacket dataPacket) {
         for(SDataTypeClass classDesc : dataPacket.getClasses()) {
             DataType type = structureTypeMapper.dataTypeMapper.findDataTypeByGhidraId(classDesc.getStructType().getType().getId());
-            changeClassByDesc((StructureDataType)type, classDesc);
+            changeClassByDesc((Structure)type, classDesc);
         }
     }
 
-    public void upsert(SyncContext ctx, StructureDataType type) {
+    public void upsert(SyncContext ctx, Structure type) {
         ctx.dataPacket.getClasses().add(buildDesc(type));
         structureTypeMapper.dataTypeMapper.upsert(ctx, type);
     }
 
-    private SDataTypeClass buildDesc(StructureDataType Class) {
+    private SDataTypeClass buildDesc(Structure Class) {
         SDataTypeClass ClassDesc = new SDataTypeClass();
         ClassDesc.setStructType(structureTypeMapper.buildDesc(Class));
 
         return ClassDesc;
     }
 
-    private void changeClassByDesc(StructureDataType Class, SDataTypeClass classDesc) {
+    private void changeClassByDesc(Structure Class, SDataTypeClass classDesc) {
         structureTypeMapper.changeStructureByDesc(Class, classDesc.getStructType());
 
     }

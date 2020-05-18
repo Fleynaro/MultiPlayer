@@ -304,6 +304,7 @@
       <workItem from="1589742629460" duration="1212000" />
       <workItem from="1589774333446" duration="4052000" />
       <workItem from="1589784609064" duration="9804000" />
+      <workItem from="1589805523466" duration="5720000" />
     </task>
     <servers />
   </component>
@@ -331,5 +332,26 @@
       <path value="$PROJECT_DIR$/../../../../.." />
     </ignored-roots>
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/sda/ghidra/DataSyncPacketManagerServiceImpl.java</url>
+          <line>27</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/sda/ghidra/DataSyncPacketManagerServiceImpl.java</url>
+          <line>32</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/sda/SdaPlugin.java</url>
+          <line>49</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

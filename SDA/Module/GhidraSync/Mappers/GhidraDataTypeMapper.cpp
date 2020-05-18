@@ -113,14 +113,14 @@ shared::STypeUnit DataTypeMapper::buildTypeUnitDesc(DataTypePtr type) {
 }
 
 DataTypePtr DataTypeMapper::getTypeByDesc(const shared::STypeUnit& desc) {
-	auto type = m_typeManager->getTypeByGhidraId(desc.typeId);
-	if (type == nullptr) {
-		return DataType::GetUnit(m_typeManager->getDefaultType());
-	}
-
 	std::vector<int> ptr_levels;
 	for (auto lvl : desc.pointerLvls) {
 		ptr_levels.push_back((int)lvl);
+	}
+	
+	auto type = m_typeManager->getTypeByGhidraId(desc.typeId);
+	if (type == nullptr) {
+		type = m_typeManager->getDefaultType();
 	}
 	return std::make_shared<DataType::Unit>(type, ptr_levels);
 }

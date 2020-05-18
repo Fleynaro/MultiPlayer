@@ -18,6 +18,7 @@ TypeManager::TypeManager(ProgramModule* module)
 	m_dataTypeMapper = new DB::DataTypeMapper(this);
 	m_ghidraDataTypeMapper = new Ghidra::DataTypeMapper(this);
 	addSystemTypes();
+	addGhidraTypedefs();
 }
 
 TypeManager::~TypeManager() {
@@ -37,6 +38,7 @@ void TypeManager::addSystemTypes() {
 		std::make_pair(DataType::SystemType::UInt16, new DataType::UInt16),
 		std::make_pair(DataType::SystemType::UInt32, new DataType::UInt32),
 		std::make_pair(DataType::SystemType::UInt64, new DataType::UInt64),
+		std::make_pair(DataType::SystemType::UInt128, new DataType::UInt128),
 		std::make_pair(DataType::SystemType::Float, new DataType::Float),
 		std::make_pair(DataType::SystemType::Double, new DataType::Double),
 		std::make_pair(DataType::SystemType::Char, new DataType::Char),
@@ -50,9 +52,47 @@ void TypeManager::addSystemTypes() {
 	}
 }
 
-void TypeManager::addGhidraSystemTypes() {
-	for (const auto& it : ghidraTypes) {
-		createTypedef(it.first)->setRefType(DataType::GetUnit(it.second));
+void TypeManager::addGhidraTypedefs() {
+	static std::pair<std::string, DB::Id> typedefs[] = {
+		std::make_pair("void", DataType::SystemType::Void),
+		std::make_pair("unicode", DataType::SystemType::Void),
+		std::make_pair("string", DataType::SystemType::Void),
+
+		std::make_pair("uchar", DataType::SystemType::Byte),
+		std::make_pair("uint8_t", DataType::SystemType::Byte),
+		std::make_pair("undefined1", DataType::SystemType::Int8),
+
+		std::make_pair("short", DataType::SystemType::Int16),
+		std::make_pair("ushort", DataType::SystemType::UInt16),
+		std::make_pair("word", DataType::SystemType::Int16),
+		std::make_pair("undefined2", DataType::SystemType::Int16),
+
+		std::make_pair("int", DataType::SystemType::Int32),
+		std::make_pair("uint", DataType::SystemType::UInt32),
+		std::make_pair("long", DataType::SystemType::Int32),
+		std::make_pair("ulong", DataType::SystemType::UInt32),
+		std::make_pair("dword", DataType::SystemType::Int32),
+		std::make_pair("float", DataType::SystemType::Float),
+		std::make_pair("ImageBaseOffset32", DataType::SystemType::UInt32),
+		std::make_pair("undefined4", DataType::SystemType::Int32),
+
+		std::make_pair("longlong", DataType::SystemType::Int64),
+		std::make_pair("ulonglong", DataType::SystemType::UInt64),
+		std::make_pair("qword", DataType::SystemType::Int64),
+		std::make_pair("double", DataType::SystemType::Double),
+		std::make_pair("undefined8", DataType::SystemType::Int64),
+
+		std::make_pair("GUID", DataType::SystemType::UInt128)
+	};
+
+	DB::Id startId = 100;
+	for (const auto& it : typedefs) {
+		auto type = new DataType::Typedef(this, it.first);
+		type->setId(startId);
+		type->setGhidraMapper(m_ghidraDataTypeMapper->m_typedefTypeMapper);
+		type->setRefType(DataType::GetUnit(getTypeById(it.second)));
+		m_items.insert(std::make_pair(startId, type));
+		startId++;
 	}
 }
 
@@ -66,15 +106,6 @@ void TypeManager::loadClasses() {
 
 void TypeManager::loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket) {
 	m_ghidraDataTypeMapper->load(dataPacket);
-}
-
-const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {
-	for (const auto& it : ghidraTypes) {
-		if (it.second->getId() == type->getId()) {
-			return it.first;
-		}
-	}
-	return getGhidraTypeName(getDefaultType());
 }
 
 DataType::Typedef* TypeManager::createTypedef(const std::string& name, const std::string& desc) {
@@ -154,6 +185,6 @@ Ghidra::Id TypeManager::getGhidraId(DataType::Type* type) {
 	}
 	
 	ObjectHash objHash;
-	objHash.addValue(getGhidraTypeName(type));
+	objHash.addValue(type->getName());
 	return objHash.getHash();
 }

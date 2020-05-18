@@ -1,9 +1,7 @@
 package sda.sync.mappers;
 
 import ghidra.program.model.data.DataType;
-import ghidra.program.model.data.DataTypeManager;
 import ghidra.program.model.data.TypeDef;
-import ghidra.program.model.data.TypedefDataType;
 import sda.Sda;
 import sda.ghidra.datatype.SDataTypeTypedef;
 import sda.ghidra.packet.SDataFullSyncPacket;
@@ -24,23 +22,23 @@ public class TypedefTypeMapper implements IMapper {
     public void load(SDataFullSyncPacket dataPacket) {
         for(SDataTypeTypedef typedefDesc : dataPacket.getTypedefs()) {
             DataType type = dataTypeMapper.findDataTypeByGhidraId(typedefDesc.getType().getId());
-            changeTypedefByDesc((TypedefDataType)type, typedefDesc);
+            changeTypedefByDesc((TypeDef)type, typedefDesc);
         }
     }
 
-    public void upsert(SyncContext ctx, TypedefDataType type) {
+    public void upsert(SyncContext ctx, TypeDef type) {
         ctx.dataPacket.getTypedefs().add(buildDesc(type));
         dataTypeMapper.upsert(ctx, type);
     }
 
-    private SDataTypeTypedef buildDesc(TypedefDataType typeDef) {
+    private SDataTypeTypedef buildDesc(TypeDef typeDef) {
         SDataTypeTypedef typedefDesc = new SDataTypeTypedef();
         typedefDesc.setType(dataTypeMapper.buildDesc(typeDef));
         typedefDesc.setRefType(dataTypeMapper.buildTypeUnitDesc(typeDef.getDataType()));
         return typedefDesc;
     }
 
-    private void changeTypedefByDesc(TypedefDataType typeDef, SDataTypeTypedef typedefDesc) {
+    private void changeTypedefByDesc(TypeDef typeDef, SDataTypeTypedef typedefDesc) {
         dataTypeMapper.changeTypeByDesc(typeDef, typedefDesc.getType());
         //typeDef.dataTypeReplaced(typeDef.getDataType(), dataTypeMapper.getTypeByDesc(typedefDesc.getRefType()));
     }

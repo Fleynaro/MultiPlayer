@@ -11,7 +11,11 @@ ClassTypeMapper::ClassTypeMapper(StructureTypeMapper* structTypeMapper)
 void ClassTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	for (auto classDesc : dataPacket->classes) {
 		auto type = m_structTypeMapper->m_dataTypeMapper->m_typeManager->getTypeByGhidraId(classDesc.structType.type.id);
-		changeClassByDesc(static_cast<DataType::Class*>(type), classDesc);
+		if (type == nullptr)
+			throw std::exception("item not found");
+		if (auto Class = dynamic_cast<DataType::Class*>(type)) {
+			changeClassByDesc(Class, classDesc);
+		}
 	}
 }
 

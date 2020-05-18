@@ -14,6 +14,8 @@ void AbstractItemManager::onChangeBeforeCommit(DB::IDomainObject* obj, ChangeTyp
 	switch (type)
 	{
 	case Inserted:
+		if (m_items.find(obj->getId()) != m_items.end())
+			throw std::exception("item has been already in the manager");
 		m_items.insert(std::make_pair(obj->getId(), obj));
 		break;
 	case Removed:

@@ -9,9 +9,9 @@ TEST(DataType, Parsing)
     ASSERT_EQ(DataType::GetPointerLevelStr(DataType::GetUnit(new DataType::Float, "(**[10][5])*")), "[1][10][5][1][1]");
 }
 
-class ProgramModuleFixture : public ::testing::Test {
+class ProgramModuleFixtureBase {
 public:
-    ProgramModuleFixture(bool isClear = false) {
+    ProgramModuleFixtureBase(bool isClear = false) {
         if (isClear) {
             clear();
         }
@@ -29,8 +29,8 @@ public:
         m_programModule->getFunctionTagManager()->calculateAllTags();
     }
 
-    ~ProgramModuleFixture() {
-        if(m_programModule != nullptr)
+    ~ProgramModuleFixtureBase() {
+        if (m_programModule != nullptr)
             delete m_programModule;
     }
 
@@ -49,6 +49,17 @@ public:
     }
 
     CE::ProgramModule* m_programModule;
+};
+
+class ProgramModuleFixture : public ProgramModuleFixtureBase, public ::testing::Test {
+public:
+    ProgramModuleFixture(bool isClear = false)
+        : ProgramModuleFixtureBase(isClear)
+    {}
+
+    ~ProgramModuleFixture() {
+
+    }
 };
 
 class ProgramModuleFixtureStart : public ProgramModuleFixture {
@@ -488,22 +499,47 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
     auto sync = m_programModule->getGhidraSync();
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
+    bool someGhidraSyncError = false;
 
-    SyncCommitment SyncCommitment(sync);
+    //download
+    {
+        try {
+            Transport tr(sync->getClient());
+            packet::SDataFullSyncPacket dataPacket;
+            sync->getDataSyncPacketManagerServiceClient()->recieveFullSyncPacket(dataPacket);
 
-    auto function = funcManager->getFunctionAt(&setRot);
-    ASSERT_NE(function, nullptr);
-    SyncCommitment.upsert(function);
-
-    auto type = typeManager->getTypeByName("Screen");
-    if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
-        SyncCommitment.upsert(screen);
+            typeManager->loadTypesFrom(&dataPacket);
+            funcManager->loadFunctionsFrom(&dataPacket);
+        }
+        catch (std::exception ex) {
+            someGhidraSyncError = true;
+            printf(ex.what());
+        }
     }
 
-    try {
-        SyncCommitment.commit();
+    //upload
+    {
+        SyncCommitment SyncCommitment(sync);
+
+        auto function = funcManager->getFunctionAt(&setRot);
+        ASSERT_NE(function, nullptr);
+        SyncCommitment.upsert(function);
+
+        auto type = typeManager->getTypeByName("Screen");
+        if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
+            SyncCommitment.upsert(screen);
+        }
+
+        try {
+            SyncCommitment.commit();
+        }
+        catch (std::exception ex) {
+            someGhidraSyncError = true;
+            printf(ex.what());
+        }
     }
-    catch (std::exception) {
+
+    if (someGhidraSyncError) {
         printf("\n*****************\nGhidra not started!!! Impossible to send data packet.\n*****************\n");
     }
 }
@@ -513,6 +549,30 @@ TEST_F(ProgramModuleFixture, Test_RemoveDB)
     //remove test database
     //clear();
 }
+
+void executeCode() {
+    /*using namespace Ghidra;
+    auto m_programModule = (new ProgramModuleFixtureBase)->m_programModule;
+    auto sync = m_programModule->getGhidraSync();
+    auto typeManager = m_programModule->getTypeManager();
+    auto funcManager = m_programModule->getFunctionManager();
+    
+    Transport tr(sync->getClient());
+    packet::SDataFullSyncPacket dataPacket;
+    sync->getDataSyncPacketManagerServiceClient()->recieveFullSyncPacket(dataPacket);
+
+    typeManager->loadTypesFrom(&dataPacket);
+    funcManager->loadFunctionsFrom(&dataPacket);*/
+}
+
+
+
+
+
+
+
+
+
 
 class SomeClass
 {
@@ -567,6 +627,8 @@ int sumArray(arrType arr[3][2], char* str)
 
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
+
+    executeCode();
 
     Hook::init();
     SetConsoleCP(1251);

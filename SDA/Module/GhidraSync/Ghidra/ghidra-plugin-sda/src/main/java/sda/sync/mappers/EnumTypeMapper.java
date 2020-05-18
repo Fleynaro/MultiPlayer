@@ -1,7 +1,6 @@
 package sda.sync.mappers;
 
 import ghidra.program.model.data.DataType;
-import ghidra.program.model.data.EnumDataType;
 import sda.Sda;
 import sda.ghidra.datatype.SDataTypeEnum;
 import sda.ghidra.datatype.SDataTypeEnumField;
@@ -10,7 +9,6 @@ import sda.sync.IMapper;
 import sda.sync.SyncContext;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class EnumTypeMapper implements IMapper {
 
@@ -26,39 +24,39 @@ public class EnumTypeMapper implements IMapper {
     public void load(SDataFullSyncPacket dataPacket) {
         for(SDataTypeEnum enumDesc : dataPacket.getEnums()) {
             DataType type = dataTypeMapper.findDataTypeByGhidraId(enumDesc.getType().getId());
-            changeEnumByDesc((EnumDataType)type, enumDesc);
+            changeEnumByDesc((ghidra.program.model.data.Enum)type, enumDesc);
         }
     }
 
-    public void upsert(SyncContext ctx, EnumDataType type) {
+    public void upsert(SyncContext ctx, ghidra.program.model.data.Enum type) {
         ctx.dataPacket.getEnums().add(buildDesc(type));
         dataTypeMapper.upsert(ctx, type);
     }
 
-    private SDataTypeEnum buildDesc(EnumDataType Enum) {
+    private SDataTypeEnum buildDesc(ghidra.program.model.data.Enum enumeration) {
         SDataTypeEnum enumDesc = new SDataTypeEnum();
-        enumDesc.setType(dataTypeMapper.buildDesc(Enum));
+        enumDesc.setType(dataTypeMapper.buildDesc(enumeration));
 
-        String[] fields = Enum.getNames();
+        String[] fields = enumeration.getNames();
         enumDesc.setFields(new ArrayList<>());
         for(String fieldName : fields) {
             SDataTypeEnumField enumField = new SDataTypeEnumField();
             enumField.setName(fieldName);
-            enumField.setValue((int)Enum.getValue(fieldName));
+            enumField.setValue((int)enumeration.getValue(fieldName));
             enumDesc.addToFields(enumField);
         }
         return enumDesc;
     }
 
-    private void changeEnumByDesc(EnumDataType Enum, SDataTypeEnum enumDesc) {
-        dataTypeMapper.changeTypeByDesc(Enum, enumDesc.getType());
+    private void changeEnumByDesc(ghidra.program.model.data.Enum enumeration, SDataTypeEnum enumDesc) {
+        dataTypeMapper.changeTypeByDesc(enumeration, enumDesc.getType());
 
-        for(String fieldName : Enum.getNames()) {
-            Enum.remove(fieldName);
+        for(String fieldName : enumeration.getNames()) {
+            enumeration.remove(fieldName);
         }
 
         for(SDataTypeEnumField field : enumDesc.getFields()) {
-            Enum.add(field.getName(), field.getValue());
+            enumeration.add(field.getName(), field.getValue());
         }
     }
 }
