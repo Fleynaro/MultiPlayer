@@ -17,35 +17,56 @@ DataTypeMapper::DataTypeMapper(CE::TypeManager* typeManager)
 	m_typedefTypeMapper = new TypedefTypeMapper(this);
 }
 
-void DataTypeMapper::load(packet::SDataLightSyncPacket* dataPacket) {
-	for (auto typeDesc : dataPacket->types) {
-		auto type = m_typeManager->getTypeByGhidraId(typeDesc.id);
-		if (type != nullptr)
-			continue;
-
-		switch (typeDesc.group)
-		{
-			case DataTypeGroup::Typedef:
-				m_typeManager->createTypedef(typeDesc.name, typeDesc.comment);
-				break;
-			case DataTypeGroup::Enum:
-				m_typeManager->createEnum(typeDesc.name, typeDesc.comment);
-				break;
-			case DataTypeGroup::Structure:
-				m_typeManager->createStructure(typeDesc.name, typeDesc.comment);
-				break;
-			case DataTypeGroup::Class:
-				m_typeManager->createClass(typeDesc.name, typeDesc.comment);
-				break;
-		}
+void DataTypeMapper::createTypeByDescIfNotExists(const datatype::SDataType& typeDesc)
+{
+	auto type = m_typeManager->getTypeByGhidraId(typeDesc.id);
+	if (type == nullptr) {
+		createTypeByDesc(typeDesc);
 	}
 }
 
+DataType::UserType* DataTypeMapper::createTypeByDesc(const datatype::SDataType& typeDesc)
+{
+	DataType::UserType* userType = nullptr;
+	switch (typeDesc.group)
+	{
+	case DataTypeGroup::Typedef:
+		userType = m_typeManager->createTypedef(typeDesc.name, typeDesc.comment);
+		break;
+	case DataTypeGroup::Enum:
+		userType = m_typeManager->createEnum(typeDesc.name, typeDesc.comment);
+		break;
+	case DataTypeGroup::Structure:
+		userType = m_typeManager->createStructure(typeDesc.name, typeDesc.comment);
+		break;
+	case DataTypeGroup::Class:
+		userType = m_typeManager->createClass(typeDesc.name, typeDesc.comment);
+		break;
+	}
+	return userType;
+}
+
 void DataTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
+	for (auto it : dataPacket->typedefs) {
+		createTypeByDescIfNotExists(it.type);
+	}
+	
+	for (auto it : dataPacket->enums) {
+		createTypeByDescIfNotExists(it.type);
+	}
+
+	for (auto it : dataPacket->structures) {
+		createTypeByDescIfNotExists(it.type);
+	}
+
+	for (auto it : dataPacket->classes) {
+		createTypeByDescIfNotExists(it.structType.type);
+	}
+
+	m_typedefTypeMapper->load(dataPacket);
 	m_enumTypeMapper->load(dataPacket);
 	m_structureTypeMapper->load(dataPacket);
 	m_classTypeMapper->load(dataPacket);
-	m_typedefTypeMapper->load(dataPacket);
 }
 
 void markObjectAsSynced(SyncContext* ctx, DataType::UserType* type) {

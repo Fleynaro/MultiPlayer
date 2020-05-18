@@ -92,6 +92,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -117,11 +118,16 @@
     <property name="MemberChooser.sorted" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/lib/tomcat-embed-core-8.5.46.jar!/" />
-    <property name="project.structure.last.edited" value="Modules" />
+    <property name="last_opened_file_path" value="R:/Program Files (x86)/Ghidra/ghidra_9.1_PUBLIC/Ghidra/Framework/SoftwareModeling/lib/SoftwareModeling-src.zip!/" />
+    <property name="project.structure.last.edited" value="SDKs" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="sda.sync.mappers" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -294,6 +300,10 @@
       <workItem from="1581192417400" duration="25000" />
       <workItem from="1585420065031" duration="225000" />
       <workItem from="1586089958814" duration="40000" />
+      <workItem from="1589742576293" duration="19000" />
+      <workItem from="1589742629460" duration="1212000" />
+      <workItem from="1589774333446" duration="4052000" />
+      <workItem from="1589784609064" duration="9804000" />
     </task>
     <servers />
   </component>

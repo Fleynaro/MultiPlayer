@@ -1,27 +1,30 @@
 package sda;
 
+import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Program;
 import sda.ghidra.Server;
-import sda.managers.DataTypeManager;
-import sda.managers.FunctionManager;
 
 public class Sda {
+    public static String dataTypeCategory = "SDA";
+
     private Program program;
-    private DataTypeManager dataTypeManager;
-    private FunctionManager functionManager;
 
     Sda(Program program)
     {
         this.program = program;
-        this.dataTypeManager = new DataTypeManager(this);
-        this.functionManager = new FunctionManager(this);
+
     }
 
-    public DataTypeManager getDataTypeManager() {
-        return dataTypeManager;
+    private long getBaseAddress() {
+        return getProgram().getAddressMap().getImageBase().getOffset();
     }
-    public FunctionManager getFunctionManager() {
-        return functionManager;
+
+    public long getOffsetByAddress(Address address) {
+        return address.getOffset() - getBaseAddress();
+    }
+
+    public Address getAddressByOffset(long offset) {
+        return getProgram().getAddressMap().getImageBase().getNewAddress(getBaseAddress() + offset);
     }
 
     public Program getProgram() {

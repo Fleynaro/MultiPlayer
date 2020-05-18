@@ -67,7 +67,7 @@ namespace CE
 
 		void loadClasses();
 
-		void loadTypesFrom(ghidra::packet::SDataLightSyncPacket* dataLightPacket, ghidra::packet::SDataFullSyncPacket* dataFullPacket);
+		void loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
 		const std::string& getGhidraTypeName(DataType::Type* type);
 

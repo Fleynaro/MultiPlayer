@@ -64,9 +64,8 @@ void TypeManager::loadClasses() {
 	m_dataTypeMapper->loadStructsAndClasses();
 }
 
-void TypeManager::loadTypesFrom(ghidra::packet::SDataLightSyncPacket* dataLightPacket, ghidra::packet::SDataFullSyncPacket* dataFullPacket) {
-	m_ghidraDataTypeMapper->load(dataLightPacket);
-	m_ghidraDataTypeMapper->load(dataFullPacket);
+void TypeManager::loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket) {
+	m_ghidraDataTypeMapper->load(dataPacket);
 }
 
 const std::string& TypeManager::getGhidraTypeName(DataType::Type* type) {

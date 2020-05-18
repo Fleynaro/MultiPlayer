@@ -27,8 +27,6 @@ namespace CE::Ghidra
 
 		DataTypeMapper(CE::TypeManager* typeManager);
 
-		void load(packet::SDataLightSyncPacket* dataPacket) override;
-
 		void load(packet::SDataFullSyncPacket* dataPacket) override;
 
 		void upsert(SyncContext* ctx, IObject* obj) override;
@@ -44,5 +42,10 @@ namespace CE::Ghidra
 		DataTypePtr getTypeByDesc(const shared::STypeUnit& typeUnitDesc);
 
 		void changeUserTypeByDesc(DataType::UserType* type, const datatype::SDataType& typeDesc);
+
+	private:
+		void createTypeByDescIfNotExists(const datatype::SDataType& typeDesc);
+
+		DataType::UserType* createTypeByDesc(const datatype::SDataType& typeDesc);
 	};
 };

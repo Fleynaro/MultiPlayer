@@ -17,7 +17,6 @@ namespace CE::Ghidra
 	class IMapper
 	{
 	public:
-		virtual void load(packet::SDataLightSyncPacket* dataPacket) {}
 		virtual void load(packet::SDataFullSyncPacket* dataPacket) = 0;
 		virtual void upsert(SyncContext* ctx, IObject* obj) = 0;
 		virtual void remove(SyncContext* ctx, IObject* obj) = 0;

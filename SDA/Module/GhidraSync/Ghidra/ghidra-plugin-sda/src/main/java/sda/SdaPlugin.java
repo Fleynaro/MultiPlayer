@@ -54,8 +54,7 @@ public class SdaPlugin extends ProgramPlugin {
 
 
         if(false) {
-            List<SDataTypeStructure> structs = sda.getDataTypeManager().getAllStructures(Collections.<Long, Long>emptyMap());
-            List<SDataTypeEnum> enums = sda.getDataTypeManager().getAllEnums(Collections.<Long, Long>emptyMap());
+
             int a = 5;
         }
 
@@ -79,17 +78,6 @@ public class SdaPlugin extends ProgramPlugin {
 
             Pointer ptr2 = new PointerDataType(new PointerDataType(tt1, program.getDataTypeManager()), program.getDataTypeManager());
             Long val4 = ptr2.getUniversalID().getValue();*/
-        }
-
-        if(false)
-        {
-            SDataType type = new SDataType();
-            type.setId(1);
-            type.setGroup(DataTypeGroup.Structure);
-            type.setSize(20);
-            type.setDesc("Entity is a base class");
-            type.setName("Entity");
-            //sda.getDataTypeManager().create_commit(Collections.singletonList(type));
         }
 
         DebugConsole.info(this, ">>> " + "getFunctionCount() = " + " " + program.getFunctionManager().getFunctionCount());
