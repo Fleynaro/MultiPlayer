@@ -141,7 +141,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.ghidra-plugin-sda [buildExtension]">
+  <component name="RunManager" selected="Remote.Debug">
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
       <Host>localhost</Host>
       <Port>5050</Port>
@@ -305,6 +305,7 @@
       <workItem from="1589774333446" duration="4052000" />
       <workItem from="1589784609064" duration="9804000" />
       <workItem from="1589805523466" duration="5720000" />
+      <workItem from="1589899316171" duration="3055000" />
     </task>
     <servers />
   </component>
@@ -337,19 +338,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/ghidra/DataSyncPacketManagerServiceImpl.java</url>
-          <line>27</line>
-          <option name="timeStamp" value="3" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/ghidra/DataSyncPacketManagerServiceImpl.java</url>
-          <line>32</line>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/SdaPlugin.java</url>
-          <line>49</line>
-          <option name="timeStamp" value="5" />
+          <url>file://$PROJECT_DIR$/src/main/java/sda/sync/mappers/StructureTypeMapper.java</url>
+          <line>55</line>
+          <option name="timeStamp" value="13" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

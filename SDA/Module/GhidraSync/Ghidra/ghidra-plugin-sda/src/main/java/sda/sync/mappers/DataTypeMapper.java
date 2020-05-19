@@ -13,6 +13,7 @@ import sda.sync.SyncContext;
 import sda.util.ObjectHash;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class DataTypeMapper implements IMapper {
@@ -113,23 +114,42 @@ public class DataTypeMapper implements IMapper {
         } catch (DuplicateNameException e) {
             e.printStackTrace();
         }
-        dataType.setDescription(typeDesc.getComment());
+
+        try {
+            dataType.setDescription(typeDesc.getComment());
+        } catch (UnsupportedOperationException e) {
+            e.printStackTrace();
+        }
     }
 
     public DataType findDataTypeByGhidraId(long id) {
-        CategoryPath[] cats = {
+        CategoryPath[] catPaths = {
                 new CategoryPath("/"),
                 new CategoryPath("/" + Sda.dataTypeCategory)
         };
-        for(CategoryPath cat : cats)
+        for(CategoryPath catPath : catPaths)
         {
-            DataType[] types = dataTypeManager.getCategory(cat).getDataTypes();
+            Category cat = dataTypeManager.getCategory(catPath);
+            if(cat == null)
+                continue;
+
+            DataType[] types = cat.getDataTypes();
             for (DataType type : types) {
                 if(type instanceof Pointer || type instanceof Array)
                     continue;
                 if (getGhidraId(type) == id) {
                     return type;
                 }
+            }
+        }
+        //???
+        Iterator<DataType> dataTypes = sda.getProgram().getDataTypeManager().getAllDataTypes();
+        while(dataTypes.hasNext()) {
+            DataType dataType = dataTypes.next();
+            if(dataType instanceof Pointer || dataType instanceof Array)
+                continue;
+            if (getGhidraId(dataType) == id) {
+                return dataType;
             }
         }
         return null;
@@ -158,7 +178,12 @@ public class DataTypeMapper implements IMapper {
                 type = new StructureDataType(cat, typeDesc.getName(), typeDesc.getSize(), dataTypeManager);
                 break;
         }
-        type.setDescription(typeDesc.getComment());
+
+        try {
+            type.setDescription(typeDesc.getComment());
+        } catch (UnsupportedOperationException e) {
+            e.printStackTrace();
+        }
         return type;
     }
 

@@ -500,20 +500,44 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
     bool someGhidraSyncError = false;
+    DataType::Structure* screen2d_vtable = nullptr;
 
     //download
     {
+        packet::SDataFullSyncPacket dataPacket;
         try {
             Transport tr(sync->getClient());
-            packet::SDataFullSyncPacket dataPacket;
             sync->getDataSyncPacketManagerServiceClient()->recieveFullSyncPacket(dataPacket);
-
-            typeManager->loadTypesFrom(&dataPacket);
-            funcManager->loadFunctionsFrom(&dataPacket);
         }
         catch (std::exception ex) {
             someGhidraSyncError = true;
             printf(ex.what());
+        }
+
+        ASSERT_GT(dataPacket.typedefs.size(), 0);
+        ASSERT_GT(dataPacket.structures.size(), 0);
+        ASSERT_GT(dataPacket.functions.size(), 0);
+
+        typeManager->loadTypesFrom(&dataPacket);
+        funcManager->loadFunctionsFrom(&dataPacket);
+
+        auto type = typeManager->getTypeByName("Screen2D");
+        if (type != nullptr) {
+            int runCode = rand();
+            printf("<<< Run code = %i >>>", runCode);
+
+            ASSERT_EQ(type->getSize(), 0x10);
+            if (auto screen2d = dynamic_cast<DataType::Structure*>(type)) {
+                ASSERT_EQ(screen2d->getFields().size(), 3);
+
+                auto vtable = screen2d->getFields().begin()->second;
+                ASSERT_EQ(vtable->getName(), "vtable");
+                if (screen2d_vtable = dynamic_cast<DataType::Structure*>(vtable->getType()->getType())) {
+                    ASSERT_EQ(screen2d_vtable->getSize(), 0x10);
+                    auto vfunc1 = screen2d_vtable->getFields().begin()->second;
+                    vfunc1->setComment("runCode = " + std::to_string(runCode));
+                }
+            }
         }
     }
 
@@ -521,13 +545,19 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
     {
         SyncCommitment SyncCommitment(sync);
 
-        auto function = funcManager->getFunctionAt(&setRot);
-        ASSERT_NE(function, nullptr);
-        SyncCommitment.upsert(function);
+        if (screen2d_vtable != nullptr) {
+            SyncCommitment.upsert(screen2d_vtable);
+        }
 
-        auto type = typeManager->getTypeByName("Screen");
-        if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
-            SyncCommitment.upsert(screen);
+        if (false) {
+            auto function = funcManager->getFunctionAt(&setRot);
+            ASSERT_NE(function, nullptr);
+            SyncCommitment.upsert(function);
+
+            auto type = typeManager->getTypeByName("Screen");
+            if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
+                SyncCommitment.upsert(screen);
+            }
         }
 
         try {

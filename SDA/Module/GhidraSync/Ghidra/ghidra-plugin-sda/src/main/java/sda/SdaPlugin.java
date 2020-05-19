@@ -52,6 +52,9 @@ public class SdaPlugin extends ProgramPlugin {
         server = new Server(sda, 9090);
         server.start();
 
+        if(true)
+            return;
+
         if(false) {
             int id = program.startTransaction("SDA: change enums");
             int id2 = program.startTransaction("SDA: change enums2");
