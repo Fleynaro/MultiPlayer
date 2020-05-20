@@ -118,7 +118,7 @@
     <property name="MemberChooser.sorted" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="D:/Ghidra/ghidra_9.1.2_PUBLIC/Ghidra/Framework/SoftwareModeling/lib/SoftwareModeling-src.zip!/" />
+    <property name="last_opened_file_path" value="R:/Program Files (x86)/Ghidra/ghidra_9.1_PUBLIC/Ghidra/Framework/SoftwareModeling/lib/SoftwareModeling-src.zip!/" />
     <property name="project.structure.last.edited" value="SDKs" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
@@ -126,6 +126,7 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="sda.sync" />
       <recent name="sda.sync.mappers" />
     </key>
   </component>
@@ -308,6 +309,7 @@
       <workItem from="1589899316171" duration="3103000" />
       <workItem from="1589950347046" duration="4485000" />
       <workItem from="1589959218796" duration="245000" />
+      <workItem from="1589989259393" duration="10265000" />
     </task>
     <servers />
   </component>
@@ -340,29 +342,19 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/sync/mappers/StructureTypeMapper.java</url>
-          <line>55</line>
-          <option name="timeStamp" value="13" />
+          <url>file://$PROJECT_DIR$/src/main/java/sda/sync/Sync.java</url>
+          <line>33</line>
+          <option name="timeStamp" value="30" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/sda/SdaPlugin.java</url>
-          <line>92</line>
-          <option name="timeStamp" value="14" />
+          <line>104</line>
+          <option name="timeStamp" value="32" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/sda/SdaPlugin.java</url>
-          <line>111</line>
-          <option name="timeStamp" value="15" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/SdaPlugin.java</url>
-          <line>60</line>
-          <option name="timeStamp" value="16" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/SdaPlugin.java</url>
-          <line>82</line>
-          <option name="timeStamp" value="21" />
+          <line>112</line>
+          <option name="timeStamp" value="33" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

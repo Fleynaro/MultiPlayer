@@ -59,10 +59,12 @@ void TypeManager::addGhidraTypedefs() {
 		std::make_pair("void", DataType::SystemType::Void),
 		std::make_pair("unicode", DataType::SystemType::Void),
 		std::make_pair("string", DataType::SystemType::Void),
+		std::make_pair("IMAGE_RICH_HEADER", DataType::SystemType::Void),
 
 		std::make_pair("uchar", DataType::SystemType::Byte),
 		std::make_pair("uint8_t", DataType::SystemType::Byte),
 		std::make_pair("undefined1", DataType::SystemType::Int8),
+		std::make_pair("TerminatedCString", DataType::SystemType::Char),
 
 		std::make_pair("short", DataType::SystemType::Int16),
 		std::make_pair("ushort", DataType::SystemType::UInt16),

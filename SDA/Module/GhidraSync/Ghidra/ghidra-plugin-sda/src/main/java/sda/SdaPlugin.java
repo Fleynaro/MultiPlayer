@@ -85,6 +85,33 @@ public class SdaPlugin extends ProgramPlugin {
                     }
                 }
             }
+
+            //built in types
+            if(true) {
+                List<DataType> types = new ArrayList<>();
+                Iterator<DataType> dataTypes = program.getDataTypeManager().getAllDataTypes();
+                while(dataTypes.hasNext()) {
+                    DataType dataType = dataTypes.next();
+                    if(dataType instanceof BuiltIn) {
+                        types.add(dataType);
+                    }
+                }
+
+                types.size();
+            }
+
+            //global vars
+            if(true) {
+                List<Data> gvars = new ArrayList<>();
+                Iterator<Data> it = program.getListing().getDefinedData(true);
+                while(it.hasNext()) {
+                    Data data = it.next();
+
+                    gvars.add(data);
+                }
+
+                gvars.size();
+            }
         }
 
 

@@ -22,7 +22,7 @@ void ClassTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 void ClassTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
 	auto type = static_cast<DataType::Class*>(obj);
 	ctx->m_dataPacket->classes.push_back(buildDesc(type));
-	m_structTypeMapper->upsert(ctx, obj);
+	m_structTypeMapper->m_dataTypeMapper->upsert(ctx, obj);
 }
 
 void ClassTypeMapper::remove(SyncContext* ctx, IObject* obj) {

@@ -537,8 +537,14 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
                 ASSERT_EQ(vtable->getName(), "vtable");
                 if (screen2d_vtable = dynamic_cast<DataType::Structure*>(vtable->getType()->getType())) {
                     ASSERT_EQ(screen2d_vtable->getSize(), 0x10);
-                    auto vfunc1 = screen2d_vtable->getFields().begin()->second;
+                    auto it = screen2d_vtable->getFields().begin();
+                    auto vfunc1 = it->second;
                     vfunc1->setComment("runCode = " + std::to_string(runCode));
+                    it++;
+                    if (auto vfunc2 = dynamic_cast<DataType::Signature*>(it->second->getType()->getType())) {
+                        ASSERT_EQ(vfunc2->getArguments().size(), 1);
+                        ASSERT_EQ(vfunc2->getArguments()[0].second->getType(), screen2d);
+                    }
                 }
             }
         }
@@ -552,13 +558,10 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
             SyncCommitment.upsert(screen2d_vtable);
         }
 
-        if (false) {
-            auto function = funcManager->getFunctionAt(&setRot);
-            ASSERT_NE(function, nullptr);
-            SyncCommitment.upsert(function);
-
-            auto type = typeManager->getTypeByName("Screen");
-            if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
+        //class
+        {
+            auto type = typeManager->getTypeByName("Entity");
+            if (auto screen = dynamic_cast<DataType::Class*>(type)) {
                 SyncCommitment.upsert(screen);
             }
         }

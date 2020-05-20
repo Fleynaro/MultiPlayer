@@ -10,17 +10,16 @@ import ghidra.program.model.symbol.SourceType;
 import ghidra.util.exception.DuplicateNameException;
 import ghidra.util.exception.InvalidInputException;
 import sda.Sda;
+import sda.ghidra.datatype.SFunctionArgument;
 import sda.ghidra.function.SFunction;
 import sda.ghidra.function.SFunctionRange;
-import sda.ghidra.function.SFunctionSignature;
 import sda.ghidra.packet.SDataFullSyncPacket;
-import sda.sync.IMapper;
+import sda.sync.IBaseMapper;
 import sda.sync.SyncContext;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class FunctionMapper implements IMapper {
+public class FunctionMapper implements IBaseMapper {
     private Sda sda;
     public FunctionManager functionManager;
     private DataTypeMapper dataTypeMapper;
@@ -32,7 +31,17 @@ public class FunctionMapper implements IMapper {
     }
 
     @Override
-    public void load(SDataFullSyncPacket dataPacket) {
+    public void loadToRemove(SDataFullSyncPacket dataPacket) {
+        for(Long id : dataPacket.removed_functions) {
+            Function function = findFunctionByGhidraId(id);
+            if(function != null) {
+                functionManager.removeFunction(function.getEntryPoint());
+            }
+        }
+    }
+
+    @Override
+    public void loadToCreate(SDataFullSyncPacket dataPacket) {
         for (SFunction funcDesc : dataPacket.functions) {
             Function function = findFunctionByGhidraId(funcDesc.getId());
             if(function == null) {
@@ -44,13 +53,15 @@ public class FunctionMapper implements IMapper {
                 } catch (OverlappingFunctionException e) {
                     e.printStackTrace();
                 }
-            } else {
-                if(funcDesc.getName().equals("{remove}")) {
-                    functionManager.removeFunction(function.getEntryPoint());
-                    continue;
-                }
-                changeFunctionByDescGenerally(function, funcDesc);
             }
+        }
+    }
+
+    @Override
+    public void load(SDataFullSyncPacket dataPacket) {
+        for (SFunction funcDesc : dataPacket.functions) {
+            Function function = findFunctionByGhidraId(funcDesc.getId());
+            changeFunctionByDescGenerally(function, funcDesc);
             changeFunctionByDescDeeply(function, funcDesc);
         }
     }
@@ -77,11 +88,12 @@ public class FunctionMapper implements IMapper {
 
     private void changeFunctionByDescDeeply(Function function, SFunction funcDesc) {
         try {
-            Parameter[] parameters = new Parameter[funcDesc.getSignature().getArgumentsSize()];
+            Parameter[] parameters = new Parameter[funcDesc.getSignature().getArguments().size()];
             for(int i = 0; i < parameters.length; i ++) {
+                SFunctionArgument argument = funcDesc.getSignature().getArguments().get(i);
                 parameters[i] = new ParameterImpl(
-                        funcDesc.getArgumentNames().get(i),
-                        dataTypeMapper.getTypeByDesc(funcDesc.getSignature().getArguments().get(i)),
+                        argument.getName(),
+                        dataTypeMapper.getTypeByDesc(argument.getType()),
                         sda.getProgram()
                 );
             }
@@ -108,16 +120,7 @@ public class FunctionMapper implements IMapper {
         funcDesc.setId(getGhidraId(function));
         funcDesc.setName(function.getName());
         funcDesc.setComment(function.getComment() != null ? function.getComment() : "");
-        funcDesc.setArgumentNames(new ArrayList<>());
-
-        SFunctionSignature signature = new SFunctionSignature();
-        signature.setReturnType(dataTypeMapper.buildTypeUnitDesc(function.getReturnType()));
-        signature.setArguments(new ArrayList<>());
-        for(Parameter parameter : function.getParameters()) {
-            signature.addToArguments(dataTypeMapper.buildTypeUnitDesc(parameter.getDataType()));
-            funcDesc.addToArgumentNames(parameter.getName());
-        }
-        funcDesc.setSignature(signature);
+        funcDesc.setSignature(dataTypeMapper.signatureTypeMapper.buildDesc(function.getSignature()));
 
         AddressRangeIterator ranges = function.getBody().getAddressRanges();
         while (ranges.hasNext()) {

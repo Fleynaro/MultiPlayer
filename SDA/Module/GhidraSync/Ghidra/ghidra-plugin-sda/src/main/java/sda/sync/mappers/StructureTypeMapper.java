@@ -63,10 +63,8 @@ public class StructureTypeMapper implements IMapper {
 
         int byteCountToEnd = structDesc.getType().getSize() - structure.getLength();
         if(byteCountToEnd > 0) {
-            if(byteCountToEnd > 1) {
-                structure.add(new ArrayDataType(new Undefined1DataType(), byteCountToEnd - 1, 1), byteCountToEnd, "", "");
-            }
-            structure.add(new ByteDataType(), 1, "lastField", "end of the structure: not make this field as the undefined type");
+            ArrayDataType arrType = new ArrayDataType(new Undefined1DataType(dataTypeMapper.dataTypeManager), byteCountToEnd, 1, dataTypeMapper.dataTypeManager);
+            structure.add(arrType, byteCountToEnd, "reserved", "required to save the size of the structure");
         }
     }
 }

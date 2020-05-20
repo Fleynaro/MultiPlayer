@@ -4,11 +4,12 @@ import ghidra.program.model.data.*;
 import ghidra.program.model.data.Enum;
 import ghidra.util.InvalidNameException;
 import ghidra.util.exception.DuplicateNameException;
+import ghidra.util.task.TaskMonitorAdapter;
 import sda.Sda;
 import sda.ghidra.datatype.*;
 import sda.ghidra.packet.SDataFullSyncPacket;
 import sda.ghidra.shared.STypeUnit;
-import sda.sync.IMapper;
+import sda.sync.IBaseMapper;
 import sda.sync.SyncContext;
 import sda.util.ObjectHash;
 
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class DataTypeMapper implements IMapper {
+public class DataTypeMapper implements IBaseMapper {
 
     private Sda sda;
     public DataTypeManager dataTypeManager;
@@ -24,6 +25,7 @@ public class DataTypeMapper implements IMapper {
     public EnumTypeMapper enumTypeMapper;
     public StructureTypeMapper structureTypeMapper;
     public ClassTypeMapper classTypeMapper;
+    public SignatureTypeMapper signatureTypeMapper;
 
     public DataTypeMapper(Sda sda, DataTypeManager dataTypeManager) {
         this.sda = sda;
@@ -32,10 +34,22 @@ public class DataTypeMapper implements IMapper {
         enumTypeMapper = new EnumTypeMapper(sda, this);
         structureTypeMapper = new StructureTypeMapper(sda, this);
         classTypeMapper = new ClassTypeMapper(sda, structureTypeMapper);
+        signatureTypeMapper = new SignatureTypeMapper(sda, this);
+    }
+
+
+    @Override
+    public void loadToRemove(SDataFullSyncPacket dataPacket) {
+        for(Long id : dataPacket.removed_datatypes) {
+            DataType dataType = findDataTypeByGhidraId(id);
+            if(dataType != null) {
+                dataTypeManager.remove(dataType, new TaskMonitorAdapter(true));
+            }
+        }
     }
 
     @Override
-    public void load(SDataFullSyncPacket dataPacket) {
+    public void loadToCreate(SDataFullSyncPacket dataPacket) {
         for(SDataTypeTypedef typedef : dataPacket.typedefs) {
             createTypeByDescIfNotExist(typedef.type);
         }
@@ -52,10 +66,18 @@ public class DataTypeMapper implements IMapper {
             createTypeByDescIfNotExist(Class.structType.type);
         }
 
+        for(SDataTypeSignature signature : dataPacket.signatures) {
+            createTypeByDescIfNotExist(signature.type);
+        }
+    }
+
+    @Override
+    public void load(SDataFullSyncPacket dataPacket) {
         typedefTypeMapper.load(dataPacket);
         enumTypeMapper.load(dataPacket);
         structureTypeMapper.load(dataPacket);
         classTypeMapper.load(dataPacket);
+        signatureTypeMapper.load(dataPacket);
     }
 
     public void upsert(SyncContext ctx, DataType type) {
@@ -73,6 +95,8 @@ public class DataTypeMapper implements IMapper {
             typeDesc.setGroup(DataTypeGroup.Enum);
         } else if(dataType instanceof TypeDef) {
             typeDesc.setGroup(DataTypeGroup.Typedef);
+        } else if(dataType instanceof FunctionDefinition) {
+            typeDesc.setGroup(DataTypeGroup.Signature);
         }
 
         typeDesc.setComment(dataType.getDescription());
@@ -98,9 +122,9 @@ public class DataTypeMapper implements IMapper {
 
         for(short lvl : desc.getPointerLvls()) {
             if(lvl == 1) {
-                type = new PointerDataType(type);
+                type = new PointerDataType(type, dataTypeManager);
             } else {
-                type = new ArrayDataType(type, lvl, type.getLength());
+                type = new ArrayDataType(type, lvl, type.getLength(), dataTypeManager);
             }
         }
         return type;
@@ -123,26 +147,6 @@ public class DataTypeMapper implements IMapper {
     }
 
     public DataType findDataTypeByGhidraId(long id) {
-        CategoryPath[] catPaths = {
-                new CategoryPath("/"),
-                new CategoryPath("/" + Sda.dataTypeCategory)
-        };
-        for(CategoryPath catPath : catPaths)
-        {
-            Category cat = dataTypeManager.getCategory(catPath);
-            if(cat == null)
-                continue;
-
-            DataType[] types = cat.getDataTypes();
-            for (DataType type : types) {
-                if(type instanceof Pointer || type instanceof Array)
-                    continue;
-                if (getGhidraId(type) == id) {
-                    return type;
-                }
-            }
-        }
-        //???
         Iterator<DataType> dataTypes = sda.getProgram().getDataTypeManager().getAllDataTypes();
         while(dataTypes.hasNext()) {
             DataType dataType = dataTypes.next();
@@ -158,24 +162,36 @@ public class DataTypeMapper implements IMapper {
     private void createTypeByDescIfNotExist(SDataType typeDesc) {
         DataType type = findDataTypeByGhidraId(typeDesc.getId());
         if(type == null) {
-            createTypeByDesc(typeDesc);
+            dataTypeManager.addDataType(createTypeByDesc(typeDesc), DataTypeConflictHandler.REPLACE_HANDLER);
         }
     }
 
     private DataType createTypeByDesc(SDataType typeDesc) {
         DataType type = null;
-        CategoryPath cat = new CategoryPath("/" + Sda.dataTypeCategory);
+        Category cat = dataTypeManager.getRootCategory().getCategory(Sda.dataTypeCategory);
+        if(cat == null) {
+            try {
+                cat = dataTypeManager.getRootCategory().createCategory(Sda.dataTypeCategory);
+            } catch (InvalidNameException e) {
+                e.printStackTrace();
+            }
+        }
+
+        CategoryPath catPath = cat.getCategoryPath();
         switch(typeDesc.getGroup())
         {
             case Typedef:
-                type = new TypedefDataType(cat, typeDesc.getName(), new ByteDataType(), dataTypeManager);
+                type = new TypedefDataType(catPath, typeDesc.getName(), new ByteDataType(), dataTypeManager);
                 break;
             case Enum:
-                type = new EnumDataType(cat, typeDesc.getName(), typeDesc.getSize(), dataTypeManager);
+                type = new EnumDataType(catPath, typeDesc.getName(), typeDesc.getSize(), dataTypeManager);
                 break;
             case Structure:
             case Class:
-                type = new StructureDataType(cat, typeDesc.getName(), typeDesc.getSize(), dataTypeManager);
+                type = new StructureDataType(catPath, typeDesc.getName(), typeDesc.getSize(), dataTypeManager);
+                break;
+            case Signature:
+                type = new FunctionDefinitionDataType(catPath, typeDesc.getName(), dataTypeManager);
                 break;
         }
 
