@@ -45,6 +45,10 @@ public class FunctionMapper implements IMapper {
                     e.printStackTrace();
                 }
             } else {
+                if(funcDesc.getName().equals("{remove}")) {
+                    functionManager.removeFunction(function.getEntryPoint());
+                    continue;
+                }
                 changeFunctionByDescGenerally(function, funcDesc);
             }
             changeFunctionByDescDeeply(function, funcDesc);

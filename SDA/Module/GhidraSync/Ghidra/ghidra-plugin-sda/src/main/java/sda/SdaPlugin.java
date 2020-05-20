@@ -52,53 +52,43 @@ public class SdaPlugin extends ProgramPlugin {
         server = new Server(sda, 9090);
         server.start();
 
-        if(true)
-            return;
+        //test1(program);
 
-        if(false) {
-            int id = program.startTransaction("SDA: change enums");
-            int id2 = program.startTransaction("SDA: change enums2");
-            Structure tt1 = (Structure) program.getDataTypeManager().getDataType(new DataTypePath("/SDA", "Entity"));
-            program.endTransaction(id2, true);
-            tt1.add(new ArrayDataType(new ByteDataType(), 222, 1));
-            program.endTransaction(id, true);
+        //datatypes
+        {
+            //cats
+            if(true) {
+                Category root = program.getDataTypeManager().getRootCategory();
+                Category[] cats = root.getCategories();
 
-            /*DataType tt1_ = program.getDataTypeManager().findDataTypeForID(tt1.getUniversalID());
-            Long val1 = tt1.getUniversalID().getValue();
+                for (Category c : cats) {
+                    CategoryPath path = c.getCategoryPath();
+                    path.getPath();
+                    DataType[] types = c.getDataTypes();
+                    for (DataType type : types) {
 
-            DoubleDataType tt2 = new DoubleDataType(program.getDataTypeManager());
-            DataType tt2_ = program.getDataTypeManager().findDataTypeForID(tt1.getUniversalID());
-
-            Pointer ptr = new PointerDataType(tt1, program.getDataTypeManager());
-            Long val2 = ptr.getUniversalID().getValue();
-            Long val3 = ptr.getDataType().getUniversalID().getValue();
-
-            Pointer ptr2 = new PointerDataType(new PointerDataType(tt1, program.getDataTypeManager()), program.getDataTypeManager());
-            Long val4 = ptr2.getUniversalID().getValue();*/
-        }
-
-        DebugConsole.info(this, ">>> " + "getFunctionCount() = " + " " + program.getFunctionManager().getFunctionCount());
-
-        /*Integer count = 0;
-        Boolean isFirst = true;
-        FunctionIterator functions = program.getFunctionManager().getFunctions(true);
-        while (functions.hasNext()) {
-            Function func = functions.next();
-
-            if(func.getReturnType() instanceof FloatDataType) {
-                count++;
+                    }
+                }
             }
 
-            if(isFirst && func.getReturnType() instanceof PointerDataType) {
-                PointerDataType dataType = (PointerDataType)func.getReturnType();
-                if(dataType.getDataType() instanceof FloatDataType) {
-                    isFirst = false;
-                    DebugConsole.info(this, "for " + func.getName() + "> dataType.getDisplayName() = " + dataType.getDisplayName() + "("+ dataType.getName() +")");
+            //func decl
+            if(true) {
+                Iterator<DataType> dataTypes = program.getDataTypeManager().getAllDataTypes();
+                while(dataTypes.hasNext()) {
+                    DataType dataType = dataTypes.next();
+                    if(dataType instanceof FunctionDefinition) {
+                        FunctionDefinition def = (FunctionDefinition)dataType;
+                        if(def.getName().equals("ScreenVTable_zero")) {
+                            DataType retType = def.getReturnType();
+                            retType.getAlignment();
+                        }
+                    }
                 }
             }
         }
-        DebugConsole.info(this, ">>> " + "count = " + " " + count);*/
 
+
+        //functions
         {
             Address addr = program.getMinAddress();
             try {
@@ -111,10 +101,13 @@ public class SdaPlugin extends ProgramPlugin {
             FunctionIterator functions = program.getFunctionManager().getFunctions(true);
             while (functions.hasNext()) {
                 function = functions.next();
-                if(function.getName().equals("TASK_VEHICLE_TEMP_ACTION")) {
+                if(function.getName().equals("Screen3D_getVolume")) {
                    break;
                 }
             }
+
+            if(function == null)
+                return;
 
             FlatDecompilerAPI api = new FlatDecompilerAPI(new FlatProgramAPI(program));
             String code = "";
@@ -130,7 +123,9 @@ public class SdaPlugin extends ProgramPlugin {
             if(ret_type instanceof Pointer) {
                 DebugConsole.info(this, "this is a pointer!");
             }
-            if(false)
+
+            //tests
+            if(true)
             {
                 DebugConsole.info(this, "> tags:");
                 Set<FunctionTag> set = function.getTags();
@@ -139,7 +134,7 @@ public class SdaPlugin extends ProgramPlugin {
                 }
             }
 
-            if(false)
+            if(true)
             {
                 DebugConsole.info(this, "> vars:");
                 Variable[] vars = function.getAllVariables();
@@ -177,6 +172,7 @@ public class SdaPlugin extends ProgramPlugin {
                     String name = varnode.getHigh().getName();
                 }
             }
+
             if(false)
             {
                 DecompInterface decompiler = new DecompInterface();
@@ -246,6 +242,52 @@ public class SdaPlugin extends ProgramPlugin {
 
             DebugConsole.info(this, "function = " + function.getName());
         }
+    }
+
+    private void test1(Program program) {
+        if(false) {
+            int id = program.startTransaction("SDA: change enums");
+            int id2 = program.startTransaction("SDA: change enums2");
+            Structure tt1 = (Structure) program.getDataTypeManager().getDataType(new DataTypePath("/SDA", "Entity"));
+            program.endTransaction(id2, true);
+            tt1.add(new ArrayDataType(new ByteDataType(), 222, 1));
+            program.endTransaction(id, true);
+
+            /*DataType tt1_ = program.getDataTypeManager().findDataTypeForID(tt1.getUniversalID());
+            Long val1 = tt1.getUniversalID().getValue();
+
+            DoubleDataType tt2 = new DoubleDataType(program.getDataTypeManager());
+            DataType tt2_ = program.getDataTypeManager().findDataTypeForID(tt1.getUniversalID());
+
+            Pointer ptr = new PointerDataType(tt1, program.getDataTypeManager());
+            Long val2 = ptr.getUniversalID().getValue();
+            Long val3 = ptr.getDataType().getUniversalID().getValue();
+
+            Pointer ptr2 = new PointerDataType(new PointerDataType(tt1, program.getDataTypeManager()), program.getDataTypeManager());
+            Long val4 = ptr2.getUniversalID().getValue();*/
+        }
+
+        DebugConsole.info(this, ">>> " + "getFunctionCount() = " + " " + program.getFunctionManager().getFunctionCount());
+
+        /*Integer count = 0;
+        Boolean isFirst = true;
+        FunctionIterator functions = program.getFunctionManager().getFunctions(true);
+        while (functions.hasNext()) {
+            Function func = functions.next();
+
+            if(func.getReturnType() instanceof FloatDataType) {
+                count++;
+            }
+
+            if(isFirst && func.getReturnType() instanceof PointerDataType) {
+                PointerDataType dataType = (PointerDataType)func.getReturnType();
+                if(dataType.getDataType() instanceof FloatDataType) {
+                    isFirst = false;
+                    DebugConsole.info(this, "for " + func.getName() + "> dataType.getDisplayName() = " + dataType.getDisplayName() + "("+ dataType.getName() +")");
+                }
+            }
+        }
+        DebugConsole.info(this, ">>> " + "count = " + " " + count);*/
     }
 
     @Override

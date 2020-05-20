@@ -26,8 +26,10 @@ public class Sync {
     }
 
     public void loadDataFullSyncPacket(SDataFullSyncPacket dataPacket) {
+        int transactionId = sda.getProgram().startTransaction("SDA: change functions");
         dataTypeMapper.load(dataPacket);
         functionMapper.load(dataPacket);
+        sda.getProgram().endTransaction(transactionId, true);
     }
 
     public SDataFullSyncPacket buildDataFullSyncPacket() {
