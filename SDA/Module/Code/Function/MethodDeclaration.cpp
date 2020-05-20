@@ -15,7 +15,7 @@ CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, DataType::Sig
 void CE::Function::MethodDecl::setClass(DataType::Class* Class)
 {
 	auto typeUnit = DataType::GetUnit(Class, "*");
-	if (getSignature()->getArgList().size() > 0) {
+	if (getSignature()->getArguments().size() > 0) {
 		getSignature()->setArgumentType(0, typeUnit);
 	}
 	else {

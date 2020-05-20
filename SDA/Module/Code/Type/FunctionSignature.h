@@ -22,7 +22,7 @@ namespace CE
 
 			DataTypePtr getReturnType();
 
-			ArgList& getArgList();
+			ArgList& getArguments();
 
 			void addArgument(const std::string& name, DataTypePtr type);
 

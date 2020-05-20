@@ -29,20 +29,12 @@ void FunctionDefinition::setComment(const std::string& comment) {
 	getDeclaration().setComment(comment);
 }
 
-std::string FunctionDefinition::getSigName() {
-	return getDeclaration().getSigName();
-}
-
 bool FunctionDefinition::isFunction() {
 	return getDeclaration().isFunction();
 }
 
-Signature& FunctionDefinition::getSignature() {
+DataType::Signature* FunctionDefinition::getSignature() {
 	return getDeclaration().getSignature();
-}
-
-ArgNameList& FunctionDefinition::getArgNameList() {
-	return getDeclaration().getArgNameList();
 }
 
 void* FunctionDefinition::getAddress() {

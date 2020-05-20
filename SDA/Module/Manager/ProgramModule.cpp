@@ -74,7 +74,8 @@ void ProgramModule::createGeneralDataBase()
 		//throw ex
 		return;
 	}
-	m_db->exec(res.getData());
+	auto query = res.getData();
+	m_db->exec(query);
 }
 
 void ProgramModule::initDataBase(std::string filename)

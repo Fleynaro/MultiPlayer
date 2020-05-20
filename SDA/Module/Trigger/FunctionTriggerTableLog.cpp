@@ -132,9 +132,9 @@ void TableLog::addAfterCallRow(CE::Hook::DynHook* hook, bool filter)
 
 std::list<Value> TableLog::getArgValues(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook) {
 	std::list<Value> values;
-	auto& argTypes = funcDef->getDeclaration().getSignature().getArgList();
+	auto& argTypes = funcDef->getDeclaration().getSignature()->getArguments();
 	for (int argIdx = 1; argIdx <= min(hook->getArgCount(), argTypes.size()); argIdx++) {
-		auto type = argTypes[argIdx - 1];
+		auto type = argTypes[argIdx - 1].second;
 		void* rawData = nullptr;
 
 		if (type->isPointer()) {
@@ -153,7 +153,7 @@ std::list<Value> TableLog::getArgValues(CE::Function::FunctionDefinition* funcDe
 }
 
 Value TableLog::getRetValue(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook) {
-	auto retType = funcDef->getDeclaration().getSignature().getReturnType();
+	auto retType = funcDef->getDeclaration().getSignature()->getReturnType();
 	void* rawData = nullptr;
 
 	if (retType->isPointer()) {

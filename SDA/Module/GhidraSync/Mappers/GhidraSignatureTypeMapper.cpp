@@ -34,7 +34,7 @@ datatype::SDataTypeSignature SignatureTypeMapper::buildDesc(DataType::Signature*
 	sigDesc.__set_type(m_dataTypeMapper->buildDesc(sig));
 	sigDesc.__set_returnType(m_dataTypeMapper->buildTypeUnitDesc(sig->getReturnType()));
 
-	for (auto arg : sig->getArgList()) {
+	for (auto arg : sig->getArguments()) {
 		datatype::SFunctionArgument argDesc;
 		argDesc.__set_name(arg.first);
 		argDesc.__set_type(m_dataTypeMapper->buildTypeUnitDesc(arg.second));

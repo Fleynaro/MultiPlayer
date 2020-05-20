@@ -128,7 +128,7 @@ bool CE::Trigger::Function::callback_before(CE::Hook::DynHook* hook)
 	}
 
 	auto funcName = func->getDeclaration().getName();
-	auto& signature = func->getDeclaration().getSignature();
+	auto signature = func->getDeclaration().getSignature();
 	auto hookMethod = hook->getMethod();
 
 	auto value1 = hook->getArgumentValue<uint64_t>(1);

@@ -24,7 +24,7 @@ namespace CE
 		class FunctionDefinition : public DB::DomainObject, public Ghidra::Object, public IDescription
 		{
 		public:
-			using ArgList = std::vector<Variable::Param>;
+			//using ArgList = std::vector<Variable::Param>;
 
 			FunctionDefinition(FunctionManager* manager, ProcessModule* module, AddressRangeList ranges, FunctionDecl* decl);
 
@@ -36,15 +36,11 @@ namespace CE
 
 			void setComment(const std::string& comment) override;
 
-			std::string getSigName();
-
 			bool isFunction();
 
-			Signature& getSignature();
+			DataType::Signature* getSignature();
 
-			ArgNameList& getArgNameList();
-
-			virtual void call(ArgList args) {}
+			//virtual void call(ArgList args) {}
 
 			void* getAddress();
 

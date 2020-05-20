@@ -71,10 +71,10 @@ void Writer::writeArgument(int argIdx) {
 }
 
 void Writer::writeArgumentExtra(int argIdx, void* argAddrValue) {
-	auto& argTypes = getFunctionDef()->getDeclaration().getSignature().getArgList();
+	auto& argTypes = getFunctionDef()->getDeclaration().getSignature()->getArguments();
 	if (argIdx > argTypes.size())
 		return;
-	if (writeTypeValue(getStream(), argAddrValue, argTypes[argIdx - 1])) {
+	if (writeTypeValue(getStream(), argAddrValue, argTypes[argIdx - 1].second)) {
 		m_argHeader->m_argExtraBits |= uint64_t(0b1) << (argIdx - 1);
 	}
 }

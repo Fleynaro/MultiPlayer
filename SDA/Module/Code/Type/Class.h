@@ -22,36 +22,11 @@ namespace CE::DataType
 		class MethodIterator : public IIterator<Function::MethodDecl*>
 		{
 		public:
-			MethodIterator(Class* Class)
-				: m_vtable(Class->getVtable())
-			{
-				m_classes = Class->getClassesInHierarchy();
-				updateIterator();
-			}
+			MethodIterator(Class* Class);
 
-			bool hasNext() override {
-				if(!(m_classes.size() != 0 && m_iterator != m_end))
-					return false;
-				if (m_signatures.count((*m_iterator)->getSigName()) != 0) {
-					next();
-					return hasNext();
-				}
-				return true;
-			}
+			bool hasNext() override;
 
-			Function::MethodDecl* next() override {
-				//vtable...
-				
-				if (m_iterator == m_end) {
-					m_classes.pop_front();
-					updateIterator();
-				}
-
-				auto method = *m_iterator;
-				m_iterator++;
-				m_signatures.insert(method->getSigName());
-				return method;
-			}
+			Function::MethodDecl* next() override;
 		private:
 			Function::VTable* m_vtable;
 			std::list<Class*> m_classes;
@@ -59,10 +34,7 @@ namespace CE::DataType
 			MethodListType::iterator m_end;
 			std::set<std::string> m_signatures;
 
-			void updateIterator() {
-				m_iterator = m_classes.front()->getMethods().begin();
-				m_end = m_classes.front()->getMethods().begin();
-			}
+			void updateIterator();
 		};
 
 		Class(TypeManager* typeManager, const std::string& name, const std::string& comment = "");

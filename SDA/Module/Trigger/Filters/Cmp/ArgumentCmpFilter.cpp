@@ -15,11 +15,11 @@ bool Argument::checkFilterBefore(CE::Hook::DynHook* hook) {
 	using namespace CE::DataType;
 
 	auto function = (CE::Function::FunctionDefinition*)hook->getUserPtr();
-	auto& argList = function->getDeclaration().getSignature().getArgList();
+	auto& argList = function->getDeclaration().getSignature()->getArguments();
 	if (m_argId > argList.size())
 		return false;
 
-	auto type = argList[m_argId - 1];
+	auto type = argList[m_argId - 1].second;
 	return cmp(
 		GetArgumentValue(type, hook, m_argId),
 		m_value,

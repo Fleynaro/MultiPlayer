@@ -28,11 +28,12 @@ IDomainObject* FunctionDeclMapper::doLoad(Database* db, SQLite::Statement& query
 	Function::FunctionDecl* decl;
 	auto decl_role = (Function::FunctionDecl::Role)(int)query.getColumn("role");
 	Id decl_id = query.getColumn("decl_id");
+	Id sig_id = query.getColumn("signature_id");
 	std::string decl_name = query.getColumn("name");
 	std::string decl_desc = query.getColumn("desc");
 	DataType::Signature* signature = nullptr;
 
-	auto type = getManager()->getProgramModule()->getTypeManager()->getTypeById(query.getColumn("signature_id"));
+	auto type = getManager()->getProgramModule()->getTypeManager()->getTypeById(sig_id);
 	if (!(signature = dynamic_cast<DataType::Signature*>(type)))
 		return nullptr;
 	

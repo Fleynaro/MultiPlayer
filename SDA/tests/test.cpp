@@ -101,30 +101,32 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         ASSERT_EQ(funcManager->getItemsCount(), 0);
         auto module = m_programModule->getProcessModuleManager()->getMainModule();
 
-        auto function1 = funcManager->createFunction(module,    { AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                 declManager->createFunctionDecl(g_testFuncName, "set rot to an entity"));
-        auto function2 = funcManager->createFunction(module,    { AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },         declManager->createFunctionDecl("changeGvar", ""));
-        auto function3 = funcManager->createFunction(ucrtbase,  { AddressRange(&rand, calculateFunctionSize((byte*)&rand)) },                     declManager->createFunctionDecl("rand", ""));
-        auto function4 = funcManager->createFunction(module,    { AddressRange(&setPlayerPos, calculateFunctionSize((byte*)&setPlayerPos)) },     declManager->createFunctionDecl("setPlayerPos", ""));
-        auto function5 = funcManager->createFunction(module,    { AddressRange(&setPlayerVel, calculateFunctionSize((byte*)&setPlayerVel)) },     declManager->createFunctionDecl("setPlayerVel", ""));
-        auto function6 = funcManager->createFunction(module,    { AddressRange(&sumArray, calculateFunctionSize((byte*)&sumArray)) },             declManager->createFunctionDecl("sumArray", ""));
+        auto setRotSig = typeManager->createSignature("setRotSig");
+        setRotSig->addArgument("arg1", DataType::GetUnit(typeManager->getTypeByName("int32_t")));
+        setRotSig->addArgument("arg2", DataType::GetUnit(typeManager->getTypeByName("float")));
+        setRotSig->addArgument("arg3", DataType::GetUnit(typeManager->getTypeByName("float")));
+        setRotSig->addArgument("arg4", DataType::GetUnit(typeManager->getTypeByName("float")));
+        setRotSig->addArgument("arg5", DataType::GetUnit(typeManager->getTypeByName("int32_t")));
+
+        auto sumArraySig = typeManager->createSignature("sumArraySig");
+        sumArraySig->addArgument("arr", DataType::GetUnit(typeManager->getTypeByName("int32_t"), "*[3][2]"));
+        sumArraySig->addArgument("str", DataType::GetUnit(typeManager->getTypeByName("char"), "*"));
+
+        auto function1 = funcManager->createFunction(module,    { AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                 declManager->createFunctionDecl(setRotSig, g_testFuncName, "set rot to an entity"));
+        auto function2 = funcManager->createFunction(module,    { AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },         declManager->createFunctionDecl(typeManager->createSignature("changeGvarSig"), "changeGvar", ""));
+        auto function3 = funcManager->createFunction(ucrtbase,  { AddressRange(&rand, calculateFunctionSize((byte*)&rand)) },                     declManager->createFunctionDecl(typeManager->createSignature("randSig"), "rand", ""));
+        auto function4 = funcManager->createFunction(module,    { AddressRange(&setPlayerPos, calculateFunctionSize((byte*)&setPlayerPos)) },     declManager->createFunctionDecl(typeManager->createSignature("setPlayerPosSig"), "setPlayerPos", ""));
+        auto function5 = funcManager->createFunction(module,    { AddressRange(&setPlayerVel, calculateFunctionSize((byte*)&setPlayerVel)) },     declManager->createFunctionDecl(typeManager->createSignature("setPlayerVelSig"), "setPlayerVel", ""));
+        auto function6 = funcManager->createFunction(module,    { AddressRange(&sumArray, calculateFunctionSize((byte*)&sumArray)) },             declManager->createFunctionDecl(sumArraySig, "sumArray", ""));
         
         auto libExportedFunctions = kernel32->getExportedFunctions();
         for (auto it : libExportedFunctions) {
             if (it.first != "GetErrorMode")
                 continue;
-            auto function = funcManager->createFunction(ucrtbase, { AddressRange(it.second, calculateFunctionSize((byte*)it.second)) }, declManager->createFunctionDecl(it.first, "exported function from kernel32.dll"));
+            auto function = funcManager->createFunction(ucrtbase, { AddressRange(it.second, calculateFunctionSize((byte*)it.second)) }, declManager->createFunctionDecl(typeManager->createSignature(it.first + "_sig"), it.first, "exported function from kernel32.dll"));
             tagManager->createUserTag(function->getDeclarationPtr(), tagManager->m_setTag, "WinAPI", "From kernel32.dll");
             function->setExported(true);
         }
-        
-        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg1");
-        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg2");
-        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg3");
-        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("float")), "arg4");
-        function1->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t")), "arg5");
-
-        function6->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("int32_t"), "*[3][2]"), "arr");
-        function6->getDeclaration().addArgument(DataType::GetUnit(typeManager->getTypeByName("char"), "*"), "str");
 
         //for function tags
         {
@@ -163,7 +165,7 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         auto ped = typeManager->createClass("Ped", "this is a derrived class type");
         ped->setBaseClass(entity);
         ped->addField(100, "head_angle", DataType::GetUnit(typeManager->getTypeByName("float")));
-        auto methodDecl = declManager->createMethodDecl("getHeadAngle");
+        auto methodDecl = declManager->createMethodDecl(typeManager->createSignature("getHeadAngleSig"), "getHeadAngle");
         ped->addMethod(methodDecl);
     }
 
@@ -201,7 +203,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         ASSERT_EQ(funcManager->getItemsCount(), 7);
         
         auto func = funcManager->getFunctionAt(&setRot);
-        ASSERT_EQ(func->getDeclaration().getArgNameList().size(), 5);
+        ASSERT_EQ(func->getDeclaration().getSignature()->getArguments().size(), 5);
         ASSERT_EQ(func->getDeclaration().getFunctions().size(), 1);
         ASSERT_EQ(func->getAddressRangeList().size(), 1);
         ASSERT_EQ(func->getAddressRangeList().begin()->getMinAddress(), &setRot);
@@ -406,7 +408,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     //iterator 1
     {
         int i = 0;
-        DereferenceIterator it(arr3, function->getDeclaration().getSignature().getArgList()[0]);
+        DereferenceIterator it(arr3, function->getDeclaration().getSignature()->getArguments()[0].second);
         while (it.hasNext()) {
             auto item = it.next();
             auto value = *(int*)item.first;
@@ -499,7 +501,6 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
     auto sync = m_programModule->getGhidraSync();
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
-    bool someGhidraSyncError = false;
     DataType::Structure* screen2d_vtable = nullptr;
 
     //download
@@ -510,8 +511,10 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
             sync->getDataSyncPacketManagerServiceClient()->recieveFullSyncPacket(dataPacket);
         }
         catch (std::exception ex) {
-            someGhidraSyncError = true;
+            printf("\n*****************\nGhidra not started!!! Impossible to send data packet.\n*****************\n");
             printf(ex.what());
+            printf("\n");
+            return;
         }
 
         ASSERT_GT(dataPacket.typedefs.size(), 0);
@@ -564,13 +567,10 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
             SyncCommitment.commit();
         }
         catch (std::exception ex) {
-            someGhidraSyncError = true;
+            printf("\n*****************\nGhidra not started!!! Impossible to send data packet.\n*****************\n");
             printf(ex.what());
+            printf("\n");
         }
-    }
-
-    if (someGhidraSyncError) {
-        printf("\n*****************\nGhidra not started!!! Impossible to send data packet.\n*****************\n");
     }
 }
 
@@ -581,18 +581,13 @@ TEST_F(ProgramModuleFixture, Test_RemoveDB)
 }
 
 void executeCode() {
-    /*using namespace Ghidra;
+   /* using namespace Ghidra;
     auto m_programModule = (new ProgramModuleFixtureBase)->m_programModule;
     auto sync = m_programModule->getGhidraSync();
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
+    */
     
-    Transport tr(sync->getClient());
-    packet::SDataFullSyncPacket dataPacket;
-    sync->getDataSyncPacketManagerServiceClient()->recieveFullSyncPacket(dataPacket);
-
-    typeManager->loadTypesFrom(&dataPacket);
-    funcManager->loadFunctionsFrom(&dataPacket);*/
 }
 
 

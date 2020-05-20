@@ -17,6 +17,7 @@ IDomainObject* SignatureTypeMapper::doLoad(Database* db, SQLite::Statement& quer
 	);
 	type->setId(query.getColumn("id"));
 	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_signatureTypeMapper);
+	loadFunctionDeclArguments(db, *type);
 	return type;
 }
 
@@ -40,7 +41,7 @@ void SignatureTypeMapper::saveFunctionDeclArguments(TransactionContext* ctx, Dat
 
 	{
 		int id = 0;
-		for (auto arg : sig.getArgList()) {
+		for (auto arg : sig.getArguments()) {
 			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_signature_args (signature_id, id, name, type_id, pointer_lvl) \
 					VALUES(?1, ?2, ?3, ?4, ?5)");
 			query.bind(1, sig.getId());

@@ -39,8 +39,9 @@ Function::Function* FunctionManager::createFunction(ProcessModule* module, Addre
 }
 
 void FunctionManager::createDefaultFunction() {
+	auto sig = new DataType::Signature(getProgramModule()->getTypeManager(), "defSig");
 	m_defFunction = new Function::Function(this, nullptr, {},
-		new Function::FunctionDecl(getFunctionDeclManager(), "DefaultFunction", "This function created automatically."));
+		new Function::FunctionDecl(getFunctionDeclManager(), sig, "DefaultFunction", "This function created automatically."));
 }
 
 Function::Function* FunctionManager::getDefaultFunction() {

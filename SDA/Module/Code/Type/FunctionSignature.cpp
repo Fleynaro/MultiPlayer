@@ -21,7 +21,7 @@ int Signature::getSize() {
 std::string Signature::getSigName() {
 	std::string name = getReturnType()->getDisplayName() + " " + getName() + "(";
 
-	auto& argList = getArgList();
+	auto& argList = getArguments();
 	for (int i = 0; i < argList.size(); i++) {
 		name += argList[i].second->getDisplayName() + " " + argList[i].first + ", ";
 	}
@@ -40,7 +40,7 @@ DataTypePtr Signature::getReturnType() {
 	return m_returnType;
 }
 
-Signature::ArgList& Signature::getArgList() {
+Signature::ArgList& Signature::getArguments() {
 	return m_args;
 }
 
