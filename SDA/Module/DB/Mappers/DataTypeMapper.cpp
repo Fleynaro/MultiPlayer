@@ -3,6 +3,7 @@
 #include "StructureTypeMapper.h"
 #include "ClassTypeMapper.h"
 #include "TypedefTypeMapper.h"
+#include "SignatureTypeMapper.h"
 #include <Manager/TypeManager.h>
 
 using namespace DB;
@@ -17,6 +18,7 @@ DataTypeMapper::DataTypeMapper(IRepository* repository)
 	m_structureTypeMapper = new StructureTypeMapper(this);
 	m_classTypeMapper = new ClassTypeMapper(m_structureTypeMapper);
 	m_typedefTypeMapper = new TypedefTypeMapper(this);
+	m_signatureTypeMapper = new SignatureTypeMapper(this);
 }
 
 void DataTypeMapper::loadAll() {
@@ -59,6 +61,9 @@ IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
 		break;
 	case DataType::Type::Group::Class:
 		obj = m_classTypeMapper->doLoad(db, query);
+		break;
+	case DataType::Type::Group::Signature:
+		obj = m_signatureTypeMapper->doLoad(db, query);
 		break;
 	}
 

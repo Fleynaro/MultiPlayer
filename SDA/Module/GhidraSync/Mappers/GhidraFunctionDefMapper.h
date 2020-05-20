@@ -32,8 +32,6 @@ namespace CE::Ghidra
 
 		void changeFunctionByDesc(Function::Function* function, const function::SFunction& funcDesc);
 
-		function::SFunction buildDescToRemove(Function::Function* function);
-
 		function::SFunction buildDesc(Function::Function* function);
 	};
 };

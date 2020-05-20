@@ -17,6 +17,7 @@
 
 #include <thrift/stdcxx.h>
 #include "shared_types.h"
+#include "datatype_types.h"
 
 
 namespace ghidra { namespace function {
@@ -24,8 +25,6 @@ namespace ghidra { namespace function {
 typedef int64_t Id;
 
 class SFunctionRange;
-
-class SFunctionSignature;
 
 class SFunction;
 
@@ -77,60 +76,11 @@ void swap(SFunctionRange &a, SFunctionRange &b);
 
 std::ostream& operator<<(std::ostream& out, const SFunctionRange& obj);
 
-typedef struct _SFunctionSignature__isset {
-  _SFunctionSignature__isset() : returnType(false), arguments(false) {}
-  bool returnType :1;
-  bool arguments :1;
-} _SFunctionSignature__isset;
-
-class SFunctionSignature : public virtual ::apache::thrift::TBase {
- public:
-
-  SFunctionSignature(const SFunctionSignature&);
-  SFunctionSignature& operator=(const SFunctionSignature&);
-  SFunctionSignature() {
-  }
-
-  virtual ~SFunctionSignature() throw();
-   ::ghidra::shared::STypeUnit returnType;
-  std::vector< ::ghidra::shared::STypeUnit>  arguments;
-
-  _SFunctionSignature__isset __isset;
-
-  void __set_returnType(const  ::ghidra::shared::STypeUnit& val);
-
-  void __set_arguments(const std::vector< ::ghidra::shared::STypeUnit> & val);
-
-  bool operator == (const SFunctionSignature & rhs) const
-  {
-    if (!(returnType == rhs.returnType))
-      return false;
-    if (!(arguments == rhs.arguments))
-      return false;
-    return true;
-  }
-  bool operator != (const SFunctionSignature &rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator < (const SFunctionSignature & ) const;
-
-  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
-  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
-
-  virtual void printTo(std::ostream& out) const;
-};
-
-void swap(SFunctionSignature &a, SFunctionSignature &b);
-
-std::ostream& operator<<(std::ostream& out, const SFunctionSignature& obj);
-
 typedef struct _SFunction__isset {
-  _SFunction__isset() : id(false), name(false), comment(false), argumentNames(false), signature(false), ranges(false) {}
+  _SFunction__isset() : id(false), name(false), comment(false), signature(false), ranges(false) {}
   bool id :1;
   bool name :1;
   bool comment :1;
-  bool argumentNames :1;
   bool signature :1;
   bool ranges :1;
 } _SFunction__isset;
@@ -147,8 +97,7 @@ class SFunction : public virtual ::apache::thrift::TBase {
   Id id;
   std::string name;
   std::string comment;
-  std::vector<std::string>  argumentNames;
-  SFunctionSignature signature;
+   ::ghidra::datatype::SDataTypeSignature signature;
   std::vector<SFunctionRange>  ranges;
 
   _SFunction__isset __isset;
@@ -159,9 +108,7 @@ class SFunction : public virtual ::apache::thrift::TBase {
 
   void __set_comment(const std::string& val);
 
-  void __set_argumentNames(const std::vector<std::string> & val);
-
-  void __set_signature(const SFunctionSignature& val);
+  void __set_signature(const  ::ghidra::datatype::SDataTypeSignature& val);
 
   void __set_ranges(const std::vector<SFunctionRange> & val);
 
@@ -172,8 +119,6 @@ class SFunction : public virtual ::apache::thrift::TBase {
     if (!(name == rhs.name))
       return false;
     if (!(comment == rhs.comment))
-      return false;
-    if (!(argumentNames == rhs.argumentNames))
       return false;
     if (!(signature == rhs.signature))
       return false;

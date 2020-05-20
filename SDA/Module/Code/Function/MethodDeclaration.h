@@ -12,11 +12,9 @@ namespace CE
 		class MethodDecl : public FunctionDecl
 		{
 		public:
-			MethodDecl(FunctionDeclManager* manager, DataType::Class* Class, std::string name, std::string desc = "");
+			MethodDecl(FunctionDeclManager* manager, DataType::Class* Class, DataType::Signature* signature, std::string name, std::string desc = "");
 
-			MethodDecl(FunctionDeclManager* manager, std::string name, std::string desc = "");
-
-			std::string getSigName() override;
+			MethodDecl(FunctionDeclManager* manager, DataType::Signature* signature, std::string name, std::string desc = "");
 
 			void setClass(DataType::Class* Class);
 

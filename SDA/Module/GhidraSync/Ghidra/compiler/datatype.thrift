@@ -53,3 +53,14 @@ struct SDataTypeTypedef {
 	1: SDataType type,
 	2: shared.STypeUnit refType
 }
+
+struct SFunctionArgument {
+	1: string name,
+	2: shared.STypeUnit type
+}
+
+struct SDataTypeSignature {
+	1: SDataType type,
+	2: list<SFunctionArgument> arguments,
+	3: shared.STypeUnit returnType
+}

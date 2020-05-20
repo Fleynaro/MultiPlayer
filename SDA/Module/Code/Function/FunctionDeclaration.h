@@ -1,7 +1,7 @@
 #pragma once
 #include <DB/DomainObject.h>
 #include <DB/AbstractMapper.h>
-#include "FunctionSignature.h"
+#include "../Type/FunctionSignature.h"
 #include <Utils/Description.h>
 
 namespace CE
@@ -27,29 +27,15 @@ namespace CE
 				VirtualDestructor
 			};
 
-			FunctionDecl(FunctionDeclManager* manager, const std::string& name, const std::string& desc = "");
+			FunctionDecl(FunctionDeclManager* manager, DataType::Signature* signature, const std::string& name, const std::string& desc = "");
 
-			virtual std::string getSigName();
-
-			Signature& getSignature();
-
-			ArgNameList& getArgNameList();
+			DataType::Signature* getSignature();
 
 			virtual Role getRole();
 
 			bool isFunction();
 
-			void addArgument(DataTypePtr type, const std::string& name);
-
-			void changeArgument(int id, DataTypePtr type, const std::string& name = "");
-
-			void removeLastArgument();
-
-			void deleteAllArguments();
-
-			std::list<FunctionDefinition*>& getFunctions() {
-				return m_functions;
-			}
+			std::list<FunctionDefinition*>& getFunctions();
 
 			void setExported(bool toggle);
 
@@ -59,8 +45,7 @@ namespace CE
 
 			static bool isFunction(Role role);
 		private:
-			Signature m_signature;
-			ArgNameList m_argNames;
+			DataType::Signature* m_signature;
 			FunctionDeclManager* m_manager;
 			std::list<FunctionDefinition*> m_functions;
 			bool m_exported = false;

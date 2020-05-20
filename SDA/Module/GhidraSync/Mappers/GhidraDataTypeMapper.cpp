@@ -3,6 +3,7 @@
 #include "GhidraStructureTypeMapper.h"
 #include "GhidraClassTypeMapper.h"
 #include "GhidraTypedefTypeMapper.h"
+#include "GhidraSignatureTypeMapper.h"
 #include <Manager/TypeManager.h>
 
 using namespace CE;
@@ -15,6 +16,7 @@ DataTypeMapper::DataTypeMapper(CE::TypeManager* typeManager)
 	m_structureTypeMapper = new StructureTypeMapper(this);
 	m_classTypeMapper = new ClassTypeMapper(m_structureTypeMapper);
 	m_typedefTypeMapper = new TypedefTypeMapper(this);
+	m_signatureTypeMapper = new SignatureTypeMapper(this);
 }
 
 void DataTypeMapper::createTypeByDescIfNotExists(const datatype::SDataType& typeDesc)
@@ -42,6 +44,9 @@ DataType::UserType* DataTypeMapper::createTypeByDesc(const datatype::SDataType& 
 	case DataTypeGroup::Class:
 		userType = m_typeManager->createClass(typeDesc.name, typeDesc.comment);
 		break;
+	case DataTypeGroup::Signature:
+		userType = m_typeManager->createSignature(typeDesc.name, typeDesc.comment);
+		break;
 	}
 	return userType;
 }
@@ -63,10 +68,15 @@ void DataTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 		createTypeByDescIfNotExists(it.structType.type);
 	}
 
+	for (auto it : dataPacket->signatures) {
+		createTypeByDescIfNotExists(it.type);
+	}
+
 	m_typedefTypeMapper->load(dataPacket);
 	m_enumTypeMapper->load(dataPacket);
 	m_structureTypeMapper->load(dataPacket);
 	m_classTypeMapper->load(dataPacket);
+	m_signatureTypeMapper->load(dataPacket);
 }
 
 void markObjectAsSynced(SyncContext* ctx, DataType::UserType* type) {
@@ -83,14 +93,8 @@ void DataTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
 
 void DataTypeMapper::remove(SyncContext* ctx, IObject* obj) {
 	auto type = static_cast<DataType::UserType*>(obj);
+	ctx->m_dataPacket->removed_datatypes.push_back(type->getGhidraId());
 	markObjectAsSynced(ctx, type);
-}
-
-datatype::SDataType DataTypeMapper::buildDescToRemove(DataType::UserType* type) {
-	datatype::SDataType typeDesc;
-	typeDesc.__set_id(type->getGhidraId());
-	typeDesc.__set_size(0);
-	return typeDesc;
 }
 
 datatype::SDataType DataTypeMapper::buildDesc(DataType::UserType* type) {

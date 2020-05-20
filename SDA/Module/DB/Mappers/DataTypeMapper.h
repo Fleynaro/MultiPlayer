@@ -12,6 +12,7 @@ namespace DB
 	class StructureTypeMapper;
 	class ClassTypeMapper;
 	class TypedefTypeMapper;
+	class SignatureTypeMapper;
 
 	class DataTypeMapper : public AbstractMapper
 	{
@@ -20,6 +21,7 @@ namespace DB
 		StructureTypeMapper* m_structureTypeMapper;
 		ClassTypeMapper* m_classTypeMapper;
 		TypedefTypeMapper* m_typedefTypeMapper;
+		SignatureTypeMapper* m_signatureTypeMapper;
 
 		DataTypeMapper(IRepository* repository);
 

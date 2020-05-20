@@ -947,4 +947,268 @@ void SDataTypeTypedef::printTo(std::ostream& out) const {
   out << ")";
 }
 
+
+SFunctionArgument::~SFunctionArgument() throw() {
+}
+
+
+void SFunctionArgument::__set_name(const std::string& val) {
+  this->name = val;
+}
+
+void SFunctionArgument::__set_type(const  ::ghidra::shared::STypeUnit& val) {
+  this->type = val;
+}
+std::ostream& operator<<(std::ostream& out, const SFunctionArgument& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t SFunctionArgument::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->name);
+          this->__isset.name = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->type.read(iprot);
+          this->__isset.type = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t SFunctionArgument::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("SFunctionArgument");
+
+  xfer += oprot->writeFieldBegin("name", ::apache::thrift::protocol::T_STRING, 1);
+  xfer += oprot->writeString(this->name);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("type", ::apache::thrift::protocol::T_STRUCT, 2);
+  xfer += this->type.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(SFunctionArgument &a, SFunctionArgument &b) {
+  using ::std::swap;
+  swap(a.name, b.name);
+  swap(a.type, b.type);
+  swap(a.__isset, b.__isset);
+}
+
+SFunctionArgument::SFunctionArgument(const SFunctionArgument& other27) {
+  name = other27.name;
+  type = other27.type;
+  __isset = other27.__isset;
+}
+SFunctionArgument& SFunctionArgument::operator=(const SFunctionArgument& other28) {
+  name = other28.name;
+  type = other28.type;
+  __isset = other28.__isset;
+  return *this;
+}
+void SFunctionArgument::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "SFunctionArgument(";
+  out << "name=" << to_string(name);
+  out << ", " << "type=" << to_string(type);
+  out << ")";
+}
+
+
+SDataTypeSignature::~SDataTypeSignature() throw() {
+}
+
+
+void SDataTypeSignature::__set_type(const SDataType& val) {
+  this->type = val;
+}
+
+void SDataTypeSignature::__set_arguments(const std::vector<SFunctionArgument> & val) {
+  this->arguments = val;
+}
+
+void SDataTypeSignature::__set_returnType(const  ::ghidra::shared::STypeUnit& val) {
+  this->returnType = val;
+}
+std::ostream& operator<<(std::ostream& out, const SDataTypeSignature& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t SDataTypeSignature::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->type.read(iprot);
+          this->__isset.type = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->arguments.clear();
+            uint32_t _size29;
+            ::apache::thrift::protocol::TType _etype32;
+            xfer += iprot->readListBegin(_etype32, _size29);
+            this->arguments.resize(_size29);
+            uint32_t _i33;
+            for (_i33 = 0; _i33 < _size29; ++_i33)
+            {
+              xfer += this->arguments[_i33].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.arguments = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 3:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->returnType.read(iprot);
+          this->__isset.returnType = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t SDataTypeSignature::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("SDataTypeSignature");
+
+  xfer += oprot->writeFieldBegin("type", ::apache::thrift::protocol::T_STRUCT, 1);
+  xfer += this->type.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("arguments", ::apache::thrift::protocol::T_LIST, 2);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->arguments.size()));
+    std::vector<SFunctionArgument> ::const_iterator _iter34;
+    for (_iter34 = this->arguments.begin(); _iter34 != this->arguments.end(); ++_iter34)
+    {
+      xfer += (*_iter34).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("returnType", ::apache::thrift::protocol::T_STRUCT, 3);
+  xfer += this->returnType.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(SDataTypeSignature &a, SDataTypeSignature &b) {
+  using ::std::swap;
+  swap(a.type, b.type);
+  swap(a.arguments, b.arguments);
+  swap(a.returnType, b.returnType);
+  swap(a.__isset, b.__isset);
+}
+
+SDataTypeSignature::SDataTypeSignature(const SDataTypeSignature& other35) {
+  type = other35.type;
+  arguments = other35.arguments;
+  returnType = other35.returnType;
+  __isset = other35.__isset;
+}
+SDataTypeSignature& SDataTypeSignature::operator=(const SDataTypeSignature& other36) {
+  type = other36.type;
+  arguments = other36.arguments;
+  returnType = other36.returnType;
+  __isset = other36.__isset;
+  return *this;
+}
+void SDataTypeSignature::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "SDataTypeSignature(";
+  out << "type=" << to_string(type);
+  out << ", " << "arguments=" << to_string(arguments);
+  out << ", " << "returnType=" << to_string(returnType);
+  out << ")";
+}
+
 }} // namespace

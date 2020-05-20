@@ -198,7 +198,7 @@
     <ClCompile Include="Module\Address\AddressRange.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionDeclaration.cpp" />
     <ClCompile Include="Module\Code\Function\FunctionDefinition.cpp" />
-    <ClCompile Include="Module\Code\Function\FunctionSignature.cpp" />
+    <ClCompile Include="Module\Code\Type\FunctionSignature.cpp" />
     <ClCompile Include="Module\Code\Type\AbstractType.cpp" />
     <ClCompile Include="Module\Code\Type\Class.cpp" />
     <ClCompile Include="Module\Code\Type\Enum.cpp" />
@@ -217,6 +217,7 @@
     <ClCompile Include="Module\DB\Mappers\FunctionTagMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionTriggerMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\ProcessModuleMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\SignatureTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\StructureTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TriggerGroupMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TriggerMapper.cpp" />
@@ -246,6 +247,7 @@
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraDataTypeMapper.cpp" />
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraEnumTypeMapper.cpp" />
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraFunctionDefMapper.cpp" />
+    <ClCompile Include="Module\GhidraSync\Mappers\GhidraSignatureTypeMapper.cpp" />
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraStructureTypeMapper.cpp" />
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraTypedefTypeMapper.cpp" />
     <ClCompile Include="Module\Manager\AbstractManager.cpp" />
@@ -310,7 +312,7 @@
     <ClInclude Include="Module\Address\AddressRange.h" />
     <ClInclude Include="Module\Code\Function\FunctionDeclaration.h" />
     <ClInclude Include="Module\Code\Function\FunctionDefinition.h" />
-    <ClInclude Include="Module\Code\Function\FunctionSignature.h" />
+    <ClInclude Include="Module\Code\Type\FunctionSignature.h" />
     <ClInclude Include="Module\Code\Type\Structure.h" />
     <ClInclude Include="Module\DB\DomainObject.h" />
     <ClInclude Include="Module\DB\AbstractMapper.h" />
@@ -322,6 +324,7 @@
     <ClInclude Include="Module\DB\Mappers\FunctionTagMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionTriggerMapper.h" />
     <ClInclude Include="Module\DB\Mappers\ProcessModuleMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\SignatureTypeMapper.h" />
     <ClInclude Include="Module\DB\Mappers\StructureTypeMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TriggerGroupMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TriggerMapper.h" />
@@ -368,6 +371,7 @@
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraDataTypeMapper.h" />
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraEnumTypeMapper.h" />
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraFunctionDefMapper.h" />
+    <ClInclude Include="Module\GhidraSync\Mappers\GhidraSignatureTypeMapper.h" />
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraStructureTypeMapper.h" />
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraTypedefTypeMapper.h" />
     <ClInclude Include="Module\Manager\AbstractManager.h" />

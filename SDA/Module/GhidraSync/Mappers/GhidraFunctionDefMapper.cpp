@@ -1,5 +1,6 @@
 #include "GhidraFunctionDefMapper.h"
-#include "GhidraDataTypeMapper.h"
+#include "GhidraSignatureTypeMapper.h"
+#include <Manager/TypeManager.h>
 #include <Manager/FunctionDefManager.h>
 #include <Manager/ProcessModuleManager.h>
 
@@ -14,7 +15,10 @@ void FunctionDefMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	for (auto funcDesc : dataPacket->functions) {
 		auto function = m_functionManager->getFunctionByGhidraId(funcDesc.id);
 		if (function == nullptr) {
-			function = m_functionManager->createFunction(m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule(), {}, m_functionManager->getFunctionDeclManager()->createFunctionDecl("", ""));
+			auto mainModule = m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule();
+			auto signatureType = m_functionManager->getProgramModule()->getTypeManager()->createSignature("", "");
+			auto funcDecl = m_functionManager->getFunctionDeclManager()->createFunctionDecl(signatureType, "", "");
+			function = m_functionManager->createFunction(mainModule, {}, funcDecl);
 		}
 		changeFunctionByDesc(function, funcDesc);
 	}
@@ -35,7 +39,7 @@ void FunctionDefMapper::upsert(SyncContext* ctx, IObject* obj) {
 
 void FunctionDefMapper::remove(SyncContext* ctx, IObject* obj) {
 	auto func = static_cast<Function::Function*>(obj);
-	ctx->m_dataPacket->functions.push_back(buildDescToRemove(func));
+	ctx->m_dataPacket->removed_functions.push_back(func->getGhidraId());
 	markObjectAsSynced(ctx, func);
 }
 
@@ -53,27 +57,9 @@ AddressRangeList FunctionDefMapper::getRangesFromDesc(const std::vector<function
 void FunctionDefMapper::changeFunctionByDesc(Function::Function* function, const function::SFunction& funcDesc) {
 	function->getDeclaration().setName(funcDesc.name);
 	function->getDeclaration().setComment(funcDesc.comment);
-
-	auto& signature = function->getSignature();
-	signature.setReturnType(
-		m_dataTypeMapper->getTypeByDesc(funcDesc.signature.returnType)
-	);
-
-	function->getDeclaration().deleteAllArguments();
-	auto& args = funcDesc.signature.arguments;
-	for (int i = 0; i < args.size(); i++) {
-		function->getDeclaration().addArgument(m_dataTypeMapper->getTypeByDesc(args[i]), funcDesc.argumentNames[i]);
-	}
-
 	function->getAddressRangeList().clear();
 	function->getAddressRangeList() = getRangesFromDesc(funcDesc.ranges);
-}
-
-function::SFunction FunctionDefMapper::buildDescToRemove(Function::Function* function) {
-	function::SFunction funcDesc;
-	funcDesc.__set_id(function->getGhidraId());
-	funcDesc.__set_name("{remove}");
-	return funcDesc;
+	m_dataTypeMapper->m_signatureTypeMapper->changeSignatureByDesc(function->getSignature(), funcDesc.signature);
 }
 
 function::SFunction FunctionDefMapper::buildDesc(Function::Function* function) {
@@ -90,19 +76,7 @@ function::SFunction FunctionDefMapper::buildDesc(Function::Function* function) {
 	else {
 		funcDesc.__set_name(function->getName());
 	}
-
 	funcDesc.__set_comment(function->getComment());
-
-	auto& signature = function->getSignature();
-	funcDesc.signature.__set_returnType(
-		m_dataTypeMapper->buildTypeUnitDesc(signature.getReturnType())
-	);
-	for (int i = 0; i < signature.getArgList().size(); i++) {
-		auto argType = signature.getArgList()[i];
-		auto argName = function->getArgNameList()[i];
-		funcDesc.signature.arguments.push_back(m_dataTypeMapper->buildTypeUnitDesc(argType));
-		funcDesc.argumentNames.push_back(argName);
-	}
 
 	for (auto& range : function->getAddressRangeList()) {
 		function::SFunctionRange rangeDesc;
@@ -111,5 +85,6 @@ function::SFunction FunctionDefMapper::buildDesc(Function::Function* function) {
 		funcDesc.ranges.push_back(rangeDesc);
 	}
 
+	funcDesc.__set_signature(m_dataTypeMapper->m_signatureTypeMapper->buildDesc(function->getSignature()));
 	return funcDesc;
 }

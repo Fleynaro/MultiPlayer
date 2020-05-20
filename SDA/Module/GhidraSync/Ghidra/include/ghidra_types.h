@@ -16,6 +16,7 @@
 #include <thrift/transport/TTransport.h>
 
 #include <thrift/stdcxx.h>
+#include "shared_types.h"
 #include "datatype_types.h"
 #include "function_types.h"
 
@@ -69,12 +70,15 @@ void swap(SDataLightSyncPacket &a, SDataLightSyncPacket &b);
 std::ostream& operator<<(std::ostream& out, const SDataLightSyncPacket& obj);
 
 typedef struct _SDataFullSyncPacket__isset {
-  _SDataFullSyncPacket__isset() : typedefs(false), classes(false), structures(false), enums(false), functions(false) {}
+  _SDataFullSyncPacket__isset() : typedefs(false), classes(false), structures(false), enums(false), signatures(false), functions(false), removed_datatypes(false), removed_functions(false) {}
   bool typedefs :1;
   bool classes :1;
   bool structures :1;
   bool enums :1;
+  bool signatures :1;
   bool functions :1;
+  bool removed_datatypes :1;
+  bool removed_functions :1;
 } _SDataFullSyncPacket__isset;
 
 class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
@@ -90,7 +94,10 @@ class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
   std::vector< ::ghidra::datatype::SDataTypeClass>  classes;
   std::vector< ::ghidra::datatype::SDataTypeStructure>  structures;
   std::vector< ::ghidra::datatype::SDataTypeEnum>  enums;
+  std::vector< ::ghidra::datatype::SDataTypeSignature>  signatures;
   std::vector< ::ghidra::function::SFunction>  functions;
+  std::vector< ::ghidra::shared::Id>  removed_datatypes;
+  std::vector< ::ghidra::shared::Id>  removed_functions;
 
   _SDataFullSyncPacket__isset __isset;
 
@@ -102,7 +109,13 @@ class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
 
   void __set_enums(const std::vector< ::ghidra::datatype::SDataTypeEnum> & val);
 
+  void __set_signatures(const std::vector< ::ghidra::datatype::SDataTypeSignature> & val);
+
   void __set_functions(const std::vector< ::ghidra::function::SFunction> & val);
+
+  void __set_removed_datatypes(const std::vector< ::ghidra::shared::Id> & val);
+
+  void __set_removed_functions(const std::vector< ::ghidra::shared::Id> & val);
 
   bool operator == (const SDataFullSyncPacket & rhs) const
   {
@@ -114,7 +127,13 @@ class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
       return false;
     if (!(enums == rhs.enums))
       return false;
+    if (!(signatures == rhs.signatures))
+      return false;
     if (!(functions == rhs.functions))
+      return false;
+    if (!(removed_datatypes == rhs.removed_datatypes))
+      return false;
+    if (!(removed_functions == rhs.removed_functions))
       return false;
     return true;
   }

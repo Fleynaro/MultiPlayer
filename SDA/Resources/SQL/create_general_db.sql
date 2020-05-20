@@ -77,14 +77,22 @@ create table sda_enum_fields
     value   INTEGER
 );
 
-create table sda_func_arguments
+create table sda_signature_args
 (
-    id          INTEGER,
-    decl_id     INTEGER,
-    name        TEXT,
-    type_id     INTEGER not null,
-    pointer_lvl TEXT,
-    primary key (id, decl_id)
+    id              INTEGER,
+    signature_id    INTEGER,
+    name            TEXT,
+    type_id         INTEGER not null,
+    pointer_lvl     TEXT,
+    primary key (id, signature_id)
+);
+
+create table sda_signatures
+(
+    signature_id         INTEGER
+        primary key,
+    ret_type_id     INTEGER not null,
+    ret_pointer_lvl TEXT
 );
 
 create table sda_func_decls
@@ -94,9 +102,8 @@ create table sda_func_decls
     name            TEXT
         unique,
     role            INTEGER,
+    signature_id    INTEGER,
     exported        INTEGER,
-    ret_type_id     INTEGER not null,
-    ret_pointer_lvl TEXT,
     desc            TEXT,
     save_id             INTEGER,
     ghidra_sync_id      INTEGER,

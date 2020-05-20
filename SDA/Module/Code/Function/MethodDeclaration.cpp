@@ -4,26 +4,22 @@
 
 //using namespace CE::Function;
 
-CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, DataType::Class* Class, std::string name, std::string desc)
-	: m_class(Class), FunctionDecl(manager, name, desc)
+CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, DataType::Class* Class, DataType::Signature* signature, std::string name, std::string desc)
+	: m_class(Class), FunctionDecl(manager, signature, name, desc)
 {}
 
-CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, std::string name, std::string desc)
-	: MethodDecl(manager, nullptr, name, desc)
+CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, DataType::Signature* signature, std::string name, std::string desc)
+	: MethodDecl(manager, nullptr, signature, name, desc)
 {}
-
-std::string CE::Function::MethodDecl::getSigName() {
-	return (isVirtual() ? "virtual " : "") + getClass()->getName() + "::" + FunctionDecl::getSigName();
-}
 
 void CE::Function::MethodDecl::setClass(DataType::Class* Class)
 {
 	auto typeUnit = DataType::GetUnit(Class, "*");
-	if (getSignature().getArgList().size() > 0) {
-		getSignature().setArgument(0, typeUnit);
+	if (getSignature()->getArgList().size() > 0) {
+		getSignature()->setArgumentType(0, typeUnit);
 	}
 	else {
-		addArgument(typeUnit, "this");
+		getSignature()->addArgument("this", typeUnit);
 	}
 }
 

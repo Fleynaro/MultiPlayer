@@ -52,6 +52,10 @@ class SDataTypeEnum;
 
 class SDataTypeTypedef;
 
+class SFunctionArgument;
+
+class SDataTypeSignature;
+
 typedef struct _SDataType__isset {
   _SDataType__isset() : id(false), name(false), comment(false), group(false), size(false) {}
   bool id :1;
@@ -411,6 +415,108 @@ class SDataTypeTypedef : public virtual ::apache::thrift::TBase {
 void swap(SDataTypeTypedef &a, SDataTypeTypedef &b);
 
 std::ostream& operator<<(std::ostream& out, const SDataTypeTypedef& obj);
+
+typedef struct _SFunctionArgument__isset {
+  _SFunctionArgument__isset() : name(false), type(false) {}
+  bool name :1;
+  bool type :1;
+} _SFunctionArgument__isset;
+
+class SFunctionArgument : public virtual ::apache::thrift::TBase {
+ public:
+
+  SFunctionArgument(const SFunctionArgument&);
+  SFunctionArgument& operator=(const SFunctionArgument&);
+  SFunctionArgument() : name() {
+  }
+
+  virtual ~SFunctionArgument() throw();
+  std::string name;
+   ::ghidra::shared::STypeUnit type;
+
+  _SFunctionArgument__isset __isset;
+
+  void __set_name(const std::string& val);
+
+  void __set_type(const  ::ghidra::shared::STypeUnit& val);
+
+  bool operator == (const SFunctionArgument & rhs) const
+  {
+    if (!(name == rhs.name))
+      return false;
+    if (!(type == rhs.type))
+      return false;
+    return true;
+  }
+  bool operator != (const SFunctionArgument &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SFunctionArgument & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(SFunctionArgument &a, SFunctionArgument &b);
+
+std::ostream& operator<<(std::ostream& out, const SFunctionArgument& obj);
+
+typedef struct _SDataTypeSignature__isset {
+  _SDataTypeSignature__isset() : type(false), arguments(false), returnType(false) {}
+  bool type :1;
+  bool arguments :1;
+  bool returnType :1;
+} _SDataTypeSignature__isset;
+
+class SDataTypeSignature : public virtual ::apache::thrift::TBase {
+ public:
+
+  SDataTypeSignature(const SDataTypeSignature&);
+  SDataTypeSignature& operator=(const SDataTypeSignature&);
+  SDataTypeSignature() {
+  }
+
+  virtual ~SDataTypeSignature() throw();
+  SDataType type;
+  std::vector<SFunctionArgument>  arguments;
+   ::ghidra::shared::STypeUnit returnType;
+
+  _SDataTypeSignature__isset __isset;
+
+  void __set_type(const SDataType& val);
+
+  void __set_arguments(const std::vector<SFunctionArgument> & val);
+
+  void __set_returnType(const  ::ghidra::shared::STypeUnit& val);
+
+  bool operator == (const SDataTypeSignature & rhs) const
+  {
+    if (!(type == rhs.type))
+      return false;
+    if (!(arguments == rhs.arguments))
+      return false;
+    if (!(returnType == rhs.returnType))
+      return false;
+    return true;
+  }
+  bool operator != (const SDataTypeSignature &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SDataTypeSignature & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+  virtual void printTo(std::ostream& out) const;
+};
+
+void swap(SDataTypeSignature &a, SDataTypeSignature &b);
+
+std::ostream& operator<<(std::ostream& out, const SDataTypeSignature& obj);
 
 }} // namespace
 

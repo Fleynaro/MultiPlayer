@@ -1,4 +1,5 @@
 include "shared.thrift"
+include "datatype.thrift"
 
 namespace java sda.ghidra.function
 namespace cpp ghidra.function
@@ -10,16 +11,10 @@ struct SFunctionRange {
 	2: i32 maxOffset
 }
 
-struct SFunctionSignature {
-	1: shared.STypeUnit returnType,
-	2: list<shared.STypeUnit> arguments
-}
-
 struct SFunction {
 	1: Id id,
 	2: string name,
 	3: string comment,
-	4: list<string> argumentNames,
-	5: SFunctionSignature signature
-	6: list<SFunctionRange> ranges
+	4: datatype.SDataTypeSignature signature,
+	5: list<SFunctionRange> ranges
 }

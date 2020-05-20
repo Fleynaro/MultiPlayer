@@ -126,138 +126,6 @@ void SFunctionRange::printTo(std::ostream& out) const {
 }
 
 
-SFunctionSignature::~SFunctionSignature() throw() {
-}
-
-
-void SFunctionSignature::__set_returnType(const  ::ghidra::shared::STypeUnit& val) {
-  this->returnType = val;
-}
-
-void SFunctionSignature::__set_arguments(const std::vector< ::ghidra::shared::STypeUnit> & val) {
-  this->arguments = val;
-}
-std::ostream& operator<<(std::ostream& out, const SFunctionSignature& obj)
-{
-  obj.printTo(out);
-  return out;
-}
-
-
-uint32_t SFunctionSignature::read(::apache::thrift::protocol::TProtocol* iprot) {
-
-  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
-  uint32_t xfer = 0;
-  std::string fname;
-  ::apache::thrift::protocol::TType ftype;
-  int16_t fid;
-
-  xfer += iprot->readStructBegin(fname);
-
-  using ::apache::thrift::protocol::TProtocolException;
-
-
-  while (true)
-  {
-    xfer += iprot->readFieldBegin(fname, ftype, fid);
-    if (ftype == ::apache::thrift::protocol::T_STOP) {
-      break;
-    }
-    switch (fid)
-    {
-      case 1:
-        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-          xfer += this->returnType.read(iprot);
-          this->__isset.returnType = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 2:
-        if (ftype == ::apache::thrift::protocol::T_LIST) {
-          {
-            this->arguments.clear();
-            uint32_t _size2;
-            ::apache::thrift::protocol::TType _etype5;
-            xfer += iprot->readListBegin(_etype5, _size2);
-            this->arguments.resize(_size2);
-            uint32_t _i6;
-            for (_i6 = 0; _i6 < _size2; ++_i6)
-            {
-              xfer += this->arguments[_i6].read(iprot);
-            }
-            xfer += iprot->readListEnd();
-          }
-          this->__isset.arguments = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      default:
-        xfer += iprot->skip(ftype);
-        break;
-    }
-    xfer += iprot->readFieldEnd();
-  }
-
-  xfer += iprot->readStructEnd();
-
-  return xfer;
-}
-
-uint32_t SFunctionSignature::write(::apache::thrift::protocol::TProtocol* oprot) const {
-  uint32_t xfer = 0;
-  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-  xfer += oprot->writeStructBegin("SFunctionSignature");
-
-  xfer += oprot->writeFieldBegin("returnType", ::apache::thrift::protocol::T_STRUCT, 1);
-  xfer += this->returnType.write(oprot);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("arguments", ::apache::thrift::protocol::T_LIST, 2);
-  {
-    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->arguments.size()));
-    std::vector< ::ghidra::shared::STypeUnit> ::const_iterator _iter7;
-    for (_iter7 = this->arguments.begin(); _iter7 != this->arguments.end(); ++_iter7)
-    {
-      xfer += (*_iter7).write(oprot);
-    }
-    xfer += oprot->writeListEnd();
-  }
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
-  return xfer;
-}
-
-void swap(SFunctionSignature &a, SFunctionSignature &b) {
-  using ::std::swap;
-  swap(a.returnType, b.returnType);
-  swap(a.arguments, b.arguments);
-  swap(a.__isset, b.__isset);
-}
-
-SFunctionSignature::SFunctionSignature(const SFunctionSignature& other8) {
-  returnType = other8.returnType;
-  arguments = other8.arguments;
-  __isset = other8.__isset;
-}
-SFunctionSignature& SFunctionSignature::operator=(const SFunctionSignature& other9) {
-  returnType = other9.returnType;
-  arguments = other9.arguments;
-  __isset = other9.__isset;
-  return *this;
-}
-void SFunctionSignature::printTo(std::ostream& out) const {
-  using ::apache::thrift::to_string;
-  out << "SFunctionSignature(";
-  out << "returnType=" << to_string(returnType);
-  out << ", " << "arguments=" << to_string(arguments);
-  out << ")";
-}
-
-
 SFunction::~SFunction() throw() {
 }
 
@@ -274,11 +142,7 @@ void SFunction::__set_comment(const std::string& val) {
   this->comment = val;
 }
 
-void SFunction::__set_argumentNames(const std::vector<std::string> & val) {
-  this->argumentNames = val;
-}
-
-void SFunction::__set_signature(const SFunctionSignature& val) {
+void SFunction::__set_signature(const  ::ghidra::datatype::SDataTypeSignature& val) {
   this->signature = val;
 }
 
@@ -338,26 +202,6 @@ uint32_t SFunction::read(::apache::thrift::protocol::TProtocol* iprot) {
         }
         break;
       case 4:
-        if (ftype == ::apache::thrift::protocol::T_LIST) {
-          {
-            this->argumentNames.clear();
-            uint32_t _size10;
-            ::apache::thrift::protocol::TType _etype13;
-            xfer += iprot->readListBegin(_etype13, _size10);
-            this->argumentNames.resize(_size10);
-            uint32_t _i14;
-            for (_i14 = 0; _i14 < _size10; ++_i14)
-            {
-              xfer += iprot->readString(this->argumentNames[_i14]);
-            }
-            xfer += iprot->readListEnd();
-          }
-          this->__isset.argumentNames = true;
-        } else {
-          xfer += iprot->skip(ftype);
-        }
-        break;
-      case 5:
         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->signature.read(iprot);
           this->__isset.signature = true;
@@ -365,18 +209,18 @@ uint32_t SFunction::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 6:
+      case 5:
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->ranges.clear();
-            uint32_t _size15;
-            ::apache::thrift::protocol::TType _etype18;
-            xfer += iprot->readListBegin(_etype18, _size15);
-            this->ranges.resize(_size15);
-            uint32_t _i19;
-            for (_i19 = 0; _i19 < _size15; ++_i19)
+            uint32_t _size2;
+            ::apache::thrift::protocol::TType _etype5;
+            xfer += iprot->readListBegin(_etype5, _size2);
+            this->ranges.resize(_size2);
+            uint32_t _i6;
+            for (_i6 = 0; _i6 < _size2; ++_i6)
             {
-              xfer += this->ranges[_i19].read(iprot);
+              xfer += this->ranges[_i6].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -414,29 +258,17 @@ uint32_t SFunction::write(::apache::thrift::protocol::TProtocol* oprot) const {
   xfer += oprot->writeString(this->comment);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("argumentNames", ::apache::thrift::protocol::T_LIST, 4);
-  {
-    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->argumentNames.size()));
-    std::vector<std::string> ::const_iterator _iter20;
-    for (_iter20 = this->argumentNames.begin(); _iter20 != this->argumentNames.end(); ++_iter20)
-    {
-      xfer += oprot->writeString((*_iter20));
-    }
-    xfer += oprot->writeListEnd();
-  }
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("signature", ::apache::thrift::protocol::T_STRUCT, 5);
+  xfer += oprot->writeFieldBegin("signature", ::apache::thrift::protocol::T_STRUCT, 4);
   xfer += this->signature.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("ranges", ::apache::thrift::protocol::T_LIST, 6);
+  xfer += oprot->writeFieldBegin("ranges", ::apache::thrift::protocol::T_LIST, 5);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->ranges.size()));
-    std::vector<SFunctionRange> ::const_iterator _iter21;
-    for (_iter21 = this->ranges.begin(); _iter21 != this->ranges.end(); ++_iter21)
+    std::vector<SFunctionRange> ::const_iterator _iter7;
+    for (_iter7 = this->ranges.begin(); _iter7 != this->ranges.end(); ++_iter7)
     {
-      xfer += (*_iter21).write(oprot);
+      xfer += (*_iter7).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -452,29 +284,26 @@ void swap(SFunction &a, SFunction &b) {
   swap(a.id, b.id);
   swap(a.name, b.name);
   swap(a.comment, b.comment);
-  swap(a.argumentNames, b.argumentNames);
   swap(a.signature, b.signature);
   swap(a.ranges, b.ranges);
   swap(a.__isset, b.__isset);
 }
 
-SFunction::SFunction(const SFunction& other22) {
-  id = other22.id;
-  name = other22.name;
-  comment = other22.comment;
-  argumentNames = other22.argumentNames;
-  signature = other22.signature;
-  ranges = other22.ranges;
-  __isset = other22.__isset;
+SFunction::SFunction(const SFunction& other8) {
+  id = other8.id;
+  name = other8.name;
+  comment = other8.comment;
+  signature = other8.signature;
+  ranges = other8.ranges;
+  __isset = other8.__isset;
 }
-SFunction& SFunction::operator=(const SFunction& other23) {
-  id = other23.id;
-  name = other23.name;
-  comment = other23.comment;
-  argumentNames = other23.argumentNames;
-  signature = other23.signature;
-  ranges = other23.ranges;
-  __isset = other23.__isset;
+SFunction& SFunction::operator=(const SFunction& other9) {
+  id = other9.id;
+  name = other9.name;
+  comment = other9.comment;
+  signature = other9.signature;
+  ranges = other9.ranges;
+  __isset = other9.__isset;
   return *this;
 }
 void SFunction::printTo(std::ostream& out) const {
@@ -483,7 +312,6 @@ void SFunction::printTo(std::ostream& out) const {
   out << "id=" << to_string(id);
   out << ", " << "name=" << to_string(name);
   out << ", " << "comment=" << to_string(comment);
-  out << ", " << "argumentNames=" << to_string(argumentNames);
   out << ", " << "signature=" << to_string(signature);
   out << ", " << "ranges=" << to_string(ranges);
   out << ")";

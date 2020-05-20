@@ -45,6 +45,8 @@ namespace CE
 
 		DataType::Class* createClass(const std::string& name, const std::string& desc = "");
 
+		DataType::Signature* createSignature(const std::string& name, const std::string& desc = "");
+
 		DataType::Type* getDefaultType();
 
 		DataType::Type* getDefaultReturnType();

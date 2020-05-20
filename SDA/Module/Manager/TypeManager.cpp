@@ -4,10 +4,12 @@
 #include <DB/Mappers/StructureTypeMapper.h>
 #include <DB/Mappers/ClassTypeMapper.h>
 #include <DB/Mappers/EnumTypeMapper.h>
+#include <DB/Mappers/SignatureTypeMapper.h>
 #include <GhidraSync/Mappers/GhidraTypedefTypeMapper.h>
 #include <GhidraSync/Mappers/GhidraStructureTypeMapper.h>
 #include <GhidraSync/Mappers/GhidraClassTypeMapper.h>
 #include <GhidraSync/Mappers/GhidraEnumTypeMapper.h>
+#include <GhidraSync/Mappers/GhidraSignatureTypeMapper.h>
 #include <Utils/ObjectHash.h>
 
 using namespace CE;
@@ -139,6 +141,15 @@ DataType::Class* TypeManager::createClass(const std::string& name, const std::st
 	auto type = new DataType::Class(this, name, desc);
 	type->setMapper(m_dataTypeMapper->m_classTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_classTypeMapper);
+	type->setId(m_dataTypeMapper->getNextId());
+	getProgramModule()->getTransaction()->markAsNew(type);
+	return type;
+}
+
+DataType::Signature* TypeManager::createSignature(const std::string& name, const std::string& desc) {
+	auto type = new DataType::Signature(this, name, desc);
+	type->setMapper(m_dataTypeMapper->m_signatureTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_signatureTypeMapper);
 	type->setId(m_dataTypeMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(type);
 	return type;

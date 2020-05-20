@@ -1,3 +1,4 @@
+include "shared.thrift"
 include "datatype.thrift"
 include "function.thrift"
 
@@ -13,7 +14,10 @@ struct SDataFullSyncPacket {
 	2: list<datatype.SDataTypeClass> classes,
 	3: list<datatype.SDataTypeStructure> structures,
 	4: list<datatype.SDataTypeEnum> enums,
-	5: list<function.SFunction> functions
+	5: list<datatype.SDataTypeSignature> signatures,
+	6: list<function.SFunction> functions,
+	7: list<shared.Id> removed_datatypes,
+	8: list<shared.Id> removed_functions
 }
 
 service DataSyncPacketManagerService {

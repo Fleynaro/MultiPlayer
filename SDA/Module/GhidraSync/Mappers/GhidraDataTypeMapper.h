@@ -15,6 +15,7 @@ namespace CE::Ghidra
 	class StructureTypeMapper;
 	class ClassTypeMapper;
 	class TypedefTypeMapper;
+	class SignatureTypeMapper;
 
 	class DataTypeMapper : public IMapper
 	{
@@ -23,6 +24,7 @@ namespace CE::Ghidra
 		StructureTypeMapper* m_structureTypeMapper;
 		ClassTypeMapper* m_classTypeMapper;
 		TypedefTypeMapper* m_typedefTypeMapper;
+		SignatureTypeMapper* m_signatureTypeMapper;
 		CE::TypeManager* m_typeManager;
 
 		DataTypeMapper(CE::TypeManager* typeManager);
@@ -32,8 +34,6 @@ namespace CE::Ghidra
 		void upsert(SyncContext* ctx, IObject* obj) override;
 
 		void remove(SyncContext* ctx, IObject* obj) override;
-
-		datatype::SDataType buildDescToRemove(DataType::UserType* type);
 
 		datatype::SDataType buildDesc(DataType::UserType* type);
 

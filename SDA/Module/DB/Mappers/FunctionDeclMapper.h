@@ -21,10 +21,6 @@ namespace DB
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
-		void loadFunctionDeclArguments(Database* db, CE::Function::FunctionDecl& decl);
-
-		void saveFunctionDeclArguments(TransactionContext* ctx, CE::Function::FunctionDecl& decl);
-
 		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
 		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;

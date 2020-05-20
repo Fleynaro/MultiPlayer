@@ -15,9 +15,9 @@ namespace CE
 
 		void loadFunctionDecls();
 
-		Function::FunctionDecl* createFunctionDecl(std::string name, std::string desc = "");
+		Function::FunctionDecl* createFunctionDecl(DataType::Signature* signature, std::string name, std::string desc = "");
 
-		Function::MethodDecl* createMethodDecl(std::string name, std::string desc = "");
+		Function::MethodDecl* createMethodDecl(DataType::Signature* signature, std::string name, std::string desc = "");
 
 		Function::FunctionDecl* getFunctionDeclById(DB::Id id);
 
