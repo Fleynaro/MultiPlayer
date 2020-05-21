@@ -42,9 +42,8 @@ void ProgramModule::load()
 {
 	getProcessModuleManager()->loadProcessModules();
 	getTypeManager()->loadTypes();
-	getGVarManager()->loadGVars();
+	getGVarManager()->loadGlobalVars();
 	getFunctionManager()->loadFunctions();
-	//getVTableManager()->loadVTables();
 	getTypeManager()->loadClasses();
 	getFunctionTagManager()->loadUserTags();
 	getTriggerManager()->loadTriggers();
@@ -56,7 +55,7 @@ void ProgramModule::initManagers()
 	m_processModuleManager = new ProcessModuleManager(this);
 	m_typeManager = new TypeManager(this);
 	m_functionManager = new FunctionManager(this, new FunctionDeclManager(this));
-	m_gvarManager = new GVarManager(this);
+	m_gvarManager = new GlobalVarManager(this);
 	m_vtableManager = new VtableManager(this);
 	m_triggerManager = new TriggerManager(this);
 	m_triggerGroupManager = new TriggerGroupManager(this);
@@ -102,7 +101,7 @@ TypeManager* ProgramModule::getTypeManager() {
 	return m_typeManager;
 }
 
-GVarManager* ProgramModule::getGVarManager() {
+GlobalVarManager* ProgramModule::getGVarManager() {
 	return m_gvarManager;
 }
 

@@ -1,6 +1,6 @@
-include "shared.thrift"
 include "datatype.thrift"
 include "function.thrift"
+include "variable.thrift"
 
 namespace java sda.ghidra.packet
 namespace cpp ghidra.packet
@@ -16,8 +16,10 @@ struct SDataFullSyncPacket {
 	4: list<datatype.SDataTypeEnum> enums,
 	5: list<datatype.SDataTypeSignature> signatures,
 	6: list<function.SFunction> functions,
-	7: list<shared.Id> removed_datatypes,
-	8: list<shared.Id> removed_functions
+	7: list<variable.SGlobalVar> globalVars,
+	8: list<datatype.Id> removed_datatypes,
+	9: list<function.Id> removed_functions,
+	10: list<variable.Id> removed_globalVars
 }
 
 service DataSyncPacketManagerService {

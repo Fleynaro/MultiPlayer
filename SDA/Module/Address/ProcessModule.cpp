@@ -10,7 +10,7 @@ int CE::GetModuleSize(HMODULE module) {
 }
 
 ProcessModule::ProcessModule(ProcessModuleManager* manager, HMODULE module, const std::string& name, const std::string& comment)
-	: AddressRange(module, GetModuleSize(module)), Descrtiption(name, comment)
+	: m_manager(manager), AddressRange(module, GetModuleSize(module)), Descrtiption(name, comment)
 {
 	if (getName().length() == 0) {
 		setName(getFile().getFullname());

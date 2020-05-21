@@ -17,6 +17,8 @@ import ghidra.program.model.data.*;
 import ghidra.program.model.listing.*;
 
 import ghidra.program.model.pcode.*;
+import ghidra.program.model.symbol.*;
+import ghidra.program.model.util.CodeUnitInsertionException;
 import ghidra.util.task.TaskMonitorAdapter;
 
 import sda.ghidra.Server;
@@ -102,20 +104,70 @@ public class SdaPlugin extends ProgramPlugin {
 
             //global vars
             if(true) {
-                List<Data> gvars = new ArrayList<>();
-                Iterator<Data> it = program.getListing().getDefinedData(true);
-                while(it.hasNext()) {
+                Iterator<Data> it = program.getListing().getDefinedData(sda.getAddressByOffset(0x236ade0),true);
+                if(it.hasNext()) {
                     Data data = it.next();
+                    String[] names = data.getNames();
+                    String fname = data.getFieldName();
+                    String comment = data.getComment(0);
 
-                    gvars.add(data);
+                    Symbol symbol = data.getPrimarySymbol();
+                    SourceType src = symbol.getSource();
+
+                    if(symbol.getObject() instanceof Data) {
+                        src.getDisplayString();
+                    }
+
+
+                    int transactionId = sda.getProgram().startTransaction("SDA test tr");
+                    data.setComment(0, "hi!");
+                    sda.getProgram().endTransaction(transactionId, true);
+
+                    /*ReferenceIterator refIt = data.getReferenceIteratorTo();
+                    if(refIt.hasNext()) {
+                        while(refIt.hasNext()) {
+                            Reference ref = refIt.next();
+                            Address addr = ref.getFromAddress();
+                            int idx = ref.getOperandIndex();
+                            RefType refTyp = ref.getReferenceType();
+                            SourceType src = ref.getSource();
+
+                            addr.getOffset();
+                        }
+
+                        gvars.add(data);
+                    }
+
+                    Reference[] refs = data.getReferencesFrom();
+                    for(Reference ref : refs) {
+                        ref.getFromAddress();
+                    }*/
                 }
 
-                gvars.size();
+                if(false) {
+                    List<Symbol> symbols = new ArrayList<>();
+                    Symbol sym;
+                    int count = 0;
+                    Iterator<Symbol> it2 = program.getSymbolTable().getDefinedSymbols();
+                    while (it2.hasNext()) {
+                        Symbol symbol = it2.next();
+                        count++;
+
+                        if (symbol.getReferenceCount() > 0 && (symbol.getSymbolType() == SymbolType.GLOBAL || symbol.getSymbolType() == SymbolType.GLOBAL_VAR)) {
+                            symbols.add(symbol);
+                            if (symbol.getName().equals("World")) {
+                                sym = symbol;
+                            }
+                        }
+                    }
+                    symbols.size();
+                }
             }
         }
 
 
         //functions
+        if(false)
         {
             Address addr = program.getMinAddress();
             try {

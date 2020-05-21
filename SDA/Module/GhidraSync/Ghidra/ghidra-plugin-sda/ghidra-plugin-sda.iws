@@ -126,8 +126,8 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="sda.sync" />
       <recent name="sda.sync.mappers" />
+      <recent name="sda.sync" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -310,6 +310,8 @@
       <workItem from="1589950347046" duration="4485000" />
       <workItem from="1589959218796" duration="245000" />
       <workItem from="1589989259393" duration="10265000" />
+      <workItem from="1590036830106" duration="4352000" />
+      <workItem from="1590062262784" duration="4167000" />
     </task>
     <servers />
   </component>
@@ -337,26 +339,5 @@
       <path value="$PROJECT_DIR$/../../../../.." />
     </ignored-roots>
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/sync/Sync.java</url>
-          <line>33</line>
-          <option name="timeStamp" value="30" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/SdaPlugin.java</url>
-          <line>104</line>
-          <option name="timeStamp" value="32" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/sda/SdaPlugin.java</url>
-          <line>112</line>
-          <option name="timeStamp" value="33" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

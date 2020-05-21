@@ -16,9 +16,9 @@
 #include <thrift/transport/TTransport.h>
 
 #include <thrift/stdcxx.h>
-#include "shared_types.h"
 #include "datatype_types.h"
 #include "function_types.h"
+#include "variable_types.h"
 
 
 namespace ghidra { namespace packet {
@@ -70,15 +70,17 @@ void swap(SDataLightSyncPacket &a, SDataLightSyncPacket &b);
 std::ostream& operator<<(std::ostream& out, const SDataLightSyncPacket& obj);
 
 typedef struct _SDataFullSyncPacket__isset {
-  _SDataFullSyncPacket__isset() : typedefs(false), classes(false), structures(false), enums(false), signatures(false), functions(false), removed_datatypes(false), removed_functions(false) {}
+  _SDataFullSyncPacket__isset() : typedefs(false), classes(false), structures(false), enums(false), signatures(false), functions(false), globalVars(false), removed_datatypes(false), removed_functions(false), removed_globalVars(false) {}
   bool typedefs :1;
   bool classes :1;
   bool structures :1;
   bool enums :1;
   bool signatures :1;
   bool functions :1;
+  bool globalVars :1;
   bool removed_datatypes :1;
   bool removed_functions :1;
+  bool removed_globalVars :1;
 } _SDataFullSyncPacket__isset;
 
 class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
@@ -96,8 +98,10 @@ class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
   std::vector< ::ghidra::datatype::SDataTypeEnum>  enums;
   std::vector< ::ghidra::datatype::SDataTypeSignature>  signatures;
   std::vector< ::ghidra::function::SFunction>  functions;
-  std::vector< ::ghidra::shared::Id>  removed_datatypes;
-  std::vector< ::ghidra::shared::Id>  removed_functions;
+  std::vector< ::ghidra::variable::SGlobalVar>  globalVars;
+  std::vector< ::ghidra::datatype::Id>  removed_datatypes;
+  std::vector< ::ghidra::function::Id>  removed_functions;
+  std::vector< ::ghidra::variable::Id>  removed_globalVars;
 
   _SDataFullSyncPacket__isset __isset;
 
@@ -113,9 +117,13 @@ class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
 
   void __set_functions(const std::vector< ::ghidra::function::SFunction> & val);
 
-  void __set_removed_datatypes(const std::vector< ::ghidra::shared::Id> & val);
+  void __set_globalVars(const std::vector< ::ghidra::variable::SGlobalVar> & val);
 
-  void __set_removed_functions(const std::vector< ::ghidra::shared::Id> & val);
+  void __set_removed_datatypes(const std::vector< ::ghidra::datatype::Id> & val);
+
+  void __set_removed_functions(const std::vector< ::ghidra::function::Id> & val);
+
+  void __set_removed_globalVars(const std::vector< ::ghidra::variable::Id> & val);
 
   bool operator == (const SDataFullSyncPacket & rhs) const
   {
@@ -131,9 +139,13 @@ class SDataFullSyncPacket : public virtual ::apache::thrift::TBase {
       return false;
     if (!(functions == rhs.functions))
       return false;
+    if (!(globalVars == rhs.globalVars))
+      return false;
     if (!(removed_datatypes == rhs.removed_datatypes))
       return false;
     if (!(removed_functions == rhs.removed_functions))
+      return false;
+    if (!(removed_globalVars == rhs.removed_globalVars))
       return false;
     return true;
   }

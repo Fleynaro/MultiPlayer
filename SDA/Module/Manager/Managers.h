@@ -5,7 +5,7 @@
 #include "TypeManager.h"
 #include "FunctionDefManager.h"
 #include "FunctionTagManager.h"
-#include "GVarManager.h"
+#include "GlobalVarManager.h"
 #include "VTableManager.h"
 #include "StatManager.h"
 #include "TriggerManager.h"

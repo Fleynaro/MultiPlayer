@@ -30,5 +30,5 @@ Function::MethodDecl* FunctionDeclManager::createMethodDecl(DataType::Signature*
 }
 
 Function::FunctionDecl* FunctionDeclManager::getFunctionDeclById(DB::Id id) {
-	return (Function::FunctionDecl*)find(id);
+	return static_cast<Function::FunctionDecl*>(find(id));
 }

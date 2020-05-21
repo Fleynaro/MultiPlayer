@@ -154,6 +154,7 @@ create table sda_gvars
     id          INTEGER
         primary key autoincrement,
     name        TEXT,
+    module_id   INTEGER,
     offset      INTEGER,
     type_id     INTEGER,
     pointer_lvl TEXT,

@@ -154,12 +154,20 @@ void SDataFullSyncPacket::__set_functions(const std::vector< ::ghidra::function:
   this->functions = val;
 }
 
-void SDataFullSyncPacket::__set_removed_datatypes(const std::vector< ::ghidra::shared::Id> & val) {
+void SDataFullSyncPacket::__set_globalVars(const std::vector< ::ghidra::variable::SGlobalVar> & val) {
+  this->globalVars = val;
+}
+
+void SDataFullSyncPacket::__set_removed_datatypes(const std::vector< ::ghidra::datatype::Id> & val) {
   this->removed_datatypes = val;
 }
 
-void SDataFullSyncPacket::__set_removed_functions(const std::vector< ::ghidra::shared::Id> & val) {
+void SDataFullSyncPacket::__set_removed_functions(const std::vector< ::ghidra::function::Id> & val) {
   this->removed_functions = val;
+}
+
+void SDataFullSyncPacket::__set_removed_globalVars(const std::vector< ::ghidra::variable::Id> & val) {
+  this->removed_globalVars = val;
 }
 std::ostream& operator<<(std::ostream& out, const SDataFullSyncPacket& obj)
 {
@@ -312,15 +320,35 @@ uint32_t SDataFullSyncPacket::read(::apache::thrift::protocol::TProtocol* iprot)
       case 7:
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
-            this->removed_datatypes.clear();
+            this->globalVars.clear();
             uint32_t _size38;
             ::apache::thrift::protocol::TType _etype41;
             xfer += iprot->readListBegin(_etype41, _size38);
-            this->removed_datatypes.resize(_size38);
+            this->globalVars.resize(_size38);
             uint32_t _i42;
             for (_i42 = 0; _i42 < _size38; ++_i42)
             {
-              xfer += iprot->readI64(this->removed_datatypes[_i42]);
+              xfer += this->globalVars[_i42].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.globalVars = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 8:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->removed_datatypes.clear();
+            uint32_t _size43;
+            ::apache::thrift::protocol::TType _etype46;
+            xfer += iprot->readListBegin(_etype46, _size43);
+            this->removed_datatypes.resize(_size43);
+            uint32_t _i47;
+            for (_i47 = 0; _i47 < _size43; ++_i47)
+            {
+              xfer += iprot->readI64(this->removed_datatypes[_i47]);
             }
             xfer += iprot->readListEnd();
           }
@@ -329,22 +357,42 @@ uint32_t SDataFullSyncPacket::read(::apache::thrift::protocol::TProtocol* iprot)
           xfer += iprot->skip(ftype);
         }
         break;
-      case 8:
+      case 9:
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->removed_functions.clear();
-            uint32_t _size43;
-            ::apache::thrift::protocol::TType _etype46;
-            xfer += iprot->readListBegin(_etype46, _size43);
-            this->removed_functions.resize(_size43);
-            uint32_t _i47;
-            for (_i47 = 0; _i47 < _size43; ++_i47)
+            uint32_t _size48;
+            ::apache::thrift::protocol::TType _etype51;
+            xfer += iprot->readListBegin(_etype51, _size48);
+            this->removed_functions.resize(_size48);
+            uint32_t _i52;
+            for (_i52 = 0; _i52 < _size48; ++_i52)
             {
-              xfer += iprot->readI64(this->removed_functions[_i47]);
+              xfer += iprot->readI64(this->removed_functions[_i52]);
             }
             xfer += iprot->readListEnd();
           }
           this->__isset.removed_functions = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 10:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->removed_globalVars.clear();
+            uint32_t _size53;
+            ::apache::thrift::protocol::TType _etype56;
+            xfer += iprot->readListBegin(_etype56, _size53);
+            this->removed_globalVars.resize(_size53);
+            uint32_t _i57;
+            for (_i57 = 0; _i57 < _size53; ++_i57)
+            {
+              xfer += iprot->readI64(this->removed_globalVars[_i57]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          this->__isset.removed_globalVars = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -369,10 +417,10 @@ uint32_t SDataFullSyncPacket::write(::apache::thrift::protocol::TProtocol* oprot
   xfer += oprot->writeFieldBegin("typedefs", ::apache::thrift::protocol::T_LIST, 1);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->typedefs.size()));
-    std::vector< ::ghidra::datatype::SDataTypeTypedef> ::const_iterator _iter48;
-    for (_iter48 = this->typedefs.begin(); _iter48 != this->typedefs.end(); ++_iter48)
+    std::vector< ::ghidra::datatype::SDataTypeTypedef> ::const_iterator _iter58;
+    for (_iter58 = this->typedefs.begin(); _iter58 != this->typedefs.end(); ++_iter58)
     {
-      xfer += (*_iter48).write(oprot);
+      xfer += (*_iter58).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -381,10 +429,10 @@ uint32_t SDataFullSyncPacket::write(::apache::thrift::protocol::TProtocol* oprot
   xfer += oprot->writeFieldBegin("classes", ::apache::thrift::protocol::T_LIST, 2);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->classes.size()));
-    std::vector< ::ghidra::datatype::SDataTypeClass> ::const_iterator _iter49;
-    for (_iter49 = this->classes.begin(); _iter49 != this->classes.end(); ++_iter49)
+    std::vector< ::ghidra::datatype::SDataTypeClass> ::const_iterator _iter59;
+    for (_iter59 = this->classes.begin(); _iter59 != this->classes.end(); ++_iter59)
     {
-      xfer += (*_iter49).write(oprot);
+      xfer += (*_iter59).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -393,10 +441,10 @@ uint32_t SDataFullSyncPacket::write(::apache::thrift::protocol::TProtocol* oprot
   xfer += oprot->writeFieldBegin("structures", ::apache::thrift::protocol::T_LIST, 3);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->structures.size()));
-    std::vector< ::ghidra::datatype::SDataTypeStructure> ::const_iterator _iter50;
-    for (_iter50 = this->structures.begin(); _iter50 != this->structures.end(); ++_iter50)
+    std::vector< ::ghidra::datatype::SDataTypeStructure> ::const_iterator _iter60;
+    for (_iter60 = this->structures.begin(); _iter60 != this->structures.end(); ++_iter60)
     {
-      xfer += (*_iter50).write(oprot);
+      xfer += (*_iter60).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -405,10 +453,10 @@ uint32_t SDataFullSyncPacket::write(::apache::thrift::protocol::TProtocol* oprot
   xfer += oprot->writeFieldBegin("enums", ::apache::thrift::protocol::T_LIST, 4);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->enums.size()));
-    std::vector< ::ghidra::datatype::SDataTypeEnum> ::const_iterator _iter51;
-    for (_iter51 = this->enums.begin(); _iter51 != this->enums.end(); ++_iter51)
+    std::vector< ::ghidra::datatype::SDataTypeEnum> ::const_iterator _iter61;
+    for (_iter61 = this->enums.begin(); _iter61 != this->enums.end(); ++_iter61)
     {
-      xfer += (*_iter51).write(oprot);
+      xfer += (*_iter61).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -417,10 +465,10 @@ uint32_t SDataFullSyncPacket::write(::apache::thrift::protocol::TProtocol* oprot
   xfer += oprot->writeFieldBegin("signatures", ::apache::thrift::protocol::T_LIST, 5);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->signatures.size()));
-    std::vector< ::ghidra::datatype::SDataTypeSignature> ::const_iterator _iter52;
-    for (_iter52 = this->signatures.begin(); _iter52 != this->signatures.end(); ++_iter52)
+    std::vector< ::ghidra::datatype::SDataTypeSignature> ::const_iterator _iter62;
+    for (_iter62 = this->signatures.begin(); _iter62 != this->signatures.end(); ++_iter62)
     {
-      xfer += (*_iter52).write(oprot);
+      xfer += (*_iter62).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
@@ -429,34 +477,58 @@ uint32_t SDataFullSyncPacket::write(::apache::thrift::protocol::TProtocol* oprot
   xfer += oprot->writeFieldBegin("functions", ::apache::thrift::protocol::T_LIST, 6);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->functions.size()));
-    std::vector< ::ghidra::function::SFunction> ::const_iterator _iter53;
-    for (_iter53 = this->functions.begin(); _iter53 != this->functions.end(); ++_iter53)
+    std::vector< ::ghidra::function::SFunction> ::const_iterator _iter63;
+    for (_iter63 = this->functions.begin(); _iter63 != this->functions.end(); ++_iter63)
     {
-      xfer += (*_iter53).write(oprot);
+      xfer += (*_iter63).write(oprot);
     }
     xfer += oprot->writeListEnd();
   }
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("removed_datatypes", ::apache::thrift::protocol::T_LIST, 7);
+  xfer += oprot->writeFieldBegin("globalVars", ::apache::thrift::protocol::T_LIST, 7);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->globalVars.size()));
+    std::vector< ::ghidra::variable::SGlobalVar> ::const_iterator _iter64;
+    for (_iter64 = this->globalVars.begin(); _iter64 != this->globalVars.end(); ++_iter64)
+    {
+      xfer += (*_iter64).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("removed_datatypes", ::apache::thrift::protocol::T_LIST, 8);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->removed_datatypes.size()));
-    std::vector< ::ghidra::shared::Id> ::const_iterator _iter54;
-    for (_iter54 = this->removed_datatypes.begin(); _iter54 != this->removed_datatypes.end(); ++_iter54)
+    std::vector< ::ghidra::datatype::Id> ::const_iterator _iter65;
+    for (_iter65 = this->removed_datatypes.begin(); _iter65 != this->removed_datatypes.end(); ++_iter65)
     {
-      xfer += oprot->writeI64((*_iter54));
+      xfer += oprot->writeI64((*_iter65));
     }
     xfer += oprot->writeListEnd();
   }
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("removed_functions", ::apache::thrift::protocol::T_LIST, 8);
+  xfer += oprot->writeFieldBegin("removed_functions", ::apache::thrift::protocol::T_LIST, 9);
   {
     xfer += oprot->writeListBegin(::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->removed_functions.size()));
-    std::vector< ::ghidra::shared::Id> ::const_iterator _iter55;
-    for (_iter55 = this->removed_functions.begin(); _iter55 != this->removed_functions.end(); ++_iter55)
+    std::vector< ::ghidra::function::Id> ::const_iterator _iter66;
+    for (_iter66 = this->removed_functions.begin(); _iter66 != this->removed_functions.end(); ++_iter66)
     {
-      xfer += oprot->writeI64((*_iter55));
+      xfer += oprot->writeI64((*_iter66));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("removed_globalVars", ::apache::thrift::protocol::T_LIST, 10);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->removed_globalVars.size()));
+    std::vector< ::ghidra::variable::Id> ::const_iterator _iter67;
+    for (_iter67 = this->removed_globalVars.begin(); _iter67 != this->removed_globalVars.end(); ++_iter67)
+    {
+      xfer += oprot->writeI64((*_iter67));
     }
     xfer += oprot->writeListEnd();
   }
@@ -475,32 +547,38 @@ void swap(SDataFullSyncPacket &a, SDataFullSyncPacket &b) {
   swap(a.enums, b.enums);
   swap(a.signatures, b.signatures);
   swap(a.functions, b.functions);
+  swap(a.globalVars, b.globalVars);
   swap(a.removed_datatypes, b.removed_datatypes);
   swap(a.removed_functions, b.removed_functions);
+  swap(a.removed_globalVars, b.removed_globalVars);
   swap(a.__isset, b.__isset);
 }
 
-SDataFullSyncPacket::SDataFullSyncPacket(const SDataFullSyncPacket& other56) {
-  typedefs = other56.typedefs;
-  classes = other56.classes;
-  structures = other56.structures;
-  enums = other56.enums;
-  signatures = other56.signatures;
-  functions = other56.functions;
-  removed_datatypes = other56.removed_datatypes;
-  removed_functions = other56.removed_functions;
-  __isset = other56.__isset;
+SDataFullSyncPacket::SDataFullSyncPacket(const SDataFullSyncPacket& other68) {
+  typedefs = other68.typedefs;
+  classes = other68.classes;
+  structures = other68.structures;
+  enums = other68.enums;
+  signatures = other68.signatures;
+  functions = other68.functions;
+  globalVars = other68.globalVars;
+  removed_datatypes = other68.removed_datatypes;
+  removed_functions = other68.removed_functions;
+  removed_globalVars = other68.removed_globalVars;
+  __isset = other68.__isset;
 }
-SDataFullSyncPacket& SDataFullSyncPacket::operator=(const SDataFullSyncPacket& other57) {
-  typedefs = other57.typedefs;
-  classes = other57.classes;
-  structures = other57.structures;
-  enums = other57.enums;
-  signatures = other57.signatures;
-  functions = other57.functions;
-  removed_datatypes = other57.removed_datatypes;
-  removed_functions = other57.removed_functions;
-  __isset = other57.__isset;
+SDataFullSyncPacket& SDataFullSyncPacket::operator=(const SDataFullSyncPacket& other69) {
+  typedefs = other69.typedefs;
+  classes = other69.classes;
+  structures = other69.structures;
+  enums = other69.enums;
+  signatures = other69.signatures;
+  functions = other69.functions;
+  globalVars = other69.globalVars;
+  removed_datatypes = other69.removed_datatypes;
+  removed_functions = other69.removed_functions;
+  removed_globalVars = other69.removed_globalVars;
+  __isset = other69.__isset;
   return *this;
 }
 void SDataFullSyncPacket::printTo(std::ostream& out) const {
@@ -512,8 +590,10 @@ void SDataFullSyncPacket::printTo(std::ostream& out) const {
   out << ", " << "enums=" << to_string(enums);
   out << ", " << "signatures=" << to_string(signatures);
   out << ", " << "functions=" << to_string(functions);
+  out << ", " << "globalVars=" << to_string(globalVars);
   out << ", " << "removed_datatypes=" << to_string(removed_datatypes);
   out << ", " << "removed_functions=" << to_string(removed_functions);
+  out << ", " << "removed_globalVars=" << to_string(removed_globalVars);
   out << ")";
 }
 

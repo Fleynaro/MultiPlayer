@@ -74,6 +74,7 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
     EXPECT_GE(m_programModule->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 20);
     auto tr = m_programModule->getTransaction();
     auto typeManager = m_programModule->getTypeManager();
+    auto gvarManager = m_programModule->getGVarManager();
     auto funcManager = m_programModule->getFunctionManager();
     auto declManager = funcManager->getFunctionDeclManager();
     auto modulesManager = m_programModule->getProcessModuleManager();
@@ -133,6 +134,12 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
             tagManager->createUserTag(function1->getDeclarationPtr(), tagManager->m_getTag, "tag1", "test GET tag1");
             tagManager->createUserTag(function2->getDeclarationPtr(), tagManager->m_setTag, "tag2", "test SET tag2");
         }
+    }
+
+    //for global vars
+    {
+        auto gvar1 = gvarManager->createGlobalVar(modulesManager->getMainModule(), &g_IntegerVal, "g_IntegerVal", "test global var");
+        gvar1->setType(DataType::GetUnit(typeManager->getTypeByName("int32_t")));
     }
 
     //for types
@@ -217,6 +224,12 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
             auto tags = tagManager->getTagCollection(func);
             ASSERT_EQ(tags.getTags().size(), 3);
         }
+    }
+
+    //for global vars
+    {
+        auto gvarManager = m_programModule->getGVarManager();
+        ASSERT_EQ(gvarManager->getItemsCount(), 1);
     }
 
     //for types
@@ -501,6 +514,7 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
     auto sync = m_programModule->getGhidraSync();
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
+    auto gvarManager = m_programModule->getGVarManager();
     DataType::Structure* screen2d_vtable = nullptr;
 
     //download
@@ -523,6 +537,7 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
 
         typeManager->loadTypesFrom(&dataPacket);
         funcManager->loadFunctionsFrom(&dataPacket);
+        gvarManager->loadGlobalVarsFrom(&dataPacket);
 
         auto type = typeManager->getTypeByName("Screen2D");
         if (type != nullptr) {
@@ -610,8 +625,8 @@ public:
     }
 };
 
-auto g_someClass = new SomeClass;
-int g_IntegerVal = 4;
+SomeClass* g_someClass = new SomeClass;
+int g_IntegerVal;
 
 void setPlayerPos() {
     g_IntegerVal = 5;

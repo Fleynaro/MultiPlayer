@@ -3,6 +3,6 @@
 
 #include "Type/Type.h"
 
-#include "Variable/Variable.h"
+#include "Variable/GlobalVar.h"
 
 #include "VTable/VTable.h"

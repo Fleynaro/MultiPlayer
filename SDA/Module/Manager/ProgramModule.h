@@ -10,7 +10,7 @@ namespace CE
 {
 	class ProcessModuleManager;
 	class TypeManager;
-	class GVarManager;
+	class GlobalVarManager;
 	class FunctionManager;
 	class FunctionDeclManager;
 	class FunctionTagManager;
@@ -47,7 +47,7 @@ namespace CE
 
 		TypeManager* getTypeManager();
 
-		GVarManager* getGVarManager();
+		GlobalVarManager* getGVarManager();
 
 		FunctionManager* getFunctionManager();
 
@@ -76,7 +76,7 @@ namespace CE
 
 		ProcessModuleManager* m_processModuleManager = nullptr;
 		TypeManager* m_typeManager = nullptr;
-		GVarManager* m_gvarManager = nullptr;
+		GlobalVarManager* m_gvarManager = nullptr;
 		FunctionManager* m_functionManager = nullptr;
 		VtableManager* m_vtableManager = nullptr;
 		TriggerManager* m_triggerManager = nullptr;
