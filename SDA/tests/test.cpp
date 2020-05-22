@@ -668,6 +668,11 @@ int sumArray(arrType arr[3][2], char* str)
     return sum;
 }
 
+#include <Decompiler/DecAsmGraph.h>
+void test11111() {
+    Decompiler::test();
+}
+
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
 
@@ -678,5 +683,6 @@ int main(int argc, char** argv) {
     SetConsoleOutputCP(1251);
     DebugOutput_Console = true;
 
-	return RUN_ALL_TESTS();
+	//return RUN_ALL_TESTS();
+    test11111();  return 0;
 }
