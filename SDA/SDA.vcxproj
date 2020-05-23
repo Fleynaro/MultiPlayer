@@ -234,6 +234,7 @@
     <ClCompile Include="Module\DB\Transaction.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
+    <ClCompile Include="Module\Decompiler\DecAsmGraph.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmDecoder.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmInstructions.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmOperand.cpp" />

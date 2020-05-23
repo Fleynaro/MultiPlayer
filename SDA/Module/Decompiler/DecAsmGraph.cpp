@@ -1,0 +1,223 @@
+#include "DecAsmGraph.h"
+
+using namespace CE;
+using namespace CE::Decompiler;
+
+AsmGraphBlock::AsmGraphBlock(AsmGraph* asmGraph, int minOffset, int maxOffset)
+	: m_asmGraph(asmGraph), m_minOffset(minOffset), m_maxOffset(maxOffset)
+{}
+
+std::list<int>& AsmGraphBlock::getInstructions() {
+	return m_instructions;
+}
+
+int AsmGraphBlock::getMinOffset() {
+	return m_minOffset;
+}
+
+int AsmGraphBlock::getMaxOffset() {
+	return m_maxOffset;
+}
+
+void AsmGraphBlock::setNextNearBlock(AsmGraphBlock* nextBlock) {
+	m_nextNearBlock = nextBlock;
+	nextBlock->m_blocksReferencedTo.push_back(this);
+}
+
+void AsmGraphBlock::setNextFarBlock(AsmGraphBlock* nextBlock) {
+	m_nextFarBlock = nextBlock;
+	nextBlock->m_blocksReferencedTo.push_back(this);
+}
+
+AsmGraphBlock* AsmGraphBlock::getNextNearBlock() {
+	return m_nextNearBlock;
+}
+
+AsmGraphBlock* AsmGraphBlock::getNextFarBlock() {
+	return m_nextFarBlock;
+}
+
+ZydisDecodedInstruction& AsmGraphBlock::getLastInstruction() {
+	return m_asmGraph->m_instructions[*std::prev(m_instructions.end())];
+}
+
+void AsmGraphBlock::printDebug(void* addr) {
+	ZydisFormatter formatter;
+	ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
+
+	ZyanU64 runtime_address = (ZyanU64)addr;
+	for (auto instr_off : m_instructions) {
+		char buffer[256];
+		ZydisFormatterFormatInstruction(&formatter, &m_asmGraph->m_instructions[instr_off], buffer, sizeof(buffer),
+			runtime_address + instr_off);
+		printf("%p(%i): %s\n", (void*)(runtime_address + instr_off), instr_off, buffer);
+	}
+
+	if(m_nextNearBlock != nullptr)
+		printf("Next near: %i\n", m_nextNearBlock->getMinOffset());
+	if (m_nextFarBlock != nullptr)
+		printf("Next far: %i\n", m_nextFarBlock->getMinOffset());
+}
+
+
+
+AsmGraph::AsmGraph(InstructionMapType instructions)
+	: m_instructions(instructions)
+{}
+
+void AsmGraph::build() {
+	std::map<int, bool> split_offsets;
+	std::list<std::pair<int, int>> jump_dirs;
+
+	for (const auto& it : m_instructions) {
+		auto offset = it.first;
+		auto& instruction = it.second;
+
+		if (instruction.meta.category == ZYDIS_CATEGORY_UNCOND_BR || instruction.meta.category == ZYDIS_CATEGORY_COND_BR) {
+			auto& operand = instruction.operands[0];
+			if (operand.reg.value == ZYDIS_REGISTER_NONE) {
+				if (operand.imm.is_relative) {
+					int targetOffset = (int)instruction.length +
+						(operand.imm.is_signed ? (offset + (int)operand.imm.value.s) : (offset + (unsigned int)operand.imm.value.u));
+					split_offsets.insert(std::make_pair(offset, false));
+					split_offsets.insert(std::make_pair(targetOffset, true));
+					jump_dirs.push_back(std::make_pair(offset, targetOffset));
+				}
+			}
+		}
+	}
+
+	int offset = 0;
+	for (const auto& it : split_offsets) {
+		auto minOffset = offset;
+		auto maxOffset = it.first;
+		if (!it.second) {
+			maxOffset += m_instructions[maxOffset].length;
+		}
+		if (minOffset < maxOffset) {
+			createBlockAtOffset(minOffset, maxOffset);
+		}
+		offset = maxOffset;
+	}
+	createBlockAtOffset(offset, getMaxOffset());
+
+	for (auto it = m_blocks.begin(); it != std::prev(m_blocks.end()); it ++) {
+		auto& curBlock = *it;
+		auto& nextBlock = *std::next(it);
+		auto& instruction = curBlock.second.getLastInstruction();
+		if (instruction.meta.category != ZYDIS_CATEGORY_UNCOND_BR) {
+			curBlock.second.setNextNearBlock(&nextBlock.second);
+		}
+	}
+
+	for (const auto& jmp_dir : jump_dirs) {
+		auto curBlock = getBlockAtOffset(jmp_dir.first);
+		auto nextFarBlock = getBlockAtOffset(jmp_dir.second);
+		curBlock->setNextFarBlock(nextFarBlock);
+	}
+}
+
+AsmGraphBlock* AsmGraph::getBlockAtOffset(int offset) {
+	auto it = std::prev(m_blocks.upper_bound(offset));
+	if (it != m_blocks.end()) {
+		if (offset >= it->second.getMinOffset() && offset < it->second.getMaxOffset()) {
+			return &it->second;
+		}
+	}
+	return nullptr;
+}
+
+void AsmGraph::printDebug(void* addr) {
+	for (auto block : m_blocks) {
+		block.second.printDebug(addr);
+		puts("==================");
+	}
+}
+
+void AsmGraph::createBlockAtOffset(int minOffset, int maxOffset) {
+	AsmGraphBlock block(this, minOffset, maxOffset);
+	for (const auto& it : m_instructions) {
+		if (it.first >= minOffset && it.first < maxOffset) {
+			block.getInstructions().push_back(it.first);
+		}
+	}
+	m_blocks.insert(std::make_pair(minOffset, block));
+}
+
+int AsmGraph::getMaxOffset() {
+	auto& lastInstr = *std::prev(m_instructions.end());
+	return lastInstr.first + lastInstr.second.length;
+}
+
+InstructionMapType CE::Decompiler::getInstructionsAtAddress(void* addr, int size) {
+	InstructionMapType result;
+	ZydisDecoder decoder;
+	ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
+
+	int curOffset = 0;
+	ZyanUSize curSize = (ZyanUSize)size;
+	auto curAddress = (ZyanU64)addr;
+	ZydisDecodedInstruction curInstruction;
+	while (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, (void*)curAddress, curSize,
+		&curInstruction)))
+	{
+		result.insert(std::make_pair(curOffset, curInstruction));
+		curSize -= curInstruction.length;
+		curOffset += curInstruction.length;
+		curAddress += curInstruction.length;
+	}
+	return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+void func() {
+	int a = 5;
+	int b = 6;
+	if (a < b) {
+		a = b;
+
+		while (a != 0) {
+			a--;
+
+			do {
+				b--;
+			} while (b != 0);
+
+			if (a == 1)
+				break;
+		}
+	}
+	else if( a == 1) {
+		a = 0;
+		return;
+	}
+
+	if (b) {
+		a = 1;
+	}
+}
+
+int calculateFunctionSize2(byte* addr) {
+	int size = 0;
+	while (addr[size] != 0xCC)
+		size++;
+	return size;
+}
+
+void CE::Decompiler::test() {
+	AsmGraph graph(CE::Decompiler::getInstructionsAtAddress(&func, calculateFunctionSize2((byte*)&func)));
+	graph.build();
+
+	graph.printDebug(&func);
+}
