@@ -346,6 +346,7 @@
     <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\Decompiler\DecAsmGraph.h" />
+    <ClInclude Include="Module\Decompiler\DecAsmInterpreter.h" />
     <ClInclude Include="Module\Disassembler\DisasmDecoder.h" />
     <ClInclude Include="Module\Disassembler\DisasmInstructions.h" />
     <ClInclude Include="Module\Disassembler\DisasmOperand.h" />
