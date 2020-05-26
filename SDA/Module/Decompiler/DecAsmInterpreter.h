@@ -86,9 +86,14 @@ namespace CE::Decompiler
 		{
 		public:
 			Node* m_parentNode;
+			bool m_isSigned = false;
 
 			Node()
 			{}
+
+			void setSigned(bool toggle) {
+				m_isSigned = toggle;
+			}
 
 			virtual bool isLeaf() = 0;
 
@@ -487,6 +492,17 @@ namespace CE::Decompiler
 				return expr;
 			}
 		}
+
+		bool isValid() {
+			return m_operand->type == ZYDIS_OPERAND_TYPE_REGISTER ||
+				m_operand->type == ZYDIS_OPERAND_TYPE_IMMEDIATE ||
+				m_operand->type == ZYDIS_OPERAND_TYPE_MEMORY;
+		}
+
+		bool isDst() {
+			return m_operand->type == ZYDIS_OPERAND_TYPE_REGISTER ||
+				m_operand->type == ZYDIS_OPERAND_TYPE_MEMORY;
+		}
 	private:
 		ExecutionContext* m_ctx;
 		const ZydisDecodedOperand* m_operand;
@@ -546,23 +562,21 @@ namespace CE::Decompiler
 		const ZydisDecodedInstruction* m_instruction;
 
 		void unaryOperation(ExprTree::OperationType opType, ExprTree::Node* srcExpr, ExprTree::Node* dstExpr = nullptr) {
-			auto firstOperandType = m_instruction->operands[0].type;
-			if (firstOperandType != ZYDIS_OPERAND_TYPE_MEMORY && firstOperandType != ZYDIS_OPERAND_TYPE_REGISTER)
+			Operand op(m_ctx, &m_instruction->operands[0]);
+			if (!op.isDst())
 				return;
+
 			if (!dstExpr) {
-				Operand op(m_ctx, &m_instruction->operands[0]);
 				dstExpr = op.getExpr();
 			}
 			assignment(m_instruction->operands[0], new ExprTree::OperationalNode(dstExpr, srcExpr, opType), dstExpr);
 		}
 
-		void binOperation(ExprTree::OperationType opType) {
-			auto firstOperandType = m_instruction->operands[0].type;
-			if (firstOperandType != ZYDIS_OPERAND_TYPE_MEMORY && firstOperandType != ZYDIS_OPERAND_TYPE_REGISTER)
-				return;
-
+		void binOperation(ExprTree::OperationType opType, bool isSigned = false) {
 			Operand op1(m_ctx, &m_instruction->operands[0]);
 			Operand op2(m_ctx, &m_instruction->operands[1]);
+			if (!op1.isDst() || !op2.isValid())
+				return;
 
 			ExprTree::Node* dstExpr = nullptr;
 			ExprTree::Node* srcExpr = op2.getExpr();
@@ -571,7 +585,20 @@ namespace CE::Decompiler
 				srcExpr = new ExprTree::OperationalNode(dstExpr, srcExpr, opType);
 			}
 
+			srcExpr->setSigned(isSigned);
 			assignment(m_instruction->operands[0], srcExpr, dstExpr);
+		}
+
+		void tripleOperation(ExprTree::OperationType opType, bool isSigned = false) {
+			Operand op1(m_ctx, &m_instruction->operands[0]);
+			Operand op2(m_ctx, &m_instruction->operands[1]);
+			Operand op3(m_ctx, &m_instruction->operands[1]);
+			if (!op1.isDst() || !op2.isValid() || !op2.isValid())
+				return;
+
+			auto srcExpr = new ExprTree::OperationalNode(op2.getExpr(), op3.getExpr(), opType);
+			srcExpr->setSigned(isSigned);
+			assignment(m_instruction->operands[0], srcExpr);
 		}
 
 		void assignment(const ZydisDecodedOperand& dstOperand, ExprTree::Node* srcExpr, ExprTree::Node* dstExpr = nullptr) {
@@ -629,9 +656,17 @@ namespace CE::Decompiler
 			switch (m_instruction->mnemonic)
 			{
 			case ZYDIS_MNEMONIC_MOV:
-			case ZYDIS_MNEMONIC_LEA:
-				binOperation(ExprTree::None);
+			case ZYDIS_MNEMONIC_MOVZX:
+			case ZYDIS_MNEMONIC_MOVSX:
+			case ZYDIS_MNEMONIC_MOVSXD:
+			case ZYDIS_MNEMONIC_LEA: {
+				bool isSigned = false;
+				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_MOVSX || m_instruction->mnemonic == ZYDIS_MNEMONIC_MOVSXD) {
+					isSigned = true;
+				}
+				binOperation(ExprTree::None, isSigned);
 				break;
+			}
 			}
 		}
 	};
@@ -653,27 +688,50 @@ namespace CE::Decompiler
 				binOperation(ExprTree::Sub);
 				break;
 			case ZYDIS_MNEMONIC_MUL:
-				binOperation(ExprTree::Mul);
-				break;
-			case ZYDIS_MNEMONIC_DIV: {
-				ZydisRegister reg;
-				switch (m_instruction->operands[0].size)
-				{
-				case 1:
-					reg = ZYDIS_REGISTER_AL;
-					break;
-				case 2:
-					reg = ZYDIS_REGISTER_AX;
-					break;
-				case 4:
-					reg = ZYDIS_REGISTER_EAX;
-					break;
-				default:
-					reg = ZYDIS_REGISTER_RAX;
+			case ZYDIS_MNEMONIC_IMUL:
+			case ZYDIS_MNEMONIC_DIV:
+			case ZYDIS_MNEMONIC_IDIV:
+			{
+				auto opType = ExprTree::Mul;
+				bool isSigned = false;
+				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_DIV || m_instruction->mnemonic == ZYDIS_MNEMONIC_IDIV) {
+					opType = ExprTree::Div;
+				}
+				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_IMUL || m_instruction->mnemonic == ZYDIS_MNEMONIC_IDIV) {
+					isSigned = true;
 				}
 
-				Operand op(m_ctx, &m_instruction->operands[0]);
-				setExprToRegisterDst(reg, new ExprTree::OperationalNode(Register::GetOrCreateExprRegLeaf(m_ctx, reg), op.getExpr(), ExprTree::Div));
+				if (m_instruction->operand_count == 1)
+				{
+					ZydisRegister reg;
+					switch (m_instruction->operands[0].size)
+					{
+					case 1:
+						reg = ZYDIS_REGISTER_AL;
+						break;
+					case 2:
+						reg = ZYDIS_REGISTER_AX;
+						break;
+					case 4:
+						reg = ZYDIS_REGISTER_EAX;
+						break;
+					default:
+						reg = ZYDIS_REGISTER_RAX;
+					}
+
+					Operand op(m_ctx, &m_instruction->operands[0]);
+					auto srcExpr = new ExprTree::OperationalNode(Register::GetOrCreateExprRegLeaf(m_ctx, reg), op.getExpr(), opType);
+					srcExpr->setSigned(isSigned);
+					setExprToRegisterDst(reg, srcExpr);
+				}
+				else if (m_instruction->operand_count == 2)
+				{
+					binOperation(opType, isSigned);
+				}
+				else if (m_instruction->operand_count == 3)
+				{
+					tripleOperation(opType, isSigned);
+				}
 				break;
 			}
 			case ZYDIS_MNEMONIC_INC:
@@ -681,6 +739,9 @@ namespace CE::Decompiler
 				break;
 			case ZYDIS_MNEMONIC_DEC:
 				unaryOperation(ExprTree::Sub, new ExprTree::NumberLeaf(1));
+				break;
+			case ZYDIS_MNEMONIC_NEG:
+				unaryOperation(ExprTree::Mul, new ExprTree::NumberLeaf(-1));
 				break;
 			}
 		}
@@ -690,24 +751,14 @@ namespace CE::Decompiler
 	{
 	public:
 		void execute(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction& instruction) {
-			switch (instruction.mnemonic)
 			{
-			case ZYDIS_MNEMONIC_MOV:
-			case ZYDIS_MNEMONIC_LEA: {
 				MovementInstructionInterpreter interpreter(block, ctx, &instruction);
 				interpreter.execute();
-				break;
 			}
-			case ZYDIS_MNEMONIC_ADD:
-			case ZYDIS_MNEMONIC_SUB:
-			case ZYDIS_MNEMONIC_MUL:
-			case ZYDIS_MNEMONIC_DIV:
-			case ZYDIS_MNEMONIC_INC:
-			case ZYDIS_MNEMONIC_DEC: {
+
+			{
 				ArithmeticInstructionInterpreter interpreter(block, ctx, &instruction);
 				interpreter.execute();
-				break;
-			}
 			}
 		}
 	};
