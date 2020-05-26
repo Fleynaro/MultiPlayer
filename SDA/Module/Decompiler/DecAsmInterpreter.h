@@ -73,6 +73,8 @@ namespace CE::Decompiler
 
 		enum OperationType
 		{
+			None,
+
 			//Arithmetic
 			Add,
 			Sub,
@@ -325,6 +327,42 @@ namespace CE::Decompiler
 			return "reg:" + std::to_string(reg);
 		}
 
+		static ExprTree::Node* CreateExprRegLeaf(ExecutionContext* ctx, ZydisRegister reg) {
+			Symbol::Symbol* symbol = new Symbol::LocalRegVar(reg);
+			auto leaf = new ExprTree::SymbolLeaf(symbol);
+			ctx->m_expressionManager->getSymbols().push_back(symbol);
+			ctx->m_expressionManager->getExprNodes().push_back(leaf);
+			return leaf;
+		}
+
+		static ExprTree::Node* GetOrCreateExprRegLeaf(ExecutionContext* ctx, ZydisRegister reg) {
+			auto addr = Register::GetAddress(reg);
+			if (ctx->m_memory.find(addr) != ctx->m_memory.end()) {
+				return ctx->m_memory[addr];
+			}
+
+			auto regInfo = Register::GetRegInfo(reg);
+			ExprTree::Node* node = nullptr;
+			for (auto sameReg : regInfo.m_sameRegisters) {
+				if (sameReg.first != reg) {
+					auto it = ctx->m_memory.find(Register::GetAddress(sameReg.first));
+					if (it != ctx->m_memory.end()) {
+						node = it->second;
+						if (sameReg.second > regInfo.m_mask) {
+							node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(sameReg.second & regInfo.m_mask), ExprTree::And);
+						}
+						break;
+					}
+				}
+			}
+
+			if (!node) {
+				node = CreateExprRegLeaf(ctx, reg);
+			}
+			ctx->m_memory.insert(std::make_pair(addr, node));
+			return node;
+		}
+		
 	private:
 		static std::list<std::pair<ZydisRegister, uint64_t>> GetListOfSameGenRegisters(int idx) {
 			std::list result = {
@@ -360,89 +398,38 @@ namespace CE::Decompiler
 		ExprTree::Node* getExpr()
 		{
 			if (m_operand->type == ZYDIS_OPERAND_TYPE_REGISTER) {
-				return getOrCreateExprRegLeaf(m_operand->reg.value, false);
+				return Register::GetOrCreateExprRegLeaf(m_ctx, m_operand->reg.value);
 			}
 			else if (m_operand->type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				return createExprNumLeaf(m_operand->imm.value.u);
+				return CreateExprNumLeaf(m_ctx, m_operand->imm.value.u);
 			}
 			else if (m_operand->type == ZYDIS_OPERAND_TYPE_MEMORY) {
-				return createExprMemLocation(m_operand->mem);
+				auto expr = CreateExprMemLocation(m_ctx, m_operand->mem);
+				expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(m_operand->size / 0x8), ExprTree::readValue);
+				return expr;
 			}
 		}
 	private:
 		ExecutionContext* m_ctx;
 		const ZydisDecodedOperand* m_operand;
 
-		ExprTree::Node* createExprNumLeaf(uint64_t value) {
+		static ExprTree::Node* CreateExprNumLeaf(ExecutionContext* ctx, uint64_t value) {
 			auto leaf = new ExprTree::NumberLeaf(value);
-			m_ctx->m_expressionManager->getExprNodes().push_back(leaf);
+			ctx->m_expressionManager->getExprNodes().push_back(leaf);
 			return leaf;
 		}
 
-		ExprTree::Node* createExprRegLeaf(ZydisRegister reg, bool isRead = false) {
-			Symbol::Symbol* symbol = nullptr;
-			if (isRead) {
-				auto paramIdx = Register::GetRegisterParamIdx(reg);
-				if (paramIdx != 0) {
-					auto regInfo = Register::GetRegInfo(reg);
-					symbol = new Symbol::Parameter(paramIdx, regInfo.m_isVector);
-				}
-			}
-
-			if (!symbol) {
-				symbol = new Symbol::LocalRegVar(reg);
-			}
-			auto leaf = new ExprTree::SymbolLeaf(symbol);
-			m_ctx->m_expressionManager->getSymbols().push_back(symbol);
-			m_ctx->m_expressionManager->getExprNodes().push_back(leaf);
-			return leaf;
-		}
-
-		ExprTree::Node* createExprRegLeafBasedOnSameReg(ExprTree::Node* baseRegExpr, uint64_t mask) {
-			auto expr = new ExprTree::OperationalNode(baseRegExpr, new ExprTree::NumberLeaf(mask), ExprTree::And);
-			m_ctx->m_expressionManager->getExprNodes().push_back(expr);
-			return expr;
-		}
-
-		ExprTree::Node* getOrCreateExprRegLeaf(ZydisRegister reg, bool isRead) {
-			auto addr = Register::GetAddress(reg);
-			if (m_ctx->m_memory.find(addr) != m_ctx->m_memory.end()) {
-				return m_ctx->m_memory[addr];
-			}
-
-			auto regInfo = Register::GetRegInfo(reg);
-			ExprTree::Node* node = nullptr;
-			for (auto sameReg : regInfo.m_sameRegisters) {
-				if (sameReg.first != reg) {
-					auto it = m_ctx->m_memory.find(Register::GetAddress(sameReg.first));
-					if (it != m_ctx->m_memory.end()) {
-						node = it->second;
-						if (sameReg.second > regInfo.m_mask) {
-							node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(sameReg.second & regInfo.m_mask), ExprTree::And);
-						}
-						break;
-					}
-				}
-			}
-
-			if (!node) {
-				node = createExprRegLeaf(reg, isRead);
-			}
-			m_ctx->m_memory.insert(std::make_pair(addr, node));
-			return node;
-		}
-
-		ExprTree::Node* createExprMemLocation(const ZydisDecodedOperand_::ZydisDecodedOperandMem_& mem) {
+		static ExprTree::Node* CreateExprMemLocation(ExecutionContext* ctx, const ZydisDecodedOperand_::ZydisDecodedOperandMem_& mem) {
 			ExprTree::Node* expr = nullptr;
 			ExprTree::Node* baseReg = nullptr;
 
 			if (mem.base != ZYDIS_REGISTER_NONE) {
-				baseReg = getOrCreateExprRegLeaf(mem.base, true);
+				baseReg = Register::GetOrCreateExprRegLeaf(ctx, mem.base);
 			}
 
 			if (mem.index != ZYDIS_REGISTER_NONE) {
 				expr = new ExprTree::OperationalNode(
-					getOrCreateExprRegLeaf(mem.index, true), new ExprTree::NumberLeaf(mem.scale), ExprTree::Mul);
+					Register::GetOrCreateExprRegLeaf(ctx, mem.index), new ExprTree::NumberLeaf(mem.scale), ExprTree::Mul);
 				if (baseReg != nullptr) {
 					expr = new ExprTree::OperationalNode(baseReg, expr, ExprTree::Add);
 				}
@@ -457,7 +444,8 @@ namespace CE::Decompiler
 					expr = new ExprTree::OperationalNode(expr, number, ExprTree::Add);
 				}
 			}
-			m_ctx->m_expressionManager->getExprNodes().push_back(expr);
+
+			ctx->m_expressionManager->getExprNodes().push_back(expr);
 			return expr;
 		}
 	};
@@ -476,8 +464,56 @@ namespace CE::Decompiler
 		ExecutionContext* m_ctx;
 		const ZydisDecodedInstruction* m_instruction;
 
-		ExprTree::OperationalNode* read(ExprTree::Node* node, int bits) {
-			return new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(bits / 0x8), ExprTree::readValue);
+		void binOperation(ExprTree::OperationType opType) {
+			auto firstOperandType = m_instruction->operands[0].type;
+			if (firstOperandType != ZYDIS_OPERAND_TYPE_MEMORY || ZYDIS_OPERAND_TYPE_MEMORY != ZYDIS_OPERAND_TYPE_REGISTER)
+				return;
+
+			Operand op1(m_ctx, &m_instruction->operands[0]);
+			Operand op2(m_ctx, &m_instruction->operands[1]);
+
+			ExprTree::Node* dstExpr = nullptr;
+			ExprTree::Node* srcExpr = op2.getExpr();
+			if (opType != ExprTree::None) {
+				dstExpr = op1.getExpr();
+				srcExpr = new ExprTree::OperationalNode(dstExpr, srcExpr, opType);
+			}
+
+			if (firstOperandType == ZYDIS_OPERAND_TYPE_MEMORY) {
+				auto line = new PrimaryTree::Line(!dstExpr ? op1.getExpr() : dstExpr, srcExpr);
+				m_block->getLines().push_back(line);
+			}
+			else {
+				auto reg = m_instruction->operands[0].reg.value;
+				setExprToRegisterDst(reg, srcExpr);
+			}
+		}
+
+		void setExprToRegisterDst(ZydisRegister reg, ExprTree::Node* srcExpr) {
+			auto regInfo = Register::GetRegInfo(reg);
+			m_ctx->m_memory[Register::GetAddress(reg)] = srcExpr;
+
+			//if these are ah, bh, ch, dh registers
+			auto leftBitShift = (regInfo.m_mask & 0b1) ? 0 : (int)floor(log2(~regInfo.m_mask));
+
+			for (auto sameReg : regInfo.m_sameRegisters) {
+				auto it = m_ctx->m_memory.find(Register::GetAddress(sameReg.first));
+				if (it != m_ctx->m_memory.end()) {
+					if (regInfo.m_mask <= sameReg.second) {
+						auto srcExprShl = srcExpr;
+						if (leftBitShift != 0) {
+							srcExprShl = new ExprTree::OperationalNode(srcExprShl, new ExprTree::NumberLeaf(leftBitShift), ExprTree::Shl);
+						}
+
+						auto maskNumber = new ExprTree::NumberLeaf(~(sameReg.second & regInfo.m_mask));
+						auto maskMultipleOperation = new ExprTree::OperationalNode(it->second, maskNumber, ExprTree::And);
+						it->second = new ExprTree::OperationalNode(maskMultipleOperation, srcExprShl, ExprTree::Or);
+					}
+					else {
+						m_ctx->m_memory.erase(it);
+					}
+				}
+			}
 		}
 	};
 
@@ -492,32 +528,7 @@ namespace CE::Decompiler
 			switch (m_instruction->mnemonic)
 			{
 			case ZYDIS_MNEMONIC_MOV:
-				Operand op2(m_ctx, &m_instruction->operands[1]);
-
-				if (m_instruction->operands[0].type == ZYDIS_OPERAND_TYPE_MEMORY) {
-					Operand op1(m_ctx, &m_instruction->operands[0]);
-					auto line = new PrimaryTree::Line(op1.getExpr(), op2.getExpr());
-					m_block->getLines().push_back(line);
-				}
-				else if (m_instruction->operands[0].type == ZYDIS_OPERAND_TYPE_REGISTER) {
-					auto reg = m_instruction->operands[0].reg.value;
-					auto regInfo = Register::GetRegInfo(reg);
-					auto srcExpr = op2.getExpr();
-
-					//if these are ah, bh, ch, dh registers
-					auto leftBitShift = (regInfo.m_mask & 0b1) ? 0 : (int)floor(log2(~regInfo.m_mask));
-					if (leftBitShift != 0) {
-						srcExpr = new ExprTree::OperationalNode(srcExpr, new ExprTree::NumberLeaf(leftBitShift), ExprTree::Shl);
-					}
-
-					for (auto sameReg : regInfo.m_sameRegisters) {
-						auto it = m_ctx->m_memory.find(Register::GetAddress(sameReg.first));
-						if (it != m_ctx->m_memory.end()) {
-							it->second = new ExprTree::OperationalNode(it->second, srcExpr, ExprTree::Or);
-						}
-					}
-				}
-				
+				binOperation(ExprTree::None);
 				break;
 			}
 		}
@@ -531,7 +542,18 @@ namespace CE::Decompiler
 		{}
 
 		void execute() override {
-			
+			switch (m_instruction->mnemonic)
+			{
+			case ZYDIS_MNEMONIC_ADD:
+				binOperation(ExprTree::Add);
+				break;
+			case ZYDIS_MNEMONIC_SUB:
+				binOperation(ExprTree::Sub);
+				break;
+			case ZYDIS_MNEMONIC_MUL:
+				binOperation(ExprTree::Mul);
+				break;
+			}
 		}
 	};
 
@@ -550,7 +572,8 @@ namespace CE::Decompiler
 			case ZYDIS_MNEMONIC_SUB:
 			case ZYDIS_MNEMONIC_MUL:
 			case ZYDIS_MNEMONIC_DIV:
-				
+				ArithmeticInstructionInterpreter interpreter(block, ctx, &instruction);
+				interpreter.execute();
 				break;
 			}
 		}
