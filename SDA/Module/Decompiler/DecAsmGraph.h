@@ -46,6 +46,8 @@ namespace CE::Decompiler
 	{
 		friend class AsmGraphBlock;
 	public:
+		InstructionMapType m_instructions;
+
 		AsmGraph(InstructionMapType instructions);
 
 		void build();
@@ -54,7 +56,6 @@ namespace CE::Decompiler
 
 		void printDebug(void* addr);
 	private:
-		InstructionMapType m_instructions;
 		std::map<int, AsmGraphBlock> m_blocks;
 
 		void createBlockAtOffset(int minOffset, int maxOffset);

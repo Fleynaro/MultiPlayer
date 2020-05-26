@@ -1,5 +1,6 @@
 #pragma once
 #include "DecAsmGraph.h"
+#include <Utility/Generic.h>
 
 namespace CE::Decompiler
 {
@@ -7,7 +8,8 @@ namespace CE::Decompiler
 	{
 		class Symbol
 		{
-			
+		public:
+			virtual std::string printDebug() = 0;
 		};
 
 		class GlobalObject : public Symbol
@@ -18,6 +20,10 @@ namespace CE::Decompiler
 			GlobalObject(int offset)
 				: m_offset(offset)
 			{}
+
+			std::string printDebug() override {
+				return "[global:" + std::to_string(m_offset) + "]";
+			}
 		};
 
 		class LocalStackTop : public Symbol
@@ -25,6 +31,10 @@ namespace CE::Decompiler
 		public:
 			LocalStackTop()
 			{}
+
+			std::string printDebug() override {
+				return "[stack top]";
+			}
 		};
 
 		class LocalStackVar : public Symbol
@@ -35,6 +45,10 @@ namespace CE::Decompiler
 			LocalStackVar(int stackOffset)
 				: m_stackOffset(stackOffset)
 			{}
+
+			std::string printDebug() override {
+				return "[stack]";
+			}
 		};
 
 		class LocalRegVar : public Symbol
@@ -45,6 +59,10 @@ namespace CE::Decompiler
 			LocalRegVar(ZydisRegister reg)
 				: m_register(reg)
 			{}
+
+			std::string printDebug() override {
+				return "[reg_" + std::string(ZydisRegisterGetString(m_register)) + "]";
+			}
 		};
 
 		class Parameter : public Symbol
@@ -55,6 +73,10 @@ namespace CE::Decompiler
 			Parameter(int idx, bool isVector = false)
 				: m_idx(idx), m_isVector(isVector)
 			{}
+
+			std::string printDebug() override {
+				return "[param_"+ std::to_string(m_idx) +"]";
+			}
 		};
 	};
 
@@ -69,6 +91,8 @@ namespace CE::Decompiler
 			{}
 
 			virtual bool isLeaf() = 0;
+
+			virtual std::string printDebug() = 0;
 		};
 
 		enum OperationType
@@ -92,6 +116,59 @@ namespace CE::Decompiler
 			readValue
 		};
 
+		static std::string ShowOperation(OperationType opType) {
+			switch (opType)
+			{
+			case Add: return "+";
+			case Sub: return "-";
+			case Mul: return "*";
+			case Div: return "/";
+			case And: return "&";
+			case Or: return "|";
+			case Xor: return "^";
+			case Shr: return ">>";
+			case Shl: return "<<";
+			case readValue: return "&";
+			}
+			return "_";
+		}
+
+		class SymbolLeaf : public Node
+		{
+		public:
+			Symbol::Symbol* m_symbol;
+
+			SymbolLeaf(Symbol::Symbol* symbol)
+				: m_symbol(symbol)
+			{}
+
+			bool isLeaf() override {
+				return true;
+			}
+
+			std::string printDebug() override {
+				return m_symbol->printDebug();
+			}
+		};
+
+		class NumberLeaf : public Node
+		{
+		public:
+			uint64_t m_value;
+
+			NumberLeaf(uint64_t value)
+				: m_value(value)
+			{}
+
+			bool isLeaf() override {
+				return true;
+			}
+
+			std::string printDebug() override {
+				return "0x" + Generic::String::NumberToHex(m_value);
+			}
+		};
+
 		class OperationalNode : public Node
 		{
 		public:
@@ -111,33 +188,12 @@ namespace CE::Decompiler
 			bool isLeaf() override {
 				return false;
 			}
-		};
 
-		class SymbolLeaf : public Node
-		{
-		public:
-			Symbol::Symbol* m_symbol;
-
-			SymbolLeaf(Symbol::Symbol* symbol)
-				: m_symbol(symbol)
-			{}
-
-			bool isLeaf() override {
-				return true;
-			}
-		};
-
-		class NumberLeaf : public Node
-		{
-		public:
-			uint64_t m_value;
-
-			NumberLeaf(uint64_t value)
-				: m_value(value)
-			{}
-
-			bool isLeaf() override {
-				return true;
+			std::string printDebug() override {
+				if (m_operation == readValue) {
+					return "*(uint_"+ std::to_string(8 * static_cast<NumberLeaf*>(m_rightNode)->m_value) +"t*)" + m_leftNode->printDebug();
+				}
+				return "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
 			}
 		};
 	};
@@ -164,6 +220,14 @@ namespace CE::Decompiler
 
 			std::list<Line*>& getLines() {
 				return m_lines;
+			}
+
+			std::string printDebug() {
+				std::string result = "";
+				for (auto line : m_lines) {
+					result += line->m_destAddr->printDebug() + " = " + line->m_srcValue->printDebug() + "\n";
+				}
+				return result;
 			}
 		private:
 			std::list<Line*> m_lines;
@@ -219,11 +283,11 @@ namespace CE::Decompiler
 			else if (reg >= ZYDIS_REGISTER_AH && reg <= ZYDIS_REGISTER_BH) {
 				info.m_mask = 0xFF00;
 				info.m_sameRegisters = GetListOfSameGenRegisters(reg - ZYDIS_REGISTER_AH);
-				info.m_sameRegisters.pop_front();
+				info.m_sameRegisters.begin()->first = reg;
 			}
 			else if (reg >= ZYDIS_REGISTER_SPL && reg <= ZYDIS_REGISTER_R15B) {
 				info.m_mask = 0xFF;
-				info.m_sameRegisters = GetListOfSameGenRegisters(reg - ZYDIS_REGISTER_SPL);
+				info.m_sameRegisters = GetListOfSameGenRegisters(reg - ZYDIS_REGISTER_AH);
 			}
 			else if (reg >= ZYDIS_REGISTER_AX && reg <= ZYDIS_REGISTER_R15W) {
 				info.m_mask = 0xFFFF;
@@ -237,8 +301,7 @@ namespace CE::Decompiler
 				info.m_mask = 0xFFFFFFFFFFFFFFFF;
 				info.m_sameRegisters = GetListOfSameGenRegisters(reg - ZYDIS_REGISTER_RAX);
 			}
-
-			if (reg >= ZYDIS_REGISTER_MM0 && reg <= ZYDIS_REGISTER_MM7) {
+			else if (reg >= ZYDIS_REGISTER_MM0 && reg <= ZYDIS_REGISTER_MM7) {
 				info.m_mask = 0xF;
 				info.m_isVector = true;
 				info.m_sameRegisters = GetListOfSameVectorRegisters(reg - ZYDIS_REGISTER_MM0);
@@ -327,6 +390,14 @@ namespace CE::Decompiler
 			return "reg:" + std::to_string(reg);
 		}
 
+		static int GetShiftValueOfMask(uint64_t mask) {
+			int result = 0;
+			for (auto m = mask; int(m & 0xF) == 0; m = m >> 4) {
+				result += 4;
+			}
+			return result;
+		}
+
 		static ExprTree::Node* CreateExprRegLeaf(ExecutionContext* ctx, ZydisRegister reg) {
 			Symbol::Symbol* symbol = new Symbol::LocalRegVar(reg);
 			auto leaf = new ExprTree::SymbolLeaf(symbol);
@@ -343,13 +414,18 @@ namespace CE::Decompiler
 
 			auto regInfo = Register::GetRegInfo(reg);
 			ExprTree::Node* node = nullptr;
-			for (auto sameReg : regInfo.m_sameRegisters) {
+			for (auto it = regInfo.m_sameRegisters.rbegin(); it != regInfo.m_sameRegisters.rend(); it ++) {
+				auto sameReg = *it;
 				if (sameReg.first != reg) {
 					auto it = ctx->m_memory.find(Register::GetAddress(sameReg.first));
 					if (it != ctx->m_memory.end()) {
 						node = it->second;
 						if (sameReg.second > regInfo.m_mask) {
 							node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(sameReg.second & regInfo.m_mask), ExprTree::And);
+							int rightBitShift = Register::GetShiftValueOfMask(regInfo.m_mask);
+							if (rightBitShift != 0) {
+								node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(rightBitShift), ExprTree::Shr);
+							}
 						}
 						break;
 					}
@@ -372,7 +448,7 @@ namespace CE::Decompiler
 			};
 			if (idx <= 3)
 				result.push_front(std::make_pair(ZydisRegister(ZYDIS_REGISTER_AL + idx), (uint64_t)0xFF));
-			else result.push_front(std::make_pair(ZydisRegister(ZYDIS_REGISTER_SPL + idx), (uint64_t)0xFF));
+			else result.push_front(std::make_pair(ZydisRegister(ZYDIS_REGISTER_AH + idx), (uint64_t)0xFF));
 			return result;
 		}
 
@@ -392,7 +468,7 @@ namespace CE::Decompiler
 	{
 	public:
 		Operand(ExecutionContext* ctx, const ZydisDecodedOperand* operand)
-			: m_ctx(ctx), m_operand(m_operand)
+			: m_ctx(ctx), m_operand(operand)
 		{}
 
 		ExprTree::Node* getExpr()
@@ -405,7 +481,9 @@ namespace CE::Decompiler
 			}
 			else if (m_operand->type == ZYDIS_OPERAND_TYPE_MEMORY) {
 				auto expr = CreateExprMemLocation(m_ctx, m_operand->mem);
-				expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(m_operand->size / 0x8), ExprTree::readValue);
+				if (m_operand->actions != 0) {
+					expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(m_operand->size / 0x8), ExprTree::readValue);
+				}
 				return expr;
 			}
 		}
@@ -443,6 +521,9 @@ namespace CE::Decompiler
 				if (expr != nullptr) {
 					expr = new ExprTree::OperationalNode(expr, number, ExprTree::Add);
 				}
+				else {
+					expr = number;
+				}
 			}
 
 			ctx->m_expressionManager->getExprNodes().push_back(expr);
@@ -464,9 +545,20 @@ namespace CE::Decompiler
 		ExecutionContext* m_ctx;
 		const ZydisDecodedInstruction* m_instruction;
 
+		void unaryOperation(ExprTree::OperationType opType, ExprTree::Node* srcExpr, ExprTree::Node* dstExpr = nullptr) {
+			auto firstOperandType = m_instruction->operands[0].type;
+			if (firstOperandType != ZYDIS_OPERAND_TYPE_MEMORY && firstOperandType != ZYDIS_OPERAND_TYPE_REGISTER)
+				return;
+			if (!dstExpr) {
+				Operand op(m_ctx, &m_instruction->operands[0]);
+				dstExpr = op.getExpr();
+			}
+			assignment(m_instruction->operands[0], new ExprTree::OperationalNode(dstExpr, srcExpr, opType), dstExpr);
+		}
+
 		void binOperation(ExprTree::OperationType opType) {
 			auto firstOperandType = m_instruction->operands[0].type;
-			if (firstOperandType != ZYDIS_OPERAND_TYPE_MEMORY || ZYDIS_OPERAND_TYPE_MEMORY != ZYDIS_OPERAND_TYPE_REGISTER)
+			if (firstOperandType != ZYDIS_OPERAND_TYPE_MEMORY && firstOperandType != ZYDIS_OPERAND_TYPE_REGISTER)
 				return;
 
 			Operand op1(m_ctx, &m_instruction->operands[0]);
@@ -479,13 +571,20 @@ namespace CE::Decompiler
 				srcExpr = new ExprTree::OperationalNode(dstExpr, srcExpr, opType);
 			}
 
-			if (firstOperandType == ZYDIS_OPERAND_TYPE_MEMORY) {
-				auto line = new PrimaryTree::Line(!dstExpr ? op1.getExpr() : dstExpr, srcExpr);
+			assignment(m_instruction->operands[0], srcExpr, dstExpr);
+		}
+
+		void assignment(const ZydisDecodedOperand& dstOperand, ExprTree::Node* srcExpr, ExprTree::Node* dstExpr = nullptr) {
+			if (dstOperand.type == ZYDIS_OPERAND_TYPE_MEMORY) {
+				if (!dstExpr) {
+					Operand op(m_ctx, &dstOperand);
+					dstExpr = op.getExpr();
+				}
+				auto line = new PrimaryTree::Line(dstExpr, srcExpr);
 				m_block->getLines().push_back(line);
 			}
 			else {
-				auto reg = m_instruction->operands[0].reg.value;
-				setExprToRegisterDst(reg, srcExpr);
+				setExprToRegisterDst(dstOperand.reg.value, srcExpr);
 			}
 		}
 
@@ -494,9 +593,11 @@ namespace CE::Decompiler
 			m_ctx->m_memory[Register::GetAddress(reg)] = srcExpr;
 
 			//if these are ah, bh, ch, dh registers
-			auto leftBitShift = (regInfo.m_mask & 0b1) ? 0 : (int)floor(log2(~regInfo.m_mask));
+			int leftBitShift = Register::GetShiftValueOfMask(regInfo.m_mask);
 
 			for (auto sameReg : regInfo.m_sameRegisters) {
+				if (sameReg.first == reg)
+					continue;
 				auto it = m_ctx->m_memory.find(Register::GetAddress(sameReg.first));
 				if (it != m_ctx->m_memory.end()) {
 					if (regInfo.m_mask <= sameReg.second) {
@@ -528,6 +629,7 @@ namespace CE::Decompiler
 			switch (m_instruction->mnemonic)
 			{
 			case ZYDIS_MNEMONIC_MOV:
+			case ZYDIS_MNEMONIC_LEA:
 				binOperation(ExprTree::None);
 				break;
 			}
@@ -553,6 +655,33 @@ namespace CE::Decompiler
 			case ZYDIS_MNEMONIC_MUL:
 				binOperation(ExprTree::Mul);
 				break;
+			case ZYDIS_MNEMONIC_DIV: {
+				ZydisRegister reg;
+				switch (m_instruction->operands[0].size)
+				{
+				case 1:
+					reg = ZYDIS_REGISTER_AL;
+					break;
+				case 2:
+					reg = ZYDIS_REGISTER_AX;
+					break;
+				case 4:
+					reg = ZYDIS_REGISTER_EAX;
+					break;
+				default:
+					reg = ZYDIS_REGISTER_RAX;
+				}
+
+				Operand op(m_ctx, &m_instruction->operands[0]);
+				setExprToRegisterDst(reg, new ExprTree::OperationalNode(Register::GetOrCreateExprRegLeaf(m_ctx, reg), op.getExpr(), ExprTree::Div));
+				break;
+			}
+			case ZYDIS_MNEMONIC_INC:
+				unaryOperation(ExprTree::Add, new ExprTree::NumberLeaf(1));
+				break;
+			case ZYDIS_MNEMONIC_DEC:
+				unaryOperation(ExprTree::Sub, new ExprTree::NumberLeaf(1));
+				break;
 			}
 		}
 	};
@@ -564,17 +693,21 @@ namespace CE::Decompiler
 			switch (instruction.mnemonic)
 			{
 			case ZYDIS_MNEMONIC_MOV:
+			case ZYDIS_MNEMONIC_LEA: {
 				MovementInstructionInterpreter interpreter(block, ctx, &instruction);
 				interpreter.execute();
 				break;
-
+			}
 			case ZYDIS_MNEMONIC_ADD:
 			case ZYDIS_MNEMONIC_SUB:
 			case ZYDIS_MNEMONIC_MUL:
 			case ZYDIS_MNEMONIC_DIV:
+			case ZYDIS_MNEMONIC_INC:
+			case ZYDIS_MNEMONIC_DEC: {
 				ArithmeticInstructionInterpreter interpreter(block, ctx, &instruction);
 				interpreter.execute();
 				break;
+			}
 			}
 		}
 	};
@@ -582,7 +715,7 @@ namespace CE::Decompiler
 	class Interpreter
 	{
 	public:
-		Interpreter(int startOffset = 0)
+		Interpreter()
 		{}
 
 		void execute(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction& instruction) {
