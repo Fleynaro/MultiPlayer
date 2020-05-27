@@ -86,7 +86,6 @@ namespace CE::Decompiler
 		{
 		public:
 			Node* m_parentNode;
-			bool m_isSigned = false;
 
 			Node()
 			{}
@@ -95,9 +94,16 @@ namespace CE::Decompiler
 				m_isSigned = toggle;
 			}
 
+			bool isSigned() {
+				return m_isSigned;
+			}
+
 			virtual bool isLeaf() = 0;
 
 			virtual std::string printDebug() = 0;
+
+		private:
+			bool m_isSigned = false;
 		};
 
 		enum OperationType
@@ -615,20 +621,24 @@ namespace CE::Decompiler
 			}
 		}
 
-		void setExprToRegisterDst(ZydisRegister reg, ExprTree::Node* srcExpr) {
-			auto regInfo = Register::GetRegInfo(reg);
-			m_ctx->m_memory[Register::GetAddress(reg)] = srcExpr;
+		void setExprToRegisterDst(ZydisRegister dstReg, ExprTree::Node* srcExpr) {
+			auto regInfo = Register::GetRegInfo(dstReg);
+			m_ctx->m_memory[Register::GetAddress(dstReg)] = srcExpr;
 
 			//if these are ah, bh, ch, dh registers
 			int leftBitShift = Register::GetShiftValueOfMask(regInfo.m_mask);
 
 			for (auto sameReg : regInfo.m_sameRegisters) {
-				if (sameReg.first == reg)
+				if (sameReg.first == dstReg)
 					continue;
 				auto it = m_ctx->m_memory.find(Register::GetAddress(sameReg.first));
 				if (it != m_ctx->m_memory.end()) {
 					if (regInfo.m_mask <= sameReg.second) {
 						auto srcExprShl = srcExpr;
+						if (srcExprShl->isSigned()) {
+							//хранить число байт для каста через энд
+							srcExprShl = new ExprTree::OperationalNode(srcExprShl, , ExprTree::And);
+						}
 						if (leftBitShift != 0) {
 							srcExprShl = new ExprTree::OperationalNode(srcExprShl, new ExprTree::NumberLeaf(leftBitShift), ExprTree::Shl);
 						}

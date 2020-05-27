@@ -217,8 +217,8 @@ int calculateFunctionSize2(byte* addr) {
 
 void ff() {
 	int a = -5;
-	uint64_t b = 6;
-	b = a;
+	uint64_t b = 1;
+	b = b * a;
 }
 
 
