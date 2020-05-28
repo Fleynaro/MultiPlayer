@@ -82,13 +82,34 @@ namespace CE::Decompiler
 
 	namespace ExprTree
 	{
+		class Node;
+		class IParentNode
+		{
+		public:
+			virtual void removeNode(Node* node) = 0;
+		};
+
 		class Node
 		{
 		public:
-			Node* m_parentNode;
-
 			Node()
 			{}
+
+			~Node() {
+				for (auto parentNode : m_parentNodes) {
+					parentNode->removeNode(this);
+				}
+			}
+
+			void removeBy(IParentNode* node) {
+				m_parentNodes.remove(node);
+				if (getUserCount() == 0)
+					delete this;
+			}
+
+			void addParentNode(IParentNode* node) {
+				m_parentNodes.push_back(node);
+			}
 
 			void setSigned(bool toggle) {
 				m_isSigned = toggle;
@@ -98,12 +119,17 @@ namespace CE::Decompiler
 				return m_isSigned;
 			}
 
+			int getUserCount() {
+				return m_parentNodes.size();
+			}
+
 			virtual bool isLeaf() = 0;
 
 			virtual std::string printDebug() = 0;
 
 		private:
 			bool m_isSigned = false;
+			std::list<IParentNode*> m_parentNodes;
 		};
 
 		enum OperationType
@@ -180,7 +206,7 @@ namespace CE::Decompiler
 			}
 		};
 
-		class OperationalNode : public Node
+		class OperationalNode : public Node, public IParentNode
 		{
 		public:
 			Node* m_leftNode;
@@ -190,9 +216,69 @@ namespace CE::Decompiler
 			OperationalNode(Node* leftNode, Node* rightNode, OperationType operation)
 				: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation)
 			{
-				leftNode->m_parentNode = this;
+				leftNode->addParentNode(this);
 				if (rightNode != nullptr) {
-					rightNode->m_parentNode = this;
+					rightNode->addParentNode(this);
+				}
+			}
+
+			~OperationalNode() {
+				if (m_leftNode != nullptr)
+					m_leftNode->removeBy(this);
+				if (m_rightNode != nullptr)
+					m_rightNode->removeBy(this);
+			}
+
+			bool isLeaf() override {
+				return false;
+			}
+
+			void removeNode(Node* node) override {
+				if (m_leftNode == node) {
+					m_leftNode = nullptr;
+				} else if (m_rightNode == node) {
+					m_rightNode = nullptr;
+				}
+			}
+
+			std::string printDebug() override {
+				if (m_operation == readValue) {
+					return "*(uint_"+ std::to_string(8 * static_cast<NumberLeaf*>(m_rightNode)->m_value) +"t*)" + m_leftNode->printDebug();
+				}
+				return "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
+			}
+		};
+
+		class Condition : public Node, public IParentNode
+		{
+		public:
+			enum ConditionType
+			{
+				Eq,
+				Ne,
+				Lt,
+				Le,
+				Gt,
+				Ge
+			};
+
+			Node* m_leftNode;
+			Node* m_rightNode;
+			ConditionType m_cond;
+
+			Condition(Node* leftNode, Node* rightNode, ConditionType cond)
+				: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond)
+			{
+				leftNode->addParentNode(this);
+				rightNode->addParentNode(this);
+			}
+
+			void removeNode(Node* node) override {
+				if (m_leftNode == node) {
+					m_leftNode = nullptr;
+				}
+				else if (m_rightNode == node) {
+					m_rightNode = nullptr;
 				}
 			}
 
@@ -201,10 +287,34 @@ namespace CE::Decompiler
 			}
 
 			std::string printDebug() override {
-				if (m_operation == readValue) {
-					return "*(uint_"+ std::to_string(8 * static_cast<NumberLeaf*>(m_rightNode)->m_value) +"t*)" + m_leftNode->printDebug();
-				}
-				return "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
+				return "";
+			}
+		};
+
+		class CompositeCondition : public Node
+		{
+		public:
+			enum CompositeConditionType
+			{
+				Not,
+				And,
+				Or
+			};
+
+			Node* m_leftNode;
+			Node* m_rightNode;
+			CompositeConditionType m_cond;
+
+			CompositeCondition(Node* leftNode, Node* rightNode, CompositeConditionType cond)
+				: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond)
+			{}
+
+			bool isLeaf() override {
+				return false;
+			}
+
+			std::string printDebug() override {
+				return "";
 			}
 		};
 	};
@@ -248,6 +358,7 @@ namespace CE::Decompiler
 	class ExpressionManager
 	{
 	public:
+		//нужен ли???
 		ExpressionManager()
 
 		{}
@@ -267,13 +378,36 @@ namespace CE::Decompiler
 	class ExecutionContext
 	{
 	public:
-		ExpressionManager* m_expressionManager;
+		ExpressionManager* m_expressionManager; //нужен ли???
 		int m_offset;
-		std::map<std::string, ExprTree::Node*> m_memory;
+
+		std::map<ZydisRegister, ExprTree::Node*> m_registers;
+		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
+
+		struct {
+			ExprTree::Node* leftNode = nullptr;
+			ExprTree::Node* rightNode = nullptr;
+		} m_lastCond;
 
 		ExecutionContext(ExpressionManager* expressionManager, int startOffset = 0)
 			: m_expressionManager(expressionManager), m_offset(startOffset)
 		{}
+
+		void setLastCond(ExprTree::Node* leftNode, ExprTree::Node* rightNode) {
+			//todo: указать, какие флаги были использованы для этого. ибо может быть трабл
+			if (m_lastCond.leftNode != nullptr) {
+				m_lastCond.leftNode->removeBy(nullptr);
+			}
+			if (m_lastCond.rightNode != nullptr) {
+				m_lastCond.rightNode->removeBy(nullptr);
+			}
+			m_lastCond.leftNode = leftNode;
+			m_lastCond.rightNode = rightNode;
+		}
+
+		void clearLastCond() {
+			setLastCond(nullptr, nullptr);
+		}
 	};
 
 	class Register
@@ -397,10 +531,6 @@ namespace CE::Decompiler
 			return 0;
 		}
 
-		static std::string GetAddress(ZydisRegister reg) {
-			return "reg:" + std::to_string(reg);
-		}
-
 		static int GetShiftValueOfMask(uint64_t mask) {
 			int result = 0;
 			for (auto m = mask; int(m & 0xF) == 0; m = m >> 4) {
@@ -418,9 +548,8 @@ namespace CE::Decompiler
 		}
 
 		static ExprTree::Node* GetOrCreateExprRegLeaf(ExecutionContext* ctx, ZydisRegister reg) {
-			auto addr = Register::GetAddress(reg);
-			if (ctx->m_memory.find(addr) != ctx->m_memory.end()) {
-				return ctx->m_memory[addr];
+			if (ctx->m_registers.find(reg) != ctx->m_registers.end()) {
+				return ctx->m_registers[reg];
 			}
 
 			auto regInfo = Register::GetRegInfo(reg);
@@ -428,8 +557,8 @@ namespace CE::Decompiler
 			for (auto it = regInfo.m_sameRegisters.rbegin(); it != regInfo.m_sameRegisters.rend(); it ++) {
 				auto sameReg = *it;
 				if (sameReg.first != reg) {
-					auto it = ctx->m_memory.find(Register::GetAddress(sameReg.first));
-					if (it != ctx->m_memory.end()) {
+					auto it = ctx->m_registers.find(sameReg.first);
+					if (it != ctx->m_registers.end()) {
 						node = it->second;
 						if (sameReg.second > regInfo.m_mask) {
 							node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(sameReg.second & regInfo.m_mask), ExprTree::And);
@@ -446,7 +575,7 @@ namespace CE::Decompiler
 			if (!node) {
 				node = CreateExprRegLeaf(ctx, reg);
 			}
-			ctx->m_memory.insert(std::make_pair(addr, node));
+			ctx->m_registers.insert(std::make_pair(reg, node));
 			return node;
 		}
 		
@@ -613,6 +742,8 @@ namespace CE::Decompiler
 					Operand op(m_ctx, &dstOperand);
 					dstExpr = op.getExpr();
 				}
+				setZF(srcExpr);
+				setSF(srcExpr);
 				auto line = new PrimaryTree::Line(dstExpr, srcExpr);
 				m_block->getLines().push_back(line);
 			}
@@ -623,7 +754,12 @@ namespace CE::Decompiler
 
 		void setExprToRegisterDst(ZydisRegister dstReg, ExprTree::Node* srcExpr) {
 			auto regInfo = Register::GetRegInfo(dstReg);
-			m_ctx->m_memory[Register::GetAddress(dstReg)] = srcExpr;
+			if (m_ctx->m_registers.find(dstReg) != m_ctx->m_registers.end()) {
+				m_ctx->m_registers[dstReg]->removeBy(nullptr);
+			}
+			m_ctx->m_registers[dstReg] = srcExpr;
+			setZF(srcExpr);
+			setSF(srcExpr);
 
 			//if these are ah, bh, ch, dh registers
 			int leftBitShift = Register::GetShiftValueOfMask(regInfo.m_mask);
@@ -631,13 +767,12 @@ namespace CE::Decompiler
 			for (auto sameReg : regInfo.m_sameRegisters) {
 				if (sameReg.first == dstReg)
 					continue;
-				auto it = m_ctx->m_memory.find(Register::GetAddress(sameReg.first));
-				if (it != m_ctx->m_memory.end()) {
+				auto it = m_ctx->m_registers.find(sameReg.first);
+				if (it != m_ctx->m_registers.end()) {
 					if (regInfo.m_mask <= sameReg.second) {
 						auto srcExprShl = srcExpr;
 						if (srcExprShl->isSigned()) {
-							//хранить число байт для каста через энд
-							srcExprShl = new ExprTree::OperationalNode(srcExprShl, , ExprTree::And);
+							srcExprShl = new ExprTree::OperationalNode(srcExprShl, new ExprTree::NumberLeaf(regInfo.m_mask), ExprTree::And);
 						}
 						if (leftBitShift != 0) {
 							srcExprShl = new ExprTree::OperationalNode(srcExprShl, new ExprTree::NumberLeaf(leftBitShift), ExprTree::Shl);
@@ -648,10 +783,20 @@ namespace CE::Decompiler
 						it->second = new ExprTree::OperationalNode(maskMultipleOperation, srcExprShl, ExprTree::Or);
 					}
 					else {
-						m_ctx->m_memory.erase(it);
+						m_ctx->m_registers.erase(it);
 					}
 				}
 			}
+		}
+
+		void setZF(ExprTree::Node* expr) {
+			m_ctx->m_flags[ZYDIS_CPUFLAG_ZF] = new ExprTree::Condition(expr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Eq);
+			m_ctx->clearLastCond();
+		}
+
+		void setSF(ExprTree::Node* expr) {
+			m_ctx->m_flags[ZYDIS_CPUFLAG_SF] = new ExprTree::Condition(expr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Lt);
+			m_ctx->clearLastCond();
 		}
 	};
 
@@ -675,6 +820,52 @@ namespace CE::Decompiler
 					isSigned = true;
 				}
 				binOperation(ExprTree::None, isSigned);
+				break;
+			}
+			}
+		}
+	};
+
+	class LogicInstructionInterpreter : public AbstractInstructionInterpreter
+	{
+	public:
+		LogicInstructionInterpreter(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction* instruction)
+			: AbstractInstructionInterpreter(block, ctx, instruction)
+		{}
+
+		void execute() override {
+			switch (m_instruction->mnemonic)
+			{
+			case ZYDIS_MNEMONIC_AND:
+				binOperation(ExprTree::And);
+				break;
+			case ZYDIS_MNEMONIC_OR:
+				binOperation(ExprTree::Or);
+				break;
+			case ZYDIS_MNEMONIC_XOR:
+				binOperation(ExprTree::Xor);
+				break;
+			case ZYDIS_MNEMONIC_SHR:
+				binOperation(ExprTree::Shr);
+				break;
+			case ZYDIS_MNEMONIC_SHL:
+				binOperation(ExprTree::Shl);
+				break;
+
+			case ZYDIS_MNEMONIC_TEST: {
+				Operand op1(m_ctx, &m_instruction->operands[0]);
+				Operand op2(m_ctx, &m_instruction->operands[1]);
+				auto dstExpr = op1.getExpr();
+				auto srcExpr = op2.getExpr();
+				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::And);
+				setZF(expr);
+				setSF(expr);
+
+				if (m_instruction->operands[0].type == ZYDIS_OPERAND_TYPE_REGISTER) {
+					if (m_instruction->operands[0].reg.value == m_instruction->operands[1].reg.value) {
+						m_ctx->setLastCond(dstExpr, new ExprTree::NumberLeaf(0));
+					}
+				}
 				break;
 			}
 			}
@@ -753,6 +944,19 @@ namespace CE::Decompiler
 			case ZYDIS_MNEMONIC_NEG:
 				unaryOperation(ExprTree::Mul, new ExprTree::NumberLeaf(-1));
 				break;
+
+
+			case ZYDIS_MNEMONIC_CMP: {
+				Operand op1(m_ctx, &m_instruction->operands[0]);
+				Operand op2(m_ctx, &m_instruction->operands[1]);
+				auto dstExpr = op1.getExpr();
+				auto srcExpr = op2.getExpr();
+				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::Sub);
+				setZF(expr);
+				setSF(expr);
+				m_ctx->setLastCond(dstExpr, srcExpr);
+				break;
+			}
 			}
 		}
 	};
