@@ -223,6 +223,7 @@ void ff() {
 
 
 #include "Decompiler.h"
+#include "Optimization/ExprOptimization.h"
 
 void CE::Decompiler::test() {
 	byte mem[] = {
@@ -257,6 +258,23 @@ void CE::Decompiler::test() {
 	for (auto off : block->getInstructions()) {
 		auto instr = graph.m_instructions[off];
 		dispatcher.execute(treeBlock, &ctx, instr);
+	}
+
+	printf("%s\n\n\nAfter optimization:\n\n", treeBlock->printDebug().c_str());
+
+	for (auto line : treeBlock->getLines()) {
+		Optimization::Optimize(line->m_destAddr);
+		Optimization::Optimize(line->m_srcValue);
+
+		/*if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(line->m_destAddr)) {
+			printf("1) %s", line->printDebug().c_str());
+			Optimization::OptimizeConstExpr(expr);
+			printf("2) %s", line->printDebug().c_str());
+			Optimization::OptimizeConstPlaceInExpr(expr);
+			printf("3) %s", line->printDebug().c_str());
+			Optimization::OptimizeRepeatOpInExpr(expr);
+			printf("4) %s\n", line->printDebug().c_str());
+		}*/
 	}
 
 	printf("%s\n\n", treeBlock->printDebug().c_str());

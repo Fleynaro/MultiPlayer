@@ -24,6 +24,10 @@ namespace CE::Decompiler::PrimaryTree
 				m_srcValue = newNode;
 			}
 		}
+
+		std::string printDebug() {
+			return m_destAddr->printDebug() + " = " + m_srcValue->printDebug() + "\n";
+		}
 	};
 
 	class Block
@@ -42,7 +46,7 @@ namespace CE::Decompiler::PrimaryTree
 		std::string printDebug() {
 			std::string result = "";
 			for (auto line : m_lines) {
-				result += line->m_destAddr->printDebug() + " = " + line->m_srcValue->printDebug() + "\n";
+				result += line->printDebug();
 			}
 			if (m_jmpCond != nullptr) {
 				result += "\nCondition: " + m_jmpCond->printDebug();

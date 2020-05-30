@@ -20,7 +20,7 @@ namespace CE::Decompiler::ExprTree
 			replaceBy(nullptr);
 		}
 
-		void replaceBy(Node* newNode) {
+		virtual void replaceBy(Node* newNode) {
 			for (auto parentNode : m_parentNodes) {
 				if (newNode == dynamic_cast<Node*>(parentNode))
 					continue;
@@ -35,14 +35,20 @@ namespace CE::Decompiler::ExprTree
 		void removeBy(IParentNode* node) {
 			if (node != nullptr) {
 				node->replaceNode(this, nullptr);
+				removeParentNode(node);
 			}
-			m_parentNodes.remove(node);
 			if (getUserCount() == 0)
 				delete this;
 		}
 
 		void addParentNode(IParentNode* node) {
+			if (this == dynamic_cast<Node*>(node))
+				return;
 			m_parentNodes.push_back(node);
+		}
+
+		void removeParentNode(IParentNode* node) {
+			m_parentNodes.remove(node);
 		}
 
 		void setSigned(bool toggle) {

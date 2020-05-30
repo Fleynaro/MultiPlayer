@@ -62,14 +62,25 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		~OperationalNode() {
-			if (m_leftNode != nullptr)
-				m_leftNode->removeBy(this);
-			if (m_rightNode != nullptr)
+			auto leftNode = m_leftNode;
+			if (leftNode != nullptr)
+				leftNode->removeBy(this);
+			if (m_rightNode != nullptr && m_rightNode != leftNode)
 				m_rightNode->removeBy(this);
 		}
 
 		bool isLeaf() override {
 			return false;
+		}
+
+		void replaceBy(Node* newNode) override {
+			Node::replaceBy(newNode);
+			if (auto newParentNode = dynamic_cast<IParentNode*>(newNode)) {
+				if (m_leftNode != nullptr)
+					m_leftNode->addParentNode(newParentNode);
+				if (m_rightNode != nullptr)
+					m_rightNode->addParentNode(newParentNode);
+			}
 		}
 
 		void replaceNode(Node* node, Node * newNode) override {

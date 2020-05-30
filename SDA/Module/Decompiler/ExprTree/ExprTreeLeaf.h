@@ -37,7 +37,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			return "0x" + Generic::String::NumberToHex(m_value);
+			return "0x" + Generic::String::NumberToHex(m_value) + "{"+ std::to_string((int)m_value) +"}";
 		}
 	};
 };
