@@ -7,7 +7,7 @@ namespace CE::Decompiler::ExprTree
 	class IParentNode
 	{
 	public:
-		virtual void removeNode(Node* node) = 0;
+		virtual void replaceNode(Node* node, Node * newNode) = 0;
 	};
 
 	class Node
@@ -17,12 +17,25 @@ namespace CE::Decompiler::ExprTree
 		{}
 
 		virtual ~Node() {
+			replaceBy(nullptr);
+		}
+
+		void replaceBy(Node* newNode) {
 			for (auto parentNode : m_parentNodes) {
-				parentNode->removeNode(this);
+				if (newNode == dynamic_cast<Node*>(parentNode))
+					continue;
+				parentNode->replaceNode(this, newNode);
+				if (newNode != nullptr) {
+					newNode->addParentNode(parentNode);
+				}
+				m_parentNodes.remove(parentNode);
 			}
 		}
 
 		void removeBy(IParentNode* node) {
+			if (node != nullptr) {
+				node->replaceNode(this, nullptr);
+			}
 			m_parentNodes.remove(node);
 			if (getUserCount() == 0)
 				delete this;

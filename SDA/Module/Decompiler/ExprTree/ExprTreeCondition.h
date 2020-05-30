@@ -41,7 +41,7 @@ namespace CE::Decompiler::ExprTree
 			rightNode->addParentNode(this);
 		}
 
-		void removeNode(Node* node) override {
+		void replaceNode(Node* node, Node * newNode) override {
 			if (m_leftNode == node) {
 				m_leftNode = nullptr;
 			}
@@ -115,10 +115,15 @@ namespace CE::Decompiler::ExprTree
 			m_condition->removeBy(this);
 		}
 
-		void removeNode(Node* node) override {
-			OperationalNode::removeNode(node);
+		void replaceNode(Node* node, Node * newNode) override {
+			OperationalNode::replaceNode(node, newNode);
 			if (m_condition == node) {
-				delete this;
+				if (auto cond = dynamic_cast<CompositeCondition*>(newNode)) {
+					m_condition = cond;
+				}
+				else {
+					delete this;
+				}
 			}
 		}
 

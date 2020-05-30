@@ -72,12 +72,12 @@ namespace CE::Decompiler::ExprTree
 			return false;
 		}
 
-		void removeNode(Node* node) override {
+		void replaceNode(Node* node, Node * newNode) override {
 			if (m_leftNode == node) {
-				m_leftNode = nullptr;
+				m_leftNode = newNode;
 			}
 			else if (m_rightNode == node) {
-				m_rightNode = nullptr;
+				m_rightNode = newNode;
 			}
 		}
 

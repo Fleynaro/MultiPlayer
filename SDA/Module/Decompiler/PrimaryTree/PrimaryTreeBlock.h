@@ -16,12 +16,12 @@ namespace CE::Decompiler::PrimaryTree
 			srcValue->addParentNode(this);
 		}
 
-		void removeNode(ExprTree::Node* node) {
+		void replaceNode(ExprTree::Node* node, ExprTree::Node * newNode) {
 			if (node == m_destAddr) {
-				m_destAddr = nullptr;
+				m_destAddr = newNode;
 			}
 			if (node == m_srcValue) {
-				m_srcValue = nullptr;
+				m_srcValue = newNode;
 			}
 		}
 	};

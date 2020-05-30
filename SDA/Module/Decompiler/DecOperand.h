@@ -56,8 +56,10 @@ namespace CE::Decompiler
 			}
 
 			if (mem.index != ZYDIS_REGISTER_NONE) {
-				expr = new ExprTree::OperationalNode(
-					Register::GetOrCreateExprRegLeaf(ctx, mem.index), new ExprTree::NumberLeaf(mem.scale), ExprTree::Mul);
+				expr = Register::GetOrCreateExprRegLeaf(ctx, mem.index);
+				if (mem.scale != 1) {
+					expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(mem.scale), ExprTree::Mul);
+				}
 				if (baseReg != nullptr) {
 					expr = new ExprTree::OperationalNode(baseReg, expr, ExprTree::Add);
 				}
