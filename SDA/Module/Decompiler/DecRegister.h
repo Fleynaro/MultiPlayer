@@ -132,6 +132,14 @@ namespace CE::Decompiler
 			return result;
 		}
 
+		static int GetBitCountOfMask(uint64_t mask) {
+			int result = 0;
+			for (auto m = mask; m != 0; m = m >> 1) {
+				result ++;
+			}
+			return result;
+		}
+
 		static ExprTree::Node* CreateExprRegLeaf(ExecutionContext* ctx, ZydisRegister reg) {
 			Symbol::Symbol* symbol = new Symbol::LocalRegVar(reg);
 			auto leaf = new ExprTree::SymbolLeaf(symbol);
@@ -139,27 +147,37 @@ namespace CE::Decompiler
 		}
 
 		static ExprTree::Node* GetOrCreateExprRegLeaf(ExecutionContext* ctx, ZydisRegister reg) {
-			if (ctx->m_registers.find(reg) != ctx->m_registers.end()) {
-				return ctx->m_registers[reg];
+			auto it = ctx->m_registers.find(reg);
+			if (it != ctx->m_registers.end()) {
+				return GetRegisterExpr(ctx, it);
 			}
 
 			auto regInfo = Register::GetRegInfo(reg);
-			ExprTree::Node* node = nullptr;
-			for (auto it = regInfo.m_sameRegisters.rbegin(); it != regInfo.m_sameRegisters.rend(); it++) {
-				auto sameReg = *it;
-				if (sameReg.first != reg) {
-					auto it = ctx->m_registers.find(sameReg.first);
-					if (it != ctx->m_registers.end()) {
-						node = it->second;
-						if (sameReg.second > regInfo.m_mask) {
-							node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(sameReg.second & regInfo.m_mask), ExprTree::And);
-							int rightBitShift = Register::GetShiftValueOfMask(regInfo.m_mask);
-							if (rightBitShift != 0) {
-								node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(rightBitShift), ExprTree::Shr);
-							}
-						}
-						break;
+			uint64_t suitSameRegMask = -1;
+			std::map<ZydisRegister, ExprTree::Node*>::iterator suitSameRegExprIt = ctx->m_registers.end();
+			int minBitsCount = 64;
+			for (auto sameRegIt = regInfo.m_sameRegisters.begin(); sameRegIt != regInfo.m_sameRegisters.end(); sameRegIt++) {
+				if (sameRegIt->first == reg)
+					continue;
+				auto it = ctx->m_registers.find(sameRegIt->first);
+				if (it != ctx->m_registers.end()) {
+					auto mask = sameRegIt->second & regInfo.m_mask;
+					auto bitsCount = GetBitCountOfMask(mask);
+					if (bitsCount < minBitsCount) {
+						suitSameRegMask = mask;
+						suitSameRegExprIt = it;
+						minBitsCount = bitsCount;
 					}
+				}
+			}
+
+			ExprTree::Node* node = nullptr;
+			if (suitSameRegMask != -1) {
+				node = GetRegisterExpr(ctx, suitSameRegExprIt);
+				node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(suitSameRegMask), ExprTree::And);
+				int rightBitShift = GetShiftValueOfMask(regInfo.m_mask);
+				if (rightBitShift != 0) {
+					node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(rightBitShift), ExprTree::Shr);
 				}
 			}
 
@@ -171,6 +189,43 @@ namespace CE::Decompiler
 		}
 
 	private:
+		static ExprTree::Node* GetRegisterExpr(ExecutionContext* ctx, std::map<ZydisRegister, ExprTree::Node*>::iterator it) {
+			auto reg = it->first;
+			auto regExpr = it->second;
+			auto regInfo = Register::GetRegInfo(reg);
+			uint64_t mask = regInfo.m_mask;
+			std::list<std::pair<uint64_t, std::map<ZydisRegister, ExprTree::Node*>::iterator>> sameRegisters;
+
+			for (auto sameReg : regInfo.m_sameRegisters) {
+				if (sameReg.first == reg)
+					continue;
+				auto it = ctx->m_registers.find(sameReg.first);
+				if (it != ctx->m_registers.end()) {
+					if (regInfo.m_mask > sameReg.second) {
+						mask &= ~sameReg.second;
+						sameRegisters.push_back(std::make_pair(sameReg.second, it));
+					}
+				}
+			}
+
+			if (mask != regInfo.m_mask) {
+				regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf(mask), ExprTree::And); //[reg_edx] & 0xffffffff00000000 (sample8)
+				for (auto sameReg : sameRegisters) {
+					if (sameReg.first != 0) {
+						auto sameRegExpr = sameReg.second->second;
+						int leftBitShift = Register::GetShiftValueOfMask(sameReg.first);
+						if (leftBitShift != 0) {
+							sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(leftBitShift), ExprTree::Shl);
+						}
+						auto maskNumber = new ExprTree::NumberLeaf(sameReg.first & regInfo.m_mask); //for signed register operations and etc...
+						sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, maskNumber, ExprTree::And);
+						regExpr = new ExprTree::OperationalNode(regExpr, sameRegExpr, ExprTree::Or);
+					}
+				}
+			}
+			return regExpr;
+		}
+
 		static std::list<std::pair<ZydisRegister, uint64_t>> GetListOfSameGenRegisters(int idx) {
 			std::list result = {
 				std::make_pair(ZydisRegister(ZYDIS_REGISTER_AX + idx), (uint64_t)0xFFFF),

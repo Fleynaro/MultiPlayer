@@ -85,6 +85,11 @@ namespace CE::Decompiler::ExprTree
 			if (m_operation == readValue) {
 				return "*(uint_" + std::to_string(8 * static_cast<NumberLeaf*>(m_rightNode)->m_value) + "t*)" + m_leftNode->printDebug();
 			}
+			if (m_operation == Xor) {
+				if (static_cast<NumberLeaf*>(m_rightNode)->m_value == -1) {
+					return "~" + m_leftNode->printDebug();
+				}
+			}
 			return "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
 		}
 	};

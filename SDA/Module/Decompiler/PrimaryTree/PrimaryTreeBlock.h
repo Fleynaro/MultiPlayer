@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler::PrimaryTree
 {
-	class Line
+	class Line : public ExprTree::IParentNode
 	{
 	public:
 		ExprTree::Node* m_destAddr;
@@ -11,7 +11,19 @@ namespace CE::Decompiler::PrimaryTree
 
 		Line(ExprTree::Node* destAddr, ExprTree::Node* srcValue)
 			: m_destAddr(destAddr), m_srcValue(srcValue)
-		{}
+		{
+			destAddr->addParentNode(this);
+			srcValue->addParentNode(this);
+		}
+
+		void removeNode(ExprTree::Node* node) {
+			if (node == m_destAddr) {
+				m_destAddr = nullptr;
+			}
+			if (node == m_srcValue) {
+				m_srcValue = nullptr;
+			}
+		}
 	};
 
 	class Block

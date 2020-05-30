@@ -1,5 +1,6 @@
 #pragma once
 #include "MovementInstructionInterpreter.h"
+#include "StackInstructionInterpreter.h"
 #include "ArithmeticInstructionInterpreter.h"
 #include "LogicInstructionInterpreter.h"
 #include "CondJmpInstructionInterpreter.h"
@@ -12,6 +13,11 @@ namespace CE::Decompiler
 		void execute(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction& instruction) {
 			{
 				MovementInstructionInterpreter interpreter(block, ctx, &instruction);
+				interpreter.execute();
+			}
+
+			{
+				StackInstructionInterpreter interpreter(block, ctx, &instruction);
 				interpreter.execute();
 			}
 

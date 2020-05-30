@@ -74,12 +74,16 @@ namespace CE::Decompiler
 				}
 				if (isSettingFlags)
 					setFlags(srcExpr, GetMaskBySize(dstOperand.size));
-				auto line = new PrimaryTree::Line(dstExpr, srcExpr);
-				m_block->getLines().push_back(line);
+				writeMemory(dstExpr, srcExpr);
 			}
 			else {
 				setExprToRegisterDst(dstOperand.reg.value, srcExpr, isSettingFlags);
 			}
+		}
+
+		void writeMemory(ExprTree::Node* dstExpr, ExprTree::Node* srcExpr) {
+			auto line = new PrimaryTree::Line(dstExpr, srcExpr);
+			m_block->getLines().push_back(line);
 		}
 
 		void setExprToRegisterDst(ZydisRegister dstReg, ExprTree::Node* srcExpr, bool isSettingFlags = true) {
@@ -91,27 +95,12 @@ namespace CE::Decompiler
 			if (isSettingFlags)
 				setFlags(srcExpr, regInfo.m_mask);
 
-			//if these are ah, bh, ch, dh registers
-			int leftBitShift = Register::GetShiftValueOfMask(regInfo.m_mask);
-
 			for (auto sameReg : regInfo.m_sameRegisters) {
 				if (sameReg.first == dstReg)
 					continue;
 				auto it = m_ctx->m_registers.find(sameReg.first);
 				if (it != m_ctx->m_registers.end()) {
-					if (regInfo.m_mask <= sameReg.second) {
-						auto srcExprShl = srcExpr;
-						//if (srcExprShl->isSigned()) {
-						srcExprShl = new ExprTree::OperationalNode(srcExprShl, new ExprTree::NumberLeaf(regInfo.m_mask), ExprTree::And);
-						if (leftBitShift != 0) {
-							srcExprShl = new ExprTree::OperationalNode(srcExprShl, new ExprTree::NumberLeaf(leftBitShift), ExprTree::Shl);
-						}
-
-						auto maskNumber = new ExprTree::NumberLeaf(~(sameReg.second & regInfo.m_mask));
-						auto maskMultipleOperation = new ExprTree::OperationalNode(it->second, maskNumber, ExprTree::And);
-						it->second = new ExprTree::OperationalNode(maskMultipleOperation, srcExprShl, ExprTree::Or);
-					}
-					else {
+					if (regInfo.m_mask > sameReg.second) {
 						m_ctx->m_registers.erase(it);
 					}
 				}
