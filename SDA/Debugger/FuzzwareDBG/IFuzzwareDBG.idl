@@ -1,0 +1,39 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(4CD86B5B-BB54-4713-BED0-823B4F4EADC7)
+]
+interface IFuzzwareDBG : IUnknown
+{
+	import "unknwn.idl";
+	HRESULT SetCrashComment([in, string] const BSTR bstrCrashComment);
+	HRESULT SetOutputDir([in, string] const BSTR bstrOutputDir);
+	//HRESULT SetRemoteOptions([in, string] const BSTR bstrRemoteOptions);
+	HRESULT CreateProcess([in, string] const BSTR bstrCommandLine);
+	HRESULT AttachToProcess([in] unsigned long zProcessId);
+	HRESULT RunProcess([out, retval] unsigned long *pdwProcessId);
+	//HRESULT ExecuteCommand([in, string] const BSTR bstrCommand, [out, string] BSTR *pbstrDebuggerOutput);
+	HRESULT HasProcessExited([out, retval] boolean* pbProcessExited);
+	HRESULT KillProcess();
+};
+
+[
+	uuid(932AB82B-F058-4dd6-8686-987D934C475B)
+]
+library IFuzzwareDBGLibrary
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	interface IFuzzwareDBG;
+
+	[
+		uuid(8C9991FE-3D7A-4f0b-A62A-0EBD08B0725F)
+	]
+	coclass FuzzwareDBG
+	{
+		[default] interface IFuzzwareDBG;
+	}
+};

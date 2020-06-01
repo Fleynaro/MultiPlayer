@@ -1,0 +1,4 @@
+﻿  Debugger.cpp
+M:\Users\user\source\repos\Debugger\Debugger\Debugger.cpp(85,1): warning C4326: return type of 'main' should be 'int' instead of 'void'
+Debugger.obj : error LNK2019: unresolved external symbol _DebugCreate@8 referenced in function "void __cdecl CreateInterfaces(void)" (?CreateInterfaces@@YAXXZ)
+M:\Users\user\source\repos\Debugger\Debug\Debugger.exe : fatal error LNK1120: 1 unresolved externals

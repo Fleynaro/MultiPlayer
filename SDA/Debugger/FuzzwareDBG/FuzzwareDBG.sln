@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FuzzwareDBG", "FuzzwareDBG.vcxproj", "{FE497205-CAF2-44D0-95F5-727E2F76E2B7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FuzzwareDBGStub", "FuzzwareDBGStub\FuzzwareDBGStub.vcxproj", "{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 3
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://127.0.0.1:9191/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = FuzzwareDBG.vcproj
+		SccLocalPath1 = .
+		SccProjectUniqueName2 = FuzzwareDBGStub\\FuzzwareDBGStub.vcproj
+		SccProjectName2 = FuzzwareDBGStub
+		SccLocalPath2 = FuzzwareDBGStub
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Debug64|Win32 = Debug64|Win32
+		Debug64|x64 = Debug64|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+		Release64|Win32 = Release64|Win32
+		Release64|x64 = Release64|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug|Win32.Build.0 = Debug|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug|x64.ActiveCfg = Debug|x64
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug|x64.Build.0 = Debug|x64
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug64|Win32.ActiveCfg = Debug|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug64|Win32.Build.0 = Debug|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug64|x64.ActiveCfg = Debug|x64
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug64|x64.Build.0 = Debug|x64
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release|Win32.ActiveCfg = Release|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release|Win32.Build.0 = Release|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release|x64.ActiveCfg = Release|x64
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release|x64.Build.0 = Release|x64
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release64|Win32.ActiveCfg = Release64|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release64|Win32.Build.0 = Release64|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release64|x64.ActiveCfg = Release64|x64
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release64|x64.Build.0 = Release64|x64
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug|Win32.Build.0 = Debug|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug|x64.ActiveCfg = Debug|x64
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug|x64.Build.0 = Debug|x64
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug64|Win32.ActiveCfg = Debug|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug64|Win32.Build.0 = Debug|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug64|x64.ActiveCfg = Debug|x64
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug64|x64.Build.0 = Debug|x64
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release|Win32.ActiveCfg = Release|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release|Win32.Build.0 = Release|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release|x64.ActiveCfg = Release|x64
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release|x64.Build.0 = Release|x64
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release64|Win32.ActiveCfg = Release64|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release64|Win32.Build.0 = Release64|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release64|x64.ActiveCfg = Release64|x64
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release64|x64.Build.0 = Release64|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

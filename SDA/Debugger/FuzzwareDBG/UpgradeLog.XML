@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="FuzzwareDBG">
+</Property><Property Name="Solution File" Value="G:\Tools\Fuzzware\FuzzwareDBG\FuzzwareDBG.sln">
+</Property><Property Name="User Options File" Value="G:\Tools\Fuzzware\FuzzwareDBG\FuzzwareDBG.suo">
+</Property><Property Name="Date" Value="02 November 2013">
+</Property><Property Name="Time" Value="11:11">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="FuzzwareDBG.sln" Description="File successfully backed up as G:\Tools\Fuzzware\FuzzwareDBG\FuzzwareDBG.sln.old">
+</Event><Event ErrorLevel="0" Project="" Source="FuzzwareDBG.suo" Description="File successfully backed up as G:\Tools\Fuzzware\FuzzwareDBG\FuzzwareDBG.suo.old">
+</Event><Event ErrorLevel="0" Project="FuzzwareDBG" Source="FuzzwareDBG.vcproj" Description="Converting project file 'G:\Tools\Fuzzware\FuzzwareDBG\FuzzwareDBG.vcproj'.">
+</Event><Event ErrorLevel="1" Project="FuzzwareDBG" Source="FuzzwareDBG.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="1" Project="FuzzwareDBG" Source="FuzzwareDBG.vcproj" Description="Attribute 'Detect64BitPortabilityProblems' of 'VCCLCompilerTool' is not supported in this version and has been removed during conversion.">
+</Event><Event ErrorLevel="0" Project="FuzzwareDBG" Source="FuzzwareDBG.vcproj" Description="Done converting to new project file 'G:\Tools\Fuzzware\FuzzwareDBG\FuzzwareDBG.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="FuzzwareDBG" Source="FuzzwareDBG.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="FuzzwareDBGStub" Source="FuzzwareDBGStub\FuzzwareDBGStub.vcproj" Description="Converting project file 'G:\Tools\Fuzzware\FuzzwareDBG\FuzzwareDBGStub\FuzzwareDBGStub.vcproj'.">
+</Event><Event ErrorLevel="1" Project="FuzzwareDBGStub" Source="FuzzwareDBGStub\FuzzwareDBGStub.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="0" Project="FuzzwareDBGStub" Source="FuzzwareDBGStub\FuzzwareDBGStub.vcproj" Description="Done converting to new project file 'G:\Tools\Fuzzware\FuzzwareDBG\FuzzwareDBGStub\FuzzwareDBGStub.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="FuzzwareDBGStub" Source="FuzzwareDBGStub\FuzzwareDBGStub.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="FuzzwareDBG.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="FuzzwareDBG.sln" Description="Converted">
+</Event></UpgradeLog>

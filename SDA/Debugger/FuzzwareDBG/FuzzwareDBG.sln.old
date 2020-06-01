@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FuzzwareDBG", "FuzzwareDBG.vcproj", "{FE497205-CAF2-44D0-95F5-727E2F76E2B7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FuzzwareDBGStub", "FuzzwareDBGStub\FuzzwareDBGStub.vcproj", "{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 3
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://127.0.0.1:9191/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = FuzzwareDBG.vcproj
+		SccLocalPath1 = .
+		SccProjectUniqueName2 = FuzzwareDBGStub\\FuzzwareDBGStub.vcproj
+		SccProjectName2 = FuzzwareDBGStub
+		SccLocalPath2 = FuzzwareDBGStub
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug64|Win32 = Debug64|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug|Win32.Build.0 = Debug|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug64|Win32.ActiveCfg = Debug|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Debug64|Win32.Build.0 = Debug|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release|Win32.ActiveCfg = Release|Win32
+		{FE497205-CAF2-44D0-95F5-727E2F76E2B7}.Release|Win32.Build.0 = Release|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug|Win32.Build.0 = Debug|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug64|Win32.ActiveCfg = Debug|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Debug64|Win32.Build.0 = Debug|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release|Win32.ActiveCfg = Release|Win32
+		{4C7E7B07-E86B-48C0-935B-39A5B3DC434F}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
