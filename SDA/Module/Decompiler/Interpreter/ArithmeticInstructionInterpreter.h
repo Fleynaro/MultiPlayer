@@ -33,11 +33,13 @@ namespace CE::Decompiler
 					isSigned = true;
 				}
 
+				ExprTree::Node* expr1 = nullptr;
+				ExprTree::Node* expr2 = nullptr;
 				auto operandsCount = getFirstExplicitOperandsCount();
 				if (operandsCount == 1)
 				{
 					ZydisRegister reg;
-					switch (m_instruction->operands[0].size)
+					switch (m_instruction->operands[0].size / 8)
 					{
 					case 1:
 						reg = ZYDIS_REGISTER_AL;
@@ -53,17 +55,54 @@ namespace CE::Decompiler
 					}
 
 					Operand op(m_ctx, &m_instruction->operands[0]);
-					auto srcExpr = new ExprTree::OperationalNode(Register::GetOrCreateExprRegLeaf(m_ctx, reg), op.getExpr(), opType);
-					srcExpr->setSigned(isSigned);
-					setExprToRegisterDst(reg, srcExpr);
+					expr1 = Register::GetOrCreateExprRegLeaf(m_ctx, reg);
+					expr2 = op.getExpr();
+					auto expr = new ExprTree::OperationalNode(expr1, expr2, opType);
+					expr->setSigned(isSigned);
+					setExprToRegisterDst(reg, expr);
 				}
 				else if (operandsCount == 2)
 				{
 					binOperation(opType, isSigned);
+					
+					if (opType == ExprTree::Div) {
+						Operand op1(m_ctx, &m_instruction->operands[0]);
+						Operand op2(m_ctx, &m_instruction->operands[1]);
+						expr1 = op1.getExpr();
+						expr2 = op2.getExpr();
+					}
 				}
 				else if (operandsCount == 3)
 				{
 					tripleOperation(opType, isSigned);
+
+					if (opType == ExprTree::Div) {
+						Operand op1(m_ctx, &m_instruction->operands[1]);
+						Operand op2(m_ctx, &m_instruction->operands[2]);
+						expr1 = op1.getExpr();
+						expr2 = op2.getExpr();
+					}
+				}
+
+				if (opType == ExprTree::Div) {
+					ZydisRegister reg;
+					switch (m_instruction->operands[0].size / 8)
+					{
+					case 1:
+						reg = ZYDIS_REGISTER_AH;
+						break;
+					case 2:
+						reg = ZYDIS_REGISTER_DX;
+						break;
+					case 4:
+						reg = ZYDIS_REGISTER_EDX;
+						break;
+					default:
+						reg = ZYDIS_REGISTER_RDX;
+					}
+					auto expr = new ExprTree::OperationalNode(expr1, expr2, ExprTree::Mod);
+					expr->setSigned(isSigned);
+					setExprToRegisterDst(reg, expr);
 				}
 				break;
 			}

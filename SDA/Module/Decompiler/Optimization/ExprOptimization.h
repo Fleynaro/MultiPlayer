@@ -8,7 +8,7 @@ namespace CE::Decompiler::Optimization
 		return operation == readValue || operation == getBits;
 	}
 
-	uint64_t Calculate(uint64_t op1, uint64_t op2, ExprTree::OperationType operation, bool isSigned = false) {
+	static uint64_t Calculate(uint64_t op1, uint64_t op2, ExprTree::OperationType operation, bool isSigned = false) {
 		using namespace ExprTree;
 		switch (operation)
 		{

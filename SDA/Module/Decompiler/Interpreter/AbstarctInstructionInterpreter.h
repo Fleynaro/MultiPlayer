@@ -1,5 +1,6 @@
 #pragma once
 #include "../DecOperand.h"
+#include "../ExprTree/ExprTreeFuncCallContext.h"
 
 namespace CE::Decompiler
 {
@@ -74,16 +75,11 @@ namespace CE::Decompiler
 				}
 				if (isSettingFlags)
 					setFlags(srcExpr, GetMaskBySize(dstOperand.size));
-				writeMemory(dstExpr, srcExpr);
+				m_block->addLine(dstExpr, srcExpr);
 			}
 			else {
 				setExprToRegisterDst(dstOperand.reg.value, srcExpr, isSettingFlags);
 			}
-		}
-
-		void writeMemory(ExprTree::Node* dstExpr, ExprTree::Node* srcExpr) {
-			auto line = new PrimaryTree::Line(dstExpr, srcExpr);
-			m_block->getLines().push_back(line);
 		}
 
 		void setExprToRegisterDst(ZydisRegister dstReg, ExprTree::Node* srcExpr, bool isSettingFlags = true) {

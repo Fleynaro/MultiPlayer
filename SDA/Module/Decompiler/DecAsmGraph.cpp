@@ -75,7 +75,7 @@ void AsmGraph::build() {
 
 		if (instruction.meta.category == ZYDIS_CATEGORY_UNCOND_BR || instruction.meta.category == ZYDIS_CATEGORY_COND_BR) {
 			auto& operand = instruction.operands[0];
-			if (operand.reg.value == ZYDIS_REGISTER_NONE) {
+			if (operand.type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
 				if (operand.imm.is_relative) {
 					int targetOffset = (int)instruction.length +
 						(operand.imm.is_signed ? (offset + (int)operand.imm.value.s) : (offset + (unsigned int)operand.imm.value.u));
@@ -210,7 +210,7 @@ void func() {
 
 int calculateFunctionSize2(byte* addr) {
 	int size = 0;
-	while (addr[size] != 0xCC)
+	while (addr[size] != 0xC3)
 		size++;
 	return size;
 }
@@ -225,7 +225,29 @@ void ff() {
 #include "Decompiler.h"
 #include "Optimization/ExprOptimization.h"
 
+int gVarrrr = 100;
+
+int func11(int a) {
+	return a * 2;
+}
+
+void func22() {
+	int b = 2;
+	b += func11(10) + func11(5);
+	b *= -1;
+	gVarrrr %= 21;
+}
+
+
 void CE::Decompiler::test() {
+	/*
+		TODO:
+		1) символы локальных переменных делать в конце, когда будет граф. помечать из них флагом те, которые €вл€ютс€ параметрами
+		2) сделать услови€ и циклы. —делать это близко к си коду, без вс€ких джампов. »бо потом все будет в кеше, не надо повторно вычисл€ть
+		3) сделать поддержку векторов и вещественных значений
+	*/
+
+
 	byte mem[] = {
 		0xba, 0x02, 0x00, 0x00, 0x00,						//MOV EDX,0x2
 		0x48, 0x8d, 0x7b, 0x32,								//LEA RDI,[RBX + 0x32]
@@ -247,11 +269,23 @@ void CE::Decompiler::test() {
 	byte sample8[] = { 0x45, 0x31, 0xD2, 0x49, 0x89, 0xCB, 0x48, 0x8B, 0x41, 0x40, 0x4C, 0x63, 0xC2, 0x46, 0x0F, 0xB6, 0x0C, 0x00, 0x8B, 0x41, 0x4C, 0x41, 0x81, 0xE1, 0x80, 0x00, 0x00, 0x00, 0x45, 0x89, 0xC8, 0x0F, 0xAF, 0xC2, 0x89, 0x44, 0x24, 0x14, 0x44, 0x89, 0x44, 0x24, 0x14, 0x48, 0x63, 0xC8, 0x48, 0x89, 0x4C, 0x24, 0x18, 0x44, 0x89, 0xC8, 0x48, 0x89, 0x44, 0x24, 0x18, 0x49, 0x03, 0x4B, 0x38, 0x48, 0xF7, 0xD8, 0x4C, 0x09, 0xC0, 0x48, 0xC1, 0xF8, 0x3F, 0x48, 0xF7, 0xD0, 0x48, 0x85, 0xC8, 0x41, 0x0F, 0x95, 0xC2, 0x44, 0x88, 0xD0, 0x88, 0x44, 0x24, 0x11 };
 	byte sample9[] = { 0x48, 0x89, 0xE5, 0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x89, 0xE0, 0x48, 0x31, 0xC9, 0x83, 0xC1, 0x10, 0x51, 0xB9, 0x20, 0x00, 0x00, 0x00, 0x5A, 0x89, 0x4C, 0x24, 0x20, 0x89, 0x48, 0x28, 0x89, 0x4D, 0xF8, 0x48, 0x83, 0xC4, 0x30, 0x48, 0x8B, 0x5C, 0x24, 0x08 }; //stack
 
-	AsmGraph graph(CE::Decompiler::getInstructionsAtAddress(sample9, sizeof(sample9)));
+	void* addr = &func22;
+	int size = calculateFunctionSize2((byte*)addr);
+
+	AsmGraph graph(CE::Decompiler::getInstructionsAtAddress(addr, size));
 	graph.build();
 
+	auto decompiler = new Decompiler(&graph);
+	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
+		auto absAddr = (std::intptr_t)addr + offset;
+		auto info = ExprTree::GetFunctionCallDefaultInfo();
+		*info.m_paramRegisters.begin() = ZYDIS_REGISTER_ECX;
+		info.m_resultRegister = ZYDIS_REGISTER_EAX;
+		return info;
+	};
+
 	InstructionInterpreterDispatcher dispatcher;
-	ExecutionContext ctx(0x0);
+	ExecutionContext ctx(decompiler, 0x0);
 	auto treeBlock = new PrimaryTree::Block;
 
 	auto block = graph.getBlockAtOffset(0x0);
@@ -260,6 +294,7 @@ void CE::Decompiler::test() {
 		dispatcher.execute(treeBlock, &ctx, instr);
 	}
 
+	
 	printf("%s\n\n\nAfter optimization:\n\n", treeBlock->printDebug().c_str());
 
 	for (auto line : treeBlock->getLines()) {

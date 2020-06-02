@@ -24,7 +24,7 @@ namespace CE::Decompiler
 					Operand op(m_ctx, &operand);
 					auto dstExpr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(operand.size / 8), ExprTree::readValue);
 					auto srcExpr = op.getExpr();
-					writeMemory(dstExpr, srcExpr);
+					m_block->addLine(dstExpr, srcExpr);
 				}
 				else {
 					auto& operand = m_instruction->operands[0];

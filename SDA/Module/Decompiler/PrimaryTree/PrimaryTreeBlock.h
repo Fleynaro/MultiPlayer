@@ -9,12 +9,7 @@ namespace CE::Decompiler::PrimaryTree
 		ExprTree::Node* m_destAddr;
 		ExprTree::Node* m_srcValue;
 
-		Line(ExprTree::Node* destAddr, ExprTree::Node* srcValue)
-			: m_destAddr(destAddr), m_srcValue(srcValue)
-		{
-			destAddr->addParentNode(this);
-			srcValue->addParentNode(this);
-		}
+		Line(ExprTree::Node* destAddr, ExprTree::Node* srcValue);
 
 		void replaceNode(ExprTree::Node* node, ExprTree::Node * newNode) {
 			if (node == m_destAddr) {
@@ -38,6 +33,10 @@ namespace CE::Decompiler::PrimaryTree
 		Block()
 
 		{}
+
+		void addLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue) {
+			m_lines.push_back(new Line(destAddr, srcValue));
+		}
 
 		std::list<Line*>& getLines() {
 			return m_lines;

@@ -4,6 +4,7 @@
 #include "ArithmeticInstructionInterpreter.h"
 #include "LogicInstructionInterpreter.h"
 #include "CondJmpInstructionInterpreter.h"
+#include "UncondJmpInstructionInterpreter.h"
 
 namespace CE::Decompiler
 {
@@ -11,6 +12,8 @@ namespace CE::Decompiler
 	{
 	public:
 		void execute(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction& instruction) {
+			ctx->m_offset += instruction.length;
+			
 			{
 				MovementInstructionInterpreter interpreter(block, ctx, &instruction);
 				interpreter.execute();
@@ -33,6 +36,11 @@ namespace CE::Decompiler
 
 			{
 				CondJmpInstructionInterpreter interpreter(block, ctx, &instruction);
+				interpreter.execute();
+			}
+
+			{
+				UncondJmpInstructionInterpreter interpreter(block, ctx, &instruction);
 				interpreter.execute();
 			}
 		}

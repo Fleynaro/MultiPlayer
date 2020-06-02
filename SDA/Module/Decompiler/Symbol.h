@@ -5,6 +5,10 @@
 #include <Zycore/LibC.h>
 #include <Zydis/Zydis.h>
 
+namespace CE::Decompiler::ExprTree {
+	class FunctionCallContext;
+};
+
 namespace CE::Decompiler::Symbol
 {
 	class Symbol
@@ -13,28 +17,17 @@ namespace CE::Decompiler::Symbol
 		virtual std::string printDebug() = 0;
 	};
 
-	class GlobalObject : public Symbol
+	class GlobalVar : public Symbol
 	{
 	public:
 		int m_offset;
 
-		GlobalObject(int offset)
+		GlobalVar(int offset)
 			: m_offset(offset)
 		{}
 
 		std::string printDebug() override {
 			return "[global:" + std::to_string(m_offset) + "]";
-		}
-	};
-
-	class LocalStackTop : public Symbol
-	{
-	public:
-		LocalStackTop()
-		{}
-
-		std::string printDebug() override {
-			return "[stack top]";
 		}
 	};
 
@@ -64,6 +57,18 @@ namespace CE::Decompiler::Symbol
 		std::string printDebug() override {
 			return "[reg_" + std::string(ZydisRegisterGetString(m_register)) + "]";
 		}
+	};
+
+	class FunctionResultVar : public Symbol
+	{
+	public:
+		ExprTree::FunctionCallContext* m_funcCallContext;
+
+		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext)
+			: m_funcCallContext(funcCallContext)
+		{}
+
+		std::string printDebug() override;
 	};
 
 	class Parameter : public Symbol

@@ -235,6 +235,9 @@
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
     <ClCompile Include="Module\Decompiler\DecAsmGraph.cpp" />
+    <ClCompile Include="Module\Decompiler\Interpreter\UncondJmpInstructionInterpreter.cpp" />
+    <ClCompile Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.cpp" />
+    <ClCompile Include="Module\Decompiler\Symbol.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmDecoder.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmInstructions.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmOperand.cpp" />
@@ -351,6 +354,7 @@
     <ClInclude Include="Module\Decompiler\DecOperand.h" />
     <ClInclude Include="Module\Decompiler\DecRegister.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeCondition.h" />
+    <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeFuncCallContext.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeLeaf.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeNode.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeOperationalNode.h" />
@@ -361,6 +365,7 @@
     <ClInclude Include="Module\Decompiler\Interpreter\LogicInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\MovementInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\StackInstructionInterpreter.h" />
+    <ClInclude Include="Module\Decompiler\Interpreter\UncondJmpInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprOptimization.h" />
     <ClInclude Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.h" />
     <ClInclude Include="Module\Decompiler\Symbol.h" />

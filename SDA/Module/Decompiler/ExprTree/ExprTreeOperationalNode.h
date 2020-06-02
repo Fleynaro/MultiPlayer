@@ -35,6 +35,7 @@ namespace CE::Decompiler::ExprTree
 		case Sub: return "-";
 		case Mul: return "*";
 		case Div: return "/";
+		case Mod: return "%";
 		case And: return "&";
 		case Or: return "|";
 		case Xor: return "^";
