@@ -6,7 +6,7 @@ namespace CE::Decompiler
 	class LogicInstructionInterpreter : public AbstractInstructionInterpreter
 	{
 	public:
-		LogicInstructionInterpreter(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction* instruction)
+		LogicInstructionInterpreter(PrimaryTree::Block* block, ExecutionBlockContext* ctx, const ZydisDecodedInstruction* instruction)
 			: AbstractInstructionInterpreter(block, ctx, instruction)
 		{}
 

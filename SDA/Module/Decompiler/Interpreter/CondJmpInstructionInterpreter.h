@@ -6,7 +6,7 @@ namespace CE::Decompiler
 	class CondJmpInstructionInterpreter : public AbstractInstructionInterpreter
 	{
 	public:
-		CondJmpInstructionInterpreter(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction* instruction)
+		CondJmpInstructionInterpreter(PrimaryTree::Block* block, ExecutionBlockContext* ctx, const ZydisDecodedInstruction* instruction)
 			: AbstractInstructionInterpreter(block, ctx, instruction)
 		{}
 
@@ -38,7 +38,7 @@ namespace CE::Decompiler
 
 			if (cond != ExprTree::Condition::None)
 			{
-				m_block->m_jmpCond = new ExprTree::Condition(m_ctx->m_lastCond.leftNode, m_ctx->m_lastCond.rightNode, cond);
+				m_block->setJumpCondition(new ExprTree::Condition(m_ctx->m_lastCond.leftNode, m_ctx->m_lastCond.rightNode, cond));
 			}
 			else {
 				//сделать movsnz и тернарный оператор

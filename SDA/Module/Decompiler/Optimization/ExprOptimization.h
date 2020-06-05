@@ -189,7 +189,8 @@ namespace CE::Decompiler::Optimization
 	}
 
 	static void Optimize(ExprTree::Node* node) {
-		if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(node)) {
+		auto list = GetNextOperationalsNodesToOpimize(node);
+		for(auto expr : list) {
 			OptimizeZeroInExpr(expr);
 			OptimizeConstExpr(expr);
 			OptimizeConstPlaceInExpr(expr);

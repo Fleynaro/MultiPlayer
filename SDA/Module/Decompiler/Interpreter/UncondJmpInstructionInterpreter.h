@@ -6,7 +6,7 @@ namespace CE::Decompiler
 	class UncondJmpInstructionInterpreter : public AbstractInstructionInterpreter
 	{
 	public:
-		UncondJmpInstructionInterpreter(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction* instruction);
+		UncondJmpInstructionInterpreter(PrimaryTree::Block* block, ExecutionBlockContext* ctx, const ZydisDecodedInstruction* instruction);
 
 		void execute() override;
 	};

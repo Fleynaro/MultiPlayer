@@ -6,7 +6,7 @@ namespace CE::Decompiler
 	class Operand
 	{
 	public:
-		Operand(ExecutionContext* ctx, const ZydisDecodedOperand* operand)
+		Operand(ExecutionBlockContext* ctx, const ZydisDecodedOperand* operand)
 			: m_ctx(ctx), m_operand(operand)
 		{}
 
@@ -39,15 +39,15 @@ namespace CE::Decompiler
 				m_operand->type == ZYDIS_OPERAND_TYPE_MEMORY;
 		}
 	private:
-		ExecutionContext* m_ctx;
+		ExecutionBlockContext* m_ctx;
 		const ZydisDecodedOperand* m_operand;
 
-		static ExprTree::Node* CreateExprNumLeaf(ExecutionContext* ctx, uint64_t value) {
+		static ExprTree::Node* CreateExprNumLeaf(ExecutionBlockContext* ctx, uint64_t value) {
 			auto leaf = new ExprTree::NumberLeaf(value);
 			return leaf;
 		}
 
-		static ExprTree::Node* CreateExprMemLocation(ExecutionContext* ctx, const ZydisDecodedOperand_::ZydisDecodedOperandMem_& mem) {
+		static ExprTree::Node* CreateExprMemLocation(ExecutionBlockContext* ctx, const ZydisDecodedOperand_::ZydisDecodedOperandMem_& mem) {
 			ExprTree::Node* expr = nullptr;
 			ExprTree::Node* baseReg = nullptr;
 

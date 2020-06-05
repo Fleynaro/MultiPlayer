@@ -3,7 +3,7 @@
 
 using namespace CE::Decompiler;
 
-UncondJmpInstructionInterpreter::UncondJmpInstructionInterpreter(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction* instruction)
+UncondJmpInstructionInterpreter::UncondJmpInstructionInterpreter(PrimaryTree::Block* block, ExecutionBlockContext* ctx, const ZydisDecodedInstruction* instruction)
 	: AbstractInstructionInterpreter(block, ctx, instruction)
 {}
 

@@ -6,7 +6,7 @@ namespace CE::Decompiler
 	class MovementInstructionInterpreter : public AbstractInstructionInterpreter
 	{
 	public:
-		MovementInstructionInterpreter(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction* instruction)
+		MovementInstructionInterpreter(PrimaryTree::Block* block, ExecutionBlockContext* ctx, const ZydisDecodedInstruction* instruction)
 			: AbstractInstructionInterpreter(block, ctx, instruction)
 		{}
 

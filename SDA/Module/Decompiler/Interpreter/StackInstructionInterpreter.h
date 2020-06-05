@@ -6,7 +6,7 @@ namespace CE::Decompiler
 	class StackInstructionInterpreter : public AbstractInstructionInterpreter
 	{
 	public:
-		StackInstructionInterpreter(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction* instruction)
+		StackInstructionInterpreter(PrimaryTree::Block* block, ExecutionBlockContext* ctx, const ZydisDecodedInstruction* instruction)
 			: AbstractInstructionInterpreter(block, ctx, instruction)
 		{}
 
@@ -34,6 +34,12 @@ namespace CE::Decompiler
 					auto expr = new ExprTree::OperationalNode(regRsp, new ExprTree::NumberLeaf(0x8), ExprTree::Add);
 					setExprToRegisterDst(ZYDIS_REGISTER_RSP, expr, false);
 				}
+				break;
+			}
+
+			case ZYDIS_MNEMONIC_RET: {
+				m_block->addLine(new ExprTree::NumberLeaf(0x0), m_ctx->getRegister(ZYDIS_REGISTER_RAX));
+				//m_block->addLine(new ExprTree::NumberLeaf(0x0), m_ctx->getRegister(ZYDIS_REGISTER_ZMM0));
 				break;
 			}
 			}

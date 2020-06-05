@@ -41,6 +41,8 @@ namespace CE::Decompiler
 			: m_decompiler(decompiler), m_offset(startOffset)
 		{}
 
+		ExprTree::Node* getRegister(ZydisRegister reg);
+
 		void setLastCond(ExprTree::Node* leftNode, ExprTree::Node* rightNode, RegisterFlags flags) {
 			if (m_lastCond.leftNode != nullptr) {
 				m_lastCond.leftNode->removeBy(nullptr);

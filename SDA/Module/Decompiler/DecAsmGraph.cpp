@@ -246,7 +246,6 @@ void ff() {
 
 
 #include "Decompiler.h"
-#include "Optimization/ExprOptimization.h"
 
 int gVarrrr = 100;
 
@@ -260,7 +259,10 @@ void func22() {
 	b *= -1;
 	gVarrrr %= 21;*/
 	if (b > 1) {
-		b = 3;
+		b = func11(10) % 25;
+		if (b == 2) {
+			b ++;
+		}
 	}
 	else {
 		b = 5;
@@ -306,10 +308,8 @@ void CE::Decompiler::test() {
 	AsmGraph graph(CE::Decompiler::getInstructionsAtAddress(addr, size));
 	graph.build();
 
-	{
-		graph.printDebug(addr);
-		return;
-	}
+	graph.printDebug(addr);
+	printf("\n\n");
 
 	auto decompiler = new Decompiler(&graph);
 	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
@@ -319,35 +319,7 @@ void CE::Decompiler::test() {
 		info.m_resultRegister = ZYDIS_REGISTER_EAX;
 		return info;
 	};
-
-	InstructionInterpreterDispatcher dispatcher;
-	ExecutionBlockContext ctx(decompiler, 0x0);
-	auto treeBlock = new PrimaryTree::Block;
-
-	auto block = graph.getBlockAtOffset(0x0);
-	for (auto off : block->getInstructions()) {
-		auto instr = graph.m_instructions[off];
-		dispatcher.execute(treeBlock, &ctx, instr);
-	}
-
-	
-	printf("%s\n\n\nAfter optimization:\n\n", treeBlock->printDebug().c_str());
-
-	for (auto line : treeBlock->getLines()) {
-		Optimization::Optimize(line->m_destAddr);
-		Optimization::Optimize(line->m_srcValue);
-
-		/*if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(line->m_destAddr)) {
-			printf("1) %s", line->printDebug().c_str());
-			Optimization::OptimizeConstExpr(expr);
-			printf("2) %s", line->printDebug().c_str());
-			Optimization::OptimizeConstPlaceInExpr(expr);
-			printf("3) %s", line->printDebug().c_str());
-			Optimization::OptimizeRepeatOpInExpr(expr);
-			printf("4) %s\n", line->printDebug().c_str());
-		}*/
-	}
-
-	printf("%s\n\n", treeBlock->printDebug().c_str());
-	graph.printDebug(&func);
+	decompiler->start();
+	decompiler->optimize();
+	decompiler->printDebug();
 }

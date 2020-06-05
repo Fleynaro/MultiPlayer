@@ -11,7 +11,7 @@ namespace CE::Decompiler
 	class InstructionInterpreterDispatcher
 	{
 	public:
-		void execute(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction& instruction) {
+		void execute(PrimaryTree::Block* block, ExecutionBlockContext* ctx, const ZydisDecodedInstruction& instruction) {
 			ctx->m_offset += instruction.length;
 			
 			{

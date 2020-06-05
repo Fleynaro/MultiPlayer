@@ -16,7 +16,7 @@ namespace CE::Decompiler
 	class AbstractInstructionInterpreter
 	{
 	public:
-		AbstractInstructionInterpreter(PrimaryTree::Block* block, ExecutionContext* ctx, const ZydisDecodedInstruction* instruction)
+		AbstractInstructionInterpreter(PrimaryTree::Block* block, ExecutionBlockContext* ctx, const ZydisDecodedInstruction* instruction)
 			: m_block(block), m_ctx(ctx), m_instruction(instruction)
 		{}
 
@@ -24,7 +24,7 @@ namespace CE::Decompiler
 
 	protected:
 		PrimaryTree::Block* m_block;
-		ExecutionContext* m_ctx;
+		ExecutionBlockContext* m_ctx;
 		const ZydisDecodedInstruction* m_instruction;
 
 		void unaryOperation(ExprTree::OperationType opType, ExprTree::Node* srcExpr, ExprTree::Node* dstExpr = nullptr, bool isSettingFlags = true) {
