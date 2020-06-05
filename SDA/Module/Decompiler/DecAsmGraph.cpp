@@ -235,7 +235,7 @@ int calculateFunctionSize2(byte* addr) {
 	int size = 0;
 	while (addr[size] != 0xC3)
 		size++;
-	return size;
+	return size + 1;
 }
 
 void ff() {
