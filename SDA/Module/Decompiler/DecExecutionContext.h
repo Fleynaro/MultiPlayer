@@ -18,7 +18,11 @@ namespace CE::Decompiler
 
 	class Decompiler; //make interface later
 
-	class ExecutionContext
+	struct ExecutionBlockContextData {
+
+	};
+
+	class ExecutionBlockContext
 	{
 	public:
 		int m_offset;
@@ -33,7 +37,7 @@ namespace CE::Decompiler
 			ExprTree::Node* rightNode = nullptr;
 		} m_lastCond;
 
-		ExecutionContext(Decompiler* decompiler, int startOffset = 0)
+		ExecutionBlockContext(Decompiler* decompiler, int startOffset = 0)
 			: m_decompiler(decompiler), m_offset(startOffset)
 		{}
 

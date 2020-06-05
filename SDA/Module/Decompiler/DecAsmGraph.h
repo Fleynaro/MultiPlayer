@@ -13,6 +13,9 @@ namespace CE::Decompiler
 	class AsmGraphBlock
 	{
 	public:
+		int m_level = 0;
+		std::list<AsmGraphBlock*> m_blocksReferencedTo;
+
 		AsmGraphBlock(AsmGraph* asmGraph, int minOffset, int maxOffset);
 
 		std::list<int>& getInstructions();
@@ -31,13 +34,16 @@ namespace CE::Decompiler
 
 		ZydisDecodedInstruction& getLastInstruction();
 
+		bool isCondition();
+
+		bool isEnd();
+
 		void printDebug(void* addr);
 	private:
 		AsmGraph* m_asmGraph;
 		int m_minOffset;
 		int m_maxOffset;
 		std::list<int> m_instructions;
-		std::list<AsmGraphBlock*> m_blocksReferencedTo;
 		AsmGraphBlock* m_nextNearBlock = nullptr;
 		AsmGraphBlock* m_nextFarBlock = nullptr;
 	};
@@ -54,6 +60,8 @@ namespace CE::Decompiler
 
 		AsmGraphBlock* getBlockAtOffset(int offset);
 
+		AsmGraphBlock* getStartBlock();
+
 		void printDebug(void* addr);
 	private:
 		std::map<int, AsmGraphBlock> m_blocks;
@@ -61,6 +69,8 @@ namespace CE::Decompiler
 		void createBlockAtOffset(int minOffset, int maxOffset);
 
 		int getMaxOffset();
+
+		static void CountLevelsForAsmGrapBlocks(AsmGraphBlock* block, int level = 1);
 	};
 
 	InstructionMapType getInstructionsAtAddress(void* addr, int size);

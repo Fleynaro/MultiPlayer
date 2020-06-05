@@ -41,6 +41,14 @@ ZydisDecodedInstruction& AsmGraphBlock::getLastInstruction() {
 	return m_asmGraph->m_instructions[*std::prev(m_instructions.end())];
 }
 
+bool AsmGraphBlock::isCondition() {
+	return m_nextNearBlock != nullptr && m_nextFarBlock != nullptr;
+}
+
+bool AsmGraphBlock::isEnd() {
+	return m_nextNearBlock == nullptr && m_nextFarBlock == nullptr;
+}
+
 void AsmGraphBlock::printDebug(void* addr) {
 	ZydisFormatter formatter;
 	ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
@@ -53,6 +61,7 @@ void AsmGraphBlock::printDebug(void* addr) {
 		printf("%p(%i): %s\n", (void*)(runtime_address + instr_off), instr_off, buffer);
 	}
 
+	printf("Level: %i\n", m_level);
 	if(m_nextNearBlock != nullptr)
 		printf("Next near: %i\n", m_nextNearBlock->getMinOffset());
 	if (m_nextFarBlock != nullptr)
@@ -115,6 +124,8 @@ void AsmGraph::build() {
 		auto nextFarBlock = getBlockAtOffset(jmp_dir.second);
 		curBlock->setNextFarBlock(nextFarBlock);
 	}
+
+	CountLevelsForAsmGrapBlocks(getStartBlock());
 }
 
 AsmGraphBlock* AsmGraph::getBlockAtOffset(int offset) {
@@ -125,6 +136,10 @@ AsmGraphBlock* AsmGraph::getBlockAtOffset(int offset) {
 		}
 	}
 	return nullptr;
+}
+
+AsmGraphBlock* AsmGraph::getStartBlock() {
+	return &(m_blocks.begin()->second);
 }
 
 void AsmGraph::printDebug(void* addr) {
@@ -147,6 +162,14 @@ void AsmGraph::createBlockAtOffset(int minOffset, int maxOffset) {
 int AsmGraph::getMaxOffset() {
 	auto& lastInstr = *std::prev(m_instructions.end());
 	return lastInstr.first + lastInstr.second.length;
+}
+
+void AsmGraph::CountLevelsForAsmGrapBlocks(AsmGraphBlock* block, int level) {
+	if (block == nullptr)
+		return;
+	block->m_level = max(block->m_level, level);
+	CountLevelsForAsmGrapBlocks(block->getNextNearBlock(), level + 1);
+	CountLevelsForAsmGrapBlocks(block->getNextFarBlock(), level + 1);
 }
 
 InstructionMapType CE::Decompiler::getInstructionsAtAddress(void* addr, int size) {
@@ -233,9 +256,17 @@ int func11(int a) {
 
 void func22() {
 	int b = 2;
-	b += func11(10) + func11(5);
+	/*b += func11(10) + func11(5);
 	b *= -1;
-	gVarrrr %= 21;
+	gVarrrr %= 21;*/
+	if (b > 1) {
+		b = 3;
+	}
+	else {
+		b = 5;
+	}
+
+	b = 0;
 }
 
 
@@ -275,6 +306,11 @@ void CE::Decompiler::test() {
 	AsmGraph graph(CE::Decompiler::getInstructionsAtAddress(addr, size));
 	graph.build();
 
+	{
+		graph.printDebug(addr);
+		return;
+	}
+
 	auto decompiler = new Decompiler(&graph);
 	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
 		auto absAddr = (std::intptr_t)addr + offset;
@@ -285,7 +321,7 @@ void CE::Decompiler::test() {
 	};
 
 	InstructionInterpreterDispatcher dispatcher;
-	ExecutionContext ctx(decompiler, 0x0);
+	ExecutionBlockContext ctx(decompiler, 0x0);
 	auto treeBlock = new PrimaryTree::Block;
 
 	auto block = graph.getBlockAtOffset(0x0);
