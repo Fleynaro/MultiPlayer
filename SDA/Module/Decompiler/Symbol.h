@@ -41,7 +41,7 @@ namespace CE::Decompiler::Symbol
 		{}
 
 		std::string printDebug() override {
-			return "[stack]";
+			return "[stack_"+ std::to_string(m_stackOffset) +"]";
 		}
 	};
 

@@ -164,12 +164,22 @@ int AsmGraph::getMaxOffset() {
 	return lastInstr.first + lastInstr.second.length;
 }
 
-void AsmGraph::CountLevelsForAsmGrapBlocks(AsmGraphBlock* block, int level) {
+void AsmGraph::CountLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGraphBlock*>& path) {
 	if (block == nullptr)
 		return;
-	block->m_level = max(block->m_level, level);
-	CountLevelsForAsmGrapBlocks(block->getNextNearBlock(), level + 1);
-	CountLevelsForAsmGrapBlocks(block->getNextFarBlock(), level + 1);
+
+	//if that is a loop
+	for (auto it : path) {
+		if (block == it) {
+			return;
+		}
+	}
+
+	path.push_back(block);
+	block->m_level = max(block->m_level, path.size());
+	CountLevelsForAsmGrapBlocks(block->getNextNearBlock(), path);
+	CountLevelsForAsmGrapBlocks(block->getNextFarBlock(), path);
+	path.pop_back();
 }
 
 InstructionMapType CE::Decompiler::getInstructionsAtAddress(void* addr, int size) {
@@ -278,6 +288,11 @@ void CE::Decompiler::test() {
 		1) символы локальных переменных делать в конце, когда будет граф. помечать из них флагом те, которые €вл€ютс€ параметрами
 		2) сделать услови€ и циклы. —делать это близко к си коду, без вс€ких джампов. »бо потом все будет в кеше, не надо повторно вычисл€ть
 		3) сделать поддержку векторов и вещественных значений
+
+
+		TODO:
+		1) —делать поиск петлей в контексте преобразовани€ в дерево
+		2) —делать поиск регистра с учетом локальности методом воды и труб в контексте декомпил€ции
 	*/
 
 

@@ -38,7 +38,7 @@ namespace CE::Decompiler
 			}
 
 			case ZYDIS_MNEMONIC_RET: {
-				m_block->addLine(new ExprTree::NumberLeaf(0x0), m_ctx->getRegister(ZYDIS_REGISTER_RAX));
+				m_block->addLine(new ExprTree::NumberLeaf(0x0), Register::GetOrCreateExprRegLeaf(m_ctx, ZYDIS_REGISTER_RAX));
 				//m_block->addLine(new ExprTree::NumberLeaf(0x0), m_ctx->getRegister(ZYDIS_REGISTER_ZMM0));
 				break;
 			}
