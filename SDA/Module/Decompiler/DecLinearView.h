@@ -7,14 +7,14 @@ namespace CE::Decompiler::LinearView
 	class Block
 	{
 	public:
-		BlockList* m_blockList;
+		BlockList* m_blockList = nullptr;
 	};
 
 	class Condition;
 	class BlockList
 	{
 	public:
-		Condition* m_condition;
+		Condition* m_condition = nullptr;
 
 		BlockList()
 		{}
@@ -69,7 +69,13 @@ namespace CE::Decompiler::LinearView
 	{
 	public:
 		struct Loop {
-			std::list<AsmGraphBlock*> m_blocks;
+			AsmGraphBlock* m_startBlock;
+			AsmGraphBlock* m_endBlock;
+			std::set<AsmGraphBlock*> m_blocks;
+
+			Loop(AsmGraphBlock* startBlock, AsmGraphBlock* endBlock)
+				: m_startBlock(startBlock), m_endBlock(endBlock)
+			{}
 		};
 
 		struct VisitedBlockInfo {
@@ -86,10 +92,43 @@ namespace CE::Decompiler::LinearView
 			std::map<AsmGraphBlock*, VisitedBlockInfo> visitedBlocks;
 			std::list<AsmGraphBlock*> passedBlocks;
 			findAllLoops(startBlock, visitedBlocks, passedBlocks);
+
+			for (auto& it : m_loops) {
+				fillLoop(&it.second);
+			}
+
+			m_blockList = new BlockList;
+			std::set<AsmGraphBlock*> usedBlocks;
+			convert(m_blockList, startBlock, usedBlocks);
 		}
 	private:
 		AsmGraph* m_asmGraph;
 		std::map<AsmGraphBlock*, Loop> m_loops;
+		BlockList* m_blockList;
+
+		void convert(BlockList* blockList, AsmGraphBlock* block, std::set<AsmGraphBlock*>& usedBlocks) {
+			while (block != nullptr) {
+				if (block->isCondition()) {
+					auto it = m_loops.find(block);
+					if (it != m_loops.end()) {
+						auto& loop = it->second;
+						for (auto it : loop.m_blocks) {
+							if (usedBlocks.count(it) != 0) {
+
+							}
+						}
+
+					}
+				}
+				else {
+					blockList->addBlock(new AsmBlock(block));
+					for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
+						if (nextBlock != nullptr)
+							block = nextBlock;
+					}
+				}
+			}
+		}
 
 		void findAllLoops(AsmGraphBlock* block, std::map<AsmGraphBlock*, VisitedBlockInfo>& visitedBlocks, std::list<AsmGraphBlock*>& passedBlocks) {
 			bool goNext = true;
@@ -109,7 +148,7 @@ namespace CE::Decompiler::LinearView
 
 				if (visitedBlock.m_enterCount >= 2) {
 					blocks.sort([](const AsmGraphBlock* block1, const AsmGraphBlock* block2) {
-						return block1->m_level < block2->m_level && block1 != block2;
+						return block1->m_level < block2->m_level&& block1 < block2;
 						});
 
 					//detect a loop and remove duplicates
@@ -124,9 +163,7 @@ namespace CE::Decompiler::LinearView
 
 					//if a loop detected
 					if (startLoopBlockIt != blocks.end()) {
-						Loop loop;
-						loop.m_blocks.insert(loop.m_blocks.begin(), startLoopBlockIt, blocks.end());
-						loop.m_blocks.push_back(block);
+						Loop loop(*startLoopBlockIt, block);
 						m_loops.insert(std::make_pair(*startLoopBlockIt, loop));
 					}
 
@@ -142,7 +179,6 @@ namespace CE::Decompiler::LinearView
 				for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
 					if (nextBlock == nullptr)
 						continue;
-					
 					findAllLoops(nextBlock, visitedBlocks, passedBlocks);
 				}
 
@@ -152,6 +188,20 @@ namespace CE::Decompiler::LinearView
 						break;
 					}
 				}
+			}
+		}
+
+		void fillLoop(Loop* loop) {
+			fillLoop(loop->m_startBlock, loop);
+			loop->m_blocks.insert(loop->m_endBlock);
+		}
+
+		void fillLoop(AsmGraphBlock* block, Loop* loop) {
+			loop->m_blocks.insert(block);
+			for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
+				if (nextBlock == nullptr || nextBlock->m_level >= loop->m_endBlock->m_level || nextBlock->m_level <= block->m_level)
+					continue;
+				fillLoop(nextBlock, loop);
 			}
 		}
 	};
