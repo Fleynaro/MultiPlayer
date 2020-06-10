@@ -125,7 +125,8 @@ void AsmGraph::build() {
 		curBlock->setNextFarBlock(nextFarBlock);
 	}
 
-	CountLevelsForAsmGrapBlocks(getStartBlock());
+	std::list<AsmGraphBlock*> path;
+	CountLevelsForAsmGrapBlocks(getStartBlock(), path);
 }
 
 AsmGraphBlock* AsmGraph::getBlockAtOffset(int offset) {
@@ -169,14 +170,14 @@ void AsmGraph::CountLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGr
 		return;
 
 	//if that is a loop
-	for (auto it : path) {
-		if (block == it) {
+	for (auto it = path.rbegin(); it != path.rend(); it ++) {
+		if (block == *it) {
 			return;
 		}
 	}
 
 	path.push_back(block);
-	block->m_level = max(block->m_level, path.size());
+	block->m_level = max(block->m_level, (int)path.size());
 	CountLevelsForAsmGrapBlocks(block->getNextNearBlock(), path);
 	CountLevelsForAsmGrapBlocks(block->getNextFarBlock(), path);
 	path.pop_back();
@@ -256,6 +257,7 @@ void ff() {
 
 
 #include "Decompiler.h"
+#include "DecLinearView.h"
 
 int gVarrrr = 100;
 
@@ -276,6 +278,10 @@ void func22() {
 	}
 	else {
 		b = 5;
+
+		if (b == 3) {
+			b++;
+		}
 	}
 
 	b = 0;
@@ -337,4 +343,7 @@ void CE::Decompiler::test() {
 	decompiler->start();
 	decompiler->optimize();
 	decompiler->printDebug();
+
+	LinearView::Converter converter(&graph);
+	converter.start();
 }

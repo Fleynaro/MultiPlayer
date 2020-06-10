@@ -22,7 +22,7 @@ namespace CE::Decompiler
 		std::function<ExprTree::FunctionCallInfo(int, ExprTree::Node*)> m_funcCallInfoCallback;
 
 		Decompiler(AsmGraph* graph)
-			: m_graph(graph)
+			: m_asmGraph(graph)
 		{
 			m_instructionInterpreterDispatcher = new InstructionInterpreterDispatcher;
 			m_funcCallInfoCallback = [](int offset, ExprTree::Node* dst) {
@@ -35,8 +35,9 @@ namespace CE::Decompiler
 		}
 
 		void start() {
-			auto startBlock = m_graph->getStartBlock();
-			decompile(startBlock);
+			auto startBlock = m_asmGraph->getStartBlock();
+			std::multiset<AsmGraphBlock*> visitedBlocks;
+			decompile(startBlock, visitedBlocks);
 		}
 
 		void optimize() {
@@ -59,21 +60,20 @@ namespace CE::Decompiler
 		}
 
 		void printDebug() {
-			for (auto& it : m_graph->m_blocks) {
+			for (auto& it : m_asmGraph->m_blocks) {
 				auto block = &it.second;
 				m_decompiledBlocks[block].m_treeBlock->printDebug();
 				printf("Level %i\n================\n", block->m_level);
 			}
 		}
 	private:
-		AsmGraph* m_graph;
+		AsmGraph* m_asmGraph;
 		InstructionInterpreterDispatcher* m_instructionInterpreterDispatcher;
 
 		AsmGraphBlock* m_curBlock = nullptr;
 		std::map<AsmGraphBlock*, DecompiledBlockInfo> m_decompiledBlocks;
-		std::multiset<AsmGraphBlock*> m_visitedBlocks;
 		
-		void decompile(AsmGraphBlock* block) {
+		void decompile(AsmGraphBlock* block, std::multiset<AsmGraphBlock*>& visitedBlocks) {
 			m_curBlock = block;
 
 			if (m_decompiledBlocks.find(block) == m_decompiledBlocks.end()) {
@@ -81,20 +81,20 @@ namespace CE::Decompiler
 			}
 			auto& decompiledBlock = m_decompiledBlocks[block];
 
-			if (m_visitedBlocks.count(block) == block->m_blocksReferencedTo.size()) {
+			if (visitedBlocks.count(block) == block->m_blocksReferencedTo.size()) {
 				decompiledBlock.m_treeBlock = new PrimaryTree::Block;
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, block->getMinOffset());
 
 				for (auto off : block->getInstructions()) {
-					auto instr = m_graph->m_instructions[off];
+					auto instr = m_asmGraph->m_instructions[off];
 					m_instructionInterpreterDispatcher->execute(decompiledBlock.m_treeBlock, decompiledBlock.m_execBlockCtx, instr);
 				}
 
 				for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
 					if (nextBlock == nullptr)
 						continue;
-					m_visitedBlocks.insert(nextBlock);
-					decompile(nextBlock);
+					visitedBlocks.insert(nextBlock);
+					decompile(nextBlock, visitedBlocks);
 				}
 			}
 		}

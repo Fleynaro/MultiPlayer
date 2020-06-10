@@ -350,6 +350,7 @@
     <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\Decompiler\DecAsmGraph.h" />
+    <ClInclude Include="Module\Decompiler\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\DecExecutionContext.h" />
     <ClInclude Include="Module\Decompiler\DecOperand.h" />
