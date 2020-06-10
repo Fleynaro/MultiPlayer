@@ -7,16 +7,29 @@ namespace CE::Decompiler::LinearView
 	class Block
 	{
 	public:
+		AsmGraphBlock* m_graphBlock;
 		BlockList* m_blockList = nullptr;
+
+		Block(AsmGraphBlock* graphBlock)
+			: m_graphBlock(graphBlock)
+		{}
+
+		virtual ~Block() {}
+
+		virtual void printDebug() {
+			m_graphBlock->printDebug(0);
+		}
 	};
 
 	class Condition;
 	class BlockList
 	{
 	public:
-		Condition* m_condition = nullptr;
+		Condition* m_condition;
+		Block* m_goto = nullptr;
 
-		BlockList()
+		BlockList(Condition* condition = nullptr)
+			: m_condition(condition)
 		{}
 
 		void addBlock(Block* block) {
@@ -27,18 +40,18 @@ namespace CE::Decompiler::LinearView
 		std::list<Block*>& getBlocks() {
 			return m_blocks;
 		}
+
+		void printDebug() {
+			for (auto it : m_blocks) {
+				it->printDebug();
+			}
+
+			if (m_goto != nullptr) {
+				printf("goto to block on level %i\n", m_goto->m_graphBlock->m_level);
+			}
+		}
 	private:
 		std::list<Block*> m_blocks;
-	};
-
-	class AsmBlock : public Block
-	{
-	public:
-		AsmGraphBlock* m_graphBlock;
-
-		AsmBlock(AsmGraphBlock* graphBlock)
-			: m_graphBlock(graphBlock)
-		{}
 	};
 
 	class Condition : public Block
@@ -46,16 +59,28 @@ namespace CE::Decompiler::LinearView
 	public:
 		BlockList* m_mainBranch;
 		BlockList* m_elseBranch;
-		Block* m_mainBranchGoto = nullptr;
-		Block* m_elseBranchGoto = nullptr;
 
-		Condition(BlockList* mainBranch, BlockList* elseBranch = nullptr)
-			: m_mainBranch(mainBranch), m_elseBranch(elseBranch)
+		Condition(AsmGraphBlock* graphBlock)
+			: Block(graphBlock)
 		{
-			m_mainBranch->m_condition = this;
-			if (m_elseBranch != nullptr) {
-				m_elseBranch->m_condition = this;
+			m_mainBranch = new BlockList(this);
+			m_elseBranch = new BlockList(this);
+		}
+
+		~Condition() {
+			delete m_mainBranch;
+			delete m_elseBranch;
+		}
+
+		void printDebug() override {
+			Block::printDebug();
+			printf("if() {\n");
+			m_mainBranch->printDebug();
+			if (m_elseBranch->getBlocks().size() > 0) {
+				printf("} else {\n");
+				m_elseBranch->printDebug();
 			}
+			printf("}\n");
 		}
 	};
 
@@ -101,31 +126,58 @@ namespace CE::Decompiler::LinearView
 			std::set<AsmGraphBlock*> usedBlocks;
 			convert(m_blockList, startBlock, usedBlocks);
 		}
+
+		BlockList* getBlockList() {
+			return m_blockList;
+		}
 	private:
 		AsmGraph* m_asmGraph;
 		std::map<AsmGraphBlock*, Loop> m_loops;
+		std::map<BlockList*, AsmGraphBlock*> m_goto;
 		BlockList* m_blockList;
 
 		void convert(BlockList* blockList, AsmGraphBlock* block, std::set<AsmGraphBlock*>& usedBlocks) {
 			while (block != nullptr) {
+				if (usedBlocks.count(block) != 0) {
+					//if
+					m_goto.insert(std::make_pair(blockList, block));
+					break;
+				}
+				AsmGraphBlock* nextBlock = nullptr;
+
 				if (block->isCondition()) {
+					blockList->addBlock(new Condition(block));
+					
 					auto it = m_loops.find(block);
-					if (it != m_loops.end()) {
-						auto& loop = it->second;
-						for (auto it : loop.m_blocks) {
-							if (usedBlocks.count(it) != 0) {
-
-							}
-						}
-
+					if (it == m_loops.end()) {
+						break;
 					}
+
+					auto& loop = it->second;
+					for (auto it : loop.m_blocks) {
+						if (usedBlocks.count(it) != 0) {
+							break;
+						}
+					}
+
+					nextBlock = loop.m_endBlock;
 				}
 				else {
-					blockList->addBlock(new AsmBlock(block));
-					for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
-						if (nextBlock != nullptr)
-							block = nextBlock;
+					blockList->addBlock(new Block(block));
+					for (auto it : { block->getNextNearBlock(), block->getNextFarBlock() }) {
+						if (it != nullptr)
+							nextBlock = it;
 					}
+				}
+
+				usedBlocks.insert(block);
+				block = nextBlock;
+			}
+
+			for (auto it : blockList->getBlocks()) {
+				if (auto condition = dynamic_cast<Condition*>(it)) {
+					convert(condition->m_mainBranch, condition->m_graphBlock->getNextNearBlock(), usedBlocks);
+					convert(condition->m_elseBranch, condition->m_graphBlock->getNextFarBlock(), usedBlocks);
 				}
 			}
 		}

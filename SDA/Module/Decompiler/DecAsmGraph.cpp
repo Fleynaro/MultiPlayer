@@ -343,8 +343,10 @@ void CE::Decompiler::test() {
 	};
 	decompiler->start();
 	decompiler->optimize();
-	decompiler->printDebug();
+	//decompiler->printDebug();
 
 	LinearView::Converter converter(&graph);
 	converter.start();
+
+	converter.getBlockList()->printDebug();
 }
