@@ -9,7 +9,7 @@ void ExecutionBlockContext::setRegister(ZydisRegister reg, ExprTree::Node* expr)
 }
 
 ExprTree::Node* ExecutionBlockContext::getRegister(ZydisRegister reg) {
-	if (m_cachedRegisters.find(reg) != m_registers.end()) {
+	if (m_cachedRegisters.find(reg) != m_cachedRegisters.end()) {
 		return m_cachedRegisters[reg];
 	}
 	auto regExpr = m_decompiler->requestRegister(reg);

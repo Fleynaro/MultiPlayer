@@ -146,12 +146,14 @@ namespace CE::Decompiler
 			return leaf;
 		}
 
+		//MYTODO: запрашиваем eax регистр, но получаем старый перезаписанный eax регистр, а не новый rax
 		static ExprTree::Node* GetOrCreateExprRegLeaf(ExecutionBlockContext* ctx, ZydisRegister reg) {
 			auto regExpr = ctx->getRegister(reg);
 			if (regExpr != nullptr) {
 				return GetRegisterExpr(ctx, reg, regExpr);
 			}
 
+			//find the most suitable register
 			auto regInfo = Register::GetRegInfo(reg);
 			struct {
 				uint64_t mask = -1;
@@ -179,6 +181,7 @@ namespace CE::Decompiler
 
 			ExprTree::Node* node = nullptr;
 			if (suitSameReg.mask != -1) {
+				//if that register found
 				node = GetRegisterExpr(ctx, suitSameReg.reg, suitSameReg.expr);
 				node = new ExprTree::OperationalNode(node, new ExprTree::NumberLeaf(suitSameReg.mask), ExprTree::And);
 				int rightBitShift = GetShiftValueOfMask(regInfo.m_mask);
