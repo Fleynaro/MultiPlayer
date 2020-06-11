@@ -190,7 +190,7 @@ namespace CE::Decompiler
 			if (!node) {
 				node = CreateExprRegLeaf(ctx, reg);
 			}
-			ctx->m_registers.insert(std::make_pair(reg, node));
+			ctx->setRegister(reg, node);
 			return node;
 		}
 

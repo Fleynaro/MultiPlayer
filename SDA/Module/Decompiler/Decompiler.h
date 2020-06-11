@@ -88,12 +88,11 @@ namespace CE::Decompiler
 		void decompile(AsmGraphBlock* block, std::multiset<AsmGraphBlock*>& visitedBlocks) {
 			m_curBlock = block;
 
-			if (m_decompiledBlocks.find(block) == m_decompiledBlocks.end()) {
-				m_decompiledBlocks.insert(std::make_pair(block, DecompiledBlockInfo()));
-			}
-			auto& decompiledBlock = m_decompiledBlocks[block];
-
 			if (visitedBlocks.count(block) == block->m_blocksReferencedTo.size()) {
+				if (m_decompiledBlocks.find(block) == m_decompiledBlocks.end()) {
+					m_decompiledBlocks.insert(std::make_pair(block, DecompiledBlockInfo()));
+				}
+				auto& decompiledBlock = m_decompiledBlocks[block];
 				decompiledBlock.m_treeBlock = new PrimaryTree::Block;
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, block->getMinOffset());
 
@@ -138,8 +137,8 @@ namespace CE::Decompiler
 			}
 
 
-			std::map<AsmGraphBlock*, uint64_t> blockPressure = { std::make_pair(block, 0x1000000000000000) };
-			auto highestBlockInLoop = getMostUpBlockInJoinedLoop(block, reg, blocksInLoop, blockPressure);
+			std::map<AsmGraphBlock*, uint64_t> blockPressure;
+			auto highestBlockInLoop = getMostUpBlockInJoinedLoop(block, reg, blocksInLoop, 0x1000000000000000, blockPressure);
 			if (highestBlockInLoop != nullptr) {
 				return requestRegister(highestBlockInLoop, reg, blocksInLoop);
 			}
@@ -147,28 +146,30 @@ namespace CE::Decompiler
 			return nullptr;
 		}
 
-		AsmGraphBlock* getMostUpBlockInJoinedLoop(AsmGraphBlock* block, ZydisRegister reg, std::list<AsmGraphBlock*>& blocksInLoop, std::map<AsmGraphBlock*, uint64_t>& blockPressure) {
+		AsmGraphBlock* getMostUpBlockInJoinedLoop(AsmGraphBlock* block, ZydisRegister reg, std::list<AsmGraphBlock*>& blocksInLoop, uint64_t incomingPressure, std::map<AsmGraphBlock*, uint64_t>& blockPressure) {
 			auto parentsCount = (int)block->m_blocksReferencedTo.size();
 			if (parentsCount == 0)
 				return nullptr;
 
 			auto bits = (int)ceil(log2((double)parentsCount));
-			auto addPressure = blockPressure[block] >> bits;
+			auto addPressure = incomingPressure >> bits;
 			auto restAddPressure = addPressure * ((1 << bits) % parentsCount);
 
 			for (auto parentBlock : block->m_blocksReferencedTo) {
 				auto isConditionOnce = false;
 				auto pressure = addPressure + restAddPressure;
 				restAddPressure = 0;
-				if (blockPressure.find(parentBlock) != blockPressure.end()) {
-					pressure += blockPressure[parentBlock];
-				} else {
-					if (parentBlock->isCondition()) {
+
+				if (parentBlock->isCondition()) {
+					if (blockPressure.find(parentBlock) != blockPressure.end()) {
+						pressure += blockPressure[parentBlock];
+						blockPressure[parentBlock] = 0x0;
+					}
+					else {
 						isConditionOnce = true;
+						blockPressure[parentBlock] = pressure;
 					}
 				}
-
-				blockPressure[parentBlock] = pressure;
 
 				if (!isConditionOnce) {
 					if (pressure == 0x1000000000000000) {
@@ -178,11 +179,40 @@ namespace CE::Decompiler
 					if (registers.find(reg) != registers.end()) {
 						blocksInLoop.push_back(parentBlock);
 					}
-					auto block = getMostUpBlockInJoinedLoop(parentBlock, reg, blocksInLoop, blockPressure);
+					auto block = getMostUpBlockInJoinedLoop(parentBlock, reg, blocksInLoop, pressure, blockPressure);
 					if (block != nullptr) {
 						return block;
 					}
 				}
+			}
+
+			//if condition blocks remain stored some pressure
+			if (incomingPressure == 0x1000000000000000) {
+				do {
+					int maxLevel = 0;
+					auto blockOnMinLevelIt = blockPressure.end();
+
+					for (auto it = blockPressure.begin(); it != blockPressure.end(); it++) {
+						if (it->second != 0x0) {
+							if (it->first->m_level > maxLevel) {
+								blockOnMinLevelIt = it;
+								maxLevel = it->first->m_level;
+							}
+						}
+					}
+
+					if (blockOnMinLevelIt != blockPressure.end()) {
+						auto remainPressure = blockOnMinLevelIt->second;
+						blockOnMinLevelIt->second = 0;
+						auto block = getMostUpBlockInJoinedLoop(blockOnMinLevelIt->first, reg, blocksInLoop, remainPressure, blockPressure);
+						if (block != nullptr) {
+							return block;
+						}
+					}
+					else {
+						break;
+					}
+				} while (true);
 			}
 
 			return nullptr;
@@ -191,7 +221,7 @@ namespace CE::Decompiler
 		ExprTree::Node* createSymbolForRegister(ZydisRegister reg, std::list<AsmGraphBlock*>& blocksInLoop) {
 			Symbol::Symbol* symbol = new Symbol::LocalStackVar(rand());
 			auto symbolNode = new ExprTree::SymbolLeaf(symbol);
-			m_decompiledBlocks[m_curBlock].m_execBlockCtx->m_registers[reg] = symbolNode;
+			//m_decompiledBlocks[m_curBlock].m_execBlockCtx->m_registers[reg] = symbolNode;
 
 			for (auto block : blocksInLoop) {
 				auto& decompiledBlock = m_decompiledBlocks[block];

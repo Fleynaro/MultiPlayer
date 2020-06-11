@@ -279,7 +279,7 @@ void func22() {
 	else {
 		b = 5;
 
-		if (b == 3) {
+		if (b == 3 || b == 6) {
 			b++;
 			if (b == 3) {
 				b++;
@@ -289,18 +289,20 @@ void func22() {
 			}
 		}
 	}
-
 	b = 0;
 }
 
 void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, PrimaryTree::Block*>& decompiledBlocks, int level = 0) {
-	for (auto block : blockList->getBlocks()) {
-		std::string tabStr = "";
-		for (int i = 0; i < level; i++)
-			tabStr += "\t";
+	std::string tabStr = "";
+	for (int i = 0; i < level; i++)
+		tabStr += "\t";
 
+	for (auto block : blockList->getBlocks()) {
 		auto decBlock = decompiledBlocks[block->m_graphBlock];
-		decBlock->printDebug(false, tabStr);
+		if (true || !decBlock->getLines().empty()) {
+			printf("%s//block %i\n", tabStr.c_str(), block->m_graphBlock->getMinOffset());
+			decBlock->printDebug(false, tabStr);
+		}
 		if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
 			
 			printf("%sif(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
@@ -311,6 +313,10 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 			}
 			printf("%s}\n", tabStr.c_str());
 		}
+	}
+
+	if (blockList->m_goto != nullptr) {
+		printf("%s//goto to block on %i\n", tabStr.c_str(), blockList->m_goto->m_graphBlock->getMinOffset());
 	}
 }
 

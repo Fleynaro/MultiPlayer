@@ -29,6 +29,7 @@ namespace CE::Decompiler
 		Decompiler* m_decompiler;
 
 		std::map<ZydisRegister, ExprTree::Node*> m_registers;
+		std::map<ZydisRegister, ExprTree::Node*> m_cachedRegisters;
 		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
 
 		struct {
@@ -40,6 +41,8 @@ namespace CE::Decompiler
 		ExecutionBlockContext(Decompiler* decompiler, int startOffset = 0)
 			: m_decompiler(decompiler), m_offset(startOffset)
 		{}
+		
+		void setRegister(ZydisRegister reg, ExprTree::Node* expr);
 
 		ExprTree::Node* getRegister(ZydisRegister reg);
 

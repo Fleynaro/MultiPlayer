@@ -3,9 +3,18 @@
 
 using namespace CE::Decompiler;
 
+void ExecutionBlockContext::setRegister(ZydisRegister reg, ExprTree::Node* expr) {
+	m_registers[reg] = expr;
+	m_cachedRegisters.erase(reg);
+}
+
 ExprTree::Node* ExecutionBlockContext::getRegister(ZydisRegister reg) {
-	/*if (m_registers.find(reg) != m_registers.end()) {
-		return m_registers[reg];
-	}*/
-	return m_decompiler->requestRegister(reg);
+	if (m_cachedRegisters.find(reg) != m_registers.end()) {
+		return m_cachedRegisters[reg];
+	}
+	auto regExpr = m_decompiler->requestRegister(reg);
+	if (regExpr != nullptr) {
+		m_cachedRegisters[reg] = regExpr;
+	}
+	return regExpr;
 }
