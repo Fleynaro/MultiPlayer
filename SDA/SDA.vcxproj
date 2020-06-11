@@ -236,6 +236,7 @@
     <ClCompile Include="Module\Address\Address.cpp" />
     <ClCompile Include="Module\Decompiler\DecAsmGraph.cpp" />
     <ClCompile Include="Module\Decompiler\DecExecutionContext.cpp" />
+    <ClCompile Include="Module\Decompiler\DecLinearView.cpp" />
     <ClCompile Include="Module\Decompiler\Interpreter\UncondJmpInstructionInterpreter.cpp" />
     <ClCompile Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.cpp" />
     <ClCompile Include="Module\Decompiler\Symbol.cpp" />

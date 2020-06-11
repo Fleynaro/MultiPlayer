@@ -67,6 +67,30 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
+		void inverse() {
+			switch (m_cond)
+			{
+			case Eq:
+				m_cond = Ne;
+				break;
+			case Ne:
+				m_cond = Eq;
+				break;
+			case Lt:
+				m_cond = Ge;
+				break;
+			case Le:
+				m_cond = Gt;
+				break;
+			case Gt:
+				m_cond = Le;
+				break;
+			case Ge:
+				m_cond = Lt;
+				break;
+			}
+		}
+
 		bool isLeaf() override {
 			return false;
 		}

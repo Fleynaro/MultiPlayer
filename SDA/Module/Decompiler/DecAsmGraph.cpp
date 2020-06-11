@@ -281,12 +281,38 @@ void func22() {
 
 		if (b == 3) {
 			b++;
+			if (b == 3) {
+				b++;
+			}
+			else {
+				b--;
+			}
 		}
 	}
 
 	b = 0;
 }
 
+void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, PrimaryTree::Block*>& decompiledBlocks, int level = 0) {
+	for (auto block : blockList->getBlocks()) {
+		std::string tabStr = "";
+		for (int i = 0; i < level; i++)
+			tabStr += "\t";
+
+		auto decBlock = decompiledBlocks[block->m_graphBlock];
+		decBlock->printDebug(false, tabStr);
+		if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
+			
+			printf("%sif(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
+			ShowCode(condition->m_mainBranch, decompiledBlocks, level + 1);
+			if (condition->m_elseBranch->getBlocks().size() > 0) {
+				printf("%s} else {\n", tabStr.c_str());
+				ShowCode(condition->m_elseBranch, decompiledBlocks, level + 1);
+			}
+			printf("%s}\n", tabStr.c_str());
+		}
+	}
+}
 
 void CE::Decompiler::test() {
 	/*
@@ -344,9 +370,11 @@ void CE::Decompiler::test() {
 	decompiler->start();
 	decompiler->optimize();
 	//decompiler->printDebug();
+	auto decompiledBlocks = decompiler->getResult();
 
 	LinearView::Converter converter(&graph);
 	converter.start();
 
-	converter.getBlockList()->printDebug();
+	//converter.getBlockList()->printDebug();
+	ShowCode(converter.getBlockList(), decompiledBlocks);
 }

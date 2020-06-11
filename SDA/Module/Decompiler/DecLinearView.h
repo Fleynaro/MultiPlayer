@@ -41,13 +41,15 @@ namespace CE::Decompiler::LinearView
 			return m_blocks;
 		}
 
+		Block* findBlock(AsmGraphBlock* graphBlock);
+
 		void printDebug() {
 			for (auto it : m_blocks) {
 				it->printDebug();
 			}
 
 			if (m_goto != nullptr) {
-				printf("goto to block on level %i\n", m_goto->m_graphBlock->m_level);
+				printf("goto to block on %i\n", m_goto->m_graphBlock->getMinOffset());
 			}
 		}
 	private:
@@ -125,6 +127,13 @@ namespace CE::Decompiler::LinearView
 			m_blockList = new BlockList;
 			std::set<AsmGraphBlock*> usedBlocks;
 			convert(m_blockList, startBlock, usedBlocks);
+
+			for (auto it : m_goto) {
+				auto block = m_blockList->findBlock(it.second);
+				if (block != nullptr) {
+					it.first->m_goto = block;
+				}
+			}
 		}
 
 		BlockList* getBlockList() {
@@ -133,14 +142,13 @@ namespace CE::Decompiler::LinearView
 	private:
 		AsmGraph* m_asmGraph;
 		std::map<AsmGraphBlock*, Loop> m_loops;
-		std::map<BlockList*, AsmGraphBlock*> m_goto;
+		std::list<std::pair<BlockList*, AsmGraphBlock*>> m_goto;
 		BlockList* m_blockList;
 
 		void convert(BlockList* blockList, AsmGraphBlock* block, std::set<AsmGraphBlock*>& usedBlocks) {
 			while (block != nullptr) {
 				if (usedBlocks.count(block) != 0) {
-					//if
-					m_goto.insert(std::make_pair(blockList, block));
+					m_goto.push_back(std::make_pair(blockList, block));
 					break;
 				}
 				AsmGraphBlock* nextBlock = nullptr;

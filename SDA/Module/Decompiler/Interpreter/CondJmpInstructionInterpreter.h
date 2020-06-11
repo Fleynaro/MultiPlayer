@@ -38,7 +38,9 @@ namespace CE::Decompiler
 
 			if (cond != ExprTree::Condition::None)
 			{
-				m_block->setJumpCondition(new ExprTree::Condition(m_ctx->m_lastCond.leftNode, m_ctx->m_lastCond.rightNode, cond));
+				auto condition = new ExprTree::Condition(m_ctx->m_lastCond.leftNode, m_ctx->m_lastCond.rightNode, cond);
+				condition->inverse();
+				m_block->setJumpCondition(condition);
 			}
 			else {
 				//сделать movsnz и тернарный оператор

@@ -28,7 +28,7 @@ namespace CE::Decompiler::PrimaryTree
 	class Block : public ExprTree::IParentNode
 	{
 	public:
-		ExprTree::Condition* m_jmpCond = nullptr;
+		ExprTree::Condition* m_noJmpCond = nullptr;
 
 		Block()
 		{}
@@ -36,16 +36,16 @@ namespace CE::Decompiler::PrimaryTree
 		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
 			if (auto cond = dynamic_cast<ExprTree::Condition*>(node)) {
 				if (auto newCond = dynamic_cast<ExprTree::Condition*>(newNode)) {
-					if (cond == m_jmpCond) {
-						m_jmpCond = newCond;
+					if (cond == m_noJmpCond) {
+						m_noJmpCond = newCond;
 					}
 				}
 			}
 		}
 
-		void setJumpCondition(ExprTree::Condition* jmpCond) {
-			m_jmpCond = jmpCond;
-			m_jmpCond->addParentNode(this);
+		void setJumpCondition(ExprTree::Condition* noJmpCond) {
+			m_noJmpCond = noJmpCond;
+			m_noJmpCond->addParentNode(this);
 		}
 
 		void addLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue) {
@@ -56,13 +56,13 @@ namespace CE::Decompiler::PrimaryTree
 			return m_lines;
 		}
 
-		void printDebug() {
+		void printDebug(bool cond = true, const std::string& tabStr = "") {
 			std::string result = "";
 			for (auto line : m_lines) {
-				result += line->printDebug();
+				result += tabStr + line->printDebug();
 			}
-			if (m_jmpCond != nullptr) {
-				result += "------> Condition: " + m_jmpCond->printDebug() + "\n";
+			if (cond && m_noJmpCond != nullptr) {
+				result += "------> Condition: " + m_noJmpCond->printDebug() + "\n";
 			}
 			printf("%s", result.c_str());
 		}

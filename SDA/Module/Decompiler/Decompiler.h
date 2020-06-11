@@ -32,6 +32,10 @@ namespace CE::Decompiler
 
 		~Decompiler() {
 			delete m_instructionInterpreterDispatcher;
+
+			for (auto& it : m_decompiledBlocks) {
+				delete it.second.m_execBlockCtx;
+			}
 		}
 
 		void start() {
@@ -48,8 +52,8 @@ namespace CE::Decompiler
 					Optimization::Optimize(line->m_srcValue);
 				}
 
-				if (treeBlock->m_jmpCond != nullptr) {
-					Optimization::Optimize(treeBlock->m_jmpCond);
+				if (treeBlock->m_noJmpCond != nullptr) {
+					Optimization::Optimize(treeBlock->m_noJmpCond);
 				}
 			}
 		}
@@ -57,6 +61,14 @@ namespace CE::Decompiler
 		ExprTree::Node* requestRegister(ZydisRegister reg) {
 			std::list<AsmGraphBlock*> blocks;
 			return requestRegister(m_curBlock, reg, blocks);
+		}
+
+		std::map<AsmGraphBlock*, PrimaryTree::Block*> getResult() {
+			std::map<AsmGraphBlock*, PrimaryTree::Block*> result;
+			for (auto& it : m_decompiledBlocks) {
+				result.insert(std::make_pair(it.first, it.second.m_treeBlock));
+			}
+			return result;
 		}
 
 		void printDebug() {
