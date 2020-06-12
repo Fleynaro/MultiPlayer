@@ -1,5 +1,5 @@
 #pragma once
-#include "PrimaryTree/PrimaryTreeBlock.h"
+#include "DecRegister.h"
 
 namespace CE::Decompiler
 {
@@ -20,6 +20,12 @@ namespace CE::Decompiler
 
 	struct ExecutionBlockContextData {
 
+	};
+
+	struct RegisterPart {
+		uint64_t regMask = -1;
+		uint64_t mulMask = -1;
+		ExprTree::Node* expr = nullptr;
 	};
 
 	class ExecutionBlockContext
@@ -49,6 +55,30 @@ namespace CE::Decompiler
 				return m_registers[reg];
 			}
 			return nullptr;
+		}
+
+		std::list<RegisterPart> getRegisterParts(const Register::RegInfo& regInfo, uint64_t& mask) {
+			std::list<RegisterPart> regParts;
+			for (auto sameReg : regInfo.m_sameRegisters) {
+				auto reg = sameReg.first;
+				auto regExpr = getRegister(reg);
+				auto sameRegMask = sameReg.second;
+				if (regExpr != nullptr) {
+					auto maskToChange = mask & ~sameRegMask;
+					if (maskToChange != mask) {
+						RegisterPart info;
+						info.regMask = sameRegMask;
+						info.mulMask = mask & sameRegMask;
+						info.expr = regExpr;
+						regParts.push_back(info);
+						mask = maskToChange;
+					}
+				}
+
+				if (mask == 0)
+					break;
+			}
+			return regParts;
 		}
 
 		ExprTree::Node* requestRegister(ZydisRegister reg);

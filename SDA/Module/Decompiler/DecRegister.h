@@ -1,5 +1,5 @@
 #pragma once
-#include "DecExecutionContext.h"
+#include "PrimaryTree/PrimaryTreeBlock.h"
 
 namespace CE::Decompiler
 {

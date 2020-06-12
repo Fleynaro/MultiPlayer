@@ -1,5 +1,5 @@
 #pragma once
-#include "DecRegister.h"
+#include "DecExecutionContext.h"
 
 namespace CE::Decompiler
 {
