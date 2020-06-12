@@ -8,7 +8,7 @@ void ExecutionBlockContext::setRegister(ZydisRegister reg, ExprTree::Node* expr)
 	m_cachedRegisters.erase(reg);
 }
 
-ExprTree::Node* ExecutionBlockContext::getRegister(ZydisRegister reg) {
+ExprTree::Node* ExecutionBlockContext::requestRegister(ZydisRegister reg) {
 	if (m_cachedRegisters.find(reg) != m_cachedRegisters.end()) {
 		return m_cachedRegisters[reg];
 	}

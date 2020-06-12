@@ -110,9 +110,103 @@ namespace CE::Decompiler
 			}
 		}
 
-		ExprTree::Node* requestRegister(AsmGraphBlock* block, ZydisRegister reg, std::list<AsmGraphBlock*>& blocksInLoop) {
-			if (m_decompiledBlocks.find(block) != m_decompiledBlocks.end()) {
-				auto& registers = m_decompiledBlocks[block].m_execBlockCtx->m_registers;
+		ExprTree::Node* createRegisterExprFromBlock(AsmGraphBlock* block, ZydisRegister reg, uint64_t& resultMask) {
+			auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
+			auto regInfo = Register::GetRegInfo(reg);
+			uint64_t mask = regInfo.m_mask;
+
+			struct sameRegInfo {
+				uint64_t mask = -1;
+				ZydisRegister reg = ZYDIS_REGISTER_NONE;
+				ExprTree::Node* expr = nullptr;
+			};
+			std::list<sameRegInfo> sameRegisters;
+
+			for (auto sameReg : regInfo.m_sameRegisters) {
+				auto reg = sameReg.first;
+				auto regExpr = ctx->getRegister(reg);
+				auto sameRegMask = sameReg.second;
+				if (regExpr != nullptr) {
+					auto maskToChange = mask & ~sameRegMask;
+					if (maskToChange != mask) {
+						sameRegInfo info;
+						info.mask = mask & sameRegMask;
+						info.reg = reg;
+						info.expr = regExpr;
+						sameRegisters.push_back(info);
+						mask = maskToChange;
+					}
+				}
+
+				if (mask == 0)
+					break;
+			}
+
+			resultMask = mask;
+			ExprTree::Node* resultExpr = nullptr;
+			if (mask != regInfo.m_mask) {
+				for (auto it = sameRegisters.rbegin(); it != sameRegisters.rend(); it ++) {
+					auto sameReg = *it;
+					auto sameRegExpr = sameReg.expr;
+					int leftBitShift = Register::GetShiftValueOfMask(sameReg.mask);
+					if (leftBitShift != 0) {
+						sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(leftBitShift), ExprTree::Shr);
+					}
+					//for signed register operations and etc...
+					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(sameReg.mask), ExprTree::And);
+					if (resultExpr) {
+						resultExpr = new ExprTree::OperationalNode(resultExpr, sameRegExpr, ExprTree::Or);
+					}
+					else {
+						resultExpr = sameRegExpr;
+					}
+				}
+			}
+			return resultExpr;
+		}
+
+		struct RegPartInfo {
+			uint64_t mask = -1;
+			ExprTree::Node* expr = nullptr;
+		};
+
+		struct BlockInLoopInfo {
+			AsmGraphBlock* block = nullptr;
+			uint64_t mask = -1;
+			ZydisRegister reg = ZYDIS_REGISTER_NONE;
+			ExprTree::Node* expr = nullptr;
+		};
+
+		void requestRegisters(AsmGraphBlock* block, Register::RegInfo& regInfo, uint64_t& mask, std::list<RegPartInfo>& registerParts, std::list<BlockInLoopInfo>& blocksInLoop) {
+			auto it = m_decompiledBlocks.find(block);
+			if (it != m_decompiledBlocks.end()) {
+				auto ctx = it->second.m_execBlockCtx;
+
+				if (blocksInLoop.empty()) {
+					for (auto sameReg : regInfo.m_sameRegisters) {
+						auto reg = sameReg.first;
+						auto regExpr = ctx->getRegister(reg);
+						auto sameRegMask = sameReg.second;
+						if (regExpr != nullptr) {
+							auto maskToChange = mask & ~sameRegMask;
+							if (maskToChange != mask) {
+								RegPartInfo info;
+								info.mask = mask & sameRegMask;
+								info.expr = regExpr;
+								registerParts.push_back(info);
+								mask = maskToChange;
+							}
+						}
+
+						if (mask == 0)
+							return;
+					}
+				}
+				else {
+
+				}
+
+				/*auto& registers = m_decompiledBlocks[block].m_execBlockCtx->m_registers;
 				if (registers.find(reg) != registers.end()) {
 					if (!blocksInLoop.empty()) {
 						blocksInLoop.push_back(block);
@@ -121,7 +215,7 @@ namespace CE::Decompiler
 					else {
 						return registers[reg];
 					}
-				}
+				}*/
 			}
 			
 			auto parentsCount = block->m_blocksReferencedTo.size();
@@ -133,7 +227,7 @@ namespace CE::Decompiler
 			}
 			else if (parentsCount == 1) {
 				auto parentBlock = *block->m_blocksReferencedTo.begin();
-				return requestRegister(parentBlock, reg, blocksInLoop);
+				return requestRegisters(parentBlock, regInfo, mask, registerParts, blocksInLoop);
 			}
 
 

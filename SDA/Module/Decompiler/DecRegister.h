@@ -65,65 +65,6 @@ namespace CE::Decompiler
 			return info;
 		}
 
-		static int GetRegisterParamIdx(ZydisRegister reg) {
-			static std::set paramRegs_1 = {
-				ZYDIS_REGISTER_CL,
-				ZYDIS_REGISTER_CH,
-				ZYDIS_REGISTER_CX,
-				ZYDIS_REGISTER_ECX,
-				ZYDIS_REGISTER_RCX,
-				ZYDIS_REGISTER_XMM0,
-				ZYDIS_REGISTER_YMM0,
-				ZYDIS_REGISTER_ZMM0
-			};
-			static std::set paramRegs_2 = {
-				ZYDIS_REGISTER_DL,
-				ZYDIS_REGISTER_DH,
-				ZYDIS_REGISTER_DX,
-				ZYDIS_REGISTER_EDX,
-				ZYDIS_REGISTER_RDX,
-				ZYDIS_REGISTER_XMM1,
-				ZYDIS_REGISTER_YMM1,
-				ZYDIS_REGISTER_ZMM1
-			};
-			static std::set paramRegs_3 = {
-				ZYDIS_REGISTER_R8B,
-				ZYDIS_REGISTER_R8W,
-				ZYDIS_REGISTER_R8D,
-				ZYDIS_REGISTER_R8,
-				ZYDIS_REGISTER_XMM2,
-				ZYDIS_REGISTER_YMM2,
-				ZYDIS_REGISTER_ZMM2
-			};
-			static std::set paramRegs_4 = {
-				ZYDIS_REGISTER_R9B,
-				ZYDIS_REGISTER_R9W,
-				ZYDIS_REGISTER_R9D,
-				ZYDIS_REGISTER_R9,
-				ZYDIS_REGISTER_XMM3,
-				ZYDIS_REGISTER_YMM3,
-				ZYDIS_REGISTER_ZMM3
-			};
-
-			if (paramRegs_1.find(reg) != paramRegs_1.end()) {
-				return 1;
-			}
-
-			if (paramRegs_2.find(reg) != paramRegs_2.end()) {
-				return 2;
-			}
-
-			if (paramRegs_3.find(reg) != paramRegs_3.end()) {
-				return 3;
-			}
-
-			if (paramRegs_4.find(reg) != paramRegs_4.end()) {
-				return 4;
-			}
-
-			return 0;
-		}
-
 		static int GetShiftValueOfMask(uint64_t mask) {
 			int result = 0;
 			for (auto m = mask; int(m & 0xF) == 0; m = m >> 4) {

@@ -44,7 +44,14 @@ namespace CE::Decompiler
 		
 		void setRegister(ZydisRegister reg, ExprTree::Node* expr);
 
-		ExprTree::Node* getRegister(ZydisRegister reg);
+		ExprTree::Node* getRegister(ZydisRegister reg) {
+			if (m_registers.find(reg) != m_registers.end()) {
+				return m_registers[reg];
+			}
+			return nullptr;
+		}
+
+		ExprTree::Node* requestRegister(ZydisRegister reg);
 
 		void setLastCond(ExprTree::Node* leftNode, ExprTree::Node* rightNode, RegisterFlags flags) {
 			if (m_lastCond.leftNode != nullptr) {
