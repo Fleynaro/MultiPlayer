@@ -289,6 +289,16 @@ void func22() {
 			}
 		}
 	}
+
+	if (b == 3 || b == 6) {
+		b++;
+		if (b == 3) {
+			b++;
+		}
+		else {
+			b--;
+		}
+	}
 	b = 0;
 }
 
@@ -300,7 +310,7 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 	for (auto block : blockList->getBlocks()) {
 		auto decBlock = decompiledBlocks[block->m_graphBlock];
 		if (true || !decBlock->getLines().empty()) {
-			printf("%s//block %i\n", tabStr.c_str(), block->m_graphBlock->getMinOffset());
+			printf("%s//block %i (level %i)\n", tabStr.c_str(), block->m_graphBlock->getMinOffset(), block->m_graphBlock->m_level);
 			decBlock->printDebug(false, tabStr);
 		}
 		if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
@@ -333,6 +343,7 @@ void CE::Decompiler::test() {
 		2) —делать поиск регистра с учетом локальности методом воды и труб в контексте декомпил€ции
 		3) ѕроверка на циклы при проходе графа, чтобы прога не зацикливалась
 		4) √де-то может быть push и pop операци€, но это не означает созданите нового символа
+		5) —делать преобразование графа в услови€ методом воды и труб. Ѕудет коэффициент, при котором можно сделать петлю. ћен€€ его, можно добитьс€ разных структур.
 	*/
 
 

@@ -55,7 +55,7 @@ namespace CE::Decompiler
 					}
 
 					Operand op(m_ctx, &m_instruction->operands[0]);
-					expr1 = Register::GetOrCreateExprRegLeaf(m_ctx, reg);
+					expr1 = m_ctx->requestRegister(reg);
 					expr2 = op.getExpr();
 					auto expr = new ExprTree::OperationalNode(expr1, expr2, opType);
 					expr->setSigned(isSigned);

@@ -15,7 +15,7 @@ namespace CE::Decompiler
 			{
 			case ZYDIS_MNEMONIC_PUSH:
 			case ZYDIS_MNEMONIC_POP: {
-				auto regRsp = Register::GetOrCreateExprRegLeaf(m_ctx, ZYDIS_REGISTER_RSP);
+				auto regRsp = m_ctx->requestRegister(ZYDIS_REGISTER_RSP);
 				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_PUSH) {
 					auto expr = new ExprTree::OperationalNode(regRsp, new ExprTree::NumberLeaf(0x8), ExprTree::Sub);
 					setExprToRegisterDst(ZYDIS_REGISTER_RSP, expr, false);
@@ -38,7 +38,7 @@ namespace CE::Decompiler
 			}
 
 			case ZYDIS_MNEMONIC_RET: {
-				//m_block->addLine(new ExprTree::NumberLeaf(0x0), Register::GetOrCreateExprRegLeaf(m_ctx, ZYDIS_REGISTER_RAX));
+				m_block->addLine(new ExprTree::NumberLeaf(0x0), m_ctx->requestRegister(ZYDIS_REGISTER_RAX));
 				//m_block->addLine(new ExprTree::NumberLeaf(0x0), m_ctx->getRegister(ZYDIS_REGISTER_ZMM0));
 				break;
 			}
