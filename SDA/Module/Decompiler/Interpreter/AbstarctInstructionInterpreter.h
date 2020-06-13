@@ -87,7 +87,7 @@ namespace CE::Decompiler
 			if (m_ctx->m_registers.find(dstReg) != m_ctx->m_registers.end()) {
 				m_ctx->m_registers[dstReg]->removeBy(nullptr);
 			}
-			m_ctx->setRegister(dstReg, srcExpr);
+			m_ctx->setRegister(regInfo, dstReg, srcExpr);
 			if (isSettingFlags)
 				setFlags(srcExpr, regInfo.m_mask);
 

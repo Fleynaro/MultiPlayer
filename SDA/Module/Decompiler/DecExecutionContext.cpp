@@ -3,9 +3,12 @@
 
 using namespace CE::Decompiler;
 
-void ExecutionBlockContext::setRegister(ZydisRegister reg, ExprTree::Node* expr) {
+void ExecutionBlockContext::setRegister(const Register::RegInfo& regInfo, ZydisRegister reg, ExprTree::Node* expr) {
 	m_registers[reg] = expr;
-	m_cachedRegisters.erase(reg);
+
+	for (auto sameReg : regInfo.m_sameRegisters) {
+		m_cachedRegisters.erase(sameReg.first);
+	}
 }
 
 ExprTree::Node* ExecutionBlockContext::requestRegister(ZydisRegister reg) {
@@ -14,14 +17,11 @@ ExprTree::Node* ExecutionBlockContext::requestRegister(ZydisRegister reg) {
 	}
 
 	auto regExpr = m_decompiler->requestRegister(reg);
-	if (regExpr != nullptr) {
-		m_cachedRegisters[reg] = regExpr;
-	}
-	else {
+	if (regExpr == nullptr) {
 		Symbol::Symbol* symbol = new Symbol::LocalRegVar(reg);
 		regExpr = new ExprTree::SymbolLeaf(symbol);
-		setRegister(reg, regExpr);
 	}
+	m_cachedRegisters[reg] = regExpr;
 
 	return regExpr;
 }

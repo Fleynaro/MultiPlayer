@@ -63,7 +63,7 @@ namespace CE::Decompiler
 			auto regInfo = Register::GetRegInfo(reg);
 			auto mask = regInfo.m_mask;
 			requestRegisterParts(m_curBlock, regInfo, mask, regParts);
-			return createExprFromRegisterParts(regParts);
+			return createExprFromRegisterParts(regParts, regInfo.m_mask);
 		}
 
 		std::map<AsmGraphBlock*, PrimaryTree::Block*> getResult() {
@@ -113,7 +113,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		ExprTree::Node* createExprFromRegisterParts(std::list<RegisterPart> regParts) {
+		ExprTree::Node* createExprFromRegisterParts(std::list<RegisterPart> regParts, uint64_t requestRegMask) {
 			ExprTree::Node* resultExpr = nullptr;
 
 			regParts.sort([](const RegisterPart& a, const RegisterPart& b) {
@@ -122,14 +122,19 @@ namespace CE::Decompiler
 
 			for (auto regPart : regParts) {
 				auto sameRegExpr = regPart.expr;
-				int leftBitShift = Register::GetShiftValueOfMask(regPart.regMask);
-				if (leftBitShift != 0) {
-					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(leftBitShift), ExprTree::Shr);
+				int bitShift = Register::GetShiftValueOfMask(regPart.regMask | ~requestRegMask);
+
+				if (resultExpr) {
+					//for signed register operations and etc...
+					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(regPart.regMask >> bitShift), ExprTree::And);
+				}
+
+				if (bitShift != 0) {
+					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(bitShift), ExprTree::Shl);
 				}
 				
 				if (resultExpr) {
-					//for signed register operations and etc...
-					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(regPart.mulMask), ExprTree::And);
+					resultExpr = new ExprTree::OperationalNode(resultExpr, new ExprTree::NumberLeaf(~regPart.maskToChange), ExprTree::And);
 					resultExpr = new ExprTree::OperationalNode(resultExpr, sameRegExpr, ExprTree::Or);
 				}
 				else {
@@ -144,15 +149,14 @@ namespace CE::Decompiler
 			std::list<RegisterPart> regParts;
 		};
 
-		void requestRegisterParts(AsmGraphBlock* block, const Register::RegInfo& regInfo, uint64_t& mask, std::list<RegisterPart>& regParts, bool isFound = true) {
-			if (isFound) {
-				auto it = m_decompiledBlocks.find(block);
-				if (it != m_decompiledBlocks.end()) {
-					auto ctx = it->second.m_execBlockCtx;
-					regParts = ctx->getRegisterParts(regInfo, mask);
-					if (!mask) {
-						return;
-					}
+		void requestRegisterParts(AsmGraphBlock* block, const Register::RegInfo& regInfo, uint64_t& mask, std::list<RegisterPart>& outRegParts) {
+			auto it = m_decompiledBlocks.find(block);
+			if (it != m_decompiledBlocks.end()) {
+				auto ctx = it->second.m_execBlockCtx;
+				auto regParts = ctx->getRegisterParts(regInfo, mask);
+				outRegParts.insert(outRegParts.begin(), regParts.begin(), regParts.end());
+				if (!mask) {
+					return;
 				}
 			}
 			
@@ -162,7 +166,7 @@ namespace CE::Decompiler
 			}
 			else if (parentsCount == 1) {
 				auto parentBlock = *block->m_blocksReferencedTo.begin();
-				requestRegisterParts(parentBlock, regInfo, mask, regParts);
+				requestRegisterParts(parentBlock, regInfo, mask, outRegParts);
 				return;
 			}
 
@@ -176,27 +180,40 @@ namespace CE::Decompiler
 				if (maxMaskInLoop) {
 					RegisterPart info;
 					info.regMask = maxMaskInLoop;
-					info.mulMask = mask & maxMaskInLoop;
-					info.expr = createSymbolForRegister(blocks);
-					regParts.push_back(info);
+					info.maskToChange = mask & maxMaskInLoop;
+					info.expr = createSymbolForRegister(blocks, maxMaskInLoop);
+					outRegParts.push_back(info);
 					mask = mask & ~maxMaskInLoop;
 					if (!mask) {
 						return;
 					}
-					isFound = false;
 				}
 
-				requestRegisterParts(blocks.rbegin()->block, regInfo, mask, regParts, isFound);
+				requestRegisterParts(blocks.rbegin()->block, regInfo, mask, outRegParts);
 			}
 		}
 
-		ExprTree::Node* createSymbolForRegister(std::list<BlockInfo>& blockInfos) {
+		ExprTree::Node* createSymbolForRegister(std::list<BlockInfo>& blockInfos, uint64_t requestRegMask) {
 			Symbol::Symbol* symbol = new Symbol::LocalStackVar(rand());
 			auto symbolNode = new ExprTree::SymbolLeaf(symbol);
 			
 			for (const auto& blockInfo : blockInfos) {
 				auto& decompiledBlock = m_decompiledBlocks[blockInfo.block];
-				auto expr = createExprFromRegisterParts(blockInfo.regParts);
+
+				auto regParts = blockInfo.regParts;
+				auto maskToChange = requestRegMask;
+				for (auto regPart : regParts) {
+					maskToChange &= ~regPart.maskToChange;
+				}
+				if (maskToChange) {
+					RegisterPart symbolPart;
+					symbolPart.expr = symbolNode;
+					symbolPart.regMask = requestRegMask;
+					symbolPart.maskToChange = maskToChange;
+					regParts.push_back(symbolPart);
+				}
+
+				auto expr = createExprFromRegisterParts(regParts, requestRegMask);
 				decompiledBlock.m_treeBlock->addLine(symbolNode, expr);
 			}
 			return symbolNode;
@@ -214,7 +231,7 @@ namespace CE::Decompiler
 				blocks.push_back(info);
 			}
 			else {
-				auto mask = checkMask | ((uint64_t)1 << 63);
+				auto mask = (uint64_t)-1;// checkMask | ((uint64_t)1 << 63);
 				//TODO: передавать маску дальше по линейному списку, чтобы не делать много символов, ибо регистры могут перезаписаться (снаружи цикла это уже сделано, надо внутри)
 				info.regParts = ctx->getRegisterParts(regInfo, mask);
 				//find max mask

@@ -24,7 +24,7 @@ namespace CE::Decompiler
 
 	struct RegisterPart {
 		uint64_t regMask = -1;
-		uint64_t mulMask = -1;
+		uint64_t maskToChange = -1;
 		ExprTree::Node* expr = nullptr;
 	};
 
@@ -48,7 +48,7 @@ namespace CE::Decompiler
 			: m_decompiler(decompiler), m_offset(startOffset)
 		{}
 		
-		void setRegister(ZydisRegister reg, ExprTree::Node* expr);
+		void setRegister(const Register::RegInfo& regInfo, ZydisRegister reg, ExprTree::Node* expr);
 
 		ExprTree::Node* getRegister(ZydisRegister reg) {
 			if (m_registers.find(reg) != m_registers.end()) {
@@ -64,14 +64,14 @@ namespace CE::Decompiler
 				auto regExpr = getRegister(reg);
 				auto sameRegMask = sameReg.second;
 				if (regExpr != nullptr) {
-					auto maskToChange = mask & ~sameRegMask;
-					if (maskToChange != mask) {
+					auto changedRegMask = mask & ~sameRegMask;
+					if (changedRegMask != mask) {
 						RegisterPart info;
 						info.regMask = sameRegMask;
-						info.mulMask = mask & sameRegMask;
+						info.maskToChange = mask & sameRegMask;
 						info.expr = regExpr;
 						regParts.push_back(info);
-						mask = maskToChange;
+						mask = changedRegMask;
 					}
 				}
 
