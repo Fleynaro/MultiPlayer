@@ -49,7 +49,16 @@ bool AsmGraphBlock::isEnd() {
 	return m_nextNearBlock == nullptr && m_nextFarBlock == nullptr;
 }
 
-void AsmGraphBlock::printDebug(void* addr) {
+int AsmGraphBlock::getRefHighBlocksCount() {
+	int count = 0;
+	for (auto refBlock : m_blocksReferencedTo) {
+		if (refBlock->m_level < m_level)
+			count++;
+	}
+	return count;
+}
+
+void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr = "", bool extraInfo = true) {
 	ZydisFormatter formatter;
 	ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
 
@@ -58,14 +67,16 @@ void AsmGraphBlock::printDebug(void* addr) {
 		char buffer[256];
 		ZydisFormatterFormatInstruction(&formatter, &m_asmGraph->m_instructions[instr_off], buffer, sizeof(buffer),
 			runtime_address + instr_off);
-		printf("%p(%i): %s\n", (void*)(runtime_address + instr_off), instr_off, buffer);
+		printf("%s%p(%i): %s\n", tabStr.c_str(), (void*)(runtime_address + instr_off), instr_off, buffer);
 	}
 
-	printf("Level: %i\n", m_level);
-	if(m_nextNearBlock != nullptr)
-		printf("Next near: %i\n", m_nextNearBlock->getMinOffset());
-	if (m_nextFarBlock != nullptr)
-		printf("Next far: %i\n", m_nextFarBlock->getMinOffset());
+	if (extraInfo) {
+		printf("Level: %i\n", m_level);
+		if (m_nextNearBlock != nullptr)
+			printf("Next near: %i\n", m_nextNearBlock->getMinOffset());
+		if (m_nextFarBlock != nullptr)
+			printf("Next far: %i\n", m_nextFarBlock->getMinOffset());
+	}
 }
 
 
@@ -270,7 +281,7 @@ void func22() {
 	/*b += func11(10) + func11(5);
 	b *= -1;
 	gVarrrr %= 21;*/
-	if (b > 1) {
+	/*if (b > 1) {
 		b = func11(10) % 25;
 		if (b == 2) {
 			b ++;
@@ -299,8 +310,13 @@ void func22() {
 			b--;
 		}
 	}
-	b = 0;
+	b = 0;*/
+
+	while (b < 5) {
+		b++;
+	}
 }
+
 
 void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, PrimaryTree::Block*>& decompiledBlocks, int level = 0) {
 	std::string tabStr = "";
@@ -309,13 +325,21 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 
 	for (auto block : blockList->getBlocks()) {
 		auto decBlock = decompiledBlocks[block->m_graphBlock];
-		if (true || !decBlock->getLines().empty()) {
-			printf("%s//block %i (level %i)\n", tabStr.c_str(), block->m_graphBlock->getMinOffset(), block->m_graphBlock->m_level);
+		printf("%s//block %i (level %i)\n", tabStr.c_str(), block->m_graphBlock->getMinOffset(), block->m_graphBlock->m_level);
+		if (decBlock) {
 			decBlock->printDebug(false, tabStr);
 		}
+		else {
+			block->m_graphBlock->printDebug(nullptr, tabStr, false);
+		}
+
 		if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
-			
-			printf("%sif(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
+			if (decBlock) {
+				printf("%sif(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
+			}
+			else {
+				printf("%sif(...) {\n", tabStr.c_str());
+			}
 			ShowCode(condition->m_mainBranch, decompiledBlocks, level + 1);
 			if (condition->m_elseBranch->getBlocks().size() > 0) {
 				printf("%s} else {\n", tabStr.c_str());
@@ -375,9 +399,12 @@ void CE::Decompiler::test() {
 	byte sample13[] = { 0xB8, 0x45, 0x23, 0x01, 0x00, 0x88, 0xEC, 0x88, 0xE8, 0x89, 0x44, 0x24, 0x10 };
 	byte sample14[] = { 0x48, 0x89, 0xD0, 0xB8, 0x45, 0x23, 0x01, 0x00, 0x88, 0xEC, 0x83, 0xF8, 0x10, 0x75, 0x0A, 0x89, 0xD8, 0xEB, 0x00, 0x66, 0xB8, 0x01, 0x00, 0xEB, 0x04, 0x89, 0xC8, 0xB0, 0x03, 0x48, 0x89, 0x44, 0x24, 0x10 };
 
+	//evklid algorithm
+	byte sample15[] = { 0x83, 0xF8, 0x00, 0x7D, 0x02, 0xF7, 0xD8, 0x83, 0xFB, 0x00, 0x7D, 0x02, 0xF7, 0xDB, 0x39, 0xD8, 0x7D, 0x01, 0x93, 0x83, 0xFB, 0x00, 0x74, 0x04, 0x29, 0xD8, 0xEB, 0xF2, 0x89, 0x04, 0x24, 0x89, 0x1C, 0x24 };
 
-	void* addr = sample9; //&func22;
-	int size = sizeof(sample9); //calculateFunctionSize2((byte*)addr);
+
+	void* addr = sample14; //&func22;
+	int size = sizeof(sample14); //calculateFunctionSize2((byte*)addr);
 
 	AsmGraph graph(CE::Decompiler::getInstructionsAtAddress(addr, size));
 	graph.build();
@@ -397,10 +424,10 @@ void CE::Decompiler::test() {
 	decompiler->optimize();
 	//decompiler->printDebug();
 	auto decompiledBlocks = decompiler->getResult();
+	//decompiledBlocks.clear();
 
 	LinearView::Converter converter(&graph);
 	converter.start();
-
-	//converter.getBlockList()->printDebug();
+	
 	ShowCode(converter.getBlockList(), decompiledBlocks);
 }

@@ -13,6 +13,17 @@ namespace CE::Decompiler
 		void execute() override {
 			switch (m_instruction->mnemonic)
 			{
+			case ZYDIS_MNEMONIC_XCHG: {
+				Operand op1(m_ctx, &m_instruction->operands[0]);
+				Operand op2(m_ctx, &m_instruction->operands[1]);
+				auto expr1 = op1.getExpr();
+				auto expr2 = op2.getExpr();
+
+				setExprToRegisterDst(m_instruction->operands[0].reg.value, expr2, false);
+				setExprToRegisterDst(m_instruction->operands[1].reg.value, expr1, false);
+				break;
+			}
+
 			case ZYDIS_MNEMONIC_MOV:
 			case ZYDIS_MNEMONIC_MOVZX:
 			case ZYDIS_MNEMONIC_MOVSX:

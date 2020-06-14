@@ -38,7 +38,9 @@ namespace CE::Decompiler
 
 		bool isEnd();
 
-		void printDebug(void* addr);
+		int getRefHighBlocksCount();
+
+		void printDebug(void* addr, const std::string& tabStr, bool extraInfo);
 	private:
 		AsmGraph* m_asmGraph;
 		int m_minOffset;

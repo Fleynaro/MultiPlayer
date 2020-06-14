@@ -15,10 +15,6 @@ namespace CE::Decompiler::LinearView
 		{}
 
 		virtual ~Block() {}
-
-		virtual void printDebug() {
-			m_graphBlock->printDebug(0);
-		}
 	};
 
 	class Condition;
@@ -42,16 +38,6 @@ namespace CE::Decompiler::LinearView
 		}
 
 		Block* findBlock(AsmGraphBlock* graphBlock);
-
-		void printDebug() {
-			for (auto it : m_blocks) {
-				it->printDebug();
-			}
-
-			if (m_goto != nullptr) {
-				printf("goto to block on %i\n", m_goto->m_graphBlock->getMinOffset());
-			}
-		}
 	private:
 		std::list<Block*> m_blocks;
 	};
@@ -72,17 +58,6 @@ namespace CE::Decompiler::LinearView
 		~Condition() {
 			delete m_mainBranch;
 			delete m_elseBranch;
-		}
-
-		void printDebug() override {
-			Block::printDebug();
-			printf("if() {\n");
-			m_mainBranch->printDebug();
-			if (m_elseBranch->getBlocks().size() > 0) {
-				printf("} else {\n");
-				m_elseBranch->printDebug();
-			}
-			printf("}\n");
 		}
 	};
 
@@ -157,18 +132,16 @@ namespace CE::Decompiler::LinearView
 					blockList->addBlock(new Condition(block));
 					
 					auto it = m_loops.find(block);
-					if (it == m_loops.end()) {
-						break;
-					}
-
-					auto& loop = it->second;
-					for (auto it : loop.m_blocks) {
-						if (usedBlocks.count(it) != 0) {
-							break;
+					if (it != m_loops.end()) {
+						auto& loop = it->second;
+						for (auto it : loop.m_blocks) {
+							if (usedBlocks.count(it) != 0) {
+								break;
+							}
 						}
-					}
 
-					nextBlock = loop.m_endBlock;
+						nextBlock = loop.m_endBlock;
+					}
 				}
 				else {
 					blockList->addBlock(new Block(block));

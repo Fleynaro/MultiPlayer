@@ -28,6 +28,12 @@ namespace CE::Decompiler
 		ExprTree::Node* expr = nullptr;
 	};
 
+	struct RegisterSymbol {
+		uint64_t mask = -1;
+		ExprTree::SymbolLeaf* symbol = nullptr;
+		ExprTree::Node* expr = nullptr;
+	};
+
 	class ExecutionBlockContext
 	{
 	public:
@@ -36,6 +42,7 @@ namespace CE::Decompiler
 
 		std::map<ZydisRegister, ExprTree::Node*> m_registers;
 		std::map<ZydisRegister, ExprTree::Node*> m_cachedRegisters;
+		std::map<int, RegisterSymbol> m_registerSymbols;
 		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
 
 		struct {
@@ -48,28 +55,21 @@ namespace CE::Decompiler
 			: m_decompiler(decompiler), m_offset(startOffset)
 		{}
 		
-		void setRegister(const Register::RegInfo& regInfo, ZydisRegister reg, ExprTree::Node* expr);
+		void setRegister(const Register& reg, ExprTree::Node* expr);
 
-		ExprTree::Node* getRegister(ZydisRegister reg) {
-			if (m_registers.find(reg) != m_registers.end()) {
-				return m_registers[reg];
-			}
-			return nullptr;
-		}
-
-		std::list<RegisterPart> getRegisterParts(const Register::RegInfo& regInfo, uint64_t& mask) {
+		std::list<RegisterPart> getRegisterParts(const Register& reg, uint64_t& mask) {
 			std::list<RegisterPart> regParts;
-			for (auto sameReg : regInfo.m_sameRegisters) {
+			for (auto sameReg : reg.m_sameRegisters) {
 				auto reg = sameReg.first;
-				auto regExpr = getRegister(reg);
-				auto sameRegMask = sameReg.second;
-				if (regExpr != nullptr) {
+				auto it = m_registers.find(reg);
+				if (it != m_registers.end()) {
+					auto sameRegMask = sameReg.second;
 					auto changedRegMask = mask & ~sameRegMask;
 					if (changedRegMask != mask) {
 						RegisterPart info;
 						info.regMask = sameRegMask;
 						info.maskToChange = mask & sameRegMask;
-						info.expr = regExpr;
+						info.expr = it->second;
 						regParts.push_back(info);
 						mask = changedRegMask;
 					}
@@ -81,7 +81,7 @@ namespace CE::Decompiler
 			return regParts;
 		}
 
-		ExprTree::Node* requestRegister(ZydisRegister reg);
+		ExprTree::Node* requestRegister(const Register& reg);
 
 		void setLastCond(ExprTree::Node* leftNode, ExprTree::Node* rightNode, RegisterFlags flags) {
 			if (m_lastCond.leftNode != nullptr) {
