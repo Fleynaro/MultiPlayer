@@ -20,6 +20,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegister(const Register& reg) {
 	if (regExpr == nullptr) {
 		Symbol::Symbol* symbol = new Symbol::LocalRegVar(reg.m_reg);
 		regExpr = new ExprTree::SymbolLeaf(symbol);
+		setRegister(reg, regExpr);
 	}
 	m_cachedRegisters[reg.m_reg] = regExpr;
 

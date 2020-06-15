@@ -106,8 +106,8 @@ namespace CE::Decompiler::Optimization
 		if (!IsOperationUnsupportedToCalculate(expr->m_operation)) {
 			if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
 				if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-					leftNumberLeaf->m_value = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
-					expr->replaceBy(expr->m_leftNode);
+					auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
+					expr->replaceBy(new NumberLeaf(result));
 					expr->m_leftNode = nullptr;
 					delete expr;
 				}
