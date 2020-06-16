@@ -70,10 +70,6 @@ namespace CE::Decompiler::ExprTree
 				m_rightNode->removeBy(this);
 		}
 
-		bool isLeaf() override {
-			return false;
-		}
-
 		void replaceBy(Node* newNode) override {
 			Node::replaceBy(newNode);
 			if (auto newParentNode = dynamic_cast<IParentNode*>(newNode)) {

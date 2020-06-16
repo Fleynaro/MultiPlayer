@@ -14,10 +14,6 @@ namespace CE::Decompiler::ExprTree
 			: m_symbol(symbol)
 		{}
 
-		bool isLeaf() override {
-			return true;
-		}
-
 		std::string printDebug() override {
 			return m_symbol->printDebug();
 		}
@@ -31,10 +27,6 @@ namespace CE::Decompiler::ExprTree
 		NumberLeaf(uint64_t value)
 			: m_value(value)
 		{}
-
-		bool isLeaf() override {
-			return true;
-		}
 
 		std::string printDebug() override {
 			return "0x" + Generic::String::NumberToHex(m_value) + "{"+ std::to_string((int)m_value) +"}";

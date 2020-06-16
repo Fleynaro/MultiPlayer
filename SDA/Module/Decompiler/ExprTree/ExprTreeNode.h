@@ -63,9 +63,9 @@ namespace CE::Decompiler::ExprTree
 			return (int)m_parentNodes.size();
 		}
 
-		virtual bool isLeaf() = 0;
-
-		virtual std::string printDebug() = 0;
+		virtual std::string printDebug() {
+			return "";
+		}
 
 	private:
 		bool m_isSigned = false;

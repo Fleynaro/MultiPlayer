@@ -60,10 +60,10 @@ namespace CE::Decompiler::ExprTree
 
 		void replaceNode(Node* node, Node * newNode) override {
 			if (m_leftNode == node) {
-				m_leftNode = nullptr;
+				m_leftNode = newNode;
 			}
 			else if (m_rightNode == node) {
-				m_rightNode = nullptr;
+				m_rightNode = newNode;
 			}
 		}
 
@@ -89,10 +89,6 @@ namespace CE::Decompiler::ExprTree
 				m_cond = Lt;
 				break;
 			}
-		}
-
-		bool isLeaf() override {
-			return false;
 		}
 
 		std::string printDebug() override {
@@ -127,10 +123,6 @@ namespace CE::Decompiler::ExprTree
 		CompositeCondition(Node* leftNode, Node* rightNode = nullptr, CompositeConditionType cond = None)
 			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond)
 		{}
-
-		bool isLeaf() override {
-			return false;
-		}
 
 		std::string printDebug() override {
 			if (m_cond == None) {

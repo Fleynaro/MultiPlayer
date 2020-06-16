@@ -48,10 +48,6 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		bool isLeaf() override {
-			return false;
-		}
-
 		std::string printDebug() override {
 			std::string str = "fun_" + std::to_string(m_destOffset + 50000000) + "(";
 			for (auto it : m_registerParams) {

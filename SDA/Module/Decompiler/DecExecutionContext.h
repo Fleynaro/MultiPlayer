@@ -3,6 +3,24 @@
 
 namespace CE::Decompiler
 {
+	class WrapperNode : public ExprTree::Node, public ExprTree::IParentNode
+	{
+	public:
+		ExprTree::Node* m_node;
+
+		WrapperNode(ExprTree::Node* node)
+			: m_node(node)
+		{
+			node->addParentNode(this);
+		}
+
+		void replaceNode(Node* node, Node* newNode) override {
+			if (m_node == node) {
+				m_node = newNode;
+			}
+		}
+	};
+
 	enum class RegisterFlags {
 		None,
 		CF = 1 << 1,
@@ -18,14 +36,10 @@ namespace CE::Decompiler
 
 	class Decompiler; //make interface later
 
-	struct ExecutionBlockContextData {
-
-	};
-
 	struct RegisterPart {
 		uint64_t regMask = -1;
 		uint64_t maskToChange = -1;
-		ExprTree::Node* expr = nullptr;
+		WrapperNode* expr = nullptr;
 	};
 
 	class ExecutionBlockContext
@@ -34,8 +48,8 @@ namespace CE::Decompiler
 		int m_offset;
 		Decompiler* m_decompiler;
 
-		std::map<ZydisRegister, ExprTree::Node*> m_registers;
-		std::map<ZydisRegister, ExprTree::Node*> m_cachedRegisters;
+		std::map<ZydisRegister, WrapperNode*> m_registers;
+		std::map<ZydisRegister, WrapperNode*> m_cachedRegisters;
 		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
 
 		struct {

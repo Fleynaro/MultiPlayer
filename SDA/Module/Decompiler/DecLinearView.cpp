@@ -18,4 +18,6 @@ Block* BlockList::findBlock(AsmGraphBlock* graphBlock) {
 			}
 		}
 	}
+
+	return nullptr;
 }
