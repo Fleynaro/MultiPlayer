@@ -28,12 +28,6 @@ namespace CE::Decompiler
 		ExprTree::Node* expr = nullptr;
 	};
 
-	struct RegisterSymbol {
-		uint64_t mask = -1;
-		ExprTree::SymbolLeaf* symbol = nullptr;
-		ExprTree::Node* expr = nullptr;
-	};
-
 	class ExecutionBlockContext
 	{
 	public:
@@ -42,7 +36,6 @@ namespace CE::Decompiler
 
 		std::map<ZydisRegister, ExprTree::Node*> m_registers;
 		std::map<ZydisRegister, ExprTree::Node*> m_cachedRegisters;
-		std::map<int, RegisterSymbol> m_registerSymbols;
 		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
 
 		struct {
