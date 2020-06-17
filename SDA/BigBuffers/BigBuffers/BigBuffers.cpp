@@ -56,7 +56,8 @@ int getTestHooked(int a) {
     return origFunc(a + 1) + 2;
 }
 
-int main2(int argc, char** argv)
+void shellcode_export_finder(BYTE* moduleBase);
+int main(int argc, char** argv)
 {
     //LPVOID pBuffer = AllocateBuffer(&getTestId);
     
@@ -91,11 +92,7 @@ int main2(int argc, char** argv)
         }
     }
 
-    system("pause");
-
-    return 1;
-
-
+    //shellcode_export_finder((BYTE*)GetModuleHandle(NULL));
    
     // Initialize MinHook.
     if (MH_Initialize() != MH_OK)
@@ -160,7 +157,9 @@ void shellcode_export_finder(BYTE* moduleBase)
     PIMAGE_EXPORT_DIRECTORY pExports;
     uint32_t i, NumberOfFuncNames;
     uint32_t* AddressOfNames;
-  
+
+    std::list<int> arr;
+    arr.push_back(5);
     
     pExports = (PIMAGE_EXPORT_DIRECTORY)(moduleBase + ntHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
 
@@ -182,12 +181,13 @@ void shellcode_export_finder(BYTE* moduleBase)
                     auto addr = &UnlockFile;
                     int b = 5;
                 }
-                printf("Export: %s\n", funcName);
+                printf("Export: %s %i\n", funcName, arr.size());
             }
             else {
                 int bb = 5;
             }
             AddressOfNames++;
+
         }
     }
 
@@ -244,8 +244,14 @@ public:
     int f = 3;
 };
 
-int main(int argc, char** argv)
+int main2(int argc, char** argv)
 {
+    // Initialize MinHook.
+    if (MH_Initialize() != MH_OK)
+    {
+        return 1;
+    }
+
     A* a = new C;
     if (auto rrr = dynamic_cast<B*>(a)) {
         int b = 5;
