@@ -41,7 +41,8 @@ namespace CE::Decompiler
 		void start() {
 			auto startBlock = m_asmGraph->getStartBlock();
 			std::multiset<AsmGraphBlock*> visitedBlocks;
-			decompile(startBlock, visitedBlocks);
+			decompileAllBlocks();
+			resolveExternalSymbols(startBlock, visitedBlocks);
 			createSymbolAssignments();
 		}
 
@@ -57,20 +58,6 @@ namespace CE::Decompiler
 					Optimization::Optimize(treeBlock->m_noJmpCond);
 				}
 			}
-		}
-
-		ExprTree::Node* requestRegister(const Register& reg) {
-			std::list<RegisterPart> regParts;
-			auto mask = reg.m_mask;
-
-			if (m_registersToSymbol.find(reg.getId()) == m_registersToSymbol.end()) {
-				m_registersToSymbol[reg.getId()] = RegSymbol();
-			}
-			m_curRegSymbol = &m_registersToSymbol[reg.getId()];
-			m_curRegSymbol->requiestId++;
-
-			requestRegisterParts(m_curBlock, reg, mask, regParts);
-			return createExprFromRegisterParts(regParts, reg.m_mask);
 		}
 
 		std::map<AsmGraphBlock*, PrimaryTree::Block*> getResult() {
@@ -92,17 +79,12 @@ namespace CE::Decompiler
 		AsmGraph* m_asmGraph;
 		InstructionInterpreterDispatcher* m_instructionInterpreterDispatcher;
 
-		AsmGraphBlock* m_curBlock = nullptr;
 		std::map<AsmGraphBlock*, DecompiledBlockInfo> m_decompiledBlocks;
 		
-		void decompile(AsmGraphBlock* block, std::multiset<AsmGraphBlock*>& visitedBlocks) {
-			m_curBlock = block;
-
-			if (visitedBlocks.count(block) == block->getRefHighBlocksCount()) {
-				if (m_decompiledBlocks.find(block) == m_decompiledBlocks.end()) {
-					m_decompiledBlocks.insert(std::make_pair(block, DecompiledBlockInfo()));
-				}
-				auto& decompiledBlock = m_decompiledBlocks[block];
+		void decompileAllBlocks() {
+			for (auto& it : m_asmGraph->m_blocks) {
+				auto block = &it.second;
+				DecompiledBlockInfo decompiledBlock;
 				decompiledBlock.m_treeBlock = new PrimaryTree::Block;
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, block->getMinOffset());
 
@@ -111,46 +93,43 @@ namespace CE::Decompiler
 					m_instructionInterpreterDispatcher->execute(decompiledBlock.m_treeBlock, decompiledBlock.m_execBlockCtx, instr);
 				}
 
+				m_decompiledBlocks[block] = decompiledBlock;
+			}
+		}
+
+		void resolveExternalSymbols(AsmGraphBlock* block, std::multiset<AsmGraphBlock*>& visitedBlocks) {
+			if (visitedBlocks.count(block) == block->getRefHighBlocksCount()) {
+				auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
+				for (auto it = ctx->m_externalSymbols.begin(); it != ctx->m_externalSymbols.end(); it ++) {
+					auto externalSymbol = **it;
+					auto regId = externalSymbol.m_reg.getId();
+					if (m_registersToSymbol.find(regId) == m_registersToSymbol.end()) {
+						m_registersToSymbol[regId] = RegSymbol();
+					}
+					m_curRegSymbol = &m_registersToSymbol[regId];
+					m_curRegSymbol->requiestId++;
+
+					std::list<RegisterPart> regParts;
+					auto mask = externalSymbol.m_needReadMask;
+					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
+					if (!regParts.empty()) {
+						auto expr = Register::CreateExprFromRegisterParts(regParts, externalSymbol.m_needReadMask);
+						externalSymbol.m_symbol->replaceBy(expr);
+						delete externalSymbol.m_symbol->m_symbol;
+						delete externalSymbol.m_symbol;
+						ctx->m_externalSymbols.erase(it);
+					}
+				}
+				
 				for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
 					if (nextBlock == nullptr)
 						continue;
 					if(nextBlock->m_level <= block->m_level)
 						continue;
 					visitedBlocks.insert(nextBlock);
-					decompile(nextBlock, visitedBlocks);
+					resolveExternalSymbols(nextBlock, visitedBlocks);
 				}
 			}
-		}
-
-		ExprTree::Node* createExprFromRegisterParts(std::list<RegisterPart> regParts, uint64_t requestRegMask) {
-			ExprTree::Node* resultExpr = nullptr;
-
-			regParts.sort([](const RegisterPart& a, const RegisterPart& b) {
-				return a.regMask > b.regMask;
-				});
-
-			for (auto regPart : regParts) {
-				auto sameRegExpr = regPart.expr->m_node;
-				int bitShift = Register::GetShiftValueOfMask(regPart.regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
-
-				if (resultExpr) {
-					//for signed register operations and etc...
-					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(regPart.regMask >> bitShift), ExprTree::And);
-				}
-
-				if (bitShift != 0) {
-					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(bitShift), ExprTree::Shl);
-				}
-				
-				if (resultExpr) {
-					resultExpr = new ExprTree::OperationalNode(resultExpr, new ExprTree::NumberLeaf(~regPart.maskToChange), ExprTree::And);
-					resultExpr = new ExprTree::OperationalNode(resultExpr, sameRegExpr, ExprTree::Or);
-				}
-				else {
-					resultExpr = sameRegExpr;
-				}
-			}
-			return resultExpr;
 		}
 
 		struct BlockRegSymbol {
@@ -169,14 +148,16 @@ namespace CE::Decompiler
 		std::map<int, RegSymbol> m_registersToSymbol;
 		RegSymbol* m_curRegSymbol = nullptr;
 
-		void requestRegisterParts(AsmGraphBlock* block, const Register& reg, uint64_t& mask, std::list<RegisterPart>& outRegParts) {
-			auto it = m_decompiledBlocks.find(block);
-			if (it != m_decompiledBlocks.end()) {
-				auto ctx = it->second.m_execBlockCtx;
-				auto regParts = ctx->getRegisterParts(reg, mask);
-				outRegParts.insert(outRegParts.begin(), regParts.begin(), regParts.end());
-				if (!mask) {
-					return;
+		void requestRegisterParts(AsmGraphBlock* block, const Register& reg, uint64_t& mask, std::list<RegisterPart>& outRegParts, bool isFound = true) {
+			if (isFound) {
+				auto it = m_decompiledBlocks.find(block);
+				if (it != m_decompiledBlocks.end()) {
+					auto ctx = it->second.m_execBlockCtx;
+					auto regParts = ctx->getRegisterParts(reg, mask);
+					outRegParts.insert(outRegParts.begin(), regParts.begin(), regParts.end());
+					if (!mask) {
+						return;
+					}
 				}
 			}
 			
@@ -201,7 +182,7 @@ namespace CE::Decompiler
 					RegisterPart info;
 					info.regMask = needReadMask;
 					info.maskToChange = mask & needReadMask;
-					info.expr = new WrapperNode(createSymbolForRequest(reg, needReadMask));
+					info.expr = new ExprTree::WrapperNode(createSymbolForRequest(reg, needReadMask));
 					outRegParts.push_back(info);
 					mask = mask & ~needReadMask;
 					if (!mask) {
@@ -262,7 +243,7 @@ namespace CE::Decompiler
 						auto& decompiledBlock = m_decompiledBlocks[it2.first];
 						auto& blockRegSymbol = it2.second;
 						if (symbol.first == blockRegSymbol.symbolId) {
-							auto expr = createExprFromRegisterParts(blockRegSymbol.regParts, blockRegSymbol.canReadMask);
+							auto expr = Register::CreateExprFromRegisterParts(blockRegSymbol.regParts, blockRegSymbol.canReadMask);
 							decompiledBlock.m_treeBlock->addLine(symbol.second, expr);
 						}
 					}

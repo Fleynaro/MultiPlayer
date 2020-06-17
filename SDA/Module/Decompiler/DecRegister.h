@@ -3,6 +3,12 @@
 
 namespace CE::Decompiler
 {
+	struct RegisterPart {
+		uint64_t regMask = -1;
+		uint64_t maskToChange = -1;
+		ExprTree::WrapperNode* expr = nullptr;
+	};
+
 	class Register
 	{
 	public:
@@ -35,6 +41,37 @@ namespace CE::Decompiler
 				result ++;
 			}
 			return result;
+		}
+
+		static ExprTree::Node* CreateExprFromRegisterParts(std::list<RegisterPart> regParts, uint64_t requestRegMask) {
+			ExprTree::Node* resultExpr = nullptr;
+
+			regParts.sort([](const RegisterPart& a, const RegisterPart& b) {
+				return a.regMask > b.regMask;
+				});
+
+			for (auto regPart : regParts) {
+				auto sameRegExpr = regPart.expr->m_node;
+				int bitShift = Register::GetShiftValueOfMask(regPart.regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
+
+				if (resultExpr) {
+					//for signed register operations and etc...
+					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(regPart.regMask >> bitShift), ExprTree::And);
+				}
+
+				if (bitShift != 0) {
+					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(bitShift), ExprTree::Shl);
+				}
+
+				if (resultExpr) {
+					resultExpr = new ExprTree::OperationalNode(resultExpr, new ExprTree::NumberLeaf(~regPart.maskToChange), ExprTree::And);
+					resultExpr = new ExprTree::OperationalNode(resultExpr, sameRegExpr, ExprTree::Or);
+				}
+				else {
+					resultExpr = sameRegExpr;
+				}
+			}
+			return resultExpr;
 		}
 	private:
 		void GetRegInfo() {

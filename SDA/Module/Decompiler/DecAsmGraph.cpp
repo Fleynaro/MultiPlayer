@@ -356,7 +356,7 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 
 void CE::Decompiler::test() {
 	/*
-		(До масштабных изменений)
+		(После масштабных изменений)
 
 		TODO:
 		1) символы локальных переменных делать в конце, когда будет граф. помечать из них флагом те, которые являются параметрами

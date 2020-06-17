@@ -19,8 +19,12 @@ namespace CE::Decompiler
 				auto expr1 = op1.getExpr();
 				auto expr2 = op2.getExpr();
 
+				auto symbol = new Symbol::LocalStackVar(rand());
+				auto tempVariable = new ExprTree::SymbolLeaf(symbol);
+				m_block->addLine(tempVariable, expr1);
+				
 				setExprToRegisterDst(m_instruction->operands[0].reg.value, expr2, false);
-				setExprToRegisterDst(m_instruction->operands[1].reg.value, expr1, false);
+				setExprToRegisterDst(m_instruction->operands[1].reg.value, tempVariable, false);
 				break;
 			}
 

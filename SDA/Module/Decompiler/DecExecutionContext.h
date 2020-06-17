@@ -3,24 +3,6 @@
 
 namespace CE::Decompiler
 {
-	class WrapperNode : public ExprTree::Node, public ExprTree::IParentNode
-	{
-	public:
-		ExprTree::Node* m_node;
-
-		WrapperNode(ExprTree::Node* node)
-			: m_node(node)
-		{
-			node->addParentNode(this);
-		}
-
-		void replaceNode(Node* node, Node* newNode) override {
-			if (m_node == node) {
-				m_node = newNode;
-			}
-		}
-	};
-
 	enum class RegisterFlags {
 		None,
 		CF = 1 << 1,
@@ -36,10 +18,21 @@ namespace CE::Decompiler
 
 	class Decompiler; //make interface later
 
-	struct RegisterPart {
-		uint64_t regMask = -1;
-		uint64_t maskToChange = -1;
-		WrapperNode* expr = nullptr;
+	struct ExternalSymbol : public ExprTree::IParentNode {
+		Register m_reg;
+		uint64_t m_needReadMask = 0x0;
+		ExprTree::SymbolLeaf* m_symbol = nullptr;
+		std::list<RegisterPart> m_regParts;
+
+		ExternalSymbol(Register reg, uint64_t needReadMask, ExprTree::SymbolLeaf* symbol, std::list<RegisterPart> regParts)
+			: m_reg(reg), m_needReadMask(needReadMask), m_symbol(symbol), m_regParts(regParts)
+		{
+			symbol->addParentNode(this);
+		}
+
+		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+			
+		}
 	};
 
 	class ExecutionBlockContext
@@ -48,9 +41,11 @@ namespace CE::Decompiler
 		int m_offset;
 		Decompiler* m_decompiler;
 
-		std::map<ZydisRegister, WrapperNode*> m_registers;
-		std::map<ZydisRegister, WrapperNode*> m_cachedRegisters;
+		std::map<ZydisRegister, ExprTree::WrapperNode*> m_registers;
+		std::map<ZydisRegister, ExprTree::WrapperNode*> m_cachedRegisters;
 		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
+
+		std::list<ExternalSymbol*> m_externalSymbols;
 
 		struct {
 			RegisterFlags flags = RegisterFlags::None;
@@ -64,29 +59,7 @@ namespace CE::Decompiler
 		
 		void setRegister(const Register& reg, ExprTree::Node* expr);
 
-		std::list<RegisterPart> getRegisterParts(const Register& reg, uint64_t& mask) {
-			std::list<RegisterPart> regParts;
-			for (auto sameReg : reg.m_sameRegisters) {
-				auto reg = sameReg.first;
-				auto it = m_registers.find(reg);
-				if (it != m_registers.end()) {
-					auto sameRegMask = sameReg.second;
-					auto changedRegMask = mask & ~sameRegMask;
-					if (changedRegMask != mask) {
-						RegisterPart info;
-						info.regMask = sameRegMask;
-						info.maskToChange = mask & sameRegMask;
-						info.expr = it->second;
-						regParts.push_back(info);
-						mask = changedRegMask;
-					}
-				}
-
-				if (mask == 0)
-					break;
-			}
-			return regParts;
-		}
+		std::list<RegisterPart> getRegisterParts(const Register& reg, uint64_t& mask);
 
 		ExprTree::Node* requestRegister(const Register& reg);
 

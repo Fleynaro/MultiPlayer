@@ -71,4 +71,22 @@ namespace CE::Decompiler::ExprTree
 		bool m_isSigned = false;
 		std::list<IParentNode*> m_parentNodes;
 	};
+
+	class WrapperNode : public Node, public IParentNode
+	{
+	public:
+		Node* m_node;
+
+		WrapperNode(Node* node)
+			: m_node(node)
+		{
+			node->addParentNode(this);
+		}
+
+		void replaceNode(Node* node, Node* newNode) override {
+			if (m_node == node) {
+				m_node = newNode;
+			}
+		}
+	};
 };
