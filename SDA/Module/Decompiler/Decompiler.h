@@ -101,7 +101,7 @@ namespace CE::Decompiler
 			if (visitedBlocks.count(block) == block->getRefHighBlocksCount()) {
 				auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
 				for (auto it = ctx->m_externalSymbols.begin(); it != ctx->m_externalSymbols.end(); it ++) {
-					auto externalSymbol = **it;
+					auto& externalSymbol = **it;
 					auto regId = externalSymbol.m_reg.getId();
 					if (m_registersToSymbol.find(regId) == m_registersToSymbol.end()) {
 						m_registersToSymbol[regId] = RegSymbol();
@@ -109,11 +109,11 @@ namespace CE::Decompiler
 					m_curRegSymbol = &m_registersToSymbol[regId];
 					m_curRegSymbol->requiestId++;
 
-					std::list<RegisterPart> regParts;
+					auto regParts = externalSymbol.m_regParts;
 					auto mask = externalSymbol.m_needReadMask;
 					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
-					if (!regParts.empty()) {
-						auto expr = Register::CreateExprFromRegisterParts(regParts, externalSymbol.m_needReadMask);
+					if (!regParts.empty()) { //regParts.size() > externalSymbol.m_regParts.size()
+						auto expr = Register::CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_mask);
 						externalSymbol.m_symbol->replaceBy(expr);
 						delete externalSymbol.m_symbol->m_symbol;
 						delete externalSymbol.m_symbol;
@@ -134,7 +134,7 @@ namespace CE::Decompiler
 
 		struct BlockRegSymbol {
 			uint64_t canReadMask = 0x0;
-			std::list<RegisterPart> regParts;
+			RegisterParts regParts;
 			int symbolId = 0;
 			int prevSymbolId = 0;
 		};
@@ -148,7 +148,7 @@ namespace CE::Decompiler
 		std::map<int, RegSymbol> m_registersToSymbol;
 		RegSymbol* m_curRegSymbol = nullptr;
 
-		void requestRegisterParts(AsmGraphBlock* block, const Register& reg, uint64_t& mask, std::list<RegisterPart>& outRegParts, bool isFound = true) {
+		void requestRegisterParts(AsmGraphBlock* block, const Register& reg, uint64_t& mask, RegisterParts& outRegParts, bool isFound = true) {
 			if (isFound) {
 				auto it = m_decompiledBlocks.find(block);
 				if (it != m_decompiledBlocks.end()) {
@@ -176,14 +176,11 @@ namespace CE::Decompiler
 			uint64_t hasReadMask = 0x0;
 			std::map<AsmGraphBlock*, uint64_t> blockPressure;
 			AsmGraphBlock* nextBlock = nullptr;
-			if (gatherBlocksWithRegisters(block, reg, mask, needReadMask, hasReadMask, nextBlock, 0x1000000000000000, blockPressure)) {
-				bool isFound = true;
-				if (needReadMask) {
-					RegisterPart info;
-					info.regMask = needReadMask;
-					info.maskToChange = mask & needReadMask;
-					info.expr = new ExprTree::WrapperNode(createSymbolForRequest(reg, needReadMask));
-					outRegParts.push_back(info);
+			if (gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock, 0x1000000000000000, blockPressure)) {
+				auto symbol = createSymbolForRequest(reg, needReadMask);
+				if ((mask & ~needReadMask) != mask) {
+					auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
+					outRegParts.push_back(regPart);
 					mask = mask & ~needReadMask;
 					if (!mask) {
 						return;
@@ -204,7 +201,7 @@ namespace CE::Decompiler
 					it.second.prevSymbolId = 0;
 				}
 				else {
-					//hasNewBlocks = true;
+					hasNewBlocks = true;
 				}
 			}
 
@@ -217,7 +214,7 @@ namespace CE::Decompiler
 				}
 			}
 
-			auto symbol = new Symbol::LocalStackVar(rand()); //указать размер временного символа, не использовать маски при чтении
+			auto symbol = new Symbol::LocalStackVar(rand(), Register::GetBitCountOfMask(needReadMask) / 8);
 			auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 			regSymbol.symbols.push_back(std::pair(regSymbol.requiestId, symbolLeaf));
 
@@ -240,18 +237,28 @@ namespace CE::Decompiler
 				auto& regSymbol = it.second;
 				for (auto symbol : regSymbol.symbols) {
 					for (const auto& it2 : regSymbol.blocks) {
-						auto& decompiledBlock = m_decompiledBlocks[it2.first];
+						auto block = it2.first;
+						auto& decompiledBlock = m_decompiledBlocks[block];
 						auto& blockRegSymbol = it2.second;
 						if (symbol.first == blockRegSymbol.symbolId) {
-							auto expr = Register::CreateExprFromRegisterParts(blockRegSymbol.regParts, blockRegSymbol.canReadMask);
-							decompiledBlock.m_treeBlock->addLine(symbol.second, expr);
+							auto symbolLeaf = symbol.second;
+							auto regParts = blockRegSymbol.regParts;
+							auto symbolMask = Register::GetMaskBySize(symbolLeaf->m_symbol->getSize());
+							auto maskToChange = symbolMask & ~blockRegSymbol.canReadMask;
+							
+							if (maskToChange != 0) {
+								regParts.push_back(new RegisterPart(symbolMask, maskToChange, symbolLeaf));
+							}
+
+							auto expr = Register::CreateExprFromRegisterParts(regParts, symbolMask);
+							decompiledBlock.m_treeBlock->addLine(symbolLeaf, expr);
 						}
 					}
 				}
 			}
 		}
 
-		void gatherRegisterPartsInBlock(AsmGraphBlock* block, const Register& reg, uint64_t checkMask, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
+		void gatherRegisterPartsInBlock(AsmGraphBlock* block, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
 			auto remainToReadMask = needReadMask & ~hasReadMask;
 			auto it = m_curRegSymbol->blocks.find(block);
 			if (it != m_curRegSymbol->blocks.end()) {
@@ -269,36 +276,40 @@ namespace CE::Decompiler
 			}
 			
 			auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
-			BlockRegSymbol blockRegSymbol;
+			auto mask = (pressure == 0x1000000000000000) ? remainToReadMask : -1;
+			auto regParts = ctx->getRegisterParts(reg, mask);
 
-			if (pressure == 0x1000000000000000) {
-				auto mask = remainToReadMask;
-				blockRegSymbol.regParts = ctx->getRegisterParts(reg, mask);
-				hasReadMask = ~mask;
-			}
-			else {
-				auto mask = (uint64_t)-1;
-				//TODO: передавать маску дальше по линейному списку, чтобы не делать много символов, ибо регистры могут перезаписаться (снаружи цикла это уже сделано, надо внутри)
-				blockRegSymbol.regParts = ctx->getRegisterParts(reg, mask);
+			for (auto it = regParts.begin(); it != regParts.end(); it++) {
+				if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>((*it)->m_expr)) {
+					if (auto symbol = dynamic_cast<Symbol::LocalStackVar*>(symbolLeaf->m_symbol)) {
+						mask |= (*it)->m_maskToChange;
+						regParts.erase(it);
+					}
+				}
 			}
 
-			if (!blockRegSymbol.regParts.empty()) {
+			if (!regParts.empty()) {
 				uint64_t canReadMask = 0x0;
-				for (auto regPart : blockRegSymbol.regParts) {
-					canReadMask |= regPart.regMask;
+				for (auto regPart : regParts) {
+					canReadMask |= regPart->m_regMask;
 				}
 
-				if (pressure != 0x1000000000000000) {
+				if (pressure == 0x1000000000000000) {
+					hasReadMask = ~mask;
+				}
+				else {
 					needReadMask |= canReadMask;
 				}
 
+				BlockRegSymbol blockRegSymbol;
+				blockRegSymbol.regParts = regParts;
 				blockRegSymbol.canReadMask = canReadMask; //that is what read
 				blockRegSymbol.symbolId = m_curRegSymbol->requiestId;
 				m_curRegSymbol->blocks[block] = blockRegSymbol;
 			}
 		}
 
-		bool gatherBlocksWithRegisters(AsmGraphBlock* block, const Register& reg, uint64_t checkMask, uint64_t& needReadMask, uint64_t& hasReadMask, AsmGraphBlock*& nextBlock, uint64_t incomingPressure, std::map<AsmGraphBlock*, uint64_t>& blockPressure) {
+		bool gatherBlocksWithRegisters(AsmGraphBlock* block, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, AsmGraphBlock*& nextBlock, uint64_t incomingPressure, std::map<AsmGraphBlock*, uint64_t>& blockPressure) {
 			auto parentsCount = block->getRefHighBlocksCount();
 			if (parentsCount == 0)
 				return false;
@@ -327,14 +338,14 @@ namespace CE::Decompiler
 				}
 
 				if (!isConditionOnce) {
-					gatherRegisterPartsInBlock(parentBlock, reg, checkMask, needReadMask, hasReadMask, pressure);
+					gatherRegisterPartsInBlock(parentBlock, reg, needReadMask, hasReadMask, pressure);
 
 					if (pressure == 0x1000000000000000 && (needReadMask & ~hasReadMask) == 0) {
 						nextBlock = parentBlock;
 						return true;
 					}
 
-					if (gatherBlocksWithRegisters(parentBlock, reg, checkMask, needReadMask, hasReadMask, nextBlock, pressure, blockPressure))
+					if (gatherBlocksWithRegisters(parentBlock, reg, needReadMask, hasReadMask, nextBlock, pressure, blockPressure))
 						return true;
 				}
 			}
@@ -357,8 +368,8 @@ namespace CE::Decompiler
 					if (blockOnMinLevelIt != blockPressure.end()) {
 						auto remainPressure = blockOnMinLevelIt->second;
 						blockOnMinLevelIt->second = 0;
-						gatherRegisterPartsInBlock(blockOnMinLevelIt->first, reg, checkMask, needReadMask, hasReadMask, remainPressure);
-						if (gatherBlocksWithRegisters(blockOnMinLevelIt->first, reg, checkMask, needReadMask, hasReadMask, nextBlock, remainPressure, blockPressure))
+						gatherRegisterPartsInBlock(blockOnMinLevelIt->first, reg, needReadMask, hasReadMask, remainPressure);
+						if (gatherBlocksWithRegisters(blockOnMinLevelIt->first, reg, needReadMask, hasReadMask, nextBlock, remainPressure, blockPressure))
 							return true;
 						
 					}

@@ -14,6 +14,10 @@ namespace CE::Decompiler::Symbol
 	class Symbol
 	{
 	public:
+		virtual int getSize() {
+			return 8;
+		}
+
 		virtual std::string printDebug() = 0;
 	};
 
@@ -22,7 +26,7 @@ namespace CE::Decompiler::Symbol
 	public:
 		int m_offset;
 
-		GlobalVar(int offset)
+		GlobalVar(int offset, uint64_t )
 			: m_offset(offset)
 		{}
 
@@ -35,13 +39,18 @@ namespace CE::Decompiler::Symbol
 	{
 	public:
 		int m_stackOffset;
+		int m_size;
 
-		LocalStackVar(int stackOffset)
-			: m_stackOffset(stackOffset)
+		LocalStackVar(int stackOffset, int size)
+			: m_stackOffset(stackOffset), m_size(size)
 		{}
 
+		int getSize() override {
+			return m_size;
+		}
+
 		std::string printDebug() override {
-			return "[stack_"+ std::to_string(m_stackOffset) +"]";
+			return "[stack_"+ std::to_string(m_stackOffset) +"_"+ std::to_string(m_size * 8) +"]";
 		}
 	};
 

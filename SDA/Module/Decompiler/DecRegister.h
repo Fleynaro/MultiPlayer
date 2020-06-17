@@ -3,11 +3,29 @@
 
 namespace CE::Decompiler
 {
-	struct RegisterPart {
-		uint64_t regMask = -1;
-		uint64_t maskToChange = -1;
-		ExprTree::WrapperNode* expr = nullptr;
+	struct RegisterPart : public ExprTree::IParentNode {
+		uint64_t m_regMask = -1;
+		uint64_t m_maskToChange = -1;
+		ExprTree::Node* m_expr = nullptr;
+
+		RegisterPart(uint64_t regMask, uint64_t maskToChange, ExprTree::Node* expr)
+			: m_regMask(regMask), m_maskToChange(maskToChange), m_expr(expr)
+		{
+			m_expr->addParentNode(this);
+		}
+
+		~RegisterPart() {
+			m_expr->removeBy(this);
+		}
+
+		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+			if (m_expr == node) {
+				m_expr = newNode;
+			}
+		}
 	};
+
+	using RegisterParts = std::list<RegisterPart*>;
 
 	class Register
 	{
@@ -43,20 +61,30 @@ namespace CE::Decompiler
 			return result;
 		}
 
-		static ExprTree::Node* CreateExprFromRegisterParts(std::list<RegisterPart> regParts, uint64_t requestRegMask) {
+		static uint64_t GetMaskBySize(int size) {
+			if (size == 8)
+				return -1;
+			return ((uint64_t)1 << (uint64_t)(size * 8)) - 1;
+		}
+
+		static ExprTree::Node* CreateExprFromRegisterParts(RegisterParts regParts, uint64_t requestRegMask) {
 			ExprTree::Node* resultExpr = nullptr;
 
-			regParts.sort([](const RegisterPart& a, const RegisterPart& b) {
-				return a.regMask > b.regMask;
+			regParts.sort([](const RegisterPart* a, const RegisterPart* b) {
+				return a->m_regMask > b->m_regMask;
 				});
 
-			for (auto regPart : regParts) {
-				auto sameRegExpr = regPart.expr->m_node;
-				int bitShift = Register::GetShiftValueOfMask(regPart.regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
+			for (auto it : regParts) {
+				auto& regPart = *it;
+				auto sameRegExpr = regPart.m_expr;
+				int bitShift = Register::GetShiftValueOfMask(regPart.m_regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
 
-				if (resultExpr) {
+				if (regPart.m_regMask != requestRegMask) {
 					//for signed register operations and etc...
-					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(regPart.regMask >> bitShift), ExprTree::And);
+					if ((regPart.m_regMask & requestRegMask) == 0) {
+						int a = 5;
+					}
+					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((regPart.m_regMask & requestRegMask) >> bitShift), ExprTree::And);
 				}
 
 				if (bitShift != 0) {
@@ -64,7 +92,7 @@ namespace CE::Decompiler
 				}
 
 				if (resultExpr) {
-					resultExpr = new ExprTree::OperationalNode(resultExpr, new ExprTree::NumberLeaf(~regPart.maskToChange), ExprTree::And);
+					resultExpr = new ExprTree::OperationalNode(resultExpr, new ExprTree::NumberLeaf(~regPart.m_maskToChange), ExprTree::And);
 					resultExpr = new ExprTree::OperationalNode(resultExpr, sameRegExpr, ExprTree::Or);
 				}
 				else {

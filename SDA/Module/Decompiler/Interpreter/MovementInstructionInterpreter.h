@@ -19,7 +19,7 @@ namespace CE::Decompiler
 				auto expr1 = op1.getExpr();
 				auto expr2 = op2.getExpr();
 
-				auto symbol = new Symbol::LocalStackVar(rand());
+				auto symbol = new Symbol::LocalStackVar(rand(), 8);
 				auto tempVariable = new ExprTree::SymbolLeaf(symbol);
 				m_block->addLine(tempVariable, expr1);
 				

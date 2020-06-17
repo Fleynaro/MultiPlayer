@@ -3,24 +3,25 @@
 
 using namespace CE::Decompiler;
 
-void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* expr) {
+void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* newExpr) {
 	if (m_registers.find(reg.m_reg) != m_registers.end()) {
-		auto wrapperNode = m_registers[reg.m_reg];
-		wrapperNode->m_node->removeBy(wrapperNode);
-		wrapperNode->m_node = expr;
-		expr->addParentNode(wrapperNode);
+		auto regExpr = m_registers[reg.m_reg];
+		regExpr->removeBy(this);
 	}
-	else {
-		m_registers[reg.m_reg] = new ExprTree::WrapperNode(expr);
-	}
+	m_registers[reg.m_reg] = newExpr;
+	newExpr->addParentNode(this);
 
 	for (auto sameReg : reg.m_sameRegisters) {
-		m_cachedRegisters.erase(sameReg.first);
+		auto it = m_cachedRegisters.find(reg.m_reg);
+		if (it != m_cachedRegisters.end()) {
+			it->second->removeBy(this);
+			m_cachedRegisters.erase(it);
+		}
 	}
 }
 
-std::list<RegisterPart> ExecutionBlockContext::getRegisterParts(const Register& reg, uint64_t& mask) {
-	std::list<RegisterPart> regParts;
+RegisterParts ExecutionBlockContext::getRegisterParts(const Register& reg, uint64_t& mask) {
+	RegisterParts regParts;
 	for (auto sameReg : reg.m_sameRegisters) {
 		auto reg = sameReg.first;
 		auto it = m_registers.find(reg);
@@ -28,11 +29,8 @@ std::list<RegisterPart> ExecutionBlockContext::getRegisterParts(const Register& 
 			auto sameRegMask = sameReg.second;
 			auto changedRegMask = mask & ~sameRegMask;
 			if (changedRegMask != mask) {
-				RegisterPart info;
-				info.regMask = sameRegMask;
-				info.maskToChange = mask & sameRegMask;
-				info.expr = it->second;
-				regParts.push_back(info);
+				auto part = new RegisterPart(sameRegMask, mask & sameRegMask, it->second);
+				regParts.push_back(part);
 				mask = changedRegMask;
 			}
 		}
@@ -45,7 +43,7 @@ std::list<RegisterPart> ExecutionBlockContext::getRegisterParts(const Register& 
 
 ExprTree::Node* ExecutionBlockContext::requestRegister(const Register& reg) {
 	if (m_cachedRegisters.find(reg.m_reg) != m_cachedRegisters.end()) {
-		return m_cachedRegisters[reg.m_reg]->m_node;
+		return m_cachedRegisters[reg.m_reg];
 	}
 
 	ExprTree::Node* regExpr;
@@ -56,17 +54,17 @@ ExprTree::Node* ExecutionBlockContext::requestRegister(const Register& reg) {
 		auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 		auto externalSymbol = new ExternalSymbol(reg, mask, symbolLeaf, regParts);
 		m_externalSymbols.push_back(externalSymbol);
+
+		if (mask == reg.m_mask) {
+			setRegister(reg, symbolLeaf);
+		}
 		regExpr = symbolLeaf;
 	}
 	else {
 		regExpr = Register::CreateExprFromRegisterParts(regParts, reg.m_mask);
 	}
 
-	//new ExprTree::WrapperNode???
-	auto wrapperNode = new ExprTree::WrapperNode(regExpr);
-	if (mask == reg.m_mask) {
-		m_registers[reg.m_reg] = wrapperNode; //???
-	}
-	m_cachedRegisters[reg.m_reg] = wrapperNode;
+	m_cachedRegisters[reg.m_reg] = regExpr;
+	regExpr->addParentNode(&m_cachedRegisters);
 	return regExpr;
 }

@@ -22,12 +22,16 @@ namespace CE::Decompiler
 		Register m_reg;
 		uint64_t m_needReadMask = 0x0;
 		ExprTree::SymbolLeaf* m_symbol = nullptr;
-		std::list<RegisterPart> m_regParts;
+		RegisterParts m_regParts;
 
-		ExternalSymbol(Register reg, uint64_t needReadMask, ExprTree::SymbolLeaf* symbol, std::list<RegisterPart> regParts)
+		ExternalSymbol(Register reg, uint64_t needReadMask, ExprTree::SymbolLeaf* symbol, RegisterParts regParts)
 			: m_reg(reg), m_needReadMask(needReadMask), m_symbol(symbol), m_regParts(regParts)
 		{
 			symbol->addParentNode(this);
+		}
+
+		~ExternalSymbol() {
+			m_symbol->removeBy(this);
 		}
 
 		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
@@ -35,15 +39,28 @@ namespace CE::Decompiler
 		}
 	};
 
-	class ExecutionBlockContext
+	class ExecutionBlockContext : ExprTree::IParentNode
 	{
 	public:
 		int m_offset;
 		Decompiler* m_decompiler;
 
-		std::map<ZydisRegister, ExprTree::WrapperNode*> m_registers;
-		std::map<ZydisRegister, ExprTree::WrapperNode*> m_cachedRegisters;
+		std::map<ZydisRegister, ExprTree::Node*> m_registers;
 		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
+
+		class RegisterCache : public std::map<ZydisRegister, ExprTree::Node*>, public ExprTree::IParentNode
+		{
+		public:
+			void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+				for (auto it = begin(); it != end(); it++) {
+					if (it->second == node) {
+						if (newNode != nullptr)
+							it->second = newNode;
+						else erase(it);
+					}
+				}
+			}
+		} m_cachedRegisters;
 
 		std::list<ExternalSymbol*> m_externalSymbols;
 
@@ -56,10 +73,33 @@ namespace CE::Decompiler
 		ExecutionBlockContext(Decompiler* decompiler, int startOffset = 0)
 			: m_decompiler(decompiler), m_offset(startOffset)
 		{}
+
+		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+			for (auto it = m_registers.begin(); it != m_registers.end(); it ++) {
+				if (it->second == node) {
+					if (newNode != nullptr)
+						it->second = newNode;
+					else m_registers.erase(it);
+				}
+			}
+
+			if (auto cond = dynamic_cast<ExprTree::Condition*>(node)) {	
+				for (auto it = m_flags.begin(); it != m_flags.end(); it++) {
+					if (it->second == cond) {
+						if (auto newCond = dynamic_cast<ExprTree::Condition*>(newNode)) {
+							it->second = newCond;
+						}
+						else {
+							m_flags.erase(it);
+						}
+					}
+				}
+			}
+		}
 		
 		void setRegister(const Register& reg, ExprTree::Node* expr);
 
-		std::list<RegisterPart> getRegisterParts(const Register& reg, uint64_t& mask);
+		RegisterParts getRegisterParts(const Register& reg, uint64_t& mask);
 
 		ExprTree::Node* requestRegister(const Register& reg);
 
