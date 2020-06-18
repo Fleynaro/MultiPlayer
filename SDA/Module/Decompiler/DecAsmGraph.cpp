@@ -4,7 +4,7 @@ using namespace CE;
 using namespace CE::Decompiler;
 
 AsmGraphBlock::AsmGraphBlock(AsmGraph* asmGraph, int minOffset, int maxOffset)
-	: m_asmGraph(asmGraph), m_minOffset(minOffset), m_maxOffset(maxOffset)
+	: m_asmGraph(asmGraph), m_minOffset(minOffset), m_maxOffset(maxOffset), ID(minOffset)
 {}
 
 std::list<int>& AsmGraphBlock::getInstructions() {
@@ -325,7 +325,7 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 
 	for (auto block : blockList->getBlocks()) {
 		auto decBlock = decompiledBlocks[block->m_graphBlock];
-		printf("%s//block %i (level %i)\n", tabStr.c_str(), block->m_graphBlock->getMinOffset(), block->m_graphBlock->m_level);
+		printf("%s//block %s (level %i)\n", tabStr.c_str(), Generic::String::NumberToHex(block->m_graphBlock->ID).c_str(), block->m_graphBlock->m_level);
 		
 		block->m_graphBlock->printDebug(nullptr, tabStr, false);
 		printf("%s------------\n", tabStr.c_str());

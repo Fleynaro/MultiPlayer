@@ -112,7 +112,7 @@ namespace CE::Decompiler
 					auto regParts = externalSymbol.m_regParts;
 					auto mask = externalSymbol.m_needReadMask;
 					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
-					if (!regParts.empty()) { //regParts.size() > externalSymbol.m_regParts.size()
+					if (!mask) {
 						auto expr = Register::CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_mask);
 						externalSymbol.m_symbol->replaceBy(expr);
 						delete externalSymbol.m_symbol->m_symbol;
@@ -177,13 +177,15 @@ namespace CE::Decompiler
 			std::map<AsmGraphBlock*, uint64_t> blockPressure;
 			AsmGraphBlock* nextBlock = nullptr;
 			if (gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock, 0x1000000000000000, blockPressure)) {
-				auto symbol = createSymbolForRequest(reg, needReadMask);
-				if ((mask & ~needReadMask) != mask) {
-					auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
-					outRegParts.push_back(regPart);
-					mask = mask & ~needReadMask;
-					if (!mask) {
-						return;
+				if (needReadMask) {
+					auto symbol = createSymbolForRequest(reg, needReadMask);
+					if ((mask & ~needReadMask) != mask) {
+						auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
+						outRegParts.push_back(regPart);
+						mask = mask & ~needReadMask;
+						if (!mask) {
+							return;
+						}
 					}
 				}
 

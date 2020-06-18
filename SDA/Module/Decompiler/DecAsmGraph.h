@@ -13,6 +13,7 @@ namespace CE::Decompiler
 	class AsmGraphBlock
 	{
 	public:
+		int ID = 0;
 		int m_level = 0;
 		std::list<AsmGraphBlock*> m_blocksReferencedTo;
 

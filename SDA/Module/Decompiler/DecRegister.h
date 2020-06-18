@@ -81,9 +81,6 @@ namespace CE::Decompiler
 
 				if (regPart.m_regMask != requestRegMask) {
 					//for signed register operations and etc...
-					if ((regPart.m_regMask & requestRegMask) == 0) {
-						int a = 5;
-					}
 					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((regPart.m_regMask & requestRegMask) >> bitShift), ExprTree::And);
 				}
 
