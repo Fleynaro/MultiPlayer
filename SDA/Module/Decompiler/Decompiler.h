@@ -178,7 +178,7 @@ namespace CE::Decompiler
 			AsmGraphBlock* nextBlock = nullptr;
 			if (gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock, 0x1000000000000000, blockPressure)) {
 				if (needReadMask) {
-					auto symbol = createSymbolForRequest(reg, needReadMask);
+					auto symbol = createSymbolForRequest(reg, needReadMask); //after gatherBlocksWithRegisters we need to create a new symbols for gathered blocks with incremented symbol's id
 					if ((mask & ~needReadMask) != mask) {
 						auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
 						outRegParts.push_back(regPart);
@@ -282,7 +282,7 @@ namespace CE::Decompiler
 			auto regParts = ctx->getRegisterParts(reg, mask);
 
 			//think about that more ???
-			if (pressure == 0x1000000000000000) {
+			if (pressure == 0x1000000000000000) { //to symbols assignments be less
 				for (auto it = regParts.begin(); it != regParts.end(); it++) {
 					if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>((*it)->m_expr)) {
 						if (auto symbol = dynamic_cast<Symbol::LocalStackVar*>(symbolLeaf->m_symbol)) {
