@@ -281,11 +281,14 @@ namespace CE::Decompiler
 			auto mask = (pressure == 0x1000000000000000) ? remainToReadMask : -1;
 			auto regParts = ctx->getRegisterParts(reg, mask);
 
-			for (auto it = regParts.begin(); it != regParts.end(); it++) {
-				if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>((*it)->m_expr)) {
-					if (auto symbol = dynamic_cast<Symbol::LocalStackVar*>(symbolLeaf->m_symbol)) {
-						mask |= (*it)->m_maskToChange;
-						regParts.erase(it);
+			//think about that more ???
+			if (pressure == 0x1000000000000000) {
+				for (auto it = regParts.begin(); it != regParts.end(); it++) {
+					if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>((*it)->m_expr)) {
+						if (auto symbol = dynamic_cast<Symbol::LocalStackVar*>(symbolLeaf->m_symbol)) {
+							mask |= (*it)->m_maskToChange;
+							regParts.erase(it);
+						}
 					}
 				}
 			}

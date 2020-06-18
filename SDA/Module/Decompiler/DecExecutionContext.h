@@ -39,7 +39,7 @@ namespace CE::Decompiler
 		}
 	};
 
-	class ExecutionBlockContext : ExprTree::IParentNode
+	class ExecutionBlockContext : public ExprTree::IParentNode
 	{
 	public:
 		int m_offset;

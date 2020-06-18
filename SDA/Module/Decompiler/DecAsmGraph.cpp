@@ -45,6 +45,10 @@ bool AsmGraphBlock::isCondition() {
 	return m_nextNearBlock != nullptr && m_nextFarBlock != nullptr;
 }
 
+bool AsmGraphBlock::isWhile() {
+	return (int)m_blocksReferencedTo.size() != getRefHighBlocksCount();
+}
+
 bool AsmGraphBlock::isEnd() {
 	return m_nextNearBlock == nullptr && m_nextFarBlock == nullptr;
 }
@@ -350,7 +354,7 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 	}
 
 	if (blockList->m_goto != nullptr) {
-		printf("%s//goto to block on %i\n", tabStr.c_str(), blockList->m_goto->m_graphBlock->getMinOffset());
+		printf("%s//goto to block %s\n", tabStr.c_str(), Generic::String::NumberToHex(blockList->m_goto->m_graphBlock->ID).c_str());
 	}
 }
 

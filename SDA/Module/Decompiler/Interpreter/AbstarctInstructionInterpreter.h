@@ -94,7 +94,7 @@ namespace CE::Decompiler
 				auto it = m_ctx->m_registers.find(sameReg.first);
 				if (it != m_ctx->m_registers.end()) {
 					if (reg.m_mask > sameReg.second) {
-						m_ctx->m_registers.erase(it);
+						it->second->removeBy(m_ctx);
 					}
 				}
 			}

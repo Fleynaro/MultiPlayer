@@ -130,7 +130,7 @@ namespace CE::Decompiler::LinearView
 
 				if (block->isCondition()) {
 					blockList->addBlock(new Condition(block));
-					
+
 					auto it = m_loops.find(block);
 					if (it != m_loops.end()) {
 						auto& loop = it->second;
@@ -165,14 +165,14 @@ namespace CE::Decompiler::LinearView
 
 		void findAllLoops(AsmGraphBlock* block, std::map<AsmGraphBlock*, VisitedBlockInfo>& visitedBlocks, std::list<AsmGraphBlock*>& passedBlocks) {
 			bool goNext = true;
-			if (block->m_blocksReferencedTo.size() >= 2) {
+			if (block->getRefHighBlocksCount() >= 2) {
 				if (visitedBlocks.find(block) == visitedBlocks.end()) {
 					visitedBlocks.insert(std::make_pair(block, VisitedBlockInfo()));
 				}
 				auto& visitedBlock = visitedBlocks[block];
 				
 				visitedBlock.m_enterCount++;
-				if (visitedBlock.m_enterCount < block->m_blocksReferencedTo.size()) {
+				if (visitedBlock.m_enterCount < block->getRefHighBlocksCount()) {
 					goNext = false;
 				}
 
@@ -211,6 +211,8 @@ namespace CE::Decompiler::LinearView
 
 				for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
 					if (nextBlock == nullptr)
+						continue;
+					if (nextBlock->m_level <= block->m_level)
 						continue;
 					findAllLoops(nextBlock, visitedBlocks, passedBlocks);
 				}

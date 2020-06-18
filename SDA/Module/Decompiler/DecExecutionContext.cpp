@@ -6,7 +6,7 @@ using namespace CE::Decompiler;
 void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* newExpr) {
 	if (m_registers.find(reg.m_reg) != m_registers.end()) {
 		auto regExpr = m_registers[reg.m_reg];
-		regExpr->removeBy(this);
+		regExpr->removeBy(this); //multiple removes
 	}
 	m_registers[reg.m_reg] = newExpr;
 	newExpr->addParentNode(this);
@@ -14,8 +14,7 @@ void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* new
 	for (auto sameReg : reg.m_sameRegisters) {
 		auto it = m_cachedRegisters.find(reg.m_reg);
 		if (it != m_cachedRegisters.end()) {
-			it->second->removeBy(this);
-			m_cachedRegisters.erase(it);
+			it->second->removeBy(&m_cachedRegisters);
 		}
 	}
 }

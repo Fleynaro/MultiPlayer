@@ -37,6 +37,8 @@ namespace CE::Decompiler
 
 		bool isCondition();
 
+		bool isWhile();
+
 		bool isEnd();
 
 		int getRefHighBlocksCount();
