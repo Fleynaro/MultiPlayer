@@ -176,7 +176,7 @@ namespace CE::Decompiler
 			uint64_t hasReadMask = 0x0;
 			std::map<AsmGraphBlock*, uint64_t> blockPressure;
 			AsmGraphBlock* nextBlock = nullptr;
-			if (gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock, 0x1000000000000000, blockPressure)) {
+			if (gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock)) {
 				if (needReadMask) {
 					auto symbol = createSymbolForRequest(reg, needReadMask); //after gatherBlocksWithRegisters we need to create a new symbols for gathered blocks with incremented symbol's id
 					if ((mask & ~needReadMask) != mask) {
@@ -196,36 +196,41 @@ namespace CE::Decompiler
 		ExprTree::Node* createSymbolForRequest(const Register& reg, uint64_t needReadMask) {
 			auto& regSymbol = *m_curRegSymbol;
 			std::set<int> prevSymbolIds;
-			bool hasNewBlocks = false;
 			for (auto& it : regSymbol.blocks) {
 				if (it.second.prevSymbolId) {
+					if (prevSymbolIds.find(it.second.prevSymbolId) == prevSymbolIds.end()) {
+						for (auto& it2 : regSymbol.blocks) { //if sets intersect
+							if (it2.second.symbolId == it.second.prevSymbolId) {
+								it2.second.symbolId = it.second.symbolId;
+							}
+						}
+					}
 					prevSymbolIds.insert(it.second.prevSymbolId);
 					it.second.prevSymbolId = 0;
 				}
-				else {
-					hasNewBlocks = true;
-				}
 			}
 
-			if (hasNewBlocks && prevSymbolIds.size() == 1) {
+			/*if (prevSymbolIds.size() == 1) {
 				for (auto& it : regSymbol.symbols) {
 					if (prevSymbolIds.count(it.first) != 0) {
 						it.first = regSymbol.requiestId;
 						return it.second;
 					}
 				}
-			}
+			}*/
 
 			auto symbol = new Symbol::LocalStackVar(rand(), Register::GetBitCountOfMask(needReadMask) / 8);
 			auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
-			regSymbol.symbols.push_back(std::pair(regSymbol.requiestId, symbolLeaf));
+			regSymbol.symbols.push_back(std::make_pair(regSymbol.requiestId, symbolLeaf));
 
 			if (!prevSymbolIds.empty()) {
 				for (auto it = regSymbol.symbols.begin(); it != regSymbol.symbols.end(); it ++) {
-					if (prevSymbolIds.count(it->first) != 0) {
+					auto prevSymbolId = it->first;
+					auto prevSymbolLeaf = it->second;
+					if (prevSymbolIds.find(prevSymbolId) != prevSymbolIds.end()) {
 						it->second->replaceBy(symbolLeaf);
-						delete it->second->m_symbol;
-						delete it->second;
+						delete prevSymbolLeaf->m_symbol;
+						delete prevSymbolLeaf;
 						regSymbol.symbols.erase(it);
 					}
 				}
@@ -314,76 +319,77 @@ namespace CE::Decompiler
 			}
 		}
 
-		bool gatherBlocksWithRegisters(AsmGraphBlock* block, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, AsmGraphBlock*& nextBlock, uint64_t incomingPressure, std::map<AsmGraphBlock*, uint64_t>& blockPressure) {
-			auto parentsCount = block->getRefHighBlocksCount();
-			if (parentsCount == 0)
-				return false;
+		bool gatherBlocksWithRegisters(AsmGraphBlock* startBlock, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, AsmGraphBlock*& nextBlock) {
+			std::map<AsmGraphBlock*, uint64_t> blockPressures;
+			std::set<AsmGraphBlock*> handledBlocks;
+			blockPressures[startBlock] = 0x1000000000000000;
+			bool isStartBlock = true;
 
-			auto bits = (int)ceil(log2((double)parentsCount));
-			auto addPressure = incomingPressure >> bits;
-			auto restAddPressure = addPressure * ((1 << bits) % parentsCount);
-
-			for (auto parentBlock : block->m_blocksReferencedTo) {
-				if (parentBlock->m_level >= block->m_level)
-					break;
-
-				auto isConditionOnce = false;
-				auto pressure = addPressure + restAddPressure;
-				restAddPressure = 0;
-
-				if (parentBlock->isCondition()) {
-					if (blockPressure.find(parentBlock) != blockPressure.end()) {
-						pressure += blockPressure[parentBlock];
-						blockPressure[parentBlock] = 0x0;
-					}
-					else {
-						isConditionOnce = true;
-						blockPressure[parentBlock] = pressure;
+			while (true)
+			{
+				int maxLevel = 0;
+				for (auto it : blockPressures) {
+					auto block = it.first;
+					if (block->m_level > maxLevel) {
+						maxLevel = it.first->m_level;
 					}
 				}
 
-				if (!isConditionOnce) {
-					gatherRegisterPartsInBlock(parentBlock, reg, needReadMask, hasReadMask, pressure);
+				int nextBlocksCount = 0;
+				for (auto it : blockPressures) {
+					auto block = it.first;
+					auto pressure = it.second;
+					if (block->m_level == maxLevel)
+					{
+						bool isLoop = true;
+						if (!isStartBlock) {
+							if (handledBlocks.find(block) == handledBlocks.end()) {
+								gatherRegisterPartsInBlock(block, reg, needReadMask, hasReadMask, pressure);
 
-					if (pressure == 0x1000000000000000 && (needReadMask & ~hasReadMask) == 0) {
-						nextBlock = parentBlock;
-						return true;
-					}
+								if (pressure == 0x1000000000000000 && (needReadMask & ~hasReadMask) == 0) {
+									nextBlock = block;
+									return true;
+								}
 
-					if (gatherBlocksWithRegisters(parentBlock, reg, needReadMask, hasReadMask, nextBlock, pressure, blockPressure))
-						return true;
-				}
-			}
-
-			//if condition blocks remain with some pressure
-			if (incomingPressure == 0x1000000000000000) {
-				do {
-					int maxLevel = 0;
-					auto blockOnMinLevelIt = blockPressure.end();
-
-					for (auto it = blockPressure.begin(); it != blockPressure.end(); it++) {
-						if (it->second != 0x0) {
-							if (it->first->m_level > maxLevel) {
-								blockOnMinLevelIt = it;
-								maxLevel = it->first->m_level;
+								handledBlocks.insert(block);
+							}
+							else {
+								isLoop = false;
 							}
 						}
-					}
+						else {
+							isStartBlock = false;
+						}
 
-					if (blockOnMinLevelIt != blockPressure.end()) {
-						auto remainPressure = blockOnMinLevelIt->second;
-						blockOnMinLevelIt->second = 0;
-						gatherRegisterPartsInBlock(blockOnMinLevelIt->first, reg, needReadMask, hasReadMask, remainPressure);
-						if (gatherBlocksWithRegisters(blockOnMinLevelIt->first, reg, needReadMask, hasReadMask, nextBlock, remainPressure, blockPressure))
-							return true;
-						
+						auto parentsCount = isLoop ? (int)block->m_blocksReferencedTo.size() : block->getRefHighBlocksCount();
+						if (parentsCount == 0)
+							continue;
+						auto bits = (int)ceil(log2((double)parentsCount));
+						auto addPressure = pressure >> bits;
+						auto restAddPressure = addPressure * ((1 << bits) % parentsCount);
+						blockPressures[block] = 0x0;
+
+						for (auto parentBlock : block->m_blocksReferencedTo) {
+							if (!isLoop && parentBlock->m_level >= block->m_level)
+								break;
+
+							if (blockPressures.find(parentBlock) == blockPressures.end()) {
+								blockPressures[parentBlock] = 0x0;
+							}
+							blockPressures[parentBlock] += addPressure + restAddPressure;
+							restAddPressure = 0;
+							nextBlocksCount++;
+						}
+
+						if (blockPressures[block] == 0x0) {
+							blockPressures.erase(block);
+						}
 					}
-					else {
-						break;
-					}
-				} while (true);
+				}
+
+				if (nextBlocksCount == 0)
+					break;
 			}
-
 			return false;
 		}
 	};
