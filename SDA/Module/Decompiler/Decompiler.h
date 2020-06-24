@@ -250,9 +250,14 @@ namespace CE::Decompiler
 						if (symbol.first == blockRegSymbol.symbolId) {
 							auto symbolLeaf = symbol.second;
 							auto regParts = blockRegSymbol.regParts;
+
+							//to avoide equal assignments: a = a, b = b, ....
+							if (regParts.size() == 1 && (*regParts.begin())->m_expr == symbolLeaf)
+								continue;
+							
 							auto symbolMask = Register::GetMaskBySize(symbolLeaf->m_symbol->getSize());
 							auto maskToChange = symbolMask & ~blockRegSymbol.canReadMask;
-							
+
 							if (maskToChange != 0) {
 								regParts.push_back(new RegisterPart(symbolMask, maskToChange, symbolLeaf));
 							}

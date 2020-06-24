@@ -67,7 +67,133 @@ namespace CE::Decompiler::LinearView
 
 	};
 
+
 	class Converter
+	{
+	public:
+		Converter(AsmGraph* asmGraph)
+			: m_asmGraph(asmGraph)
+		{}
+
+		void start() {
+			auto startBlock = m_asmGraph->getStartBlock();
+			
+			m_blockList = new BlockList;
+			std::set<AsmGraphBlock*> usedBlocks;
+			convert(m_blockList, startBlock, usedBlocks);
+
+			for (auto it : m_goto) {
+				auto block = m_blockList->findBlock(it.second);
+				if (block != nullptr) {
+					it.first->m_goto = block;
+				}
+			}
+		}
+
+		BlockList* getBlockList() {
+			return m_blockList;
+		}
+	private:
+		AsmGraph* m_asmGraph;
+		std::list<std::pair<BlockList*, AsmGraphBlock*>> m_goto;
+		BlockList* m_blockList;
+
+		void convert(BlockList* blockList, AsmGraphBlock* block, std::set<AsmGraphBlock*>& usedBlocks) {
+			while (block != nullptr) {
+				if (usedBlocks.count(block) != 0) {
+					m_goto.push_back(std::make_pair(blockList, block));
+					break;
+				}
+				AsmGraphBlock* nextBlock = nullptr;
+
+				if (block->isCondition()) {
+					blockList->addBlock(new Condition(block));
+
+					auto endBlock = getEndBlockOfLoop(block);
+					if (endBlock != nullptr)
+						nextBlock = endBlock;
+				}
+				else {
+					blockList->addBlock(new Block(block));
+					for (auto it : { block->getNextNearBlock(), block->getNextFarBlock() }) {
+						if (it == nullptr)
+							continue;
+						if (it->m_level - block->m_level != 1) {
+							m_goto.push_back(std::make_pair(blockList, it));
+							continue;
+						}
+
+						nextBlock = it;
+						break;
+					}
+				}
+
+				usedBlocks.insert(block);
+				block = nextBlock;
+			}
+
+			for (auto it : blockList->getBlocks()) {
+				if (auto condition = dynamic_cast<Condition*>(it)) {
+					convert(condition->m_mainBranch, condition->m_graphBlock->getNextNearBlock(), usedBlocks);
+					convert(condition->m_elseBranch, condition->m_graphBlock->getNextFarBlock(), usedBlocks);
+				}
+			}
+		}
+
+		struct VisitInfo {
+			uint64_t pressure = 0x0;
+			int visitedCount = 0;
+		};
+
+		AsmGraphBlock* getEndBlockOfLoop(AsmGraphBlock* startBlock) {
+			std::map<AsmGraphBlock*, VisitInfo> visitedBlocks;
+			return getEndBlockOfLoop(startBlock, 0x1000000000000000, visitedBlocks);
+		}
+
+		AsmGraphBlock* getEndBlockOfLoop(AsmGraphBlock* block, uint64_t incomingPressure, std::map<AsmGraphBlock*, VisitInfo>& visitedBlocks) {
+			std::list<AsmGraphBlock*> nextBlocks;
+			for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
+				if (nextBlock == nullptr)
+					continue;
+				if (nextBlock->m_level <= block->m_level)
+					continue;
+				nextBlocks.push_back(nextBlock);
+			}
+
+			if (nextBlocks.empty())
+				return nullptr;
+
+			auto addPressure = incomingPressure;
+			if (nextBlocks.size() == 2)
+				addPressure >>= 1;
+			
+			for (auto nextBlock : nextBlocks) {
+				auto inputsCount = nextBlock->getRefHighBlocksCount();
+				if (inputsCount == 1) {
+					getEndBlockOfLoop(nextBlock, addPressure, visitedBlocks);
+				}
+				else {
+					if (visitedBlocks.find(nextBlock) == visitedBlocks.end()) {
+						visitedBlocks[nextBlock] = VisitInfo();
+					}
+					auto& visitInfo = visitedBlocks[nextBlock];
+					visitInfo.pressure += addPressure;
+					if (++visitInfo.visitedCount == inputsCount) {
+						if (visitInfo.pressure == 0x1000000000000000)
+							return nextBlock;
+						auto block = getEndBlockOfLoop(nextBlock, visitInfo.pressure, visitedBlocks);
+						if (block != nullptr)
+							return block;
+					}
+				}
+			}
+
+			return nullptr;
+		}
+	};
+
+
+	class Converter2
 	{
 	public:
 		struct Loop {
@@ -85,7 +211,7 @@ namespace CE::Decompiler::LinearView
 			std::list<AsmGraphBlock*> m_passedBlocks;
 		};
 
-		Converter(AsmGraph* asmGraph)
+		Converter2(AsmGraph* asmGraph)
 			: m_asmGraph(asmGraph)
 		{}
 

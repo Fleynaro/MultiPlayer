@@ -303,7 +303,7 @@ void func22() {
 				b--;
 			}
 		}
-	}
+	}*/
 
 	if (b == 3 || b == 6) {
 		b++;
@@ -314,11 +314,11 @@ void func22() {
 			b--;
 		}
 	}
-	b = 0;*/
+	b = 0;
 
-	while (b < 5) {
+	/*while (b < 5) {
 		b++;
-	}
+	}*/
 }
 
 
@@ -413,8 +413,8 @@ void CE::Decompiler::test() {
 	byte sample25[] = { 0x83, 0xF8, 0x00, 0x7D, 0x02, 0xF7, 0xD8, 0x83, 0xFB, 0x00, 0x7D, 0x02, 0xF7, 0xDB, 0x39, 0xD8, 0x7D, 0x01, 0x93, 0x83, 0xFB, 0x00, 0x74, 0x04, 0x29, 0xD8, 0xEB, 0xF2, 0x89, 0x04, 0x24, 0x89, 0x1C, 0x24 };
 
 
-	void* addr = sample25; //&func22;
-	int size = sizeof(sample25); //calculateFunctionSize2((byte*)addr);
+	void* addr = &func22;
+	int size = calculateFunctionSize2((byte*)addr);
 
 	AsmGraph graph(CE::Decompiler::getInstructionsAtAddress(addr, size));
 	graph.build();
