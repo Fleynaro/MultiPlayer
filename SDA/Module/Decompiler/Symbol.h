@@ -4,6 +4,7 @@
 #include <Zycore/Format.h>
 #include <Zycore/LibC.h>
 #include <Zydis/Zydis.h>
+#include <Utility/Generic.h>
 
 namespace CE::Decompiler::ExprTree {
 	class FunctionCallContext;
@@ -50,7 +51,7 @@ namespace CE::Decompiler::Symbol
 		}
 
 		std::string printDebug() override {
-			return "[stack_"+ std::to_string(m_stackOffset) +"_"+ std::to_string(m_size * 8) +"]";
+			return "[stack_"+ Generic::String::NumberToHex(m_stackOffset) +"_"+ std::to_string(m_size * 8) +"]";
 		}
 	};
 

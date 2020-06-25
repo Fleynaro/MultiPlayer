@@ -112,7 +112,7 @@ namespace CE::Decompiler
 					auto regParts = externalSymbol.m_regParts;
 					auto mask = externalSymbol.m_needReadMask;
 					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
-					if (!mask) {
+					if (mask != externalSymbol.m_needReadMask) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
 						auto expr = Register::CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_mask);
 						externalSymbol.m_symbol->replaceBy(expr);
 						delete externalSymbol.m_symbol->m_symbol;
@@ -176,19 +176,20 @@ namespace CE::Decompiler
 			uint64_t hasReadMask = 0x0;
 			std::map<AsmGraphBlock*, uint64_t> blockPressure;
 			AsmGraphBlock* nextBlock = nullptr;
-			if (gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock)) {
-				if (needReadMask) {
-					auto symbol = createSymbolForRequest(reg, needReadMask); //after gatherBlocksWithRegisters we need to create a new symbols for gathered blocks with incremented symbol's id
-					if ((mask & ~needReadMask) != mask) {
-						auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
-						outRegParts.push_back(regPart);
-						mask = mask & ~needReadMask;
-						if (!mask) {
-							return;
-						}
+			auto isSuccess = gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock);
+			if (needReadMask) {
+				//todo: we should create symbol anyway [1]: e.g. loop with simple 2 branches (if() mov eax, 1 else mov eax, 2)
+				auto symbol = createSymbolForRequest(reg, needReadMask); //after gatherBlocksWithRegisters we need to create a new symbols for gathered blocks with incremented symbol's id
+				if ((mask & ~needReadMask) != mask) {
+					auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
+					outRegParts.push_back(regPart);
+					mask = mask & ~needReadMask;
+					if (!mask) {
+						return;
 					}
 				}
-
+			}
+			if (nextBlock) {
 				requestRegisterParts(nextBlock, reg, mask, outRegParts);
 			}
 		}
@@ -252,7 +253,7 @@ namespace CE::Decompiler
 							auto regParts = blockRegSymbol.regParts;
 
 							//to avoide equal assignments: a = a, b = b, ....
-							if (regParts.size() == 1 && (*regParts.begin())->m_expr == symbolLeaf)
+							if (false && regParts.size() == 1 && (*regParts.begin())->m_expr == symbolLeaf)
 								continue;
 							
 							auto symbolMask = Register::GetMaskBySize(symbolLeaf->m_symbol->getSize());
@@ -289,7 +290,7 @@ namespace CE::Decompiler
 			
 			auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
 			auto mask = (pressure == 0x1000000000000000) ? remainToReadMask : -1;
-			auto regParts = ctx->getRegisterParts(reg, mask);
+			auto regParts = ctx->getRegisterParts(reg, mask, pressure != 0x1000000000000000);
 
 			//think about that more ???
 			if (pressure == 0x1000000000000000) { //to symbols assignments be less
@@ -344,7 +345,7 @@ namespace CE::Decompiler
 				for (auto it : blockPressures) {
 					auto block = it.first;
 					auto pressure = it.second;
-					if (block->m_level == maxLevel)
+					if (block->m_level == maxLevel) //find blocks with the highest level down
 					{
 						bool isLoop = true;
 						if (!isStartBlock) {

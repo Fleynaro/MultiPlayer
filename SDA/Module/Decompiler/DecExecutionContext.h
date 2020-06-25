@@ -47,6 +47,7 @@ namespace CE::Decompiler
 
 		std::map<ZydisRegister, ExprTree::Node*> m_registers;
 		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
+		std::set<ZydisRegister> m_changedRegisters;
 
 		class RegisterCache : public std::map<ZydisRegister, ExprTree::Node*>, public ExprTree::IParentNode
 		{
@@ -97,9 +98,9 @@ namespace CE::Decompiler
 			}
 		}
 		
-		void setRegister(const Register& reg, ExprTree::Node* expr);
+		void setRegister(const Register& reg, ExprTree::Node* expr, bool rewrite = true);
 
-		RegisterParts getRegisterParts(const Register& reg, uint64_t& mask);
+		RegisterParts getRegisterParts(const Register& reg, uint64_t& mask, bool changedRegistersOnly = false);
 
 		ExprTree::Node* requestRegister(const Register& reg);
 

@@ -146,8 +146,62 @@ namespace CE::Decompiler::LinearView
 		};
 
 		AsmGraphBlock* getEndBlockOfLoop(AsmGraphBlock* startBlock) {
-			std::map<AsmGraphBlock*, VisitInfo> visitedBlocks;
-			return getEndBlockOfLoop(startBlock, 0x1000000000000000, visitedBlocks);
+			//std::map<AsmGraphBlock*, VisitInfo> visitedBlocks;
+			//return getEndBlockOfLoop(startBlock, 0x1000000000000000, visitedBlocks);
+			std::map<AsmGraphBlock*, uint64_t> blockPressures;
+			blockPressures[startBlock] = 0x1000000000000000;
+
+			while (true)
+			{
+				int minLevel = 100000;
+				for (auto it : blockPressures) {
+					auto block = it.first;
+					if (block->m_level < minLevel) {
+						minLevel = it.first->m_level;
+					}
+				}
+
+				int filledUpBlocksCount = 0;
+				for (auto it : blockPressures) {
+					auto block = it.first;
+					auto pressure = it.second;
+					if (block->m_level == minLevel) //find blocks with the lowest level up
+					{
+						std::list<AsmGraphBlock*> nextBlocks;
+						for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
+							if (nextBlock == nullptr)
+								continue;
+							if (nextBlock->m_level <= block->m_level)
+								continue;
+							nextBlocks.push_back(nextBlock);
+						}
+
+						blockPressures.erase(block);
+						if (nextBlocks.empty())
+							continue;
+
+						auto addPressure = pressure;
+						if (nextBlocks.size() == 2)
+							addPressure >>= 1;
+
+						for (auto nextBlock : nextBlocks) {
+							if (blockPressures.find(nextBlock) == blockPressures.end()) {
+								blockPressures[nextBlock] = 0x0;
+							}
+							blockPressures[nextBlock] += addPressure;
+							if (blockPressures[nextBlock] == 0x1000000000000000) {
+								return nextBlock;
+							}
+							filledUpBlocksCount++;
+						}
+					}
+				}
+
+				if (filledUpBlocksCount == 0)
+					break;
+			}
+
+			return nullptr;
 		}
 
 		AsmGraphBlock* getEndBlockOfLoop(AsmGraphBlock* block, uint64_t incomingPressure, std::map<AsmGraphBlock*, VisitInfo>& visitedBlocks) {
@@ -170,7 +224,9 @@ namespace CE::Decompiler::LinearView
 			for (auto nextBlock : nextBlocks) {
 				auto inputsCount = nextBlock->getRefHighBlocksCount();
 				if (inputsCount == 1) {
-					getEndBlockOfLoop(nextBlock, addPressure, visitedBlocks);
+					auto block = getEndBlockOfLoop(nextBlock, addPressure, visitedBlocks);
+					if (block != nullptr)
+						return block;
 				}
 				else {
 					if (visitedBlocks.find(nextBlock) == visitedBlocks.end()) {

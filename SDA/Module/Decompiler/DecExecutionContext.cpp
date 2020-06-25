@@ -3,13 +3,20 @@
 
 using namespace CE::Decompiler;
 
-void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* newExpr) {
+void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* newExpr, bool rewrite) {
 	if (m_registers.find(reg.m_reg) != m_registers.end()) {
 		auto regExpr = m_registers[reg.m_reg];
 		regExpr->removeBy(this); //multiple removes
 	}
-	m_registers[reg.m_reg] = newExpr;
-	newExpr->addParentNode(this);
+
+	if (newExpr) {
+		m_registers[reg.m_reg] = newExpr;
+		newExpr->addParentNode(this);
+	}
+
+	if (rewrite) {
+		m_changedRegisters.insert(reg.m_reg);
+	}
 
 	for (auto sameReg : reg.m_sameRegisters) {
 		auto it = m_cachedRegisters.find(reg.m_reg);
@@ -19,10 +26,13 @@ void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* new
 	}
 }
 
-RegisterParts ExecutionBlockContext::getRegisterParts(const Register& reg, uint64_t& mask) {
+RegisterParts ExecutionBlockContext::getRegisterParts(const Register& reg, uint64_t& mask, bool changedRegistersOnly) {
 	RegisterParts regParts;
 	for (auto sameReg : reg.m_sameRegisters) {
 		auto reg = sameReg.first;
+		if (changedRegistersOnly && m_changedRegisters.find(reg) == m_changedRegisters.end())
+			continue;
+
 		auto it = m_registers.find(reg);
 		if (it != m_registers.end()) {
 			auto sameRegMask = sameReg.second;
@@ -55,7 +65,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegister(const Register& reg) {
 		m_externalSymbols.push_back(externalSymbol);
 
 		if (mask == reg.m_mask) {
-			setRegister(reg, symbolLeaf);
+			setRegister(reg, symbolLeaf, false);
 		}
 		regExpr = symbolLeaf;
 	}

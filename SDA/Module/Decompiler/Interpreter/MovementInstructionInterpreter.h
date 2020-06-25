@@ -18,13 +18,13 @@ namespace CE::Decompiler
 				Operand op2(m_ctx, &m_instruction->operands[1]);
 				auto expr1 = op1.getExpr();
 				auto expr2 = op2.getExpr();
-
-				auto symbol = new Symbol::LocalStackVar(rand(), m_instruction->operands[0].size / 8);
-				auto tempVariable = new ExprTree::SymbolLeaf(symbol);
-				m_block->addLine(tempVariable, expr1);
 				
-				setExprToRegisterDst(m_instruction->operands[1].reg.value, tempVariable, false);
+				auto opNode = new ExprTree::OperationalNode(expr1, expr2, ExprTree::None);
+				setExprToRegisterDst(m_instruction->operands[0].reg.value, nullptr, false);
+				setExprToRegisterDst(m_instruction->operands[1].reg.value, nullptr, false);
 				setExprToRegisterDst(m_instruction->operands[0].reg.value, expr2, false);
+				setExprToRegisterDst(m_instruction->operands[1].reg.value, expr1, false);
+				opNode->removeBy(nullptr);
 				break;
 			}
 
