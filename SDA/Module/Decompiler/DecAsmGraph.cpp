@@ -305,23 +305,28 @@ void func22() {
 		}
 	}*/
 
-	if (b == 3 || b == 6) {
-		b++;
-		if (b == 3) {
-			b++;
-		}
-		else {
-			b--;
-		}
-	}
-	b = 0;
-
-	/*while (b < 5) {
+	/*if (b == 10 || b == 20 || b == 30 || b == 40) {
 		b++;
 	}*/
+	/*if (b == 10 && b == 20 && b == 30 && b == 40) {
+		b++;
+	}*/
+	/*if (b == 10 && b == 20 || b == 30 && b == 40 && b == 50 || b == 60) {
+		b++;
+	}*/
+	b = 0;
+
+	while (b < 5) {
+		b++;
+		if (b == 100) {
+			while (b < 500) {
+				b+=2;
+			}
+		}
+	}
 }
 
-
+#define SHOW_ASM 0
 void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, PrimaryTree::Block*>& decompiledBlocks, int level = 0) {
 	std::string tabStr = "";
 	for (int i = 0; i < level; i++)
@@ -331,8 +336,10 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 		auto decBlock = decompiledBlocks[block->m_graphBlock];
 		printf("%s//block %s (level %i)\n", tabStr.c_str(), Generic::String::NumberToHex(block->m_graphBlock->ID).c_str(), block->m_graphBlock->m_level);
 		
-		block->m_graphBlock->printDebug(nullptr, tabStr, false);
-		printf("%s------------\n", tabStr.c_str());
+		if (SHOW_ASM) {
+			block->m_graphBlock->printDebug(nullptr, tabStr, false);
+			printf("%s------------\n", tabStr.c_str());
+		}
 		if (decBlock) {
 			decBlock->printDebug(false, tabStr);
 		}
@@ -345,7 +352,7 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 				printf("%sif(...) {\n", tabStr.c_str());
 			}
 			ShowCode(condition->m_mainBranch, decompiledBlocks, level + 1);
-			if (condition->m_elseBranch->getBlocks().size() > 0) {
+			if (true || condition->m_elseBranch->getBlocks().size() > 0) {
 				printf("%s} else {\n", tabStr.c_str());
 				ShowCode(condition->m_elseBranch, decompiledBlocks, level + 1);
 			}
@@ -444,7 +451,7 @@ void CE::Decompiler::test() {
 	auto decompiledBlocks = decompiler->getResult();
 	//decompiledBlocks.clear();
 
-	LinearView::Converter converter(&graph);
+	LinearView::Converter2 converter(&graph);
 	converter.start();
 	
 	ShowCode(converter.getBlockList(), decompiledBlocks);

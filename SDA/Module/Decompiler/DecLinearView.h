@@ -68,6 +68,12 @@ namespace CE::Decompiler::LinearView
 	};
 
 
+	namespace Optimization
+	{
+
+	};
+
+
 	class Converter
 	{
 	public:
