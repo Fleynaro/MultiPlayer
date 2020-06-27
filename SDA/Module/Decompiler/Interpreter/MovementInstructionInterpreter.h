@@ -81,7 +81,7 @@ namespace CE::Decompiler
 					Operand op2(m_ctx, &m_instruction->operands[1]);
 					auto dstExpr = op1.getExpr();
 					auto srcExpr = op2.getExpr();
-					auto condExpr = new ExprTree::CompositeCondition(new ExprTree::Condition(m_ctx->m_lastCond.leftNode, m_ctx->m_lastCond.rightNode, cond));
+					auto condExpr = new ExprTree::Condition(m_ctx->m_lastCond.leftNode, m_ctx->m_lastCond.rightNode, cond);
 					auto ternaryCondExpr = new ExprTree::TernaryOperationalNode(condExpr, srcExpr, dstExpr);
 					setExprToRegisterDst(m_instruction->operands[0].reg.value, ternaryCondExpr);
 				}

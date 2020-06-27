@@ -3,7 +3,13 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class Condition : public Node, public IParentNode
+	class ICondition : public Node, public IParentNode
+	{
+	public:
+		virtual void inverse() = 0;
+	};
+
+	class Condition : public ICondition
 	{
 	public:
 		enum ConditionType
@@ -48,16 +54,6 @@ namespace CE::Decompiler::ExprTree
 				m_rightNode->removeBy(this);
 		}
 
-		void replaceBy(Node* newNode) override {
-			Node::replaceBy(newNode);
-			if (auto newParentNode = dynamic_cast<IParentNode*>(newNode)) {
-				if (m_leftNode != nullptr)
-					m_leftNode->addParentNode(newParentNode);
-				if (m_rightNode != nullptr)
-					m_rightNode->addParentNode(newParentNode);
-			}
-		}
-
 		void replaceNode(Node* node, Node * newNode) override {
 			if (m_leftNode == node) {
 				m_leftNode = newNode;
@@ -67,7 +63,7 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		void inverse() {
+		void inverse() override {
 			switch (m_cond)
 			{
 			case Eq:
@@ -96,7 +92,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class CompositeCondition : public Node
+	class CompositeCondition : public ICondition
 	{
 	public:
 		enum CompositeConditionType
@@ -116,31 +112,67 @@ namespace CE::Decompiler::ExprTree
 			return "_";
 		}
 
-		Node* m_leftNode;
-		Node* m_rightNode;
+		ICondition* m_leftCond;
+		ICondition* m_rightCond;
 		CompositeConditionType m_cond;
 
-		CompositeCondition(Node* leftNode, Node* rightNode = nullptr, CompositeConditionType cond = None)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond)
-		{}
+		CompositeCondition(ICondition* leftCond, ICondition* rightCond = nullptr, CompositeConditionType cond = None)
+			: m_leftCond(leftCond), m_rightCond(rightCond), m_cond(cond)
+		{
+			leftCond->addParentNode(this);
+			if (rightCond != nullptr) {
+				rightCond->addParentNode(this);
+			}
+		}
+
+		void replaceNode(Node* node, Node* newNode) override {
+			if (auto cond = dynamic_cast<ICondition*>(node)) {
+				if (auto newCond = dynamic_cast<ICondition*>(newNode)) {
+					if (m_leftCond == cond)
+						m_leftCond = newCond;
+					else if (m_rightCond == cond)
+						m_rightCond = newCond;
+				}
+			}
+		}
+
+		void inverse() override {
+			switch (m_cond)
+			{
+			case Not:
+				m_cond = None;
+				break;
+			case And:
+				m_cond = Or;
+				break;
+			case Or:
+				m_cond = And;
+				break;
+			}
+
+			if (m_leftCond)
+				m_leftCond->inverse();
+			if (m_rightCond)
+				m_rightCond->inverse();
+		}
 
 		std::string printDebug() override {
 			if (m_cond == None) {
-				return m_leftNode->printDebug();
+				return m_leftCond->printDebug();
 			}
 			if (m_cond == Not) {
-				return "!(" + m_leftNode->printDebug() + ")";
+				return "!(" + m_leftCond->printDebug() + ")";
 			}
-			return "(" + m_leftNode->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightNode->printDebug() + ")";
+			return "(" + m_leftCond->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightCond->printDebug() + ")";
 		}
 	};
 
 	class TernaryOperationalNode : public OperationalNode
 	{
 	public:
-		CompositeCondition* m_condition;
+		ICondition* m_condition;
 
-		TernaryOperationalNode(CompositeCondition* condition, Node* leftNode, Node* rightNode)
+		TernaryOperationalNode(ICondition* condition, Node* leftNode, Node* rightNode)
 			: m_condition(condition), OperationalNode(leftNode, rightNode, ExprTree::None)
 		{}
 
@@ -150,12 +182,11 @@ namespace CE::Decompiler::ExprTree
 
 		void replaceNode(Node* node, Node * newNode) override {
 			OperationalNode::replaceNode(node, newNode);
-			if (m_condition == node) {
-				if (auto cond = dynamic_cast<CompositeCondition*>(newNode)) {
-					m_condition = cond;
-				}
-				else {
-					delete this;
+			if (auto cond = dynamic_cast<ICondition*>(node)) {
+				if (auto newCond = dynamic_cast<ICondition*>(newNode)) {
+					if (m_condition == cond) {
+						m_condition = newCond;
+					}
 				}
 			}
 		}

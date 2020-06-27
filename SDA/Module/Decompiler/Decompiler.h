@@ -1,28 +1,27 @@
 #pragma once
 #include "DecAsmGraph.h"
 #include "Interpreter/InstructionInterpreterDispatcher.h"
-#include "Optimization/ExprOptimization.h"
+#include "DecCodeGraph.h"
 
 namespace CE::Decompiler
 {
-	struct DecompiledBlockInfo {
-		PrimaryTree::Block* m_treeBlock = nullptr;
-		ExecutionBlockContext* m_execBlockCtx = nullptr;
-		
-		DecompiledBlockInfo() = default;
-
-		bool isDecompiled() {
-			return m_treeBlock != nullptr;
-		}
-	};
-
 	class Decompiler
 	{
+		struct DecompiledBlockInfo {
+			PrimaryTree::Block* m_treeBlock = nullptr;
+			ExecutionBlockContext* m_execBlockCtx = nullptr;
+
+			DecompiledBlockInfo() = default;
+
+			bool isDecompiled() {
+				return m_treeBlock != nullptr;
+			}
+		};
 	public:
 		std::function<ExprTree::FunctionCallInfo(int, ExprTree::Node*)> m_funcCallInfoCallback;
 
-		Decompiler(AsmGraph* graph)
-			: m_asmGraph(graph)
+		Decompiler(AsmGraph* graph, DecompiledCodeGraph* decompiledGraph)
+			: m_asmGraph(graph), m_decompiledGraph(decompiledGraph)
 		{
 			m_instructionInterpreterDispatcher = new InstructionInterpreterDispatcher;
 			m_funcCallInfoCallback = [](int offset, ExprTree::Node* dst) {
@@ -42,28 +41,18 @@ namespace CE::Decompiler
 			auto startBlock = m_asmGraph->getStartBlock();
 			std::multiset<AsmGraphBlock*> visitedBlocks;
 			decompileAllBlocks();
+			setAllBlocksLinks();
 			resolveExternalSymbols(startBlock, visitedBlocks);
 			createSymbolAssignments();
+			buildDecompiledGraph();
 		}
 
-		void optimize() {
-			for (auto& it : m_decompiledBlocks) {
-				auto treeBlock = it.second.m_treeBlock;
-				for (auto line : treeBlock->getLines()) {
-					Optimization::Optimize(line->m_destAddr);
-					Optimization::Optimize(line->m_srcValue);
-				}
+		void buildDecompiledGraph();
 
-				if (treeBlock->m_noJmpCond != nullptr) {
-					Optimization::Optimize(treeBlock->m_noJmpCond);
-				}
-			}
-		}
-
-		std::map<AsmGraphBlock*, PrimaryTree::Block*> getResult() {
-			std::map<AsmGraphBlock*, PrimaryTree::Block*> result;
+		std::map<PrimaryTree::Block*, AsmGraphBlock*> getAsmBlocks() {
+			std::map<PrimaryTree::Block*, AsmGraphBlock*> result;
 			for (auto& it : m_decompiledBlocks) {
-				result.insert(std::make_pair(it.first, it.second.m_treeBlock));
+				result[it.second.m_treeBlock] = it.first;
 			}
 			return result;
 		}
@@ -77,6 +66,7 @@ namespace CE::Decompiler
 		}
 	private:
 		AsmGraph* m_asmGraph;
+		DecompiledCodeGraph* m_decompiledGraph;
 		InstructionInterpreterDispatcher* m_instructionInterpreterDispatcher;
 
 		std::map<AsmGraphBlock*, DecompiledBlockInfo> m_decompiledBlocks;
@@ -85,7 +75,7 @@ namespace CE::Decompiler
 			for (auto& it : m_asmGraph->m_blocks) {
 				auto block = &it.second;
 				DecompiledBlockInfo decompiledBlock;
-				decompiledBlock.m_treeBlock = new PrimaryTree::Block;
+				decompiledBlock.m_treeBlock = new PrimaryTree::Block(block->m_level);
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, block->getMinOffset());
 
 				for (auto off : block->getInstructions()) {
@@ -94,6 +84,23 @@ namespace CE::Decompiler
 				}
 
 				m_decompiledBlocks[block] = decompiledBlock;
+			}
+		}
+
+		void setAllBlocksLinks() {
+			for (const auto& it : m_decompiledBlocks) {
+				auto asmBlock = it.first;
+				auto& decBlockInfo = it.second;
+
+				for (const auto& link : {
+					std::make_pair(&decBlockInfo.m_treeBlock->m_nextNearBlock, asmBlock->getNextNearBlock()),
+					std::make_pair(&decBlockInfo.m_treeBlock->m_nextFarBlock, asmBlock->getNextFarBlock()) })
+				{
+					if (!link.second)
+						continue;
+					auto block = *link.first = m_decompiledBlocks[link.second].m_treeBlock;
+					block->m_blocksReferencedTo.push_back(decBlockInfo.m_treeBlock);
+				}
 			}
 		}
 
@@ -114,7 +121,7 @@ namespace CE::Decompiler
 					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
 					if (mask != externalSymbol.m_needReadMask) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
 						auto expr = Register::CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_mask);
-						externalSymbol.m_symbol->replaceBy(expr);
+						externalSymbol.m_symbol->replaceWith(expr);
 						delete externalSymbol.m_symbol->m_symbol;
 						delete externalSymbol.m_symbol;
 						ctx->m_externalSymbols.erase(it);
@@ -229,7 +236,7 @@ namespace CE::Decompiler
 					auto prevSymbolId = it->first;
 					auto prevSymbolLeaf = it->second;
 					if (prevSymbolIds.find(prevSymbolId) != prevSymbolIds.end()) {
-						it->second->replaceBy(symbolLeaf);
+						it->second->replaceWith(symbolLeaf);
 						delete prevSymbolLeaf->m_symbol;
 						delete prevSymbolLeaf;
 						regSymbol.symbols.erase(it);

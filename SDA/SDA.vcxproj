@@ -237,6 +237,7 @@
     <ClCompile Include="Module\Decompiler\DecAsmGraph.cpp" />
     <ClCompile Include="Module\Decompiler\DecExecutionContext.cpp" />
     <ClCompile Include="Module\Decompiler\DecLinearView.cpp" />
+    <ClCompile Include="Module\Decompiler\Decompiler.cpp" />
     <ClCompile Include="Module\Decompiler\Interpreter\UncondJmpInstructionInterpreter.cpp" />
     <ClCompile Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.cpp" />
     <ClCompile Include="Module\Decompiler\Symbol.cpp" />
@@ -351,6 +352,7 @@
     <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\Decompiler\DecAsmGraph.h" />
+    <ClInclude Include="Module\Decompiler\DecCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\DecExecutionContext.h" />

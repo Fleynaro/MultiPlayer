@@ -228,8 +228,6 @@ InstructionMapType CE::Decompiler::getInstructionsAtAddress(void* addr, int size
 
 
 
-
-
 void func() {
 	int a = 5;
 	int b = 6;
@@ -311,33 +309,34 @@ void func22() {
 	/*if (b == 10 && b == 20 && b == 30 && b == 40) {
 		b++;
 	}*/
-	/*if (b == 10 && b == 20 || b == 30 && b == 40 && b == 50 || b == 60) {
+	if (b == 10 && b == 20 || b == 30 && b == 40 && b == 50 || b == 60) {
 		b++;
-	}*/
+	}
 	b = 0;
 
-	while (b < 5) {
+	/*while (b < 5) {
 		b++;
 		if (b == 100) {
 			while (b < 500) {
 				b+=2;
 			}
 		}
-	}
+	}*/
 }
 
 #define SHOW_ASM 0
-void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, PrimaryTree::Block*>& decompiledBlocks, int level = 0) {
+void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, AsmGraphBlock*>& asmBlocks, int level = 0) {
 	std::string tabStr = "";
 	for (int i = 0; i < level; i++)
 		tabStr += "\t";
 
 	for (auto block : blockList->getBlocks()) {
-		auto decBlock = decompiledBlocks[block->m_graphBlock];
-		printf("%s//block %s (level %i)\n", tabStr.c_str(), Generic::String::NumberToHex(block->m_graphBlock->ID).c_str(), block->m_graphBlock->m_level);
+		auto decBlock = block->m_decBlock;
+		auto asmBlock = asmBlocks[decBlock];
+		printf("%s//block %s (level %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), asmBlock->m_level);
 		
 		if (SHOW_ASM) {
-			block->m_graphBlock->printDebug(nullptr, tabStr, false);
+			asmBlock->printDebug(nullptr, tabStr, false);
 			printf("%s------------\n", tabStr.c_str());
 		}
 		if (decBlock) {
@@ -351,17 +350,17 @@ void ShowCode(LinearView::BlockList* blockList, std::map<AsmGraphBlock*, Primary
 			else {
 				printf("%sif(...) {\n", tabStr.c_str());
 			}
-			ShowCode(condition->m_mainBranch, decompiledBlocks, level + 1);
+			ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
 			if (true || condition->m_elseBranch->getBlocks().size() > 0) {
 				printf("%s} else {\n", tabStr.c_str());
-				ShowCode(condition->m_elseBranch, decompiledBlocks, level + 1);
+				ShowCode(condition->m_elseBranch, asmBlocks, level + 1);
 			}
 			printf("%s}\n", tabStr.c_str());
 		}
 	}
 
 	if (blockList->m_goto != nullptr) {
-		printf("%s//goto to block %s\n", tabStr.c_str(), Generic::String::NumberToHex(blockList->m_goto->m_graphBlock->ID).c_str());
+		printf("%s//goto to block %s\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlocks[blockList->m_goto->m_decBlock]->ID).c_str());
 	}
 }
 
@@ -437,7 +436,8 @@ void CE::Decompiler::test() {
 	graph.printDebug(addr);
 	printf("\n\n");
 
-	auto decompiler = new Decompiler(&graph);
+	auto decCodeGraph = new DecompiledCodeGraph;
+	auto decompiler = new Decompiler(&graph, decCodeGraph);
 	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
 		auto absAddr = (std::intptr_t)addr + offset;
 		auto info = ExprTree::GetFunctionCallDefaultInfo();
@@ -446,13 +446,12 @@ void CE::Decompiler::test() {
 		return info;
 	};
 	decompiler->start();
-	decompiler->optimize();
 	//decompiler->printDebug();
-	auto decompiledBlocks = decompiler->getResult();
-	//decompiledBlocks.clear();
+	Optimization::OptimizeDecompiledGraph(decCodeGraph);
 
-	LinearView::Converter2 converter(&graph);
+	LinearView::Converter converter(decCodeGraph);
 	converter.start();
 	
-	ShowCode(converter.getBlockList(), decompiledBlocks);
+	auto asmBlocks = decompiler->getAsmBlocks();
+	ShowCode(converter.getBlockList(), asmBlocks);
 }

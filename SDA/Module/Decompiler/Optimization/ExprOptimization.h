@@ -54,8 +54,8 @@ namespace CE::Decompiler::Optimization
 		}
 
 		if (auto compCondition = dynamic_cast<CompositeCondition*>(node)) {
-			auto list1 = GetNextOperationalsNodesToOpimize(compCondition->m_leftNode);
-			auto list2 = GetNextOperationalsNodesToOpimize(compCondition->m_rightNode);
+			auto list1 = GetNextOperationalsNodesToOpimize(compCondition->m_leftCond);
+			auto list2 = GetNextOperationalsNodesToOpimize(compCondition->m_rightCond);
 			list1.insert(list1.end(), list2.begin(), list2.end());
 			return list1;
 		}
@@ -89,7 +89,7 @@ namespace CE::Decompiler::Optimization
 
 		if (expr->m_operation == Xor) {
 			if (expr->m_leftNode == expr->m_rightNode) {
-				expr->replaceBy(new NumberLeaf(0));
+				expr->replaceWith(new NumberLeaf(0));
 				delete expr;
 			}
 		}
@@ -107,7 +107,7 @@ namespace CE::Decompiler::Optimization
 			if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
 				if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 					auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
-					expr->replaceBy(new NumberLeaf(result));
+					expr->replaceWith(new NumberLeaf(result));
 					expr->m_leftNode = nullptr;
 					delete expr;
 				}
@@ -174,7 +174,7 @@ namespace CE::Decompiler::Optimization
 						result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
 					}
 					expr = new OperationalNode(expr->m_leftNode, new NumberLeaf(result), expr->m_operation);
-					prevOperationalNode->replaceBy(expr);
+					prevOperationalNode->replaceWith(expr);
 					delete prevOperationalNode;
 				}
 			}

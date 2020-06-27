@@ -28,22 +28,34 @@ namespace CE::Decompiler::PrimaryTree
 	class Block : public ExprTree::IParentNode
 	{
 	public:
-		ExprTree::Condition* m_noJmpCond = nullptr;
+		int m_level = 0;
+		std::list<Block*> m_blocksReferencedTo;
+		ExprTree::ICondition* m_noJmpCond = nullptr;
+		Block* m_nextNearBlock = nullptr;
+		Block* m_nextFarBlock = nullptr;
 
-		Block()
+		Block(int level)
+			: m_level(level)
 		{}
 
+		bool isCondition() {
+			return m_nextNearBlock != nullptr && m_nextFarBlock != nullptr;
+		}
+
 		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
-			if (auto cond = dynamic_cast<ExprTree::Condition*>(node)) {
-				if (auto newCond = dynamic_cast<ExprTree::Condition*>(newNode)) {
+			if (auto cond = dynamic_cast<ExprTree::ICondition*>(node)) {
+				if (auto newCond = dynamic_cast<ExprTree::ICondition*>(newNode)) {
 					if (cond == m_noJmpCond) {
-						m_noJmpCond = newCond;
+						m_noJmpCond = cond;
 					}
 				}
 			}
 		}
 
-		void setJumpCondition(ExprTree::Condition* noJmpCond) {
+		void setJumpCondition(ExprTree::ICondition* noJmpCond) {
+			if (m_noJmpCond) {
+				m_noJmpCond->removeBy(this);
+			}
 			m_noJmpCond = noJmpCond;
 			m_noJmpCond->addParentNode(this);
 		}
@@ -54,6 +66,10 @@ namespace CE::Decompiler::PrimaryTree
 
 		std::list<Line*>& getLines() {
 			return m_lines;
+		}
+
+		bool hasNoCode() {
+			return m_lines.empty();
 		}
 
 		void printDebug(bool cond = true, const std::string& tabStr = "") {

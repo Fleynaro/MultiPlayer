@@ -17,10 +17,10 @@ namespace CE::Decompiler::ExprTree
 		{}
 
 		virtual ~Node() {
-			replaceBy(nullptr);
+			replaceWith(nullptr);
 		}
 
-		virtual void replaceBy(Node* newNode) {
+		void replaceWith(Node* newNode) {
 			for (auto parentNode : m_parentNodes) {
 				if (newNode == dynamic_cast<Node*>(parentNode))
 					continue;
