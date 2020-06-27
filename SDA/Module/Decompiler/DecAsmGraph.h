@@ -74,7 +74,7 @@ namespace CE::Decompiler
 
 		int getMaxOffset();
 
-		static void CountLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGraphBlock*>& path);
+		static void CalculateLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGraphBlock*>& path);
 	};
 
 	InstructionMapType getInstructionsAtAddress(void* addr, int size);

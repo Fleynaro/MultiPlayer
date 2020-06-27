@@ -8,13 +8,14 @@ namespace CE::Decompiler
 	class Decompiler
 	{
 		struct DecompiledBlockInfo {
-			PrimaryTree::Block* m_treeBlock = nullptr;
+			AsmGraphBlock* m_asmBlock = nullptr;
+			PrimaryTree::Block* m_decBlock = nullptr;
 			ExecutionBlockContext* m_execBlockCtx = nullptr;
 
 			DecompiledBlockInfo() = default;
 
 			bool isDecompiled() {
-				return m_treeBlock != nullptr;
+				return m_decBlock != nullptr;
 			}
 		};
 	public:
@@ -38,13 +39,14 @@ namespace CE::Decompiler
 		}
 
 		void start() {
-			auto startBlock = m_asmGraph->getStartBlock();
-			std::multiset<AsmGraphBlock*> visitedBlocks;
 			decompileAllBlocks();
 			setAllBlocksLinks();
+			buildDecompiledGraph();
+
+			auto startBlock = m_decompiledGraph->getStartBlock();
+			std::multiset<PrimaryTree::Block*> visitedBlocks;
 			resolveExternalSymbols(startBlock, visitedBlocks);
 			createSymbolAssignments();
-			buildDecompiledGraph();
 		}
 
 		void buildDecompiledGraph();
@@ -52,59 +54,53 @@ namespace CE::Decompiler
 		std::map<PrimaryTree::Block*, AsmGraphBlock*> getAsmBlocks() {
 			std::map<PrimaryTree::Block*, AsmGraphBlock*> result;
 			for (auto& it : m_decompiledBlocks) {
-				result[it.second.m_treeBlock] = it.first;
+				result[it.second.m_decBlock] = it.second.m_asmBlock;
 			}
 			return result;
-		}
-
-		void printDebug() {
-			for (auto& it : m_asmGraph->m_blocks) {
-				auto block = &it.second;
-				m_decompiledBlocks[block].m_treeBlock->printDebug();
-				printf("Level %i\n================\n", block->m_level);
-			}
 		}
 	private:
 		AsmGraph* m_asmGraph;
 		DecompiledCodeGraph* m_decompiledGraph;
 		InstructionInterpreterDispatcher* m_instructionInterpreterDispatcher;
 
-		std::map<AsmGraphBlock*, DecompiledBlockInfo> m_decompiledBlocks;
+		std::map<AsmGraphBlock*, PrimaryTree::Block*> m_asmToDecBlocks;
+		std::map<PrimaryTree::Block*, DecompiledBlockInfo> m_decompiledBlocks;
 		
 		void decompileAllBlocks() {
 			for (auto& it : m_asmGraph->m_blocks) {
-				auto block = &it.second;
+				auto asmBlock = &it.second;
 				DecompiledBlockInfo decompiledBlock;
-				decompiledBlock.m_treeBlock = new PrimaryTree::Block(block->m_level);
-				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, block->getMinOffset());
+				decompiledBlock.m_asmBlock = asmBlock;
+				decompiledBlock.m_decBlock = new PrimaryTree::Block(asmBlock->m_level);
+				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, asmBlock->getMinOffset());
 
-				for (auto off : block->getInstructions()) {
+				for (auto off : asmBlock->getInstructions()) {
 					auto instr = m_asmGraph->m_instructions[off];
-					m_instructionInterpreterDispatcher->execute(decompiledBlock.m_treeBlock, decompiledBlock.m_execBlockCtx, instr);
+					m_instructionInterpreterDispatcher->execute(decompiledBlock.m_decBlock, decompiledBlock.m_execBlockCtx, instr);
 				}
 
-				m_decompiledBlocks[block] = decompiledBlock;
+				m_asmToDecBlocks[asmBlock] = decompiledBlock.m_decBlock;
+				m_decompiledBlocks[decompiledBlock.m_decBlock] = decompiledBlock;
 			}
 		}
 
 		void setAllBlocksLinks() {
 			for (const auto& it : m_decompiledBlocks) {
-				auto asmBlock = it.first;
 				auto& decBlockInfo = it.second;
 
 				for (const auto& link : {
-					std::make_pair(&decBlockInfo.m_treeBlock->m_nextNearBlock, asmBlock->getNextNearBlock()),
-					std::make_pair(&decBlockInfo.m_treeBlock->m_nextFarBlock, asmBlock->getNextFarBlock()) })
+					std::make_pair(&decBlockInfo.m_decBlock->m_nextNearBlock, decBlockInfo.m_asmBlock->getNextNearBlock()),
+					std::make_pair(&decBlockInfo.m_decBlock->m_nextFarBlock, decBlockInfo.m_asmBlock->getNextFarBlock()) })
 				{
 					if (!link.second)
 						continue;
-					auto block = *link.first = m_decompiledBlocks[link.second].m_treeBlock;
-					block->m_blocksReferencedTo.push_back(decBlockInfo.m_treeBlock);
+					auto block = *link.first = m_asmToDecBlocks[link.second];
+					block->m_blocksReferencedTo.push_back(decBlockInfo.m_decBlock);
 				}
 			}
 		}
 
-		void resolveExternalSymbols(AsmGraphBlock* block, std::multiset<AsmGraphBlock*>& visitedBlocks) {
+		void resolveExternalSymbols(PrimaryTree::Block* block, std::multiset<PrimaryTree::Block*>& visitedBlocks) {
 			if (visitedBlocks.count(block) == block->getRefHighBlocksCount()) {
 				auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
 				for (auto it = ctx->m_externalSymbols.begin(); it != ctx->m_externalSymbols.end(); it ++) {
@@ -128,7 +124,7 @@ namespace CE::Decompiler
 					}
 				}
 				
-				for (auto nextBlock : { block->getNextNearBlock(), block->getNextFarBlock() }) {
+				for (auto nextBlock : { block->m_nextNearBlock, block->m_nextFarBlock }) {
 					if (nextBlock == nullptr)
 						continue;
 					if(nextBlock->m_level <= block->m_level)
@@ -147,7 +143,7 @@ namespace CE::Decompiler
 		};
 
 		struct RegSymbol {
-			std::map<AsmGraphBlock*, BlockRegSymbol> blocks;
+			std::map<PrimaryTree::Block*, BlockRegSymbol> blocks;
 			std::list<std::pair<int, ExprTree::SymbolLeaf*>> symbols;
 			int requiestId = 0;
 		};
@@ -155,7 +151,7 @@ namespace CE::Decompiler
 		std::map<int, RegSymbol> m_registersToSymbol;
 		RegSymbol* m_curRegSymbol = nullptr;
 
-		void requestRegisterParts(AsmGraphBlock* block, const Register& reg, uint64_t& mask, RegisterParts& outRegParts, bool isFound = true) {
+		void requestRegisterParts(PrimaryTree::Block* block, const Register& reg, uint64_t& mask, RegisterParts& outRegParts, bool isFound = true) {
 			if (isFound) {
 				auto it = m_decompiledBlocks.find(block);
 				if (it != m_decompiledBlocks.end()) {
@@ -181,8 +177,8 @@ namespace CE::Decompiler
 
 			uint64_t needReadMask = 0x0;
 			uint64_t hasReadMask = 0x0;
-			std::map<AsmGraphBlock*, uint64_t> blockPressure;
-			AsmGraphBlock* nextBlock = nullptr;
+			std::map<PrimaryTree::Block*, uint64_t> blockPressure;
+			PrimaryTree::Block* nextBlock = nullptr;
 			auto isSuccess = gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock);
 			if (needReadMask) {
 				//todo: we should create symbol anyway [1]: e.g. loop with simple 2 branches (if() mov eax, 1 else mov eax, 2)
@@ -252,8 +248,7 @@ namespace CE::Decompiler
 				auto& regSymbol = it.second;
 				for (auto symbol : regSymbol.symbols) {
 					for (const auto& it2 : regSymbol.blocks) {
-						auto block = it2.first;
-						auto& decompiledBlock = m_decompiledBlocks[block];
+						auto decBlock = it2.first;
 						auto& blockRegSymbol = it2.second;
 						if (symbol.first == blockRegSymbol.symbolId) {
 							auto symbolLeaf = symbol.second;
@@ -271,14 +266,14 @@ namespace CE::Decompiler
 							}
 
 							auto expr = Register::CreateExprFromRegisterParts(regParts, symbolMask);
-							decompiledBlock.m_treeBlock->addLine(symbolLeaf, expr);
+							decBlock->addLine(symbolLeaf, expr);
 						}
 					}
 				}
 			}
 		}
 
-		void gatherRegisterPartsInBlock(AsmGraphBlock* block, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
+		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
 			auto remainToReadMask = needReadMask & ~hasReadMask;
 			auto it = m_curRegSymbol->blocks.find(block);
 			if (it != m_curRegSymbol->blocks.end()) {
@@ -332,9 +327,9 @@ namespace CE::Decompiler
 			}
 		}
 
-		bool gatherBlocksWithRegisters(AsmGraphBlock* startBlock, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, AsmGraphBlock*& nextBlock) {
-			std::map<AsmGraphBlock*, uint64_t> blockPressures;
-			std::set<AsmGraphBlock*> handledBlocks;
+		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, PrimaryTree::Block*& nextBlock) {
+			std::map<PrimaryTree::Block*, uint64_t> blockPressures;
+			std::set<PrimaryTree::Block*> handledBlocks;
 			blockPressures[startBlock] = 0x1000000000000000;
 			bool isStartBlock = true;
 

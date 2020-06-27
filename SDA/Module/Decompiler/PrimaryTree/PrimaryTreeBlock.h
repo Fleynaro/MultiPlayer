@@ -38,8 +38,38 @@ namespace CE::Decompiler::PrimaryTree
 			: m_level(level)
 		{}
 
+		~Block() {
+			for (auto refBlock : m_blocksReferencedTo) {
+				if (refBlock->m_nextNearBlock == this)
+					refBlock->m_nextNearBlock = refBlock->m_nextFarBlock;
+				else if (refBlock->m_nextFarBlock == this)
+					refBlock->m_nextFarBlock = nullptr;
+			}
+
+			if (m_noJmpCond) {
+				m_noJmpCond->removeBy(this);
+			}
+
+			if (m_nextFarBlock) {
+				m_nextFarBlock->m_blocksReferencedTo.remove(this);
+			}
+
+			if (m_nextNearBlock) {
+				m_nextNearBlock->m_blocksReferencedTo.remove(this);
+			}
+		}
+
 		bool isCondition() {
 			return m_nextNearBlock != nullptr && m_nextFarBlock != nullptr;
+		}
+
+		int getRefHighBlocksCount() {
+			int count = 0;
+			for (auto refBlock : m_blocksReferencedTo) {
+				if (refBlock->m_level < m_level)
+					count++;
+			}
+			return count;
 		}
 
 		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {

@@ -141,7 +141,7 @@ void AsmGraph::build() {
 	}
 
 	std::list<AsmGraphBlock*> path;
-	CountLevelsForAsmGrapBlocks(getStartBlock(), path);
+	CalculateLevelsForAsmGrapBlocks(getStartBlock(), path);
 }
 
 AsmGraphBlock* AsmGraph::getBlockAtOffset(int offset) {
@@ -180,7 +180,7 @@ int AsmGraph::getMaxOffset() {
 	return lastInstr.first + lastInstr.second.length;
 }
 
-void AsmGraph::CountLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGraphBlock*>& path) {
+void AsmGraph::CalculateLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGraphBlock*>& path) {
 	if (block == nullptr)
 		return;
 
@@ -193,8 +193,8 @@ void AsmGraph::CountLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGr
 
 	path.push_back(block);
 	block->m_level = max(block->m_level, (int)path.size());
-	CountLevelsForAsmGrapBlocks(block->getNextNearBlock(), path);
-	CountLevelsForAsmGrapBlocks(block->getNextFarBlock(), path);
+	CalculateLevelsForAsmGrapBlocks(block->getNextNearBlock(), path);
+	CalculateLevelsForAsmGrapBlocks(block->getNextFarBlock(), path);
 	path.pop_back();
 }
 
@@ -303,25 +303,28 @@ void func22() {
 		}
 	}*/
 
-	/*if (b == 10 || b == 20 || b == 30 || b == 40) {
-		b++;
-	}*/
 	/*if (b == 10 && b == 20 && b == 30 && b == 40) {
 		b++;
 	}*/
-	if (b == 10 && b == 20 || b == 30 && b == 40 && b == 50 || b == 60) {
+	/*if (b == 10 && b == 20 || b == 30 && b == 40 && b == 50 || b == 60) {
 		b++;
-	}
+	}*/
+
+	//SWITCH!!!
+
 	b = 0;
 
-	/*while (b < 5) {
+	while (b == 10 || (b == 20 && b == 30)) {
 		b++;
 		if (b == 100) {
 			while (b < 500) {
 				b+=2;
 			}
 		}
-	}*/
+
+
+		b += func11(10) + func11(5);
+	}
 }
 
 #define SHOW_ASM 0
@@ -333,7 +336,7 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 	for (auto block : blockList->getBlocks()) {
 		auto decBlock = block->m_decBlock;
 		auto asmBlock = asmBlocks[decBlock];
-		printf("%s//block %s (level %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), asmBlock->m_level);
+		printf("%s//block %s (level %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), decBlock->m_level);
 		
 		if (SHOW_ASM) {
 			asmBlock->printDebug(nullptr, tabStr, false);
