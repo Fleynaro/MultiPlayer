@@ -41,27 +41,6 @@ ZydisDecodedInstruction& AsmGraphBlock::getLastInstruction() {
 	return m_asmGraph->m_instructions[*std::prev(m_instructions.end())];
 }
 
-bool AsmGraphBlock::isCondition() {
-	return m_nextNearBlock != nullptr && m_nextFarBlock != nullptr;
-}
-
-bool AsmGraphBlock::isWhile() {
-	return (int)m_blocksReferencedTo.size() != getRefHighBlocksCount();
-}
-
-bool AsmGraphBlock::isEnd() {
-	return m_nextNearBlock == nullptr && m_nextFarBlock == nullptr;
-}
-
-int AsmGraphBlock::getRefHighBlocksCount() {
-	int count = 0;
-	for (auto refBlock : m_blocksReferencedTo) {
-		if (refBlock->m_level < m_level)
-			count++;
-	}
-	return count;
-}
-
 void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr = "", bool extraInfo = true) {
 	ZydisFormatter formatter;
 	ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
@@ -325,6 +304,8 @@ void func22() {
 
 		b += func11(10) + func11(5);
 	}
+
+	b = 100;
 }
 
 #define SHOW_ASM 0
@@ -342,28 +323,31 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 			asmBlock->printDebug(nullptr, tabStr, false);
 			printf("%s------------\n", tabStr.c_str());
 		}
-		if (decBlock) {
-			decBlock->printDebug(false, tabStr);
-		}
+		decBlock->printDebug(false, tabStr);
 
 		if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
-			if (decBlock) {
-				printf("%sif(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
+			if (auto whileLoop = dynamic_cast<LinearView::WhileLoop*>(block)) {
+				printf("%swhile(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
+				ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
+				printf("%s}\n", tabStr.c_str());
 			}
 			else {
-				printf("%sif(...) {\n", tabStr.c_str());
+				printf("%sif(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
+				ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
+				if (true || condition->m_elseBranch->getBlocks().size() > 0) {
+					printf("%s} else {\n", tabStr.c_str());
+					ShowCode(condition->m_elseBranch, asmBlocks, level + 1);
+				}
+				printf("%s}\n", tabStr.c_str());
 			}
-			ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
-			if (true || condition->m_elseBranch->getBlocks().size() > 0) {
-				printf("%s} else {\n", tabStr.c_str());
-				ShowCode(condition->m_elseBranch, asmBlocks, level + 1);
-			}
-			printf("%s}\n", tabStr.c_str());
 		}
 	}
 
 	if (blockList->m_goto != nullptr) {
 		printf("%s//goto to block %s\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlocks[blockList->m_goto->m_decBlock]->ID).c_str());
+	}
+	else {
+		printf("%s//goto is null\n", tabStr.c_str());
 	}
 }
 

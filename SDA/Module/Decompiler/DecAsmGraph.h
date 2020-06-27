@@ -35,14 +35,6 @@ namespace CE::Decompiler
 
 		ZydisDecodedInstruction& getLastInstruction();
 
-		bool isCondition();
-
-		bool isWhile();
-
-		bool isEnd();
-
-		int getRefHighBlocksCount();
-
 		void printDebug(void* addr, const std::string& tabStr, bool extraInfo);
 	private:
 		AsmGraph* m_asmGraph;

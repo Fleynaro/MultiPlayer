@@ -64,7 +64,9 @@ namespace CE::Decompiler::LinearView
 	class WhileLoop : public Condition
 	{
 	public:
-
+		WhileLoop(PrimaryTree::Block* decBlock)
+			: Condition(decBlock)
+		{}
 	};
 
 
@@ -80,7 +82,8 @@ namespace CE::Decompiler::LinearView
 			
 			m_blockList = new BlockList;
 			std::set<PrimaryTree::Block*> usedBlocks;
-			convert(m_blockList, startBlock, usedBlocks);
+			std::set<Condition*> usedConditions;
+			convert(m_blockList, startBlock, usedBlocks, usedConditions);
 
 			for (auto it : m_goto) {
 				auto block = m_blockList->findBlock(it.second);
@@ -98,44 +101,56 @@ namespace CE::Decompiler::LinearView
 		std::list<std::pair<BlockList*, PrimaryTree::Block*>> m_goto;
 		BlockList* m_blockList;
 
-		void convert(BlockList* blockList, PrimaryTree::Block* block, std::set<PrimaryTree::Block*>& usedBlocks) {
-			while (block != nullptr) {
-				if (usedBlocks.count(block) != 0) {
-					m_goto.push_back(std::make_pair(blockList, block));
+		void convert(BlockList* blockList, PrimaryTree::Block* decBlock, std::set<PrimaryTree::Block*>& usedBlocks, std::set<Condition*>& usedConditions) {
+			while (decBlock != nullptr) {
+				if (usedBlocks.count(decBlock) != 0) {
+					m_goto.push_back(std::make_pair(blockList, decBlock));
 					break;
 				}
-				PrimaryTree::Block* nextBlock = nullptr;
+				PrimaryTree::Block* nextDecBlock = nullptr;
 
-				if (block->isCondition()) {
-					blockList->addBlock(new Condition(block));
+				if (decBlock->isCondition()) {
+					if (decBlock->isWhile()) {
+						blockList->addBlock(new WhileLoop(decBlock));
+					}
+					else {
+						blockList->addBlock(new Condition(decBlock));
+					}
 
-					auto endBlock = getEndBlockOfLoop(block);
+					auto endBlock = getEndBlockOfLoop(decBlock);
 					if (endBlock != nullptr)
-						nextBlock = endBlock;
+						nextDecBlock = endBlock;
 				}
 				else {
-					blockList->addBlock(new Block(block));
-					for (auto it : { block->m_nextNearBlock, block->m_nextFarBlock }) {
+					blockList->addBlock(new Block(decBlock));
+					for (auto it : { decBlock->m_nextNearBlock, decBlock->m_nextFarBlock }) {
 						if (it == nullptr)
 							continue;
-						if (it->m_level - block->m_level != 1) {
+						if (it->m_level - decBlock->m_level != 1) {
 							m_goto.push_back(std::make_pair(blockList, it));
 							continue;
 						}
 
-						nextBlock = it;
+						nextDecBlock = it;
 						break;
 					}
 				}
 
-				usedBlocks.insert(block);
-				block = nextBlock;
+				usedBlocks.insert(decBlock);
+				decBlock = nextDecBlock;
 			}
 
-			for (auto it : blockList->getBlocks()) {
-				if (auto condition = dynamic_cast<Condition*>(it)) {
-					convert(condition->m_mainBranch, condition->m_decBlock->m_nextNearBlock, usedBlocks);
-					convert(condition->m_elseBranch, condition->m_decBlock->m_nextFarBlock, usedBlocks);
+			for (auto block : blockList->getBlocks()) {
+				if (auto condition = dynamic_cast<Condition*>(block)) {
+					if (usedConditions.find(condition) == usedConditions.end()) {
+						usedConditions.insert(condition);
+						convert(condition->m_mainBranch, condition->m_decBlock->m_nextNearBlock, usedBlocks, usedConditions);
+						auto elseBranch = condition->m_elseBranch;
+						if (auto whileLoop = dynamic_cast<WhileLoop*>(block)) {
+							elseBranch = blockList;
+						}
+						convert(elseBranch, condition->m_decBlock->m_nextFarBlock, usedBlocks, usedConditions);
+					}
 				}
 			}
 		}
