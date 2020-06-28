@@ -78,7 +78,7 @@ namespace CE::Decompiler::Symbol
 		{}
 
 		std::string printDebug() override {
-			return "[stack_"+ Generic::String::NumberToHex(m_stackOffset) +"_"+ std::to_string(getSize() * 8) +"]";
+			return "[stack_"+ Generic::String::NumberToHex(-m_stackOffset) +"_"+ std::to_string(getSize() * 8) +"]";
 		}
 	};
 

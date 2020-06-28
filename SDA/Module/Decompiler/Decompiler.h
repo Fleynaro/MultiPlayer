@@ -298,7 +298,7 @@ namespace CE::Decompiler
 			if (pressure == 0x1000000000000000) { //to symbols assignments be less
 				for (auto it = regParts.begin(); it != regParts.end(); it++) {
 					if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>((*it)->m_expr)) {
-						if (auto symbol = dynamic_cast<Symbol::StackVariable*>(symbolLeaf->m_symbol)) {
+						if (auto symbol = dynamic_cast<Symbol::LocalVariable*>(symbolLeaf->m_symbol)) {
 							mask |= (*it)->m_maskToChange;
 							regParts.erase(it);
 						}

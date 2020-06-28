@@ -371,6 +371,7 @@
     <ClInclude Include="Module\Decompiler\Interpreter\MovementInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\StackInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\UncondJmpInstructionInterpreter.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\DecGraphOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprOptimization.h" />
     <ClInclude Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.h" />
     <ClInclude Include="Module\Decompiler\Symbol.h" />

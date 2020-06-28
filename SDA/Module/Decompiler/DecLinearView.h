@@ -112,7 +112,7 @@ namespace CE::Decompiler::LinearView
 
 				if (decBlock->isCondition()) {
 					Condition* cond;
-					if (decBlock->isWhile()) {
+					if (false && decBlock->isWhile()) {
 						cond = new WhileLoop(decBlock);
 					}
 					else {
@@ -285,7 +285,7 @@ namespace CE::Decompiler::LinearView
 
 				if (decBlock->isCondition()) {
 					Condition* cond;
-					if (decBlock->isWhile()) {
+					if (false && decBlock->isWhile()) {
 						cond = new WhileLoop(decBlock);
 					}
 					else {

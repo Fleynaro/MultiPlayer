@@ -250,6 +250,7 @@ void ff() {
 
 #include "Decompiler.h"
 #include "DecLinearView.h"
+#include "Optimization/DecGraphOptimization.h"
 
 int gVarrrr = 100;
 
@@ -407,7 +408,7 @@ void CE::Decompiler::test() {
 
 	void* addr;
 	int size;
-	if (true) {
+	if (false) {
 		addr = &func22;
 		size = calculateFunctionSize2((byte*)addr);
 	}
@@ -434,7 +435,7 @@ void CE::Decompiler::test() {
 	};
 	decompiler->start();
 	//decompiler->printDebug();
-	Optimization::OptimizeDecompiledGraph(decCodeGraph);
+	//Optimization::OptimizeDecompiledGraph(decCodeGraph);
 
 	LinearView::Converter2 converter(decCodeGraph);
 	converter.start();
