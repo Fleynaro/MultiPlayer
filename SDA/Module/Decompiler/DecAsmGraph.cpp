@@ -436,7 +436,7 @@ void CE::Decompiler::test() {
 	//decompiler->printDebug();
 	Optimization::OptimizeDecompiledGraph(decCodeGraph);
 
-	LinearView::Converter converter(decCodeGraph);
+	LinearView::Converter2 converter(decCodeGraph);
 	converter.start();
 	
 	auto asmBlocks = decompiler->getAsmBlocks();

@@ -45,6 +45,10 @@ namespace CE::Decompiler
 			return m_sameRegisters.begin()->first;
 		}
 
+		int getSize() const {
+			return GetBitCountOfMask(m_mask) / 8;
+		}
+
 		static int GetShiftValueOfMask(uint64_t mask) {
 			int result = 0;
 			for (auto m = mask; int(m & 0xF) == 0; m = m >> 4) {

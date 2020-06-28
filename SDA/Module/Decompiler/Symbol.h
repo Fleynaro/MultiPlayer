@@ -22,76 +22,103 @@ namespace CE::Decompiler::Symbol
 		virtual std::string printDebug() = 0;
 	};
 
-	class GlobalVar : public Symbol
+	class Variable : public Symbol
 	{
 	public:
-		int m_offset;
-
-		GlobalVar(int offset, uint64_t )
-			: m_offset(offset)
-		{}
-
-		std::string printDebug() override {
-			return "[global:" + std::to_string(m_offset) + "]";
-		}
-	};
-
-	class LocalStackVar : public Symbol
-	{
-	public:
-		int m_stackOffset;
-		int m_size;
-
-		LocalStackVar(int stackOffset, int size)
-			: m_stackOffset(stackOffset), m_size(size)
+		Variable(int size)
+			: m_size(size)
 		{}
 
 		int getSize() override {
 			return m_size;
 		}
 
+	private:
+		int m_size;
+	};
+
+	class GlobalVariable : public Variable
+	{
+	public:
+		int m_offset;
+
+		GlobalVariable(int offset, int size)
+			: m_offset(offset), Variable(size)
+		{}
+
 		std::string printDebug() override {
-			return "[stack_"+ Generic::String::NumberToHex(m_stackOffset) +"_"+ std::to_string(m_size * 8) +"]";
+			return "[global_" + std::to_string(m_offset) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 
-	class LocalRegVar : public Symbol
+	class LocalVariable : public Variable
+	{
+	public:
+		int m_id;
+
+		LocalVariable(int size)
+			: Variable(size)
+		{
+			static int id = 1;
+			m_id = id++;
+		}
+
+		std::string printDebug() override {
+			return "[var_" + Generic::String::NumberToHex(m_id) + "_" + std::to_string(getSize() * 8) + "]";
+		}
+	};
+
+	class StackVariable : public Variable
+	{
+	public:
+		int m_stackOffset;
+
+		StackVariable(int stackOffset, int size)
+			: m_stackOffset(stackOffset), Variable(size)
+		{}
+
+		std::string printDebug() override {
+			return "[stack_"+ Generic::String::NumberToHex(m_stackOffset) +"_"+ std::to_string(getSize() * 8) +"]";
+		}
+	};
+
+	class RegisterVariable : public Variable
 	{
 	public:
 		ZydisRegister m_register;
 
-		LocalRegVar(ZydisRegister reg)
-			: m_register(reg)
+		RegisterVariable(ZydisRegister reg, int size)
+			: m_register(reg), Variable(size)
 		{}
 
 		std::string printDebug() override {
-			return "[reg_" + std::string(ZydisRegisterGetString(m_register)) + "]";
+			return "[reg_" + std::string(ZydisRegisterGetString(m_register)) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 
-	class FunctionResultVar : public Symbol
+	class ParameterVariable : public Variable
+	{
+	public:
+		int m_index = 0;
+
+		ParameterVariable(int index, int size)
+			: m_index(index), Variable(size)
+		{}
+
+		std::string printDebug() override {
+			return "[param_" + std::to_string(m_index) + "_" + std::to_string(getSize() * 8) + "]";
+		}
+	};
+
+	class FunctionResultVar : public Variable
 	{
 	public:
 		ExprTree::FunctionCallContext* m_funcCallContext;
 
-		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext)
-			: m_funcCallContext(funcCallContext)
+		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext, int size)
+			: m_funcCallContext(funcCallContext), Variable(size)
 		{}
 
 		std::string printDebug() override;
-	};
-
-	class Parameter : public Symbol
-	{
-	public:
-		int m_idx = 0;
-		bool m_isVector;
-		Parameter(int idx, bool isVector = false)
-			: m_idx(idx), m_isVector(isVector)
-		{}
-
-		std::string printDebug() override {
-			return "[param_" + std::to_string(m_idx) + "]";
-		}
 	};
 };

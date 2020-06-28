@@ -223,7 +223,7 @@ namespace CE::Decompiler
 				}
 			}*/
 
-			auto symbol = new Symbol::LocalStackVar(rand(), Register::GetBitCountOfMask(needReadMask) / 8);
+			auto symbol = new Symbol::LocalVariable(Register::GetBitCountOfMask(needReadMask) / 8);
 			auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 			regSymbol.symbols.push_back(std::make_pair(regSymbol.requiestId, symbolLeaf));
 
@@ -298,7 +298,7 @@ namespace CE::Decompiler
 			if (pressure == 0x1000000000000000) { //to symbols assignments be less
 				for (auto it = regParts.begin(); it != regParts.end(); it++) {
 					if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>((*it)->m_expr)) {
-						if (auto symbol = dynamic_cast<Symbol::LocalStackVar*>(symbolLeaf->m_symbol)) {
+						if (auto symbol = dynamic_cast<Symbol::StackVariable*>(symbolLeaf->m_symbol)) {
 							mask |= (*it)->m_maskToChange;
 							regParts.erase(it);
 						}

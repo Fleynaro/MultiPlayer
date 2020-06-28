@@ -82,8 +82,7 @@ namespace CE::Decompiler::LinearView
 			
 			m_blockList = new BlockList;
 			std::set<PrimaryTree::Block*> usedBlocks;
-			std::set<Condition*> usedConditions;
-			convert(m_blockList, startBlock, usedBlocks, usedConditions);
+			convert(m_blockList, startBlock, usedBlocks);
 
 			for (auto it : m_goto) {
 				auto block = m_blockList->findBlock(it.second);
@@ -101,7 +100,9 @@ namespace CE::Decompiler::LinearView
 		std::list<std::pair<BlockList*, PrimaryTree::Block*>> m_goto;
 		BlockList* m_blockList;
 
-		void convert(BlockList* blockList, PrimaryTree::Block* decBlock, std::set<PrimaryTree::Block*>& usedBlocks, std::set<Condition*>& usedConditions) {
+		void convert(BlockList* blockList, PrimaryTree::Block* decBlock, std::set<PrimaryTree::Block*>& usedBlocks) {
+			std::list<Condition*> conditions;
+			
 			while (decBlock != nullptr) {
 				if (usedBlocks.count(decBlock) != 0) {
 					m_goto.push_back(std::make_pair(blockList, decBlock));
@@ -110,12 +111,15 @@ namespace CE::Decompiler::LinearView
 				PrimaryTree::Block* nextDecBlock = nullptr;
 
 				if (decBlock->isCondition()) {
+					Condition* cond;
 					if (decBlock->isWhile()) {
-						blockList->addBlock(new WhileLoop(decBlock));
+						cond = new WhileLoop(decBlock);
 					}
 					else {
-						blockList->addBlock(new Condition(decBlock));
+						cond = new Condition(decBlock);
 					}
+					blockList->addBlock(cond);
+					conditions.push_back(cond);
 
 					auto endBlock = getEndBlockOfLoop(decBlock);
 					if (endBlock != nullptr)
@@ -140,18 +144,13 @@ namespace CE::Decompiler::LinearView
 				decBlock = nextDecBlock;
 			}
 
-			for (auto block : blockList->getBlocks()) {
-				if (auto condition = dynamic_cast<Condition*>(block)) {
-					if (usedConditions.find(condition) == usedConditions.end()) {
-						usedConditions.insert(condition);
-						convert(condition->m_mainBranch, condition->m_decBlock->m_nextNearBlock, usedBlocks, usedConditions);
-						auto elseBranch = condition->m_elseBranch;
-						if (auto whileLoop = dynamic_cast<WhileLoop*>(block)) {
-							elseBranch = blockList;
-						}
-						convert(elseBranch, condition->m_decBlock->m_nextFarBlock, usedBlocks, usedConditions);
-					}
+			for (auto condition : conditions) {
+				convert(condition->m_mainBranch, condition->m_decBlock->m_nextNearBlock, usedBlocks);
+				auto elseBranch = condition->m_elseBranch;
+				if (auto whileLoop = dynamic_cast<WhileLoop*>(condition)) {
+					elseBranch = blockList;
 				}
+				convert(elseBranch, condition->m_decBlock->m_nextFarBlock, usedBlocks);
 			}
 		}
 
@@ -274,18 +273,28 @@ namespace CE::Decompiler::LinearView
 		std::list<std::pair<BlockList*, PrimaryTree::Block*>> m_goto;
 		BlockList* m_blockList;
 
-		void convert(BlockList* blockList, PrimaryTree::Block* block, std::set<PrimaryTree::Block*>& usedBlocks) {
-			while (block != nullptr) {
-				if (usedBlocks.count(block) != 0) {
-					m_goto.push_back(std::make_pair(blockList, block));
+		void convert(BlockList* blockList, PrimaryTree::Block* decBlock, std::set<PrimaryTree::Block*>& usedBlocks) {
+			std::list<Condition*> conditions;
+			
+			while (decBlock != nullptr) {
+				if (usedBlocks.count(decBlock) != 0) {
+					m_goto.push_back(std::make_pair(blockList, decBlock));
 					break;
 				}
 				PrimaryTree::Block* nextBlock = nullptr;
 
-				if (block->isCondition()) {
-					blockList->addBlock(new Condition(block));
+				if (decBlock->isCondition()) {
+					Condition* cond;
+					if (decBlock->isWhile()) {
+						cond = new WhileLoop(decBlock);
+					}
+					else {
+						cond = new Condition(decBlock);
+					}
+					blockList->addBlock(cond);
+					conditions.push_back(cond);
 
-					auto it = m_loops.find(block);
+					auto it = m_loops.find(decBlock);
 					if (it != m_loops.end()) {
 						auto& loop = it->second;
 						for (auto it : loop.m_blocks) {
@@ -298,22 +307,24 @@ namespace CE::Decompiler::LinearView
 					}
 				}
 				else {
-					blockList->addBlock(new Block(block));
-					for (auto it : { block->m_nextNearBlock, block->m_nextFarBlock }) {
+					blockList->addBlock(new Block(decBlock));
+					for (auto it : { decBlock->m_nextNearBlock, decBlock->m_nextFarBlock }) {
 						if (it != nullptr)
 							nextBlock = it;
 					}
 				}
 
-				usedBlocks.insert(block);
-				block = nextBlock;
+				usedBlocks.insert(decBlock);
+				decBlock = nextBlock;
 			}
 
-			for (auto it : blockList->getBlocks()) {
-				if (auto condition = dynamic_cast<Condition*>(it)) {
-					convert(condition->m_mainBranch, condition->m_decBlock->m_nextNearBlock, usedBlocks);
-					convert(condition->m_elseBranch, condition->m_decBlock->m_nextFarBlock, usedBlocks);
+			for (auto condition : conditions) {
+				convert(condition->m_mainBranch, condition->m_decBlock->m_nextNearBlock, usedBlocks);
+				auto elseBranch = condition->m_elseBranch;
+				if (auto whileLoop = dynamic_cast<WhileLoop*>(condition)) {
+					elseBranch = blockList;
 				}
+				convert(elseBranch, condition->m_decBlock->m_nextFarBlock, usedBlocks);
 			}
 		}
 

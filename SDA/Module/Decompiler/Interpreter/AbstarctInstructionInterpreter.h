@@ -82,18 +82,17 @@ namespace CE::Decompiler
 			}
 		}
 
-		void setExprToRegisterDst(ZydisRegister dstReg, ExprTree::Node* srcExpr, bool isSettingFlags = true) {
-			auto reg = Register(dstReg);
-			m_ctx->setRegister(reg, srcExpr);
+		void setExprToRegisterDst(const Register& dstReg, ExprTree::Node* srcExpr, bool isSettingFlags = true) {
+			m_ctx->setRegister(dstReg, srcExpr);
 			if (isSettingFlags)
-				setFlags(srcExpr, reg.m_mask);
+				setFlags(srcExpr, dstReg.m_mask);
 
-			for (auto sameReg : reg.m_sameRegisters) {
-				if (sameReg.first == dstReg)
+			for (auto sameReg : dstReg.m_sameRegisters) {
+				if (sameReg.first == dstReg.m_reg)
 					continue;
 				auto it = m_ctx->m_registers.find(sameReg.first);
 				if (it != m_ctx->m_registers.end()) {
-					if (reg.m_mask > sameReg.second) {
+					if (dstReg.m_mask > sameReg.second) {
 						it->second->removeBy(m_ctx);
 					}
 				}

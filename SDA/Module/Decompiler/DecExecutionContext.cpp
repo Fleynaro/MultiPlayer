@@ -59,7 +59,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegister(const Register& reg) {
 	auto mask = reg.m_mask;
 	auto regParts = getRegisterParts(reg, mask);
 	if (mask) {
-		auto symbol = new Symbol::LocalRegVar(reg.m_reg);
+		auto symbol = new Symbol::RegisterVariable(reg.m_reg, reg.getSize());
 		auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 		auto externalSymbol = new ExternalSymbol(reg, mask, symbolLeaf, regParts);
 		m_externalSymbols.push_back(externalSymbol);
