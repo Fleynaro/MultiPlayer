@@ -346,7 +346,7 @@ namespace CE::Decompiler::LinearView
 
 				if (visitedBlock.m_enterCount >= 2) {
 					blocks.sort([](const PrimaryTree::Block* block1, const PrimaryTree::Block* block2) {
-						return block1->m_level < block2->m_level&& block1 < block2;
+						return block1->m_level < block2->m_level && block1 != block2; //todo: here there are some issues
 						});
 
 					//detect a loop and remove duplicates

@@ -48,6 +48,18 @@ namespace CE::Decompiler
 				}
 				break;
 			}
+
+			case ZYDIS_MNEMONIC_BT: {
+				Operand op1(m_ctx, &m_instruction->operands[0]);
+				Operand op2(m_ctx, &m_instruction->operands[1]);
+				auto expr = new ExprTree::OperationalNode(op2.getExpr(), new ExprTree::NumberLeaf(31), ExprTree::And);
+				expr = new ExprTree::OperationalNode(op1.getExpr(), expr, ExprTree::Shr);
+				expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(1), ExprTree::And);
+				auto cond = new ExprTree::Condition(expr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Ne);
+				m_ctx->m_flags[ZYDIS_CPUFLAG_CF] = cond;
+				m_ctx->clearLastCond(); //???
+				break;
+			}
 			}
 		}
 	};

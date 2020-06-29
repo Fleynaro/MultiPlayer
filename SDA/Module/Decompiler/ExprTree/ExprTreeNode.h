@@ -21,14 +21,15 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		void replaceWith(Node* newNode) {
-			for (auto parentNode : m_parentNodes) {
+			for (auto it = m_parentNodes.begin(); it != m_parentNodes.end(); it ++) {
+				auto parentNode = *it;
 				if (newNode == dynamic_cast<Node*>(parentNode))
 					continue;
 				parentNode->replaceNode(this, newNode);
 				if (newNode != nullptr) {
 					newNode->addParentNode(parentNode);
 				}
-				m_parentNodes.remove(parentNode);
+				m_parentNodes.erase(it);
 			}
 		}
 

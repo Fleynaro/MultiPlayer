@@ -360,6 +360,8 @@ namespace CE::Decompiler
 								}
 
 								handledBlocks.insert(block);
+								if(block == startBlock)
+									isLoop = false;
 							}
 							else {
 								isLoop = false;
@@ -379,7 +381,7 @@ namespace CE::Decompiler
 
 						for (auto parentBlock : block->m_blocksReferencedTo) {
 							if (!isLoop && parentBlock->m_level >= block->m_level)
-								break;
+								continue;
 
 							if (blockPressures.find(parentBlock) == blockPressures.end()) {
 								blockPressures[parentBlock] = 0x0;

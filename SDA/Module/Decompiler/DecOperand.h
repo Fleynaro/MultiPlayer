@@ -20,7 +20,7 @@ namespace CE::Decompiler
 			}
 			else if (m_operand->type == ZYDIS_OPERAND_TYPE_MEMORY) {
 				auto expr = CreateExprMemLocation(m_ctx, m_operand->mem);
-				if (m_operand->actions != 0) {
+				if (m_operand->actions != 0) { //for LEA instruction
 					expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(m_operand->size / 0x8), ExprTree::readValue);
 				}
 				return expr;
