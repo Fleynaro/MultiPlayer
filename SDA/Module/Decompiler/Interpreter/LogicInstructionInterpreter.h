@@ -49,7 +49,8 @@ namespace CE::Decompiler
 				break;
 			}
 
-			case ZYDIS_MNEMONIC_BT: {
+			case ZYDIS_MNEMONIC_BT:
+			case ZYDIS_MNEMONIC_BTR: {
 				Operand op1(m_ctx, &m_instruction->operands[0]);
 				Operand op2(m_ctx, &m_instruction->operands[1]);
 				auto expr = new ExprTree::OperationalNode(op2.getExpr(), new ExprTree::NumberLeaf(31), ExprTree::And);

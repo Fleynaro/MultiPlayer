@@ -16,16 +16,15 @@ namespace CE::Decompiler::Optimization
 		void start() {
 			for (auto decBlock : m_decGraph->getDecompiledBlocks()) {
 				for (auto line : decBlock->getLines()) {
-					detectAllStackMemoryAddressesInExpr(line->m_destAddr);
-					detectAllStackMemoryAddressesInExpr(line->m_srcValue);
+					detectAllStackMemoryAddressesInExpr(line->m_destAddr, true);
+					detectAllStackMemoryAddressesInExpr(line->m_srcValue, false);
 				}
 				if (decBlock->m_noJmpCond != nullptr) {
-					detectAllStackMemoryAddressesInExpr(decBlock->m_noJmpCond);
+					detectAllStackMemoryAddressesInExpr(decBlock->m_noJmpCond, false);
 				}
 			}
 
 			createSymbol(m_stackMemory, [](int offset, int size) { return new Symbol::StackVariable(offset, size); });
-			createSymbol(m_stackParameterMemory, [](int offset, int size) { return new Symbol::ParameterVariable(0, size); });
 			createSymbol(m_globalMemory, [](int offset, int size) { return new Symbol::GlobalVariable(offset, size); });
 		}
 	private:
@@ -33,9 +32,9 @@ namespace CE::Decompiler::Optimization
 
 		struct MemoryAddressInfo {
 			std::set<ExprTree::OperationalNode*> m_exprs;
+			std::set<ExprTree::OperationalNode*> m_exprsToWrite;
 		};
 		std::map<int, MemoryAddressInfo> m_stackMemory;
-		std::map<int, MemoryAddressInfo> m_stackParameterMemory;
 		std::map<int, MemoryAddressInfo> m_globalMemory;
 
 		void createSymbol(const std::map<int, MemoryAddressInfo>& memory, const std::function<Symbol::Variable*(int, int)>& constructor) {
@@ -57,10 +56,12 @@ namespace CE::Decompiler::Optimization
 
 				for (auto expr : memoryAddressInfo.m_exprs) {
 					ExprTree::Node* newExpr = symbolLeaf;
-					if (auto readSizeNumber = dynamic_cast<ExprTree::NumberLeaf*>(expr->m_rightNode)) {
-						if (readSizeNumber->m_value < maxSize) {
-							auto mask = ((uint64_t)1 << (readSizeNumber->m_value * 8)) - 1;
-							newExpr = new ExprTree::OperationalNode(symbolLeaf, new ExprTree::NumberLeaf(mask), ExprTree::And);
+					if (memoryAddressInfo.m_exprsToWrite.find(expr) == memoryAddressInfo.m_exprsToWrite.end()) {
+						if (auto readSizeNumber = dynamic_cast<ExprTree::NumberLeaf*>(expr->m_rightNode)) {
+							if (readSizeNumber->m_value < maxSize) {
+								auto mask = ((uint64_t)1 << (readSizeNumber->m_value * 8)) - 1;
+								newExpr = new ExprTree::OperationalNode(symbolLeaf, new ExprTree::NumberLeaf(mask), ExprTree::And);
+							}
 						}
 					}
 					expr->replaceWith(newExpr);
@@ -69,18 +70,18 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		void detectAllStackMemoryAddressesInExpr(ExprTree::Node* node) {
+		void detectAllStackMemoryAddressesInExpr(ExprTree::Node* node, bool write) {
 			auto list = GetNextOperationalsNodesToOpimize(node);
 			for (auto expr : list) {
-				detectAllStackMemoryAddressesInExpr(expr);
+				detectAllStackMemoryAddressesInExpr(expr, write);
 			}
 		}
 
-		void detectAllStackMemoryAddressesInExpr(ExprTree::OperationalNode* expr) {
+		void detectAllStackMemoryAddressesInExpr(ExprTree::OperationalNode* expr, bool write) {
 			using namespace ExprTree;
 			auto list = GetNextOperationalsNodesToOpimize(expr);
 			for (auto it : list) {
-				detectAllStackMemoryAddressesInExpr(it);
+				detectAllStackMemoryAddressesInExpr(it, false);
 			}
 
 			if (expr->m_operation == readValue) {
@@ -91,17 +92,12 @@ namespace CE::Decompiler::Optimization
 								if (auto offsetNode = dynamic_cast<ExprTree::NumberLeaf*>(addrExpr->m_rightNode)) {
 									if (regVarSymbol->m_register == ZYDIS_REGISTER_RSP) {
 										auto offset = (int)offsetNode->m_value;
-										if (true || offset < 0) {
-											if (m_stackMemory.find(offset) == m_stackMemory.end()) {
-												m_stackMemory[offset] = MemoryAddressInfo();
-											}
-											m_stackMemory[offset].m_exprs.insert(expr);
+										if (m_stackMemory.find(offset) == m_stackMemory.end()) {
+											m_stackMemory[offset] = MemoryAddressInfo();
 										}
-										else if (offset > 0) { //todo: remove?
-											if (m_stackParameterMemory.find(offset) == m_stackParameterMemory.end()) {
-												m_stackParameterMemory[offset] = MemoryAddressInfo();
-											}
-											m_stackParameterMemory[offset].m_exprs.insert(expr);
+										m_stackMemory[offset].m_exprs.insert(expr);
+										if (write) {
+											m_stackMemory[offset].m_exprsToWrite.insert(expr);
 										}
 									}
 								}
@@ -112,18 +108,6 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 	};
-
-	/*static void CalculateMasksInDecGraph(DecompiledCodeGraph* decGraph) {
-		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
-			for (auto line : decBlock->getLines()) {
-				Optimization::CalculateMasks(line->m_destAddr);
-				Optimization::CalculateMasks(line->m_srcValue);
-			}
-			if (decBlock->m_noJmpCond != nullptr) {
-				Optimization::CalculateMasks(decBlock->m_noJmpCond);
-			}
-		}
-	}*/
 
 	static void OptimizeConditionDecBlock(Block* block) {
 		if (!block->isCondition())
@@ -193,5 +177,15 @@ namespace CE::Decompiler::Optimization
 
 		MemorySymbolization memorySymbolization(decGraph);
 		memorySymbolization.start();
+
+		//optimize expressions again after memory symbolization
+		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+			for (auto line : decBlock->getLines()) {
+				Optimization::Optimize(line->m_srcValue);
+			}
+			if (decBlock->m_noJmpCond != nullptr) {
+				Optimization::Optimize(decBlock->m_noJmpCond);
+			}
+		}
 	}
 };

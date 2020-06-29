@@ -19,7 +19,7 @@ void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* new
 	}
 
 	for (auto sameReg : reg.m_sameRegisters) {
-		auto it = m_cachedRegisters.find(reg.m_reg);
+		auto it = m_cachedRegisters.find(sameReg.first);
 		if (it != m_cachedRegisters.end()) {
 			it->second->removeBy(&m_cachedRegisters);
 		}
