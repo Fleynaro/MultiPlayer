@@ -1,5 +1,5 @@
 #pragma once
-#include "main.h"
+#include "../DecMask.h"
 
 namespace CE::Decompiler::ExprTree
 {

@@ -28,6 +28,39 @@ namespace CE::Decompiler::ExprTree
 		getBits
 	};
 
+	enum class OperationGroup {
+		None,
+		Arithmetic,
+		Logic,
+		Memory
+	};
+
+	static OperationGroup GetOperationGroup(OperationType opType) {
+		if (opType >= Add && opType <= Mod)
+			return OperationGroup::Arithmetic;
+		if (opType >= And && opType <= Shl)
+			return OperationGroup::Logic;
+		if(opType == readValue)
+			return OperationGroup::Memory;
+		return OperationGroup::None;
+	}
+
+	static bool IsOperationOverflow(OperationType opType) {
+		return opType == Add || opType == Sub || opType == Mul || opType == Shl;
+	}
+
+	static bool IsOperationSigned(OperationType opType) {
+		return GetOperationGroup(opType) == OperationGroup::Arithmetic && opType != Mod;
+	}
+
+	static bool IsOperationManipulatedWithBitVector(OperationType opType) {
+		return opType == And || opType == Or || opType == Xor;
+	}
+
+	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
+		return operation == readValue || operation == getBits;
+	}
+
 	static std::string ShowOperation(OperationType opType) {
 		switch (opType)
 		{
@@ -46,12 +79,13 @@ namespace CE::Decompiler::ExprTree
 		return "_";
 	}
 
-	class OperationalNode : public Node, public IParentNode
+	class OperationalNode : public Node, public IParentNode, public INumber
 	{
 	public:
 		Node* m_leftNode;
 		Node* m_rightNode;
 		OperationType m_operation;
+		uint64_t m_mask = -1;
 
 		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation)
 			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation)
@@ -77,6 +111,10 @@ namespace CE::Decompiler::ExprTree
 			else if (m_rightNode == node) {
 				m_rightNode = newNode;
 			}
+		}
+
+		uint64_t getMask() override {
+			return m_mask;
 		}
 
 		std::string printDebug() override {

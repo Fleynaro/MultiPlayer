@@ -4,15 +4,6 @@
 
 namespace CE::Decompiler
 {
-	static uint64_t GetMaskBySize(int size) {
-		uint64_t mask = 0x0;
-		while (size != 0) {
-			mask |= 0xFF << size;
-			size--;
-		}
-		return mask;
-	}
-
 	class AbstractInstructionInterpreter
 	{
 	public:

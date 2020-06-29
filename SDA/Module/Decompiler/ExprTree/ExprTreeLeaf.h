@@ -5,7 +5,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class SymbolLeaf : public Node
+	class SymbolLeaf : public Node, public INumber
 	{
 	public:
 		Symbol::Symbol* m_symbol;
@@ -14,12 +14,16 @@ namespace CE::Decompiler::ExprTree
 			: m_symbol(symbol)
 		{}
 
+		uint64_t getMask() override {
+			return GetMaskBySize(m_symbol->getSize());
+		}
+
 		std::string printDebug() override {
 			return m_symbol->printDebug();
 		}
 	};
 
-	class NumberLeaf : public Node
+	class NumberLeaf : public Node, public INumber
 	{
 	public:
 		uint64_t m_value;
@@ -27,6 +31,10 @@ namespace CE::Decompiler::ExprTree
 		NumberLeaf(uint64_t value)
 			: m_value(value)
 		{}
+
+		uint64_t getMask() override {
+			return m_value;
+		}
 
 		std::string printDebug() override {
 			return "0x" + Generic::String::NumberToHex(m_value) + "{"+ std::to_string((int)m_value) +"}";

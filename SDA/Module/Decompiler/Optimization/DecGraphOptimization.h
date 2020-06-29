@@ -113,6 +113,18 @@ namespace CE::Decompiler::Optimization
 		}
 	};
 
+	/*static void CalculateMasksInDecGraph(DecompiledCodeGraph* decGraph) {
+		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+			for (auto line : decBlock->getLines()) {
+				Optimization::CalculateMasks(line->m_destAddr);
+				Optimization::CalculateMasks(line->m_srcValue);
+			}
+			if (decBlock->m_noJmpCond != nullptr) {
+				Optimization::CalculateMasks(decBlock->m_noJmpCond);
+			}
+		}
+	}*/
+
 	static void OptimizeConditionDecBlock(Block* block) {
 		if (!block->isCondition())
 			return;

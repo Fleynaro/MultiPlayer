@@ -1,15 +1,12 @@
 #pragma once
 #include "../ExprTree/ExprTreeCondition.h"
+#include "../ExprTree/ExprTreeFuncCallContext.h"
 
 namespace CE::Decompiler::Optimization
 {
-	static bool IsOperationUnsupportedToCalculate(ExprTree::OperationType operation) {
-		using namespace ExprTree;
-		return operation == readValue || operation == getBits;
-	}
+	using namespace ExprTree;
 
-	static uint64_t Calculate(uint64_t op1, uint64_t op2, ExprTree::OperationType operation, bool isSigned = false) {
-		using namespace ExprTree;
+	static uint64_t Calculate(uint64_t op1, uint64_t op2, OperationType operation, bool isSigned = false) {
 		switch (operation)
 		{
 		case Add:
@@ -36,14 +33,13 @@ namespace CE::Decompiler::Optimization
 		return 0;
 	}
 
-	static std::list<ExprTree::OperationalNode*> GetNextOperationalsNodesToOpimize(ExprTree::Node* node) {
-		using namespace ExprTree;
+	static std::list<OperationalNode*> GetNextOperationalsNodesToOpimize(Node* node) {
 		if (auto operationalNode = dynamic_cast<OperationalNode*>(node)) {
 			return { operationalNode };
 		}
 
 		if (auto conditionNode = dynamic_cast<Condition*>(node)) {
-			std::list<ExprTree::OperationalNode*> list;
+			std::list<OperationalNode*> list;
 			if (auto operationalNode = dynamic_cast<OperationalNode*>(conditionNode->m_leftNode)) {
 				list.push_back(operationalNode);
 			}
@@ -69,10 +65,19 @@ namespace CE::Decompiler::Optimization
 			return list1;
 		}
 
+		if (auto functionCallCtx = dynamic_cast<FunctionCallContext*>(node)) {
+			auto resultList = GetNextOperationalsNodesToOpimize(functionCallCtx->m_destination);
+			for (const auto& it : functionCallCtx->m_registerParams) {
+				auto list = GetNextOperationalsNodesToOpimize(it.second);
+				resultList.insert(resultList.end(), list.begin(), list.end());
+			}
+			return resultList;
+		}
+
 		return {};
 	}
 
-	static std::list<ExprTree::OperationalNode*> GetNextOperationalsNodesToOpimize(ExprTree::OperationalNode* expr) {
+	static std::list<OperationalNode*> GetNextOperationalsNodesToOpimize(OperationalNode* expr) {
 		auto list1 = GetNextOperationalsNodesToOpimize(expr->m_leftNode);
 		auto list2 = GetNextOperationalsNodesToOpimize(expr->m_rightNode);
 		list1.insert(list1.end(), list2.begin(), list2.end());
@@ -80,8 +85,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 
-	static void OptimizeZeroInExpr(ExprTree::OperationalNode* expr) {
-		using namespace ExprTree;
+	static void OptimizeZeroInExpr(OperationalNode* expr) {	
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
 			OptimizeZeroInExpr(it);
@@ -96,8 +100,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 
-	static void OptimizeConstExpr(ExprTree::OperationalNode* expr) {
-		using namespace ExprTree;
+	static void OptimizeConstExpr(OperationalNode* expr) {
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
 			OptimizeConstExpr(it);
@@ -118,8 +121,7 @@ namespace CE::Decompiler::Optimization
 
 	//(0x8 - (((rsp & 0xF) + 0x9) + 0x2))
 	//((0x2 - ((rsp & 0xF) + 0x9)) - 0x8)
-	static void OptimizeConstPlaceInExpr(ExprTree::OperationalNode* expr) {
-		using namespace ExprTree;
+	static void OptimizeConstPlaceInExpr(OperationalNode* expr) {
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
 			OptimizeConstPlaceInExpr(it);
@@ -145,8 +147,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//((((rsp & 0xF) + 0x9) + 0x2) - ((0x8 - 0x2) + 0x2))		=>			((((rsp & 0xF) + 0x9) + 0x2) + (-0x8))		=>		((rsp & 0xF) + 0x3)
-	static void OptimizeRepeatOpInExpr(ExprTree::OperationalNode* expr, ExprTree::OperationalNode* prevOperationalNode = nullptr) {
-		using namespace ExprTree;
+	static void OptimizeRepeatOpInExpr(OperationalNode* expr, OperationalNode* prevOperationalNode = nullptr) {
 		bool isSameOperation = true;
 
 		if (prevOperationalNode != nullptr) {
@@ -188,13 +189,83 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	static void Optimize(ExprTree::Node* node) {
+
+	static void RemoveZeroMaskMulExpr(OperationalNode* expr, uint64_t mask) {
+		if (!IsOperationManipulatedWithBitVector(expr->m_operation))
+			return;
+
+		for (auto& it : {
+			std::make_pair(&expr->m_leftNode, expr->m_rightNode),
+			std::make_pair(&expr->m_rightNode, expr->m_leftNode) })
+		{
+			if (auto operand = dynamic_cast<INumber*>(*it.first)) {
+				if ((operand->getMask() & mask) == 0x0) {
+					expr->replaceWith(it.second);
+					*it.first = nullptr;
+					delete expr;
+
+					if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(it.second)) {
+						RemoveZeroMaskMulExpr(expr, mask);
+					}
+					return;
+				}
+			}
+		}
+
+		auto list = GetNextOperationalsNodesToOpimize(expr);
+		for (auto it : list) {
+			RemoveZeroMaskMulExpr(it, mask);
+		}
+	}
+
+
+	static void CalculateMasksAndOptimize(OperationalNode* expr) {
+		auto list = GetNextOperationalsNodesToOpimize(expr);
+		for (auto it : list) {
+			CalculateMasksAndOptimize(it);
+		}
+
+		if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
+			if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
+				if (expr->m_operation == And) {
+					auto mask1 = leftNode->getMask();
+					auto mask2 = rightNode->getMask();
+					if (auto numberLeaf = dynamic_cast<ExprTree::NumberLeaf*>(expr->m_rightNode)) {
+						if ((mask1 & mask2) == mask1) {
+							expr->replaceWith(expr->m_leftNode);
+							expr->m_leftNode = nullptr;
+							delete expr;
+							return;
+						}
+						else {
+							if (auto leftExpr = dynamic_cast<ExprTree::OperationalNode*>(expr->m_leftNode)) {
+								RemoveZeroMaskMulExpr(expr, mask2);
+								return;
+							}
+						}
+					}
+
+					expr->m_mask = mask1 & mask2;
+				}
+				else {
+					expr->m_mask = leftNode->getMask() | rightNode->getMask();
+					if (IsOperationOverflow(expr->m_operation)) {
+						expr->m_mask = expr->m_mask << 1 | 1;
+					}
+				}
+			}
+		}
+	}
+
+
+	static void Optimize(Node* node) {
 		auto list = GetNextOperationalsNodesToOpimize(node);
 		for(auto expr : list) {
 			OptimizeZeroInExpr(expr);
 			OptimizeConstExpr(expr);
 			OptimizeConstPlaceInExpr(expr);
 			OptimizeRepeatOpInExpr(expr);
+			CalculateMasksAndOptimize(expr);
 		}
 	}
 };

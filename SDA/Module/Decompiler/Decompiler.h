@@ -223,7 +223,7 @@ namespace CE::Decompiler
 				}
 			}*/
 
-			auto symbol = new Symbol::LocalVariable(Register::GetBitCountOfMask(needReadMask) / 8);
+			auto symbol = new Symbol::LocalVariable(GetBitCountOfMask(needReadMask) / 8);
 			auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 			regSymbol.symbols.push_back(std::make_pair(regSymbol.requiestId, symbolLeaf));
 
@@ -258,7 +258,7 @@ namespace CE::Decompiler
 							if (false && regParts.size() == 1 && (*regParts.begin())->m_expr == symbolLeaf)
 								continue;
 							
-							auto symbolMask = Register::GetMaskBySize(symbolLeaf->m_symbol->getSize());
+							auto symbolMask = GetMaskBySize(symbolLeaf->m_symbol->getSize());
 							auto maskToChange = symbolMask & ~blockRegSymbol.canReadMask;
 
 							if (maskToChange != 0) {

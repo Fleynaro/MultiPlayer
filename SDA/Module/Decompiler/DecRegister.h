@@ -49,28 +49,6 @@ namespace CE::Decompiler
 			return GetBitCountOfMask(m_mask) / 8;
 		}
 
-		static int GetShiftValueOfMask(uint64_t mask) {
-			int result = 0;
-			for (auto m = mask; int(m & 0xF) == 0; m = m >> 4) {
-				result += 4;
-			}
-			return result;
-		}
-
-		static int GetBitCountOfMask(uint64_t mask) {
-			int result = 0;
-			for (auto m = mask; m != 0; m = m >> 1) {
-				result ++;
-			}
-			return result;
-		}
-
-		static uint64_t GetMaskBySize(int size) {
-			if (size == 8)
-				return -1;
-			return ((uint64_t)1 << (uint64_t)(size * 8)) - 1;
-		}
-
 		static ExprTree::Node* CreateExprFromRegisterParts(RegisterParts regParts, uint64_t requestRegMask) {
 			ExprTree::Node* resultExpr = nullptr;
 
@@ -81,7 +59,7 @@ namespace CE::Decompiler
 			for (auto it : regParts) {
 				auto& regPart = *it;
 				auto sameRegExpr = regPart.m_expr;
-				int bitShift = Register::GetShiftValueOfMask(regPart.m_regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
+				int bitShift = GetShiftValueOfMask(regPart.m_regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
 
 				if (regPart.m_regMask != requestRegMask) {
 					//for signed register operations and etc...
