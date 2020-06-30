@@ -23,6 +23,7 @@ namespace CE::Decompiler::ExprTree
 
 		//Memory
 		readValue,
+		readAddress,
 
 		//Flags
 		getBits
@@ -40,7 +41,7 @@ namespace CE::Decompiler::ExprTree
 			return OperationGroup::Arithmetic;
 		if (opType >= And && opType <= Shl)
 			return OperationGroup::Logic;
-		if(opType == readValue)
+		if(opType == readValue || opType == readAddress)
 			return OperationGroup::Memory;
 		return OperationGroup::None;
 	}
@@ -130,6 +131,41 @@ namespace CE::Decompiler::ExprTree
 				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
 			}
 			return result;// + "<" + std::to_string((uint64_t)this % 100000) + ">";
+		}
+	};
+
+	class ReadValueNode : public OperationalNode
+	{
+	public:
+		ReadValueNode(Node* node, int size)
+			: OperationalNode(node, new NumberLeaf(size), readValue), m_size(size)
+		{}
+
+		Node* getAddress() {
+			return m_leftNode;
+		}
+
+		int getSize() {
+			return m_size;
+		}
+	private:
+		int m_size;
+	};
+
+	class ReadAddressNode : public OperationalNode
+	{
+	public:
+		ReadAddressNode(SymbolLeaf* symbolLeaf)
+			: OperationalNode(symbolLeaf, new NumberLeaf(0), readAddress)
+		{}
+
+		Symbol::Variable* getVariableSymbol() {
+			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(m_leftNode)) {
+				if (auto symbol = dynamic_cast<Symbol::Variable*>(symbolLeaf->m_symbol)) {
+					return symbol;
+				}
+			}
+			return nullptr;
 		}
 	};
 };

@@ -22,13 +22,13 @@ namespace CE::Decompiler
 
 					auto& operand = m_instruction->operands[0];
 					Operand op(m_ctx, &operand);
-					auto dstExpr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(operand.size / 8), ExprTree::readValue);
+					auto dstExpr = new ExprTree::ReadValueNode(expr, operand.size / 8);
 					auto srcExpr = op.getExpr();
 					m_block->addLine(dstExpr, srcExpr);
 				}
 				else {
 					auto& operand = m_instruction->operands[0];
-					auto srcExpr = new ExprTree::OperationalNode(regRsp, new ExprTree::NumberLeaf(operand.size / 8), ExprTree::readValue);
+					auto srcExpr = new ExprTree::ReadValueNode(regRsp, operand.size / 8);
 					assignment(operand, srcExpr, nullptr, false);
 
 					auto expr = new ExprTree::OperationalNode(regRsp, new ExprTree::NumberLeaf(0x8), ExprTree::Add);
@@ -38,8 +38,9 @@ namespace CE::Decompiler
 			}
 
 			case ZYDIS_MNEMONIC_RET: {
-				m_block->addLine(new ExprTree::NumberLeaf(0x0), m_ctx->requestRegister(ZYDIS_REGISTER_EAX));
-				//m_block->addLine(new ExprTree::NumberLeaf(0x0), m_ctx->getRegister(ZYDIS_REGISTER_ZMM0));
+				if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(m_block)) {
+					endBlock->setReturnNode(m_ctx->requestRegister(ZYDIS_REGISTER_EAX));
+				}
 				break;
 			}
 			}

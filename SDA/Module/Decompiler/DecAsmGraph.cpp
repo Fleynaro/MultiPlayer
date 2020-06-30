@@ -253,63 +253,7 @@ void ff() {
 #include "Decompiler.h"
 #include "DecLinearView.h"
 #include "Optimization/DecGraphOptimization.h"
-
-int gVarrrr = 100;
-
-int func11(int a) {
-	return a * 2;
-}
-
-void func22() {
-	int b = 2;
-	/*b += func11(10) + func11(5);
-	b *= -1;
-	gVarrrr %= 21;*/
-	/*if (b > 1) {
-		b = func11(10) % 25;
-		if (b == 2) {
-			b ++;
-		}
-	}
-	else {
-		b = 5;
-
-		if (b == 3 || b == 6) {
-			b++;
-			if (b == 3) {
-				b++;
-			}
-			else {
-				b--;
-			}
-		}
-	}*/
-
-	/*if (b == 10 && b == 20 && b == 30 && b == 40) {
-		b++;
-	}*/
-	/*if (b == 10 && b == 20 || b == 30 && b == 40 && b == 50 || b == 60) {
-		b++;
-	}*/
-
-	//SWITCH!!!
-
-	b = 0;
-
-	while (b == 10 || (b == 20 && b == 30)) {
-		b++;
-		if (b == 100) {
-			while (b < 500) {
-				b+=2;
-			}
-		}
-
-
-		b += func11(10) + func11(5);
-	}
-
-	b = 100;
-}
+#include "TestCodeToDecompile.h"
 
 #define SHOW_ASM 1
 void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, AsmGraphBlock*>& asmBlocks, int level = 0) {
@@ -342,6 +286,12 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 					ShowCode(condition->m_elseBranch, asmBlocks, level + 1);
 				}
 				printf("%s}\n", tabStr.c_str());
+			}
+		}
+
+		if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
+			if (endBlock->m_returnNode != nullptr) {
+				printf("%sreturn %s\n", tabStr.c_str(), endBlock->m_returnNode->printDebug().c_str());
 			}
 		}
 	}
@@ -416,11 +366,11 @@ void CE::Decompiler::test() {
 	void* addr;
 	int size;
 	if (false) {
-		addr = &func22;
+		addr = &TestFunctionToDecompile1;
 		size = calculateFunctionSize2((byte*)addr);
 	}
 	else {
-#define SAMPLE_VAR sample102
+#define SAMPLE_VAR sample100
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}
@@ -442,7 +392,7 @@ void CE::Decompiler::test() {
 	};
 	decompiler->start();
 	//decompiler->printDebug();
-	Optimization::OptimizeDecompiledGraph(decCodeGraph);
+	//Optimization::OptimizeDecompiledGraph(decCodeGraph);
 
 	LinearView::Converter2 converter(decCodeGraph);
 	converter.start();

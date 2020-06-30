@@ -31,8 +31,8 @@ namespace CE::Decompiler::Optimization
 		DecompiledCodeGraph* m_decGraph;
 
 		struct MemoryAddressInfo {
-			std::set<ExprTree::OperationalNode*> m_exprs;
-			std::set<ExprTree::OperationalNode*> m_exprsToWrite;
+			std::set<OperationalNode*> m_exprs;
+			std::set<OperationalNode*> m_exprsToWrite;
 		};
 		std::map<int, MemoryAddressInfo> m_stackMemory;
 		std::map<int, MemoryAddressInfo> m_globalMemory;
@@ -44,7 +44,7 @@ namespace CE::Decompiler::Optimization
 
 				int maxSize = 0;
 				for (auto expr : memoryAddressInfo.m_exprs) {
-					if (auto readSizeNumber = dynamic_cast<ExprTree::NumberLeaf*>(expr->m_rightNode)) {
+					if (auto readSizeNumber = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 						if (readSizeNumber->m_value > maxSize) {
 							maxSize = (int)readSizeNumber->m_value;
 						}
@@ -52,15 +52,15 @@ namespace CE::Decompiler::Optimization
 				}
 
 				auto symbol = constructor(offset, maxSize);
-				auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
+				auto symbolLeaf = new SymbolLeaf(symbol);
 
 				for (auto expr : memoryAddressInfo.m_exprs) {
-					ExprTree::Node* newExpr = symbolLeaf;
+					Node* newExpr = symbolLeaf;
 					if (memoryAddressInfo.m_exprsToWrite.find(expr) == memoryAddressInfo.m_exprsToWrite.end()) {
-						if (auto readSizeNumber = dynamic_cast<ExprTree::NumberLeaf*>(expr->m_rightNode)) {
+						if (auto readSizeNumber = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 							if (readSizeNumber->m_value < maxSize) {
 								auto mask = ((uint64_t)1 << (readSizeNumber->m_value * 8)) - 1;
-								newExpr = new ExprTree::OperationalNode(symbolLeaf, new ExprTree::NumberLeaf(mask), ExprTree::And);
+								newExpr = new OperationalNode(symbolLeaf, new NumberLeaf(mask), And);
 							}
 						}
 					}
@@ -70,26 +70,25 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		void detectAllStackMemoryAddressesInExpr(ExprTree::Node* node, bool write) {
+		void detectAllStackMemoryAddressesInExpr(Node* node, bool write) {
 			auto list = GetNextOperationalsNodesToOpimize(node);
 			for (auto expr : list) {
 				detectAllStackMemoryAddressesInExpr(expr, write);
 			}
 		}
 
-		void detectAllStackMemoryAddressesInExpr(ExprTree::OperationalNode* expr, bool write) {
-			using namespace ExprTree;
+		void detectAllStackMemoryAddressesInExpr(OperationalNode* expr, bool write) {
 			auto list = GetNextOperationalsNodesToOpimize(expr);
 			for (auto it : list) {
 				detectAllStackMemoryAddressesInExpr(it, false);
 			}
 
-			if (expr->m_operation == readValue) {
-				if (auto addrExpr = dynamic_cast<ExprTree::OperationalNode*>(expr->m_leftNode)) {
+			if (auto readValueNode = dynamic_cast<ReadValueNode*>(expr)) {
+				if (auto addrExpr = dynamic_cast<OperationalNode*>(readValueNode->getAddress())) {
 					if (addrExpr->m_operation == Add) {
-						if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>(addrExpr->m_leftNode)) {
+						if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(addrExpr->m_leftNode)) {
 							if (auto regVarSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbolLeaf->m_symbol)) {
-								if (auto offsetNode = dynamic_cast<ExprTree::NumberLeaf*>(addrExpr->m_rightNode)) {
+								if (auto offsetNode = dynamic_cast<NumberLeaf*>(addrExpr->m_rightNode)) {
 									if (regVarSymbol->m_register == ZYDIS_REGISTER_RSP) {
 										auto offset = (int)offsetNode->m_value;
 										if (m_stackMemory.find(offset) == m_stackMemory.end()) {
@@ -140,7 +139,7 @@ namespace CE::Decompiler::Optimization
 		if (!targetBlock)
 			return nullptr;
 
-		block->setJumpCondition(new ExprTree::CompositeCondition(block->m_noJmpCond, removedBlockNoJmpCond, ExprTree::CompositeCondition::And));
+		block->setJumpCondition(new CompositeCondition(block->m_noJmpCond, removedBlockNoJmpCond, CompositeCondition::And));
 		block->m_nextNearBlock = targetBlock;
 		removedBlock->m_blocksReferencedTo.remove(block);
 		return removedBlock;

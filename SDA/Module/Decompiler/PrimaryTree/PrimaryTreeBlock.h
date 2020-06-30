@@ -79,7 +79,7 @@ namespace CE::Decompiler::PrimaryTree
 		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
 			if (auto cond = dynamic_cast<ExprTree::ICondition*>(node)) {
 				if (auto newCond = dynamic_cast<ExprTree::ICondition*>(newNode)) {
-					if (cond == m_noJmpCond) {
+					if (m_noJmpCond == cond) {
 						m_noJmpCond = cond;
 					}
 				}
@@ -118,5 +118,30 @@ namespace CE::Decompiler::PrimaryTree
 		}
 	private:
 		std::list<Line*> m_lines;
+	};
+
+	class EndBlock : public Block
+	{
+	public:
+		ExprTree::Node* m_returnNode = nullptr;
+
+		EndBlock(int level)
+			: Block(level)
+		{}
+
+		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+			Block::replaceNode(node, newNode);
+			if (m_returnNode == node) {
+				m_returnNode = newNode;
+			}
+		}
+
+		void setReturnNode(ExprTree::Node* returnNode) {
+			if (m_returnNode) {
+				m_returnNode->removeBy(this);
+			}
+			m_returnNode = returnNode;
+			returnNode->addParentNode(this);
+		}
 	};
 };

@@ -71,7 +71,12 @@ namespace CE::Decompiler
 				auto asmBlock = &it.second;
 				DecompiledBlockInfo decompiledBlock;
 				decompiledBlock.m_asmBlock = asmBlock;
-				decompiledBlock.m_decBlock = new PrimaryTree::Block(asmBlock->m_level);
+				if (!asmBlock->getNextNearBlock() && !asmBlock->getNextFarBlock()) {
+					decompiledBlock.m_decBlock = new PrimaryTree::EndBlock(asmBlock->m_level);
+				}
+				else {
+					decompiledBlock.m_decBlock = new PrimaryTree::Block(asmBlock->m_level);
+				}
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, asmBlock->getMinOffset());
 
 				for (auto off : asmBlock->getInstructions()) {
@@ -179,7 +184,7 @@ namespace CE::Decompiler
 			uint64_t hasReadMask = 0x0;
 			std::map<PrimaryTree::Block*, uint64_t> blockPressure;
 			PrimaryTree::Block* nextBlock = nullptr;
-			auto isSuccess = gatherBlocksWithRegisters(block, reg, needReadMask, hasReadMask, nextBlock);
+			auto isSuccess = gatherBlocksWithRegisters(block, reg, mask, needReadMask, hasReadMask, nextBlock);
 			if (needReadMask) {
 				//todo: we should create symbol anyway [1]: e.g. loop with simple 2 branches (if() mov eax, 1 else mov eax, 2)
 				auto symbol = createSymbolForRequest(reg, needReadMask); //after gatherBlocksWithRegisters we need to create a new symbols for gathered blocks with incremented symbol's id
@@ -273,25 +278,31 @@ namespace CE::Decompiler
 			}
 		}
 
-		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
+		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
 			auto remainToReadMask = needReadMask & ~hasReadMask;
+			int prevSymbolId = 0;
+
 			auto it = m_curRegSymbol->blocks.find(block);
 			if (it != m_curRegSymbol->blocks.end()) {
 				auto& blockRegSymbol = it->second;
-				blockRegSymbol.prevSymbolId = blockRegSymbol.symbolId;
-				blockRegSymbol.symbolId = m_curRegSymbol->requiestId;
-				if (pressure == 0x1000000000000000) {
-					hasReadMask = ~(remainToReadMask & ~blockRegSymbol.canReadMask);
+				if ((requestMask & blockRegSymbol.canReadMask) == 0) {
+					blockRegSymbol.prevSymbolId = blockRegSymbol.symbolId;
+					blockRegSymbol.symbolId = m_curRegSymbol->requiestId;
+					if (pressure == 0x1000000000000000) {
+						hasReadMask = ~(remainToReadMask & ~blockRegSymbol.canReadMask);
+					}
+					else {
+						needReadMask |= blockRegSymbol.canReadMask;
+					}
+					return;
 				}
 				else {
-					needReadMask |= blockRegSymbol.canReadMask;
+					prevSymbolId = blockRegSymbol.symbolId;
 				}
-
-				return;
 			}
 			
 			auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
-			auto mask = (pressure == 0x1000000000000000) ? remainToReadMask : -1;
+			auto mask = (pressure == 0x1000000000000000) ? remainToReadMask : requestMask;
 			auto regParts = ctx->getRegisterParts(reg, mask, pressure != 0x1000000000000000);
 
 			//think about that more ???
@@ -323,11 +334,12 @@ namespace CE::Decompiler
 				blockRegSymbol.regParts = regParts;
 				blockRegSymbol.canReadMask = canReadMask; //that is what read
 				blockRegSymbol.symbolId = m_curRegSymbol->requiestId;
+				blockRegSymbol.prevSymbolId = prevSymbolId;
 				m_curRegSymbol->blocks[block] = blockRegSymbol;
 			}
 		}
 
-		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const Register& reg, uint64_t& needReadMask, uint64_t& hasReadMask, PrimaryTree::Block*& nextBlock) {
+		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, PrimaryTree::Block*& nextBlock) {
 			std::map<PrimaryTree::Block*, uint64_t> blockPressures;
 			std::set<PrimaryTree::Block*> handledBlocks;
 			blockPressures[startBlock] = 0x1000000000000000;
@@ -352,7 +364,7 @@ namespace CE::Decompiler
 						bool isLoop = true;
 						if (!isStartBlock) {
 							if (handledBlocks.find(block) == handledBlocks.end()) {
-								gatherRegisterPartsInBlock(block, reg, needReadMask, hasReadMask, pressure);
+								gatherRegisterPartsInBlock(block, reg, requestMask, needReadMask, hasReadMask, pressure);
 
 								if (pressure == 0x1000000000000000 && (needReadMask & ~hasReadMask) == 0) {
 									nextBlock = block;

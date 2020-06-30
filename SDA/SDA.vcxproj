@@ -87,14 +87,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseExe|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(ProjectDir)Module\Decompiler\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(ProjectDir)Module\Decompiler\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>$(GTA5_ROOT)\FastLoader</OutDir>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
@@ -158,7 +158,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>gtestd.lib;d3d11.lib;libMinHook.x64.lib;libthrift.lib;SQLiteCpp.lib;sqlite3.lib;Zycore.lib;Zydis.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gtestd.lib;d3d11.lib;libMinHook.x64.lib;libthrift.lib;SQLiteCpp.lib;sqlite3.lib;Zycore.lib;Zydis.lib;TestCodeToDecompile.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -181,7 +181,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>gtest.lib;d3d11.lib;libMinHook.x64.lib;libthrift.lib;SQLiteCpp.lib;sqlite3.lib;Zycore.lib;Zydis.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gtest.lib;d3d11.lib;libMinHook.x64.lib;libthrift.lib;SQLiteCpp.lib;sqlite3.lib;Zycore.lib;Zydis.lib;TestCodeToDecompile.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <VerboseOutput>true</VerboseOutput>

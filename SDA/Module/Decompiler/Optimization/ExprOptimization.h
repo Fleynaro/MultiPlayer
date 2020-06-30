@@ -100,6 +100,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 
+	//5 + 2		=>		7
 	static void OptimizeConstExpr(OperationalNode* expr) {
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
@@ -189,7 +190,7 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-
+	//([reg_rbx_64] & 0xffffffff00000000{0} | [var_2_32]) & 0x1f{31}	=>		[var_2_32] & 0x1f{31}
 	static void RemoveZeroMaskMulExpr(OperationalNode* expr, uint64_t mask) {
 		if (!IsOperationManipulatedWithBitVector(expr->m_operation))
 			return;
@@ -225,32 +226,47 @@ namespace CE::Decompiler::Optimization
 			CalculateMasksAndOptimize(it);
 		}
 
-		if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
-			if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
-				if (expr->m_operation == And) {
-					auto mask1 = leftNode->getMask();
-					auto mask2 = rightNode->getMask();
-					if (auto numberLeaf = dynamic_cast<ExprTree::NumberLeaf*>(expr->m_rightNode)) {
-						if ((mask1 & mask2) == mask1) {
-							expr->replaceWith(expr->m_leftNode);
-							expr->m_leftNode = nullptr;
-							delete expr;
-							return;
-						}
-						else {
-							if (auto leftExpr = dynamic_cast<ExprTree::OperationalNode*>(expr->m_leftNode)) {
-								RemoveZeroMaskMulExpr(expr, mask2);
+		if (auto readValueNode = dynamic_cast<ReadValueNode*>(expr)) {
+			expr->m_mask = GetMaskBySize(readValueNode->getSize());
+		}
+		else if(auto readAddressNode = dynamic_cast<ReadAddressNode*>(expr)) {
+			expr->m_mask = -1;
+		}
+		else {
+			if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
+				if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
+					if (expr->m_operation == And) {
+						auto mask1 = leftNode->getMask();
+						auto mask2 = rightNode->getMask();
+						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+							if ((mask1 & mask2) == mask1) {
+								//[var_2_32] & 0xffffffff{-1}		=>		[var_2_32]		
+								expr->replaceWith(expr->m_leftNode);
+								expr->m_leftNode = nullptr;
+								delete expr;
 								return;
 							}
+							else {
+								if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
+									RemoveZeroMaskMulExpr(expr, mask2);
+									return;
+								}
+							}
+						}
+
+						expr->m_mask = mask1 & mask2;
+
+						if (expr->m_mask == 0x0) {
+							//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
+							expr->replaceWith(new NumberLeaf(0));
+							delete expr;
 						}
 					}
-
-					expr->m_mask = mask1 & mask2;
-				}
-				else {
-					expr->m_mask = leftNode->getMask() | rightNode->getMask();
-					if (IsOperationOverflow(expr->m_operation)) {
-						expr->m_mask = expr->m_mask << 1 | 1;
+					else {
+						expr->m_mask = leftNode->getMask() | rightNode->getMask();
+						if (IsOperationOverflow(expr->m_operation)) {
+							expr->m_mask = expr->m_mask << 1 | 1;
+						}
 					}
 				}
 			}
@@ -266,6 +282,7 @@ namespace CE::Decompiler::Optimization
 			OptimizeConstPlaceInExpr(expr);
 			OptimizeRepeatOpInExpr(expr);
 			CalculateMasksAndOptimize(expr);
+			OptimizeZeroInExpr(expr);
 		}
 	}
 };
