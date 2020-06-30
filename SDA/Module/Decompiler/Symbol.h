@@ -113,11 +113,15 @@ namespace CE::Decompiler::Symbol
 	class FunctionResultVar : public Variable
 	{
 	public:
+		int m_id;
 		ExprTree::FunctionCallContext* m_funcCallContext;
 
 		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext, int size)
 			: m_funcCallContext(funcCallContext), Variable(size)
-		{}
+		{
+			static int id = 1;
+			m_id = id++;
+		}
 
 		std::string printDebug() override;
 	};

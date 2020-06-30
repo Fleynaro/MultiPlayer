@@ -1,3 +1,3 @@
 #pragma once
 
-void TestFunctionToDecompile1();
+int TestFunctionToDecompile1();

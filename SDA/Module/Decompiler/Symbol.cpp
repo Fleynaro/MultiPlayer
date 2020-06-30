@@ -5,5 +5,5 @@ using namespace CE::Decompiler;
 using namespace CE::Decompiler::Symbol;
 
 std::string FunctionResultVar::printDebug() {
-	return "[funcVar_" + std::to_string(m_funcCallContext->m_destOffset + 50000000) + "_" + std::to_string(getSize() * 8) + "]";
+	return "[funcVar_" + std::to_string(m_id) + "_" + std::to_string(getSize() * 8) + "]";
 }

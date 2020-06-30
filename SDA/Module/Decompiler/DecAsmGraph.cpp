@@ -110,7 +110,7 @@ void AsmGraph::build() {
 		auto& curBlock = *it;
 		auto& nextBlock = *std::next(it);
 		auto& instruction = curBlock.second.getLastInstruction();
-		if (instruction.meta.category != ZYDIS_CATEGORY_UNCOND_BR) {
+		if (instruction.meta.category != ZYDIS_CATEGORY_UNCOND_BR && instruction.meta.category != ZYDIS_CATEGORY_RET) {
 			curBlock.second.setNextNearBlock(&nextBlock.second);
 		}
 	}
@@ -236,9 +236,9 @@ void func() {
 	}
 }
 
-int calculateFunctionSize2(byte* addr) {
+int calculateFunctionSize2(byte* addr, bool endByRet = false) {
 	int size = 0;
-	while (addr[size] != 0xC3)
+	while (addr[size] != (endByRet ? 0xC3 : 0xCC))
 		size++;
 	return size + 1;
 }
@@ -365,9 +365,9 @@ void CE::Decompiler::test() {
 
 	void* addr;
 	int size;
-	if (false) {
+	if (true) {
 		addr = &TestFunctionToDecompile1;
-		size = calculateFunctionSize2((byte*)addr);
+		size = calculateFunctionSize2((byte*)addr, 0);
 	}
 	else {
 #define SAMPLE_VAR sample100
@@ -386,13 +386,16 @@ void CE::Decompiler::test() {
 	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
 		auto absAddr = (std::intptr_t)addr + offset;
 		auto info = ExprTree::GetFunctionCallDefaultInfo();
-		*info.m_paramRegisters.begin() = ZYDIS_REGISTER_ECX;
-		info.m_resultRegister = ZYDIS_REGISTER_RAX;
+		auto it = info.m_paramRegisters.begin();
+		*(it ++) = ZYDIS_REGISTER_ECX;
+		*(it++) = ZYDIS_REGISTER_EDX;
+		*(it++) = ZYDIS_REGISTER_R8D;
+		info.m_resultRegister = ZYDIS_REGISTER_EAX;
 		return info;
 	};
 	decompiler->start();
 	//decompiler->printDebug();
-	//Optimization::OptimizeDecompiledGraph(decCodeGraph);
+	Optimization::OptimizeDecompiledGraph(decCodeGraph);
 
 	LinearView::Converter2 converter(decCodeGraph);
 	converter.start();

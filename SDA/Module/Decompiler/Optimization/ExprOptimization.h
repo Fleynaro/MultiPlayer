@@ -85,6 +85,10 @@ namespace CE::Decompiler::Optimization
 	}
 
 
+	//[var_2_32] * 0				=>		0
+	//[var_2_32] ^ [var_2_32]		=>		0
+	//[var_2_32] + 0				=>		[var_2_32]
+	//[var_2_32] * 1				=>		[var_2_32]
 	static void OptimizeZeroInExpr(OperationalNode* expr) {	
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
@@ -95,6 +99,26 @@ namespace CE::Decompiler::Optimization
 			if (expr->m_leftNode == expr->m_rightNode) {
 				expr->replaceWith(new NumberLeaf(0));
 				delete expr;
+			}
+		}
+
+		if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+			if (expr->m_operation != Div && expr->m_operation != Mod) {
+				if (rightNumberLeaf->m_value == 0) {
+					if (expr->m_operation == Mul || expr->m_operation == And) {
+						expr->replaceWith(new NumberLeaf(0));
+					}
+					else {
+						expr->replaceWith(expr->m_leftNode);
+					}
+					delete expr;
+				}
+			}
+			else {
+				if (rightNumberLeaf->m_value == 1) {
+					expr->replaceWith(expr->m_leftNode);
+					delete expr;
+				}
 			}
 		}
 	}
@@ -277,7 +301,6 @@ namespace CE::Decompiler::Optimization
 	static void Optimize(Node* node) {
 		auto list = GetNextOperationalsNodesToOpimize(node);
 		for(auto expr : list) {
-			OptimizeZeroInExpr(expr);
 			OptimizeConstExpr(expr);
 			OptimizeConstPlaceInExpr(expr);
 			OptimizeRepeatOpInExpr(expr);

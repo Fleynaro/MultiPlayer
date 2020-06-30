@@ -17,8 +17,20 @@ namespace CE::Decompiler
 				binOperation(ExprTree::Add);
 				break;
 			case ZYDIS_MNEMONIC_SUB:
-				binOperation(ExprTree::Sub);
+			case ZYDIS_MNEMONIC_CMP: {
+				Operand op1(m_ctx, &m_instruction->operands[0]);
+				Operand op2(m_ctx, &m_instruction->operands[1]);
+				auto dstExpr = op1.getExpr();
+				auto srcExpr = op2.getExpr();
+				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::Sub);
+				setFlags(expr, GetMaskBySize(m_instruction->operands[0].size / 8));
+				m_ctx->setLastCond(dstExpr, srcExpr, RegisterFlags::CMP);
+
+				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_SUB) {
+					assignment(m_instruction->operands[0], expr, dstExpr, false);
+				}
 				break;
+			}
 			case ZYDIS_MNEMONIC_MUL:
 			case ZYDIS_MNEMONIC_IMUL:
 			case ZYDIS_MNEMONIC_DIV:
@@ -118,18 +130,6 @@ namespace CE::Decompiler
 			case ZYDIS_MNEMONIC_NEG:
 				unaryOperation(ExprTree::Mul, new ExprTree::NumberLeaf(-1));
 				break;
-
-
-			case ZYDIS_MNEMONIC_CMP: {
-				Operand op1(m_ctx, &m_instruction->operands[0]);
-				Operand op2(m_ctx, &m_instruction->operands[1]);
-				auto dstExpr = op1.getExpr();
-				auto srcExpr = op2.getExpr();
-				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::Sub);
-				setFlags(expr, GetMaskBySize(m_instruction->operands[0].size));
-				m_ctx->setLastCond(dstExpr, srcExpr, RegisterFlags::CMP);
-				break;
-			}
 			}
 		}
 	};

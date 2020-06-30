@@ -14,8 +14,25 @@ namespace CE::Decompiler
 			switch (m_instruction->mnemonic)
 			{
 			case ZYDIS_MNEMONIC_AND:
-				binOperation(ExprTree::And);
+			case ZYDIS_MNEMONIC_TEST: {
+				Operand op1(m_ctx, &m_instruction->operands[0]);
+				Operand op2(m_ctx, &m_instruction->operands[1]);
+				auto dstExpr = op1.getExpr();
+				auto srcExpr = op2.getExpr();
+				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::And);
+				setFlags(expr, GetMaskBySize(m_instruction->operands[0].size / 8));
+
+				if (m_instruction->operands[0].type == ZYDIS_OPERAND_TYPE_REGISTER) {
+					if (m_instruction->operands[0].reg.value == m_instruction->operands[1].reg.value) {
+						m_ctx->setLastCond(dstExpr, new ExprTree::NumberLeaf(0), RegisterFlags::TEST);
+					}
+				}
+
+				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_AND) {
+					assignment(m_instruction->operands[0], expr, dstExpr, false);
+				}
 				break;
+			}
 			case ZYDIS_MNEMONIC_OR:
 				binOperation(ExprTree::Or);
 				break;
@@ -33,22 +50,6 @@ namespace CE::Decompiler
 				unaryOperation(ExprTree::Xor, new ExprTree::NumberLeaf(-1));
 				break;
 
-			case ZYDIS_MNEMONIC_TEST: {
-				Operand op1(m_ctx, &m_instruction->operands[0]);
-				Operand op2(m_ctx, &m_instruction->operands[1]);
-				auto dstExpr = op1.getExpr();
-				auto srcExpr = op2.getExpr();
-				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::And);
-				setFlags(expr, GetMaskBySize(m_instruction->operands[0].size));
-
-				if (m_instruction->operands[0].type == ZYDIS_OPERAND_TYPE_REGISTER) {
-					if (m_instruction->operands[0].reg.value == m_instruction->operands[1].reg.value) {
-						m_ctx->setLastCond(dstExpr, new ExprTree::NumberLeaf(0), RegisterFlags::TEST);
-					}
-				}
-				break;
-			}
-
 			case ZYDIS_MNEMONIC_BT:
 			case ZYDIS_MNEMONIC_BTR: {
 				Operand op1(m_ctx, &m_instruction->operands[0]);
@@ -59,6 +60,10 @@ namespace CE::Decompiler
 				auto cond = new ExprTree::Condition(expr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Ne);
 				m_ctx->m_flags[ZYDIS_CPUFLAG_CF] = cond;
 				m_ctx->clearLastCond(); //???
+
+				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_BTR) {
+					//...
+				}
 				break;
 			}
 			}

@@ -1,5 +1,6 @@
 #include "TestCodeToDecompile.h"
 #include "pch.h"
+#include <Windows.h>
 
 int gVarrrr = 100;
 
@@ -7,8 +8,8 @@ int Func1(int a) {
 	return a * 2;
 }
 
-void TestFunctionToDecompile1() {
-	int b = 2;
+int TestFunctionToDecompile1() {
+	int b = GetTickCount();
 
 	/*b += func11(10) + func11(5);
 	b *= -1;
@@ -33,6 +34,19 @@ void TestFunctionToDecompile1() {
 		}
 	}*/
 
+	switch (b % 20)
+	{
+	case 1:
+		b *= 10;
+		break;
+	case 2:
+		b *= 15;
+		break;
+	case 5:
+		b *= 30;
+		break;
+	}
+
 	/*if (b == 10 && b == 20 && b == 30 && b == 40) {
 		b++;
 	}*/
@@ -42,7 +56,7 @@ void TestFunctionToDecompile1() {
 
 	//SWITCH!!!
 
-	while (b == 10 || (b == 20 && b == 30)) {
+	/*while (b == 10 || (b == 20 && b == 30)) {
 		b++;
 		if (b == 100) {
 			while (b < 500) {
@@ -52,7 +66,7 @@ void TestFunctionToDecompile1() {
 
 
 		b += Func1(10) + Func1(5);
-	}
+	}*/
 
-	b = 100;
+	return b;
 }
