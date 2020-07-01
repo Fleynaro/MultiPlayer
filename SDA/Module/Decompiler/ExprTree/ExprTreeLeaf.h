@@ -18,6 +18,10 @@ namespace CE::Decompiler::ExprTree
 			return GetMaskBySize(m_symbol->getSize());
 		}
 
+		bool isLeaf() override {
+			return true;
+		}
+
 		std::string printDebug() override {
 			return m_symbol->printDebug();
 		}
@@ -34,6 +38,10 @@ namespace CE::Decompiler::ExprTree
 
 		uint64_t getMask() override {
 			return m_value;
+		}
+
+		bool isLeaf() override {
+			return true;
 		}
 
 		std::string printDebug() override {

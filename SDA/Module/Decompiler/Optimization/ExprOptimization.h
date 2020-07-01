@@ -11,8 +11,6 @@ namespace CE::Decompiler::Optimization
 		{
 		case Add:
 			return op1 + op2;
-		case Sub:
-			return op1 - op2;
 		case Mul:
 			return op1 * op2;
 		case Div:
@@ -141,76 +139,143 @@ namespace CE::Decompiler::Optimization
 				}
 			}
 		}
+
+		//a << 0x2{2}		=>		a * 4
+		if (expr->m_operation == Shl) {
+			if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+				auto value = numberLeaf->m_value;
+				if (value >= 1 && value <= 3) {
+					expr->m_operation = Mul;
+					numberLeaf->m_value = (uint64_t)1 << value;
+				}
+			}
+		}
+	}
+
+	//a
+	//a * 5
+	static bool IsLeaf(Node* node) {
+		if (node->isLeaf())
+			return true;
+		if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
+			if (opNode->m_operation == Mul) {
+				if (dynamic_cast<NumberLeaf*>(opNode->m_rightNode) && IsLeaf(opNode->m_leftNode))
+					return true;
+			}
+		}
+		return false;
 	}
 
 
-	//(0x8 - (((rsp & 0xF) + 0x9) + 0x2))
-	//((0x2 - ((rsp & 0xF) + 0x9)) - 0x8)
-	static void OptimizeConstPlaceInExpr(OperationalNode* expr) {
+	//(0x2 + a)		=>		(a + 0x2)	
+	static void OptimizeLeafPlaceInExpr(OperationalNode* expr) {
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
-			OptimizeConstPlaceInExpr(it);
+			OptimizeLeafPlaceInExpr(it);
 		}
 		if (!IsOperationUnsupportedToCalculate(expr->m_operation) && (expr->m_operation != Div && expr->m_operation != Shr && expr->m_operation != Shl)) {
-			if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-				if (expr->m_operation == Sub) {
-					expr->m_operation = Add;
-					numberLeaf->m_value *= -1;
-				}
-			} else if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
+			if (IsLeaf(expr->m_leftNode) && !IsLeaf(expr->m_rightNode)) {
 				auto tempNode = expr->m_rightNode;
-				expr->m_rightNode = numberLeaf;
+				expr->m_rightNode = expr->m_leftNode;
 				expr->m_leftNode = tempNode;
+			}
+		}
+	}
 
-				if (expr->m_operation == Sub) {
-					expr->m_operation = Add;
-					expr->m_leftNode->removeParentNode(expr);
-					expr->m_leftNode = new OperationalNode(expr->m_leftNode, new NumberLeaf(-1), Mul);
+
+	//(3x + x)	=>	4x
+	static OperationalNode* AddEqualNodes(Node* node1, Node* node2) {
+		auto coreNode1 = node1;
+		auto coreNode2 = node2;
+		uint64_t k1 = 1;
+		uint64_t k2 = 1;
+
+		for (auto& it : { std::make_pair(&k1, &coreNode1), std::make_pair(&k2, &coreNode2) }) {
+			if (auto opNode = dynamic_cast<OperationalNode*>(*it.second)) {
+				if (auto numberLeaf = dynamic_cast<NumberLeaf*>(opNode->m_rightNode)) {
+					if (opNode->m_operation == Mul) {
+						*it.first = numberLeaf->m_value;
+						*it.second = opNode->m_leftNode;
+						continue;
+					}
 				}
+			}
+		}
+
+		if (coreNode1 != coreNode2)
+			return nullptr;
+		return new OperationalNode(coreNode1, new NumberLeaf(k1 + k2), Mul);
+	}
+
+
+	//(3x + x) + 5	=>	4x + 5
+	static void OptimizeAddEqualExpr(OperationalNode* expr) {
+		auto list = GetNextOperationalsNodesToOpimize(expr);
+		for (auto it : list) {
+			OptimizeAddEqualExpr(it);
+		}
+
+		if (expr->m_operation == Add) {
+			auto resultExpr = AddEqualNodes(expr->m_leftNode, expr->m_rightNode);
+			if (resultExpr != nullptr) {
+				expr->replaceWith(resultExpr);
+				delete expr;
 			}
 		}
 	}
 
 	//((((rsp & 0xF) + 0x9) + 0x2) - ((0x8 - 0x2) + 0x2))		=>			((((rsp & 0xF) + 0x9) + 0x2) + (-0x8))		=>		((rsp & 0xF) + 0x3)
-	static void OptimizeRepeatOpInExpr(OperationalNode* expr, OperationalNode* prevOperationalNode = nullptr) {
+	static void OptimizeRepeatOpInExpr(OperationalNode* expr, OperationalNode* prevExpr = nullptr) {
 		bool isSameOperation = true;
 
-		if (prevOperationalNode != nullptr) {
-			auto prevOperation = prevOperationalNode->m_operation;
+		if (prevExpr != nullptr) {
+			auto prevOperation = prevExpr->m_operation;
 			if (prevOperation != expr->m_operation) {
 				isSameOperation = false;
 			}
 		}
 
-		auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode);
-		if (numberLeaf && isSameOperation) {
-			if (prevOperationalNode != nullptr) {
-				if (auto prevNumberLeaf = dynamic_cast<NumberLeaf*>(prevOperationalNode->m_rightNode)) {
-					auto result = numberLeaf->m_value;
-					switch (expr->m_operation)
-					{
-					case Shr:
-					case Shl:
-						result += prevNumberLeaf->m_value;
-						break;
-					case Div:
-						result *= prevNumberLeaf->m_value;
-						break;
-					default:
-						result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
+		if (isSameOperation) {
+			if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+				if (prevExpr != nullptr) {
+					if (auto prevNumberLeaf = dynamic_cast<NumberLeaf*>(prevExpr->m_rightNode)) {
+						auto result = numberLeaf->m_value;
+						switch (expr->m_operation)
+						{
+						case Shr:
+						case Shl:
+							result += prevNumberLeaf->m_value;
+							break;
+						case Div:
+							result *= prevNumberLeaf->m_value;
+							break;
+						default:
+							result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
+						}
+						expr = new OperationalNode(expr->m_leftNode, new NumberLeaf(result), expr->m_operation);
+						prevExpr->replaceWith(expr);
+						delete prevExpr;
 					}
-					expr = new OperationalNode(expr->m_leftNode, new NumberLeaf(result), expr->m_operation);
-					prevOperationalNode->replaceWith(expr);
-					delete prevOperationalNode;
+				}
+			}
+			else {
+				//((y + 3x) + x)	=>	(y + 4x)
+				if (expr->m_operation == Add) {
+					auto resultExpr = AddEqualNodes(expr, prevExpr);
+					if (resultExpr != nullptr) {
+						expr = new OperationalNode(expr->m_leftNode, resultExpr, Add);
+						prevExpr->replaceWith(expr);
+						delete prevExpr;
+					}
 				}
 			}
 		}
 
-		prevOperationalNode = expr;
+		prevExpr = expr;
 
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
-			OptimizeRepeatOpInExpr(it, prevOperationalNode);
+			OptimizeRepeatOpInExpr(it, prevExpr);
 		}
 	}
 
@@ -308,13 +373,14 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-
+	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
 	static void Optimize(Node* node) {
 		auto list = GetNextOperationalsNodesToOpimize(node);
 		for(auto expr : list) {
 			OptimizeConstExpr(expr);
-			OptimizeConstPlaceInExpr(expr);
+			OptimizeLeafPlaceInExpr(expr);
 			OptimizeRepeatOpInExpr(expr);
+			OptimizeAddEqualExpr(expr);
 			CalculateMasksAndOptimize(expr);
 			OptimizeZeroInExpr(expr);
 		}

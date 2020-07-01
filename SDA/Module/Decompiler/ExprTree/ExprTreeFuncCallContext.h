@@ -53,8 +53,10 @@ namespace CE::Decompiler::ExprTree
 			for (auto it : m_registerParams) {
 				str += it.second->printDebug() + ", ";
 			}
-			str.pop_back();
-			str.pop_back();
+			if (!m_registerParams.empty()) {
+				str.pop_back();
+				str.pop_back();
+			}
 			return str + ")";
 		}
 	};

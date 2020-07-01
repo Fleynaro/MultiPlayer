@@ -53,6 +53,11 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const Register& reg, uint6
 				auto part = new RegisterPart(sameRegMask, mask & sameRegMask, it->second->m_node);
 				regParts.push_back(part);
 				mask = changedRegMask;
+
+				//exception: eax(no ax, ah, al!) overwrite rax!!!
+				/*if (sameRegMask == 0xFFFFFFFF) {
+					mask &= 0xFFFFFFFF;
+				}*/
 			}
 		}
 

@@ -60,6 +60,10 @@ namespace CE::Decompiler::ExprTree
 			return m_isSigned;
 		}
 
+		virtual bool isLeaf() {
+			return false;
+		}
+
 		int getUserCount() {
 			return (int)m_parentNodes.size();
 		}

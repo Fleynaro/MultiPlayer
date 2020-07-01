@@ -22,6 +22,11 @@ namespace CE::Decompiler::Optimization
 				if (decBlock->m_noJmpCond != nullptr) {
 					detectAllStackMemoryAddressesInExpr(decBlock->m_noJmpCond, false);
 				}
+				if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
+					if (endBlock->m_returnNode != nullptr) {
+						detectAllStackMemoryAddressesInExpr(endBlock->m_returnNode, false);
+					}
+				}
 			}
 
 			createSymbol(m_stackMemory, [](int offset, int size) { return new Symbol::StackVariable(offset, size); });
@@ -145,6 +150,24 @@ namespace CE::Decompiler::Optimization
 		return removedBlock;
 	}
 
+	static void OptimizeExprInDecompiledGraph(DecompiledCodeGraph* decGraph) {
+		//optimize expressions
+		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+			for (auto line : decBlock->getLines()) {
+				Optimization::Optimize(line->m_destAddr);
+				Optimization::Optimize(line->m_srcValue);
+			}
+			if (decBlock->m_noJmpCond != nullptr) {
+				Optimization::Optimize(decBlock->m_noJmpCond);
+			}
+			if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
+				if (endBlock->m_returnNode != nullptr) {
+					Optimization::Optimize(endBlock->m_returnNode);
+				}
+			}
+		}
+	}
+
 	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph) {
 		//join conditions and remove useless blocks
 		for (auto it = decGraph->getDecompiledBlocks().rbegin(); it != decGraph->getDecompiledBlocks().rend(); it++) {
@@ -163,28 +186,12 @@ namespace CE::Decompiler::Optimization
 		std::list<PrimaryTree::Block*> path;
 		DecompiledCodeGraph::CalculateLevelsForDecBlocks(decGraph->getStartBlock(), path);
 
-		//optimize expressions
-		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
-			for (auto line : decBlock->getLines()) {
-				Optimization::Optimize(line->m_destAddr);
-				Optimization::Optimize(line->m_srcValue);
-			}
-			if (decBlock->m_noJmpCond != nullptr) {
-				Optimization::Optimize(decBlock->m_noJmpCond);
-			}
-		}
+		OptimizeExprInDecompiledGraph(decGraph);
 
 		MemorySymbolization memorySymbolization(decGraph);
 		memorySymbolization.start();
 
 		//optimize expressions again after memory symbolization
-		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
-			for (auto line : decBlock->getLines()) {
-				Optimization::Optimize(line->m_srcValue);
-			}
-			if (decBlock->m_noJmpCond != nullptr) {
-				Optimization::Optimize(decBlock->m_noJmpCond);
-			}
-		}
+		OptimizeExprInDecompiledGraph(decGraph);
 	}
 };

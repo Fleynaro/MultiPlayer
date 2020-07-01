@@ -238,7 +238,7 @@ void func() {
 
 int calculateFunctionSize2(byte* addr, bool endByRet = false) {
 	int size = 0;
-	while (addr[size] != (endByRet ? 0xC3 : 0xCC))
+	while (!(addr[size] == 0xC3 && addr[size + 1] == 0xCC))
 		size++;
 	return size + 1;
 }
@@ -305,6 +305,8 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 }
 
 void CE::Decompiler::test() {
+	//TestFunctionToDecompile1();
+
 	/*
 		(После масштабных изменений)
 
@@ -391,6 +393,7 @@ void CE::Decompiler::test() {
 		*(it++) = ZYDIS_REGISTER_EDX;
 		*(it++) = ZYDIS_REGISTER_R8D;
 		info.m_resultRegister = ZYDIS_REGISTER_EAX;
+		info.m_paramRegisters.clear();
 		return info;
 	};
 	decompiler->start();

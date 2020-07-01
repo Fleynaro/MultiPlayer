@@ -83,7 +83,7 @@ namespace CE::Decompiler
 					continue;
 				auto it = m_ctx->m_registers.find(sameReg.first);
 				if (it != m_ctx->m_registers.end()) {
-					if (dstReg.m_mask > sameReg.second) {
+					if (dstReg.m_mask >= sameReg.second) { //exception: eax(no ax, ah, al!) overwrite rax!!!
 						m_ctx->m_registers.erase(it);
 						delete it->second;
 					}

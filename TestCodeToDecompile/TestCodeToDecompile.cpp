@@ -34,7 +34,7 @@ int TestFunctionToDecompile1() {
 		}
 	}*/
 
-	switch (b)
+	/*switch (b)
 	{
 	case 1:
 		b *= 10;
@@ -45,7 +45,7 @@ int TestFunctionToDecompile1() {
 	case 5:
 		b *= 30;
 		break;
-	}
+	}*/
 
 	/*if (b == 10 && b == 20 && b == 30 && b == 40) {
 		b++;
@@ -68,6 +68,10 @@ int TestFunctionToDecompile1() {
 		b += Func1(10) + Func1(5);
 	}*/
 
-	int a = GetTickCount() * GetTickCount() * GetTickCount() * GetTickCount();
-	return b * a + 100;
+	int arr[2][3][4];
+	for (int i = 0; i < 120; i++)
+		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;
+
+	/*int a = GetTickCount() * GetTickCount() * GetTickCount() * GetTickCount();*/
+	return /*b * a + 100 + */arr[1][2][3];
 }

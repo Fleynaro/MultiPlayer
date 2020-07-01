@@ -321,6 +321,11 @@ namespace CE::Decompiler
 				uint64_t canReadMask = 0x0;
 				for (auto regPart : regParts) {
 					canReadMask |= regPart->m_regMask;
+
+					//exception: eax(no ax, ah, al!) overwrite rax!!!
+					/*if (regPart->m_regMask = 0xFFFFFFFF) {
+						canReadMask = 0xFFFFFFFFFFFFFFFF;
+					}*/
 				}
 
 				if (pressure == 0x1000000000000000) {

@@ -22,7 +22,8 @@ namespace CE::Decompiler
 				Operand op2(m_ctx, &m_instruction->operands[1]);
 				auto dstExpr = op1.getExpr();
 				auto srcExpr = op2.getExpr();
-				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::Sub);
+				srcExpr = new ExprTree::OperationalNode(srcExpr, new ExprTree::NumberLeaf(-1), ExprTree::Mul); //negative
+				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::Add);
 				setFlags(expr, GetMaskBySize(m_instruction->operands[0].size / 8));
 				m_ctx->setLastCond(dstExpr, srcExpr, RegisterFlags::CMP);
 
@@ -125,7 +126,7 @@ namespace CE::Decompiler
 				unaryOperation(ExprTree::Add, new ExprTree::NumberLeaf(1));
 				break;
 			case ZYDIS_MNEMONIC_DEC:
-				unaryOperation(ExprTree::Sub, new ExprTree::NumberLeaf(1));
+				unaryOperation(ExprTree::Add, new ExprTree::NumberLeaf(-1));
 				break;
 			case ZYDIS_MNEMONIC_NEG:
 				unaryOperation(ExprTree::Mul, new ExprTree::NumberLeaf(-1));

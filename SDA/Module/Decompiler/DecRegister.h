@@ -99,7 +99,7 @@ namespace CE::Decompiler
 				m_sameRegisters = GetListOfSameGenRegisters(m_reg - ZYDIS_REGISTER_AX);
 			}
 			else if (m_reg >= ZYDIS_REGISTER_EAX && m_reg <= ZYDIS_REGISTER_R15D) {
-				m_mask = 0xFFFFFFFF;
+				m_mask = 0xFFFFFFFFFFFFFFFF; //exception: eax(no ax, ah, al!) overwrite rax!!!
 				m_sameRegisters = GetListOfSameGenRegisters(m_reg - ZYDIS_REGISTER_EAX);
 			}
 			else if (m_reg >= ZYDIS_REGISTER_RAX && m_reg <= ZYDIS_REGISTER_R15) {
@@ -135,7 +135,7 @@ namespace CE::Decompiler
 			std::list result = {
 				std::make_pair(ZydisRegister(ZYDIS_REGISTER_AH + idx), (uint64_t)0xFF),
 				std::make_pair(ZydisRegister(ZYDIS_REGISTER_AX + idx), (uint64_t)0xFFFF),
-				std::make_pair(ZydisRegister(ZYDIS_REGISTER_EAX + idx), (uint64_t)0xFFFFFFFF),
+				std::make_pair(ZydisRegister(ZYDIS_REGISTER_EAX + idx), (uint64_t)0xFFFFFFFFFFFFFFFF), //exception: eax(no ax, ah, al!) overwrite rax!!!
 				std::make_pair(ZydisRegister(ZYDIS_REGISTER_RAX + idx), (uint64_t)0xFFFFFFFFFFFFFFFF)
 			};
 			if (idx <= 3) {

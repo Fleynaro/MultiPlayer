@@ -17,7 +17,7 @@ namespace CE::Decompiler
 			case ZYDIS_MNEMONIC_POP: {
 				auto regRsp = m_ctx->requestRegister(ZYDIS_REGISTER_RSP);
 				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_PUSH) {
-					auto expr = new ExprTree::OperationalNode(regRsp, new ExprTree::NumberLeaf(0x8), ExprTree::Sub);
+					auto expr = new ExprTree::OperationalNode(regRsp, new ExprTree::NumberLeaf(-0x8), ExprTree::Add);
 					setExprToRegisterDst(ZYDIS_REGISTER_RSP, expr, false);
 
 					auto& operand = m_instruction->operands[0];

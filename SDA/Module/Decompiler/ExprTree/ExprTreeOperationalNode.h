@@ -9,7 +9,6 @@ namespace CE::Decompiler::ExprTree
 
 		//Arithmetic
 		Add,
-		Sub,
 		Mul,
 		Div,
 		Mod,
@@ -47,7 +46,7 @@ namespace CE::Decompiler::ExprTree
 	}
 
 	static bool IsOperationOverflow(OperationType opType) {
-		return opType == Add || opType == Sub || opType == Mul || opType == Shl;
+		return opType == Add || opType == Mul || opType == Shl;
 	}
 
 	static bool IsOperationSigned(OperationType opType) {
@@ -59,14 +58,13 @@ namespace CE::Decompiler::ExprTree
 	}
 
 	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
-		return operation == readValue || operation == getBits;
+		return operation == readValue || operation == readAddress || operation == getBits;
 	}
 
 	static std::string ShowOperation(OperationType opType) {
 		switch (opType)
 		{
 		case Add: return "+";
-		case Sub: return "-";
 		case Mul: return "*";
 		case Div: return "/";
 		case Mod: return "%";
