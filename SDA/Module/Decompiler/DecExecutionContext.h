@@ -39,30 +39,40 @@ namespace CE::Decompiler
 		}
 	};
 
-	class ExecutionBlockContext : public ExprTree::IParentNode
+	class ExecutionBlockContext
 	{
 	public:
 		int m_offset;
 		Decompiler* m_decompiler;
 
-		std::map<ZydisRegister, ExprTree::Node*> m_registers;
-		std::map<ZydisCPUFlag, ExprTree::Condition*> m_flags;
-		std::set<ZydisRegister> m_changedRegisters;
-
-		class RegisterCache : public std::map<ZydisRegister, ExprTree::Node*>, public ExprTree::IParentNode
+		template<typename T = ExprTree::Node>
+		class WrapperNode : public ExprTree::IParentNode
 		{
 		public:
-			void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
-				for (auto it = begin(); it != end(); it++) {
-					if (it->second == node) {
-						if (newNode != nullptr)
-							it->second = newNode;
-						else erase(it);
-					}
+			T* m_node;
+			WrapperNode(T* node)
+				: m_node(node)
+			{
+				node->addParentNode(this);
+			}
+
+			~WrapperNode() {
+				if (m_node) {
+					m_node->removeBy(this);
 				}
 			}
-		} m_cachedRegisters;
 
+			void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+				if (m_node == node) {
+					m_node = static_cast<T*>(newNode);
+				}
+			}
+		};
+
+		std::map<ZydisRegister, WrapperNode<ExprTree::Node>*> m_registers;
+		std::map<ZydisRegister, WrapperNode<ExprTree::Node>*> m_cachedRegisters;
+		std::map<ZydisCPUFlag, WrapperNode<ExprTree::Condition>*> m_flags;
+		std::set<ZydisRegister> m_changedRegisters;
 		std::list<ExternalSymbol*> m_externalSymbols;
 
 		struct {
@@ -71,53 +81,20 @@ namespace CE::Decompiler
 			ExprTree::Node* rightNode = nullptr;
 		} m_lastCond;
 
-		ExecutionBlockContext(Decompiler* decompiler, int startOffset = 0)
-			: m_decompiler(decompiler), m_offset(startOffset)
-		{}
+		ExecutionBlockContext(Decompiler* decompiler, int startOffset = 0);
 
-		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
-			for (auto it = m_registers.begin(); it != m_registers.end(); it ++) {
-				if (it->second == node) {
-					if (newNode != nullptr)
-						it->second = newNode;
-					else m_registers.erase(it);
-				}
-			}
-
-			if (auto cond = dynamic_cast<ExprTree::Condition*>(node)) {	
-				for (auto it = m_flags.begin(); it != m_flags.end(); it++) {
-					if (it->second == cond) {
-						if (auto newCond = dynamic_cast<ExprTree::Condition*>(newNode)) {
-							it->second = newCond;
-						}
-						else {
-							m_flags.erase(it);
-						}
-					}
-				}
-			}
-		}
-		
 		void setRegister(const Register& reg, ExprTree::Node* expr, bool rewrite = true);
 
 		RegisterParts getRegisterParts(const Register& reg, uint64_t& mask, bool changedRegistersOnly = false);
 
 		ExprTree::Node* requestRegister(const Register& reg);
 
-		void setLastCond(ExprTree::Node* leftNode, ExprTree::Node* rightNode, RegisterFlags flags) {
-			if (m_lastCond.leftNode != nullptr) {
-				m_lastCond.leftNode->removeBy(nullptr);
-			}
-			if (m_lastCond.rightNode != nullptr) {
-				m_lastCond.rightNode->removeBy(nullptr);
-			}
-			m_lastCond.leftNode = leftNode;
-			m_lastCond.rightNode = rightNode;
-			m_lastCond.flags = flags;
-		}
+		ExprTree::Condition* getFlag(ZydisCPUFlag flag);
 
-		void clearLastCond() {
-			setLastCond(nullptr, nullptr, RegisterFlags::None);
-		}
+		void setFlag(ZydisCPUFlag flag, ExprTree::Condition* cond);
+
+		void setLastCond(ExprTree::Node* leftNode, ExprTree::Node* rightNode, RegisterFlags flags);
+
+		void clearLastCond();
 	};
 };

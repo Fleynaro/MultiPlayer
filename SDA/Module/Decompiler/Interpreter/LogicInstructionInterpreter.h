@@ -58,7 +58,7 @@ namespace CE::Decompiler
 				expr = new ExprTree::OperationalNode(op1.getExpr(), expr, ExprTree::Shr);
 				expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(1), ExprTree::And);
 				auto cond = new ExprTree::Condition(expr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Ne);
-				m_ctx->m_flags[ZYDIS_CPUFLAG_CF] = cond;
+				m_ctx->setFlag(ZYDIS_CPUFLAG_CF, cond);
 				m_ctx->clearLastCond(); //???
 
 				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_BTR) {

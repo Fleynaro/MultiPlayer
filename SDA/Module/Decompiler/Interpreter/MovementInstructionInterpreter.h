@@ -131,7 +131,7 @@ namespace CE::Decompiler
 				}
 				else {
 					if (m_instruction->mnemonic == ZYDIS_MNEMONIC_SETNZ) {
-						assignment(m_instruction->operands[0], new ExprTree::CompositeCondition(m_ctx->m_flags[ZYDIS_CPUFLAG_ZF], nullptr, ExprTree::CompositeCondition::Not), nullptr, false);
+						assignment(m_instruction->operands[0], new ExprTree::CompositeCondition(m_ctx->getFlag(ZYDIS_CPUFLAG_ZF), nullptr, ExprTree::CompositeCondition::Not), nullptr, false);
 					}
 				}
 

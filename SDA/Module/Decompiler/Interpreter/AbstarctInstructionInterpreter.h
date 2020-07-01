@@ -84,7 +84,8 @@ namespace CE::Decompiler
 				auto it = m_ctx->m_registers.find(sameReg.first);
 				if (it != m_ctx->m_registers.end()) {
 					if (dstReg.m_mask > sameReg.second) {
-						it->second->removeBy(m_ctx);
+						m_ctx->m_registers.erase(it);
+						delete it->second;
 					}
 				}
 			}
@@ -95,12 +96,12 @@ namespace CE::Decompiler
 			if (mask != -1) {
 				maskedExpr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(mask), ExprTree::And);
 			}
-			m_ctx->m_flags[ZYDIS_CPUFLAG_ZF] = new ExprTree::Condition(maskedExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Eq);
-			m_ctx->m_flags[ZYDIS_CPUFLAG_SF] = new ExprTree::Condition(maskedExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Lt);
+			m_ctx->setFlag(ZYDIS_CPUFLAG_ZF, new ExprTree::Condition(maskedExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Eq));
+			m_ctx->setFlag(ZYDIS_CPUFLAG_SF, new ExprTree::Condition(maskedExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Lt));
 
 			auto bitsAmountExpr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(0x8), ExprTree::getBits);
 			auto evenOfBitsAmountExpr = new ExprTree::OperationalNode(bitsAmountExpr, new ExprTree::NumberLeaf(2), ExprTree::Mod);
-			m_ctx->m_flags[ZYDIS_CPUFLAG_PF] = new ExprTree::Condition(evenOfBitsAmountExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Eq);
+			m_ctx->setFlag(ZYDIS_CPUFLAG_PF, new ExprTree::Condition(evenOfBitsAmountExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Eq));
 			//flags CF and OF...
 			m_ctx->clearLastCond();
 		}

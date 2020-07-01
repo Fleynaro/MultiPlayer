@@ -286,6 +286,17 @@ namespace CE::Decompiler::Optimization
 							delete expr;
 						}
 					}
+					else if (expr->m_operation == Shr) {
+						expr->m_mask = leftNode->getMask();
+						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+							expr->m_mask >>= numberLeaf->m_value;
+						}
+					}
+					else if (expr->m_operation == Shl) {
+						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+							expr->m_mask = leftNode->getMask() << numberLeaf->m_value;
+						}
+					}
 					else {
 						expr->m_mask = leftNode->getMask() | rightNode->getMask();
 						if (IsOperationOverflow(expr->m_operation)) {

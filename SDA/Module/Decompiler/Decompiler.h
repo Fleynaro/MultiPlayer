@@ -120,7 +120,7 @@ namespace CE::Decompiler
 					auto regParts = externalSymbol.m_regParts;
 					auto mask = externalSymbol.m_needReadMask;
 					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
-					if (mask != externalSymbol.m_needReadMask) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
+					if (mask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
 						auto expr = Register::CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_mask);
 						externalSymbol.m_symbol->replaceWith(expr);
 						delete externalSymbol.m_symbol->m_symbol;

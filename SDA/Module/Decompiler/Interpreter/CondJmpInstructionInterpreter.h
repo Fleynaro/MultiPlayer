@@ -17,7 +17,7 @@ namespace CE::Decompiler
 				case ZYDIS_MNEMONIC_JB:
 				case ZYDIS_MNEMONIC_JNB:
 					if (m_ctx->m_flags.find(ZYDIS_CPUFLAG_CF) != m_ctx->m_flags.end()) {
-						auto condition = m_ctx->m_flags[ZYDIS_CPUFLAG_CF];
+						auto condition = m_ctx->getFlag(ZYDIS_CPUFLAG_CF);
 						if (m_instruction->mnemonic == ZYDIS_MNEMONIC_JB) {
 							condition->inverse();
 						}

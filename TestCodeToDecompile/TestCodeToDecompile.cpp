@@ -34,13 +34,13 @@ int TestFunctionToDecompile1() {
 		}
 	}*/
 
-	switch (b % 20)
+	switch (b)
 	{
 	case 1:
 		b *= 10;
 		break;
 	case 2:
-		b *= 15;
+		b *= 15 + b;
 		break;
 	case 5:
 		b *= 30;
@@ -68,5 +68,6 @@ int TestFunctionToDecompile1() {
 		b += Func1(10) + Func1(5);
 	}*/
 
-	return b;
+	int a = GetTickCount() * GetTickCount() * GetTickCount() * GetTickCount();
+	return b * a + 100;
 }
