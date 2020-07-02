@@ -45,20 +45,24 @@ namespace CE::Decompiler::ExprTree
 		return OperationGroup::None;
 	}
 
+	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
+		return operation == readValue || operation == readAddress || operation == getBits;
+	}
+
 	static bool IsOperationOverflow(OperationType opType) {
-		return opType == Add || opType == Mul || opType == Shl;
+		return (opType == Add || opType == Mul || opType == Shl) && !IsOperationUnsupportedToCalculate(opType);
+	}
+
+	static bool IsOperationMoving(OperationType opType) {
+		return !(opType == Div || opType == Shr || opType == Shl) && !IsOperationUnsupportedToCalculate(opType);
 	}
 
 	static bool IsOperationSigned(OperationType opType) {
-		return GetOperationGroup(opType) == OperationGroup::Arithmetic && opType != Mod;
+		return (GetOperationGroup(opType) == OperationGroup::Arithmetic && opType != Mod) && !IsOperationUnsupportedToCalculate(opType);
 	}
 
 	static bool IsOperationManipulatedWithBitVector(OperationType opType) {
-		return opType == And || opType == Or || opType == Xor;
-	}
-
-	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
-		return operation == readValue || operation == readAddress || operation == getBits;
+		return (opType == And || opType == Or || opType == Xor) && !IsOperationUnsupportedToCalculate(opType);
 	}
 
 	static std::string ShowOperation(OperationType opType) {

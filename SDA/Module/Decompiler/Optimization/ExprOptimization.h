@@ -167,14 +167,19 @@ namespace CE::Decompiler::Optimization
 	}
 
 
+	static bool IsSwap(Node* node1, Node* node2) {
+		return dynamic_cast<NumberLeaf*>(node1) && !dynamic_cast<NumberLeaf*>(node2) || IsLeaf(node1) && !IsLeaf(node2);
+	}
+
+
 	//(0x2 + a)		=>		(a + 0x2)	
-	static void OptimizeLeafPlaceInExpr(OperationalNode* expr) {
+	static void ChangeLeafPlaceInMovingOperations(OperationalNode* expr) {
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
-			OptimizeLeafPlaceInExpr(it);
+			ChangeLeafPlaceInMovingOperations(it);
 		}
-		if (!IsOperationUnsupportedToCalculate(expr->m_operation) && (expr->m_operation != Div && expr->m_operation != Shr && expr->m_operation != Shl)) {
-			if (IsLeaf(expr->m_leftNode) && !IsLeaf(expr->m_rightNode)) {
+		if (IsOperationMoving(expr->m_operation)) {
+			if (IsSwap(expr->m_leftNode, expr->m_rightNode)) {
 				auto tempNode = expr->m_rightNode;
 				expr->m_rightNode = expr->m_leftNode;
 				expr->m_leftNode = tempNode;
@@ -209,10 +214,10 @@ namespace CE::Decompiler::Optimization
 
 
 	//(3x + x) + 5	=>	4x + 5
-	static void OptimizeAddEqualExpr(OperationalNode* expr) {
+	static void CalculateAddEqualNodes(OperationalNode* expr) {
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
-			OptimizeAddEqualExpr(it);
+			CalculateAddEqualNodes(it);
 		}
 
 		if (expr->m_operation == Add) {
@@ -224,8 +229,10 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	//((((rsp & 0xF) + 0x9) + 0x2) - ((0x8 - 0x2) + 0x2))		=>			((((rsp & 0xF) + 0x9) + 0x2) + (-0x8))		=>		((rsp & 0xF) + 0x3)
-	static void OptimizeRepeatOpInExpr(OperationalNode* expr, OperationalNode* prevExpr = nullptr) {
+
+	//((rsp + 0x20) + (rax * 5)) + 0x10				=>		(rsp + 0x30) + (rax * 5)
+	//((((rsp & 0xF) + 0x9) + 0x2) + (-0x8))		=>		((rsp & 0xF) + 0x3)
+	static void MakeLeafPlaceDeeperAndCalculate(OperationalNode* expr, OperationalNode* prevExpr = nullptr) {
 		bool isSameOperation = true;
 
 		if (prevExpr != nullptr) {
@@ -235,27 +242,36 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		if (isSameOperation) {
+		if (isSameOperation && prevExpr) {
+			if (IsOperationMoving(expr->m_operation)) {
+				if (IsSwap(expr->m_rightNode, prevExpr->m_rightNode)) {
+					auto newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation);
+					auto newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation);
+					prevExpr->replaceWith(newPrevExpr);
+					delete prevExpr;
+					expr = newExpr;
+					prevExpr = newPrevExpr;
+				}
+			}
+
 			if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-				if (prevExpr != nullptr) {
-					if (auto prevNumberLeaf = dynamic_cast<NumberLeaf*>(prevExpr->m_rightNode)) {
-						auto result = numberLeaf->m_value;
-						switch (expr->m_operation)
-						{
-						case Shr:
-						case Shl:
-							result += prevNumberLeaf->m_value;
-							break;
-						case Div:
-							result *= prevNumberLeaf->m_value;
-							break;
-						default:
-							result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
-						}
-						expr = new OperationalNode(expr->m_leftNode, new NumberLeaf(result), expr->m_operation);
-						prevExpr->replaceWith(expr);
-						delete prevExpr;
+				if (auto prevNumberLeaf = dynamic_cast<NumberLeaf*>(prevExpr->m_rightNode)) {
+					auto result = numberLeaf->m_value;
+					switch (expr->m_operation)
+					{
+					case Shr:
+					case Shl:
+						result += prevNumberLeaf->m_value;
+						break;
+					case Div:
+						result *= prevNumberLeaf->m_value;
+						break;
+					default:
+						result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
 					}
+					expr = new OperationalNode(expr->m_leftNode, new NumberLeaf(result), expr->m_operation);
+					prevExpr->replaceWith(expr);
+					delete prevExpr;
 				}
 			}
 			else {
@@ -275,7 +291,7 @@ namespace CE::Decompiler::Optimization
 
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
-			OptimizeRepeatOpInExpr(it, prevExpr);
+			MakeLeafPlaceDeeperAndCalculate(it, prevExpr);
 		}
 	}
 
@@ -378,9 +394,9 @@ namespace CE::Decompiler::Optimization
 		auto list = GetNextOperationalsNodesToOpimize(node);
 		for(auto expr : list) {
 			OptimizeConstExpr(expr);
-			OptimizeLeafPlaceInExpr(expr);
-			OptimizeRepeatOpInExpr(expr);
-			OptimizeAddEqualExpr(expr);
+			ChangeLeafPlaceInMovingOperations(expr);
+			MakeLeafPlaceDeeperAndCalculate(expr);
+			CalculateAddEqualNodes(expr);
 			CalculateMasksAndOptimize(expr);
 			OptimizeZeroInExpr(expr);
 		}
