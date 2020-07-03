@@ -57,7 +57,7 @@ namespace CE::Decompiler::ExprTree
 				str.pop_back();
 				str.pop_back();
 			}
-			return str + ")";
+			return (m_updateDebugInfo = (str + ")"));
 		}
 	};
 };

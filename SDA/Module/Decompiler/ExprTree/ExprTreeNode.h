@@ -13,6 +13,12 @@ namespace CE::Decompiler::ExprTree
 	class Node
 	{
 	public:
+		std::string m_updateDebugInfo;
+		void static UpdateDebugInfo(Node* node) {
+			if (!node) return;
+			node->printDebug();
+		}
+
 		Node()
 		{}
 

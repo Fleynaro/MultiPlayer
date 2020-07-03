@@ -233,6 +233,8 @@ namespace CE::Decompiler::Optimization
 	//((rsp + 0x20) + (rax * 5)) + 0x10				=>		(rsp + 0x30) + (rax * 5)
 	//((((rsp & 0xF) + 0x9) + 0x2) + (-0x8))		=>		((rsp & 0xF) + 0x3)
 	static void MakeLeafPlaceDeeperAndCalculate(OperationalNode* expr, OperationalNode* prevExpr = nullptr) {
+		Node::UpdateDebugInfo(expr);
+		Node::UpdateDebugInfo(prevExpr);
 		bool isSameOperation = true;
 
 		if (prevExpr != nullptr) {
@@ -244,13 +246,15 @@ namespace CE::Decompiler::Optimization
 
 		if (isSameOperation && prevExpr) {
 			if (IsOperationMoving(expr->m_operation)) {
-				if (IsSwap(expr->m_rightNode, prevExpr->m_rightNode)) {
+				if (IsSwap(prevExpr->m_rightNode, expr->m_rightNode)) {
 					auto newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation);
 					auto newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation);
 					prevExpr->replaceWith(newPrevExpr);
 					delete prevExpr;
 					expr = newExpr;
 					prevExpr = newPrevExpr;
+					Node::UpdateDebugInfo(expr);
+					Node::UpdateDebugInfo(prevExpr);
 				}
 			}
 
@@ -287,11 +291,9 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		prevExpr = expr;
-
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
-			MakeLeafPlaceDeeperAndCalculate(it, prevExpr);
+			MakeLeafPlaceDeeperAndCalculate(it, expr);
 		}
 	}
 
@@ -333,9 +335,6 @@ namespace CE::Decompiler::Optimization
 
 		if (auto readValueNode = dynamic_cast<ReadValueNode*>(expr)) {
 			expr->m_mask = GetMaskBySize(readValueNode->getSize());
-		}
-		else if(auto readAddressNode = dynamic_cast<ReadAddressNode*>(expr)) {
-			expr->m_mask = -1;
 		}
 		else {
 			if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
@@ -380,9 +379,6 @@ namespace CE::Decompiler::Optimization
 					}
 					else {
 						expr->m_mask = leftNode->getMask() | rightNode->getMask();
-						if (IsOperationOverflow(expr->m_operation)) {
-							expr->m_mask = expr->m_mask << 1 | 1;
-						}
 					}
 				}
 			}

@@ -23,7 +23,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			return m_symbol->printDebug();
+			return m_updateDebugInfo = m_symbol->printDebug();
 		}
 	};
 
@@ -45,7 +45,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			return "0x" + Generic::String::NumberToHex(m_value) + "{"+ std::to_string((int)m_value) +"}";
+			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value) + "{"+ std::to_string((int)m_value) +"}");
 		}
 	};
 };

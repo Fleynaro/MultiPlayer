@@ -188,10 +188,9 @@ namespace CE::Decompiler::Optimization
 
 		OptimizeExprInDecompiledGraph(decGraph);
 
-		MemorySymbolization memorySymbolization(decGraph);
-		memorySymbolization.start();
-
+		//MemorySymbolization memorySymbolization(decGraph);
+		//memorySymbolization.start();
 		//optimize expressions again after memory symbolization
-		OptimizeExprInDecompiledGraph(decGraph);
+		//OptimizeExprInDecompiledGraph(decGraph);
 	}
 };

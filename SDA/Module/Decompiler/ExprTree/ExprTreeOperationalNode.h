@@ -22,7 +22,6 @@ namespace CE::Decompiler::ExprTree
 
 		//Memory
 		readValue,
-		readAddress,
 
 		//Flags
 		getBits
@@ -40,13 +39,13 @@ namespace CE::Decompiler::ExprTree
 			return OperationGroup::Arithmetic;
 		if (opType >= And && opType <= Shl)
 			return OperationGroup::Logic;
-		if(opType == readValue || opType == readAddress)
+		if(opType == readValue)
 			return OperationGroup::Memory;
 		return OperationGroup::None;
 	}
 
 	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
-		return operation == readValue || operation == readAddress || operation == getBits;
+		return operation == readValue || operation == getBits;
 	}
 
 	static bool IsOperationOverflow(OperationType opType) {
@@ -88,7 +87,7 @@ namespace CE::Decompiler::ExprTree
 		Node* m_leftNode;
 		Node* m_rightNode;
 		OperationType m_operation;
-		uint64_t m_mask = -1;
+		uint64_t m_mask = 0x0;
 
 		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation)
 			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation)
@@ -121,6 +120,8 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
+			if (!m_leftNode || !m_rightNode)
+				return "";
 			std::string result = "";
 			if (m_operation == readValue) {
 				result = "*(uint_" + std::to_string(8 * static_cast<NumberLeaf*>(m_rightNode)->m_value) + "t*)" + m_leftNode->printDebug();
@@ -132,7 +133,7 @@ namespace CE::Decompiler::ExprTree
 			else {
 				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
 			}
-			return result;// + "<" + std::to_string((uint64_t)this % 100000) + ">";
+			return (m_updateDebugInfo = result);// + "<" + std::to_string((uint64_t)this % 100000) + ">";
 		}
 	};
 
@@ -152,22 +153,5 @@ namespace CE::Decompiler::ExprTree
 		}
 	private:
 		int m_size;
-	};
-
-	class ReadAddressNode : public OperationalNode
-	{
-	public:
-		ReadAddressNode(SymbolLeaf* symbolLeaf)
-			: OperationalNode(symbolLeaf, new NumberLeaf(0), readAddress)
-		{}
-
-		Symbol::Variable* getVariableSymbol() {
-			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(m_leftNode)) {
-				if (auto symbol = dynamic_cast<Symbol::Variable*>(symbolLeaf->m_symbol)) {
-					return symbol;
-				}
-			}
-			return nullptr;
-		}
 	};
 };

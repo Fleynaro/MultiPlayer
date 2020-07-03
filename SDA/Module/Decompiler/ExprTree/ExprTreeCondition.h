@@ -88,7 +88,9 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			return "(" + m_leftNode->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightNode->printDebug() + ")";
+			if (!m_leftNode || !m_rightNode)
+				return "";
+			return m_updateDebugInfo = ("(" + m_leftNode->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightNode->printDebug() + ")");
 		}
 	};
 
@@ -157,13 +159,15 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
+			if (!m_leftCond)
+				return "";
 			if (m_cond == None) {
-				return m_leftCond->printDebug();
+				return m_updateDebugInfo = m_leftCond->printDebug();
 			}
 			if (m_cond == Not) {
-				return "!(" + m_leftCond->printDebug() + ")";
+				return m_updateDebugInfo = ("!(" + m_leftCond->printDebug() + ")");
 			}
-			return "(" + m_leftCond->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightCond->printDebug() + ")";
+			return m_updateDebugInfo = ("(" + m_leftCond->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightCond->printDebug() + ")");
 		}
 	};
 
@@ -192,7 +196,9 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			return "(" + m_condition->printDebug() + ") ? " + "(" + m_leftNode->printDebug() + ") : (" + m_rightNode->printDebug() + ")";
+			if (!m_leftNode || !m_rightNode)
+				return "";
+			return m_updateDebugInfo = ("(" + m_condition->printDebug() + ") ? " + "(" + m_leftNode->printDebug() + ") : (" + m_rightNode->printDebug() + ")");
 		}
 	};
 };
