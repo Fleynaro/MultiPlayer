@@ -108,6 +108,8 @@ int TestFunctionToDecompile1() {
 	auto a = g_c;
 	auto obj = fff(*a.b->a);
 
+	auto rr = &(&a)->b;
+
 	/*int arr[2][3][4];
 	for (int i = 0; i < 120; i++)
 		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;*/
