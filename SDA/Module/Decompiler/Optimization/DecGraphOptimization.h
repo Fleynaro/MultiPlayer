@@ -15,7 +15,7 @@ namespace CE::Decompiler::Optimization
 
 		void start() {
 			for (auto decBlock : m_decGraph->getDecompiledBlocks()) {
-				for (auto line : decBlock->getLines()) {
+				for (auto line : decBlock->getSeqLines()) {
 					detectAllStackMemoryAddressesInExpr(line->m_destAddr, true);
 					detectAllStackMemoryAddressesInExpr(line->m_srcValue, false);
 				}
@@ -153,8 +153,11 @@ namespace CE::Decompiler::Optimization
 	static void OptimizeExprInDecompiledGraph(DecompiledCodeGraph* decGraph) {
 		//optimize expressions
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
-			for (auto line : decBlock->getLines()) {
+			for (auto line : decBlock->getSeqLines()) {
 				Optimization::Optimize(line->m_destAddr);
+				Optimization::Optimize(line->m_srcValue);
+			}
+			for (auto line : decBlock->getSymbolAssignmentLines()) {
 				Optimization::Optimize(line->m_srcValue);
 			}
 			if (decBlock->m_noJmpCond != nullptr) {

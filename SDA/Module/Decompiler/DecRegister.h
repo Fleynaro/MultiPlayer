@@ -61,8 +61,9 @@ namespace CE::Decompiler
 				auto sameRegExpr = regPart.m_expr;
 				int bitShift = GetShiftValueOfMask(regPart.m_regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
 
-				if (regPart.m_regMask != requestRegMask) {
-					//for signed register operations and etc...
+				//see if is regPart.m_regMask bigger than requestRegMask
+				if ((regPart.m_regMask & ~requestRegMask) != 0x0) {
+					//for operations and etc...
 					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((regPart.m_regMask & requestRegMask) >> bitShift), ExprTree::And);
 				}
 
@@ -99,7 +100,7 @@ namespace CE::Decompiler
 				m_sameRegisters = GetListOfSameGenRegisters(m_reg - ZYDIS_REGISTER_AX);
 			}
 			else if (m_reg >= ZYDIS_REGISTER_EAX && m_reg <= ZYDIS_REGISTER_R15D) {
-				m_mask = 0xFFFFFFFFFFFFFFFF; //exception: eax(no ax, ah, al!) overwrite rax!!!
+				m_mask = 0xFFFFFFFF; //exception: eax(no ax, ah, al!) overwrite rax!!!
 				m_sameRegisters = GetListOfSameGenRegisters(m_reg - ZYDIS_REGISTER_EAX);
 			}
 			else if (m_reg >= ZYDIS_REGISTER_RAX && m_reg <= ZYDIS_REGISTER_R15) {
@@ -135,7 +136,7 @@ namespace CE::Decompiler
 			std::list result = {
 				std::make_pair(ZydisRegister(ZYDIS_REGISTER_AH + idx), (uint64_t)0xFF),
 				std::make_pair(ZydisRegister(ZYDIS_REGISTER_AX + idx), (uint64_t)0xFFFF),
-				std::make_pair(ZydisRegister(ZYDIS_REGISTER_EAX + idx), (uint64_t)0xFFFFFFFFFFFFFFFF), //exception: eax(no ax, ah, al!) overwrite rax!!!
+				std::make_pair(ZydisRegister(ZYDIS_REGISTER_EAX + idx), (uint64_t)0xFFFFFFFF), //exception: eax(no ax, ah, al!) overwrite rax!!!
 				std::make_pair(ZydisRegister(ZYDIS_REGISTER_RAX + idx), (uint64_t)0xFFFFFFFFFFFFFFFF)
 			};
 			if (idx <= 3) {

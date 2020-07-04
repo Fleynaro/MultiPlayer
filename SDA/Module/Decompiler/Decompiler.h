@@ -271,7 +271,7 @@ namespace CE::Decompiler
 							}
 
 							auto expr = Register::CreateExprFromRegisterParts(regParts, symbolMask);
-							decBlock->addLine(symbolLeaf, expr);
+							decBlock->addSymbolAssignmentLine(symbolLeaf, expr);
 						}
 					}
 				}
@@ -320,12 +320,7 @@ namespace CE::Decompiler
 			if (!regParts.empty()) {
 				uint64_t canReadMask = 0x0;
 				for (auto regPart : regParts) {
-					canReadMask |= regPart->m_regMask;
-
-					//exception: eax(no ax, ah, al!) overwrite rax!!!
-					/*if (regPart->m_regMask = 0xFFFFFFFF) {
-						canReadMask = 0xFFFFFFFFFFFFFFFF;
-					}*/
+					canReadMask |= regPart->m_maskToChange;
 				}
 
 				if (pressure == 0x1000000000000000) {

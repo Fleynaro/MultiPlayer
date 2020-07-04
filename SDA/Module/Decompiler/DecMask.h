@@ -9,6 +9,12 @@ namespace CE::Decompiler
 		virtual uint64_t getMask() = 0;
 	};
 
+	static uint64_t GetMaskWithException(uint64_t mask) {
+		if (mask == 0xFFFFFFFF)
+			return 0xFFFFFFFFFFFFFFFF;
+		return mask;
+	}
+
 	static int GetShiftValueOfMask(uint64_t mask) {
 		int result = 0;
 		for (auto m = mask; int(m & 0xF) == 0; m = m >> 4) {

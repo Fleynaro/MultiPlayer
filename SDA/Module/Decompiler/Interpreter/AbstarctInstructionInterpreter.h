@@ -37,12 +37,19 @@ namespace CE::Decompiler
 
 			ExprTree::Node* dstExpr = nullptr;
 			ExprTree::Node* srcExpr = op2.getExpr();
+
+			if (isSigned) {
+				srcExpr = new ExprTree::CastNode(srcExpr, op1.getSize(), true);
+			}
+
 			if (opType != ExprTree::None) {
 				dstExpr = op1.getExpr();
+				if (isSigned) {
+					dstExpr = new ExprTree::CastNode(dstExpr, op1.getSize(), true);
+				}
 				srcExpr = new ExprTree::OperationalNode(dstExpr, srcExpr, opType);
 			}
 
-			srcExpr->setSigned(isSigned);
 			assignment(m_instruction->operands[0], srcExpr, dstExpr, isSettingFlags);
 		}
 
@@ -53,8 +60,14 @@ namespace CE::Decompiler
 			if (!op1.isDst() || !op2.isValid() || !op2.isValid())
 				return;
 
-			auto srcExpr = new ExprTree::OperationalNode(op2.getExpr(), op3.getExpr(), opType);
-			srcExpr->setSigned(isSigned);
+			auto expr1 = op2.getExpr();
+			auto expr2 = op3.getExpr();
+			if (isSigned) {
+				expr1 = new ExprTree::CastNode(expr1, op1.getSize(), true);
+				expr2 = new ExprTree::CastNode(expr2, op1.getSize(), true);
+			}
+
+			auto srcExpr = new ExprTree::OperationalNode(expr1, expr2, opType);
 			assignment(m_instruction->operands[0], srcExpr, nullptr, isSettingFlags);
 		}
 
@@ -66,7 +79,7 @@ namespace CE::Decompiler
 				}
 				if (isSettingFlags)
 					setFlags(srcExpr, GetMaskBySize(dstOperand.size));
-				m_block->addLine(dstExpr, srcExpr);
+				m_block->addSeqLine(dstExpr, srcExpr);
 			}
 			else {
 				setExprToRegisterDst(dstOperand.reg.value, srcExpr, isSettingFlags);
@@ -83,7 +96,8 @@ namespace CE::Decompiler
 					continue;
 				auto it = m_ctx->m_registers.find(sameReg.first);
 				if (it != m_ctx->m_registers.end()) {
-					if (dstReg.m_mask >= sameReg.second) { //exception: eax(no ax, ah, al!) overwrite rax!!!
+					//exception: eax(no ax, ah, al!) overwrite rax!!!
+					if (GetMaskWithException(dstReg.m_mask) >= GetMaskWithException(sameReg.second)) {
 						m_ctx->m_registers.erase(it);
 						delete it->second;
 					}
@@ -99,7 +113,7 @@ namespace CE::Decompiler
 			m_ctx->setFlag(ZYDIS_CPUFLAG_ZF, new ExprTree::Condition(maskedExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Eq));
 			m_ctx->setFlag(ZYDIS_CPUFLAG_SF, new ExprTree::Condition(maskedExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Lt));
 
-			auto bitsAmountExpr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(0x8), ExprTree::getBits);
+			auto bitsAmountExpr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(0x8), ExprTree::GetBits);
 			auto evenOfBitsAmountExpr = new ExprTree::OperationalNode(bitsAmountExpr, new ExprTree::NumberLeaf(2), ExprTree::Mod);
 			m_ctx->setFlag(ZYDIS_CPUFLAG_PF, new ExprTree::Condition(evenOfBitsAmountExpr, new ExprTree::NumberLeaf(0), ExprTree::Condition::Eq));
 			//flags CF and OF...

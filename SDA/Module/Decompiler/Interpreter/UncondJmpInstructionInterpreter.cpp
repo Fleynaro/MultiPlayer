@@ -41,6 +41,6 @@ void UncondJmpInstructionInterpreter::execute() {
 		if (dstExpr == nullptr) {
 			dstExpr = new ExprTree::NumberLeaf(0x0);
 		}
-		m_block->addLine(dstExpr, funcCallCtx);
+		m_block->addSeqLine(dstExpr, funcCallCtx);
 	}
 }

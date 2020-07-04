@@ -333,53 +333,48 @@ namespace CE::Decompiler::Optimization
 			CalculateMasksAndOptimize(it);
 		}
 
-		if (auto readValueNode = dynamic_cast<ReadValueNode*>(expr)) {
-			expr->m_mask = GetMaskBySize(readValueNode->getSize());
-		}
-		else {
-			if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
-				if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
-					if (expr->m_operation == And) {
-						auto mask1 = leftNode->getMask();
-						auto mask2 = rightNode->getMask();
-						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-							if ((mask1 & mask2) == mask1) {
-								//[var_2_32] & 0xffffffff{-1}		=>		[var_2_32]		
-								expr->replaceWith(expr->m_leftNode);
-								expr->m_leftNode = nullptr;
-								delete expr;
+		if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
+			if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
+				if (expr->m_operation == And) {
+					auto mask1 = leftNode->getMask();
+					auto mask2 = rightNode->getMask();
+					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+						if ((mask1 & mask2) == mask1) {
+							//[var_2_32] & 0xffffffff{-1}		=>		[var_2_32]		
+							expr->replaceWith(expr->m_leftNode);
+							expr->m_leftNode = nullptr;
+							delete expr;
+							return;
+						}
+						else {
+							if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
+								RemoveZeroMaskMulExpr(expr, mask2);
 								return;
 							}
-							else {
-								if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
-									RemoveZeroMaskMulExpr(expr, mask2);
-									return;
-								}
-							}
 						}
+					}
 
-						expr->m_mask = mask1 & mask2;
+					expr->m_mask = mask1 & mask2;
 
-						if (expr->m_mask == 0x0) {
-							//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
-							expr->replaceWith(new NumberLeaf(0));
-							delete expr;
-						}
+					if (expr->m_mask == 0x0) {
+						//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
+						expr->replaceWith(new NumberLeaf(0));
+						delete expr;
 					}
-					else if (expr->m_operation == Shr) {
-						expr->m_mask = leftNode->getMask();
-						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-							expr->m_mask >>= numberLeaf->m_value;
-						}
+				}
+				else if (expr->m_operation == Shr) {
+					expr->m_mask = leftNode->getMask();
+					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+						expr->m_mask >>= numberLeaf->m_value;
 					}
-					else if (expr->m_operation == Shl) {
-						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-							expr->m_mask = leftNode->getMask() << numberLeaf->m_value;
-						}
+				}
+				else if (expr->m_operation == Shl) {
+					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+						expr->m_mask = leftNode->getMask() << numberLeaf->m_value;
 					}
-					else {
-						expr->m_mask = leftNode->getMask() | rightNode->getMask();
-					}
+				}
+				else {
+					expr->m_mask = leftNode->getMask() | rightNode->getMask();
 				}
 			}
 		}

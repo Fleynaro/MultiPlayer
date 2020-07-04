@@ -3,17 +3,23 @@
 
 namespace CE::Decompiler::PrimaryTree
 {
+	template<typename T = ExprTree::Node>
 	class Line : public ExprTree::IParentNode
 	{
 	public:
-		ExprTree::Node* m_destAddr;
+		T* m_destAddr;
 		ExprTree::Node* m_srcValue;
 
-		Line(ExprTree::Node* destAddr, ExprTree::Node* srcValue);
+		Line(T* destAddr, ExprTree::Node* srcValue)
+			: m_destAddr(destAddr), m_srcValue(srcValue)
+		{
+			destAddr->addParentNode(this);
+			srcValue->addParentNode(this);
+		}
 
 		void replaceNode(ExprTree::Node* node, ExprTree::Node * newNode) override {
 			if (node == m_destAddr) {
-				m_destAddr = newNode;
+				m_destAddr = static_cast<T*>(newNode);
 			}
 			if (node == m_srcValue) {
 				m_srcValue = newNode;
@@ -24,6 +30,9 @@ namespace CE::Decompiler::PrimaryTree
 			return m_destAddr->printDebug() + " = " + m_srcValue->printDebug() + "\n";
 		}
 	};
+
+	using SeqLine = Line<ExprTree::Node>;
+	using SymbolAssignmentLine = Line<ExprTree::SymbolLeaf>;
 
 	class Block : public ExprTree::IParentNode
 	{
@@ -94,21 +103,34 @@ namespace CE::Decompiler::PrimaryTree
 			m_noJmpCond->addParentNode(this);
 		}
 
-		void addLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue) {
-			m_lines.push_back(new Line(destAddr, srcValue));
+		void addSeqLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue) {
+			m_seqLines.push_back(new SeqLine(destAddr, srcValue));
 		}
 
-		std::list<Line*>& getLines() {
-			return m_lines;
+		std::list<SeqLine*>& getSeqLines() {
+			return m_seqLines;
+		}
+
+		void addSymbolAssignmentLine(ExprTree::SymbolLeaf* symbolLeaf, ExprTree::Node* srcValue) {
+			m_symbolAssignmentLines.push_back(new SymbolAssignmentLine(symbolLeaf, srcValue));
+		}
+
+		std::list<SymbolAssignmentLine*>& getSymbolAssignmentLines() {
+			return m_symbolAssignmentLines;
 		}
 
 		bool hasNoCode() {
-			return m_lines.empty();
+			return m_seqLines.empty();
 		}
 
 		void printDebug(bool cond = true, const std::string& tabStr = "") {
 			std::string result = "";
-			for (auto line : m_lines) {
+			for (auto line : m_seqLines) {
+				result += tabStr + line->printDebug();
+			}
+			if(!m_symbolAssignmentLines.empty())
+				result += tabStr + "<Symbol assignments>:\n";
+			for (auto line : m_symbolAssignmentLines) {
 				result += tabStr + line->printDebug();
 			}
 			if (cond && m_noJmpCond != nullptr) {
@@ -117,7 +139,8 @@ namespace CE::Decompiler::PrimaryTree
 			printf("%s", result.c_str());
 		}
 	private:
-		std::list<Line*> m_lines;
+		std::list<SeqLine*> m_seqLines;
+		std::list<SymbolAssignmentLine*> m_symbolAssignmentLines;
 	};
 
 	class EndBlock : public Block

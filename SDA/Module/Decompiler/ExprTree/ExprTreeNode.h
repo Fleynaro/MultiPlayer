@@ -58,14 +58,6 @@ namespace CE::Decompiler::ExprTree
 			m_parentNodes.remove(node);
 		}
 
-		void setSigned(bool toggle) {
-			m_isSigned = toggle;
-		}
-
-		bool isSigned() {
-			return m_isSigned;
-		}
-
 		virtual bool isLeaf() {
 			return false;
 		}
@@ -79,7 +71,6 @@ namespace CE::Decompiler::ExprTree
 		}
 
 	private:
-		bool m_isSigned = false;
 		std::list<IParentNode*> m_parentNodes;
 	};
 };

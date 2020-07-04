@@ -47,17 +47,13 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const Register& reg, uint6
 
 		auto it = m_registers.find(reg);
 		if (it != m_registers.end()) {
+			//exception: eax(no ax, ah, al!) overwrite rax!!!
 			auto sameRegMask = sameReg.second;
-			auto changedRegMask = mask & ~sameRegMask;
-			if (changedRegMask != mask) {
-				auto part = new RegisterPart(sameRegMask, mask & sameRegMask, it->second->m_node);
+			auto remainToReadMask = mask & ~GetMaskWithException(sameRegMask);
+			if (remainToReadMask != mask) {
+				auto part = new RegisterPart(sameRegMask, mask & GetMaskWithException(sameRegMask), it->second->m_node);
 				regParts.push_back(part);
-				mask = changedRegMask;
-
-				//exception: eax(no ax, ah, al!) overwrite rax!!!
-				/*if (sameRegMask == 0xFFFFFFFF) {
-					mask &= 0xFFFFFFFF;
-				}*/
+				mask = remainToReadMask;
 			}
 		}
 

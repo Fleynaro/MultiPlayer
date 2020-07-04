@@ -87,10 +87,10 @@ int TestFunctionToDecompile1() {
 	A a;
 	auto obj = fff(a);
 
-	//int arr[2][3][4];
-	/*for (int i = 0; i < 120; i++)
-		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;*/
+	int arr[2][3][4];
+	for (int i = 0; i < 120; i++)
+		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;
 
 	/*int a = GetTickCount() * GetTickCount() * GetTickCount() * GetTickCount();*/
-	return /*b * a + 100 + *//*arr[1][2][3] + */obj.a + obj.b;
+	return /*b * a + 100 + */arr[1][2][3] + obj.a + obj.b;
 }

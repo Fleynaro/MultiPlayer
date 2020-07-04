@@ -21,10 +21,11 @@ namespace CE::Decompiler::ExprTree
 		Shl,
 
 		//Memory
-		readValue,
+		ReadValue,
 
-		//Flags
-		getBits
+		//Other
+		Cast,
+		GetBits
 	};
 
 	enum class OperationGroup {
@@ -39,13 +40,13 @@ namespace CE::Decompiler::ExprTree
 			return OperationGroup::Arithmetic;
 		if (opType >= And && opType <= Shl)
 			return OperationGroup::Logic;
-		if(opType == readValue)
+		if(opType == ReadValue)
 			return OperationGroup::Memory;
 		return OperationGroup::None;
 	}
 
 	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
-		return operation == readValue || operation == getBits;
+		return operation == ReadValue || operation == Cast || operation == GetBits;
 	}
 
 	static bool IsOperationOverflow(OperationType opType) {
@@ -76,7 +77,7 @@ namespace CE::Decompiler::ExprTree
 		case Xor: return "^";
 		case Shr: return ">>";
 		case Shl: return "<<";
-		case readValue: return "&";
+		case ReadValue: return "&";
 		}
 		return "_";
 	}
@@ -123,16 +124,14 @@ namespace CE::Decompiler::ExprTree
 			if (!m_leftNode || !m_rightNode)
 				return "";
 			std::string result = "";
-			if (m_operation == readValue) {
-				result = "*(uint_" + std::to_string(8 * static_cast<NumberLeaf*>(m_rightNode)->m_value) + "t*)" + m_leftNode->printDebug();
-			} else if (m_operation == Xor) {
+			if (m_operation == Xor) {
 				if (static_cast<NumberLeaf*>(m_rightNode)->m_value == -1) {
 					result = "~" + m_leftNode->printDebug();
 				}
 			}
-			else {
+			
+			if(result.empty())
 				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
-			}
 			return (m_updateDebugInfo = result);// + "<" + std::to_string((uint64_t)this % 100000) + ">";
 		}
 	};
@@ -141,17 +140,53 @@ namespace CE::Decompiler::ExprTree
 	{
 	public:
 		ReadValueNode(Node* node, int size)
-			: OperationalNode(node, new NumberLeaf(size), readValue), m_size(size)
+			: OperationalNode(node, new NumberLeaf(size), ReadValue), m_size(size)
 		{}
 
 		Node* getAddress() {
 			return m_leftNode;
 		}
 
+		uint64_t getMask() override {
+			return GetMaskBySize(getSize());
+		}
+
 		int getSize() {
 			return m_size;
 		}
+
+		std::string printDebug() override {
+			if (!m_leftNode || !m_rightNode)
+				return "";
+			return m_updateDebugInfo = ("*(uint_" + std::to_string(8 * getSize()) + "t*)" + m_leftNode->printDebug());
+		}
 	private:
 		int m_size;
+	};
+
+	//for movsx, imul, idiv, ...
+	class CastNode : public OperationalNode
+	{
+	public:
+		CastNode(Node* node, int size, bool isSigned)
+			: OperationalNode(node, new NumberLeaf(size), Cast), m_size(size), m_isSigned(isSigned)
+		{}
+
+		uint64_t getMask() override {
+			return GetMaskBySize(getSize());
+		}
+
+		int getSize() {
+			return m_size;
+		}
+
+		std::string printDebug() override {
+			if (!m_leftNode || !m_rightNode)
+				return "";
+			return m_updateDebugInfo = ("("+ std::string(!m_isSigned ? "u" : "") +"int_" + std::to_string(8 * getSize()) + "t)" + m_leftNode->printDebug());
+		}
+	private:
+		int m_size;
+		bool m_isSigned;
 	};
 };

@@ -11,6 +11,9 @@ namespace CE::Decompiler
 		{}
 
 		void execute() override {
+			auto size = m_instruction->operands[0].size / 8;
+			auto mask = GetMaskBySize(size);
+
 			switch (m_instruction->mnemonic)
 			{
 			case ZYDIS_MNEMONIC_ADD:
@@ -20,11 +23,12 @@ namespace CE::Decompiler
 			case ZYDIS_MNEMONIC_CMP: {
 				Operand op1(m_ctx, &m_instruction->operands[0]);
 				Operand op2(m_ctx, &m_instruction->operands[1]);
+
 				auto dstExpr = op1.getExpr();
 				auto srcExpr = op2.getExpr();
-				srcExpr = new ExprTree::OperationalNode(srcExpr, new ExprTree::NumberLeaf(-1), ExprTree::Mul); //negative
+				srcExpr = new ExprTree::OperationalNode(srcExpr, new ExprTree::NumberLeaf(-1 & mask), ExprTree::Mul); //negative
 				auto expr = new ExprTree::OperationalNode(dstExpr, srcExpr, ExprTree::Add);
-				setFlags(expr, GetMaskBySize(m_instruction->operands[0].size / 8));
+				setFlags(expr, mask);
 				m_ctx->setLastCond(dstExpr, srcExpr, RegisterFlags::CMP);
 
 				if (m_instruction->mnemonic == ZYDIS_MNEMONIC_SUB) {
@@ -52,7 +56,7 @@ namespace CE::Decompiler
 				if (operandsCount == 1)
 				{
 					ZydisRegister reg;
-					switch (m_instruction->operands[0].size / 8)
+					switch (size)
 					{
 					case 1:
 						reg = ZYDIS_REGISTER_AL;
@@ -70,8 +74,11 @@ namespace CE::Decompiler
 					Operand op(m_ctx, &m_instruction->operands[0]);
 					expr1 = m_ctx->requestRegister(reg);
 					expr2 = op.getExpr();
+					if (isSigned) {
+						expr1 = new ExprTree::CastNode(expr1, size, true);
+						expr2 = new ExprTree::CastNode(expr2, size, true);
+					}
 					auto expr = new ExprTree::OperationalNode(expr1, expr2, opType);
-					expr->setSigned(isSigned);
 					setExprToRegisterDst(reg, expr);
 				}
 				else if (operandsCount == 2)
@@ -99,7 +106,7 @@ namespace CE::Decompiler
 
 				if (opType == ExprTree::Div) {
 					ZydisRegister reg;
-					switch (m_instruction->operands[0].size / 8)
+					switch (size)
 					{
 					case 1:
 						reg = ZYDIS_REGISTER_AH;
@@ -113,8 +120,12 @@ namespace CE::Decompiler
 					default:
 						reg = ZYDIS_REGISTER_RDX;
 					}
+
+					if (isSigned) {
+						expr1 = new ExprTree::CastNode(expr1, size, true);
+						expr2 = new ExprTree::CastNode(expr2, size, true);
+					}
 					auto expr = new ExprTree::OperationalNode(expr1, expr2, ExprTree::Mod);
-					expr->setSigned(isSigned);
 					setExprToRegisterDst(reg, expr);
 				}
 				break;
@@ -123,13 +134,13 @@ namespace CE::Decompiler
 				binOperation(ExprTree::Mod);
 				break;*/
 			case ZYDIS_MNEMONIC_INC:
-				unaryOperation(ExprTree::Add, new ExprTree::NumberLeaf(1));
+				unaryOperation(ExprTree::Add, new ExprTree::NumberLeaf(1 & mask));
 				break;
 			case ZYDIS_MNEMONIC_DEC:
-				unaryOperation(ExprTree::Add, new ExprTree::NumberLeaf(-1));
+				unaryOperation(ExprTree::Add, new ExprTree::NumberLeaf(-1 & mask));
 				break;
 			case ZYDIS_MNEMONIC_NEG:
-				unaryOperation(ExprTree::Mul, new ExprTree::NumberLeaf(-1));
+				unaryOperation(ExprTree::Mul, new ExprTree::NumberLeaf(-1 & mask));
 				break;
 			}
 		}
