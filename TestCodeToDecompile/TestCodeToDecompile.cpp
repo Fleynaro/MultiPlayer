@@ -11,18 +11,39 @@ int Func1(int a) {
 
 class A {
 public:
-	int a = 0;
-	int b = 0;
+	int a = 10;
+	int b = 20;
 	long long c = 1000;
+	uint64_t arr[3];
 
 	A() = default;
 };
 
-A fff(A a) {
+class B {
+public:
+	int b = 0;
+	A* a = new A;
+
+	B() = default;
+};
+
+class C {
+public:
+	int c = 0;
+	B* b = new B;
+
+	C() = default;
+};
+
+A fff(A& a) {
 	a.a = rand();
 	a.b = rand();
 	return a;
 }
+
+A g_a;
+B g_b;
+C g_c;
 
 int TestFunctionToDecompile1() {
 	int b = GetTickCount();
@@ -84,13 +105,13 @@ int TestFunctionToDecompile1() {
 		b += Func1(10) + Func1(5);
 	}*/
 
-	A a;
-	auto obj = fff(a);
+	auto a = g_c;
+	auto obj = fff(*a.b->a);
 
-	int arr[2][3][4];
+	/*int arr[2][3][4];
 	for (int i = 0; i < 120; i++)
-		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;
+		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;*/
 
 	/*int a = GetTickCount() * GetTickCount() * GetTickCount() * GetTickCount();*/
-	return /*b * a + 100 + */arr[1][2][3] + obj.a + obj.b;
+	return /*b * a + 100 + *//*arr[1][2][3] + */obj.a + a.b->a->b;
 }

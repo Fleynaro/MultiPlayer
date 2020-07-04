@@ -131,7 +131,7 @@ namespace CE::Decompiler::PrimaryTree
 			if(!m_symbolAssignmentLines.empty())
 				result += tabStr + "<Symbol assignments>:\n";
 			for (auto line : m_symbolAssignmentLines) {
-				result += tabStr + line->printDebug();
+				result += tabStr + "- " + line->printDebug();
 			}
 			if (cond && m_noJmpCond != nullptr) {
 				result += "------> Condition: " + m_noJmpCond->printDebug() + "\n";
