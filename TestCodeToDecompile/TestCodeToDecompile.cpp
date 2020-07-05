@@ -110,6 +110,9 @@ int TestFunctionToDecompile1() {
 
 	auto rr = &(&a)->b;
 
+	auto op1 = int16_t(55);
+	auto var = (int)op1 + (uint16_t*)2 + (op1 == -1) ? 1 : 2;
+
 	/*int arr[2][3][4];
 	for (int i = 0; i < 120; i++)
 		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;*/
