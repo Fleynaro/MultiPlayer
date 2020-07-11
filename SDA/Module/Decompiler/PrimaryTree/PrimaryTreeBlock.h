@@ -120,7 +120,7 @@ namespace CE::Decompiler::PrimaryTree
 		}
 
 		bool hasNoCode() {
-			return m_seqLines.empty();
+			return m_seqLines.empty() && m_symbolAssignmentLines.empty();
 		}
 
 		void printDebug(bool cond = true, const std::string& tabStr = "") {

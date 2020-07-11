@@ -161,6 +161,7 @@ namespace CE::Decompiler::Optimization
 				Optimization::Optimize(line->m_srcValue);
 			}
 			if (decBlock->m_noJmpCond != nullptr) {
+				Node::UpdateDebugInfo(decBlock->m_noJmpCond);
 				Optimization::Optimize(decBlock->m_noJmpCond);
 			}
 			if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
