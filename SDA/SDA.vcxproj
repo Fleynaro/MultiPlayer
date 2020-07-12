@@ -358,7 +358,9 @@
     <ClInclude Include="Module\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\DecExecutionContext.h" />
     <ClInclude Include="Module\Decompiler\DecOperand.h" />
+    <ClInclude Include="Module\Decompiler\DecPCode.h" />
     <ClInclude Include="Module\Decompiler\DecRegister.h" />
+    <ClInclude Include="Module\Decompiler\DecTranslatorX86.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeCondition.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeFuncCallContext.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeLeaf.h" />

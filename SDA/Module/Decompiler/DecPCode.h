@@ -10,11 +10,11 @@ namespace CE::Decompiler::PCode
 	public:
 		int m_genericId;
 		int m_explicitId;
-		uint64_t m_valueRangeMask = 0x0;
-		uint64_t m_actionRangeMask = 0x0;
+		uint64_t m_valueRangeMask;
+		uint64_t m_actionRangeMask;
 		bool m_isVector = false;
 
-		Register(int genericId, uint64_t valueRangeMask, uint64_t actionRangeMask, bool isVector, int explicitId = 0)
+		Register(int genericId = 0, uint64_t valueRangeMask = 0x0, uint64_t actionRangeMask = 0x0, bool isVector = false, int explicitId = 0)
 			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_actionRangeMask(actionRangeMask), m_isVector(isVector), m_explicitId(explicitId)
 		{}
 
@@ -75,33 +75,15 @@ namespace CE::Decompiler::PCode
 	class SymbolVarnode : public Varnode
 	{
 	public:
-		int m_symboldId;
 		int m_size;
 
-		enum Id {
-			SYM_A,
-			SYM_B,
-			SYM_C,
-			SYM_D,
-			SYM_E,
-			SYM_F,
-			SYM_G,
-			SYM_H,
-			SYM_I,
-			SYM_J,
-			SYM_K,
-			SYM_L,
-			SYM_M,
-			SYM_N,
-			SYM_O,
-			SYM_P,
-			SYM_Q,
-			SYM_R
-		};
-
-		SymbolVarnode(int symboldId, int size)
-			: m_symboldId(symboldId), m_size(size)
+		SymbolVarnode(int size)
+			: m_size(size)
 		{}
+
+		int getSize() override {
+			return m_size;
+		}
 	};
 
 	class Instruction;
