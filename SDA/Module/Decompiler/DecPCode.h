@@ -91,6 +91,7 @@ namespace CE::Decompiler::PCode
 	{
 	public:
 		enum Id {
+			NONE,
 			//Data Moving
 			COPY,
 			LOAD,
