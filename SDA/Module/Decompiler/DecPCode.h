@@ -9,7 +9,7 @@ namespace CE::Decompiler::PCode
 	{
 	public:
 		int m_genericId;
-		int m_explicitId;
+		int m_explicitId; //remove???
 		uint64_t m_valueRangeMask;
 		uint64_t m_actionRangeMask;
 		bool m_isVector = false;
@@ -28,6 +28,10 @@ namespace CE::Decompiler::PCode
 
 		bool isExplicit() const {
 			return m_explicitId != 0;
+		}
+
+		bool isZextNeeded() {
+			return m_valueRangeMask != m_actionRangeMask;
 		}
 
 		int getSize() const {

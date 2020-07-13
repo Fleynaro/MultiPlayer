@@ -60,7 +60,6 @@ namespace CE::Decompiler::PCode
 				auto operand = m_curInstr->operands[1];
 				auto varnode = requestOperandValue(operand, nullptr, operand.actions != 0);
 				addGenericOperation(MicroInstruction::COPY, varnode, nullptr);
-				//eax-rax
 				break;
 			}
 
@@ -69,6 +68,11 @@ namespace CE::Decompiler::PCode
 			case ZYDIS_MNEMONIC_DEC:
 			case ZYDIS_MNEMONIC_SUB:
 			case ZYDIS_MNEMONIC_CMP:
+			case ZYDIS_MNEMONIC_NEG:
+			case ZYDIS_MNEMONIC_MUL:
+			case ZYDIS_MNEMONIC_IMUL:
+			case ZYDIS_MNEMONIC_DIV:
+			case ZYDIS_MNEMONIC_IDIV:
 			case ZYDIS_MNEMONIC_AND:
 			case ZYDIS_MNEMONIC_TEST:
 			case ZYDIS_MNEMONIC_OR:
@@ -115,6 +119,99 @@ namespace CE::Decompiler::PCode
 					m_curTrInstr->addMicroInstruction(MicroInstruction::INT_NOTEQUAL, varnodeInput0, varnodeZero, CreateVarnode(ZYDIS_CPUFLAG_CF));
 					m_curTrInstr->addMicroInstruction(MicroInstruction::INT_SBORROW, varnodeZero, varnodeInput0, CreateVarnode(ZYDIS_CPUFLAG_OF));
 					varnodeOutput = addGenericOperation(MicroInstruction::INT_2COMP, varnodeInput0, nullptr, memLocVarnode);
+					break;
+
+				case ZYDIS_MNEMONIC_MUL:
+				case ZYDIS_MNEMONIC_IMUL:
+					Varnode* varnodeDst = nullptr;
+					Varnode* varnodeMul1;
+					Varnode* varnodeMul2;
+					Varnode* varnodeCF = CreateVarnode(ZYDIS_CPUFLAG_CF);
+
+					if (operandsCount == 1) {
+						varnodeDst = varnodeMul1 = CreateVarnode(GetRegisterBySize(ZYDIS_REGISTER_RAX, size));
+						varnodeMul2 = varnodeInput0;
+					}
+					else if (operandsCount == 2) {
+						varnodeDst = varnodeMul1 = varnodeInput0;
+						varnodeMul2 = varnodeInput1;
+					}
+					else {
+						varnodeDst = varnodeInput0;
+						varnodeMul1 = varnodeInput1;
+						varnodeMul2 = varnodeInput2;
+					}
+
+					auto instrExt = MicroInstruction::INT_ZEXT;
+					if (mnemonic == ZYDIS_MNEMONIC_IMUL)
+						instrExt = MicroInstruction::INT_SEXT;
+
+					auto varnodeZext1 = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(instrExt, varnodeMul1, nullptr, varnodeZext1);
+					auto varnodeZext2 = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(instrExt, varnodeMul2, nullptr, varnodeZext2);
+					auto varnodeMult = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(MicroInstruction::INT_MULT, varnodeZext1, varnodeZext2, varnodeMult);
+
+					Varnode* varnodeSubpiece;
+					if (operandsCount == 1) {
+						varnodeSubpiece = CreateVarnode(GetRegisterBySize(ZYDIS_REGISTER_RDX, size));
+					}
+					else {
+						varnodeSubpiece = new SymbolVarnode(size * 2);
+					}
+					if (mnemonic == ZYDIS_MNEMONIC_IMUL) {
+						m_curTrInstr->addMicroInstruction(MicroInstruction::INT_MULT, varnodeMul1, varnodeMul2, varnodeDst);
+						m_curTrInstr->addMicroInstruction(MicroInstruction::SUBPIECE, varnodeMult, new ConstantVarnode(size, 0x4), varnodeSubpiece);
+						auto varnodeNe1 = new SymbolVarnode(0x1);
+						m_curTrInstr->addMicroInstruction(MicroInstruction::INT_NOTEQUAL, varnodeSubpiece, new ConstantVarnode(0x0, size), varnodeNe1);
+						auto varnode2Cmp = new SymbolVarnode(size);
+						m_curTrInstr->addMicroInstruction(MicroInstruction::INT_2COMP, new ConstantVarnode(0x1, size), nullptr, varnode2Cmp);
+						auto varnodeNe2 = new SymbolVarnode(0x1);
+						m_curTrInstr->addMicroInstruction(MicroInstruction::INT_NOTEQUAL, varnodeSubpiece, varnode2Cmp, varnodeNe2);
+						m_curTrInstr->addMicroInstruction(MicroInstruction::INT_AND, varnodeNe1, varnodeNe2, varnodeCF);
+					}
+					else {
+						m_curTrInstr->addMicroInstruction(MicroInstruction::SUBPIECE, varnodeMult, new ConstantVarnode(size, 0x4), varnodeSubpiece);
+						m_curTrInstr->addMicroInstruction(MicroInstruction::SUBPIECE, varnodeMult, new ConstantVarnode(0x0, 0x4), varnodeDst);
+						m_curTrInstr->addMicroInstruction(MicroInstruction::INT_NOTEQUAL, varnodeSubpiece, new ConstantVarnode(0x0, size), varnodeCF);
+					}
+					
+					m_curTrInstr->addMicroInstruction(MicroInstruction::COPY, varnodeCF, nullptr, CreateVarnode(ZYDIS_CPUFLAG_OF));
+					break;
+
+				case ZYDIS_MNEMONIC_DIV:
+				case ZYDIS_MNEMONIC_IDIV:
+					auto instrExt = MicroInstruction::INT_ZEXT;
+					auto instrDiv = MicroInstruction::INT_DIV;
+					auto instrRem = MicroInstruction::INT_REM;
+					if (mnemonic == ZYDIS_MNEMONIC_IMUL) {
+						instrExt = MicroInstruction::INT_SEXT;
+						instrDiv = MicroInstruction::INT_SDIV;
+						instrRem = MicroInstruction::INT_SREM;
+					}
+
+					auto varnodeRax = CreateVarnode(GetRegisterBySize(ZYDIS_REGISTER_RAX, size));
+					auto varnodeRdx = CreateVarnode(GetRegisterBySize(ZYDIS_REGISTER_RDX, size));
+					auto varnodeExt = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(instrExt, varnodeInput0, nullptr, varnodeExt);
+					
+					auto varnodeZext1 = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(MicroInstruction::INT_ZEXT, varnodeRdx, nullptr, varnodeZext1);
+					auto varnodeLeft = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(MicroInstruction::INT_LEFT, varnodeZext1, new ConstantVarnode(size * 0x8, 0x4), varnodeLeft);
+					auto varnodeZext2 = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(MicroInstruction::INT_ZEXT, varnodeRax, nullptr, varnodeZext2);
+					auto varnodeOr = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(MicroInstruction::INT_OR, varnodeLeft, varnodeZext2, varnodeOr);
+					
+					auto varnodeDiv = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(instrDiv, varnodeOr, varnodeExt, varnodeDiv);
+					
+					m_curTrInstr->addMicroInstruction(MicroInstruction::SUBPIECE, varnodeDiv, new ConstantVarnode(0x0, 0x4), varnodeRax);
+					auto varnodeRem = new SymbolVarnode(size * 2);
+					m_curTrInstr->addMicroInstruction(instrRem, varnodeOr, varnodeExt, varnodeRem);
+					m_curTrInstr->addMicroInstruction(MicroInstruction::SUBPIECE, varnodeRem, new ConstantVarnode(0x0, 0x4), varnodeRdx);
 					break;
 
 				case ZYDIS_MNEMONIC_AND:
@@ -208,11 +305,23 @@ namespace CE::Decompiler::PCode
 			}
 
 			m_curTrInstr->addMicroInstruction(instrId, varnodeInput0, varnodeInput1, varnodeOutput);
+
 			if (!isFictitious && operand.type == ZYDIS_OPERAND_TYPE_MEMORY) {
 				setDestinationMemOperand(operand, varnodeOutput, memLocVarnode);
 			}
 
 			return varnodeOutput;
+		}
+
+		void addMicroInstruction(MicroInstruction::Id id, Varnode* input0, Varnode* input1 = nullptr, Varnode* output = nullptr) {
+			m_curTrInstr->addMicroInstruction(id, input0, input1, output);
+			if (auto outputReg = dynamic_cast<RegisterVarnode*>(output)) {
+				if (outputReg->m_register.isZextNeeded()) { //TODO: не везде -> imul
+					auto extReg = outputReg->m_register;
+					extReg.m_valueRangeMask = extReg.m_actionRangeMask;
+					m_curTrInstr->addMicroInstruction(MicroInstruction::INT_ZEXT, outputReg, nullptr, new RegisterVarnode(extReg));
+				}
+			}
 		}
 
 		void setDestinationMemOperand(const ZydisDecodedOperand& operand, Varnode* varnode, Varnode* memLocVarnode = nullptr) {
@@ -289,6 +398,22 @@ namespace CE::Decompiler::PCode
 				result++;
 			}
 			return result;
+		}
+
+		static ZydisRegister GetRegisterBySize(ZydisRegister reg, int size) {
+			int idx = reg - ZYDIS_REGISTER_RAX;
+			switch (size)
+			{
+			case 1:
+				return ZydisRegister(ZYDIS_REGISTER_AL + idx + (idx >= 3 ? 4 : 0));
+			case 2:
+				return ZydisRegister(ZYDIS_REGISTER_AX + idx);
+			case 4:
+				return ZydisRegister(ZYDIS_REGISTER_EAX + idx);
+			case 8:
+				return ZydisRegister(ZYDIS_REGISTER_RAX + idx);
+			}
+			return ZYDIS_REGISTER_NONE;
 		}
 		
 		static Register CreateRegister(ZydisRegister reg) {
