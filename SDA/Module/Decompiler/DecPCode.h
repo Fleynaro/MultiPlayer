@@ -9,30 +9,16 @@ namespace CE::Decompiler::PCode
 	{
 	public:
 		int m_genericId;
-		int m_explicitId; //remove???
-		uint64_t m_valueRangeMask;
-		uint64_t m_actionRangeMask;
 		bool m_isVector = false;
+		uint64_t m_valueRangeMask;
 
-		Register(int genericId = 0, uint64_t valueRangeMask = 0x0, uint64_t actionRangeMask = 0x0, bool isVector = false, int explicitId = 0)
-			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_actionRangeMask(actionRangeMask), m_isVector(isVector), m_explicitId(explicitId)
+		Register(int genericId = 0, uint64_t valueRangeMask = 0x0, bool isVector = false)
+			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_isVector(isVector)
 		{}
 
 		int getGenericId() const {
 			return m_genericId;
 		} 
-
-		int getExplicitId() const {
-			return m_explicitId;
-		}
-
-		bool isExplicit() const {
-			return m_explicitId != 0;
-		}
-
-		bool isZextNeeded() {
-			return m_valueRangeMask != m_actionRangeMask;
-		}
 
 		int getSize() const {
 			return GetBitCountOfMask(m_valueRangeMask) / (m_isVector ? 1 : 8);
