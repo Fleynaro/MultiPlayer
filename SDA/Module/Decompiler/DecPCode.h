@@ -76,8 +76,7 @@ namespace CE::Decompiler::PCode
 		}
 	};
 
-	class Instruction;
-	class MicroInstruction
+	class Instruction
 	{
 	public:
 		enum Id {
@@ -160,26 +159,24 @@ namespace CE::Decompiler::PCode
 		Varnode* m_input0;
 		Varnode* m_input1;
 		Varnode* m_output;
-		Instruction* m_instruction;
-		int m_orderId;
-
-		MicroInstruction(Id id, Varnode* input0, Varnode* input1, Varnode* output, Instruction* instruction, int orderId)
-			: m_id(id), m_input0(input0), m_input1(input1), m_output(output), m_instruction(instruction), m_orderId(orderId)
-		{}
-	};
-
-	class Instruction
-	{
-	public:
-		std::vector<MicroInstruction*> m_microInstructions;
-
-		Instruction()
+		
+		Instruction(Id id, Varnode* input0, Varnode* input1, Varnode* output, int offset, int orderId)
+			: m_id(id), m_input0(input0), m_input1(input1), m_output(output), m_offset(offset), m_orderId(orderId)
 		{}
 
-		void addMicroInstruction(MicroInstruction::Id id, Varnode* input0, Varnode* input1 = nullptr, Varnode* output = nullptr) {
-			m_microInstructions.push_back(new MicroInstruction(id, input0, input1, output, this, m_microInstructions.size()));
+		static bool IsBranching(Id id) {
+			return id >= BRANCH && id <= RETURN;
 		}
-	};
 
-	using InstructionMapType = std::map<int, Instruction*>;
+		int getOriginalInstructionOffset() {
+			return m_offset;
+		}
+
+		int64_t getOffset() {
+			return (m_offset << 8) | m_orderId;
+		}
+	private:
+		int m_offset;
+		int m_orderId;
+	};
 };

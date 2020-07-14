@@ -1,9 +1,5 @@
 #pragma once
-#include <main.h>
-#include <inttypes.h>
-#include <Zycore/Format.h>
-#include <Zycore/LibC.h>
-#include <Zydis/Zydis.h>
+#include "DecPCode.h"
 
 namespace CE::Decompiler
 {
@@ -17,30 +13,50 @@ namespace CE::Decompiler
 		int m_level = 0;
 		std::list<AsmGraphBlock*> m_blocksReferencedTo;
 
-		AsmGraphBlock(AsmGraph* asmGraph, int minOffset, int maxOffset);
+		AsmGraphBlock(AsmGraph* asmGraph, int64_t minOffset, int64_t maxOffset)
+			: m_asmGraph(asmGraph), m_minOffset(minOffset), m_maxOffset(maxOffset), ID(minOffset)
+		{}
 
-		std::list<int>& getInstructions();
+		std::list<PCode::Instruction*>& getInstructions() {
+			return m_instructions;
+		}
 
-		int getMinOffset();
+		int64_t getMinOffset() {
+			return m_minOffset;
+		}
 
-		int getMaxOffset();
+		int64_t getMaxOffset() {
+			return m_maxOffset;
+		}
 
-		void setNextNearBlock(AsmGraphBlock* nextBlock);
+		void setNextNearBlock(AsmGraphBlock* nextBlock) {
+			m_nextNearBlock = nextBlock;
+			nextBlock->m_blocksReferencedTo.push_back(this);
+		}
 
-		void setNextFarBlock(AsmGraphBlock* nextBlock);
+		void setNextFarBlock(AsmGraphBlock* nextBlock) {
+			m_nextFarBlock = nextBlock;
+			nextBlock->m_blocksReferencedTo.push_back(this);
+		}
 
-		AsmGraphBlock* getNextNearBlock();
+		AsmGraphBlock* getNextNearBlock() {
+			return m_nextNearBlock;
+		}
 
-		AsmGraphBlock* getNextFarBlock();
+		AsmGraphBlock* getNextFarBlock() {
+			return m_nextFarBlock;
+		}
 
-		ZydisDecodedInstruction& getLastInstruction();
+		PCode::Instruction* getLastInstruction() {
+			return *std::prev(m_instructions.end());
+		}
 
 		void printDebug(void* addr, const std::string& tabStr, bool extraInfo);
 	private:
 		AsmGraph* m_asmGraph;
-		int m_minOffset;
-		int m_maxOffset;
-		std::list<int> m_instructions;
+		int64_t m_minOffset;
+		int64_t m_maxOffset;
+		std::list<PCode::Instruction*> m_instructions;
 		AsmGraphBlock* m_nextNearBlock = nullptr;
 		AsmGraphBlock* m_nextFarBlock = nullptr;
 	};
@@ -49,27 +65,118 @@ namespace CE::Decompiler
 	{
 		friend class AsmGraphBlock;
 	public:
-		std::map<int, AsmGraphBlock> m_blocks;
-		InstructionMapType m_instructions;
+		std::map<int64_t, AsmGraphBlock> m_blocks;
+		std::list<PCode::Instruction*> m_instructions;
 
-		AsmGraph(InstructionMapType instructions);
+		AsmGraph(std::list<PCode::Instruction*> instructions)
+			: m_instructions(instructions)
+		{}
 
-		void build();
+		void build() {
+			std::map<int64_t, bool> split_offsets;
+			std::list<std::pair<int64_t, int64_t>> jump_dirs;
 
-		AsmGraphBlock* getBlockAtOffset(int offset);
+			for (auto instr : m_instructions) {
+				if (PCode::Instruction::IsBranching(instr->m_id)) {
+					if (auto varnodeOffset = dynamic_cast<PCode::ConstantVarnode*>(instr->m_input0)) {
+						auto targetOffset = (int64_t&)varnodeOffset->m_value;
+						if (targetOffset >= 0 && targetOffset < getMaxOffset()) {
+							auto offset = instr->getOffset();
+							split_offsets.insert(std::make_pair(offset, false)); //out
+							split_offsets.insert(std::make_pair(targetOffset, true)); //in
+							jump_dirs.push_back(std::make_pair(offset, targetOffset));
+						}
+					}
+				}
+			}
 
-		AsmGraphBlock* getStartBlock();
+			int64_t offset = 0;
+			for (const auto& it : split_offsets) {
+				auto minOffset = offset;
+				auto maxOffset = it.first;
+				if (!it.second) { //out
+					maxOffset ++;
+				}
+				if (minOffset < maxOffset) {
+					createBlockAtOffset(minOffset, maxOffset);
+				}
+				offset = maxOffset;
+			}
+			createBlockAtOffset(offset, getMaxOffset());
 
-		void printDebug(void* addr);
+			for (auto it = m_blocks.begin(); it != std::prev(m_blocks.end()); it++) {
+				auto& curBlock = *it;
+				auto& nextBlock = *std::next(it);
+				auto lastInstr = curBlock.second.getLastInstruction();
+				if (lastInstr->m_id == PCode::Instruction::CBRANCH) {
+					curBlock.second.setNextNearBlock(&nextBlock.second);
+				}
+			}
+
+			for (const auto& jmp_dir : jump_dirs) {
+				auto curBlock = getBlockAtOffset(jmp_dir.first);
+				auto nextFarBlock = getBlockAtOffset(jmp_dir.second);
+				curBlock->setNextFarBlock(nextFarBlock);
+			}
+
+			std::list<AsmGraphBlock*> path;
+			CalculateLevelsForAsmGrapBlocks(getStartBlock(), path);
+		}
+
+		AsmGraphBlock* getBlockAtOffset(int64_t offset) {
+			auto it = std::prev(m_blocks.upper_bound(offset));
+			if (it != m_blocks.end()) {
+				if (offset >= it->second.getMinOffset() && offset < it->second.getMaxOffset()) {
+					return &it->second;
+				}
+			}
+			return nullptr;
+		}
+
+		AsmGraphBlock* getStartBlock() {
+			return &(m_blocks.begin()->second);
+		}
+
+		void printDebug(void* addr) {
+			for (auto block : m_blocks) {
+				block.second.printDebug(addr);
+				puts("==================");
+			}
+		}
 	private:
-		void createBlockAtOffset(int minOffset, int maxOffset);
+		void createBlockAtOffset(int64_t minOffset, int64_t maxOffset) {
+			AsmGraphBlock block(this, minOffset, maxOffset);
+			for (auto instr : m_instructions) {
+				if (instr->getOffset() >= minOffset && instr->getOffset() < maxOffset) {
+					block.getInstructions().push_back(instr);
+				}
+			}
+			m_blocks.insert(std::make_pair(minOffset, block));
+		}
 
-		int getMaxOffset();
+		int64_t getMaxOffset() {
+			auto lastInstr = *std::prev(m_instructions.end());
+			return lastInstr->getOffset() + 1;
+		}
 
-		static void CalculateLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGraphBlock*>& path);
+		static void CalculateLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGraphBlock*>& path) {
+			if (block == nullptr)
+				return;
+
+			//if that is a loop
+			for (auto it = path.rbegin(); it != path.rend(); it++) {
+				if (block == *it) {
+					return;
+				}
+			}
+
+			path.push_back(block);
+			block->m_level = max(block->m_level, (int)path.size());
+			CalculateLevelsForAsmGrapBlocks(block->getNextNearBlock(), path);
+			CalculateLevelsForAsmGrapBlocks(block->getNextFarBlock(), path);
+			path.pop_back();
+		}
 	};
-
-	InstructionMapType getInstructionsAtAddress(void* addr, int size);
 
 	void test();
 };
