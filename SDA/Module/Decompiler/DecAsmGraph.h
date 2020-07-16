@@ -14,7 +14,7 @@ namespace CE::Decompiler
 		std::list<AsmGraphBlock*> m_blocksReferencedTo;
 
 		AsmGraphBlock(AsmGraph* asmGraph, int64_t minOffset, int64_t maxOffset)
-			: m_asmGraph(asmGraph), m_minOffset(minOffset), m_maxOffset(maxOffset), ID(minOffset)
+			: m_asmGraph(asmGraph), m_minOffset(minOffset), m_maxOffset(maxOffset), ID((int)(minOffset >> 8))
 		{}
 
 		std::list<PCode::Instruction*>& getInstructions() {
@@ -51,7 +51,7 @@ namespace CE::Decompiler
 			return *std::prev(m_instructions.end());
 		}
 
-		void printDebug(void* addr, const std::string& tabStr, bool extraInfo);
+		void printDebug(void* addr, const std::string& tabStr, bool extraInfo, bool pcode);
 	private:
 		AsmGraph* m_asmGraph;
 		int64_t m_minOffset;
@@ -95,7 +95,8 @@ namespace CE::Decompiler
 				auto minOffset = offset;
 				auto maxOffset = it.first;
 				if (!it.second) { //out
-					maxOffset ++;
+					auto instr = getInstructionByOffset(maxOffset);
+					maxOffset = instr->getFirstInstrOffsetInNextOrigInstr();
 				}
 				if (minOffset < maxOffset) {
 					createBlockAtOffset(minOffset, maxOffset);
@@ -139,11 +140,19 @@ namespace CE::Decompiler
 
 		void printDebug(void* addr) {
 			for (auto block : m_blocks) {
-				block.second.printDebug(addr);
+				block.second.printDebug(addr, "", true, true);
 				puts("==================");
 			}
 		}
 	private:
+		PCode::Instruction* getInstructionByOffset(int64_t offset) {
+			for (auto instr : m_instructions) {
+				if (instr->getOffset() == offset) //todo: binary search
+					return instr;
+			}
+			return nullptr;
+		}
+
 		void createBlockAtOffset(int64_t minOffset, int64_t maxOffset) {
 			AsmGraphBlock block(this, minOffset, maxOffset);
 			for (auto instr : m_instructions) {
@@ -156,7 +165,7 @@ namespace CE::Decompiler
 
 		int64_t getMaxOffset() {
 			auto lastInstr = *std::prev(m_instructions.end());
-			return lastInstr->getOffset() + 1;
+			return lastInstr->getFirstInstrOffsetInNextOrigInstr();
 		}
 
 		static void CalculateLevelsForAsmGrapBlocks(AsmGraphBlock* block, std::list<AsmGraphBlock*>& path) {

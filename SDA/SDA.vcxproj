@@ -369,7 +369,7 @@
     <ClInclude Include="Module\Decompiler\Interpreter\AbstarctInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\ArithmeticInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\CondJmpInstructionInterpreter.h" />
-    <ClInclude Include="Module\Decompiler\Interpreter\InstructionInterpreterDispatcher.h" />
+    <ClInclude Include="Module\Decompiler\DecInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\LogicInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\MovementInstructionInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Interpreter\StackInstructionInterpreter.h" />
@@ -477,6 +477,7 @@
     <ClInclude Include="Utils\Buffer.h" />
     <ClInclude Include="Utils\BufferStreamRecorder.h" />
     <ClInclude Include="Utils\Description.h" />
+    <ClInclude Include="Utils\enum.h" />
     <ClInclude Include="Utils\ITaskMonitor.h" />
     <ClInclude Include="Utils\Iterator.h" />
     <ClInclude Include="Utils\MultipleAction.h" />

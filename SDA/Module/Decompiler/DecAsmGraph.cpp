@@ -3,27 +3,6 @@
 using namespace CE;
 using namespace CE::Decompiler;
 
-void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr = "", bool extraInfo = true) {
-	ZydisFormatter formatter;
-	ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
-
-	ZyanU64 runtime_address = (ZyanU64)addr;
-	for (auto instr_off : m_instructions) {
-		char buffer[256];
-		ZydisFormatterFormatInstruction(&formatter, &m_asmGraph->m_instructions[instr_off], buffer, sizeof(buffer),
-			runtime_address + instr_off);
-		printf("%s%p(%i): %s\n", tabStr.c_str(), (void*)(runtime_address + instr_off), instr_off, buffer);
-	}
-
-	if (extraInfo) {
-		printf("Level: %i\n", m_level);
-		if (m_nextNearBlock != nullptr)
-			printf("Next near: %i\n", m_nextNearBlock->getMinOffset());
-		if (m_nextFarBlock != nullptr)
-			printf("Next far: %i\n", m_nextFarBlock->getMinOffset());
-	}
-}
-
 
 int calculateFunctionSize2(byte* addr, bool endByRet = false) {
 	int size = 0;
@@ -43,8 +22,36 @@ void ff() {
 #include "DecLinearView.h"
 #include "Optimization/DecGraphOptimization.h"
 #include "TestCodeToDecompile.h"
+#include "DecTranslatorX86.h"
+
+
+void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr = "", bool extraInfo = true, bool pcode = true) {
+	ZydisFormatter formatter;
+	ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
+
+	ZyanU64 runtime_address = (ZyanU64)addr;
+	for (auto instr : m_instructions) {
+		std::string prefix = tabStr + "0x" + Generic::String::NumberToHex(runtime_address + instr->getOriginalInstructionOffset());
+		if (!instr->m_originalView.empty())
+			printf("%s %s\n", prefix.c_str(), instr->m_originalView.c_str());
+		if (pcode) {
+			prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Generic::String::NumberToHex(instr->getOffset()).c_str() + ")";
+			printf("\t%s %s\n", prefix.c_str(), instr->printDebug().c_str());
+		}
+	}
+
+	if (extraInfo) {
+		printf("Level: %i\n", m_level);
+		if (m_nextNearBlock != nullptr)
+			printf("Next near: %s\n", Generic::String::NumberToHex(m_nextNearBlock->getMinOffset()).c_str());
+		if (m_nextFarBlock != nullptr)
+			printf("Next far: %s\n", Generic::String::NumberToHex(m_nextFarBlock->getMinOffset()).c_str());
+	}
+}
+
 
 #define SHOW_ASM 1
+#define SHOW_PCODE 0
 void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, AsmGraphBlock*>& asmBlocks, int level = 0) {
 	std::string tabStr = "";
 	for (int i = 0; i < level; i++)
@@ -56,7 +63,7 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 		printf("%s//block %s (level %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), decBlock->m_level);
 		
 		if (SHOW_ASM) {
-			asmBlock->printDebug(nullptr, tabStr, false);
+			asmBlock->printDebug(nullptr, tabStr, false, SHOW_PCODE);
 			printf("%s------------\n", tabStr.c_str());
 		}
 		decBlock->printDebug(false, tabStr);
@@ -169,8 +176,13 @@ void CE::Decompiler::test() {
 		size = (int)SAMPLE_VAR.size();
 	}
 
-	AsmGraph graph(CE::Decompiler::getInstructionsAtAddress(addr, size));
+	PCode::TranslatorX86 translatorX86;
+	translatorX86.start(addr, size);
+	AsmGraph graph(translatorX86.m_result);
 	graph.build();
+	graph.printDebug(addr);
+
+	return;
 
 	graph.printDebug(addr);
 	printf("\n\n");

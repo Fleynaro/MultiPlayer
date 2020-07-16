@@ -25,6 +25,9 @@
 #include <Vendor/json/json.hpp>
 using json = nlohmann::json;
 
+#include "Utils/enum.h"
+
+
 #define MYDEBUG
 
 class DebugInfo {

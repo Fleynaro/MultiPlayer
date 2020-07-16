@@ -17,8 +17,8 @@ namespace CE::Decompiler
 
 	static int GetShiftValueOfMask(uint64_t mask) {
 		int result = 0;
-		for (auto m = mask; int(m & 0xF) == 0; m = m >> 4) {
-			result += 4;
+		for (auto m = mask; bool(m & 0b1) == 0; m = m >> 1) {
+			result += 1;
 		}
 		return result;
 	}

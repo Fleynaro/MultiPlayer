@@ -1,20 +1,32 @@
 #pragma once
-#include "DecRegister.h"
+#include "DecPCode.h"
+#include "PrimaryTree/PrimaryTreeBlock.h"
 
 namespace CE::Decompiler
 {
-	enum class RegisterFlags {
-		None,
-		CF = 1 << 1,
-		PF = 1 << 2,
-		AF = 1 << 3,
-		ZF = 1 << 4,
-		SF = 1 << 5,
-		OF = 1 << 6,
+	struct RegisterPart : public ExprTree::IParentNode {
+		uint64_t m_regMask = -1;
+		uint64_t m_maskToChange = -1;
+		ExprTree::Node* m_expr = nullptr;
 
-		TEST = ZF | SF | PF,
-		CMP = TEST | CF | OF
+		RegisterPart(uint64_t regMask, uint64_t maskToChange, ExprTree::Node* expr)
+			: m_regMask(regMask), m_maskToChange(maskToChange), m_expr(expr)
+		{
+			m_expr->addParentNode(this);
+		}
+
+		~RegisterPart() {
+			m_expr->removeBy(this);
+		}
+
+		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+			if (m_expr == node) {
+				m_expr = newNode;
+			}
+		}
 	};
+
+	using RegisterParts = std::list<RegisterPart*>;
 
 	class Decompiler; //make interface later
 
@@ -71,7 +83,6 @@ namespace CE::Decompiler
 
 		std::map<ZydisRegister, WrapperNode<ExprTree::Node>*> m_registers;
 		std::map<ZydisRegister, WrapperNode<ExprTree::Node>*> m_cachedRegisters;
-		std::map<ZydisCPUFlag, WrapperNode<ExprTree::Condition>*> m_flags;
 		std::set<ZydisRegister> m_changedRegisters;
 		std::list<ExternalSymbol*> m_externalSymbols;
 
@@ -88,13 +99,5 @@ namespace CE::Decompiler
 		RegisterParts getRegisterParts(const Register& reg, uint64_t& mask, bool changedRegistersOnly = false);
 
 		ExprTree::Node* requestRegister(const Register& reg);
-
-		ExprTree::Condition* getFlag(ZydisCPUFlag flag);
-
-		void setFlag(ZydisCPUFlag flag, ExprTree::Condition* cond);
-
-		void setLastCond(ExprTree::Node* leftNode, ExprTree::Node* rightNode, RegisterFlags flags);
-
-		void clearLastCond();
 	};
 };

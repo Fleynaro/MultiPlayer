@@ -1,6 +1,6 @@
 #pragma once
 #include "DecAsmGraph.h"
-#include "Interpreter/InstructionInterpreterDispatcher.h"
+#include "DecInstructionInterpreter.h"
 #include "DecCodeGraph.h"
 
 namespace CE::Decompiler
@@ -79,9 +79,9 @@ namespace CE::Decompiler
 				}
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, asmBlock->getMinOffset());
 
-				for (auto off : asmBlock->getInstructions()) {
-					auto instr = m_asmGraph->m_instructions[off];
-					m_instructionInterpreterDispatcher->execute(decompiledBlock.m_decBlock, decompiledBlock.m_execBlockCtx, instr);
+				for (auto instr : asmBlock->getInstructions()) {
+					//auto instr = m_asmGraph->m_instructions[off];
+					//m_instructionInterpreterDispatcher->execute(decompiledBlock.m_decBlock, decompiledBlock.m_execBlockCtx, instr);
 				}
 
 				m_asmToDecBlocks[asmBlock] = decompiledBlock.m_decBlock;
