@@ -28,15 +28,48 @@ namespace CE::Decompiler
 
 	using RegisterParts = std::list<RegisterPart*>;
 
+	static ExprTree::Node* CreateExprFromRegisterParts(RegisterParts regParts, uint64_t requestRegMask) {
+		ExprTree::Node* resultExpr = nullptr;
+
+		regParts.sort([](const RegisterPart* a, const RegisterPart* b) {
+			return a->m_regMask > b->m_regMask;
+			});
+
+		for (auto it : regParts) {
+			auto& regPart = *it;
+			auto sameRegExpr = regPart.m_expr;
+			int bitShift = GetShiftValueOfMask(regPart.m_regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
+
+			//see if is regPart.m_regMask bigger than requestRegMask
+			if ((regPart.m_regMask & ~requestRegMask) != 0x0) {
+				//for operations and etc...
+				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((regPart.m_regMask & requestRegMask) >> bitShift), ExprTree::And);
+			}
+
+			if (bitShift != 0) {
+				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(bitShift), ExprTree::Shl);
+			}
+
+			if (resultExpr) {
+				resultExpr = new ExprTree::OperationalNode(resultExpr, new ExprTree::NumberLeaf(~regPart.m_maskToChange), ExprTree::And);
+				resultExpr = new ExprTree::OperationalNode(resultExpr, sameRegExpr, ExprTree::Or);
+			}
+			else {
+				resultExpr = sameRegExpr;
+			}
+		}
+		return resultExpr;
+	}
+
 	class Decompiler; //make interface later
 
 	struct ExternalSymbol : public ExprTree::IParentNode {
-		Register m_reg;
+		PCode::Register m_reg;
+		RegisterParts m_regParts;
 		uint64_t m_needReadMask = 0x0;
 		ExprTree::SymbolLeaf* m_symbol = nullptr;
-		RegisterParts m_regParts;
 
-		ExternalSymbol(Register reg, uint64_t needReadMask, ExprTree::SymbolLeaf* symbol, RegisterParts regParts)
+		ExternalSymbol(PCode::Register reg, uint64_t needReadMask, ExprTree::SymbolLeaf* symbol, RegisterParts regParts)
 			: m_reg(reg), m_needReadMask(needReadMask), m_symbol(symbol), m_regParts(regParts)
 		{
 			symbol->addParentNode(this);
@@ -54,7 +87,6 @@ namespace CE::Decompiler
 	class ExecutionBlockContext
 	{
 	public:
-		int m_offset;
 		Decompiler* m_decompiler;
 
 		template<typename T = ExprTree::Node>
@@ -81,23 +113,45 @@ namespace CE::Decompiler
 			}
 		};
 
-		std::map<ZydisRegister, WrapperNode<ExprTree::Node>*> m_registers;
-		std::map<ZydisRegister, WrapperNode<ExprTree::Node>*> m_cachedRegisters;
-		std::set<ZydisRegister> m_changedRegisters;
+		struct VarnodeExpr {
+			PCode::Varnode* m_varnode;
+			WrapperNode<ExprTree::Node>* m_expr;
+			bool m_changed;
+
+			VarnodeExpr(PCode::Varnode* varnode, WrapperNode<ExprTree::Node>* expr, bool changed)
+				: m_varnode(varnode), m_expr(expr), m_changed(changed)
+			{}
+
+			bool equal(PCode::Varnode* varnode) {
+				if (auto varnodeRegister1 = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
+					if (auto varnodeRegister2 = dynamic_cast<PCode::RegisterVarnode*>(m_varnode)) {
+						return varnodeRegister1->m_register == varnodeRegister2->m_register;
+					}
+					return false;
+				}
+
+				if (auto varnodeSymbol1 = dynamic_cast<PCode::SymbolVarnode*>(varnode)) {
+					if (auto varnodeSymbol2 = dynamic_cast<PCode::SymbolVarnode*>(m_varnode)) {
+						return varnodeSymbol1 == varnodeSymbol2;
+					}
+					return false;
+				}
+
+				return false;
+			}
+		};
+		std::list<VarnodeExpr> m_varnodes;
+		std::map<PCode::Register, WrapperNode<ExprTree::Node>*> m_cachedRegisters;
 		std::list<ExternalSymbol*> m_externalSymbols;
 
-		struct {
-			RegisterFlags flags = RegisterFlags::None;
-			ExprTree::Node* leftNode = nullptr;
-			ExprTree::Node* rightNode = nullptr;
-		} m_lastCond;
+		ExecutionBlockContext(Decompiler* decompiler);
 
-		ExecutionBlockContext(Decompiler* decompiler, int startOffset = 0);
+		void setVarnode(PCode::Varnode* varnode, ExprTree::Node* expr, bool rewrite = true);
 
-		void setRegister(const Register& reg, ExprTree::Node* expr, bool rewrite = true);
+		RegisterParts getRegisterParts(const PCode::Register& reg, uint64_t& mask, bool changedRegistersOnly = false);
 
-		RegisterParts getRegisterParts(const Register& reg, uint64_t& mask, bool changedRegistersOnly = false);
+		ExprTree::Node* requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister);
 
-		ExprTree::Node* requestRegister(const Register& reg);
+		ExprTree::Node* requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode);
 	};
 };

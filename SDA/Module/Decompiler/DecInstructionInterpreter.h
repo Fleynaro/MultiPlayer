@@ -7,7 +7,13 @@ namespace CE::Decompiler::PCode
 	{
 	public:
 		void execute(PrimaryTree::Block* block, ExecutionBlockContext* ctx, Instruction* instr) {
-			
+			switch (instr->m_id)
+			{
+			case InstructionId::COPY:
+			{
+				break;
+			}
+			}
 		}
 	};
 };

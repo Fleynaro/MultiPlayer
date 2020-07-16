@@ -26,7 +26,7 @@ void UncondJmpInstructionInterpreter::execute() {
 		auto funcCallCtx = new ExprTree::FunctionCallContext(dstLocOffset, dstLocExpr);
 
 		for (auto paramReg : funcCallInfo.m_paramRegisters) {
-			auto reg = m_ctx->requestRegister(paramReg);
+			auto reg = m_ctx->requestRegisterExpr(paramReg);
 			funcCallCtx->addRegisterParam(paramReg, reg);
 		}
 

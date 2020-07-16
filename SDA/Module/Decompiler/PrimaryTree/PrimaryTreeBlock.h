@@ -1,5 +1,6 @@
 #pragma once
 #include "../ExprTree/ExprTreeCondition.h"
+#include "../ExprTree/ExprTreeFuncCallContext.h"
 
 namespace CE::Decompiler::PrimaryTree
 {

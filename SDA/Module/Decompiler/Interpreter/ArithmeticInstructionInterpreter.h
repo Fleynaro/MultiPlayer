@@ -72,7 +72,7 @@ namespace CE::Decompiler
 					}
 
 					Operand op(m_ctx, &m_instruction->operands[0]);
-					expr1 = m_ctx->requestRegister(reg);
+					expr1 = m_ctx->requestRegisterExpr(reg);
 					expr2 = op.getExpr();
 					if (isSigned) {
 						expr1 = new ExprTree::CastNode(expr1, size, true);

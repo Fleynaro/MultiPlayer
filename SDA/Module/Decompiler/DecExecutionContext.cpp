@@ -3,25 +3,23 @@
 
 using namespace CE::Decompiler;
 
-ExecutionBlockContext::ExecutionBlockContext(Decompiler* decompiler, int startOffset)
-	: m_decompiler(decompiler), m_offset(startOffset)
+ExecutionBlockContext::ExecutionBlockContext(Decompiler* decompiler)
+	: m_decompiler(decompiler)
 {}
 
-void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* newExpr, bool rewrite) {
-	
+void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* newExpr, bool rewrite) {
 	WrapperNode<ExprTree::Node>* oldWrapperNode = nullptr;
-	auto it = m_registers.find(reg.m_reg);
-	if (it != m_registers.end()) {
-		oldWrapperNode = it->second;
-		m_registers.erase(it);
+	for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it ++) {
+		if (it->equal(varnode)) {
+			oldWrapperNode = it->m_expr;
+			m_varnodes.erase(it);
+			break;
+		}
 	}
 
 	if (newExpr) {
-		m_registers[reg.m_reg] = new WrapperNode<ExprTree::Node>(newExpr);
-	}
-
-	if (rewrite) {
-		m_changedRegisters.insert(reg.m_reg);
+		auto varnodeExpr = VarnodeExpr(varnode, new WrapperNode<ExprTree::Node>(newExpr), rewrite);
+		m_varnodes.push_back(varnodeExpr);
 	}
 
 	if (oldWrapperNode) {
@@ -29,31 +27,32 @@ void ExecutionBlockContext::setRegister(const Register& reg, ExprTree::Node* new
 		delete oldWrapperNode;
 	}
 
-	for (auto sameReg : reg.m_sameRegisters) {
-		auto it = m_cachedRegisters.find(sameReg.first);
-		if (it != m_cachedRegisters.end()) {
-			delete it->second;
-			m_cachedRegisters.erase(it);
+	if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
+		for (auto it = m_cachedRegisters.begin(); it != m_cachedRegisters.end(); it ++) {
+			if (it->first.getGenericId() == varnodeRegister->m_register.getGenericId()) {
+				delete it->second;
+				m_cachedRegisters.erase(it);
+			}
 		}
 	}
 }
 
-RegisterParts ExecutionBlockContext::getRegisterParts(const Register& reg, uint64_t& mask, bool changedRegistersOnly) {
+RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg, uint64_t& mask, bool changedRegistersOnly) {
 	RegisterParts regParts;
-	for (auto sameReg : reg.m_sameRegisters) {
-		auto reg = sameReg.first;
-		if (changedRegistersOnly && m_changedRegisters.find(reg) == m_changedRegisters.end())
+	for (auto it : m_varnodes) {
+		if (changedRegistersOnly && !it.m_changed)
 			continue;
 
-		auto it = m_registers.find(reg);
-		if (it != m_registers.end()) {
-			//exception: eax(no ax, ah, al!) overwrite rax!!!
-			auto sameRegMask = sameReg.second;
-			auto remainToReadMask = mask & ~GetMaskWithException(sameRegMask);
-			if (remainToReadMask != mask) {
-				auto part = new RegisterPart(sameRegMask, mask & GetMaskWithException(sameRegMask), it->second->m_node);
-				regParts.push_back(part);
-				mask = remainToReadMask;
+		if (auto sameReg = dynamic_cast<PCode::RegisterVarnode*>(it.m_varnode)) {
+			if (reg.getGenericId() == sameReg->m_register.getGenericId()) {
+				//exception: eax(no ax, ah, al!) overwrite rax!!!
+				auto sameRegMask = sameReg->m_register.m_valueRangeMask;
+				auto remainToReadMask = mask & ~GetMaskWithException(sameRegMask);
+				if (remainToReadMask != mask) {
+					auto part = new RegisterPart(sameRegMask, mask & GetMaskWithException(sameRegMask), it.m_expr->m_node);
+					regParts.push_back(part);
+					mask = remainToReadMask;
+				}
 			}
 		}
 
@@ -63,30 +62,41 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const Register& reg, uint6
 	return regParts;
 }
 
-ExprTree::Node* ExecutionBlockContext::requestRegister(const Register& reg) {
-	auto it = m_cachedRegisters.find(reg.m_reg);
+ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister) {
+	auto it = m_cachedRegisters.find(varnodeRegister->m_register);
 	if (it != m_cachedRegisters.end()) {
 		return it->second->m_node;
 	}
 
 	ExprTree::Node* regExpr;
-	auto mask = reg.m_mask;
+	auto& reg = varnodeRegister->m_register;
+	auto mask = varnodeRegister->m_register.m_valueRangeMask;
 	auto regParts = getRegisterParts(reg, mask);
 	if (mask) {
-		auto symbol = new Symbol::RegisterVariable(reg.m_reg, reg.getSize());
+		auto symbol = new Symbol::RegisterVariable(reg, reg.getSize());
 		auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 		auto externalSymbol = new ExternalSymbol(reg, mask, symbolLeaf, regParts);
 		m_externalSymbols.push_back(externalSymbol);
 
-		if (mask == reg.m_mask) {
-			setRegister(reg, symbolLeaf, false);
+		if (mask == reg.m_valueRangeMask) {
+			setVarnode(varnodeRegister, symbolLeaf, false);
 		}
 		regExpr = symbolLeaf;
 	}
 	else {
-		regExpr = Register::CreateExprFromRegisterParts(regParts, reg.m_mask);
+		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 	}
 
-	m_cachedRegisters[reg.m_reg] = new WrapperNode<ExprTree::Node>(regExpr);
+	m_cachedRegisters[varnodeRegister->m_register] = new WrapperNode<ExprTree::Node>(regExpr);
 	return regExpr;
+}
+
+ExprTree::Node* ExecutionBlockContext::requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode)
+{
+	for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
+		if (symbolVarnode == it->m_varnode) {
+			return it->m_expr->m_node;
+		}
+	}
+	return nullptr;
 }

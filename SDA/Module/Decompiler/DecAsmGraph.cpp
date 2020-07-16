@@ -182,6 +182,12 @@ void CE::Decompiler::test() {
 	graph.build();
 	graph.printDebug(addr);
 
+	{
+		auto decCodeGraph = new DecompiledCodeGraph;
+		auto decompiler = new Decompiler(&graph, decCodeGraph);
+		decompiler->start();
+	}
+
 	return;
 
 	graph.printDebug(addr);

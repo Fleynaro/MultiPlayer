@@ -1,9 +1,5 @@
 #pragma once
-#include "main.h"
-#include <inttypes.h>
-#include <Zycore/Format.h>
-#include <Zycore/LibC.h>
-#include <Zydis/Zydis.h>
+#include "DecPCode.h"
 #include <Utility/Generic.h>
 
 namespace CE::Decompiler::ExprTree {
@@ -85,14 +81,14 @@ namespace CE::Decompiler::Symbol
 	class RegisterVariable : public Variable
 	{
 	public:
-		ZydisRegister m_register;
+		PCode::Register m_register;
 
-		RegisterVariable(ZydisRegister reg, int size)
+		RegisterVariable(PCode::Register reg, int size)
 			: m_register(reg), Variable(size)
 		{}
 
 		std::string printDebug() override {
-			return "[reg_" + std::string(ZydisRegisterGetString(m_register)) + "_" + std::to_string(getSize() * 8) + "]";
+			return "[reg_" + std::string(ZydisRegisterGetString((ZydisRegister)m_register.m_genericId)) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 

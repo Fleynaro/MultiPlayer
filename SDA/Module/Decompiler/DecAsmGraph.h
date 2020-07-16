@@ -109,7 +109,7 @@ namespace CE::Decompiler
 				auto& curBlock = *it;
 				auto& nextBlock = *std::next(it);
 				auto lastInstr = curBlock.second.getLastInstruction();
-				if (lastInstr->m_id == PCode::Instruction::CBRANCH) {
+				if (lastInstr->m_id._to_index() == PCode::InstructionId::CBRANCH) {
 					curBlock.second.setNextNearBlock(&nextBlock.second);
 				}
 			}

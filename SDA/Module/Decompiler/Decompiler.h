@@ -24,14 +24,14 @@ namespace CE::Decompiler
 		Decompiler(AsmGraph* graph, DecompiledCodeGraph* decompiledGraph)
 			: m_asmGraph(graph), m_decompiledGraph(decompiledGraph)
 		{
-			m_instructionInterpreterDispatcher = new InstructionInterpreterDispatcher;
+			m_instructionInterpreter = new PCode::InstructionInterpreter;
 			m_funcCallInfoCallback = [](int offset, ExprTree::Node* dst) {
 				return ExprTree::GetFunctionCallDefaultInfo();
 			};
 		}
 
 		~Decompiler() {
-			delete m_instructionInterpreterDispatcher;
+			delete m_instructionInterpreter;
 
 			for (auto& it : m_decompiledBlocks) {
 				delete it.second.m_execBlockCtx;
@@ -61,7 +61,7 @@ namespace CE::Decompiler
 	private:
 		AsmGraph* m_asmGraph;
 		DecompiledCodeGraph* m_decompiledGraph;
-		InstructionInterpreterDispatcher* m_instructionInterpreterDispatcher;
+		PCode::InstructionInterpreter* m_instructionInterpreter;
 
 		std::map<AsmGraphBlock*, PrimaryTree::Block*> m_asmToDecBlocks;
 		std::map<PrimaryTree::Block*, DecompiledBlockInfo> m_decompiledBlocks;
@@ -77,11 +77,10 @@ namespace CE::Decompiler
 				else {
 					decompiledBlock.m_decBlock = new PrimaryTree::Block(asmBlock->m_level);
 				}
-				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this, asmBlock->getMinOffset());
+				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this);
 
 				for (auto instr : asmBlock->getInstructions()) {
-					//auto instr = m_asmGraph->m_instructions[off];
-					//m_instructionInterpreterDispatcher->execute(decompiledBlock.m_decBlock, decompiledBlock.m_execBlockCtx, instr);
+					m_instructionInterpreter->execute(decompiledBlock.m_decBlock, decompiledBlock.m_execBlockCtx, instr);
 				}
 
 				m_asmToDecBlocks[asmBlock] = decompiledBlock.m_decBlock;
@@ -110,7 +109,7 @@ namespace CE::Decompiler
 				auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
 				for (auto it = ctx->m_externalSymbols.begin(); it != ctx->m_externalSymbols.end(); it ++) {
 					auto& externalSymbol = **it;
-					auto regId = externalSymbol.m_reg.getId();
+					auto regId = externalSymbol.m_reg.getGenericId();
 					if (m_registersToSymbol.find(regId) == m_registersToSymbol.end()) {
 						m_registersToSymbol[regId] = RegSymbol();
 					}
@@ -121,7 +120,7 @@ namespace CE::Decompiler
 					auto mask = externalSymbol.m_needReadMask;
 					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
 					if (mask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
-						auto expr = Register::CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_mask);
+						auto expr = CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_valueRangeMask);
 						externalSymbol.m_symbol->replaceWith(expr);
 						delete externalSymbol.m_symbol->m_symbol;
 						delete externalSymbol.m_symbol;
@@ -156,7 +155,7 @@ namespace CE::Decompiler
 		std::map<int, RegSymbol> m_registersToSymbol;
 		RegSymbol* m_curRegSymbol = nullptr;
 
-		void requestRegisterParts(PrimaryTree::Block* block, const Register& reg, uint64_t& mask, RegisterParts& outRegParts, bool isFound = true) {
+		void requestRegisterParts(PrimaryTree::Block* block, const PCode::Register& reg, uint64_t& mask, RegisterParts& outRegParts, bool isFound = true) {
 			if (isFound) {
 				auto it = m_decompiledBlocks.find(block);
 				if (it != m_decompiledBlocks.end()) {
@@ -202,7 +201,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		ExprTree::Node* createSymbolForRequest(const Register& reg, uint64_t needReadMask) {
+		ExprTree::Node* createSymbolForRequest(const PCode::Register& reg, uint64_t needReadMask) {
 			auto& regSymbol = *m_curRegSymbol;
 			std::set<int> prevSymbolIds;
 			for (auto& it : regSymbol.blocks) {
@@ -270,7 +269,7 @@ namespace CE::Decompiler
 								regParts.push_back(new RegisterPart(symbolMask, maskToChange, symbolLeaf));
 							}
 
-							auto expr = Register::CreateExprFromRegisterParts(regParts, symbolMask);
+							auto expr = CreateExprFromRegisterParts(regParts, symbolMask);
 							decBlock->addSymbolAssignmentLine(symbolLeaf, expr);
 						}
 					}
@@ -278,7 +277,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
+		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
 			auto remainToReadMask = needReadMask & ~hasReadMask;
 			int prevSymbolId = 0;
 
@@ -339,7 +338,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, PrimaryTree::Block*& nextBlock) {
+		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const PCode::Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, PrimaryTree::Block*& nextBlock) {
 			std::map<PrimaryTree::Block*, uint64_t> blockPressures;
 			std::set<PrimaryTree::Block*> handledBlocks;
 			blockPressures[startBlock] = 0x1000000000000000;

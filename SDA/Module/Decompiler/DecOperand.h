@@ -13,7 +13,7 @@ namespace CE::Decompiler
 		ExprTree::Node* getExpr()
 		{
 			if (m_operand->type == ZYDIS_OPERAND_TYPE_REGISTER) {
-				return m_ctx->requestRegister(m_operand->reg.value);
+				return m_ctx->requestRegisterExpr(m_operand->reg.value);
 			}
 			else if (m_operand->type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
 				return CreateExprNumLeaf(m_ctx, m_operand->imm.value.u & GetMaskBySize(getSize()));
@@ -56,11 +56,11 @@ namespace CE::Decompiler
 			ExprTree::Node* baseReg = nullptr;
 
 			if (mem.base != ZYDIS_REGISTER_NONE) {
-				baseReg = ctx->requestRegister(mem.base);
+				baseReg = ctx->requestRegisterExpr(mem.base);
 			}
 
 			if (mem.index != ZYDIS_REGISTER_NONE) {
-				expr = ctx->requestRegister(mem.index);
+				expr = ctx->requestRegisterExpr(mem.index);
 				if (mem.scale != 1) {
 					expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(mem.scale), ExprTree::Mul);
 				}
