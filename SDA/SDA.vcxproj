@@ -74,26 +74,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugExe|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)Vendor\magic_enum\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)Vendor\magic_enum\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>$(GTA5_ROOT)\FastLoader</OutDir>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseExe|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)Vendor\magic_enum\include;$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(ProjectDir)Module\Decompiler\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)Vendor\magic_enum\include;$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(ProjectDir)Module\Decompiler\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>$(GTA5_ROOT)\FastLoader</OutDir>
     <EmbedManifest>false</EmbedManifest>

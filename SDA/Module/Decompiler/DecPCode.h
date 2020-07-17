@@ -2,6 +2,7 @@
 #include <main.h>
 #include <inttypes.h>
 #include "DecMask.h"
+#include <magic_enum.hpp>
 
 //for debug x86
 #include <Zycore/Format.h>
@@ -34,9 +35,9 @@ namespace CE::Decompiler::PCode
 			return m_genericId == reg.m_genericId && m_valueRangeMask == reg.m_valueRangeMask;
 		}
 
-		bool operator <(const Register& reg) const {
+		/*bool operator <(const Register& reg) const {
 			return m_genericId < reg.getGenericId() && m_valueRangeMask < reg.m_valueRangeMask;
-		}
+		}*/
 	};
 
 	class Varnode
@@ -122,7 +123,7 @@ namespace CE::Decompiler::PCode
 		}
 	};
 
-	BETTER_ENUM(InstructionId, int,
+	enum class InstructionId {
 		NONE,
 		//Data Moving
 		COPY,
@@ -196,7 +197,7 @@ namespace CE::Decompiler::PCode
 		//Managed Code
 		CPOOLREF,
 		NEW
-		)
+	};
 
 	class Instruction
 	{
@@ -212,7 +213,7 @@ namespace CE::Decompiler::PCode
 		{}
 
 		static bool IsBranching(InstructionId id) {
-			return id._to_index() >= InstructionId::BRANCH && id._to_index() <= InstructionId::RETURN;
+			return id >= InstructionId::BRANCH && id <= InstructionId::RETURN;
 		}
 
 		int getOriginalInstructionOffset() {
@@ -239,7 +240,7 @@ namespace CE::Decompiler::PCode
 			std::string result;
 			if (m_output)
 				result += m_output->printDebug() + " = ";
-			result += InstructionId::_from_index(m_id)._to_string();
+			result += magic_enum::enum_name(m_id);
 			if (m_input0)
 				result += " " + m_input0->printDebug();
 			if (m_input1)

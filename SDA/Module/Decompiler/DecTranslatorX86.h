@@ -63,8 +63,8 @@ namespace CE::Decompiler::PCode
 				Varnode* varnodeInput1 = requestOperandValue(m_curInstr->operands[1], size);
 				auto varnodeTemp = new SymbolVarnode(size);
 				addMicroInstruction(InstructionId::COPY, varnodeInput0, nullptr, varnodeTemp);
-				addMicroInstruction(InstructionId::COPY, varnodeInput0, nullptr, varnodeInput1);
-				addMicroInstruction(InstructionId::COPY, varnodeTemp, nullptr, varnodeInput0);
+				addMicroInstruction(InstructionId::COPY, varnodeInput1, nullptr, varnodeInput0);
+				addMicroInstruction(InstructionId::COPY, varnodeTemp, nullptr, varnodeInput1);
 				break;
 			}
 
@@ -258,7 +258,7 @@ namespace CE::Decompiler::PCode
 				case ZYDIS_MNEMONIC_XOR:
 				{
 					auto instrId = InstructionId::NONE;
-					switch (instrId) {
+					switch (mnemonic) {
 					case ZYDIS_MNEMONIC_AND:
 					case ZYDIS_MNEMONIC_TEST:
 						instrId = InstructionId::INT_AND;
@@ -281,7 +281,7 @@ namespace CE::Decompiler::PCode
 				case ZYDIS_MNEMONIC_SAR:
 				{
 					auto instrId = InstructionId::NONE;
-					switch (instrId) {
+					switch (mnemonic) {
 					case ZYDIS_MNEMONIC_SHL:
 						instrId = InstructionId::INT_LEFT;
 						break;
@@ -546,6 +546,11 @@ namespace CE::Decompiler::PCode
 		}
 
 		void addMicroInstruction(InstructionId id, Varnode* input0, Varnode* input1 = nullptr, Varnode* output = nullptr, bool zext = true) {
+			/*for (auto vn : { input0, input1, output })
+				if (auto outputReg = dynamic_cast<RegisterVarnode*>(vn))
+					if (outputReg->m_register.getGenericId() == ZYDIS_REGISTER_RFLAGS)
+						return;*/
+
 			auto instr = new Instruction(id, input0, input1, output, m_curOffset, m_curInstr->length, m_curOrderId++);
 			if (m_curOrderId == 1) { //for debug info
 				ZydisFormatter formatter;

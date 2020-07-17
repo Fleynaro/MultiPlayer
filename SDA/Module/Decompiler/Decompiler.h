@@ -109,7 +109,7 @@ namespace CE::Decompiler
 				auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
 				for (auto it = ctx->m_externalSymbols.begin(); it != ctx->m_externalSymbols.end(); it ++) {
 					auto& externalSymbol = **it;
-					auto regId = externalSymbol.m_reg.getGenericId();
+					auto regId = externalSymbol.m_reg.getGenericId(); //ah/al and xmm?
 					if (m_registersToSymbol.find(regId) == m_registersToSymbol.end()) {
 						m_registersToSymbol[regId] = RegSymbol();
 					}

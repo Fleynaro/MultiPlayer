@@ -51,14 +51,13 @@ namespace CE::Decompiler::PCode
 				auto op2 = requestVarnode(m_instr->m_input1);
 				auto opType = ExprTree::None;
 
-				switch (opType)
+				switch (m_instr->m_id)
 				{
 				case InstructionId::INT_ADD:
-					opType = ExprTree::Add;
-					break;
 				case InstructionId::INT_SUB:
 					opType = ExprTree::Add;
-					op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & m_instr->m_input1->getMask()), ExprTree::Mul);
+					if(m_instr->m_id == InstructionId::INT_SUB)
+						op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & m_instr->m_input1->getMask()), ExprTree::Mul);
 					break;
 				case InstructionId::INT_MULT:
 					opType = ExprTree::Mul;
@@ -99,7 +98,7 @@ namespace CE::Decompiler::PCode
 			{
 				auto expr = requestVarnode(m_instr->m_input0);
 				auto nodeMask = new ExprTree::NumberLeaf(-1 & m_instr->m_input0->getMask());
-				auto opType = (m_instr->m_id._to_index() == InstructionId::INT_2COMP) ? ExprTree::Mul : ExprTree::Xor;
+				auto opType = (m_instr->m_id == InstructionId::INT_2COMP) ? ExprTree::Mul : ExprTree::Xor;
 				m_ctx->setVarnode(m_instr->m_output, new ExprTree::OperationalNode(expr, nodeMask, opType), true);
 				break;
 			}

@@ -63,9 +63,10 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg
 }
 
 ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister) {
-	auto it = m_cachedRegisters.find(varnodeRegister->m_register);
-	if (it != m_cachedRegisters.end()) {
-		return it->second->m_node;
+	for (auto it : m_cachedRegisters) {
+		if (it.first == varnodeRegister->m_register) {
+			return it.second->m_node;
+		}
 	}
 
 	ExprTree::Node* regExpr;
@@ -87,7 +88,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 	}
 
-	m_cachedRegisters[varnodeRegister->m_register] = new WrapperNode<ExprTree::Node>(regExpr);
+	m_cachedRegisters.push_back(std::make_pair(varnodeRegister->m_register, new WrapperNode<ExprTree::Node>(regExpr)));
 	return regExpr;
 }
 

@@ -141,7 +141,7 @@ namespace CE::Decompiler
 			}
 		};
 		std::list<VarnodeExpr> m_varnodes;
-		std::map<PCode::Register, WrapperNode<ExprTree::Node>*> m_cachedRegisters;
+		std::list<std::pair<PCode::Register, WrapperNode<ExprTree::Node>*>> m_cachedRegisters;
 		std::list<ExternalSymbol*> m_externalSymbols;
 
 		ExecutionBlockContext(Decompiler* decompiler);
