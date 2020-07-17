@@ -46,6 +46,10 @@ namespace CE::Decompiler::PCode
 
 		virtual int getSize() = 0;
 
+		uint64_t getMask() {
+			return GetMaskBySize(getSize());
+		}
+
 		virtual std::string printDebug() = 0;
 	};
 

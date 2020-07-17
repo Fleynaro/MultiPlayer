@@ -70,12 +70,12 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 
 		if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
 			if (auto whileLoop = dynamic_cast<LinearView::WhileLoop*>(block)) {
-				printf("%swhile(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
+				printf("%swhile(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond ? decBlock->m_noJmpCond->printDebug().c_str() : "");
 				ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
 				printf("%s}\n", tabStr.c_str());
 			}
 			else {
-				printf("%sif(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond->printDebug().c_str());
+				printf("%sif(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond ? decBlock->m_noJmpCond->printDebug().c_str() : "");
 				ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
 				if (true || condition->m_elseBranch->getBlocks().size() > 0) {
 					printf("%s} else {\n", tabStr.c_str());
@@ -186,6 +186,12 @@ void CE::Decompiler::test() {
 		auto decCodeGraph = new DecompiledCodeGraph;
 		auto decompiler = new Decompiler(&graph, decCodeGraph);
 		decompiler->start();
+
+		LinearView::Converter2 converter(decCodeGraph);
+		converter.start();
+
+		auto asmBlocks = decompiler->getAsmBlocks();
+		ShowCode(converter.getBlockList(), asmBlocks);
 	}
 
 	return;

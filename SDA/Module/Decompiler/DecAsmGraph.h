@@ -108,8 +108,8 @@ namespace CE::Decompiler
 			for (auto it = m_blocks.begin(); it != std::prev(m_blocks.end()); it++) {
 				auto& curBlock = *it;
 				auto& nextBlock = *std::next(it);
-				auto lastInstr = curBlock.second.getLastInstruction();
-				if (lastInstr->m_id._to_index() == PCode::InstructionId::CBRANCH) {
+				auto lastInstrId = curBlock.second.getLastInstruction()->m_id._to_index();
+				if (lastInstrId != PCode::InstructionId::BRANCHIND && lastInstrId != PCode::InstructionId::BRANCH && lastInstrId != PCode::InstructionId::RETURN) {
 					curBlock.second.setNextNearBlock(&nextBlock.second);
 				}
 			}
