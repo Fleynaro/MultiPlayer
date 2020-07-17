@@ -142,15 +142,20 @@ namespace CE::Decompiler
 		};
 		std::list<VarnodeExpr> m_varnodes;
 		std::list<std::pair<PCode::Register, WrapperNode<ExprTree::Node>*>> m_cachedRegisters;
+		std::list<PCode::RegisterVarnode*> m_ownRegVarnodes;
 		std::list<ExternalSymbol*> m_externalSymbols;
 
 		ExecutionBlockContext(Decompiler* decompiler);
+
+		void setVarnode(const PCode::Register& reg, ExprTree::Node* expr, bool rewrite = true);
 
 		void setVarnode(PCode::Varnode* varnode, ExprTree::Node* expr, bool rewrite = true);
 
 		RegisterParts getRegisterParts(const PCode::Register& reg, uint64_t& mask, bool changedRegistersOnly = false);
 
 		ExprTree::Node* requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister);
+
+		ExprTree::Node* requestRegisterExpr(const PCode::Register& reg);
 
 		ExprTree::Node* requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode);
 	};

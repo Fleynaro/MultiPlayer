@@ -19,10 +19,11 @@ namespace CE::Decompiler
 			}
 		};
 	public:
+		ExprTree::FunctionCallInfo m_functionCallInfo;
 		std::function<ExprTree::FunctionCallInfo(int, ExprTree::Node*)> m_funcCallInfoCallback;
 
-		Decompiler(AsmGraph* graph, DecompiledCodeGraph* decompiledGraph)
-			: m_asmGraph(graph), m_decompiledGraph(decompiledGraph)
+		Decompiler(AsmGraph* graph, DecompiledCodeGraph* decompiledGraph, ExprTree::FunctionCallInfo functionCallInfo = ExprTree::GetFunctionCallDefaultInfo())
+			: m_asmGraph(graph), m_decompiledGraph(decompiledGraph), m_functionCallInfo(functionCallInfo)
 		{
 			m_instructionInterpreter = new PCode::InstructionInterpreter;
 			m_funcCallInfoCallback = [](int offset, ExprTree::Node* dst) {

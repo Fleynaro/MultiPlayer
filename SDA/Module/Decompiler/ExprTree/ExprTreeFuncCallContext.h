@@ -4,16 +4,13 @@
 namespace CE::Decompiler::ExprTree
 {
 	struct FunctionCallInfo {
-		std::list<ZydisRegister> m_paramRegisters;
-		ZydisRegister m_resultRegister;
-		ZydisRegister m_resultVectorRegister;
+		std::list<PCode::Register> m_paramRegisters;
+		PCode::Register m_resultRegister;
+		PCode::Register m_resultVectorRegister;
 	};
 
 	static FunctionCallInfo GetFunctionCallDefaultInfo() {
 		FunctionCallInfo info;
-		info.m_paramRegisters = { ZYDIS_REGISTER_RCX, ZYDIS_REGISTER_RDX, ZYDIS_REGISTER_R8, ZYDIS_REGISTER_R9 };
-		info.m_resultRegister = ZYDIS_REGISTER_RAX;
-		info.m_resultVectorRegister = ZYDIS_REGISTER_XMM0;
 		return info;
 	}
 
@@ -22,7 +19,7 @@ namespace CE::Decompiler::ExprTree
 	public:
 		int m_destOffset = 0;
 		Node* m_destination;
-		std::list<std::pair<ZydisRegister, Node*>> m_registerParams;
+		std::list<std::pair<PCode::Register, Node*>> m_registerParams;
 		
 		FunctionCallContext(int destOffset, Node* destination)
 			: m_destOffset(destOffset), m_destination(destination)
@@ -30,7 +27,7 @@ namespace CE::Decompiler::ExprTree
 			m_destination->addParentNode(this);
 		}
 
-		void addRegisterParam(ZydisRegister reg, Node* node) {
+		void addRegisterParam(PCode::Register reg, Node* node) {
 			m_registerParams.push_back(std::make_pair(reg, node));
 			node->addParentNode(this);
 		}

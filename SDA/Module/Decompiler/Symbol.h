@@ -88,7 +88,21 @@ namespace CE::Decompiler::Symbol
 		{}
 
 		std::string printDebug() override {
-			return "[reg_" + std::string(ZydisRegisterGetString((ZydisRegister)m_register.m_genericId)) + "_" + std::to_string(getSize() * 8) + "]";
+			auto reg = (ZydisRegister)m_register.m_genericId;
+			if (reg == ZYDIS_REGISTER_RFLAGS) {
+				std::string flagName = "flag";
+				auto flag = (ZydisCPUFlag)GetShiftValueOfMask(m_register.m_valueRangeMask);
+				if (flag == ZYDIS_CPUFLAG_CF)
+					flagName = "CF";
+				else if (flag == ZYDIS_CPUFLAG_OF)
+					flagName = "OF";
+				else if (flag == ZYDIS_CPUFLAG_SF)
+					flagName = "SF";
+				else if (flag == ZYDIS_CPUFLAG_ZF)
+					flagName = "ZF";
+				return "[reg_" + flagName + "_8]";
+			}
+			return "[reg_" + std::string(ZydisRegisterGetString(reg)) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 

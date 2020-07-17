@@ -7,6 +7,13 @@ ExecutionBlockContext::ExecutionBlockContext(Decompiler* decompiler)
 	: m_decompiler(decompiler)
 {}
 
+void ExecutionBlockContext::setVarnode(const PCode::Register& reg, ExprTree::Node * expr, bool rewrite)
+{
+	auto varnode = new PCode::RegisterVarnode(reg);
+	m_ownRegVarnodes.push_back(varnode);
+	return setVarnode(varnode, expr, rewrite);
+}
+
 void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* newExpr, bool rewrite) {
 	WrapperNode<ExprTree::Node>* oldWrapperNode = nullptr;
 	for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it ++) {
@@ -90,6 +97,13 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 
 	m_cachedRegisters.push_back(std::make_pair(varnodeRegister->m_register, new WrapperNode<ExprTree::Node>(regExpr)));
 	return regExpr;
+}
+
+ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(const PCode::Register& reg)
+{
+	auto varnode = new PCode::RegisterVarnode(reg);
+	m_ownRegVarnodes.push_back(varnode);
+	return requestRegisterExpr(varnode);
 }
 
 ExprTree::Node* ExecutionBlockContext::requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode)

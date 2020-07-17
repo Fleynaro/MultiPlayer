@@ -24,6 +24,14 @@ void ff() {
 #include "TestCodeToDecompile.h"
 #include "DecTranslatorX86.h"
 
+ExprTree::FunctionCallInfo GetFunctionCallDefaultInfo() {
+	using namespace PCode;
+	ExprTree::FunctionCallInfo info;
+	info.m_paramRegisters = { Register(ZYDIS_REGISTER_RCX, -1), Register(ZYDIS_REGISTER_RDX, -1), Register(ZYDIS_REGISTER_R8, -1), Register(ZYDIS_REGISTER_R9, -1) };
+	info.m_resultRegister = Register(ZYDIS_REGISTER_RAX, -1);
+	info.m_resultVectorRegister = Register(ZYDIS_REGISTER_XMM0, 0xFF, true);
+	return info;
+}
 
 void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr = "", bool extraInfo = true, bool pcode = true) {
 	ZydisFormatter formatter;
@@ -203,12 +211,12 @@ void CE::Decompiler::test() {
 	auto decompiler = new Decompiler(&graph, decCodeGraph);
 	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
 		auto absAddr = (std::intptr_t)addr + offset;
-		auto info = ExprTree::GetFunctionCallDefaultInfo();
+		auto info = GetFunctionCallDefaultInfo();
 		auto it = info.m_paramRegisters.begin();
-		*(it ++) = ZYDIS_REGISTER_ECX;
-		*(it++) = ZYDIS_REGISTER_EDX;
-		*(it++) = ZYDIS_REGISTER_R8D;
-		info.m_resultRegister = ZYDIS_REGISTER_EAX;
+		*(it ++) = PCode::Register(ZYDIS_REGISTER_RCX, 0xFFFFFFFF);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, 0xFFFFFFFF);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_R8, 0xFFFFFFFF);
+		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, 0xFFFFFFFF);
 		info.m_paramRegisters.clear();
 		return info;
 	};
