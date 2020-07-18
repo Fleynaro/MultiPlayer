@@ -47,10 +47,13 @@ namespace CE::Decompiler::Optimization
 		//optimize expressions
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto line : decBlock->getSeqLines()) {
+				Node::UpdateDebugInfo(line->m_destAddr);
+				Node::UpdateDebugInfo(line->m_srcValue);
 				Optimization::Optimize(line->m_destAddr);
 				Optimization::Optimize(line->m_srcValue);
 			}
 			for (auto line : decBlock->getSymbolAssignmentLines()) {
+				Node::UpdateDebugInfo(line->m_srcValue);
 				Optimization::Optimize(line->m_srcValue);
 			}
 			if (decBlock->m_noJmpCond != nullptr) {
@@ -59,6 +62,7 @@ namespace CE::Decompiler::Optimization
 			}
 			if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
 				if (endBlock->m_returnNode != nullptr) {
+					Node::UpdateDebugInfo(endBlock->m_returnNode);
 					Optimization::Optimize(endBlock->m_returnNode);
 				}
 			}

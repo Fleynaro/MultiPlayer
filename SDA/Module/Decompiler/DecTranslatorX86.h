@@ -673,7 +673,7 @@ namespace CE::Decompiler::PCode
 			{
 				auto varnodeEq = new SymbolVarnode(1);
 				addMicroInstruction(InstructionId::INT_EQUAL, CreateVarnode(ZYDIS_CPUFLAG_OF), CreateVarnode(ZYDIS_CPUFLAG_SF), varnodeEq);
-				if (flagCond == FlagCond::LE) {
+				if (flagCond == FlagCond::NLE) {
 					auto varnodeNeg = new SymbolVarnode(1);
 					addMicroInstruction(InstructionId::BOOL_NEGATE, CreateVarnode(ZYDIS_CPUFLAG_ZF), nullptr, varnodeNeg);
 					auto varnodeAnd = new SymbolVarnode(1);

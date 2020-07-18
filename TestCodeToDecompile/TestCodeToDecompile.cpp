@@ -84,9 +84,24 @@ int TestFunctionToDecompile1() {
 		break;
 	}*/
 
-	/*if (b == 10 && b == 20 && b == 30 && b == 40) {
+	if (b >= 1) {
 		b++;
-	}*/
+	}
+	if (b > 2) {
+		b++;
+	}
+	if (b <= 3) {
+		b++;
+	}
+	if (b < 4) {
+		b++;
+	}
+	if (b == 5) {
+		b++;
+	}
+	if (b != 6) {
+		b++;
+	}
 	/*if (b == 10 && b == 20 || b == 30 && b == 40 && b == 50 || b == 60) {
 		b++;
 	}*/
@@ -105,18 +120,18 @@ int TestFunctionToDecompile1() {
 		b += Func1(10) + Func1(5);
 	}*/
 
-	auto a = g_c;
+	/*auto a = g_c;
 	auto obj = fff(*a.b->a);
 
 	auto rr = &(&a)->b;
 
 	auto op1 = int16_t(55);
-	auto var = (int)op1 + (uint16_t*)2 + (op1 == -1) ? 1 : 2;
+	auto var = (int)op1 + (uint16_t*)2 + (op1 == -1) ? 1 : 2;*/
 
 	/*int arr[2][3][4];
 	for (int i = 0; i < 120; i++)
 		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;*/
 
 	/*int a = GetTickCount() * GetTickCount() * GetTickCount() * GetTickCount();*/
-	return /*b * a + 100 + *//*arr[1][2][3] + */obj.a + a.b->a->b;
+	return b/*b * a + 100 + *//*arr[1][2][3] + */ /*obj.a + a.b->a->b*/;
 }

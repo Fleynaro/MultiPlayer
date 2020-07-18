@@ -198,6 +198,7 @@ namespace CE::Decompiler::ExprTree
 			SCARRY,
 			SBORROW
 		};
+		Id m_funcId;
 
 		FunctionalNode(Node* node1, Node* node2, Id id)
 			: OperationalNode(node1, node2, Functional), m_funcId(id)
@@ -212,7 +213,5 @@ namespace CE::Decompiler::ExprTree
 				return "";
 			return m_updateDebugInfo = (std::string(magic_enum::enum_name(m_funcId)) + "(" + m_leftNode->printDebug() + ", " + m_rightNode->printDebug() + ")");
 		}
-	private:
-		Id m_funcId;
 	};
 };

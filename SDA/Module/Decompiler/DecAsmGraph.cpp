@@ -174,7 +174,7 @@ void CE::Decompiler::test() {
 
 	void* addr;
 	int size;
-	if (false) {
+	if (true) {
 		addr = &TestFunctionToDecompile1;
 		size = calculateFunctionSize2((byte*)addr, 0);
 	}
