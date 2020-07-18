@@ -52,7 +52,7 @@ namespace CE::Decompiler::PCode
 
 		void translateCurInstruction() {
 			auto mnemonic = m_curInstr->mnemonic;
-			auto size = m_curInstr->operands[0].size / 8;
+			auto size = m_curInstr->operands[0].size / 0x8;
 			auto operandsCount = getFirstExplicitOperandsCount();
 			
 			switch (mnemonic)
@@ -75,7 +75,7 @@ namespace CE::Decompiler::PCode
 			case ZYDIS_MNEMONIC_LEA:
 			{
 				auto operand = m_curInstr->operands[1];
-				auto varnode = requestOperandValue(operand, size, nullptr, operand.actions != 0);
+				auto varnode = requestOperandValue(operand, operand.size / 0x8, nullptr, operand.actions != 0);
 
 				auto instrId = InstructionId::COPY;
 				switch (mnemonic) {
@@ -628,7 +628,7 @@ namespace CE::Decompiler::PCode
 				}
 
 				if (isMemLocLoaded) { //check for LEA instruction
-					auto symbolVarnode = new SymbolVarnode(0x8);
+					auto symbolVarnode = new SymbolVarnode(size);
 					addMicroInstruction(InstructionId::LOAD, resultVarnode, nullptr, symbolVarnode);
 					resultVarnode = symbolVarnode;
 				}
@@ -734,6 +734,14 @@ namespace CE::Decompiler::PCode
 			}
 			else if (reg >= ZYDIS_REGISTER_RAX && reg <= ZYDIS_REGISTER_R15) {
 				return Register(reg, 0xFFFFFFFFFFFFFFFF, false);
+			}
+			else if (reg >= ZYDIS_REGISTER_IP && reg <= ZYDIS_REGISTER_RIP) {
+				auto mask = 0xFFFFFFFFFFFFFFFF;
+				if (reg == ZYDIS_REGISTER_EIP)
+					mask = 0xFFFFFFFF;
+				if (reg == ZYDIS_REGISTER_IP)
+					mask = 0xFFFF;
+				return Register(reg, mask);
 			}
 			else if (reg >= ZYDIS_REGISTER_XMM0 && reg <= ZYDIS_REGISTER_XMM31) {
 				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_XMM0, 0xFFFF, true);

@@ -180,11 +180,29 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		break;
 	}
 
+	case InstructionId::INT_CARRY:
+	case InstructionId::INT_SCARRY:
+	case InstructionId::INT_SBORROW:
+	{
+		auto op1 = requestVarnode(m_instr->m_input0);
+		auto op2 = requestVarnode(m_instr->m_input1);
+		auto funcId = ExprTree::FunctionalNode::Id::CARRY;
+		if(m_instr->m_id == InstructionId::INT_SCARRY)
+			funcId = ExprTree::FunctionalNode::Id::SCARRY;
+		else if (m_instr->m_id == InstructionId::INT_SBORROW)
+			funcId = ExprTree::FunctionalNode::Id::SBORROW;
+
+		auto result = new ExprTree::FunctionalNode(op1, op2, funcId);
+		m_ctx->setVarnode(m_instr->m_output, result);
+		break;
+	}
+
 	case InstructionId::CBRANCH:
 	{
 		auto op2 = requestVarnode(m_instr->m_input1);
 		if (auto flagCond = dynamic_cast<ExprTree::ICondition*>(op2)) {
-			m_block->setJumpCondition(flagCond);
+			auto notFlagCond = new ExprTree::CompositeCondition(flagCond, nullptr, ExprTree::CompositeCondition::Not);
+			m_block->setNoJumpCondition(notFlagCond);
 		}
 		break;
 	}
@@ -194,6 +212,9 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		int dstLocOffset = 0;
 		auto dstLocExpr = requestVarnode(m_instr->m_input0);
+		if (auto dstLocExprNum = dynamic_cast<ExprTree::NumberLeaf*>(dstLocExpr)) {
+			dstLocOffset = int(dstLocExprNum->m_value >> 8);
+		}
 
 		auto funcCallInfo = m_ctx->m_decompiler->m_funcCallInfoCallback(dstLocOffset, dstLocExpr);
 		auto funcCallCtx = new ExprTree::FunctionCallContext(dstLocOffset, dstLocExpr);

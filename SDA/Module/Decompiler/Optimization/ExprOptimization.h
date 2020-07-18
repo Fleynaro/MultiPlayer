@@ -37,14 +37,10 @@ namespace CE::Decompiler::Optimization
 		}
 
 		if (auto conditionNode = dynamic_cast<Condition*>(node)) {
-			std::list<OperationalNode*> list;
-			if (auto operationalNode = dynamic_cast<OperationalNode*>(conditionNode->m_leftNode)) {
-				list.push_back(operationalNode);
-			}
-			if (auto operationalNode = dynamic_cast<OperationalNode*>(conditionNode->m_rightNode)) {
-				list.push_back(operationalNode);
-			}
-			return list;
+			auto list1 = GetNextOperationalsNodesToOpimize(conditionNode->m_leftNode);
+			auto list2 = GetNextOperationalsNodesToOpimize(conditionNode->m_rightNode);
+			list1.insert(list1.end(), list2.begin(), list2.end());
+			return list1;
 		}
 
 		if (auto compCondition = dynamic_cast<CompositeCondition*>(node)) {
@@ -93,14 +89,8 @@ namespace CE::Decompiler::Optimization
 			OptimizeZeroInExpr(it);
 		}
 
-		if (expr->m_operation == Xor) {
-			if (expr->m_leftNode == expr->m_rightNode) {
-				expr->replaceWith(new NumberLeaf(0));
-				delete expr;
-				expr = nullptr;
-				return;
-			}
-		}
+		if (IsOperationUnsupportedToCalculate(expr->m_operation))
+			return;
 
 		if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 			if (expr->m_operation != Div && expr->m_operation != Mod) {
@@ -133,16 +123,36 @@ namespace CE::Decompiler::Optimization
 		for (auto it : list) {
 			OptimizeConstExpr(it);
 		}
+
+		if (IsOperationUnsupportedToCalculate(expr->m_operation))
+			return;
+
+		//[sym1] & [sym1]	=>	 [sym1]
+		if (expr->m_leftNode == expr->m_rightNode) {
+			bool isOptimized = true;
+			if (expr->m_operation == Xor) {
+				expr->replaceWith(new NumberLeaf(0));
+			} else if (expr->m_operation == And || expr->m_operation == Or) {
+				expr->replaceWith(expr->m_leftNode);
+			}
+			else {
+				isOptimized = false;
+			}
+
+			if (isOptimized) {
+				delete expr;
+				expr = nullptr;
+				return;
+			}
+		}
 		
-		if (!IsOperationUnsupportedToCalculate(expr->m_operation)) {
-			if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
-				if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-					auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
-					expr->replaceWith(new NumberLeaf(result));
-					delete expr;
-					expr = nullptr;
-					return;
-				}
+		if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
+			if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+				auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
+				expr->replaceWith(new NumberLeaf(result));
+				delete expr;
+				expr = nullptr;
+				return;
 			}
 		}
 

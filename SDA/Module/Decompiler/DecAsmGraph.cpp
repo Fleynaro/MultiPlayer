@@ -190,34 +190,20 @@ void CE::Decompiler::test() {
 	graph.build();
 	graph.printDebug(addr);
 
+	auto info = GetFunctionCallDefaultInfo();
 	{
-		auto decCodeGraph = new DecompiledCodeGraph;
-		auto decompiler = new Decompiler(&graph, decCodeGraph);
-		decompiler->start();
-
-		LinearView::Converter2 converter(decCodeGraph);
-		converter.start();
-
-		auto asmBlocks = decompiler->getAsmBlocks();
-		ShowCode(converter.getBlockList(), asmBlocks);
-	}
-
-	return;
-
-	graph.printDebug(addr);
-	printf("\n\n");
-
-	auto decCodeGraph = new DecompiledCodeGraph;
-	auto decompiler = new Decompiler(&graph, decCodeGraph);
-	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
-		auto absAddr = (std::intptr_t)addr + offset;
-		auto info = GetFunctionCallDefaultInfo();
 		auto it = info.m_paramRegisters.begin();
-		*(it ++) = PCode::Register(ZYDIS_REGISTER_RCX, 0xFFFFFFFF);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, 0xFFFFFFFF);
 		*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, 0xFFFFFFFF);
 		*(it++) = PCode::Register(ZYDIS_REGISTER_R8, 0xFFFFFFFF);
 		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, 0xFFFFFFFF);
 		info.m_paramRegisters.clear();
+	}
+
+	auto decCodeGraph = new DecompiledCodeGraph;
+	auto decompiler = new Decompiler(&graph, decCodeGraph, info);
+	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
+		auto absAddr = (std::intptr_t)addr + offset;
 		return info;
 	};
 	decompiler->start();

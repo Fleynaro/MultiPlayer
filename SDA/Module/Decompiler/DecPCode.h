@@ -34,10 +34,6 @@ namespace CE::Decompiler::PCode
 		bool operator ==(const Register& reg) const {
 			return m_genericId == reg.m_genericId && m_valueRangeMask == reg.m_valueRangeMask;
 		}
-
-		/*bool operator <(const Register& reg) const {
-			return m_genericId < reg.getGenericId() && m_valueRangeMask < reg.m_valueRangeMask;
-		}*/
 	};
 
 	class Varnode

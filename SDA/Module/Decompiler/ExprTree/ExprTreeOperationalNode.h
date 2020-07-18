@@ -25,7 +25,7 @@ namespace CE::Decompiler::ExprTree
 
 		//Other
 		Cast,
-		GetBits
+		Functional
 	};
 
 	enum class OperationGroup {
@@ -46,7 +46,7 @@ namespace CE::Decompiler::ExprTree
 	}
 
 	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
-		return operation == ReadValue || operation == Cast || operation == GetBits;
+		return operation == ReadValue || operation == Cast || operation == Functional;
 	}
 
 	static bool IsOperationOverflow(OperationType opType) {
@@ -188,5 +188,31 @@ namespace CE::Decompiler::ExprTree
 	private:
 		int m_size;
 		bool m_isSigned;
+	};
+
+	class FunctionalNode : public OperationalNode
+	{
+	public:
+		enum class Id {
+			CARRY,
+			SCARRY,
+			SBORROW
+		};
+
+		FunctionalNode(Node* node1, Node* node2, Id id)
+			: OperationalNode(node1, node2, Functional), m_funcId(id)
+		{}
+
+		uint64_t getMask() override {
+			return 0b1;
+		}
+
+		std::string printDebug() override {
+			if (!m_leftNode || !m_rightNode)
+				return "";
+			return m_updateDebugInfo = (std::string(magic_enum::enum_name(m_funcId)) + "(" + m_leftNode->printDebug() + ", " + m_rightNode->printDebug() + ")");
+		}
+	private:
+		Id m_funcId;
 	};
 };

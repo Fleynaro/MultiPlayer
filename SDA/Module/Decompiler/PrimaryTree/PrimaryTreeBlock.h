@@ -96,7 +96,7 @@ namespace CE::Decompiler::PrimaryTree
 			}
 		}
 
-		void setJumpCondition(ExprTree::ICondition* noJmpCond) {
+		void setNoJumpCondition(ExprTree::ICondition* noJmpCond) {
 			if (m_noJmpCond) {
 				m_noJmpCond->removeBy(this);
 			}

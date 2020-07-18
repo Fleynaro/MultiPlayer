@@ -37,7 +37,7 @@ namespace CE::Decompiler::Optimization
 		if (!targetBlock)
 			return nullptr;
 
-		block->setJumpCondition(new CompositeCondition(block->m_noJmpCond, removedBlockNoJmpCond, CompositeCondition::And));
+		block->setNoJumpCondition(new CompositeCondition(block->m_noJmpCond, removedBlockNoJmpCond, CompositeCondition::And));
 		block->m_nextNearBlock = targetBlock;
 		removedBlock->m_blocksReferencedTo.remove(block);
 		return removedBlock;
