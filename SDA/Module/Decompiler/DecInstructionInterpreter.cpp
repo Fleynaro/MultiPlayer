@@ -86,7 +86,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			break;
 		}
 
-		auto result = new ExprTree::OperationalNode(op1, op2, opType, m_instr->m_output->getSize());
+		auto result = new ExprTree::InstructionOperationalNode(op1, op2, opType, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -97,7 +97,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto expr = requestVarnode(m_instr->m_input0);
 		auto nodeMask = new ExprTree::NumberLeaf(-1 & m_instr->m_input0->getMask());
 		auto opType = (m_instr->m_id == InstructionId::INT_2COMP) ? ExprTree::Mul : ExprTree::Xor;
-		m_ctx->setVarnode(m_instr->m_output, new ExprTree::OperationalNode(expr, nodeMask, opType, m_instr->m_output->getSize()));
+		m_ctx->setVarnode(m_instr->m_output, new ExprTree::InstructionOperationalNode(expr, nodeMask, opType, m_instr));
 		break;
 	}
 
@@ -230,6 +230,13 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.getSize());
 			dstExpr = new ExprTree::SymbolLeaf(funcResultVar);
 			m_ctx->setVarnode(dstRegister, dstExpr);
+			if (funcCallInfo.m_x86zext) {
+				if (dstRegister.m_valueRangeMask == 0xFFFFFFFF) {
+					auto dstExtRegister = dstRegister;
+					dstExtRegister.m_valueRangeMask = 0xFFFFFFFFFFFFFFFF;
+					m_ctx->setVarnode(dstExtRegister, dstExpr);
+				}
+			}
 		}
 
 		if (dstExpr == nullptr) {

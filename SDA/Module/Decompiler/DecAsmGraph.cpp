@@ -179,7 +179,7 @@ void CE::Decompiler::test() {
 		size = calculateFunctionSize2((byte*)addr, 0);
 	}
 	else {
-#define SAMPLE_VAR sample100
+#define SAMPLE_VAR sample102
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}

@@ -1,5 +1,6 @@
 #pragma once
 #include "ExprTreeLeaf.h"
+#include "../DecPCode.h"
 
 namespace CE::Decompiler::ExprTree
 {
@@ -49,6 +50,10 @@ namespace CE::Decompiler::ExprTree
 		return operation == ReadValue || operation == Cast || operation == Functional;
 	}
 
+	static bool IsOperationWithSingleOperand(OperationType operation) {
+		return operation == ReadValue || operation == Cast || operation == Functional;
+	}
+
 	static bool IsOperationOverflow(OperationType opType) {
 		return (opType == Add || opType == Mul || opType == Shl) && !IsOperationUnsupportedToCalculate(opType);
 	}
@@ -90,14 +95,18 @@ namespace CE::Decompiler::ExprTree
 		OperationType m_operation;
 		uint64_t m_mask;
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, int size = 0x0)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(GetMaskBySize(size))
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, uint64_t mask = 0x0)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask)
 		{
 			leftNode->addParentNode(this);
 			if (rightNode != nullptr) {
 				rightNode->addParentNode(this);
 			}
 		}
+
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, int size)
+			: OperationalNode(leftNode, rightNode, operation, GetMaskBySize(size))
+		{}
 
 		~OperationalNode() {
 			auto leftNode = m_leftNode;
@@ -133,6 +142,20 @@ namespace CE::Decompiler::ExprTree
 			if(result.empty())
 				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
 			return (m_updateDebugInfo = result);// + "<" + std::to_string((uint64_t)this % 100000) + ">";
+		}
+	};
+
+	class InstructionOperationalNode : public OperationalNode
+	{
+	public:
+		PCode::Instruction* m_instr;
+
+		InstructionOperationalNode(Node* leftNode, Node* rightNode, OperationType operation, PCode::Instruction* instr)
+			: OperationalNode(leftNode, rightNode, operation), m_instr(instr)
+		{}
+
+		uint64_t getMask() override {
+			return m_instr->m_output->getMask();
 		}
 	};
 

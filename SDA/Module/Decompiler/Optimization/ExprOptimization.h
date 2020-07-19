@@ -122,10 +122,9 @@ namespace CE::Decompiler::Optimization
 			if (auto curAddExpr = dynamic_cast<OperationalNode*>(curExpr)) {
 				auto mask = curAddExpr->m_mask;
 				if (curAddExpr->m_operation == Add) {
-					if (IsNegative(curAddExpr->m_rightNode, mask)) {
+					if (dynamic_cast<NumberLeaf*>(curAddExpr->m_rightNode) || IsNegative(curAddExpr->m_rightNode, mask)) {
 						//move expr from left node of the condition to the right node being multiplied -1
-						auto newPartOfRightExpr = new OperationalNode(curAddExpr->m_rightNode, new NumberLeaf(uint64_t(-1) & mask), Mul);
-						newPartOfRightExpr->m_mask = mask;
+						auto newPartOfRightExpr = new OperationalNode(curAddExpr->m_rightNode, new NumberLeaf(uint64_t(-1) & mask), Mul, mask);
 						auto newRightExpr = new OperationalNode(condition->m_rightNode, newPartOfRightExpr, Add);
 						newCond = new Condition(curAddExpr->m_leftNode, newRightExpr, condition->m_cond);
 						condition->replaceWith(newCond);
@@ -293,8 +292,8 @@ namespace CE::Decompiler::Optimization
 		if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
 			if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 				auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
-				if (expr->m_mask)
-					result &= expr->m_mask;
+				if (expr->getMask())
+					result &= expr->getMask();
 				expr->replaceWith(new NumberLeaf(result));
 				delete expr;
 				expr = nullptr;
@@ -478,9 +477,12 @@ namespace CE::Decompiler::Optimization
 		{
 			if (auto operand = dynamic_cast<INumber*>(*it.first)) {
 				if ((operand->getMask() & mask) == 0x0) {
-					if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(it.second)) {
+					//убрал, ибо не соблюдается главное условие оптимизации - заменяться все должно целиком
+					/*if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(it.second)) {
 						RemoveZeroMaskMulExpr(expr, mask);
-					}
+						if (!expr)
+							return;
+					}*/
 
 					expr->replaceWith(it.second);
 					*it.first = nullptr;
@@ -504,11 +506,16 @@ namespace CE::Decompiler::Optimization
 			CalculateMasksAndOptimize(it);
 		}
 
+		if (IsOperationWithSingleOperand(expr->m_operation))
+			return;
+
 		if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
 			if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
 				if (expr->m_operation == And) {
 					auto mask1 = leftNode->getMask();
 					auto mask2 = rightNode->getMask();
+					expr->m_mask = mask1 & mask2;
+
 					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 						if ((mask1 & mask2) == mask1) {
 							//[var_2_32] & 0xffffffff{-1}		=>		[var_2_32]		
@@ -519,13 +526,11 @@ namespace CE::Decompiler::Optimization
 						}
 						else {
 							if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
-								RemoveZeroMaskMulExpr(expr, mask2);
+								RemoveZeroMaskMulExpr(leftExpr, mask2);
 								return;
 							}
 						}
 					}
-
-					expr->m_mask = mask1 & mask2;
 
 					if (expr->m_mask == 0x0) {
 						//[var_2_32] & 0xffffffff00000000{0}		=>		0x0

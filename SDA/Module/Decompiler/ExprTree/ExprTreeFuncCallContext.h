@@ -7,6 +7,7 @@ namespace CE::Decompiler::ExprTree
 		std::list<PCode::Register> m_paramRegisters;
 		PCode::Register m_resultRegister;
 		PCode::Register m_resultVectorRegister;
+		bool m_x86zext = true;
 	};
 
 	static FunctionCallInfo GetFunctionCallDefaultInfo() {
