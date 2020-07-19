@@ -120,7 +120,7 @@ namespace CE::Decompiler::Optimization
 		while (curExpr) {
 			bool next = false;
 			if (auto curAddExpr = dynamic_cast<OperationalNode*>(curExpr)) {
-				auto mask = curAddExpr->m_mask;
+				auto mask = curAddExpr->getMask();
 				if (curAddExpr->m_operation == Add) {
 					if (dynamic_cast<NumberLeaf*>(curAddExpr->m_rightNode) || IsNegative(curAddExpr->m_rightNode, mask)) {
 						//move expr from left node of the condition to the right node being multiplied -1
@@ -410,8 +410,22 @@ namespace CE::Decompiler::Optimization
 		if (isSameOperation && prevExpr) {
 			if (IsOperationMoving(expr->m_operation)) {
 				if (IsSwap(prevExpr->m_rightNode, expr->m_rightNode)) {
-					auto newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation);
-					auto newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation);
+					OperationalNode* newExpr;
+					OperationalNode* newPrevExpr;
+					//we should check what type of instruction this node belongs to because of keeping suit
+					if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
+						newExpr = new InstructionOperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation, instrExpr->m_instr);
+					}
+					else {
+						newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation);
+					}
+					if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(prevExpr)) {
+						newPrevExpr = new InstructionOperationalNode(newExpr, expr->m_rightNode, expr->m_operation, instrExpr->m_instr);
+					}
+					else {
+						newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation);
+					}
+
 					prevExpr->replaceWith(newPrevExpr);
 					delete prevExpr;
 					isPrevExprRemoved = 2;
@@ -437,7 +451,18 @@ namespace CE::Decompiler::Optimization
 					default:
 						result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
 					}
-					expr = new OperationalNode(expr->m_leftNode, new NumberLeaf(result), expr->m_operation);
+
+					auto mask = expr->getMask() | prevExpr->getMask();
+					if (mask)
+						result &= mask;
+
+					auto numberLeaf = new NumberLeaf(result);
+					if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
+						expr = new InstructionOperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation, instrExpr->m_instr);
+					}
+					else {
+						expr = new OperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation);
+					}
 					prevExpr->replaceWith(expr);
 					delete prevExpr;
 					isPrevExprRemoved = 2;
@@ -448,7 +473,12 @@ namespace CE::Decompiler::Optimization
 				if (expr->m_operation == Add) {
 					auto resultExpr = AddEqualNodes(expr, prevExpr);
 					if (resultExpr != nullptr) {
-						expr = new OperationalNode(expr->m_leftNode, resultExpr, Add);
+						if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
+							expr = new InstructionOperationalNode(expr->m_leftNode, resultExpr, Add, instrExpr->m_instr);
+						}
+						else {
+							expr = new OperationalNode(expr->m_leftNode, resultExpr, Add);
+						}
 						prevExpr->replaceWith(expr);
 						delete prevExpr;
 						isPrevExprRemoved = 2;
@@ -594,8 +624,12 @@ namespace CE::Decompiler::Optimization
 			Node::UpdateDebugInfo(compCond);
 			InverseConditions(compCond, cond);
 			if (auto compCond = dynamic_cast<CompositeCondition*>(cond)) {
+				Node::UpdateDebugInfo(compCond);
 				MakeOrderInCompositeCondition(compCond);
+				Node::UpdateDebugInfo(compCond);
 				OptimizeCompositeCondition(compCond, cond);
+				Node::UpdateDebugInfo(cond);
+				int a = 5;
 			}
 		}
 		else if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
@@ -605,7 +639,10 @@ namespace CE::Decompiler::Optimization
 				Node::UpdateDebugInfo(simpleCond);
 				OptimizeCondition_Add(simpleCond, cond);
 				if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
+					Node::UpdateDebugInfo(simpleCond);
 					Optimize(simpleCond);
+					Node::UpdateDebugInfo(simpleCond);
+					int a = 5;
 				}
 			}
 		}

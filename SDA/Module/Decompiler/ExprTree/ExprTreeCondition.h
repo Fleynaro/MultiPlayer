@@ -3,11 +3,16 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class ICondition : public Node, public IParentNode
+	class ICondition : public Node, public INumber, public IParentNode
 	{
 	public:
 		virtual ICondition* clone() = 0;
+
 		virtual void inverse() = 0;
+
+		uint64_t getMask() override {
+			return 0xFF;
+		}
 	};
 
 	class Condition : public ICondition

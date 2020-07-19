@@ -38,6 +38,8 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::INT_MULT:
 	case InstructionId::INT_DIV:
 	case InstructionId::INT_SDIV:
+	case InstructionId::INT_REM:
+	case InstructionId::INT_SREM:
 	case InstructionId::INT_AND:
 	case InstructionId::INT_OR:
 	case InstructionId::INT_XOR:
@@ -105,6 +107,19 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::INT_SEXT:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
+		if (m_instr->m_id == InstructionId::INT_SEXT) {
+			expr = new ExprTree::CastNode(expr, m_instr->m_output->getSize(), true);
+		}
+		m_ctx->setVarnode(m_instr->m_output, expr);
+		break;
+	}
+
+	case InstructionId::SUBPIECE:
+	{
+		auto expr = requestVarnode(m_instr->m_input0);
+		auto shiftExpr = requestVarnode(m_instr->m_input1);
+		shiftExpr = new ExprTree::InstructionOperationalNode(shiftExpr, new ExprTree::NumberLeaf(0x8), ExprTree::Mul, m_instr);
+		expr = new ExprTree::InstructionOperationalNode(expr, shiftExpr, ExprTree::Shr, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, expr);
 		break;
 	}
