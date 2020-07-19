@@ -239,6 +239,7 @@
     <ClCompile Include="Module\Decompiler\DecInstructionInterpreter.cpp" />
     <ClCompile Include="Module\Decompiler\DecLinearView.cpp" />
     <ClCompile Include="Module\Decompiler\Decompiler.cpp" />
+    <ClCompile Include="Module\Decompiler\Optimization\ExprOptimization.cpp" />
     <ClCompile Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.cpp" />
     <ClCompile Include="Module\Decompiler\Symbol.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmDecoder.cpp" />

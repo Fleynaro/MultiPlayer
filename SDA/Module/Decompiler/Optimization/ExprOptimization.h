@@ -80,24 +80,20 @@ namespace CE::Decompiler::Optimization
 
 
 	
-	static void OptimizeCondition_SBORROW(Condition*& condition) {
+	static void OptimizeCondition_SBORROW(Condition* condition, ICondition*& newCond) {
+		newCond = condition;
 		//replace SBORROW condition with normal
 		//SBORROW(*(uint_32t*)([reg_rsp_64]), 0x4{4}) == ((*(uint_32t*)([reg_rsp_64]) + 0x3fffffffc{-4}) < 0x0{0}))
 		if (auto func = dynamic_cast<FunctionalNode*>(condition->m_leftNode)) {
 			if (func->m_funcId == FunctionalNode::Id::SBORROW && (condition->m_cond == Condition::Eq || condition->m_cond == Condition::Ne)) {
 				if (auto mainCond = dynamic_cast<Condition*>(condition->m_rightNode)) {
 					if (mainCond->m_cond == Condition::Lt) {
-						if (auto addExpr = dynamic_cast<OperationalNode*>(mainCond->m_leftNode)) {
-							if (addExpr->m_operation == Add) {
-								auto newCondType = Condition::Ge;
-								if(condition->m_cond == Condition::Ne)
-									newCondType = Condition::Lt;
-								auto newCond = new Condition(func->m_leftNode, func->m_rightNode, newCondType);
-								condition->replaceWith(newCond);
-								delete condition;
-								condition = nullptr;
-							}
-						}
+						auto newCondType = Condition::Ge;
+						if(condition->m_cond == Condition::Ne)
+							newCondType = Condition::Lt;
+						newCond = new Condition(func->m_leftNode, func->m_rightNode, newCondType);
+						condition->replaceWith(newCond);
+						delete condition;
 					}
 				}
 			}
@@ -107,7 +103,7 @@ namespace CE::Decompiler::Optimization
 	//check negative of expr node
 	static bool IsNegative(Node* node, uint64_t mask) {
 		if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
-			if (numberLeaf->m_value == uint64_t(-1) & mask)
+			if ((numberLeaf->m_value >> (GetBitCountOfMask(mask) - 1)) & 0b1)
 				return true;
 		}
 		else if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
@@ -117,7 +113,9 @@ namespace CE::Decompiler::Optimization
 		return false;
 	}
 
-	static void OptimizeCondition_Add(Condition* condition) {
+	//rax + -0x2 < 0		=>		rax < -0x2 * -1
+	static void OptimizeCondition_Add(Condition* condition, ICondition*& newCond) {
+		newCond = condition;
 		auto curExpr = condition->m_leftNode;
 		while (curExpr) {
 			bool next = false;
@@ -127,11 +125,12 @@ namespace CE::Decompiler::Optimization
 					if (IsNegative(curAddExpr->m_rightNode, mask)) {
 						//move expr from left node of the condition to the right node being multiplied -1
 						auto newPartOfRightExpr = new OperationalNode(curAddExpr->m_rightNode, new NumberLeaf(uint64_t(-1) & mask), Mul);
+						newPartOfRightExpr->m_mask = mask;
 						auto newRightExpr = new OperationalNode(condition->m_rightNode, newPartOfRightExpr, Add);
-						condition->m_rightNode->replaceWith(newRightExpr);
-						curAddExpr->replaceWith(curAddExpr->m_leftNode);
-						delete curAddExpr;
-						curExpr = curAddExpr->m_leftNode;
+						newCond = new Condition(curAddExpr->m_leftNode, newRightExpr, condition->m_cond);
+						condition->replaceWith(newCond);
+						delete condition;
+						curExpr = condition->m_leftNode;
 						next = true;
 					}
 				}
@@ -141,11 +140,15 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	//x > 2 && x == 3		=>		x == 3 && x > 2
 	static void MakeOrderInCompositeCondition(CompositeCondition* compCond) {
+		if (!compCond->m_rightCond)
+			return;
+		
 		bool isSwap = false;
 		if (auto cond1 = dynamic_cast<Condition*>(compCond->m_leftCond)) {
 			if (auto cond2 = dynamic_cast<Condition*>(compCond->m_rightCond)) {
-				if (cond1->m_cond > cond2->m_cond) {
+				if (cond1->m_cond > cond2->m_cond) { //sorting condition
 					isSwap = true;
 				}
 			} else {
@@ -165,10 +168,11 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//(x < 2 || x == 2)		->		(x <= 2)
-	static void OptimizeCompositeCondition(CompositeCondition*& compCond) {
+	static void OptimizeCompositeCondition(CompositeCondition* compCond, ICondition*& newCond) {
+		newCond = compCond;
 		if (auto leftSimpleCond = dynamic_cast<Condition*>(compCond->m_leftCond)) {
 			if (auto rightSimpleCond = dynamic_cast<Condition*>(compCond->m_rightCond)) {
-				if (leftSimpleCond->m_leftNode == rightSimpleCond->m_leftNode && leftSimpleCond->m_rightNode == rightSimpleCond->m_rightNode) {
+				if (leftSimpleCond->m_leftNode->getHash() == rightSimpleCond->m_leftNode->getHash() && leftSimpleCond->m_rightNode->getHash() == rightSimpleCond->m_rightNode->getHash()) {
 					auto newCondType = Condition::None;
 					if (compCond->m_cond == CompositeCondition::Or) {
 						if (leftSimpleCond->m_cond == Condition::Eq) {
@@ -195,7 +199,7 @@ namespace CE::Decompiler::Optimization
 						auto newSimpleCond = new Condition(leftSimpleCond->m_leftNode, leftSimpleCond->m_rightNode, newCondType);
 						compCond->replaceWith(newSimpleCond);
 						delete compCond;
-						compCond = nullptr;
+						newCond = newSimpleCond;
 					}
 				}
 			}
@@ -203,11 +207,21 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//!(x == 2)		->		(x != 2)
-	static void InverseConditions(ICondition* cond, bool inverse = false) {
-
+	static void InverseConditions(CompositeCondition* compCond, ICondition*& newCond) {
+		newCond = compCond;
+		if (compCond->m_cond == CompositeCondition::Not) {
+			auto condClone = compCond->m_leftCond->clone();
+			condClone->inverse();
+			compCond->replaceWith(condClone);
+			delete compCond;
+			newCond = condClone;
+		}
+		else if(compCond->m_cond == CompositeCondition::None) {
+			compCond->replaceWith(compCond->m_leftCond);
+			delete compCond;
+			newCond = compCond->m_leftCond;
+		}
 	}
-
-
 
 	//[var_2_32] * 0				=>		0
 	//[var_2_32] ^ [var_2_32]		=>		0
@@ -279,6 +293,8 @@ namespace CE::Decompiler::Optimization
 		if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
 			if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 				auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
+				if (expr->m_mask)
+					result &= expr->m_mask;
 				expr->replaceWith(new NumberLeaf(result));
 				delete expr;
 				expr = nullptr;
@@ -538,7 +554,11 @@ namespace CE::Decompiler::Optimization
 	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
 	static void Optimize(Node* node) {
 		auto list = GetNextOperationalsNodesToOpimize(node);
-		for(auto expr : list) {
+		std::set<OperationalNode*> exprs;
+		for (auto it : list)
+			exprs.insert(it);
+
+		for(auto expr : exprs) {
 			Node::UpdateDebugInfo(expr);
 			OptimizeConstExpr(expr);
 			if (!expr) continue;
@@ -558,6 +578,31 @@ namespace CE::Decompiler::Optimization
 			OptimizeZeroInExpr(expr);
 			if (!expr) continue;
 			Node::UpdateDebugInfo(expr);
+		}
+	}
+
+	static void OptimizeCondition(ICondition*& cond) {
+		if (auto compCond = dynamic_cast<CompositeCondition*>(cond)) {
+			OptimizeCondition(compCond->m_leftCond);
+			OptimizeCondition(compCond->m_rightCond);
+
+			Node::UpdateDebugInfo(compCond);
+			InverseConditions(compCond, cond);
+			if (auto compCond = dynamic_cast<CompositeCondition*>(cond)) {
+				MakeOrderInCompositeCondition(compCond);
+				OptimizeCompositeCondition(compCond, cond);
+			}
+		}
+		else if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
+			Node::UpdateDebugInfo(simpleCond);
+			OptimizeCondition_SBORROW(simpleCond, cond);
+			if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
+				Node::UpdateDebugInfo(simpleCond);
+				OptimizeCondition_Add(simpleCond, cond);
+				if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
+					Optimize(simpleCond);
+				}
+			}
 		}
 	}
 };

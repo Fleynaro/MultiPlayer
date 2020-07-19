@@ -6,6 +6,7 @@ namespace CE::Decompiler::ExprTree
 	class ICondition : public Node, public IParentNode
 	{
 	public:
+		virtual ICondition* clone() = 0;
 		virtual void inverse() = 0;
 	};
 
@@ -61,6 +62,10 @@ namespace CE::Decompiler::ExprTree
 			else if (m_rightNode == node) {
 				m_rightNode = newNode;
 			}
+		}
+
+		ICondition* clone() override {
+			return new Condition(m_leftNode, m_rightNode, m_cond);
 		}
 
 		void inverse() override {
@@ -138,12 +143,22 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
+		ICondition* clone() override {
+			return new CompositeCondition(m_leftCond->clone(), m_rightCond->clone(), m_cond);
+		}
+
 		void inverse() override {
+			if (m_cond == Not) {
+				m_cond = None;
+				return;
+			}
+			if (m_cond == None) {
+				m_cond = Not;
+				return;
+			}
+
 			switch (m_cond)
 			{
-			case Not:
-				m_cond = None;
-				break;
 			case And:
 				m_cond = Or;
 				break;

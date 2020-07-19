@@ -88,10 +88,10 @@ namespace CE::Decompiler::ExprTree
 		Node* m_leftNode;
 		Node* m_rightNode;
 		OperationType m_operation;
-		uint64_t m_mask = 0x0;
+		uint64_t m_mask;
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation)
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, int size = 0x0)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(GetMaskBySize(size))
 		{
 			leftNode->addParentNode(this);
 			if (rightNode != nullptr) {

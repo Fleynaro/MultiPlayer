@@ -174,12 +174,12 @@ void CE::Decompiler::test() {
 
 	void* addr;
 	int size;
-	if (true) {
+	if (false) {
 		addr = &TestFunctionToDecompile1;
 		size = calculateFunctionSize2((byte*)addr, 0);
 	}
 	else {
-#define SAMPLE_VAR sample25
+#define SAMPLE_VAR sample100
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}
@@ -210,6 +210,7 @@ void CE::Decompiler::test() {
 	//decompiler->printDebug();
 	Optimization::OptimizeDecompiledGraph(decCodeGraph);
 
+	
 	LinearView::Converter2 converter(decCodeGraph);
 	converter.start();
 	

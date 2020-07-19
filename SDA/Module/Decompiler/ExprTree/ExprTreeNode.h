@@ -1,5 +1,6 @@
 #pragma once
 #include "../DecMask.h"
+#include "Utils/ObjectHash.h"
 
 namespace CE::Decompiler::ExprTree
 {
@@ -64,6 +65,12 @@ namespace CE::Decompiler::ExprTree
 
 		int getUserCount() {
 			return (int)m_parentNodes.size();
+		}
+
+		virtual ObjectHash::Hash getHash() {
+			ObjectHash hash;
+			hash.addValue((int64_t)this);
+			return hash.getHash();
 		}
 
 		virtual std::string printDebug() {

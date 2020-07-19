@@ -1,6 +1,7 @@
 #pragma once
 #include "DecPCode.h"
 #include <Utility/Generic.h>
+#include "Utils/ObjectHash.h"
 
 namespace CE::Decompiler::ExprTree {
 	class FunctionCallContext;
@@ -13,6 +14,12 @@ namespace CE::Decompiler::Symbol
 	public:
 		virtual int getSize() {
 			return 8;
+		}
+
+		virtual ObjectHash::Hash getHash() {
+			ObjectHash hash;
+			hash.addValue((int64_t)this);
+			return hash.getHash();
 		}
 
 		virtual std::string printDebug() = 0;
@@ -28,7 +35,6 @@ namespace CE::Decompiler::Symbol
 		int getSize() override {
 			return m_size;
 		}
-
 	private:
 		int m_size;
 	};
@@ -41,6 +47,12 @@ namespace CE::Decompiler::Symbol
 		GlobalVariable(int offset, int size)
 			: m_offset(offset), Variable(size)
 		{}
+
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue(m_offset);
+			return hash.getHash();
+		}
 
 		std::string printDebug() override {
 			return "[global_" + std::to_string(m_offset) + "_" + std::to_string(getSize() * 8) + "]";
@@ -87,6 +99,13 @@ namespace CE::Decompiler::Symbol
 			: m_register(reg), Variable(size)
 		{}
 
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue(m_register.getGenericId());
+			hash.addValue((int64_t&)m_register.m_valueRangeMask);
+			return hash.getHash();
+		}
+
 		std::string printDebug() override {
 			auto reg = (ZydisRegister)m_register.m_genericId;
 			if (reg == ZYDIS_REGISTER_RFLAGS) {
@@ -131,6 +150,12 @@ namespace CE::Decompiler::Symbol
 		{
 			static int id = 1;
 			m_id = id++;
+		}
+
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue(m_id);
+			return hash.getHash();
 		}
 
 		std::string printDebug() override;

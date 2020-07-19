@@ -22,6 +22,10 @@ namespace CE::Decompiler::ExprTree
 			return true;
 		}
 
+		ObjectHash::Hash getHash() override {
+			return m_symbol->getHash();
+		}
+
 		std::string printDebug() override {
 			return m_updateDebugInfo = m_symbol->printDebug();
 		}
@@ -42,6 +46,12 @@ namespace CE::Decompiler::ExprTree
 
 		bool isLeaf() override {
 			return true;
+		}
+
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue((int64_t&)m_value);
+			return hash.getHash();
 		}
 
 		std::string printDebug() override {
