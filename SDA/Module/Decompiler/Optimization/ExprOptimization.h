@@ -126,7 +126,7 @@ namespace CE::Decompiler::Optimization
 				if (curAddExpr->m_operation == Add) {
 					if (dynamic_cast<NumberLeaf*>(curAddExpr->m_rightNode) || IsNegative(curAddExpr->m_rightNode, mask)) {
 						//move expr from left node of the condition to the right node being multiplied -1
-						auto newPartOfRightExpr = new OperationalNode(curAddExpr->m_rightNode, new NumberLeaf(uint64_t(-1) & mask), Mul, mask);
+						auto newPartOfRightExpr = new OperationalNode(curAddExpr->m_rightNode, new NumberLeaf(uint64_t(-1) & GetMask64ByMask(mask)), Mul, mask);
 						auto newRightExpr = new OperationalNode(condition->m_rightNode, newPartOfRightExpr, Add);
 						newCond = new Condition(curAddExpr->m_leftNode, newRightExpr, condition->m_cond);
 						condition->replaceWith(newCond);
@@ -249,7 +249,7 @@ namespace CE::Decompiler::Optimization
 						auto newExpr = expr->m_leftNode;
 						expr->replaceWith(expr->m_leftNode);
 						delete expr;
-						expr = nullptr;// dynamic_cast<OperationalNode*>(newExpr);
+						expr = dynamic_cast<OperationalNode*>(newExpr);
 					}
 				}
 			}
@@ -492,7 +492,7 @@ namespace CE::Decompiler::Optimization
 
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
-			if (MakeLeafPlaceDeeperAndCalculate(it, expr) == 2)
+			if (MakeLeafPlaceDeeperAndCalculate(it, expr) >= 1)
 				return 1;
 		}
 
@@ -549,20 +549,23 @@ namespace CE::Decompiler::Optimization
 					auto mask2 = rightNode->getMask();
 					expr->m_mask = mask1 & mask2;
 
-					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-						if ((mask1 & mask2) == mask1) {
-							//[var_2_32] & 0xffffffff{-1}		=>		[var_2_32]		
-							auto newExpr = expr->m_leftNode;
-							expr->replaceWith(newExpr);
-							expr->m_leftNode = nullptr;
-							delete expr;
-							expr = dynamic_cast<OperationalNode*>(newExpr);
-							return;
-						}
-						else {
-							if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
-								RemoveZeroMaskMulExpr(leftExpr, mask2);
+					if (mask1 <= 0xFF) {
+						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+							auto mask1_64 = GetMask64ByMask(mask1);
+							if ((mask1_64 & numberLeaf->m_value) == mask1_64) {
+								//[var_2_32] & 0xffffffff{-1}		=>		 [var_2_32]		
+								auto newExpr = expr->m_leftNode;
+								expr->replaceWith(newExpr);
+								expr->m_leftNode = nullptr;
+								delete expr;
+								expr = dynamic_cast<OperationalNode*>(newExpr);
 								return;
+							}
+							else {
+								if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
+									RemoveZeroMaskMulExpr(leftExpr, mask2);
+									return;
+								}
 							}
 						}
 					}
@@ -601,6 +604,9 @@ namespace CE::Decompiler::Optimization
 			Node::UpdateDebugInfo(expr);
 			if (MakeLeafPlaceDeeperAndCalculate(expr) == 1)
 				continue;
+			Node::UpdateDebugInfo(expr);
+			OptimizeZeroInExpr(expr);
+			if (!expr) continue;
 			Node::UpdateDebugInfo(expr);
 			CalculateAddEqualNodes(expr);
 			if (!expr) continue;

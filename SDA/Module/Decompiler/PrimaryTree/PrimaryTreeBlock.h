@@ -153,6 +153,12 @@ namespace CE::Decompiler::PrimaryTree
 			: Block(level)
 		{}
 
+		~EndBlock() {
+			if (m_returnNode) {
+				m_returnNode->removeBy(this);
+			}
+		}
+
 		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
 			Block::replaceNode(node, newNode);
 			if (m_returnNode == node) {

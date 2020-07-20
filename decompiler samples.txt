@@ -1,190 +1,36 @@
-//block 0 (level 1)
-0000000000000000(0): push rbx
-0000000000000002(2): sub rsp, 0x70
-0000000000000006(6): call [0x00000000001120B8]
-000000000000000C(12): movups xmm0, [0x0000000000208EE0]
-0000000000000013(19): lea rcx, [rsp+0x48]
-0000000000000018(24): psrldq xmm0, 0x08
-000000000000001D(29): movq rbx, xmm0
-0000000000000022(34): mov rdx, [rbx+0x08]
-0000000000000026(38): call 0xFFFFFFFFFFFFFFB0
-000000000000002B(43): movups xmm2, [rax]
-000000000000002E(46): mov rax, [rbx+0x08]
-0000000000000032(50): mov ecx, [rax+0x04]
-0000000000000035(53): movd eax, xmm2
-0000000000000039(57): add eax, ecx
-000000000000003B(59): add rsp, 0x70
-000000000000003F(63): pop rbx
-0000000000000040(64): ret
-------------
-*(uint_64t*)([reg_rsp_64] + 0xfffffffffffffff8{-8}) = [reg_rbx_64]
-[funcVar_1_32] = fun_50000000()
-[funcVar_2_32] = fun_49999925()
-return ((*(uint_64t*)([reg_rbx_64] + 0x8{8}) & 0xffffffff{-1}) + *(uint_32t*)(*(uint_64t*)([reg_rbx_64] + 0x8{8}) + 0x4{4}))
-//goto is null
-
-
-
-
-
-
-
-
-
+SAMPLE 100
+********************* BEFORE OPTIMIZATION: *********************
 
 //block 0 (level 1)
-0000000000000000(0): sub rsp, 0x28
-0000000000000004(4): mov eax, [rsp+0x38]
-0000000000000008(8): lea rdx, [rsp+0x40]
-000000000000000D(13): mov dword ptr [rsp+0x40], 0xFFFF
-0000000000000015(21): or eax, 0xFFFFFFF
-000000000000001A(26): and eax, 0xFFFFFFF
-000000000000001F(31): mov [rsp+0x38], eax
-0000000000000023(35): call 0x00000000008B8F78
-0000000000000028(40): movzx ecx, word ptr [rsp+0x40]
-000000000000002D(45): mov [rsp+0x38], cx
-0000000000000032(50): mov ecx, [rsp+0x38]
-0000000000000036(54): mov r8, rax
-0000000000000039(57): or ecx, 0xFFF0000
-000000000000003F(63): xor eax, eax
-0000000000000041(65): btr ecx, 0x1C
-0000000000000045(69): cmp cx, 0xFFFF
-000000000000004A(74): jz 0x000000000000005C
+0x0 push rbx
+0x2 sub rsp, 0x20
+0x6 mov ebx, edx
+0x8 cmp edx, 0x0A
+0xb jle 0x00000225989257ED
 ------------
-*(uint_32t*)([reg_rsp_64] + 0x18{24}) = 0xffff{65535}
-*(uint_32t*)([reg_rsp_64] + 0x10{16}) = ((*(uint_32t*)([reg_rsp_64] + 0x10{16}) | 0xfffffff{268435455}) & 0xfffffff{268435455})
-[funcVar_1_32] = fun_59146237()
-*(uint_16t*)([reg_rsp_64] + 0x10{16}) = *(uint_16t*)([reg_rsp_64] + 0x18{24})
+*(uint_64t*)([reg_rsp_64] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = [reg_rbx_64]
 <Symbol assignments>:
-- [var_1_32] = 0x0{0}
-if(((((*(uint_32t*)([reg_rsp_64] + 0x10{16}) | 0xfff0000{268369920}) & 0xfffe{65534}) != 0xfffe0001{-131071}) && ([funcVar_1_32] != 0x0{0}))) {
-        //block 51 (level 2)
-        0000000000000051(81): movzx eax, byte ptr [r8+0x518]
-        0000000000000059(89): and eax, 0x1F
-        ------------
-        <Symbol assignments>:
-        - [var_1_32] = (*(uint_8t*)([funcVar_1_32] + 0x518{1304}) & 0x1f{31})
-        //goto to block 5c
-} else {
-        //goto to block 5c
-}
-//block 5c (level 3)
-000000000000005C(92): add rsp, 0x28
-0000000000000060(96): ret
-0000000000000061(97): int3
-0000000000000062(98): push rsp
-------------
-*(uint_64t*)([reg_rsp_64] + 0xfffffffffffffff8{-8}) = ([reg_rsp_64] + 0xfffffffffffffff8{-8})
-return [var_1_32]
-//goto is null
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-RAX request but no EAX
-//block 0 (level 1)
-0000000000000000(0): sub rsp, 0x28
-0000000000000004(4): call 0xFFFFFFFFFFFEB224
-0000000000000009(9): test rax, rax
-000000000000000C(12): jz 0x000000000000001C
-------------
-[funcVar_1_32] = fun_49914537()
-<Symbol assignments>:
-- [var_1_32] = [funcVar_1_32]
-if(([funcVar_1_32] != 0x0{0})) {
-        //block e (level 2)
-        000000000000000E(14): mov rax, [rax+0x20]
-        0000000000000012(18): movzx eax, byte ptr [rax+0x518]
-        0000000000000019(25): and eax, 0x1F
-        ------------
-        <Symbol assignments>:
-        - [var_1_32] = (*(uint_8t*)(*(uint_64t*)([funcVar_1_32] + 0x20{32}) + 0x518{1304}) & 0x1f{31})
-        //goto to block 1c
-} else {
-        //goto to block 1c
-}
-//block 1c (level 3)
-000000000000001C(28): add rsp, 0x28
-0000000000000020(32): ret
-0000000000000021(33): nop
-0000000000000022(34): mov ebp, ebp
-------------
-return [var_1_32]
-//goto is null
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JMP function
-//block 0 (level 1)
-0000000000000000(0): push rbx
-0000000000000002(2): sub rsp, 0x20
-0000000000000006(6): mov ebx, edx			<<<<<< ebx = edx
-0000000000000008(8): cmp edx, 0x0A
-000000000000000B(11): jle 0x000000000000001D
-------------
-*(uint_64t*)([reg_rsp_64] + 0xfffffffffffffff8{-8}) = [reg_rbx_64]
-<Symbol assignments>:
-- [var_1_32] = [reg_edx_32]
-if(([reg_edx_32] > 0x9fffffff6{-10})) {
+- [var_1_32] = [reg_rdx_32]
+if(!(((([reg_rdx_32] +.4 (0xa{10} *.4 0xffffffff{-1})) == 0x0{0}) || (SBORROW([reg_rdx_32], 0xa{10}) != (([reg_rdx_32] +.4 (0xa{10} *.4 0xffffffff{-1})) < 0x0{0}))))) {
         //block d (level 2)
-        000000000000000D(13): lea eax, [rdx-0x0B]
-        0000000000000010(16): cmp eax, 0x0D
-        0000000000000013(19): jnbe 0x000000000000001A
+        0xd lea eax, [rdx-0x0B]
+        0x10 cmp eax, 0x0D
+        0x13 jnbe 0x00000225989257EA
         ------------
-        if((([reg_edx_32] + 0xfffffffffffffff5{-11}) <= 0xcfffffff3{-13})) {
+        if(!(!(((([reg_rdx_32] +.4 0xfffffff5{-11}) < 0xd{13}) || ((([reg_rdx_32] +.4 0xfffffff5{-11}) +.4 (0xd{13} *.4 0xffffffff{-1})) == 0x0{0}))))) {
                 //block 15 (level 3)
-                0000000000000015(21): add ebx, 0x19
-                0000000000000018(24): jmp 0x000000000000001D
+                0x15 add ebx, 0x19
+                0x18 jmp 0x00000225989257ED
                 ------------
                 <Symbol assignments>:
-                - [var_1_32] = ([reg_edx_32] + 0x19{25})
+                - [var_1_32] = ([reg_rdx_32] +.4 0x19{25})
                 //goto to block 1d
         } else {
                 //block 1a (level 3)
-                000000000000001A(26): sub ebx, 0x0E
+                0x1a sub ebx, 0x0E
                 ------------
                 <Symbol assignments>:
-                - [var_1_32] = ([reg_edx_32] + 0xdfffffff2{-14})
+                - [var_1_32] = ([reg_rdx_32] +.4 (0xe{14} *.4 0xffffffff{-1}))
                 //goto to block 1d
         }
         //goto to block 1d
@@ -192,30 +38,117 @@ if(([reg_edx_32] > 0x9fffffff6{-10})) {
         //goto to block 1d
 }
 //block 1d (level 4)
-000000000000001D(29): call 0xFFFFFFFFFFFECA68
-0000000000000022(34): test rax, rax
-0000000000000025(37): jz 0x0000000000000053
+0x1d call 0x0000022598912238
+0x22 test rax, rax
+0x25 jz 0x0000022598925823
 ------------
-[funcVar_1_32] = fun_49920749()
-if((([funcVar_1_32] == 0x0{0}) || (([var_1_32] > 0x30ffffffcf{-49}) || (((0x343ffffffffff{-1} >> ([var_1_32] & 0x7{7})) & 0x1{1}) == 0x0{0})))) {
+[funcVar_1_32] = fun_49920744()
+if(!((([funcVar_1_32] &.8 [funcVar_1_32]) == 0x0{0}))) {
+        //block 27 (level 5)
+        0x27 cmp ebx, 0x31
+        0x2a jnbe 0x0000022598925823
+        ------------
+        if(!(!((([var_1_32] < 0x31{49}) || (([var_1_32] +.4 (0x31{49} *.4 0xffffffff{-1})) == 0x0{0}))))) {
+                //block 2c (level 6)
+                0x2c mov rdx, 0x343FFFFFFFFFF
+                0x36 bt rdx, rbx
+                0x3a jnb 0x0000022598925823
+                ------------
+                if(!(!((((0x343ffffffffff{-1} >>.8 ([var_1_32] &.8 0x3f{63})) &.8 0x1{1}) != 0x0{0})))) {
+                        //block 3c (level 7)
+                        0x3c mov rcx, [rax+0x48]
+                        0x40 mov r8, rax
+                        0x43 mov edx, ebx
+                        0x45 add rcx, 0x40
+                        0x49 add rsp, 0x20
+                        0x4d pop rbx
+                        0x4e jmp 0x0000022598236830
+                        ------------
+                        //goto is null
+                } else {
+                        //goto to block 53
+                }
+                //goto is null
+        } else {
+                //goto to block 53
+        }
+        //goto to block 53
+} else {
+        //goto to block 53
+}
+//block 53 (level 7)
+0x53 xor eax, eax
+0x55 add rsp, 0x20
+0x59 pop rbx
+0x5a ret
+------------
+return (([funcVar_1_32] &.0 0xffffffff{-1}) ^.4 ([funcVar_1_32] &.0 0xffffffff{-1}))
+//goto is null
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level 1)
+0x0 push rbx
+0x2 sub rsp, 0x20
+0x6 mov ebx, edx
+0x8 cmp edx, 0x0A
+0xb jle 0x00000225989257ED
+------------
+*(uint_64t*)([reg_rsp_64] +.8 0xfffffffffffffff8{-8}) = [reg_rbx_64]
+<Symbol assignments>:
+- [var_1_32] = [reg_rdx_32]
+if(([reg_rdx_32] > 0xa{10})) {
+        //block d (level 2)
+        0xd lea eax, [rdx-0x0B]
+        0x10 cmp eax, 0x0D
+        0x13 jnbe 0x00000225989257EA
+        ------------
+        if(([reg_rdx_32] <= 0x18{24})) {
+                //block 15 (level 3)
+                0x15 add ebx, 0x19
+                0x18 jmp 0x00000225989257ED
+                ------------
+                <Symbol assignments>:
+                - [var_1_32] = ([reg_rdx_32] +.4 0x19{25})
+                //goto to block 1d
+        } else {
+                //block 1a (level 3)
+                0x1a sub ebx, 0x0E
+                ------------
+                <Symbol assignments>:
+                - [var_1_32] = ([reg_rdx_32] +.4 0xfffffff2{-14})
+                //goto to block 1d
+        }
+        //goto to block 1d
+} else {
+        //goto to block 1d
+}
+//block 1d (level 4)
+0x1d call 0x0000022598912238
+0x22 test rax, rax
+0x25 jz 0x0000022598925823
+------------
+[funcVar_1_32] = fun_49920744()
+if((((((0x343ffffffffff{-1} >>.8 ([var_1_32] &.8 0x3f{63})) &.8 0x1{1}) == 0x0{0}) || ([var_1_32] > 0x31{49})) || ([funcVar_1_32] == 0x0{0}))) {
         //block 53 (level 5)
-        0000000000000053(83): xor eax, eax
-        0000000000000055(85): add rsp, 0x20
-        0000000000000059(89): pop rbx
-        000000000000005A(90): ret
-        000000000000005B(91): int3
+        0x53 xor eax, eax
+        0x55 add rsp, 0x20
+        0x59 pop rbx
+        0x5a ret
         ------------
         return 0x0{0}
         //goto is null
 } else {
         //block 3c (level 5)
-        000000000000003C(60): mov rcx, [rax+0x48]
-        0000000000000040(64): mov r8, rax
-        0000000000000043(67): mov edx, ebx
-        0000000000000045(69): add rcx, 0x40
-        0000000000000049(73): add rsp, 0x20
-        000000000000004D(77): pop rbx
-        000000000000004E(78): jmp 0xFFFFFFFFFF911060
+        0x3c mov rcx, [rax+0x48]
+        0x40 mov r8, rax
+        0x43 mov edx, ebx
+        0x45 add rcx, 0x40
+        0x49 add rsp, 0x20
+        0x4d pop rbx
+        0x4e jmp 0x0000022598236830
         ------------
         //goto is null
 }
@@ -240,46 +173,303 @@ if((([funcVar_1_32] == 0x0{0}) || (([var_1_32] > 0x30ffffffcf{-49}) || (((0x343f
 
 
 
-Evklid
+
+
+
+
+
+
+
+
+
+
+SAMPLE 102
+********************* BEFORE OPTIMIZATION: *********************
+
 //block 0 (level 1)
-0000000000000000(0): cmp eax, 0x00
-0000000000000003(3): jnl 0x0000000000000007
+0x0 sub rsp, 0x28
+0x4 mov eax, [rsp+0x38]
+0x8 lea rdx, [rsp+0x40]
+0xd mov dword ptr [rsp+0x40], 0xFFFF
+0x15 or eax, 0xFFFFFFF
+0x1a and eax, 0xFFFFFFF
+0x1f mov [rsp+0x38], eax
+0x23 call 0x000001FCA1AF6028
+0x28 movzx ecx, word ptr [rsp+0x40]
+0x2d mov [rsp+0x38], cx
+0x32 mov ecx, [rsp+0x38]
+0x36 mov r8, rax
+0x39 or ecx, 0xFFF0000
+0x3f xor eax, eax
+0x41 btr ecx, 0x1C
+0x45 cmp cx, 0xFFFF
+0x4a jz 0x000001FCA123D10C
 ------------
+*(uint_32t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) = 0xffff{65535}
+*(uint_32t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x38{56}) = ((*(uint_32t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x38{56}) |.4 0xfffffff{268435455}) &.4 0xfffffff{268435455})
+[funcVar_1_32] = fun_59146232()
+*(uint_16t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x38{56}) = (*(uint_16t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) &.0 0xffff{65535})
 <Symbol assignments>:
-- [var_5_32] = [reg_eax_32]
-if(([reg_eax_32] < 0x0{0})) {
-        //block 5 (level 2)
-        0000000000000005(5): neg eax
+- [var_1_32] = (([funcVar_1_32] &.0 0xffffffff{-1}) ^.4 ([funcVar_1_32] &.0 0xffffffff{-1}))
+if(!((((((*(uint_32t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x38{56}) |.4 0xfff0000{268369920}) &.4 ~(0x1{1} <<.8 (0x1c{28} &.8 0x3f{63}))) &.0 0xffff{65535}) +.2 (0xffff{65535} *.2 0xffff{65535})) == 0x0{0}))) {
+        //block 4c (level 2)
+        0x4c test r8, r8
+        0x4f jz 0x000001FCA123D10C
+        ------------
+        if(!((([funcVar_1_32] &.8 [funcVar_1_32]) == 0x0{0}))) {
+                //block 51 (level 3)
+                0x51 movzx eax, byte ptr [r8+0x518]
+                0x59 and eax, 0x1F
+                ------------
+                <Symbol assignments>:
+                - [var_1_32] = (*(uint_8t*)([funcVar_1_32] +.8 0x518{1304}) &.4 0x1f{31})
+                //goto to block 5c
+        } else {
+                //goto to block 5c
+        }
+        //goto to block 5c
+} else {
+        //goto to block 5c
+}
+//block 5c (level 4)
+0x5c add rsp, 0x28
+0x60 ret
+0x62 push rsp
+------------
+*(uint_64t*)(((([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x28{40}) +.8 0x8{8}) +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = (((([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x28{40}) +.8 0x8{8}) +.8 (0x8{8} *.8 0xffffffffffffffff{-1}))
+return [var_1_32]
+//goto is null
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level 1)
+0x0 sub rsp, 0x28
+0x4 mov eax, [rsp+0x38]
+0x8 lea rdx, [rsp+0x40]
+0xd mov dword ptr [rsp+0x40], 0xFFFF
+0x15 or eax, 0xFFFFFFF
+0x1a and eax, 0xFFFFFFF
+0x1f mov [rsp+0x38], eax
+0x23 call 0x000001FCA1AF6028
+0x28 movzx ecx, word ptr [rsp+0x40]
+0x2d mov [rsp+0x38], cx
+0x32 mov ecx, [rsp+0x38]
+0x36 mov r8, rax
+0x39 or ecx, 0xFFF0000
+0x3f xor eax, eax
+0x41 btr ecx, 0x1C
+0x45 cmp cx, 0xFFFF
+0x4a jz 0x000001FCA123D10C
+------------
+*(uint_32t*)([reg_rsp_64] +.8 0x18{24}) = 0xffff{65535}
+*(uint_32t*)([reg_rsp_64] +.8 0x10{16}) = ((*(uint_32t*)([reg_rsp_64] +.8 0x10{16}) |.4 0xfffffff{268435455}) &.4 0xfffffff{268435455})
+[funcVar_1_32] = fun_59146232()
+*(uint_16t*)([reg_rsp_64] +.8 0x10{16}) = *(uint_16t*)([reg_rsp_64] +.8 0x18{24})
+<Symbol assignments>:
+- [var_1_32] = 0x0{0}
+if((((*(uint_32t*)([reg_rsp_64] +.8 0x10{16}) &.4 0xffff{65535}) != 0xffff{65535}) && ([funcVar_1_32] != 0x0{0}))) {
+        //block 51 (level 2)
+        0x51 movzx eax, byte ptr [r8+0x518]
+        0x59 and eax, 0x1F
         ------------
         <Symbol assignments>:
-        - [var_5_32] = ([reg_eax_32] * 0xffffffff{-1})
+        - [var_1_32] = (*(uint_8t*)([funcVar_1_32] +.8 0x518{1304}) &.4 0x1f{31})
+        //goto to block 5c
+} else {
+        //goto to block 5c
+}
+//block 5c (level 3)
+0x5c add rsp, 0x28
+0x60 ret
+0x62 push rsp
+------------
+*(uint_64t*)[reg_rsp_64] = [reg_rsp_64]
+return [var_1_32]
+//goto is null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SAMPLE 101
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level 1)
+0x0 sub rsp, 0x28
+0x4 call 0x0000013ECD997414
+0x9 test rax, rax
+0xc jz 0x0000013ECD9AC20C
+------------
+[funcVar_1_32] = fun_49914532()
+<Symbol assignments>:
+- [var_1_32] = ([funcVar_1_32] &.0 0xffffffff{-1})
+if(!((([funcVar_1_32] &.8 [funcVar_1_32]) == 0x0{0}))) {
+        //block e (level 2)
+        0xe mov rax, [rax+0x20]
+        0x12 movzx eax, byte ptr [rax+0x518]
+        0x19 and eax, 0x1F
+        ------------
+        <Symbol assignments>:
+        - [var_1_32] = (*(uint_8t*)(*(uint_64t*)([funcVar_1_32] +.8 0x20{32}) +.8 0x518{1304}) &.4 0x1f{31})
+        //goto to block 1c
+} else {
+        //goto to block 1c
+}
+//block 1c (level 3)
+0x1c add rsp, 0x28
+0x20 ret
+0x22 mov ebp, ebp
+------------
+return [var_1_32]
+//goto is null
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level 1)
+0x0 sub rsp, 0x28
+0x4 call 0x0000013ECD997414
+0x9 test rax, rax
+0xc jz 0x0000013ECD9AC20C
+------------
+[funcVar_1_32] = fun_49914532()
+<Symbol assignments>:
+- [var_1_32] = [funcVar_1_32]
+if(([funcVar_1_32] != 0x0{0})) {
+        //block e (level 2)
+        0xe mov rax, [rax+0x20]
+        0x12 movzx eax, byte ptr [rax+0x518]
+        0x19 and eax, 0x1F
+        ------------
+        <Symbol assignments>:
+        - [var_1_32] = (*(uint_8t*)(*(uint_64t*)([funcVar_1_32] +.8 0x20{32}) +.8 0x518{1304}) &.4 0x1f{31})
+        //goto to block 1c
+} else {
+        //goto to block 1c
+}
+//block 1c (level 3)
+0x1c add rsp, 0x28
+0x20 ret
+0x22 mov ebp, ebp
+------------
+return [var_1_32]
+//goto is null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SAMPLE 25
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level 1)
+0x0 cmp eax, 0x00
+0x3 jnl 0x00000230C6B9C0A7
+------------
+<Symbol assignments>:
+- [var_5_32] = [reg_rax_32]
+if(!((SBORROW([reg_rax_32], 0x0{0}) == (([reg_rax_32] +.4 (0x0{0} *.4 0xffffffff{-1})) < 0x0{0})))) {
+        //block 5 (level 2)
+        0x5 neg eax
+        ------------
+        <Symbol assignments>:
+        - [var_5_32] = ([reg_rax_32] *.4 0xffffffff{-1})
         //goto to block 7
 } else {
         //goto to block 7
 }
 //block 7 (level 3)
-0000000000000007(7): cmp ebx, 0x00
-000000000000000A(10): jnl 0x000000000000000E
+0x7 cmp ebx, 0x00
+0xa jnl 0x00000230C6B9C0AE
 ------------
 <Symbol assignments>:
-- [var_3_32] = [reg_ebx_32]
-if(([reg_ebx_32] < 0x0{0})) {
+- [var_3_32] = [reg_rbx_32]
+if(!((SBORROW([reg_rbx_32], 0x0{0}) == (([reg_rbx_32] +.4 (0x0{0} *.4 0xffffffff{-1})) < 0x0{0})))) {
         //block c (level 4)
-        000000000000000C(12): neg ebx
+        0xc neg ebx
         ------------
         <Symbol assignments>:
-        - [var_3_32] = ([reg_ebx_32] * 0xffffffff{-1})
+        - [var_3_32] = ([reg_rbx_32] *.4 0xffffffff{-1})
         //goto to block e
 } else {
         //goto to block e
 }
 //block e (level 5)
-000000000000000E(14): cmp eax, ebx
-0000000000000010(16): jnl 0x0000000000000013
+0xe cmp eax, ebx
+0x10 jnl 0x00000230C6B9C0B3
 ------------
-if(([var_5_32] < ([var_3_32] * 0xffffffff{-1}))) {
+if(!((SBORROW([var_5_32], [var_3_32]) == (([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1})) < 0x0{0})))) {
         //block 12 (level 6)
-        0000000000000012(18): xchg ebx, eax
+        0x12 xchg ebx, eax
         ------------
         <Symbol assignments>:
         - [var_5_32] = [var_3_32]
@@ -289,24 +479,147 @@ if(([var_5_32] < ([var_3_32] * 0xffffffff{-1}))) {
         //goto to block 13
 }
 //block 13 (level 7)
-0000000000000013(19): cmp ebx, 0x00
-0000000000000016(22): jz 0x000000000000001C
+0x13 cmp ebx, 0x00
+0x16 jz 0x00000230C6B9C0BC
 ------------
-if(([var_3_32] != 0x0{0})) {
+if(!((([var_3_32] +.4 (0x0{0} *.4 0xffffffff{-1})) == 0x0{0}))) {
         //block 18 (level 8)
-        0000000000000018(24): sub eax, ebx
-        000000000000001A(26): jmp 0x000000000000000E
+        0x18 sub eax, ebx
+        0x1a jmp 0x00000230C6B9C0AE
         ------------
         <Symbol assignments>:
-        - [var_5_32] = ([var_5_32] + ([var_3_32] * 0xffffffff{-1}))
+        - [var_5_32] = ([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1}))
         //goto to block e
 } else {
         //block 1c (level 8)
-        000000000000001C(28): mov [rsp], eax
-        000000000000001F(31): mov [rsp], ebx
+        0x1c mov [rsp], eax
+        0x1f mov [rsp], ebx
         ------------
         *(uint_32t*)[reg_rsp_64] = [var_5_32]
         *(uint_32t*)[reg_rsp_64] = [var_3_32]
         //goto is null
 }
+//goto is null
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level 1)
+0x0 cmp eax, 0x00
+0x3 jnl 0x00000230C6B9C0A7
+------------
+<Symbol assignments>:
+- [var_5_32] = [reg_rax_32]
+if(([reg_rax_32] < 0x0{0})) {
+        //block 5 (level 2)
+        0x5 neg eax
+        ------------
+        <Symbol assignments>:
+        - [var_5_32] = ([reg_rax_32] *.4 0xffffffff{-1})
+        //goto to block 7
+} else {
+        //goto to block 7
+}
+//block 7 (level 3)
+0x7 cmp ebx, 0x00
+0xa jnl 0x00000230C6B9C0AE
+------------
+<Symbol assignments>:
+- [var_3_32] = [reg_rbx_32]
+if(([reg_rbx_32] < 0x0{0})) {
+        //block c (level 4)
+        0xc neg ebx
+        ------------
+        <Symbol assignments>:
+        - [var_3_32] = ([reg_rbx_32] *.4 0xffffffff{-1})
+        //goto to block e
+} else {
+        //goto to block e
+}
+//block e (level 5)
+0xe cmp eax, ebx
+0x10 jnl 0x00000230C6B9C0B3
+------------
+if(([var_5_32] < [var_3_32])) {
+        //block 12 (level 6)
+        0x12 xchg ebx, eax
+        ------------
+        <Symbol assignments>:
+        - [var_5_32] = [var_3_32]
+        - [var_3_32] = [var_5_32]
+        //goto to block 13
+} else {
+        //goto to block 13
+}
+//block 13 (level 70
+0x13 cmp ebx, 0x00
+0x16 jz 0x00000230C6B9C0BC
+------------
+if(([var_3_32] != 0x0{0})) {
+        //block 18 (level 8)
+        0x18 sub eax, ebx
+        0x1a jmp 0x00000230C6B9C0AE
+        ------------
+        <Symbol assignments>:
+        - [var_5_32] = ([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1}))
+        //goto to block e
+} else {
+        //block 1c (level 8)
+        0x1c mov [rsp], eax
+        0x1f mov [rsp], ebx
+        ------------
+        *(uint_32t*)[reg_rsp_64] = [var_5_32]
+        *(uint_32t*)[reg_rsp_64] = [var_3_32]
+        //goto is null
+}
+//goto is null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SAMPLE 23
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level 1)
+0x0 mul ecx
+0x2 add eax, 0x05
+0x5 mov [rsp+0x04], eax
+------------
+*(uint_32t*)([reg_rsp_64] +.8 0x4{4}) = (((([reg_rax_32] *.8 [reg_rcx_32]) >>.8 (0x0{0} *.4 0x8{8})) &.4 0xffffffff{-1}) +.4 0x5{5})
+//goto is null
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level 1)
+0x0 mul ecx
+0x2 add eax, 0x05
+0x5 mov [rsp+0x04], eax
+------------
+*(uint_32t*)([reg_rsp_64] +.8 0x4{4}) = ((([reg_rax_32] *.8 [reg_rcx_32]) &.4 0xffffffff{-1}) +.4 0x5{5})
 //goto is null

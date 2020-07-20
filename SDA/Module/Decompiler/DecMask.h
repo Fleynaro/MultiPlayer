@@ -33,6 +33,15 @@ namespace CE::Decompiler
 		return result;
 	}
 
+	static Mask GetMaskByNumber(uint64_t value) {
+		Mask mask = 0x0;
+		int i = 0;
+		for (auto val = value; val != 0; val = val >> 8) {
+			mask |= ((val & 0xFF) ? 1 : 0) << (i++);
+		}
+		return mask;
+	}
+
 	static Mask GetMaskBySize(int size, bool byteAsBit = true) {
 		auto k = byteAsBit ? 1 : 8;
 		if (size == 64 / k)

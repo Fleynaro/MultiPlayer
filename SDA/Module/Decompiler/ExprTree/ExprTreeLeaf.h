@@ -41,8 +41,7 @@ namespace CE::Decompiler::ExprTree
 		{}
 
 		Mask getMask() override {
-			auto size = max(1, (int)(log2(m_value) + 1) / 8);
-			return GetMaskBySize(size);
+			return GetMaskByNumber(m_value);
 		}
 
 		bool isLeaf() override {

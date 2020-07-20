@@ -29,7 +29,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto dstExpr = requestVarnode(m_instr->m_input0);
 		auto srcExpr = requestVarnode(m_instr->m_input1);
-		dstExpr = new ExprTree::ReadValueNode(dstExpr, m_instr->m_input0->getSize());
+		dstExpr = new ExprTree::ReadValueNode(dstExpr, m_instr->m_input1->getSize());
 		m_block->addSeqLine(dstExpr, srcExpr);
 		break;
 	}
@@ -119,8 +119,9 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
 		auto shiftExpr = requestVarnode(m_instr->m_input1);
-		shiftExpr = new ExprTree::InstructionOperationalNode(shiftExpr, new ExprTree::NumberLeaf(0x8), ExprTree::Mul, m_instr);
-		expr = new ExprTree::InstructionOperationalNode(expr, shiftExpr, ExprTree::Shr, m_instr);
+		shiftExpr = new ExprTree::OperationalNode(shiftExpr, new ExprTree::NumberLeaf(0x8), ExprTree::Mul, m_instr->m_input1->getSize());
+		expr = new ExprTree::OperationalNode(expr, shiftExpr, ExprTree::Shr, m_instr->m_input0->getSize());
+		expr = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(GetMaskBySize(m_instr->m_output->getSize(), false)), ExprTree::And, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, expr);
 		break;
 	}
@@ -246,7 +247,9 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.getSize());
 			dstExpr = new ExprTree::SymbolLeaf(funcResultVar);
 			m_ctx->setVarnode(dstRegister, dstExpr);
-			if (funcCallInfo.m_x86zext) {
+
+			//we use exception mask
+			if (false && funcCallInfo.m_x86zext) {
 				if (dstRegister.m_valueRangeMask == 0xFFFFFFFF) {
 					auto dstExtRegister = dstRegister;
 					dstExtRegister.m_valueRangeMask = 0xFFFFFFFFFFFFFFFF;

@@ -25,6 +25,13 @@ namespace CE::Decompiler::PCode
 			while (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, (void*)m_curAddr, curSize,
 				&curInstruction)))
 			{
+				ZydisFormatter formatter;
+				ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
+				char buffer[256];
+				ZydisFormatterFormatInstruction(&formatter, m_curInstr, buffer, sizeof(buffer),
+					m_curAddr);
+				printf("%s\n", buffer);
+
 				m_curInstr = &curInstruction;
 				translateCurInstruction();
 				curSize -= curInstruction.length;
@@ -224,7 +231,7 @@ namespace CE::Decompiler::PCode
 					}
 					else {
 						addMicroInstruction(InstructionId::SUBPIECE, varnodeMult, new ConstantVarnode(size, 0x4), varnodeSubpiece);
-						addMicroInstruction(InstructionId::SUBPIECE, varnodeMult, new ConstantVarnode(0x0, 0x4), varnodeDst);
+						addMicroInstruction(InstructionId::INT_MULT, varnodeMul1, varnodeMul2, varnodeDst); //not like ghidra
 						addMicroInstruction(InstructionId::INT_NOTEQUAL, varnodeSubpiece, new ConstantVarnode(0x0, size), varnodeCF);
 					}
 
@@ -875,10 +882,9 @@ namespace CE::Decompiler::PCode
 
 		int getFirstExplicitOperandsCount() {
 			int result = 0;
-			while (result < m_curInstr->operand_count) {
-				if (m_curInstr->operands[result].visibility != ZYDIS_OPERAND_VISIBILITY_EXPLICIT)
-					break;
-				result++;
+			for (int i = 0; i < m_curInstr->operand_count; i++) {
+				if (m_curInstr->operands[result].visibility != ZYDIS_OPERAND_VISIBILITY_HIDDEN)
+					result++;
 			}
 			return result;
 		}
