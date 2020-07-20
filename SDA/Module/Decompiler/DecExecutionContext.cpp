@@ -15,52 +15,81 @@ void ExecutionBlockContext::setVarnode(const PCode::Register& reg, ExprTree::Nod
 }
 
 void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* newExpr, bool rewrite) {
-	WrapperNode<ExprTree::Node>* oldWrapperNode = nullptr;
-	for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it ++) {
-		if (it->equal(varnode)) {
-			oldWrapperNode = it->m_expr;
-			m_varnodes.erase(it);
-			break;
+	std::list<WrapperNode<ExprTree::Node>*> oldWrapperNodes;
+	
+	//remove all old registers/symbols
+	if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
+		//write rax -> remove eax/ax/ah/al
+		auto& reg = varnodeRegister->m_register;
+		for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
+			if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it->m_varnode)) {
+				if (reg.getGenericId() == sameRegVarnode->m_register.getGenericId()) {
+					if ((sameRegVarnode->m_register.m_valueRangeMask & ~reg.m_valueRangeMask) == 0) {
+						oldWrapperNodes.push_back(it->m_expr);
+						m_varnodes.erase(it);
+					}
+				}
+			}
+		}
+
+		for (auto it = m_cachedRegisters.begin(); it != m_cachedRegisters.end(); it++) {
+			if (it->first.getGenericId() == varnodeRegister->m_register.getGenericId()) {
+				oldWrapperNodes.push_back(it->second);
+				m_cachedRegisters.erase(it);
+			}
+		}
+	} else if (auto varnodeSymbol = dynamic_cast<PCode::SymbolVarnode*>(varnode)) {
+		for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
+			if (it->m_varnode == varnodeSymbol) {
+				oldWrapperNodes.push_back(it->m_expr);
+				m_varnodes.erase(it);
+				break;
+			}
 		}
 	}
 
+	//set new register/symbol
 	if (newExpr) {
 		auto varnodeExpr = VarnodeExpr(varnode, new WrapperNode<ExprTree::Node>(newExpr), rewrite);
 		m_varnodes.push_back(varnodeExpr);
 	}
-
-	if (oldWrapperNode) {
-		//delete only here because new expr may be the same as old expr
-		delete oldWrapperNode;
-	}
-
-	if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
-		for (auto it = m_cachedRegisters.begin(); it != m_cachedRegisters.end(); it ++) {
-			if (it->first.getGenericId() == varnodeRegister->m_register.getGenericId()) {
-				delete it->second;
-				m_cachedRegisters.erase(it);
-			}
-		}
+	
+	//delete only here because new expr may be the same as old expr: mov rax, rax
+	for (auto it : oldWrapperNodes) {
+		delete it;
 	}
 }
 
 RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg, uint64_t& mask, bool changedRegistersOnly) {
 	RegisterParts regParts;
+	using SameRegInfo = std::pair<PCode::Register, ExprTree::Node*>;
+	std::list<SameRegInfo> sameRegisters;
+	//select same registeres
 	for (auto it : m_varnodes) {
 		if (changedRegistersOnly && !it.m_changed)
 			continue;
-
-		if (auto sameReg = dynamic_cast<PCode::RegisterVarnode*>(it.m_varnode)) {
-			if (reg.getGenericId() == sameReg->m_register.getGenericId()) {
-				//exception: eax(no ax, ah, al!) overwrite rax!!!
-				auto sameRegMask = sameReg->m_register.m_valueRangeMask;
-				auto remainToReadMask = mask & ~GetMaskWithException(sameRegMask);
-				if (remainToReadMask != mask) {
-					auto part = new RegisterPart(sameRegMask, mask & GetMaskWithException(sameRegMask), it.m_expr->m_node);
-					regParts.push_back(part);
-					mask = remainToReadMask;
-				}
+		if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it.m_varnode)) {
+			if (reg.getGenericId() == sameRegVarnode->m_register.getGenericId()) {
+				sameRegisters.push_back(std::make_pair(sameRegVarnode->m_register, it.m_expr->m_node));
 			}
+		}
+	}
+
+	//sort asc
+	sameRegisters.sort([](SameRegInfo a, SameRegInfo b) {
+		return a.first.m_valueRangeMask < b.first.m_valueRangeMask;
+		});
+
+	//gather need parts
+	for (auto sameRegInfo : sameRegisters) {
+		//exception: eax(no ax, ah, al!) overwrite rax!!!
+		auto sameRegMask = sameRegInfo.first.m_valueRangeMask;
+		auto sameRegExceptionMask = GetMaskWithException(sameRegMask); //for x86 only!!!
+		auto remainToReadMask = mask & ~sameRegExceptionMask;
+		if (remainToReadMask != mask) {
+			auto part = new RegisterPart(sameRegMask, mask & sameRegExceptionMask, sameRegInfo.second);
+			regParts.push_back(part);
+			mask = remainToReadMask;
 		}
 
 		if (mask == 0)

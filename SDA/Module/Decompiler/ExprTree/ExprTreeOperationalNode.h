@@ -138,9 +138,14 @@ namespace CE::Decompiler::ExprTree
 					result = "~" + m_leftNode->printDebug();
 				}
 			}
+
+			std::string opSize = "";
+			if (true) {
+				opSize = "."+ std::to_string(GetBitCountOfMask(getMask()) / 8) +"";
+			}
 			
 			if(result.empty())
-				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + " " + m_rightNode->printDebug() + ")";
+				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + ""+ opSize +" " + m_rightNode->printDebug() + ")";
 			return (m_updateDebugInfo = result);// + "<" + std::to_string((uint64_t)this % 100000) + ">";
 		}
 	};

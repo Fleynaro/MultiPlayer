@@ -121,24 +121,6 @@ namespace CE::Decompiler
 			VarnodeExpr(PCode::Varnode* varnode, WrapperNode<ExprTree::Node>* expr, bool changed)
 				: m_varnode(varnode), m_expr(expr), m_changed(changed)
 			{}
-
-			bool equal(PCode::Varnode* varnode) {
-				if (auto varnodeRegister1 = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
-					if (auto varnodeRegister2 = dynamic_cast<PCode::RegisterVarnode*>(m_varnode)) {
-						return varnodeRegister1->m_register == varnodeRegister2->m_register;
-					}
-					return false;
-				}
-
-				if (auto varnodeSymbol1 = dynamic_cast<PCode::SymbolVarnode*>(varnode)) {
-					if (auto varnodeSymbol2 = dynamic_cast<PCode::SymbolVarnode*>(m_varnode)) {
-						return varnodeSymbol1 == varnodeSymbol2;
-					}
-					return false;
-				}
-
-				return false;
-			}
 		};
 		std::list<VarnodeExpr> m_varnodes;
 		std::list<std::pair<PCode::Register, WrapperNode<ExprTree::Node>*>> m_cachedRegisters;

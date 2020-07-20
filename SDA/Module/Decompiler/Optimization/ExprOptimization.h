@@ -73,8 +73,10 @@ namespace CE::Decompiler::Optimization
 
 	static std::list<OperationalNode*> GetNextOperationalsNodesToOpimize(OperationalNode* expr) {
 		auto list1 = GetNextOperationalsNodesToOpimize(expr->m_leftNode);
-		auto list2 = GetNextOperationalsNodesToOpimize(expr->m_rightNode);
-		list1.insert(list1.end(), list2.begin(), list2.end());
+		if (!IsOperationWithSingleOperand(expr->m_operation)) {
+			auto list2 = GetNextOperationalsNodesToOpimize(expr->m_rightNode);
+			list1.insert(list1.end(), list2.begin(), list2.end());
+		}
 		return list1;
 	}
 

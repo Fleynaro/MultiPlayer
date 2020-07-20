@@ -58,8 +58,9 @@ void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr =
 }
 
 
-#define SHOW_ASM 1
-#define SHOW_PCODE 0
+bool g_SHOW_ASM = true;
+bool g_SHOW_PCODE = false;
+
 void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, AsmGraphBlock*>& asmBlocks, int level = 0) {
 	std::string tabStr = "";
 	for (int i = 0; i < level; i++)
@@ -70,8 +71,8 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 		auto asmBlock = asmBlocks[decBlock];
 		printf("%s//block %s (level %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), decBlock->m_level);
 		
-		if (SHOW_ASM) {
-			asmBlock->printDebug(nullptr, tabStr, false, SHOW_PCODE);
+		if (g_SHOW_ASM) {
+			asmBlock->printDebug(nullptr, tabStr, false, g_SHOW_PCODE);
 			printf("%s------------\n", tabStr.c_str());
 		}
 		decBlock->printDebug(false, tabStr);
@@ -162,6 +163,8 @@ void CE::Decompiler::test() {
 
 	//mul/div
 	std::vector<byte> sample20 = { 0xF7, 0xE1, 0x45, 0x6B, 0xC1, 0x02, 0x41, 0xF7, 0xF0, 0x44, 0x89, 0x44, 0x24, 0x04, 0x89, 0x44, 0x24, 0x04 };
+	std::vector<byte> sample21 = { 0x45, 0x0F, 0xB7, 0x41, 0x08, 0x33, 0xD2, 0x8B, 0xC1, 0x41, 0xF7, 0xF0, 0x48, 0x89, 0x44, 0x24, 0x08 };
+	std::vector<byte> sample22 = { 0x4D, 0x0F, 0xB7, 0x41, 0x08, 0x31, 0xD2, 0x89, 0xC8, 0x49, 0xF7, 0xF0, 0x48, 0x89, 0x44, 0x24, 0x08 };
 
 	//evklid algorithm
 	std::vector<byte> sample25 = { 0x83, 0xF8, 0x00, 0x7D, 0x02, 0xF7, 0xD8, 0x83, 0xFB, 0x00, 0x7D, 0x02, 0xF7, 0xDB, 0x39, 0xD8, 0x7D, 0x01, 0x93, 0x83, 0xFB, 0x00, 0x74, 0x04, 0x29, 0xD8, 0xEB, 0xF2, 0x89, 0x04, 0x24, 0x89, 0x1C, 0x24 };
@@ -182,7 +185,7 @@ void CE::Decompiler::test() {
 		size = calculateFunctionSize2((byte*)addr, 0);
 	}
 	else {
-#define SAMPLE_VAR sample20
+#define SAMPLE_VAR sample22
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}
@@ -210,13 +213,24 @@ void CE::Decompiler::test() {
 		return info;
 	};
 	decompiler->start();
-	//decompiler->printDebug();
-	Optimization::OptimizeDecompiledGraph(decCodeGraph);
-
 	
 	LinearView::Converter2 converter(decCodeGraph);
 	converter.start();
-	
 	auto asmBlocks = decompiler->getAsmBlocks();
+
+	//show code
+	bool prevShowAsm = g_SHOW_ASM;
+	bool prevShowPcode = g_SHOW_PCODE;
+	g_SHOW_ASM = false;
+	g_SHOW_PCODE = false;
+
+	printf("\n\n\n********************* BEFORE OPTIMIZATION: *********************\n\n");
+	ShowCode(converter.getBlockList(), asmBlocks);
+
+	printf("\n\n\n********************* AFTER OPTIMIZATION: *********************\n\n");
+	Optimization::OptimizeDecompiledGraph(decCodeGraph);
+
+	g_SHOW_ASM = prevShowAsm;
+	g_SHOW_PCODE = prevShowPcode;
 	ShowCode(converter.getBlockList(), asmBlocks);
 }
