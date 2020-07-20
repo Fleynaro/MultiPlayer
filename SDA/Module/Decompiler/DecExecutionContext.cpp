@@ -24,7 +24,7 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 		for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
 			if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it->m_varnode)) {
 				if (reg.getGenericId() == sameRegVarnode->m_register.getGenericId()) {
-					if ((sameRegVarnode->m_register.m_valueRangeMask & ~reg.m_valueRangeMask) == 0) {
+					if ((GetMaskWithException(sameRegVarnode->m_register.m_valueRangeMask) & ~GetMaskWithException(reg.m_valueRangeMask)) == 0) {
 						oldWrapperNodes.push_back(it->m_expr);
 						m_varnodes.erase(it);
 					}

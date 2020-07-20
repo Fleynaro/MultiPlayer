@@ -3,19 +3,21 @@
 
 namespace CE::Decompiler
 {
+	using Mask = uint64_t;
+
 	class INumber
 	{
 	public:
-		virtual uint64_t getMask() = 0;
+		virtual Mask getMask() = 0;
 	};
 
-	static uint64_t GetMaskWithException(uint64_t mask) {
+	static Mask GetMaskWithException(Mask mask) {
 		if (mask == 0xFFFFFFFF)
 			return 0xFFFFFFFFFFFFFFFF;
 		return mask;
 	}
 
-	static int GetShiftValueOfMask(uint64_t mask) {
+	static int GetShiftValueOfMask(Mask mask) {
 		int result = 0;
 		for (auto m = mask; bool(m & 0b1) == 0; m = m >> 1) {
 			result += 1;
@@ -23,7 +25,7 @@ namespace CE::Decompiler
 		return result;
 	}
 
-	static int GetBitCountOfMask(uint64_t mask) {
+	static int GetBitCountOfMask(Mask mask) {
 		int result = 0;
 		for (auto m = mask; m != 0; m = m >> 1) {
 			result++;
@@ -31,9 +33,14 @@ namespace CE::Decompiler
 		return result;
 	}
 
-	static uint64_t GetMaskBySize(int size) {
-		if (size == 8)
+	static Mask GetMaskBySize(int size, bool byteAsBit = true) {
+		auto k = byteAsBit ? 1 : 8;
+		if (size == 64 / k)
 			return -1;
-		return ((uint64_t)1 << (uint64_t)(size * 8)) - 1;
+		return ((uint64_t)1 << (uint64_t)(size * k)) - 1;
+	}
+
+	static uint64_t GetMask64ByMask(Mask mask) {
+		return GetMaskBySize(GetBitCountOfMask(mask), false);
 	}
 };

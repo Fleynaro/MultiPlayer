@@ -185,7 +185,7 @@ void CE::Decompiler::test() {
 		size = calculateFunctionSize2((byte*)addr, 0);
 	}
 	else {
-#define SAMPLE_VAR sample22
+#define SAMPLE_VAR sample100
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}
@@ -221,8 +221,8 @@ void CE::Decompiler::test() {
 	//show code
 	bool prevShowAsm = g_SHOW_ASM;
 	bool prevShowPcode = g_SHOW_PCODE;
-	g_SHOW_ASM = false;
-	g_SHOW_PCODE = false;
+	/*g_SHOW_ASM = false;
+	g_SHOW_PCODE = false;*/
 
 	printf("\n\n\n********************* BEFORE OPTIMIZATION: *********************\n\n");
 	ShowCode(converter.getBlockList(), asmBlocks);

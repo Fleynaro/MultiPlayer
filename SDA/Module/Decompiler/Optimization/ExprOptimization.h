@@ -105,7 +105,7 @@ namespace CE::Decompiler::Optimization
 	//check negative of expr node
 	static bool IsNegative(Node* node, uint64_t mask) {
 		if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
-			if ((numberLeaf->m_value >> (GetBitCountOfMask(mask) - 1)) & 0b1)
+			if ((numberLeaf->m_value >> (GetBitCountOfMask(mask) * 0x8 - 1)) & 0b1)
 				return true;
 		}
 		else if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
@@ -242,19 +242,23 @@ namespace CE::Decompiler::Optimization
 				if (rightNumberLeaf->m_value == 0) {
 					if (expr->m_operation == Mul || expr->m_operation == And) {
 						expr->replaceWith(new NumberLeaf(0));
+						delete expr;
+						expr = nullptr;
 					}
 					else {
+						auto newExpr = expr->m_leftNode;
 						expr->replaceWith(expr->m_leftNode);
+						delete expr;
+						expr = nullptr;// dynamic_cast<OperationalNode*>(newExpr);
 					}
-					delete expr;
-					expr = nullptr;
 				}
 			}
 			else {
 				if (rightNumberLeaf->m_value == 1) {
-					expr->replaceWith(expr->m_leftNode);
+					auto newExpr = expr->m_leftNode;
+					expr->replaceWith(newExpr);
 					delete expr;
-					expr = nullptr;
+					expr = dynamic_cast<OperationalNode*>(newExpr);
 				}
 			}
 		}
@@ -274,19 +278,16 @@ namespace CE::Decompiler::Optimization
 
 		//[sym1] & [sym1]	=>	 [sym1]
 		if (expr->m_leftNode == expr->m_rightNode) {
-			bool isOptimized = true;
 			if (expr->m_operation == Xor) {
 				expr->replaceWith(new NumberLeaf(0));
-			} else if (expr->m_operation == And || expr->m_operation == Or) {
-				expr->replaceWith(expr->m_leftNode);
-			}
-			else {
-				isOptimized = false;
-			}
-
-			if (isOptimized) {
 				delete expr;
 				expr = nullptr;
+				return;
+			} else if (expr->m_operation == And || expr->m_operation == Or) {
+				auto newExpr = expr->m_leftNode;
+				expr->replaceWith(newExpr);
+				delete expr;
+				expr = dynamic_cast<OperationalNode*>(newExpr);
 				return;
 			}
 		}
@@ -295,7 +296,7 @@ namespace CE::Decompiler::Optimization
 			if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 				auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
 				if (expr->getMask())
-					result &= expr->getMask();
+					result &= GetMask64ByMask(expr->getMask());
 				expr->replaceWith(new NumberLeaf(result));
 				delete expr;
 				expr = nullptr;
@@ -388,7 +389,7 @@ namespace CE::Decompiler::Optimization
 			if (resultExpr != nullptr) {
 				expr->replaceWith(resultExpr);
 				delete expr;
-				expr = nullptr;
+				expr = resultExpr;
 			}
 		}
 	}
@@ -456,7 +457,7 @@ namespace CE::Decompiler::Optimization
 
 					auto mask = expr->getMask() | prevExpr->getMask();
 					if (mask)
-						result &= mask;
+						result &= GetMask64ByMask(mask);
 
 					auto numberLeaf = new NumberLeaf(result);
 					if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
@@ -499,7 +500,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//([reg_rbx_64] & 0xffffffff00000000{0} | [var_2_32]) & 0x1f{31}	=>		[var_2_32] & 0x1f{31}
-	static void RemoveZeroMaskMulExpr(OperationalNode*& expr, uint64_t mask) {
+	static void RemoveZeroMaskMulExpr(OperationalNode*& expr, Mask mask) {
 		if (!IsOperationManipulatedWithBitVector(expr->m_operation))
 			return;
 
@@ -551,9 +552,11 @@ namespace CE::Decompiler::Optimization
 					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 						if ((mask1 & mask2) == mask1) {
 							//[var_2_32] & 0xffffffff{-1}		=>		[var_2_32]		
-							expr->replaceWith(expr->m_leftNode);
+							auto newExpr = expr->m_leftNode;
+							expr->replaceWith(newExpr);
 							expr->m_leftNode = nullptr;
 							delete expr;
+							expr = dynamic_cast<OperationalNode*>(newExpr);
 							return;
 						}
 						else {
@@ -568,18 +571,11 @@ namespace CE::Decompiler::Optimization
 						//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
 						expr->replaceWith(new NumberLeaf(0));
 						delete expr;
+						expr = nullptr;
 					}
 				}
-				else if (expr->m_operation == Shr) {
+				else if (expr->m_operation == Shl || expr->m_operation == Shr) {
 					expr->m_mask = leftNode->getMask();
-					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-						expr->m_mask >>= numberLeaf->m_value;
-					}
-				}
-				else if (expr->m_operation == Shl) {
-					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-						expr->m_mask = leftNode->getMask() << numberLeaf->m_value;
-					}
 				}
 				else {
 					expr->m_mask = leftNode->getMask() | rightNode->getMask();

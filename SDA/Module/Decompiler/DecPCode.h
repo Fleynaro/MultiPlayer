@@ -11,18 +11,20 @@
 
 namespace CE::Decompiler::PCode
 {
+	using RegisterId = int;
+
 	class Register
 	{
 	public:
-		int m_genericId;
+		RegisterId m_genericId;
 		bool m_isVector = false;
 		uint64_t m_valueRangeMask;
 
-		Register(int genericId = 0, uint64_t valueRangeMask = 0x0, bool isVector = false)
+		Register(RegisterId genericId = 0, uint64_t valueRangeMask = 0x0, bool isVector = false)
 			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_isVector(isVector)
 		{}
 
-		int getGenericId() const {
+		RegisterId getGenericId() const {
 			return m_genericId;
 		} 
 
@@ -43,7 +45,7 @@ namespace CE::Decompiler::PCode
 
 		virtual int getSize() = 0;
 
-		uint64_t getMask() {
+		Mask getMask() {
 			return GetMaskBySize(getSize());
 		}
 

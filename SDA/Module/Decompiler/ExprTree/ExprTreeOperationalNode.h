@@ -93,9 +93,9 @@ namespace CE::Decompiler::ExprTree
 		Node* m_leftNode;
 		Node* m_rightNode;
 		OperationType m_operation;
-		uint64_t m_mask;
+		Mask m_mask;
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, uint64_t mask = 0x0)
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, Mask mask = 0x0)
 			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask)
 		{
 			leftNode->addParentNode(this);
@@ -125,7 +125,7 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		uint64_t getMask() override {
+		Mask getMask() override {
 			return m_mask;
 		}
 
@@ -141,7 +141,7 @@ namespace CE::Decompiler::ExprTree
 
 			std::string opSize = "";
 			if (true) {
-				opSize = "."+ std::to_string(GetBitCountOfMask(getMask()) / 8) +"";
+				opSize = "."+ std::to_string(GetBitCountOfMask(getMask())) +"";
 			}
 			
 			if(result.empty())
@@ -159,7 +159,7 @@ namespace CE::Decompiler::ExprTree
 			: OperationalNode(leftNode, rightNode, operation), m_instr(instr)
 		{}
 
-		uint64_t getMask() override {
+		Mask getMask() override {
 			return m_instr->m_output->getMask();
 		}
 	};
@@ -175,7 +175,7 @@ namespace CE::Decompiler::ExprTree
 			return m_leftNode;
 		}
 
-		uint64_t getMask() override {
+		Mask getMask() override {
 			return GetMaskBySize(getSize());
 		}
 
@@ -200,7 +200,7 @@ namespace CE::Decompiler::ExprTree
 			: OperationalNode(node, new NumberLeaf(size), Cast), m_size(size), m_isSigned(isSigned)
 		{}
 
-		uint64_t getMask() override {
+		Mask getMask() override {
 			return GetMaskBySize(getSize());
 		}
 
@@ -232,7 +232,7 @@ namespace CE::Decompiler::ExprTree
 			: OperationalNode(node1, node2, Functional), m_funcId(id)
 		{}
 
-		uint64_t getMask() override {
+		Mask getMask() override {
 			return 0b1;
 		}
 

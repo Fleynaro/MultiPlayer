@@ -112,7 +112,7 @@ namespace CE::Decompiler
 					auto& externalSymbol = **it;
 					auto regId = externalSymbol.m_reg.getGenericId(); //ah/al and xmm?
 					if (m_registersToSymbol.find(regId) == m_registersToSymbol.end()) {
-						m_registersToSymbol[regId] = RegSymbol();
+						m_registersToSymbol[regId] = RegSymbol(externalSymbol.m_reg.m_isVector);
 					}
 					m_curRegSymbol = &m_registersToSymbol[regId];
 					m_curRegSymbol->requiestId++;
@@ -148,12 +148,17 @@ namespace CE::Decompiler
 		};
 
 		struct RegSymbol {
+			bool isVector;
 			std::map<PrimaryTree::Block*, BlockRegSymbol> blocks;
 			std::list<std::pair<int, ExprTree::SymbolLeaf*>> symbols;
 			int requiestId = 0;
+
+			RegSymbol(bool isVector = false)
+				: isVector(isVector)
+			{}
 		};
 
-		std::map<int, RegSymbol> m_registersToSymbol;
+		std::map<PCode::RegisterId, RegSymbol> m_registersToSymbol;
 		RegSymbol* m_curRegSymbol = nullptr;
 
 		void requestRegisterParts(PrimaryTree::Block* block, const PCode::Register& reg, uint64_t& mask, RegisterParts& outRegParts, bool isFound = true) {
@@ -263,7 +268,7 @@ namespace CE::Decompiler
 							if (false && regParts.size() == 1 && (*regParts.begin())->m_expr == symbolLeaf)
 								continue;
 							
-							auto symbolMask = GetMaskBySize(symbolLeaf->m_symbol->getSize());
+							auto symbolMask = GetMaskBySize(symbolLeaf->m_symbol->getSize(), regSymbol.isVector);
 							auto maskToChange = symbolMask & ~blockRegSymbol.canReadMask;
 
 							if (maskToChange != 0) {

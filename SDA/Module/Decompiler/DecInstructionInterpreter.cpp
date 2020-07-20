@@ -29,6 +29,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto dstExpr = requestVarnode(m_instr->m_input0);
 		auto srcExpr = requestVarnode(m_instr->m_input1);
+		dstExpr = new ExprTree::ReadValueNode(dstExpr, m_instr->m_input0->getSize());
 		m_block->addSeqLine(dstExpr, srcExpr);
 		break;
 	}
@@ -57,7 +58,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		case InstructionId::INT_SUB:
 			opType = ExprTree::Add;
 			if (m_instr->m_id == InstructionId::INT_SUB)
-				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & m_instr->m_input1->getMask()), ExprTree::Mul, m_instr->m_input1->getSize());
+				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & GetMask64ByMask(m_instr->m_input1->getMask())), ExprTree::Mul, m_instr->m_input1->getSize());
 			break;
 		case InstructionId::INT_MULT:
 			opType = ExprTree::Mul;
@@ -97,7 +98,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::INT_2COMP:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		auto nodeMask = new ExprTree::NumberLeaf(-1 & m_instr->m_input0->getMask());
+		auto nodeMask = new ExprTree::NumberLeaf(-1 & GetMask64ByMask(m_instr->m_input0->getMask()));
 		auto opType = (m_instr->m_id == InstructionId::INT_2COMP) ? ExprTree::Mul : ExprTree::Xor;
 		m_ctx->setVarnode(m_instr->m_output, new ExprTree::InstructionOperationalNode(expr, nodeMask, opType, m_instr));
 		break;

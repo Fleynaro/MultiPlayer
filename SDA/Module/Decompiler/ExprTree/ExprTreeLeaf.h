@@ -14,7 +14,7 @@ namespace CE::Decompiler::ExprTree
 			: m_symbol(symbol)
 		{}
 
-		uint64_t getMask() override {
+		Mask getMask() override {
 			return GetMaskBySize(m_symbol->getSize());
 		}
 
@@ -40,8 +40,9 @@ namespace CE::Decompiler::ExprTree
 			: m_value(value)
 		{}
 
-		uint64_t getMask() override {
-			return m_value;
+		Mask getMask() override {
+			auto size = max(1, (int)(log2(m_value) + 1) / 8);
+			return GetMaskBySize(size);
 		}
 
 		bool isLeaf() override {

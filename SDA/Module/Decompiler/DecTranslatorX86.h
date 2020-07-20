@@ -694,7 +694,9 @@ namespace CE::Decompiler::PCode
 				instr->m_originalView = buffer;
 			}
 			m_result.push_back(instr);
-			if (zext) {
+
+			//we use exception mask then dont use it
+			if (false && zext) {
 				if (auto outputReg = dynamic_cast<RegisterVarnode*>(output)) {
 					if (outputReg->m_register.m_valueRangeMask == 0xFFFFFFFF) { //TODO: не везде -> imul
 						auto extReg = outputReg->m_register;
@@ -717,13 +719,13 @@ namespace CE::Decompiler::PCode
 				return CreateVarnode(operand.reg.value);
 			}
 			else if (operand.type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				return new ConstantVarnode(operand.imm.value.u & GetMaskBySize(size), size);
+				return new ConstantVarnode(operand.imm.value.u & GetMaskBySize(size, false), size);
 			}
 			else if (operand.type == ZYDIS_OPERAND_TYPE_MEMORY) {
 				Varnode* resultVarnode = nullptr;
 				RegisterVarnode* baseRegVarnode = nullptr;
 				RegisterVarnode* indexRegVarnode = nullptr;
-				auto memLocExprMask = GetMaskBySize(memLocExprSize);
+				auto memLocExprMask = GetMaskBySize(memLocExprSize, false);
 
 				if (operand.mem.base != ZYDIS_REGISTER_NONE) {
 					baseRegVarnode = CreateVarnode(operand.mem.base);
