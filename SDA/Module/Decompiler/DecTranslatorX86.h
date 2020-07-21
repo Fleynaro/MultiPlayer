@@ -74,12 +74,36 @@ namespace CE::Decompiler::PCode
 			
 			switch (mnemonic)
 			{
+			case ZYDIS_MNEMONIC_CVTDQ2PD:
+			{
+				auto& srcOperand = m_curInstr->operands[1];
+				auto srcOpVarnode1 = requestOperandValue(srcOperand, 0x4, 0);
+				auto srcOpVarnode2 = requestOperandValue(srcOperand, 0x4, 4);
+				addGenericOperation(InstructionId::INT2FLOAT, srcOpVarnode1, nullptr, nullptr, false, 0x8, 0);
+				addGenericOperation(InstructionId::INT2FLOAT, srcOpVarnode2, nullptr, nullptr, false, 0x8, 8);
+				break;
+			}
+
+
+			case ZYDIS_MNEMONIC_MOVD:
+			{
+				auto& srcOperand = m_curInstr->operands[1];
+				auto srcOpVarnode = requestOperandValue(srcOperand, 0x4, 0x0);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode, nullptr, nullptr, false, 0x4, 0x0);
+				auto zero = new ConstantVarnode(0x0, 0x4);
+				addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 4);
+				addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 8);
+				addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 12);
+				break;
+			}
+
+			case ZYDIS_MNEMONIC_MOVQ:
 			case ZYDIS_MNEMONIC_MOVSD:
 			{
 				auto& srcOperand = m_curInstr->operands[1];
 				auto srcOpVarnode = requestOperandValue(srcOperand, 0x8, 0x0);
 				addGenericOperation(InstructionId::COPY, srcOpVarnode, nullptr, nullptr, false, 0x8, 0x0);
-				if (m_curInstr->operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY) {
+				if (mnemonic == ZYDIS_MNEMONIC_MOVQ || m_curInstr->operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY) {
 					addGenericOperation(InstructionId::COPY, new ConstantVarnode(0x0, 0x8), nullptr, nullptr, false, 0x8, 0x8);
 				}
 				break;
