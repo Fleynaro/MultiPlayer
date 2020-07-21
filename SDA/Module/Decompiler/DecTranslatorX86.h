@@ -74,6 +74,32 @@ namespace CE::Decompiler::PCode
 			
 			switch (mnemonic)
 			{
+			case ZYDIS_MNEMONIC_MOVSD:
+			{
+				auto& srcOperand = m_curInstr->operands[1];
+				auto srcOpVarnode = requestOperandValue(srcOperand, 0x8, 0x0);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode, nullptr, nullptr, false, 0x8, 0x0);
+				if (m_curInstr->operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY) {
+					addGenericOperation(InstructionId::COPY, new ConstantVarnode(0x0, 0x8), nullptr, nullptr, false, 0x8, 0x8);
+				}
+				break;
+			}
+
+			case ZYDIS_MNEMONIC_MOVUPS:
+			case ZYDIS_MNEMONIC_MOVAPS:
+			{
+				auto& srcOperand = m_curInstr->operands[1];
+				auto srcOpVarnode1 = requestOperandValue(srcOperand, 0x4, 12);
+				auto srcOpVarnode2 = requestOperandValue(srcOperand, 0x4, 8);
+				auto srcOpVarnode3 = requestOperandValue(srcOperand, 0x4, 4);
+				auto srcOpVarnode4 = requestOperandValue(srcOperand, 0x4, 0);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode4, nullptr, nullptr, false, 0x4, 0);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode3, nullptr, nullptr, false, 0x4, 4);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode2, nullptr, nullptr, false, 0x4, 8);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode1, nullptr, nullptr, false, 0x4, 12);
+				break;
+			}
+
 			case ZYDIS_MNEMONIC_XCHG:
 			{
 				Varnode* varnodeInput0 = requestOperandValue(m_curInstr->operands[0], size);
@@ -91,7 +117,7 @@ namespace CE::Decompiler::PCode
 			case ZYDIS_MNEMONIC_MOVSXD:
 			case ZYDIS_MNEMONIC_LEA:
 			{
-				auto operand = m_curInstr->operands[1];
+				auto& operand = m_curInstr->operands[1];
 				Varnode* varnode;
 				if (mnemonic == ZYDIS_MNEMONIC_LEA) {
 					varnode = requestOperandValue(operand, operand.size / 0x8, nullptr, false, size);
@@ -666,12 +692,13 @@ namespace CE::Decompiler::PCode
 			return offset << 8;
 		}
 
-		Varnode* addGenericOperation(InstructionId instrId, Varnode* varnodeInput0, Varnode* varnodeInput1, Varnode* memLocVarnode = nullptr, bool isFictitious = false) {
+		Varnode* addGenericOperation(InstructionId instrId, Varnode* varnodeInput0, Varnode* varnodeInput1, Varnode* memLocVarnode = nullptr, bool isFictitious = false, int size = 0x0, int offset = 0x0) {
 			auto& operand = m_curInstr->operands[0];
-			auto size = operand.size / 0x8;
+			if(size == 0x0)
+				size = operand.size / 0x8;
 			Varnode* varnodeOutput = nullptr;
 			if (!isFictitious && operand.type == ZYDIS_OPERAND_TYPE_REGISTER) {
-				varnodeOutput = CreateVarnode(operand.reg.value);
+				varnodeOutput = CreateVarnode(operand.reg.value, size, offset);
 			} else {
 				varnodeOutput = new SymbolVarnode(size);
 			}
@@ -679,7 +706,7 @@ namespace CE::Decompiler::PCode
 			addMicroInstruction(instrId, varnodeInput0, varnodeInput1, varnodeOutput);
 
 			if (!isFictitious && operand.type == ZYDIS_OPERAND_TYPE_MEMORY) {
-				setDestinationMemOperand(operand, size, varnodeOutput, memLocVarnode);
+				setDestinationMemOperand(operand, size, offset, varnodeOutput, memLocVarnode);
 			}
 
 			return varnodeOutput;
@@ -714,19 +741,23 @@ namespace CE::Decompiler::PCode
 			}
 		}
 
-		void setDestinationMemOperand(const ZydisDecodedOperand& operand, int size, Varnode* varnode, Varnode* memLocVarnode = nullptr) {
+		void setDestinationMemOperand(const ZydisDecodedOperand& operand, int size, int offset, Varnode* varnode, Varnode* memLocVarnode = nullptr) {
 			if (!memLocVarnode) {
-				memLocVarnode = requestOperandValue(operand, size, nullptr, false);
+				memLocVarnode = requestOperandValue(operand, size, offset, nullptr, false);
 			}
 			addMicroInstruction(InstructionId::STORE, memLocVarnode, varnode);
 		}
 
 		Varnode* requestOperandValue(const ZydisDecodedOperand& operand, int size, Varnode** memLocVarnode = nullptr, bool isMemLocLoaded = true, int memLocExprSize = 0x8) {
+			return requestOperandValue(operand, size, 0x0, memLocVarnode, isMemLocLoaded, memLocExprSize);
+		}
+
+		Varnode* requestOperandValue(const ZydisDecodedOperand& operand, int size, int offset, Varnode** memLocVarnode = nullptr, bool isMemLocLoaded = true, int memLocExprSize = 0x8) {
 			if (operand.type == ZYDIS_OPERAND_TYPE_REGISTER) {
-				return CreateVarnode(operand.reg.value);
+				return CreateVarnode(operand.reg.value, size, offset);
 			}
 			else if (operand.type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				return new ConstantVarnode(operand.imm.value.u & GetMaskBySize(size, false), size);
+				return new ConstantVarnode(operand.imm.value.u & GetMaskBySize(size), size);
 			}
 			else if (operand.type == ZYDIS_OPERAND_TYPE_MEMORY) {
 				Varnode* resultVarnode = nullptr;
@@ -763,6 +794,12 @@ namespace CE::Decompiler::PCode
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);
 						addMicroInstruction(InstructionId::INT_ADD, resultVarnode, dispVarnode, symbolVarnode);
 						resultVarnode = symbolVarnode;
+
+						if (offset > 0) {
+							auto symbolVarnode = new SymbolVarnode(memLocExprSize);
+							addMicroInstruction(InstructionId::INT_ADD, resultVarnode, new ConstantVarnode(offset, memLocExprSize), symbolVarnode);
+							resultVarnode = symbolVarnode;
+						}
 					}
 					else {
 						resultVarnode = dispVarnode;
@@ -950,8 +987,12 @@ namespace CE::Decompiler::PCode
 			return Register(ZYDIS_REGISTER_RFLAGS, mask, false);
 		}
 
-		static RegisterVarnode* CreateVarnode(ZydisRegister reg) {
-			return new RegisterVarnode(CreateRegister(reg));
+		static RegisterVarnode* CreateVarnode(ZydisRegister regId, int size = 0x0, int offset = 0x0) {
+			auto reg = CreateRegister(regId);
+			if (size != 0x0) {
+				reg.m_valueRangeMask &= GetMaskBySize(size, reg.m_isVector) << (offset * (reg.m_isVector ? 0x1 : 0x8));
+			}
+			return new RegisterVarnode(reg);
 		}
 
 		static RegisterVarnode* CreateVarnode(ZydisCPUFlag flag) {

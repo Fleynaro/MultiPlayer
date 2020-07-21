@@ -41,7 +41,7 @@ namespace CE::Decompiler::ExprTree
 		{}
 
 		Mask getMask() override {
-			return GetMaskByNumber(m_value);
+			return GetMaskByMask64(m_value);
 		}
 
 		bool isLeaf() override {

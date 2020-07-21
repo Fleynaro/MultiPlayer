@@ -36,6 +36,39 @@ namespace CE::Decompiler::PCode
 		bool operator ==(const Register& reg) const {
 			return m_genericId == reg.m_genericId && m_valueRangeMask == reg.m_valueRangeMask;
 		}
+
+		std::string printDebug() {
+			auto regId = (ZydisRegister)m_genericId;
+
+			std::string maskStr;
+			if (m_isVector) {
+				auto bitCount = GetBitCountOfMask(m_valueRangeMask);
+				if (bitCount == 4 || bitCount == 8) {
+					maskStr = std::string(bitCount == 4 ? "D" : "Q") + (char)('a' + (char)(GetShiftValueOfMask(m_valueRangeMask) / bitCount));
+				}
+				else {
+					maskStr = std::to_string(bitCount);
+				}
+			}
+			else {
+				maskStr = std::to_string(getSize());
+			}
+
+			if (regId != ZYDIS_REGISTER_RFLAGS)
+				return std::string(ZydisRegisterGetString(regId)) + ":" + maskStr;
+
+			std::string flagName = "flag";
+			auto flag = (ZydisCPUFlag)GetShiftValueOfMask(m_valueRangeMask);
+			if (flag == ZYDIS_CPUFLAG_CF)
+				flagName = "CF";
+			else if (flag == ZYDIS_CPUFLAG_OF)
+				flagName = "OF";
+			else if (flag == ZYDIS_CPUFLAG_SF)
+				flagName = "SF";
+			else if (flag == ZYDIS_CPUFLAG_ZF)
+				flagName = "ZF";
+			return flagName + ":1";
+		}
 	};
 
 	class Varnode
@@ -66,21 +99,7 @@ namespace CE::Decompiler::PCode
 		}
 
 		std::string printDebug() override {
-			auto regId = (ZydisRegister)m_register.m_genericId;
-			if(regId != ZYDIS_REGISTER_RFLAGS)
-				return std::string(ZydisRegisterGetString(regId)) + ":" + std::to_string(getSize());
-
-			std::string flagName = "flag";
-			auto flag = (ZydisCPUFlag)GetShiftValueOfMask(m_register.m_valueRangeMask);
-			if (flag == ZYDIS_CPUFLAG_CF)
-				flagName = "CF";
-			else if (flag == ZYDIS_CPUFLAG_OF)
-				flagName = "OF";
-			else if (flag == ZYDIS_CPUFLAG_SF)
-				flagName = "SF";
-			else if (flag == ZYDIS_CPUFLAG_ZF)
-				flagName = "ZF";
-			return flagName + ":1";
+			return m_register.printDebug();
 		}
 	};
 

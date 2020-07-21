@@ -89,14 +89,15 @@ namespace CE::Decompiler::ExprTree
 
 	class OperationalNode : public Node, public IParentNode, public INumber
 	{
+		Mask m_mask;
 	public:
 		Node* m_leftNode;
 		Node* m_rightNode;
 		OperationType m_operation;
-		Mask m_mask;
+		bool m_notChangedMask;
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, Mask mask = 0x0)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask)
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, Mask mask = 0x0, bool notChangedMask = false)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask)
 		{
 			leftNode->addParentNode(this);
 			if (rightNode != nullptr) {
@@ -104,8 +105,8 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, int size)
-			: OperationalNode(leftNode, rightNode, operation, GetMaskBySize(size))
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, int size, bool notChangedMask = false)
+			: OperationalNode(leftNode, rightNode, operation, GetMaskBySize(size), notChangedMask)
 		{}
 
 		~OperationalNode() {
@@ -125,6 +126,12 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
+		void setMask(Mask mask) {
+			if (m_notChangedMask)
+				return;
+			m_mask = mask;
+		}
+
 		Mask getMask() override {
 			return m_mask;
 		}
@@ -141,7 +148,7 @@ namespace CE::Decompiler::ExprTree
 
 			std::string opSize = "";
 			if (true) {
-				opSize = "."+ std::to_string(GetBitCountOfMask(getMask())) +"";
+				opSize = "."+ std::to_string(GetBitCountOfMask(getMask(), false)) +"";
 			}
 			
 			if(result.empty())

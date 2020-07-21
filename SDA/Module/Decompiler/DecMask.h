@@ -25,21 +25,14 @@ namespace CE::Decompiler
 		return result;
 	}
 
-	static int GetBitCountOfMask(Mask mask) {
+	static int GetBitCountOfMask(Mask mask, bool onlyOne = true) {
 		int result = 0;
 		for (auto m = mask; m != 0; m = m >> 1) {
-			result++;
+			if (!onlyOne || (m & 0b1)) {
+				result++;
+			}
 		}
 		return result;
-	}
-
-	static Mask GetMaskByNumber(uint64_t value) {
-		Mask mask = 0x0;
-		int i = 0;
-		for (auto val = value; val != 0; val = val >> 8) {
-			mask |= ((val & 0xFF) ? 1 : 0) << (i++);
-		}
-		return mask;
 	}
 
 	static Mask GetMaskBySize(int size, bool byteAsBit = true) {
@@ -50,6 +43,19 @@ namespace CE::Decompiler
 	}
 
 	static uint64_t GetMask64ByMask(Mask mask) {
-		return GetMaskBySize(GetBitCountOfMask(mask), false);
+		uint64_t value = 0x0;
+		for (int i = 0; i < 8; i ++) {
+			value |= (((mask >> i) & 0b1) * 0xFF) << (i * 8);
+		}
+		return value;
+	}
+
+	static Mask GetMaskByMask64(uint64_t value) {
+		Mask mask = 0x0;
+		int i = 0;
+		for (auto val = value; val != 0; val = val >> 8) {
+			mask |= ((val & 0xFF) ? 1 : 0) << (i++);
+		}
+		return mask;
 	}
 };

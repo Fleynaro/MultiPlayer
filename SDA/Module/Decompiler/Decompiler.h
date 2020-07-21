@@ -121,7 +121,7 @@ namespace CE::Decompiler
 					auto mask = externalSymbol.m_needReadMask;
 					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
 					if (mask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
-						auto expr = CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_valueRangeMask);
+						auto expr = CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_valueRangeMask, externalSymbol.m_reg.m_isVector);
 						externalSymbol.m_symbol->replaceWith(expr);
 						delete externalSymbol.m_symbol->m_symbol;
 						delete externalSymbol.m_symbol;
@@ -275,7 +275,7 @@ namespace CE::Decompiler
 								regParts.push_back(new RegisterPart(symbolMask, maskToChange, symbolLeaf));
 							}
 
-							auto expr = CreateExprFromRegisterParts(regParts, symbolMask);
+							auto expr = CreateExprFromRegisterParts(regParts, symbolMask, regSymbol.isVector);
 							decBlock->addSymbolAssignmentLine(symbolLeaf, expr);
 						}
 					}
