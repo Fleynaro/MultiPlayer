@@ -107,6 +107,30 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	static void GetMemoryVariableSymbolLeafs(OperationalNode* expr, Symbol::MemoryVariable* memVariable, std::list<SymbolLeaf*>& symbolLeafs) {
+		auto list = GetNextOperationalsNodesToOpimize(expr);
+		for (auto it : list) {
+			GetMemoryVariableSymbolLeafs(it, memVariable, symbolLeafs);
+		}
+
+		for (auto node : { expr->m_leftNode, expr->m_rightNode }) {
+			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
+				if (symbolLeaf->m_symbol == memVariable) {
+					symbolLeafs.push_back(symbolLeaf);
+				}
+			}
+		}
+	}
+
+	static void GetMemoryVariableSymbolLeafs(PrimaryTree::SeqLine* line, Symbol::MemoryVariable* memVariable, std::list<SymbolLeaf*>& symbolLeafs) {
+		auto list1 = GetNextOperationalsNodesToOpimize(line->m_destAddr);
+		auto list2 = GetNextOperationalsNodesToOpimize(line->m_srcValue);
+		list1.insert(list1.end(), list2.begin(), list2.end());
+		for (auto it : list1) {
+			GetMemoryVariableSymbolLeafs(it, memVariable, symbolLeafs);
+		}
+	}
+
 	static bool AreSeqLinesInterconnected(PrimaryTree::SeqLine* line1, PrimaryTree::SeqLine* line2) {
 		for (auto linePair : { std::pair(line1, line2), std::pair(line2, line1) }) {
 			if (auto writeValueNode = dynamic_cast<ReadValueNode*>(linePair.first->m_destAddr)) {
@@ -160,7 +184,42 @@ namespace CE::Decompiler::Optimization
 	}
 
 	static void OptimizeSeqLinesOrderInDecompiledGraph(DecompiledCodeGraph* decGraph) {
-		auto firstBlock = *decGraph->getDecompiledBlocks().begin();
+		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+			for (auto it1 = decBlock->getSeqLines().begin(); it1 != decBlock->getSeqLines().end(); it1 ++) {
+				if (auto memSymbolLeaf = dynamic_cast<SymbolLeaf*>((*it1)->m_destAddr)) {
+					if (auto memVariable = dynamic_cast<Symbol::MemoryVariable*>(memSymbolLeaf->m_symbol))
+					{
+						//std::list<std::list<SeqLine*>::iterator> - найти все строки, где юзается символ
+
+						/*
+						//сделать копию первичного дерева
+						bool isRemove = true;
+						for (auto it2 = std::next(it1); it2 != decBlock->getSeqLines().end(); it2++) {
+							std::list<SymbolLeaf*> symbolLeafs;
+							GetMemoryVariableSymbolLeafs(*it2, memVariable, symbolLeafs);
+							if (!symbolLeafs.empty()) {
+								isRemove = false;
+								if (!DoesLineHavePathToOtherLine(it1, it2))
+									break;
+								for (auto symbolLeaf : symbolLeafs) {
+									symbolLeaf->replaceWith((*it1)->m_srcValue);
+									delete symbolLeaf;
+								}
+								std::move(it1, it1, std::next(it2));
+							}
+						}
+
+						if (isRemove) {
+							decBlock->getSeqLines().erase(it1);
+							delete* it1;
+						}
+						*/
+					}
+				}
+			}
+		}
+
+		/*auto firstBlock = *decGraph->getDecompiledBlocks().begin();
 		auto lineIt1 = firstBlock->getSeqLines().begin();
 		auto lineIt2 = std::next(std::next(std::next(std::next(lineIt1))));
 
@@ -173,7 +232,7 @@ namespace CE::Decompiler::Optimization
 		}
 
 		auto result = DoesLineHavePathToOtherLine(lineIt1, lineIt2);
-		result = result;
+		result = result;*/
 	}
 
 	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph) {

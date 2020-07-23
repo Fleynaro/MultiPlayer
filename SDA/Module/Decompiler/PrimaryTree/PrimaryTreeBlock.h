@@ -18,6 +18,13 @@ namespace CE::Decompiler::PrimaryTree
 			srcValue->addParentNode(this);
 		}
 
+		~Line() {
+			if (m_destAddr)
+				delete m_destAddr;
+			if (m_srcValue)
+				delete m_srcValue;
+		}
+
 		void replaceNode(ExprTree::Node* node, ExprTree::Node * newNode) override {
 			if (node == m_destAddr) {
 				m_destAddr = static_cast<T*>(newNode);
