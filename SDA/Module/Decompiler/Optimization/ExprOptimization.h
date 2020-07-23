@@ -592,6 +592,47 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	//get list of terms in expr: (5x - 10y) * 2 + 5		=>		x: 10, y: -20, constTerm: 5
+	//need mostly for array linear expr
+	static void GetTermsInExpr(Node* node, std::map<ObjectHash::Hash, int64_t>& terms, int64_t& constTerm, int64_t k = 1) {
+		if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
+			constTerm += (int64_t&)numberLeaf->m_value * k;
+			return;
+		}
+
+		if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
+			if (opNode->m_operation == Add) {
+				GetTermsInExpr(opNode->m_leftNode, terms, constTerm, k);
+				GetTermsInExpr(opNode->m_rightNode, terms, constTerm, k);
+				return;
+			} else if (opNode->m_operation == Mul) {
+				if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(opNode->m_rightNode)) {
+					GetTermsInExpr(opNode->m_leftNode, terms, constTerm, k * rightNumberLeaf->m_value);
+					return;
+				}
+			}
+		}
+
+		auto hash = node->getHash();
+		if (terms.find(hash) == terms.end()) {
+			terms[hash] = 0;
+		}
+		terms[hash] += k;
+	}
+
+	static bool AreTermsEqual(std::map<ObjectHash::Hash, int64_t>& terms1, std::map<ObjectHash::Hash, int64_t>& terms2) {
+		for (auto termList : { std::pair(&terms1, &terms2), std::pair(&terms2, &terms1) }) {
+			for (auto term : *termList.first) {
+				if (term.second == 0)
+					continue;
+				auto it = termList.second->find(term.first);
+				if (it == termList.second->end() || term.second != it->second)
+					return false;
+			}
+		}
+		return true;
+	}
+
 	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
 	static void Optimize(Node* node) {
 		auto list = GetNextOperationalsNodesToOpimize(node);

@@ -4,6 +4,7 @@
 #include "Utils/ObjectHash.h"
 
 namespace CE::Decompiler::ExprTree {
+	class Node;
 	class FunctionCallContext;
 };
 
@@ -39,23 +40,21 @@ namespace CE::Decompiler::Symbol
 		int m_size;
 	};
 
-	class GlobalVariable : public Variable
+	class MemoryVariable : public Variable
 	{
 	public:
-		int m_offset;
-
-		GlobalVariable(int offset, int size)
-			: m_offset(offset), Variable(size)
-		{}
-
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue(m_offset);
-			return hash.getHash();
+		int m_id;
+		ExprTree::Node* m_loadValueExpr;
+		
+		MemoryVariable(ExprTree::Node* loadValueExpr, int size)
+			: m_loadValueExpr(loadValueExpr), Variable(size)
+		{
+			static int id = 1;
+			m_id = id++;
 		}
 
 		std::string printDebug() override {
-			return "[global_" + std::to_string(m_offset) + "_" + std::to_string(getSize() * 8) + "]";
+			return "[mem_" + Generic::String::NumberToHex(m_id) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 
@@ -73,20 +72,6 @@ namespace CE::Decompiler::Symbol
 
 		std::string printDebug() override {
 			return "[var_" + Generic::String::NumberToHex(m_id) + "_" + std::to_string(getSize() * 8) + "]";
-		}
-	};
-
-	class StackVariable : public Variable
-	{
-	public:
-		int m_stackOffset;
-
-		StackVariable(int stackOffset, int size)
-			: m_stackOffset(stackOffset), Variable(size)
-		{}
-
-		std::string printDebug() override {
-			return "[stack_"+ std::string(m_stackOffset < 0 ? "-" : "") + Generic::String::NumberToHex(std::abs(m_stackOffset)) +"_"+ std::to_string(getSize() * 8) +"]";
 		}
 	};
 
@@ -108,20 +93,6 @@ namespace CE::Decompiler::Symbol
 
 		std::string printDebug() override {
 			return "[reg_" + m_register.printDebug() + "]";
-		}
-	};
-
-	class ParameterVariable : public Variable
-	{
-	public:
-		int m_index = 0;
-
-		ParameterVariable(int index, int size)
-			: m_index(index), Variable(size)
-		{}
-
-		std::string printDebug() override {
-			return "[param_" + std::to_string(m_index) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 

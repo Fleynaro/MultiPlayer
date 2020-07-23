@@ -21,7 +21,11 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::LOAD:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		m_ctx->setVarnode(m_instr->m_output, new ExprTree::ReadValueNode(expr, m_instr->m_output->getSize()));
+		auto readSize = m_instr->m_output->getSize();
+		expr = new ExprTree::ReadValueNode(expr, readSize);
+		auto memSymbolLeaf = new ExprTree::SymbolLeaf(new Symbol::MemoryVariable(expr, readSize));
+		m_block->addSeqLine(memSymbolLeaf, expr);
+		m_ctx->setVarnode(m_instr->m_output, memSymbolLeaf);
 		break;
 	}
 
