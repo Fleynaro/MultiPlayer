@@ -107,31 +107,13 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	static void GetMemoryVariableSymbolLeafs(OperationalNode* expr, Symbol::MemoryVariable* memVariable, std::list<SymbolLeaf*>& symbolLeafs) {
-		auto list = GetNextOperationalsNodesToOpimize(expr);
-		for (auto it : list) {
-			GetMemoryVariableSymbolLeafs(it, memVariable, symbolLeafs);
-		}
-
-		for (auto node : { expr->m_leftNode, expr->m_rightNode }) {
-			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
-				if (symbolLeaf->m_symbol == memVariable) {
-					symbolLeafs.push_back(symbolLeaf);
-				}
-			}
-		}
-	}
-
-	static void GetMemoryVariableSymbolLeafs(PrimaryTree::SeqLine* line, Symbol::MemoryVariable* memVariable, std::list<SymbolLeaf*>& symbolLeafs) {
-		auto list1 = GetNextOperationalsNodesToOpimize(line->m_destAddr);
-		auto list2 = GetNextOperationalsNodesToOpimize(line->m_srcValue);
-		list1.insert(list1.end(), list2.begin(), list2.end());
-		for (auto it : list1) {
-			GetMemoryVariableSymbolLeafs(it, memVariable, symbolLeafs);
-		}
-	}
-
 	static bool AreSeqLinesInterconnected(PrimaryTree::SeqLine* line1, PrimaryTree::SeqLine* line2) {
+		//case 1: function call
+		if (dynamic_cast<FunctionCallContext*>(line1->m_srcValue) || dynamic_cast<FunctionCallContext*>(line2->m_srcValue)) {
+			return true;
+		}
+		
+		//case 2: read-write or write-read
 		for (auto linePair : { std::pair(line1, line2), std::pair(line2, line1) }) {
 			if (auto writeValueNode = dynamic_cast<ReadValueNode*>(linePair.first->m_destAddr)) {
 				std::list<ReadValueNode*> readValueNodes;
@@ -145,12 +127,12 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
+		//case 3: write-write
 		auto writeValueNode1 = dynamic_cast<ReadValueNode*>(line1->m_destAddr);
 		auto writeValueNode2 = dynamic_cast<ReadValueNode*>(line2->m_destAddr);
 		if (!writeValueNode1 || !writeValueNode2) {
 			return false;
 		}
-
 		return IsMemLocIntersected(writeValueNode1, writeValueNode2);
 	}
 
@@ -214,8 +196,10 @@ namespace CE::Decompiler::Optimization
 							}
 						}
 
+						//mem var must be in seq lines only of the same block
 						if (seqLinesWithMemVar.size() == parentNodes.size() - 1)
 						{
+							//store pushed out of the bound wall lines that are in conflict with *it1
 							std::list<std::pair<std::list<SeqLine*>::iterator, std::list<SeqLine*>>> pushedOutlines;
 
 							bool isRemove = true;
@@ -261,21 +245,6 @@ namespace CE::Decompiler::Optimization
 				}
 			}
 		}
-
-		/*auto firstBlock = *decGraph->getDecompiledBlocks().begin();
-		auto lineIt1 = firstBlock->getSeqLines().begin();
-		auto lineIt2 = std::next(std::next(std::next(std::next(lineIt1))));
-
-		if (auto destAddr = dynamic_cast<ReadValueNode*>((*lineIt1)->m_destAddr)) {
-			if (auto opNode = dynamic_cast<OperationalNode*>(destAddr->m_leftNode)) {
-				if (auto num = dynamic_cast<NumberLeaf*>(opNode->m_rightNode)) {
-					num->m_value -= 148;
-				}
-			}
-		}
-
-		auto result = DoesLineHavePathToOtherLine(lineIt1, lineIt2);
-		result = result;*/
 	}
 
 	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph) {
