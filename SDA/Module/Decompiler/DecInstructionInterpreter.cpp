@@ -42,6 +42,10 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::INT_SUB:
 	case InstructionId::INT_MULT:
 	case InstructionId::INT_DIV:
+	case InstructionId::FLOAT_ADD:
+	case InstructionId::FLOAT_SUB:
+	case InstructionId::FLOAT_MULT:
+	case InstructionId::FLOAT_DIV:
 	case InstructionId::INT_SDIV:
 	case InstructionId::INT_REM:
 	case InstructionId::INT_SREM:
@@ -91,9 +95,23 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		case InstructionId::INT_SRIGHT:
 			opType = ExprTree::Shr;
 			break;
+		case InstructionId::FLOAT_ADD:
+		case InstructionId::FLOAT_SUB:
+			opType = ExprTree::fAdd;
+			if (m_instr->m_id == InstructionId::FLOAT_SUB) {
+				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1.0, m_instr->m_input1->getSize()), ExprTree::fMul, m_instr->m_input1->getSize());
+			}
+			break;
+		case InstructionId::FLOAT_MULT:
+			opType = ExprTree::fMul;
+			break;
+		case InstructionId::FLOAT_DIV:
+			opType = ExprTree::fDiv;
+			break;
 		}
 
-		auto result = new ExprTree::InstructionOperationalNode(op1, op2, opType, m_instr);
+		bool isFloatingPoint = (InstructionId::FLOAT_ADD >= m_instr->m_id && m_instr->m_id <= InstructionId::FLOAT_DIV);
+		auto result = new ExprTree::InstructionOperationalNode(op1, op2, opType, m_instr, isFloatingPoint);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -130,12 +148,66 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		break;
 	}
 
+	case InstructionId::FLOAT_NEG:
+	{
+		auto expr = requestVarnode(m_instr->m_input0);
+		auto result = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(-1.0, m_instr->m_input0->getSize()), ExprTree::fMul, m_instr, true);
+		m_ctx->setVarnode(m_instr->m_output, result);
+		break;
+	}
+
+	case InstructionId::FLOAT_ABS:
+	case InstructionId::FLOAT_SQRT:
+	case InstructionId::FLOAT_NAN:
+	case InstructionId::INT2FLOAT:
+	case InstructionId::FLOAT2FLOAT:
+	case InstructionId::TRUNC:
+	case InstructionId::CEIL:
+	case InstructionId::FLOOR:
+	case InstructionId::ROUND:
+	{
+		auto expr = requestVarnode(m_instr->m_input0);
+		auto id = ExprTree::FloatFunctionalNode::Id::FABS;
+		switch (m_instr->m_id)
+		{
+		case InstructionId::FLOAT_SQRT:
+			id = ExprTree::FloatFunctionalNode::Id::FSQRT;
+			break;
+		case InstructionId::FLOAT_NAN:
+			id = ExprTree::FloatFunctionalNode::Id::FNAN;
+			break;
+		case InstructionId::INT2FLOAT:
+		case InstructionId::FLOAT2FLOAT:
+			id = ExprTree::FloatFunctionalNode::Id::TOFLOAT;
+			break;
+		case InstructionId::TRUNC:
+			id = ExprTree::FloatFunctionalNode::Id::TRUNC;
+			break;
+		case InstructionId::CEIL:
+			id = ExprTree::FloatFunctionalNode::Id::CEIL;
+			break;
+		case InstructionId::FLOOR:
+			id = ExprTree::FloatFunctionalNode::Id::FLOOR;
+			break;
+		case InstructionId::ROUND:
+			id = ExprTree::FloatFunctionalNode::Id::ROUND;
+			break;
+		}
+
+		m_ctx->setVarnode(m_instr->m_output, new ExprTree::FloatFunctionalNode(expr, id, m_instr->m_input0->getSize()));
+		break;
+	}
+
 	case InstructionId::INT_EQUAL:
 	case InstructionId::INT_NOTEQUAL:
 	case InstructionId::INT_SLESS:
 	case InstructionId::INT_SLESSEQUAL:
 	case InstructionId::INT_LESS:
 	case InstructionId::INT_LESSEQUAL:
+	case InstructionId::FLOAT_EQUAL:
+	case InstructionId::FLOAT_NOTEQUAL:
+	case InstructionId::FLOAT_LESS:
+	case InstructionId::FLOAT_LESSEQUAL:
 	{
 		auto op1 = requestVarnode(m_instr->m_input0);
 		auto op2 = requestVarnode(m_instr->m_input1);
@@ -143,22 +215,27 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		switch (m_instr->m_id)
 		{
 		case InstructionId::INT_EQUAL:
+		case InstructionId::FLOAT_EQUAL:
 			condType = ExprTree::Condition::Eq;
 			break;
 		case InstructionId::INT_NOTEQUAL:
+		case InstructionId::FLOAT_NOTEQUAL:
 			condType = ExprTree::Condition::Ne;
 			break;
 		case InstructionId::INT_LESS:
 		case InstructionId::INT_SLESS:
+		case InstructionId::FLOAT_LESS:
 			condType = ExprTree::Condition::Lt;
 			break;
 		case InstructionId::INT_LESSEQUAL:
 		case InstructionId::INT_SLESSEQUAL:
+		case InstructionId::FLOAT_LESSEQUAL:
 			condType = ExprTree::Condition::Le;
 			break;
 		}
 
-		auto result = new ExprTree::Condition(op1, op2, condType);
+		bool isFloatingPoint = (InstructionId::FLOAT_EQUAL >= m_instr->m_id && m_instr->m_id <= InstructionId::FLOAT_LESSEQUAL);
+		auto result = new ExprTree::Condition(op1, op2, condType, isFloatingPoint);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}

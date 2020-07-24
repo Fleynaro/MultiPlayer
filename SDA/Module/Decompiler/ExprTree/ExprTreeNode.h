@@ -11,6 +11,12 @@ namespace CE::Decompiler::ExprTree
 		virtual void replaceNode(Node* node, Node * newNode) = 0;
 	};
 
+	class IFloatingPoint
+	{
+	public:
+		virtual bool IsFloatingPoint() = 0;
+	};
+
 	class Node
 	{
 	public:

@@ -15,7 +15,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class Condition : public ICondition
+	class Condition : public ICondition, public IFloatingPoint
 	{
 	public:
 		enum ConditionType
@@ -46,8 +46,8 @@ namespace CE::Decompiler::ExprTree
 		Node* m_rightNode;
 		ConditionType m_cond;
 
-		Condition(Node* leftNode, Node* rightNode, ConditionType cond)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond)
+		Condition(Node* leftNode, Node* rightNode, ConditionType cond, bool isFloatingPoint = false)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond), m_isFloatingPoint(isFloatingPoint)
 		{
 			leftNode->addParentNode(this);
 			rightNode->addParentNode(this);
@@ -71,6 +71,10 @@ namespace CE::Decompiler::ExprTree
 
 		ICondition* clone() override {
 			return new Condition(m_leftNode, m_rightNode, m_cond);
+		}
+
+		bool IsFloatingPoint() override {
+			return m_isFloatingPoint;
 		}
 
 		void inverse() override {
@@ -102,6 +106,9 @@ namespace CE::Decompiler::ExprTree
 				return "";
 			return m_updateDebugInfo = ("(" + m_leftNode->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightNode->printDebug() + ")");
 		}
+
+	private:
+		bool m_isFloatingPoint;
 	};
 
 	class CompositeCondition : public ICondition
