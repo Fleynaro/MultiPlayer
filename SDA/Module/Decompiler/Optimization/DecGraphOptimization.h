@@ -154,33 +154,47 @@ namespace CE::Decompiler::Optimization
 		return IsMemLocIntersected(writeValueNode1, writeValueNode2);
 	}
 
-	static bool DoesLineHavePathToOtherLine(std::list<SeqLine*>::iterator lineIt, std::list<SeqLine*>& lines, bool isTop = true) {
+	static bool DoesLineHavePathToOtherLine(std::list<SeqLine*>::iterator lineIt, std::list<SeqLine*>& lines, std::list<SeqLine*>& pushedOutLines, bool isTop = true) {
 		if (!isTop && lineIt == prev(lines.end()))
 			return false;
 		while (lineIt != (isTop ? prev(prev(lines.end())) : prev(lines.end()))) {
 			auto curLineIt = lineIt;
 			auto nextLineIt = ++lineIt;
 
-			if (AreSeqLinesInterconnected(*curLineIt, *nextLineIt) && !DoesLineHavePathToOtherLine(nextLineIt, lines, false))
+			if (AreSeqLinesInterconnected(*curLineIt, *nextLineIt) && !DoesLineHavePathToOtherLine(nextLineIt, lines, pushedOutLines, false))
 				return false;
+			//move wall further
 			std::iter_swap(curLineIt, nextLineIt);
 		}
 		if (!isTop) {
+			pushedOutLines.push_back(*std::prev(lines.end()));
 			lines.pop_back();
 		}
 		return true;
 	}
 
-	static bool DoesLineHavePathToOtherLine(std::list<SeqLine*>::iterator lineIt1, std::list<SeqLine*>::iterator lineIt2) {
+	static bool DoesLineHavePathToOtherLine(SeqLine* firstSeqLine, std::list<SeqLine*>::iterator lineIt1, std::list<SeqLine*>::iterator lineIt2, std::list<SeqLine*>& pushedOutLines) {
 		std::list<SeqLine*> lines;
+		lines.push_back(firstSeqLine);
 		for (auto it = lineIt1; it != std::next(lineIt2); it++) {
 			Node::UpdateDebugInfo((*it)->m_destAddr);
 			Node::UpdateDebugInfo((*it)->m_srcValue);
 			lines.push_back(*it);
 		}
 
-		auto result = DoesLineHavePathToOtherLine(lines.begin(), lines);
+		auto result = DoesLineHavePathToOtherLine(lines.begin(), lines, pushedOutLines);
 		return result;
+	}
+
+	static void GetConstantParentsOfNode(Node* node, std::list<IParentNode*>& parentNodes) {
+		for (auto it : node->getParentNodes()) {
+			if (auto parentNode = dynamic_cast<Node*>(it)) {
+				GetConstantParentsOfNode(parentNode, parentNodes);
+			}
+			if (dynamic_cast<SeqLine*>(it) || dynamic_cast<SymbolAssignmentLine*>(it) || dynamic_cast<Block*>(it)) {
+				parentNodes.push_back(it);
+			}
+		}
 	}
 
 	static void OptimizeSeqLinesOrderInDecompiledGraph(DecompiledCodeGraph* decGraph) {
@@ -189,31 +203,60 @@ namespace CE::Decompiler::Optimization
 				if (auto memSymbolLeaf = dynamic_cast<SymbolLeaf*>((*it1)->m_destAddr)) {
 					if (auto memVariable = dynamic_cast<Symbol::MemoryVariable*>(memSymbolLeaf->m_symbol))
 					{
-						//std::list<std::list<SeqLine*>::iterator> - найти все строки, где юзается символ
-
-						/*
-						//сделать копию первичного дерева
-						bool isRemove = true;
-						for (auto it2 = std::next(it1); it2 != decBlock->getSeqLines().end(); it2++) {
-							std::list<SymbolLeaf*> symbolLeafs;
-							GetMemoryVariableSymbolLeafs(*it2, memVariable, symbolLeafs);
-							if (!symbolLeafs.empty()) {
-								isRemove = false;
-								if (!DoesLineHavePathToOtherLine(it1, it2))
-									break;
-								for (auto symbolLeaf : symbolLeafs) {
-									symbolLeaf->replaceWith((*it1)->m_srcValue);
-									delete symbolLeaf;
+						std::list<IParentNode*> parentNodes;
+						std::list<SeqLine*> seqLinesWithMemVar;
+						GetConstantParentsOfNode(memSymbolLeaf, parentNodes);
+						for (auto parentNode : parentNodes) {
+							if (auto seqLineWithMemVar = dynamic_cast<SeqLine*>(parentNode)) {
+								if (seqLineWithMemVar->m_block == decBlock && seqLineWithMemVar != *it1) {
+									seqLinesWithMemVar.push_back(seqLineWithMemVar);
 								}
-								std::move(it1, it1, std::next(it2));
 							}
 						}
 
-						if (isRemove) {
-							decBlock->getSeqLines().erase(it1);
-							delete* it1;
+						if (seqLinesWithMemVar.size() == parentNodes.size() - 1)
+						{
+							std::list<std::pair<std::list<SeqLine*>::iterator, std::list<SeqLine*>>> pushedOutlines;
+
+							bool isRemove = true;
+							auto curNextSeqLineIt = std::next(it1);
+							for (auto it2 = std::next(it1); it2 != decBlock->getSeqLines().end() && !seqLinesWithMemVar.empty(); it2++) {
+								bool isSuit = false;
+								for (auto seqLineIt = seqLinesWithMemVar.begin(); seqLineIt != seqLinesWithMemVar.end(); seqLineIt++) {
+									if (*it2 == *seqLineIt) {
+										isSuit = true;
+										seqLinesWithMemVar.erase(seqLineIt);
+										break;
+									}
+								}
+
+								if (isSuit) {
+									std::list<SeqLine*> pushedOutLines_;
+									if (!DoesLineHavePathToOtherLine(*it1, curNextSeqLineIt, it2, pushedOutLines_)) {
+										isRemove = false;
+										break;
+									}
+									if (!pushedOutLines_.empty()) {
+										pushedOutlines.push_back(std::pair(it2, pushedOutLines_));
+									}
+									curNextSeqLineIt = std::next(it2);
+								}
+							}
+
+							if (isRemove) {
+								for (auto it : pushedOutlines) {
+									auto boundLineIt = it.first;
+									for (auto pushedOutline : it.second) {
+										decBlock->getSeqLines().remove(pushedOutline);
+										boundLineIt = decBlock->getSeqLines().insert(std::next(boundLineIt), pushedOutline);
+									}
+								}
+
+								memSymbolLeaf->replaceWith((*it1)->m_srcValue);
+								decBlock->getSeqLines().erase(it1);
+								delete* it1;
+							}
 						}
-						*/
 					}
 				}
 			}

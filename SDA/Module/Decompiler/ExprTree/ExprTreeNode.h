@@ -59,6 +59,10 @@ namespace CE::Decompiler::ExprTree
 			m_parentNodes.remove(node);
 		}
 
+		std::list<IParentNode*>& getParentNodes() {
+			return m_parentNodes;
+		}
+
 		virtual bool isLeaf() {
 			return false;
 		}

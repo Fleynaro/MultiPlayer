@@ -4,15 +4,17 @@
 
 namespace CE::Decompiler::PrimaryTree
 {
+	class Block;
 	template<typename T = ExprTree::Node>
 	class Line : public ExprTree::IParentNode
 	{
 	public:
 		T* m_destAddr;
 		ExprTree::Node* m_srcValue;
+		Block* m_block;
 
-		Line(T* destAddr, ExprTree::Node* srcValue)
-			: m_destAddr(destAddr), m_srcValue(srcValue)
+		Line(T* destAddr, ExprTree::Node* srcValue, Block* block)
+			: m_destAddr(destAddr), m_srcValue(srcValue), m_block(block)
 		{
 			destAddr->addParentNode(this);
 			srcValue->addParentNode(this);
@@ -20,9 +22,9 @@ namespace CE::Decompiler::PrimaryTree
 
 		~Line() {
 			if (m_destAddr)
-				delete m_destAddr;
+				m_destAddr->removeBy(this);
 			if (m_srcValue)
-				delete m_srcValue;
+				m_srcValue->removeBy(this);
 		}
 
 		void replaceNode(ExprTree::Node* node, ExprTree::Node * newNode) override {
@@ -112,7 +114,7 @@ namespace CE::Decompiler::PrimaryTree
 		}
 
 		void addSeqLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue) {
-			m_seqLines.push_back(new SeqLine(destAddr, srcValue));
+			m_seqLines.push_back(new SeqLine(destAddr, srcValue, this));
 		}
 
 		std::list<SeqLine*>& getSeqLines() {
@@ -120,7 +122,7 @@ namespace CE::Decompiler::PrimaryTree
 		}
 
 		void addSymbolAssignmentLine(ExprTree::SymbolLeaf* symbolLeaf, ExprTree::Node* srcValue) {
-			m_symbolAssignmentLines.push_back(new SymbolAssignmentLine(symbolLeaf, srcValue));
+			m_symbolAssignmentLines.push_back(new SymbolAssignmentLine(symbolLeaf, srcValue, this));
 		}
 
 		std::list<SymbolAssignmentLine*>& getSymbolAssignmentLines() {
