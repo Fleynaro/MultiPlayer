@@ -277,12 +277,13 @@ namespace CE::Decompiler::ExprTree
 			CEIL,
 			FLOOR,
 			ROUND,
-			TOFLOAT
+			TOFLOAT,
+			TOINT
 		};
 		Id m_funcId;
 
 		FloatFunctionalNode(Node* node1, Id id, int size)
-			: OperationalNode(node1, nullptr, fFunctional, GetMaskBySize(size), true, true), m_funcId(id), m_size(size)
+			: OperationalNode(node1, nullptr, fFunctional, GetMaskBySize(size), true, id != Id::TOINT), m_funcId(id), m_size(size)
 		{}
 
 		int getSize() {

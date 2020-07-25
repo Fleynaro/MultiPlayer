@@ -75,12 +75,163 @@ namespace CE::Decompiler::PCode
 			switch (mnemonic)
 			{
 			case ZYDIS_MNEMONIC_CVTDQ2PD:
+			case ZYDIS_MNEMONIC_CVTDQ2PS:
+			case ZYDIS_MNEMONIC_CVTPD2DQ:
+			case ZYDIS_MNEMONIC_CVTPD2PI:
+			case ZYDIS_MNEMONIC_CVTPD2PS:
+			case ZYDIS_MNEMONIC_CVTPI2PD:
+			case ZYDIS_MNEMONIC_CVTPI2PS:
+			case ZYDIS_MNEMONIC_CVTPS2DQ:
+			case ZYDIS_MNEMONIC_CVTPS2PD:
+			case ZYDIS_MNEMONIC_CVTPS2PI:
+			case ZYDIS_MNEMONIC_CVTSD2SI:
+			case ZYDIS_MNEMONIC_CVTSD2SS:
+			case ZYDIS_MNEMONIC_CVTSI2SD:
+			case ZYDIS_MNEMONIC_CVTSI2SS:
+			case ZYDIS_MNEMONIC_CVTSS2SD:
+			case ZYDIS_MNEMONIC_CVTSS2SI:
+			case ZYDIS_MNEMONIC_CVTTPD2DQ:
+			case ZYDIS_MNEMONIC_CVTTPD2PI:
+			case ZYDIS_MNEMONIC_CVTTPS2DQ:
+			case ZYDIS_MNEMONIC_CVTTPS2PI:
+			case ZYDIS_MNEMONIC_CVTTSD2SI:
+			case ZYDIS_MNEMONIC_CVTTSS2SI:
 			{
+				InstructionId instrId;
+				int dstSize;
+				int srcSize;
+				int maxSize = size;
+
+				switch (mnemonic)
+				{
+				case ZYDIS_MNEMONIC_CVTDQ2PD:
+					instrId = InstructionId::INT2FLOAT;
+					dstSize = 0x8;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTDQ2PS:
+					instrId = InstructionId::INT2FLOAT;
+					dstSize = 0x4;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTPD2DQ:
+				case ZYDIS_MNEMONIC_CVTTPD2DQ:
+					instrId = InstructionId::FLOAT2INT;
+					dstSize = 0x4;
+					srcSize = 0x8;
+					break;
+				case ZYDIS_MNEMONIC_CVTPD2PI:
+					instrId = InstructionId::FLOAT2INT;
+					dstSize = 0x4;
+					srcSize = 0x8;
+					break;
+				case ZYDIS_MNEMONIC_CVTPD2PS:
+					instrId = InstructionId::FLOAT2FLOAT;
+					dstSize = 0x4;
+					srcSize = 0x8;
+					break;
+				case ZYDIS_MNEMONIC_CVTPI2PD:
+					instrId = InstructionId::INT2FLOAT;
+					dstSize = 0x8;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTPI2PS:
+					instrId = InstructionId::INT2FLOAT;
+					dstSize = 0x4;
+					srcSize = 0x0;
+					break;
+				case ZYDIS_MNEMONIC_CVTPS2DQ:
+				case ZYDIS_MNEMONIC_CVTTPS2DQ:
+					instrId = InstructionId::FLOAT2INT;
+					dstSize = 0x4;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTPS2PD:
+					instrId = InstructionId::FLOAT2FLOAT;
+					dstSize = 0x8;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTPS2PI:
+					instrId = InstructionId::ROUND;
+					dstSize = 0x4;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTSD2SI:
+					instrId = InstructionId::ROUND;
+					dstSize = size;
+					srcSize = 0x8;
+					break;
+				case ZYDIS_MNEMONIC_CVTSD2SS:
+					instrId = InstructionId::INT2FLOAT;
+					maxSize = 0x4;
+					dstSize = 0x4;
+					srcSize = 0x8;
+					break;
+				case ZYDIS_MNEMONIC_CVTSI2SS:
+				case ZYDIS_MNEMONIC_CVTSI2SD:
+					instrId = InstructionId::INT2FLOAT;
+					maxSize = 0x4;
+					dstSize = 0x4;
+					srcSize = size;
+					break;
+				case ZYDIS_MNEMONIC_CVTSS2SD:
+					instrId = InstructionId::FLOAT2FLOAT;
+					maxSize = 0x8;
+					dstSize = 0x8;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTSS2SI:
+					instrId = InstructionId::ROUND;
+					dstSize = size;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTTPD2PI:
+					instrId = InstructionId::FLOAT2INT;
+					dstSize = 0x4;
+					srcSize = 0x8;
+					break;
+				case ZYDIS_MNEMONIC_CVTTPS2PI:
+					instrId = InstructionId::FLOAT2INT;
+					dstSize = 0x4;
+					srcSize = 0x4;
+					break;
+				case ZYDIS_MNEMONIC_CVTTSD2SI:
+					instrId = InstructionId::FLOAT2INT;
+					dstSize = size;
+					srcSize = 0x8;
+					break;
+				case ZYDIS_MNEMONIC_CVTTSS2SI:
+					instrId = InstructionId::FLOAT2INT;
+					dstSize = size;
+					srcSize = 0x4;
+					break;
+				}
+				
+				int offset = 0;
+				int offset2 = 0;
+				auto& dstOperand = m_curInstr->operands[0];
 				auto& srcOperand = m_curInstr->operands[1];
-				auto srcOpVarnode1 = requestOperandValue(srcOperand, 0x4, 0);
-				auto srcOpVarnode2 = requestOperandValue(srcOperand, 0x4, 4);
-				addGenericOperation(InstructionId::INT2FLOAT, srcOpVarnode1, nullptr, nullptr, false, 0x8, 0);
-				addGenericOperation(InstructionId::INT2FLOAT, srcOpVarnode2, nullptr, nullptr, false, 0x8, 8);
+				while (offset < maxSize) {
+					auto srcOpVarnode = requestOperandValue(srcOperand, srcSize, offset);
+					auto varnodeRegOutput = CreateVarnode(dstOperand.reg.value, dstSize, offset);
+					if (!varnodeRegOutput->m_register.m_isVector) {
+						//all float values store in vector registers then need cast when moving to non-vector register
+						auto varnodeOutput = new SymbolVarnode(size);
+						addMicroInstruction(instrId, srcOpVarnode, nullptr, varnodeOutput);
+						addMicroInstruction(InstructionId::FLOAT2INT, varnodeOutput, nullptr, varnodeRegOutput);
+					}
+					else {
+						addMicroInstruction(instrId, srcOpVarnode, nullptr, varnodeRegOutput);
+					}
+					offset += max(dstSize, srcSize);
+					offset2 += srcSize;
+				}
+
+				while (offset2 < maxSize) {
+					auto varnodeRegOutput = CreateVarnode(dstOperand.reg.value, dstSize, offset);
+					addMicroInstruction(InstructionId::COPY, new ConstantVarnode(0x0, dstSize), nullptr, varnodeRegOutput);
+					offset2 += srcSize;
+				}
 				break;
 			}
 
@@ -108,28 +259,14 @@ namespace CE::Decompiler::PCode
 				break;
 			}
 
-			case ZYDIS_MNEMONIC_MOVUPS:
+			//mov
+			case ZYDIS_MNEMONIC_MOVAPD:
 			case ZYDIS_MNEMONIC_MOVAPS:
-			{
-				auto& srcOperand = m_curInstr->operands[1];
-				auto srcOpVarnode1 = requestOperandValue(srcOperand, 0x4, 0);
-				auto srcOpVarnode2 = requestOperandValue(srcOperand, 0x4, 4);
-				auto srcOpVarnode3 = requestOperandValue(srcOperand, 0x4, 8);
-				auto srcOpVarnode4 = requestOperandValue(srcOperand, 0x4, 12);
-				addGenericOperation(InstructionId::COPY, srcOpVarnode1, nullptr, nullptr, false, 0x4, 0);
-				addGenericOperation(InstructionId::COPY, srcOpVarnode2, nullptr, nullptr, false, 0x4, 4);
-				addGenericOperation(InstructionId::COPY, srcOpVarnode3, nullptr, nullptr, false, 0x4, 8);
-				addGenericOperation(InstructionId::COPY, srcOpVarnode4, nullptr, nullptr, false, 0x4, 12);
-				break;
-			}
-
-			case ZYDIS_MNEMONIC_BLENDPS:
+			case ZYDIS_MNEMONIC_MOVUPD:
+			case ZYDIS_MNEMONIC_MOVUPS:
+			//blend
 			case ZYDIS_MNEMONIC_BLENDPD:
-			{
-				
-				break;
-			}
-
+			case ZYDIS_MNEMONIC_BLENDPS:
 			//addsub
 			case ZYDIS_MNEMONIC_ADDSUBPD:
 			case ZYDIS_MNEMONIC_ADDSUBPS:
@@ -180,23 +317,35 @@ namespace CE::Decompiler::PCode
 				};
 				OperationSize operationSize;
 				InstructionId instrId1;
-				InstructionId instrId2;
+				InstructionId instrId2 = InstructionId::NONE;
 				bool isNegate = false;
+				bool isExt = false;
 				int shuffOp1[4] = { 0, 1, 2, 3 };
 				int shuffOp2[4] = { 0, 1, 2, 3 };
 
-				if (ZYDIS_MNEMONIC_ADDSUBPD <= mnemonic <= ZYDIS_MNEMONIC_ADDSUBPS) {
+				if (ZYDIS_MNEMONIC_MOVUPD <= mnemonic <= ZYDIS_MNEMONIC_MOVUPS || ZYDIS_MNEMONIC_MOVAPD <= mnemonic <= ZYDIS_MNEMONIC_MOVAPS) {
+					instrId1 = InstructionId::COPY;
+				}
+				else if (ZYDIS_MNEMONIC_BLENDPD <= mnemonic <= ZYDIS_MNEMONIC_BLENDPS) {
+					instrId1 = InstructionId::COPY;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_BLENDPS - mnemonic);
+					auto& infoOperand = m_curInstr->operands[2];
+					for (int i = 0; i < 4; i++) {
+						shuffOp2[i] = ((infoOperand.imm.value.u >> i) & 0b1) ? shuffOp2[i] : -1;
+					}
+				}
+				else if (ZYDIS_MNEMONIC_ADDSUBPD <= mnemonic <= ZYDIS_MNEMONIC_ADDSUBPS) {
 					instrId1 = InstructionId::FLOAT_SUB;
 					instrId2 = InstructionId::FLOAT_ADD;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_ADDSUBPS - mnemonic);
 				}
 				else if (ZYDIS_MNEMONIC_HADDPD <= mnemonic <= ZYDIS_MNEMONIC_HADDPS || ZYDIS_MNEMONIC_HSUBPD <= mnemonic <= ZYDIS_MNEMONIC_HSUBPS) {
 					if(ZYDIS_MNEMONIC_HADDPD <= mnemonic <= ZYDIS_MNEMONIC_HADDPS) {
-						instrId1 = instrId2 = InstructionId::INT_ADD;
+						instrId1 = InstructionId::INT_ADD;
 						operationSize = OperationSize(ZYDIS_MNEMONIC_HADDPS - mnemonic);
 					}
 					else {
-						instrId1 = instrId2 = InstructionId::INT_SUB;
+						instrId1 = InstructionId::INT_SUB;
 						operationSize = OperationSize(ZYDIS_MNEMONIC_HSUBPS - mnemonic);
 					}
 					
@@ -212,91 +361,84 @@ namespace CE::Decompiler::PCode
 					}
 				}
 				else if (ZYDIS_MNEMONIC_HSUBPD <= mnemonic <= ZYDIS_MNEMONIC_HSUBPS) {
-					instrId1 = instrId2 = InstructionId::INT_ADD;
+					instrId1 = InstructionId::INT_ADD;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_HSUBPS - mnemonic);
 				}
 				else if (ZYDIS_MNEMONIC_ADDPD <= mnemonic <= ZYDIS_MNEMONIC_ADDSS) {
-					instrId1 = instrId2 = InstructionId::FLOAT_ADD;
+					instrId1 = InstructionId::FLOAT_ADD;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_ADDSS - mnemonic);
 				}
 				else if (ZYDIS_MNEMONIC_SUBPD <= mnemonic <= ZYDIS_MNEMONIC_SUBSS) {
-					instrId1 = instrId2 = InstructionId::FLOAT_SUB;
+					instrId1 = InstructionId::FLOAT_SUB;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_SUBSS - mnemonic);
 				}
 				else if (ZYDIS_MNEMONIC_MULPD <= mnemonic <= ZYDIS_MNEMONIC_MULSS) {
-					instrId1 = instrId2 = InstructionId::FLOAT_MULT;
+					instrId1 = InstructionId::FLOAT_MULT;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_MULSS - mnemonic);
 				}
 				else if (ZYDIS_MNEMONIC_DIVPD <= mnemonic <= ZYDIS_MNEMONIC_DIVSS) {
-					instrId1 = instrId2 = InstructionId::FLOAT_DIV;
+					instrId1 = InstructionId::FLOAT_DIV;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_DIVSS - mnemonic);
 				}
 				else if (ZYDIS_MNEMONIC_ANDPD <= mnemonic <= ZYDIS_MNEMONIC_ANDPS) {
-					instrId1 = instrId2 = InstructionId::INT_AND;
+					instrId1 = InstructionId::INT_AND;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_ANDPS - mnemonic);
 				}
 				else if (ZYDIS_MNEMONIC_ANDNPD <= mnemonic <= ZYDIS_MNEMONIC_ANDNPS) {
-					instrId1 = instrId2 = InstructionId::INT_AND;
+					instrId1 = InstructionId::INT_AND;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_ANDNPS - mnemonic);
 					isNegate = true;
 				}
 				else if (ZYDIS_MNEMONIC_ORPD <= mnemonic <= ZYDIS_MNEMONIC_ORPS) {
-					instrId1 = instrId2 = InstructionId::INT_OR;
+					instrId1 = InstructionId::INT_OR;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_ORPS - mnemonic);
 				}
 				else if (ZYDIS_MNEMONIC_XORPD <= mnemonic <= ZYDIS_MNEMONIC_XORPS) {
-					instrId1 = instrId2 = InstructionId::INT_XOR;
+					instrId1 = InstructionId::INT_XOR;
 					operationSize = OperationSize(ZYDIS_MNEMONIC_XORPS - mnemonic);
+				}
+
+				if (instrId2 == InstructionId::NONE) {
+					instrId2 = instrId1;
 				}
 
 				switch(operationSize)
 				{
 				case OperationSize::PS:
-				{
-					PCode::Varnode* dstOpVarnode[4];
-					PCode::Varnode* srcOpVarnode[4];
-
-					auto& dstOperand = m_curInstr->operands[0];
-					dstOpVarnode[0] = requestOperandValue(dstOperand, 0x4, 0);
-					dstOpVarnode[1] = requestOperandValue(dstOperand, 0x4, 4);
-					dstOpVarnode[2] = requestOperandValue(dstOperand, 0x4, 8);
-					dstOpVarnode[3] = requestOperandValue(dstOperand, 0x4, 12);
-					auto& srcOperand = m_curInstr->operands[1];
-					srcOpVarnode[0] = requestOperandValue(srcOperand, 0x4, 0);
-					srcOpVarnode[1] = requestOperandValue(srcOperand, 0x4, 4);
-					srcOpVarnode[2] = requestOperandValue(srcOperand, 0x4, 8);
-					srcOpVarnode[3] = requestOperandValue(srcOperand, 0x4, 12);
-
-					if (isNegate) {
-						dstOpVarnode[0] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[0], nullptr);
-						dstOpVarnode[1] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[1], nullptr);
-						dstOpVarnode[2] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[2], nullptr);
-						dstOpVarnode[3] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[3], nullptr);
-					}
-					addGenericOperation(instrId1, dstOpVarnode[shuffOp1[0]], srcOpVarnode[shuffOp2[0]], nullptr, false, 0x4, 0);
-					addGenericOperation(instrId2, dstOpVarnode[shuffOp1[1]], srcOpVarnode[shuffOp2[1]], nullptr, false, 0x4, 4);
-					addGenericOperation(instrId1, dstOpVarnode[shuffOp1[2]], srcOpVarnode[shuffOp2[2]], nullptr, false, 0x4, 8);
-					addGenericOperation(instrId2, dstOpVarnode[shuffOp1[3]], srcOpVarnode[shuffOp2[3]], nullptr, false, 0x4, 12);
-					break;
-				}
 				case OperationSize::PD:
 				{
-					PCode::Varnode* dstOpVarnode[2];
-					PCode::Varnode* srcOpVarnode[2];
+					int maxSize = 0x10;
+					int size = 0x4;
+					if (operationSize == OperationSize::PD)
+						size = 0x8;
+					PCode::Varnode* dstOpVarnode[4];
+					PCode::Varnode* srcOpVarnode[4] = { nullptr, nullptr, nullptr, nullptr };
 
-					auto& dstOperand = m_curInstr->operands[0];
-					dstOpVarnode[0] = requestOperandValue(dstOperand, 0x8, 0);
-					dstOpVarnode[1] = requestOperandValue(dstOperand, 0x8, 8);
+					if (instrId1 != InstructionId::COPY) {
+						auto& dstOperand = m_curInstr->operands[0];
+						for (int i = 0; i < maxSize / size; i++)
+							dstOpVarnode[i] = requestOperandValue(dstOperand, size, size * i);
+					}
+
 					auto& srcOperand = m_curInstr->operands[1];
-					srcOpVarnode[0] = requestOperandValue(srcOperand, 0x8, 0);
-					srcOpVarnode[1] = requestOperandValue(srcOperand, 0x8, 8);
+					for (int i = 0; i < maxSize / size; i++)
+						if (shuffOp2[i] != -1)
+							srcOpVarnode[i] = requestOperandValue(srcOperand, size, size * i);
 
 					if (isNegate) {
-						dstOpVarnode[0] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[0], nullptr);
-						dstOpVarnode[1] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[1], nullptr);
+						for (int i = 0; i < maxSize / size; i++)
+							dstOpVarnode[i] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[i], nullptr);
 					}
-					addGenericOperation(instrId1, dstOpVarnode[0], srcOpVarnode[0], nullptr, false, 0x8, 0);
-					addGenericOperation(instrId2, dstOpVarnode[1], srcOpVarnode[1], nullptr, false, 0x8, 8);
+					for (int i = 0; i < maxSize / size; i++)
+						if (shuffOp2[i] != -1) {
+							auto op1 = dstOpVarnode[shuffOp1[i]];
+							auto op2 = srcOpVarnode[shuffOp2[i]];
+							if (instrId1 != InstructionId::COPY) {
+								op1 = op2;
+								op2 = nullptr;
+							}
+							addGenericOperation(i % 2 ? instrId1 : instrId2, op1, op2, nullptr, false, size, size * i);
+						}
 					break;
 				}
 				case OperationSize::SS:
@@ -1163,22 +1305,22 @@ namespace CE::Decompiler::PCode
 		
 		static Register CreateRegister(ZydisRegister reg) {
 			if (reg >= ZYDIS_REGISTER_AL && reg <= ZYDIS_REGISTER_BL) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AL, 0xFF, false);
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AL, 0xFF);
 			}
 			else if (reg >= ZYDIS_REGISTER_AH && reg <= ZYDIS_REGISTER_BH) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, 0xFF00, false);
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, 0xFF00);
 			}
 			else if (reg >= ZYDIS_REGISTER_SPL && reg <= ZYDIS_REGISTER_R15B) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, 0xFF, false);
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, 0xFF);
 			}
 			else if (reg >= ZYDIS_REGISTER_AX && reg <= ZYDIS_REGISTER_R15W) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AX, 0xFFFF, false);
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AX, 0xFFFF);
 			}
 			else if (reg >= ZYDIS_REGISTER_EAX && reg <= ZYDIS_REGISTER_R15D) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_EAX, 0xFFFFFFFF, false);
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_EAX, 0xFFFFFFFF);
 			}
 			else if (reg >= ZYDIS_REGISTER_RAX && reg <= ZYDIS_REGISTER_R15) {
-				return Register(reg, 0xFFFFFFFFFFFFFFFF, false);
+				return Register(reg, 0xFFFFFFFFFFFFFFFF);
 			}
 			else if (reg >= ZYDIS_REGISTER_IP && reg <= ZYDIS_REGISTER_RIP) {
 				auto mask = 0xFFFFFFFFFFFFFFFF;
@@ -1187,6 +1329,9 @@ namespace CE::Decompiler::PCode
 				if (reg == ZYDIS_REGISTER_IP)
 					mask = 0xFFFF;
 				return Register(reg, mask);
+			}
+			else if (reg >= ZYDIS_REGISTER_MM0 && reg <= ZYDIS_REGISTER_MM7) {
+				return Register(reg, 0xFF, true);
 			}
 			else if (reg >= ZYDIS_REGISTER_XMM0 && reg <= ZYDIS_REGISTER_XMM31) {
 				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_XMM0, 0xFFFF, true);

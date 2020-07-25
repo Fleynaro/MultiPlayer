@@ -194,6 +194,7 @@ namespace CE::Decompiler::PCode
 		FLOAT_LESSEQUAL,
 		//Floating Point Conversion
 		INT2FLOAT,
+		FLOAT2INT,
 		FLOAT2FLOAT,
 		TRUNC,
 		CEIL,

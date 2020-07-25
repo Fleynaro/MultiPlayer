@@ -160,6 +160,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::FLOAT_SQRT:
 	case InstructionId::FLOAT_NAN:
 	case InstructionId::INT2FLOAT:
+	case InstructionId::FLOAT2INT:
 	case InstructionId::FLOAT2FLOAT:
 	case InstructionId::TRUNC:
 	case InstructionId::CEIL:
@@ -179,6 +180,9 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		case InstructionId::INT2FLOAT:
 		case InstructionId::FLOAT2FLOAT:
 			id = ExprTree::FloatFunctionalNode::Id::TOFLOAT;
+			break;
+		case InstructionId::FLOAT2INT:
+			id = ExprTree::FloatFunctionalNode::Id::TOINT;
 			break;
 		case InstructionId::TRUNC:
 			id = ExprTree::FloatFunctionalNode::Id::TRUNC;
