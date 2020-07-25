@@ -84,7 +84,6 @@ namespace CE::Decompiler::PCode
 				break;
 			}
 
-
 			case ZYDIS_MNEMONIC_MOVD:
 			{
 				auto& srcOperand = m_curInstr->operands[1];
@@ -113,14 +112,205 @@ namespace CE::Decompiler::PCode
 			case ZYDIS_MNEMONIC_MOVAPS:
 			{
 				auto& srcOperand = m_curInstr->operands[1];
-				auto srcOpVarnode1 = requestOperandValue(srcOperand, 0x4, 12);
-				auto srcOpVarnode2 = requestOperandValue(srcOperand, 0x4, 8);
-				auto srcOpVarnode3 = requestOperandValue(srcOperand, 0x4, 4);
-				auto srcOpVarnode4 = requestOperandValue(srcOperand, 0x4, 0);
-				addGenericOperation(InstructionId::COPY, srcOpVarnode4, nullptr, nullptr, false, 0x4, 0);
-				addGenericOperation(InstructionId::COPY, srcOpVarnode3, nullptr, nullptr, false, 0x4, 4);
-				addGenericOperation(InstructionId::COPY, srcOpVarnode2, nullptr, nullptr, false, 0x4, 8);
-				addGenericOperation(InstructionId::COPY, srcOpVarnode1, nullptr, nullptr, false, 0x4, 12);
+				auto srcOpVarnode1 = requestOperandValue(srcOperand, 0x4, 0);
+				auto srcOpVarnode2 = requestOperandValue(srcOperand, 0x4, 4);
+				auto srcOpVarnode3 = requestOperandValue(srcOperand, 0x4, 8);
+				auto srcOpVarnode4 = requestOperandValue(srcOperand, 0x4, 12);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode1, nullptr, nullptr, false, 0x4, 0);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode2, nullptr, nullptr, false, 0x4, 4);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode3, nullptr, nullptr, false, 0x4, 8);
+				addGenericOperation(InstructionId::COPY, srcOpVarnode4, nullptr, nullptr, false, 0x4, 12);
+				break;
+			}
+
+			case ZYDIS_MNEMONIC_BLENDPS:
+			case ZYDIS_MNEMONIC_BLENDPD:
+			{
+				
+				break;
+			}
+
+			//addsub
+			case ZYDIS_MNEMONIC_ADDSUBPD:
+			case ZYDIS_MNEMONIC_ADDSUBPS:
+			//hadd
+			case ZYDIS_MNEMONIC_HADDPD:
+			case ZYDIS_MNEMONIC_HADDPS:
+			//hsub
+			case ZYDIS_MNEMONIC_HSUBPD:
+			case ZYDIS_MNEMONIC_HSUBPS:
+			//add
+			case ZYDIS_MNEMONIC_ADDPD:
+			case ZYDIS_MNEMONIC_ADDPS:
+			case ZYDIS_MNEMONIC_ADDSD:
+			case ZYDIS_MNEMONIC_ADDSS:
+			//sub
+			case ZYDIS_MNEMONIC_SUBPD:
+			case ZYDIS_MNEMONIC_SUBPS:
+			case ZYDIS_MNEMONIC_SUBSD:
+			case ZYDIS_MNEMONIC_SUBSS:
+			//mul
+			case ZYDIS_MNEMONIC_MULPD:
+			case ZYDIS_MNEMONIC_MULPS:
+			case ZYDIS_MNEMONIC_MULSD:
+			case ZYDIS_MNEMONIC_MULSS:
+			//div
+			case ZYDIS_MNEMONIC_DIVPD:
+			case ZYDIS_MNEMONIC_DIVPS:
+			case ZYDIS_MNEMONIC_DIVSD:
+			case ZYDIS_MNEMONIC_DIVSS:
+			//and
+			case ZYDIS_MNEMONIC_ANDPD:
+			case ZYDIS_MNEMONIC_ANDPS:
+			//andnot
+			case ZYDIS_MNEMONIC_ANDNPD:
+			case ZYDIS_MNEMONIC_ANDNPS:
+			//or
+			case ZYDIS_MNEMONIC_ORPD:
+			case ZYDIS_MNEMONIC_ORPS:
+			//xor
+			case ZYDIS_MNEMONIC_XORPD:
+			case ZYDIS_MNEMONIC_XORPS:
+			{
+				enum class OperationSize {
+					PD,
+					PS,
+					SD,
+					SS
+				};
+				OperationSize operationSize;
+				InstructionId instrId1;
+				InstructionId instrId2;
+				bool isNegate = false;
+				int shuffOp1[4] = { 0, 1, 2, 3 };
+				int shuffOp2[4] = { 0, 1, 2, 3 };
+
+				if (ZYDIS_MNEMONIC_ADDSUBPD <= mnemonic <= ZYDIS_MNEMONIC_ADDSUBPS) {
+					instrId1 = InstructionId::FLOAT_SUB;
+					instrId2 = InstructionId::FLOAT_ADD;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_ADDSUBPS - mnemonic);
+				}
+				else if (ZYDIS_MNEMONIC_HADDPD <= mnemonic <= ZYDIS_MNEMONIC_HADDPS || ZYDIS_MNEMONIC_HSUBPD <= mnemonic <= ZYDIS_MNEMONIC_HSUBPS) {
+					if(ZYDIS_MNEMONIC_HADDPD <= mnemonic <= ZYDIS_MNEMONIC_HADDPS) {
+						instrId1 = instrId2 = InstructionId::INT_ADD;
+						operationSize = OperationSize(ZYDIS_MNEMONIC_HADDPS - mnemonic);
+					}
+					else {
+						instrId1 = instrId2 = InstructionId::INT_SUB;
+						operationSize = OperationSize(ZYDIS_MNEMONIC_HSUBPS - mnemonic);
+					}
+					
+					if (operationSize == OperationSize::PS) {
+						shuffOp1[0] = shuffOp1[2] = 0;
+						shuffOp1[1] = shuffOp1[3] = 2;
+						shuffOp2[0] = shuffOp2[2] = 1;
+						shuffOp2[1] = shuffOp2[3] = 3;
+					}
+					else {
+						shuffOp1[0] = shuffOp1[1] = 0;
+						shuffOp2[0] = shuffOp2[1] = 1;
+					}
+				}
+				else if (ZYDIS_MNEMONIC_HSUBPD <= mnemonic <= ZYDIS_MNEMONIC_HSUBPS) {
+					instrId1 = instrId2 = InstructionId::INT_ADD;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_HSUBPS - mnemonic);
+				}
+				else if (ZYDIS_MNEMONIC_ADDPD <= mnemonic <= ZYDIS_MNEMONIC_ADDSS) {
+					instrId1 = instrId2 = InstructionId::FLOAT_ADD;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_ADDSS - mnemonic);
+				}
+				else if (ZYDIS_MNEMONIC_SUBPD <= mnemonic <= ZYDIS_MNEMONIC_SUBSS) {
+					instrId1 = instrId2 = InstructionId::FLOAT_SUB;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_SUBSS - mnemonic);
+				}
+				else if (ZYDIS_MNEMONIC_MULPD <= mnemonic <= ZYDIS_MNEMONIC_MULSS) {
+					instrId1 = instrId2 = InstructionId::FLOAT_MULT;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_MULSS - mnemonic);
+				}
+				else if (ZYDIS_MNEMONIC_DIVPD <= mnemonic <= ZYDIS_MNEMONIC_DIVSS) {
+					instrId1 = instrId2 = InstructionId::FLOAT_DIV;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_DIVSS - mnemonic);
+				}
+				else if (ZYDIS_MNEMONIC_ANDPD <= mnemonic <= ZYDIS_MNEMONIC_ANDPS) {
+					instrId1 = instrId2 = InstructionId::INT_AND;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_ANDPS - mnemonic);
+				}
+				else if (ZYDIS_MNEMONIC_ANDNPD <= mnemonic <= ZYDIS_MNEMONIC_ANDNPS) {
+					instrId1 = instrId2 = InstructionId::INT_AND;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_ANDNPS - mnemonic);
+					isNegate = true;
+				}
+				else if (ZYDIS_MNEMONIC_ORPD <= mnemonic <= ZYDIS_MNEMONIC_ORPS) {
+					instrId1 = instrId2 = InstructionId::INT_OR;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_ORPS - mnemonic);
+				}
+				else if (ZYDIS_MNEMONIC_XORPD <= mnemonic <= ZYDIS_MNEMONIC_XORPS) {
+					instrId1 = instrId2 = InstructionId::INT_XOR;
+					operationSize = OperationSize(ZYDIS_MNEMONIC_XORPS - mnemonic);
+				}
+
+				switch(operationSize)
+				{
+				case OperationSize::PS:
+				{
+					PCode::Varnode* dstOpVarnode[4];
+					PCode::Varnode* srcOpVarnode[4];
+
+					auto& dstOperand = m_curInstr->operands[0];
+					dstOpVarnode[0] = requestOperandValue(dstOperand, 0x4, 0);
+					dstOpVarnode[1] = requestOperandValue(dstOperand, 0x4, 4);
+					dstOpVarnode[2] = requestOperandValue(dstOperand, 0x4, 8);
+					dstOpVarnode[3] = requestOperandValue(dstOperand, 0x4, 12);
+					auto& srcOperand = m_curInstr->operands[1];
+					srcOpVarnode[0] = requestOperandValue(srcOperand, 0x4, 0);
+					srcOpVarnode[1] = requestOperandValue(srcOperand, 0x4, 4);
+					srcOpVarnode[2] = requestOperandValue(srcOperand, 0x4, 8);
+					srcOpVarnode[3] = requestOperandValue(srcOperand, 0x4, 12);
+
+					if (isNegate) {
+						dstOpVarnode[0] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[0], nullptr);
+						dstOpVarnode[1] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[1], nullptr);
+						dstOpVarnode[2] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[2], nullptr);
+						dstOpVarnode[3] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[3], nullptr);
+					}
+					addGenericOperation(instrId1, dstOpVarnode[shuffOp1[0]], srcOpVarnode[shuffOp2[0]], nullptr, false, 0x4, 0);
+					addGenericOperation(instrId2, dstOpVarnode[shuffOp1[1]], srcOpVarnode[shuffOp2[1]], nullptr, false, 0x4, 4);
+					addGenericOperation(instrId1, dstOpVarnode[shuffOp1[2]], srcOpVarnode[shuffOp2[2]], nullptr, false, 0x4, 8);
+					addGenericOperation(instrId2, dstOpVarnode[shuffOp1[3]], srcOpVarnode[shuffOp2[3]], nullptr, false, 0x4, 12);
+					break;
+				}
+				case OperationSize::PD:
+				{
+					PCode::Varnode* dstOpVarnode[2];
+					PCode::Varnode* srcOpVarnode[2];
+
+					auto& dstOperand = m_curInstr->operands[0];
+					dstOpVarnode[0] = requestOperandValue(dstOperand, 0x8, 0);
+					dstOpVarnode[1] = requestOperandValue(dstOperand, 0x8, 8);
+					auto& srcOperand = m_curInstr->operands[1];
+					srcOpVarnode[0] = requestOperandValue(srcOperand, 0x8, 0);
+					srcOpVarnode[1] = requestOperandValue(srcOperand, 0x8, 8);
+
+					if (isNegate) {
+						dstOpVarnode[0] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[0], nullptr);
+						dstOpVarnode[1] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[1], nullptr);
+					}
+					addGenericOperation(instrId1, dstOpVarnode[0], srcOpVarnode[0], nullptr, false, 0x8, 0);
+					addGenericOperation(instrId2, dstOpVarnode[1], srcOpVarnode[1], nullptr, false, 0x8, 8);
+					break;
+				}
+				case OperationSize::SS:
+				case OperationSize::SD:
+				{
+					int size = 0x4;
+					if (operationSize == OperationSize::SD)
+						size = 0x8;
+					auto opVarnode1 = requestOperandValue(m_curInstr->operands[0], size);
+					auto opVarnode2 = requestOperandValue(m_curInstr->operands[1], size);
+					addGenericOperation(instrId1, opVarnode1, opVarnode2, nullptr, false, size);
+					break;
+				}
+				}
 				break;
 			}
 
@@ -333,6 +523,7 @@ namespace CE::Decompiler::PCode
 					auto instrId = InstructionId::NONE;
 					switch (mnemonic) {
 					case ZYDIS_MNEMONIC_AND:
+					case ZYDIS_MNEMONIC_ANDN:
 					case ZYDIS_MNEMONIC_TEST:
 						instrId = InstructionId::INT_AND;
 						break;
@@ -342,6 +533,10 @@ namespace CE::Decompiler::PCode
 					case ZYDIS_MNEMONIC_XOR:
 						instrId = InstructionId::INT_XOR;
 						break;
+					}
+
+					if (mnemonic == ZYDIS_MNEMONIC_ANDN) {
+						varnodeInput0 = addGenericOperation(InstructionId::INT_NEGATE, varnodeInput0, nullptr);
 					}
 					addMicroInstruction(InstructionId::COPY, new ConstantVarnode(0x0, size), nullptr, CreateVarnode(ZYDIS_CPUFLAG_CF));
 					addMicroInstruction(InstructionId::COPY, new ConstantVarnode(0x0, size), nullptr, CreateVarnode(ZYDIS_CPUFLAG_OF));
