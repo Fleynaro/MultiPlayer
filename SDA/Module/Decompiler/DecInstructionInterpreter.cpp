@@ -110,8 +110,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			break;
 		}
 
-		bool isFloatingPoint = (InstructionId::FLOAT_ADD >= m_instr->m_id && m_instr->m_id <= InstructionId::FLOAT_DIV);
-		auto result = new ExprTree::InstructionOperationalNode(op1, op2, opType, m_instr, isFloatingPoint);
+		auto result = new ExprTree::InstructionOperationalNode(op1, op2, opType, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -141,7 +140,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
 		auto shiftExpr = requestVarnode(m_instr->m_input1);
-		shiftExpr = new ExprTree::OperationalNode(shiftExpr, new ExprTree::NumberLeaf(0x8), ExprTree::Mul, m_instr->m_input1->getSize());
+		shiftExpr = new ExprTree::OperationalNode(shiftExpr, new ExprTree::NumberLeaf((uint64_t)0x8), ExprTree::Mul, m_instr->m_input1->getSize());
 		expr = new ExprTree::OperationalNode(expr, shiftExpr, ExprTree::Shr, m_instr->m_input0->getSize());
 		expr = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(GetMaskBySize(m_instr->m_output->getSize(), false)), ExprTree::And, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, expr);
@@ -151,7 +150,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::FLOAT_NEG:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		auto result = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(-1.0, m_instr->m_input0->getSize()), ExprTree::fMul, m_instr, true);
+		auto result = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(-1.0, m_instr->m_input0->getSize()), ExprTree::fMul, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -238,7 +237,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			break;
 		}
 
-		bool isFloatingPoint = (InstructionId::FLOAT_EQUAL >= m_instr->m_id && m_instr->m_id <= InstructionId::FLOAT_LESSEQUAL);
+		bool isFloatingPoint = (InstructionId::FLOAT_EQUAL <= m_instr->m_id && m_instr->m_id <= InstructionId::FLOAT_LESSEQUAL);
 		auto result = new ExprTree::Condition(op1, op2, condType, isFloatingPoint);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
@@ -344,7 +343,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		}
 
 		if (dstExpr == nullptr) {
-			dstExpr = new ExprTree::NumberLeaf(0x0);
+			dstExpr = new ExprTree::NumberLeaf((uint64_t)0x0);
 		}
 		m_block->addSeqLine(dstExpr, funcCallCtx);
 		break;

@@ -56,6 +56,10 @@ namespace CE::Decompiler::ExprTree
 		return operation == ReadValue || operation == Cast || operation == Functional;
 	}
 
+	static bool IsOperationFloatingPoint(OperationType operation) {
+		return operation >= fAdd && operation <= fFunctional;
+	}
+
 	static bool IsOperationWithSingleOperand(OperationType operation) {
 		return operation == ReadValue || operation == Cast || operation == Functional;
 	}
@@ -105,8 +109,8 @@ namespace CE::Decompiler::ExprTree
 		OperationType m_operation;
 		bool m_notChangedMask;
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, Mask mask = 0x0, bool notChangedMask = false, bool isFloatingPoint = false)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask), m_isFloatingPoint(isFloatingPoint)
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, Mask mask = 0x0, bool notChangedMask = false)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask)
 		{
 			leftNode->addParentNode(this);
 			if (rightNode != nullptr) {
@@ -114,8 +118,8 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, int size, bool notChangedMask = false, bool isFloatingPoint = false)
-			: OperationalNode(leftNode, rightNode, operation, GetMaskBySize(size), notChangedMask, isFloatingPoint)
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, int size, bool notChangedMask = false)
+			: OperationalNode(leftNode, rightNode, operation, GetMaskBySize(size), notChangedMask)
 		{}
 
 		~OperationalNode() {
@@ -146,7 +150,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		bool IsFloatingPoint() override {
-			return m_isFloatingPoint;
+			return IsOperationFloatingPoint(m_operation);
 		}
 
 		std::string printDebug() override {
@@ -161,16 +165,16 @@ namespace CE::Decompiler::ExprTree
 
 			std::string opSize = "";
 			if (true) {
-				opSize = "."+ std::to_string(GetBitCountOfMask(getMask(), false)) +"";
+				opSize = "."+ std::to_string(GetBitCountOfMask(getMask(), false));
+				if (IsFloatingPoint()) {
+					opSize += "f";
+				}
 			}
 			
 			if(result.empty())
 				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + ""+ opSize +" " + m_rightNode->printDebug() + ")";
 			return (m_updateDebugInfo = result);// + "<" + std::to_string((uint64_t)this % 100000) + ">";
 		}
-
-	private:
-		bool m_isFloatingPoint;
 	};
 
 	class InstructionOperationalNode : public OperationalNode
@@ -178,8 +182,8 @@ namespace CE::Decompiler::ExprTree
 	public:
 		PCode::Instruction* m_instr;
 
-		InstructionOperationalNode(Node* leftNode, Node* rightNode, OperationType operation, PCode::Instruction* instr, bool isFloatingPoint = false)
-			: OperationalNode(leftNode, rightNode, operation, 0, false, isFloatingPoint), m_instr(instr)
+		InstructionOperationalNode(Node* leftNode, Node* rightNode, OperationType operation, PCode::Instruction* instr)
+			: OperationalNode(leftNode, rightNode, operation, 0), m_instr(instr)
 		{}
 
 		Mask getMask() override {
@@ -191,7 +195,7 @@ namespace CE::Decompiler::ExprTree
 	{
 	public:
 		ReadValueNode(Node* node, int size)
-			: OperationalNode(node, new NumberLeaf(size), ReadValue), m_size(size)
+			: OperationalNode(node, new NumberLeaf((uint64_t)size), ReadValue), m_size(size)
 		{}
 
 		Node* getAddress() {
@@ -220,7 +224,7 @@ namespace CE::Decompiler::ExprTree
 	{
 	public:
 		CastNode(Node* node, int size, bool isSigned)
-			: OperationalNode(node, new NumberLeaf(size), Cast), m_size(size), m_isSigned(isSigned)
+			: OperationalNode(node, new NumberLeaf((uint64_t)size), Cast), m_size(size), m_isSigned(isSigned)
 		{}
 
 		Mask getMask() override {
@@ -283,7 +287,7 @@ namespace CE::Decompiler::ExprTree
 		Id m_funcId;
 
 		FloatFunctionalNode(Node* node1, Id id, int size)
-			: OperationalNode(node1, nullptr, fFunctional, GetMaskBySize(size), true, id != Id::TOINT), m_funcId(id), m_size(size)
+			: OperationalNode(node1, nullptr, fFunctional, GetMaskBySize(size), true), m_funcId(id), m_size(size)
 		{}
 
 		int getSize() {
@@ -294,10 +298,14 @@ namespace CE::Decompiler::ExprTree
 			return GetMaskBySize(m_size);
 		}
 
+		bool IsFloatingPoint() override {
+			return m_funcId != Id::TOINT;
+		}
+
 		std::string printDebug() override {
 			if (!m_leftNode || !m_rightNode)
 				return "";
-			return m_updateDebugInfo = (std::string(magic_enum::enum_name(m_funcId)) + "(" + m_leftNode->printDebug() + ", " + m_rightNode->printDebug() + ")");
+			return m_updateDebugInfo = (std::string(magic_enum::enum_name(m_funcId)) + "(" + m_leftNode->printDebug() + ")");
 		}
 
 	private:

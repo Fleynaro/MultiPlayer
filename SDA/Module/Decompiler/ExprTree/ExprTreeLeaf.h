@@ -40,7 +40,7 @@ namespace CE::Decompiler::ExprTree
 			: m_value(value)
 		{}
 
-		NumberLeaf(double value, bool size = 4)
+		NumberLeaf(double value, int size = 4)
 		{
 			if(size == 4)
 				(float&)m_value = (float)value;

@@ -233,7 +233,7 @@ namespace CE::Decompiler
 				}
 			}*/
 
-			auto symbol = new Symbol::LocalVariable(GetBitCountOfMask(needReadMask) / 8);
+			auto symbol = new Symbol::LocalVariable(GetBitCountOfMask(needReadMask) / (regSymbol.isVector ? 1 : 8));
 			auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 			regSymbol.symbols.push_back(std::make_pair(regSymbol.requiestId, symbolLeaf));
 

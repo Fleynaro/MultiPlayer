@@ -58,7 +58,7 @@ namespace CE::Decompiler
 			if (bitShift != 0) {
 				auto bitShift_ = bitShift;
 				if (isVector) bitShift_ *= 8;
-				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(bitShift_), ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
+				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((uint64_t)bitShift_), ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (resultExpr) {

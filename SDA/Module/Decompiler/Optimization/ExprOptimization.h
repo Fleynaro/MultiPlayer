@@ -241,7 +241,7 @@ namespace CE::Decompiler::Optimization
 			if (expr->m_operation != Div && expr->m_operation != Mod) {
 				if (rightNumberLeaf->m_value == 0) {
 					if (expr->m_operation == Mul || expr->m_operation == And) {
-						expr->replaceWith(new NumberLeaf(0));
+						expr->replaceWith(new NumberLeaf((uint64_t)0));
 						delete expr;
 						expr = nullptr;
 					}
@@ -279,7 +279,7 @@ namespace CE::Decompiler::Optimization
 		//[sym1] & [sym1]	=>	 [sym1]
 		if (expr->m_leftNode == expr->m_rightNode) {
 			if (expr->m_operation == Xor) {
-				expr->replaceWith(new NumberLeaf(0));
+				expr->replaceWith(new NumberLeaf((uint64_t)0));
 				delete expr;
 				expr = nullptr;
 				return;
@@ -551,7 +551,7 @@ namespace CE::Decompiler::Optimization
 
 					if (expr->getMask() == 0x0) {
 						//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
-						expr->replaceWith(new NumberLeaf(0));
+						expr->replaceWith(new NumberLeaf((uint64_t)0));
 						delete expr;
 						expr = nullptr;
 						return;

@@ -67,6 +67,17 @@ namespace CE::Decompiler::PCode
 			NA
 		};
 
+		struct VectorOperationGeneratorInfo {
+			int size = 0x0;
+			int maxSize = 0x0;
+			InstructionId instrId1 = InstructionId::NONE;
+			InstructionId instrId2 = InstructionId::NONE;
+			bool isNegate = false;
+			bool isOperationWithSingleOperand = false;
+			int shuffOp1[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+			int shuffOp2[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1 };
+		};
+
 		void translateCurInstruction() {
 			auto mnemonic = m_curInstr->mnemonic;
 			auto size = m_curInstr->operands[0].size / 0x8;
@@ -236,6 +247,7 @@ namespace CE::Decompiler::PCode
 			}
 
 			case ZYDIS_MNEMONIC_MOVD:
+			case ZYDIS_MNEMONIC_MOVSS:
 			{
 				auto& srcOperand = m_curInstr->operands[1];
 				auto srcOpVarnode = requestOperandValue(srcOperand, 0x4, 0x0);
@@ -267,6 +279,9 @@ namespace CE::Decompiler::PCode
 			//blend
 			case ZYDIS_MNEMONIC_BLENDPD:
 			case ZYDIS_MNEMONIC_BLENDPS:
+			//shuff
+			case ZYDIS_MNEMONIC_SHUFPD:
+			case ZYDIS_MNEMONIC_SHUFPS:
 			//addsub
 			case ZYDIS_MNEMONIC_ADDSUBPD:
 			case ZYDIS_MNEMONIC_ADDSUBPS:
@@ -309,6 +324,9 @@ namespace CE::Decompiler::PCode
 			case ZYDIS_MNEMONIC_XORPD:
 			case ZYDIS_MNEMONIC_XORPS:
 			{
+				VectorOperationGeneratorInfo info;
+				info.maxSize = size;
+
 				enum class OperationSize {
 					PD,
 					PS,
@@ -316,143 +334,119 @@ namespace CE::Decompiler::PCode
 					SS
 				};
 				OperationSize operationSize;
-				InstructionId instrId1;
-				InstructionId instrId2 = InstructionId::NONE;
-				bool isNegate = false;
-				bool isExt = false;
-				int shuffOp1[4] = { 0, 1, 2, 3 };
-				int shuffOp2[4] = { 0, 1, 2, 3 };
 
-				if (ZYDIS_MNEMONIC_MOVUPD <= mnemonic <= ZYDIS_MNEMONIC_MOVUPS || ZYDIS_MNEMONIC_MOVAPD <= mnemonic <= ZYDIS_MNEMONIC_MOVAPS) {
-					instrId1 = InstructionId::COPY;
+				if (ZYDIS_MNEMONIC_MOVUPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_MOVUPS) {
+					info.instrId1 = InstructionId::COPY;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_MOVUPD);
 				}
-				else if (ZYDIS_MNEMONIC_BLENDPD <= mnemonic <= ZYDIS_MNEMONIC_BLENDPS) {
-					instrId1 = InstructionId::COPY;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_BLENDPS - mnemonic);
+				else if (ZYDIS_MNEMONIC_MOVAPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_MOVAPS) {
+					info.instrId1 = InstructionId::COPY;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_MOVAPD);
+				}
+				else if (ZYDIS_MNEMONIC_BLENDPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_BLENDPS) {
+					info.instrId1 = InstructionId::COPY;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_BLENDPD);
 					auto& infoOperand = m_curInstr->operands[2];
 					for (int i = 0; i < 4; i++) {
-						shuffOp2[i] = ((infoOperand.imm.value.u >> i) & 0b1) ? shuffOp2[i] : -1;
+						info.shuffOp2[i] = ((infoOperand.imm.value.u >> i) & 0b1) ? info.shuffOp2[i] : -1;
 					}
 				}
-				else if (ZYDIS_MNEMONIC_ADDSUBPD <= mnemonic <= ZYDIS_MNEMONIC_ADDSUBPS) {
-					instrId1 = InstructionId::FLOAT_SUB;
-					instrId2 = InstructionId::FLOAT_ADD;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_ADDSUBPS - mnemonic);
-				}
-				else if (ZYDIS_MNEMONIC_HADDPD <= mnemonic <= ZYDIS_MNEMONIC_HADDPS || ZYDIS_MNEMONIC_HSUBPD <= mnemonic <= ZYDIS_MNEMONIC_HSUBPS) {
-					if(ZYDIS_MNEMONIC_HADDPD <= mnemonic <= ZYDIS_MNEMONIC_HADDPS) {
-						instrId1 = InstructionId::INT_ADD;
-						operationSize = OperationSize(ZYDIS_MNEMONIC_HADDPS - mnemonic);
+				else if (ZYDIS_MNEMONIC_SHUFPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_SHUFPS) {
+					info.instrId1 = InstructionId::COPY;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_SHUFPD);
+					info.isOperationWithSingleOperand = true;
+					auto& infoOperand = m_curInstr->operands[2];
+					if (operationSize == OperationSize::PS) {
+						for (int i = 0; i < 4; i++) {
+							info.shuffOp1[i] = info.shuffOp2[i] = ((infoOperand.imm.value.u >> (i * 2)) & 0b11);
+						}
 					}
 					else {
-						instrId1 = InstructionId::INT_SUB;
-						operationSize = OperationSize(ZYDIS_MNEMONIC_HSUBPS - mnemonic);
+						for (int i = 0; i < 2; i++) {
+							info.shuffOp1[i] = info.shuffOp2[i] = ((infoOperand.imm.value.u >> (i * 1)) & 0b1);
+						}
+					}
+				}
+				else if (ZYDIS_MNEMONIC_ADDSUBPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_ADDSUBPS) {
+					info.instrId1 = InstructionId::FLOAT_SUB;
+					info.instrId2 = InstructionId::FLOAT_ADD;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_ADDSUBPD);
+				}
+				else if (ZYDIS_MNEMONIC_HADDPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_HADDPS || ZYDIS_MNEMONIC_HSUBPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_HSUBPS) {
+					if(ZYDIS_MNEMONIC_HADDPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_HADDPS) {
+						info.instrId1 = InstructionId::INT_ADD;
+						operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_HADDPD);
+					}
+					else {
+						info.instrId1 = InstructionId::INT_SUB;
+						operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_HSUBPD);
 					}
 					
 					if (operationSize == OperationSize::PS) {
-						shuffOp1[0] = shuffOp1[2] = 0;
-						shuffOp1[1] = shuffOp1[3] = 2;
-						shuffOp2[0] = shuffOp2[2] = 1;
-						shuffOp2[1] = shuffOp2[3] = 3;
+						info.shuffOp1[0] = info.shuffOp1[2] = 0;
+						info.shuffOp1[1] = info.shuffOp1[3] = 2;
+						info.shuffOp2[0] = info.shuffOp2[2] = 1;
+						info.shuffOp2[1] = info.shuffOp2[3] = 3;
 					}
 					else {
-						shuffOp1[0] = shuffOp1[1] = 0;
-						shuffOp2[0] = shuffOp2[1] = 1;
+						info.shuffOp1[0] = info.shuffOp1[1] = 0;
+						info.shuffOp2[0] = info.shuffOp2[1] = 1;
 					}
 				}
-				else if (ZYDIS_MNEMONIC_HSUBPD <= mnemonic <= ZYDIS_MNEMONIC_HSUBPS) {
-					instrId1 = InstructionId::INT_ADD;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_HSUBPS - mnemonic);
+				else if (ZYDIS_MNEMONIC_HSUBPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_HSUBPS) {
+					info.instrId1 = InstructionId::INT_ADD;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_HSUBPD);
 				}
-				else if (ZYDIS_MNEMONIC_ADDPD <= mnemonic <= ZYDIS_MNEMONIC_ADDSS) {
-					instrId1 = InstructionId::FLOAT_ADD;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_ADDSS - mnemonic);
+				else if (ZYDIS_MNEMONIC_ADDPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_ADDSS) {
+					info.instrId1 = InstructionId::FLOAT_ADD;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_ADDPD);
 				}
-				else if (ZYDIS_MNEMONIC_SUBPD <= mnemonic <= ZYDIS_MNEMONIC_SUBSS) {
-					instrId1 = InstructionId::FLOAT_SUB;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_SUBSS - mnemonic);
+				else if (ZYDIS_MNEMONIC_SUBPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_SUBSS) {
+					info.instrId1 = InstructionId::FLOAT_SUB;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_SUBPD);
 				}
-				else if (ZYDIS_MNEMONIC_MULPD <= mnemonic <= ZYDIS_MNEMONIC_MULSS) {
-					instrId1 = InstructionId::FLOAT_MULT;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_MULSS - mnemonic);
+				else if (ZYDIS_MNEMONIC_MULPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_MULSS) {
+					info.instrId1 = InstructionId::FLOAT_MULT;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_MULPD);
 				}
-				else if (ZYDIS_MNEMONIC_DIVPD <= mnemonic <= ZYDIS_MNEMONIC_DIVSS) {
-					instrId1 = InstructionId::FLOAT_DIV;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_DIVSS - mnemonic);
+				else if (ZYDIS_MNEMONIC_DIVPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_DIVSS) {
+					info.instrId1 = InstructionId::FLOAT_DIV;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_DIVPD);
 				}
-				else if (ZYDIS_MNEMONIC_ANDPD <= mnemonic <= ZYDIS_MNEMONIC_ANDPS) {
-					instrId1 = InstructionId::INT_AND;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_ANDPS - mnemonic);
+				else if (ZYDIS_MNEMONIC_ANDPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_ANDPS) {
+					info.instrId1 = InstructionId::INT_AND;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_ANDPD);
 				}
-				else if (ZYDIS_MNEMONIC_ANDNPD <= mnemonic <= ZYDIS_MNEMONIC_ANDNPS) {
-					instrId1 = InstructionId::INT_AND;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_ANDNPS - mnemonic);
-					isNegate = true;
+				else if (ZYDIS_MNEMONIC_ANDNPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_ANDNPS) {
+					info.instrId1 = InstructionId::INT_AND;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_ANDNPD);
+					info.isNegate = true;
 				}
-				else if (ZYDIS_MNEMONIC_ORPD <= mnemonic <= ZYDIS_MNEMONIC_ORPS) {
-					instrId1 = InstructionId::INT_OR;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_ORPS - mnemonic);
+				else if (ZYDIS_MNEMONIC_ORPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_ORPS) {
+					info.instrId1 = InstructionId::INT_OR;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_ORPD);
 				}
-				else if (ZYDIS_MNEMONIC_XORPD <= mnemonic <= ZYDIS_MNEMONIC_XORPS) {
-					instrId1 = InstructionId::INT_XOR;
-					operationSize = OperationSize(ZYDIS_MNEMONIC_XORPS - mnemonic);
-				}
-
-				if (instrId2 == InstructionId::NONE) {
-					instrId2 = instrId1;
+				else if (ZYDIS_MNEMONIC_XORPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_XORPS) {
+					info.instrId1 = InstructionId::INT_XOR;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_XORPD);
 				}
 
-				switch(operationSize)
+				switch (operationSize)
 				{
 				case OperationSize::PS:
+					info.size = 0x4;
+					break;
 				case OperationSize::PD:
-				{
-					int maxSize = 0x10;
-					int size = 0x4;
-					if (operationSize == OperationSize::PD)
-						size = 0x8;
-					PCode::Varnode* dstOpVarnode[4];
-					PCode::Varnode* srcOpVarnode[4] = { nullptr, nullptr, nullptr, nullptr };
-
-					if (instrId1 != InstructionId::COPY) {
-						auto& dstOperand = m_curInstr->operands[0];
-						for (int i = 0; i < maxSize / size; i++)
-							dstOpVarnode[i] = requestOperandValue(dstOperand, size, size * i);
-					}
-
-					auto& srcOperand = m_curInstr->operands[1];
-					for (int i = 0; i < maxSize / size; i++)
-						if (shuffOp2[i] != -1)
-							srcOpVarnode[i] = requestOperandValue(srcOperand, size, size * i);
-
-					if (isNegate) {
-						for (int i = 0; i < maxSize / size; i++)
-							dstOpVarnode[i] = addGenericOperation(InstructionId::INT_NEGATE, dstOpVarnode[i], nullptr);
-					}
-					for (int i = 0; i < maxSize / size; i++)
-						if (shuffOp2[i] != -1) {
-							auto op1 = dstOpVarnode[shuffOp1[i]];
-							auto op2 = srcOpVarnode[shuffOp2[i]];
-							if (instrId1 != InstructionId::COPY) {
-								op1 = op2;
-								op2 = nullptr;
-							}
-							addGenericOperation(i % 2 ? instrId1 : instrId2, op1, op2, nullptr, false, size, size * i);
-						}
+					info.size = 0x8;
 					break;
-				}
 				case OperationSize::SS:
+					info.maxSize = info.size = 0x4;
+					break;
 				case OperationSize::SD:
-				{
-					int size = 0x4;
-					if (operationSize == OperationSize::SD)
-						size = 0x8;
-					auto opVarnode1 = requestOperandValue(m_curInstr->operands[0], size);
-					auto opVarnode2 = requestOperandValue(m_curInstr->operands[1], size);
-					addGenericOperation(instrId1, opVarnode1, opVarnode2, nullptr, false, size);
+					info.maxSize = info.size = 0x8;
 					break;
 				}
-				}
+				GenerateVectorOperation(info);
 				break;
 			}
 
@@ -1040,6 +1034,45 @@ namespace CE::Decompiler::PCode
 
 			
 			}
+		}
+
+		void GenerateVectorOperation(const VectorOperationGeneratorInfo& info)
+		{
+			int operationsCount = info.maxSize / info.size;
+			auto instrId2 = info.instrId2;
+			if (instrId2 == InstructionId::NONE) {
+				instrId2 = info.instrId1;
+			}
+
+			auto& dstOperand = m_curInstr->operands[0];
+			auto& srcOperand = m_curInstr->operands[1];
+
+			for (int i = 0; i < operationsCount; i++)
+				if (info.shuffOp2[i] != -1) {
+					int idxOp1 = 0;
+					int idxOp2 = 1;
+					Varnode* ops[2] = { nullptr, nullptr };
+
+					if (info.isOperationWithSingleOperand) {
+						idxOp1 = idxOp2 = (i < operationsCount / 2) ? idxOp1 : idxOp2;
+					}
+					if (info.instrId1 == InstructionId::COPY) {
+						idxOp1 = idxOp2;
+						idxOp2 = -1;
+					}
+
+					if (idxOp1 == 0 || idxOp2 == 0) {
+						ops[0] = requestOperandValue(dstOperand, info.size, info.size * info.shuffOp1[i]);
+					}
+					if (idxOp1 == 1 || idxOp2 == 1) {
+						ops[1] = requestOperandValue(srcOperand, info.size, info.size * info.shuffOp2[i]);
+					}
+
+					if (info.isNegate) {
+						ops[idxOp1] = addGenericOperation(InstructionId::INT_NEGATE, ops[idxOp1], nullptr);
+					}
+					addGenericOperation(i % 2 ? info.instrId1 : instrId2, ops[idxOp1], idxOp2 != -1 ? ops[idxOp2] : nullptr, nullptr, false, info.size, info.size * i);
+				}
 		}
 
 		int64_t getJumpOffsetByOperand(const ZydisDecodedOperand& operand) {
