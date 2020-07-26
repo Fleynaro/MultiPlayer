@@ -141,12 +141,21 @@ namespace CE::Decompiler::Optimization
 			return false;
 		while (lineIt != (isTop ? prev(prev(lines.end())) : prev(lines.end()))) {
 			auto curLineIt = lineIt;
-			auto nextLineIt = ++lineIt;
+			auto nextLineIt = std::next(lineIt);
 
-			if (AreSeqLinesInterconnected(*curLineIt, *nextLineIt) && !DoesLineHavePathToOtherLine(nextLineIt, lines, pushedOutLines, false))
-				return false;
+			bool areSeqLinesInterconnected = AreSeqLinesInterconnected(*curLineIt, *nextLineIt);
+			if (areSeqLinesInterconnected) {
+				if (DoesLineHavePathToOtherLine(nextLineIt, lines, pushedOutLines, false)) {
+					continue;
+				}
+				else {
+					return false;
+				}
+			}
+
 			//move wall further
 			std::iter_swap(curLineIt, nextLineIt);
+			lineIt++;
 		}
 		if (!isTop) {
 			pushedOutLines.push_back(*std::prev(lines.end()));

@@ -450,6 +450,108 @@ namespace CE::Decompiler::PCode
 				break;
 			}
 
+			//add
+			case ZYDIS_MNEMONIC_PADDB:
+			case ZYDIS_MNEMONIC_PADDW:
+			case ZYDIS_MNEMONIC_PADDD:
+			case ZYDIS_MNEMONIC_PADDQ:
+			//sub
+			case ZYDIS_MNEMONIC_PSUBB:
+			case ZYDIS_MNEMONIC_PSUBW:
+			case ZYDIS_MNEMONIC_PSUBD:
+			case ZYDIS_MNEMONIC_PSUBQ:
+			//shuf
+			case ZYDIS_MNEMONIC_PSHUFD:
+			case ZYDIS_MNEMONIC_PSHUFHW:
+			case ZYDIS_MNEMONIC_PSHUFLW:
+			case ZYDIS_MNEMONIC_PSHUFW:
+			{
+				VectorOperationGeneratorInfo info;
+				info.maxSize = size;
+
+				switch (mnemonic)
+				{
+				case ZYDIS_MNEMONIC_PADDB:
+				case ZYDIS_MNEMONIC_PADDW:
+				case ZYDIS_MNEMONIC_PADDD:
+				case ZYDIS_MNEMONIC_PADDQ:
+				{
+					info.instrId1 = InstructionId::INT_ADD;
+					switch (mnemonic)
+					{
+					case ZYDIS_MNEMONIC_PADDB:
+						info.size = 0x1;
+						break;
+					case ZYDIS_MNEMONIC_PADDW:
+						info.size = 0x2;
+						break;
+					case ZYDIS_MNEMONIC_PADDD:
+						info.size = 0x4;
+						break;
+					case ZYDIS_MNEMONIC_PADDQ:
+						info.size = 0x8;
+						break;
+					}
+					break;
+				}
+
+				case ZYDIS_MNEMONIC_PSUBB:
+				case ZYDIS_MNEMONIC_PSUBW:
+				case ZYDIS_MNEMONIC_PSUBD:
+				case ZYDIS_MNEMONIC_PSUBQ:
+				{
+					info.instrId1 = InstructionId::INT_SUB;
+					switch (mnemonic)
+					{
+					case ZYDIS_MNEMONIC_PSUBB:
+						info.size = 0x1;
+						break;
+					case ZYDIS_MNEMONIC_PSUBW:
+						info.size = 0x2;
+						break;
+					case ZYDIS_MNEMONIC_PSUBD:
+						info.size = 0x4;
+						break;
+					case ZYDIS_MNEMONIC_PSUBQ:
+						info.size = 0x8;
+						break;
+					}
+					break;
+				}
+
+				case ZYDIS_MNEMONIC_PSHUFD:
+				case ZYDIS_MNEMONIC_PSHUFHW:
+				case ZYDIS_MNEMONIC_PSHUFLW:
+				case ZYDIS_MNEMONIC_PSHUFW:
+				{
+					info.instrId1 = InstructionId::COPY;
+					auto& infoOperand = m_curInstr->operands[2];
+					int startIdx = 0;
+					switch (mnemonic)
+					{
+					case ZYDIS_MNEMONIC_PSHUFD:
+						info.size = 0x4;
+						break;
+					case ZYDIS_MNEMONIC_PSHUFHW:
+					case ZYDIS_MNEMONIC_PSHUFLW:
+					case ZYDIS_MNEMONIC_PSHUFW:
+						info.size = 0x2;
+						if (mnemonic == ZYDIS_MNEMONIC_PSHUFHW)
+							startIdx = 4;
+						break;
+					}
+
+					for (int i = 0; i < 4; i++) {
+						info.shuffOp1[startIdx + i] = info.shuffOp2[startIdx + i] = startIdx + ((infoOperand.imm.value.u >> (i * 2)) & 0b11);
+					}
+					break;
+				}
+				}
+
+				GenerateVectorOperation(info);
+				break;
+			}
+
 			case ZYDIS_MNEMONIC_XCHG:
 			{
 				Varnode* varnodeInput0 = requestOperandValue(m_curInstr->operands[0], size);
@@ -1188,16 +1290,16 @@ namespace CE::Decompiler::PCode
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);
 						addMicroInstruction(InstructionId::INT_ADD, resultVarnode, dispVarnode, symbolVarnode);
 						resultVarnode = symbolVarnode;
-
-						if (offset > 0) {
-							auto symbolVarnode = new SymbolVarnode(memLocExprSize);
-							addMicroInstruction(InstructionId::INT_ADD, resultVarnode, new ConstantVarnode(offset, memLocExprSize), symbolVarnode);
-							resultVarnode = symbolVarnode;
-						}
 					}
 					else {
 						resultVarnode = dispVarnode;
 					}
+				}
+
+				if (offset > 0) {
+					auto symbolVarnode = new SymbolVarnode(memLocExprSize);
+					addMicroInstruction(InstructionId::INT_ADD, resultVarnode, new ConstantVarnode(offset, memLocExprSize), symbolVarnode);
+					resultVarnode = symbolVarnode;
 				}
 
 				if (memLocVarnode) {
