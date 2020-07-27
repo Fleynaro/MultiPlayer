@@ -84,6 +84,7 @@ namespace CE::Decompiler::Optimization
 		return !(delta >= memValueNode1->getSize() || -delta >= memValueNode2->getSize());
 	}
 
+
 	static void GetReadValueNodes(OperationalNode* expr, std::list<ReadValueNode*>& readValueNodes) {
 		auto list = GetNextOperationalsNodesToOpimize(expr);
 		for (auto it : list) {
@@ -196,7 +197,12 @@ namespace CE::Decompiler::Optimization
 					{
 						std::list<IParentNode*> parentNodes;
 						std::list<SeqLine*> seqLinesWithMemVar;
-						GetConstantParentsOfNode(memSymbolLeaf, parentNodes);
+						for (auto symbolLeaf : memVariable->m_symbolLeafs) {
+							if (symbolLeaf == memSymbolLeaf)
+								continue;
+							GetConstantParentsOfNode(symbolLeaf, parentNodes);
+						}
+						
 						for (auto parentNode : parentNodes) {
 							if (auto seqLineWithMemVar = dynamic_cast<SeqLine*>(parentNode)) {
 								if (seqLineWithMemVar->m_block == decBlock && seqLineWithMemVar != *it1) {
@@ -206,7 +212,7 @@ namespace CE::Decompiler::Optimization
 						}
 
 						//mem var must be in seq lines only of the same block
-						if (seqLinesWithMemVar.size() == parentNodes.size() - 1)
+						if (seqLinesWithMemVar.size() == parentNodes.size())
 						{
 							//store pushed out of the bound wall lines that are in conflict with *it1
 							std::list<std::pair<std::list<SeqLine*>::iterator, std::list<SeqLine*>>> pushedOutlines;
@@ -245,13 +251,121 @@ namespace CE::Decompiler::Optimization
 									}
 								}
 
-								memSymbolLeaf->replaceWith((*it1)->m_srcValue);
+								for (auto symbolLeaf : memVariable->m_symbolLeafs) {
+									if (symbolLeaf == memSymbolLeaf)
+										continue;
+									symbolLeaf->replaceWith((*it1)->m_srcValue);
+								}
 								decBlock->getSeqLines().erase(it1);
 								delete* it1;
 							}
 						}
 					}
 				}
+			}
+		}
+	}
+
+	static bool HasUndefinedRegister(OperationalNode* expr, ExprTree::FunctionCallInfo& funcCallInfo) {
+		auto list = GetNextOperationalsNodesToOpimize(expr);
+		for (auto it : list) {
+			if (HasUndefinedRegister(it, funcCallInfo))
+				return true;
+		}
+
+		for (auto node : { expr->m_leftNode, expr->m_rightNode }) {
+			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
+				if (auto regVar = dynamic_cast<Symbol::RegisterVariable*>(symbolLeaf->m_symbol)) {
+					bool isFound = false;
+					for (auto list : { funcCallInfo.m_paramRegisters, funcCallInfo.m_knownRegisters }) {
+						for (auto paramReg : list) {
+							if (regVar->m_register.getGenericId() == paramReg.getGenericId()) {
+								isFound = true;
+								break;
+							}
+						}
+					}
+					if (!isFound) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	static bool HasUndefinedRegister(PrimaryTree::SeqLine* line, ExprTree::FunctionCallInfo& funcCallInfo) {
+		for (auto node : { line->m_destAddr, line->m_srcValue }) {
+			OperationalNode op(node);
+			if (HasUndefinedRegister(&op, funcCallInfo))
+				return true;
+		}
+		
+		return false;
+	}
+
+	static void RemoveSeqLinesWithUndefinedRegisters(DecompiledCodeGraph* decGraph) {
+		auto& funcCallInfo = decGraph->getFunctionCallInfo();
+		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+			for (auto it = decBlock->getSeqLines().begin(); it != decBlock->getSeqLines().end(); it++) {
+				auto seqLine = *it;
+				if (HasUndefinedRegister(seqLine, funcCallInfo)) {
+					decBlock->getSeqLines().erase(it);
+					delete seqLine;
+				}
+			}
+		}
+	}
+
+	static void GetSymbolLeafs(OperationalNode* expr, Symbol::Symbol* symbol, std::list<ExprTree::SymbolLeaf*>& symbolLeafs) {
+		auto list = GetNextOperationalsNodesToOpimize(expr);
+		for (auto it : list) {
+			GetSymbolLeafs(it, symbol, symbolLeafs);
+		}
+
+		for (auto node : { expr->m_leftNode, expr->m_rightNode }) {
+			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
+				if (symbolLeaf->m_symbol == symbol) {
+					symbolLeafs.push_back(symbolLeaf);
+				}
+			}
+		}
+	}
+
+	static void ExpandSymbolAssignmentLines(DecompiledCodeGraph* decGraph) {
+		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+			std::list<SeqLine*> newSeqLines;
+			for (auto symbolAssignmentLine : decBlock->getSymbolAssignmentLines()) {
+				newSeqLines.push_back(new SeqLine(symbolAssignmentLine->m_destAddr, symbolAssignmentLine->m_srcValue->clone(), decBlock));
+				delete symbolAssignmentLine;
+			}
+			decBlock->getSymbolAssignmentLines().clear();
+
+			for (auto it = newSeqLines.begin(); it != newSeqLines.end(); it ++) {
+				auto seqLine = *it;
+				auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>(seqLine->m_destAddr);
+				
+				ExprTree::SymbolLeaf* tempVarSymbolLeaf = nullptr;
+				for (auto it2 = std::next(it); it2 != newSeqLines.end(); it2++) {
+					auto otherSeqLine = *it2;
+					OperationalNode op(otherSeqLine->m_srcValue);
+					std::list<ExprTree::SymbolLeaf*> symbolLeafs;
+					GetSymbolLeafs(&op, symbolLeaf->m_symbol, symbolLeafs);
+					if (!symbolLeafs.empty()) {
+						if (!tempVarSymbolLeaf) {
+							tempVarSymbolLeaf = new ExprTree::SymbolLeaf(new Symbol::LocalVariable(symbolLeaf->m_symbol->getSize()));
+						}
+						for (auto symbolLeaf : symbolLeafs) {
+							symbolLeaf->replaceWith(tempVarSymbolLeaf);
+							delete symbolLeaf;
+						}
+					}
+				}
+
+				if (tempVarSymbolLeaf) {
+					decBlock->addSeqLine(tempVarSymbolLeaf, symbolLeaf);
+				}
+				decBlock->getSeqLines().push_back(seqLine);
 			}
 		}
 	}
@@ -275,6 +389,8 @@ namespace CE::Decompiler::Optimization
 		DecompiledCodeGraph::CalculateLevelsForDecBlocks(decGraph->getStartBlock(), path);
 
 		OptimizeExprInDecompiledGraph(decGraph);
+		ExpandSymbolAssignmentLines(decGraph);
+		RemoveSeqLinesWithUndefinedRegisters(decGraph);
 		OptimizeSeqLinesOrderInDecompiledGraph(decGraph);
 
 		//MemorySymbolization memorySymbolization(decGraph);

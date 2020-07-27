@@ -331,15 +331,6 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.getSize());
 			dstExpr = new ExprTree::SymbolLeaf(funcResultVar);
 			m_ctx->setVarnode(dstRegister, dstExpr);
-
-			//we use exception mask
-			if (false && funcCallInfo.m_x86zext) {
-				if (dstRegister.m_valueRangeMask == 0xFFFFFFFF) {
-					auto dstExtRegister = dstRegister;
-					dstExtRegister.m_valueRangeMask = 0xFFFFFFFFFFFFFFFF;
-					m_ctx->setVarnode(dstExtRegister, dstExpr);
-				}
-			}
 		}
 
 		if (dstExpr == nullptr) {
@@ -352,7 +343,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::RETURN:
 	{
 		if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(m_block)) {
-			auto& resultReg = m_ctx->m_decompiler->m_functionCallInfo.m_resultRegister;
+			auto& resultReg = m_ctx->m_decompiler->m_decompiledGraph->getFunctionCallInfo().m_resultRegister;
 			endBlock->setReturnNode(m_ctx->requestRegisterExpr(resultReg));
 		}
 		break;

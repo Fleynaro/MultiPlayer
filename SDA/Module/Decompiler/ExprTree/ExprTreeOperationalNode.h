@@ -7,6 +7,7 @@ namespace CE::Decompiler::ExprTree
 	enum OperationType
 	{
 		None,
+		Temp,
 
 		//Arithmetic
 		Add,
@@ -122,7 +123,14 @@ namespace CE::Decompiler::ExprTree
 			: OperationalNode(leftNode, rightNode, operation, GetMaskBySize(size), notChangedMask)
 		{}
 
+		OperationalNode(Node* leftNode)
+			: m_leftNode(leftNode), m_rightNode(nullptr), m_operation(Temp), m_mask(0x0), m_notChangedMask(false)
+		{}
+
 		~OperationalNode() {
+			if (m_operation == Temp)
+				return;
+
 			auto leftNode = m_leftNode;
 			if (leftNode != nullptr)
 				leftNode->removeBy(this);
@@ -151,6 +159,10 @@ namespace CE::Decompiler::ExprTree
 
 		bool IsFloatingPoint() override {
 			return IsOperationFloatingPoint(m_operation);
+		}
+
+		Node* clone() override {
+			return new OperationalNode(m_leftNode->clone(), m_rightNode->clone(), m_operation, m_mask, m_notChangedMask);
 		}
 
 		std::string printDebug() override {
@@ -183,11 +195,15 @@ namespace CE::Decompiler::ExprTree
 		PCode::Instruction* m_instr;
 
 		InstructionOperationalNode(Node* leftNode, Node* rightNode, OperationType operation, PCode::Instruction* instr)
-			: OperationalNode(leftNode, rightNode, operation, 0), m_instr(instr)
+			: OperationalNode(leftNode, rightNode, operation, 0, true), m_instr(instr)
 		{}
 
 		Mask getMask() override {
 			return m_instr->m_output->getMask();
+		}
+
+		Node* clone() override {
+			return new InstructionOperationalNode(m_leftNode->clone(), m_rightNode->clone(), m_operation, m_instr);
 		}
 	};
 
@@ -208,6 +224,10 @@ namespace CE::Decompiler::ExprTree
 
 		int getSize() {
 			return m_size;
+		}
+
+		Node* clone() override {
+			return new ReadValueNode(m_leftNode->clone(), m_size);
 		}
 
 		std::string printDebug() override {
@@ -233,6 +253,10 @@ namespace CE::Decompiler::ExprTree
 
 		int getSize() {
 			return m_size;
+		}
+
+		Node* clone() override {
+			return new CastNode(m_leftNode->clone(), m_size, m_isSigned);
 		}
 
 		std::string printDebug() override {
@@ -261,6 +285,10 @@ namespace CE::Decompiler::ExprTree
 
 		Mask getMask() override {
 			return 0b1;
+		}
+
+		Node* clone() override {
+			return new FunctionalNode(m_leftNode->clone(), m_rightNode->clone(), m_funcId);
 		}
 
 		std::string printDebug() override {
@@ -300,6 +328,10 @@ namespace CE::Decompiler::ExprTree
 
 		bool IsFloatingPoint() override {
 			return m_funcId != Id::TOINT;
+		}
+
+		Node* clone() override {
+			return new FloatFunctionalNode(m_leftNode->clone(), m_funcId, m_size);
 		}
 
 		std::string printDebug() override {

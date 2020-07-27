@@ -83,6 +83,8 @@ namespace CE::Decompiler::ExprTree
 			return hash.getHash();
 		}
 
+		virtual Node* clone() = 0;
+
 		virtual std::string printDebug() {
 			return "";
 		}

@@ -27,6 +27,7 @@ void ff() {
 ExprTree::FunctionCallInfo GetFunctionCallDefaultInfo() {
 	using namespace PCode;
 	ExprTree::FunctionCallInfo info;
+	info.m_knownRegisters = { Register(ZYDIS_REGISTER_RIP, -1), Register(ZYDIS_REGISTER_RSP, -1) };
 	info.m_paramRegisters = { Register(ZYDIS_REGISTER_RCX, -1), Register(ZYDIS_REGISTER_RDX, -1), Register(ZYDIS_REGISTER_R8, -1), Register(ZYDIS_REGISTER_R9, -1) };
 	info.m_resultRegister = Register(ZYDIS_REGISTER_RAX, -1);
 	info.m_resultVectorRegister = Register(ZYDIS_REGISTER_XMM0, 0xFF, true);
@@ -213,11 +214,11 @@ void CE::Decompiler::test() {
 		*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, 0xFFFFFFFF);
 		*(it++) = PCode::Register(ZYDIS_REGISTER_R8, 0xFFFFFFFF);
 		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, 0xFFFFFFFF);
-		info.m_paramRegisters.clear();
+		//info.m_paramRegisters.clear();
 	}
 
-	auto decCodeGraph = new DecompiledCodeGraph;
-	auto decompiler = new Decompiler(&graph, decCodeGraph, info);
+	auto decCodeGraph = new DecompiledCodeGraph(info);
+	auto decompiler = new Decompiler(&graph, decCodeGraph);
 	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
 		auto absAddr = (std::intptr_t)addr + offset;
 		return info;

@@ -6,7 +6,7 @@ namespace CE::Decompiler::ExprTree
 	class ICondition : public Node, public INumber, public IParentNode
 	{
 	public:
-		virtual ICondition* clone() = 0;
+		virtual ICondition* cloneCond() = 0;
 
 		virtual void inverse() = 0;
 
@@ -69,8 +69,12 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		ICondition* clone() override {
+		ICondition* cloneCond() override {
 			return new Condition(m_leftNode, m_rightNode, m_cond);
+		}
+
+		Node* clone() override {
+			return new Condition(m_leftNode->clone(), m_rightNode->clone(), m_cond);
 		}
 
 		bool IsFloatingPoint() override {
@@ -155,8 +159,12 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		ICondition* clone() override {
-			return new CompositeCondition(m_leftCond->clone(), m_rightCond->clone(), m_cond);
+		ICondition* cloneCond() override {
+			return new CompositeCondition(m_leftCond->cloneCond(), m_rightCond->cloneCond(), m_cond);
+		}
+
+		Node* clone() override {
+			return new CompositeCondition(dynamic_cast<ICondition*>(m_leftCond->clone()), dynamic_cast<ICondition*>(m_rightCond->clone()), m_cond);
 		}
 
 		void inverse() override {
@@ -195,37 +203,6 @@ namespace CE::Decompiler::ExprTree
 				return m_updateDebugInfo = ("!(" + m_leftCond->printDebug() + ")");
 			}
 			return m_updateDebugInfo = ("(" + m_leftCond->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightCond->printDebug() + ")");
-		}
-	};
-
-	class TernaryOperationalNode : public OperationalNode
-	{
-	public:
-		ICondition* m_condition;
-
-		TernaryOperationalNode(ICondition* condition, Node* leftNode, Node* rightNode)
-			: m_condition(condition), OperationalNode(leftNode, rightNode, ExprTree::None)
-		{}
-
-		~TernaryOperationalNode() {
-			m_condition->removeBy(this);
-		}
-
-		void replaceNode(Node* node, Node * newNode) override {
-			OperationalNode::replaceNode(node, newNode);
-			if (auto cond = dynamic_cast<ICondition*>(node)) {
-				if (auto newCond = dynamic_cast<ICondition*>(newNode)) {
-					if (m_condition == cond) {
-						m_condition = newCond;
-					}
-				}
-			}
-		}
-
-		std::string printDebug() override {
-			if (!m_leftNode || !m_rightNode)
-				return "";
-			return m_updateDebugInfo = ("(" + m_condition->printDebug() + ") ? " + "(" + m_leftNode->printDebug() + ") : (" + m_rightNode->printDebug() + ")");
 		}
 	};
 };

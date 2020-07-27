@@ -6,6 +6,7 @@
 namespace CE::Decompiler::ExprTree {
 	class Node;
 	class FunctionCallContext;
+	class SymbolLeaf;
 };
 
 namespace CE::Decompiler::Symbol
@@ -13,6 +14,8 @@ namespace CE::Decompiler::Symbol
 	class Symbol
 	{
 	public:
+		std::list<ExprTree::SymbolLeaf*> m_symbolLeafs;
+
 		virtual int getSize() {
 			return 8;
 		}

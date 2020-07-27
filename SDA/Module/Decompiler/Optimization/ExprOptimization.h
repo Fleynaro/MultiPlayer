@@ -50,15 +50,6 @@ namespace CE::Decompiler::Optimization
 			return list1;
 		}
 
-		if (auto ternaryOperationalNode = dynamic_cast<TernaryOperationalNode*>(node)) {
-			auto list1 = GetNextOperationalsNodesToOpimize(ternaryOperationalNode->m_condition);
-			auto list2 = GetNextOperationalsNodesToOpimize(ternaryOperationalNode->m_leftNode);
-			auto list3 = GetNextOperationalsNodesToOpimize(ternaryOperationalNode->m_rightNode);
-			list1.insert(list1.end(), list2.begin(), list2.end());
-			list1.insert(list1.end(), list3.begin(), list3.end());
-			return list1;
-		}
-
 		if (auto functionCallCtx = dynamic_cast<FunctionCallContext*>(node)) {
 			auto resultList = GetNextOperationalsNodesToOpimize(functionCallCtx->m_destination);
 			for (const auto& it : functionCallCtx->m_registerParams) {
@@ -211,7 +202,7 @@ namespace CE::Decompiler::Optimization
 	static void InverseConditions(CompositeCondition* compCond, ICondition*& newCond) {
 		newCond = compCond;
 		if (compCond->m_cond == CompositeCondition::Not) {
-			auto condClone = compCond->m_leftCond->clone();
+			auto condClone = compCond->m_leftCond->cloneCond();
 			condClone->inverse();
 			compCond->replaceWith(condClone);
 			delete compCond;

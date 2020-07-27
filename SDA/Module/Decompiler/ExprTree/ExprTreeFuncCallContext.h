@@ -4,10 +4,10 @@
 namespace CE::Decompiler::ExprTree
 {
 	struct FunctionCallInfo {
+		std::list<PCode::Register> m_knownRegisters;
 		std::list<PCode::Register> m_paramRegisters;
 		PCode::Register m_resultRegister;
 		PCode::Register m_resultVectorRegister;
-		bool m_x86zext = true;
 	};
 
 	static FunctionCallInfo GetFunctionCallDefaultInfo() {
@@ -44,6 +44,10 @@ namespace CE::Decompiler::ExprTree
 					}
 				}
 			}
+		}
+
+		Node* clone() override {
+			return this;
 		}
 
 		std::string printDebug() override {

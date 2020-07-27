@@ -12,7 +12,13 @@ namespace CE::Decompiler::ExprTree
 
 		SymbolLeaf(Symbol::Symbol* symbol)
 			: m_symbol(symbol)
-		{}
+		{
+			m_symbol->m_symbolLeafs.push_back(this);
+		}
+
+		~SymbolLeaf() {
+			m_symbol->m_symbolLeafs.remove(this);
+		}
 
 		Mask getMask() override {
 			return GetMaskBySize(m_symbol->getSize());
@@ -24,6 +30,10 @@ namespace CE::Decompiler::ExprTree
 
 		ObjectHash::Hash getHash() override {
 			return m_symbol->getHash();
+		}
+
+		Node* clone() override {
+			return new SymbolLeaf(m_symbol);
 		}
 
 		std::string printDebug() override {
@@ -59,6 +69,10 @@ namespace CE::Decompiler::ExprTree
 			ObjectHash hash;
 			hash.addValue((int64_t&)m_value);
 			return hash.getHash();
+		}
+
+		Node* clone() override {
+			return new NumberLeaf(m_value);
 		}
 
 		std::string printDebug() override {

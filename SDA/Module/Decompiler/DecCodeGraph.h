@@ -6,7 +6,8 @@ namespace CE::Decompiler
 	class DecompiledCodeGraph
 	{
 	public:
-		DecompiledCodeGraph()
+		DecompiledCodeGraph(ExprTree::FunctionCallInfo functionCallInfo = ExprTree::GetFunctionCallDefaultInfo())
+			: m_functionCallInfo(functionCallInfo)
 		{}
 
 		PrimaryTree::Block* getStartBlock() {
@@ -15,6 +16,10 @@ namespace CE::Decompiler
 
 		std::list<PrimaryTree::Block*>& getDecompiledBlocks() {
 			return m_decompiledBlocks;
+		}
+
+		ExprTree::FunctionCallInfo& getFunctionCallInfo() {
+			return m_functionCallInfo;;
 		}
 
 		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
@@ -36,5 +41,6 @@ namespace CE::Decompiler
 		}
 	private:
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
+		ExprTree::FunctionCallInfo m_functionCallInfo;
 	};
 };
