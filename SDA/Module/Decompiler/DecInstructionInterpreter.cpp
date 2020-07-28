@@ -249,8 +249,8 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 
 	case InstructionId::BOOL_NEGATE:
 	{
-		auto expr = requestVarnode(m_instr->m_input0);
-		if (auto cond = dynamic_cast<ExprTree::ICondition*>(expr)) {
+		auto cond = toBoolean(requestVarnode(m_instr->m_input0));
+		if (cond) {
 			auto result = new ExprTree::CompositeCondition(cond, nullptr, ExprTree::CompositeCondition::Not);
 			m_ctx->setVarnode(m_instr->m_output, result);
 		}
@@ -261,10 +261,10 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::BOOL_OR:
 	case InstructionId::BOOL_XOR:
 	{
-		auto op1 = requestVarnode(m_instr->m_input0);
-		auto op2 = requestVarnode(m_instr->m_input1);
-		if (auto condOp1 = dynamic_cast<ExprTree::ICondition*>(op1)) {
-			if (auto condOp2 = dynamic_cast<ExprTree::ICondition*>(op2)) {
+		auto condOp1 = toBoolean(requestVarnode(m_instr->m_input0));
+		auto condOp2 = toBoolean(requestVarnode(m_instr->m_input1));
+		if (condOp1) {
+			if (condOp2) {
 				ExprTree::CompositeCondition* result;
 				if (m_instr->m_id == InstructionId::BOOL_XOR) {
 					auto notCondOp1 = new ExprTree::CompositeCondition(condOp1, nullptr, ExprTree::CompositeCondition::Not);
@@ -304,8 +304,8 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 
 	case InstructionId::CBRANCH:
 	{
-		auto op2 = requestVarnode(m_instr->m_input1);
-		if (auto flagCond = dynamic_cast<ExprTree::ICondition*>(op2)) {
+		auto flagCond = toBoolean(requestVarnode(m_instr->m_input1));
+		if (flagCond) {
 			auto notFlagCond = new ExprTree::CompositeCondition(flagCond, nullptr, ExprTree::CompositeCondition::Not);
 			m_block->setNoJumpCondition(notFlagCond);
 		}
@@ -366,4 +366,13 @@ ExprTree::Node* InstructionInterpreter::requestVarnode(PCode::Varnode* varnode) 
 		return new ExprTree::NumberLeaf(varnodeConstant->m_value);
 	}
 	return nullptr;
+}
+
+ExprTree::ICondition* InstructionInterpreter::toBoolean(ExprTree::Node* node) {
+	if (!node)
+		return nullptr;
+	if (auto cond = dynamic_cast<ExprTree::ICondition*>(node)) {
+		return cond;
+	}
+	return new ExprTree::Condition(node, new ExprTree::NumberLeaf((uint64_t)0x0), ExprTree::Condition::Ne);
 }

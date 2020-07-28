@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class ICondition : public Node, public INumber, public IParentNode
+	class ICondition : public Node, public INumber
 	{
 	public:
 		virtual ICondition* cloneCond() = 0;
@@ -15,7 +15,33 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class Condition : public ICondition, public IFloatingPoint
+	class BooleanValue : public ICondition
+	{
+	public:
+		bool m_value;
+
+		BooleanValue(bool value)
+			: m_value(value)
+		{}
+
+		void inverse() override {
+			m_value ^= true;
+		}
+
+		ICondition* cloneCond() override {
+			return new BooleanValue(m_value);
+		}
+
+		Node* clone() override {
+			return cloneCond();
+		}
+
+		std::string printDebug() override {
+			return m_updateDebugInfo = (m_value ? "true" : "false");
+		}
+	};
+
+	class Condition : public ICondition, public IParentNode, public IFloatingPoint
 	{
 	public:
 		enum ConditionType
@@ -115,7 +141,7 @@ namespace CE::Decompiler::ExprTree
 		bool m_isFloatingPoint;
 	};
 
-	class CompositeCondition : public ICondition
+	class CompositeCondition : public ICondition, public IParentNode
 	{
 	public:
 		enum CompositeConditionType

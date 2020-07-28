@@ -10,6 +10,7 @@ namespace CE::Decompiler::PCode
 
 		ExprTree::Node* requestVarnode(PCode::Varnode* varnode);
 
+		ExprTree::ICondition* toBoolean(ExprTree::Node* node);
 	private:
 		PrimaryTree::Block* m_block;
 		ExecutionBlockContext* m_ctx;

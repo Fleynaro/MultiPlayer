@@ -71,7 +71,91 @@ namespace CE::Decompiler::Optimization
 		return list1;
 	}
 
+	static void OptimizeConstCondition(ICondition* cond, ICondition*& newCond) {
+		Node::UpdateDebugInfo(cond);
+		if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
+			//[mem_16_32] == NaN		->		false
+			if (auto floatNanLeaf = dynamic_cast<FloatNanLeaf*>(simpleCond->m_rightNode)) {
+				newCond = new BooleanValue(simpleCond->m_cond == Condition::Ne);
+				cond->replaceWith(newCond);
+				delete cond;
+			}
 
+			if (auto subCond = dynamic_cast<ICondition*>(simpleCond->m_leftNode)) {
+				OptimizeConstCondition(subCond, subCond);
+				if (auto numberLeaf = dynamic_cast<NumberLeaf*>(simpleCond->m_rightNode)) {
+					if (numberLeaf->m_value == 0x0 && (simpleCond->m_cond == Condition::Eq || simpleCond->m_cond == Condition::Ne)) {
+						newCond = subCond;
+						if (simpleCond->m_cond == Condition::Eq)
+							newCond->inverse();
+						cond->replaceWith(newCond);
+						delete cond;
+					}
+				}
+			}
+		}
+		else if (auto compCond = dynamic_cast<CompositeCondition*>(cond)) {
+			OptimizeConstCondition(compCond->m_leftCond, compCond->m_leftCond);
+
+			if (compCond->m_cond == CompositeCondition::Not || compCond->m_cond == CompositeCondition::None) {
+				//!false		->		true
+				if (auto booleanVal = dynamic_cast<BooleanValue*>(compCond->m_leftCond)) {
+					newCond = new BooleanValue(compCond->m_cond == CompositeCondition::None ? booleanVal->m_value : !booleanVal->m_value);
+					cond->replaceWith(newCond);
+					delete cond;
+				}
+			}
+			else {
+				OptimizeConstCondition(compCond->m_rightCond, compCond->m_rightCond);
+
+				ICondition* conds[2] = { compCond->m_leftCond, compCond->m_rightCond };
+				bool val[2] = { false, false };
+				bool val_calc[2] = { false, false };
+				for (int idx = 0; idx < 2; idx++) {
+					if (auto booleanVal = dynamic_cast<BooleanValue*>(conds[idx])) {
+						val[idx] = booleanVal->m_value;
+						val_calc[idx] = true;
+					}
+				}
+
+				if (val_calc[0] || val_calc[1]) {
+					//true && false		->		false
+					if (val_calc[0] && val_calc[1]) {
+						bool result = (compCond->m_cond == CompositeCondition::Or ? (val[0] || val[1]) : (val[0] && val[1]));
+						newCond = new BooleanValue(result);
+					}
+					else {
+						//cond1	|| true		->		true
+						//cond1 || false	->		cond1
+						for (int idx = 0; idx < 2; idx++) {
+							if (val_calc[idx]) {
+								if (compCond->m_cond == CompositeCondition::Or) {
+									if (val[idx]) {
+										newCond = new BooleanValue(true);
+									}
+									else {
+										newCond = conds[1 - idx];
+									}
+								}
+								else {
+									if (!val[idx]) {
+										newCond = new BooleanValue(false);
+									}
+									else {
+										newCond = conds[1 - idx];
+									}
+								}
+								break;
+							}
+						}
+					}
+
+					cond->replaceWith(newCond);
+					delete cond;
+				}
+			}
+		}
+	}
 	
 	static void OptimizeCondition_SBORROW(Condition* condition, ICondition*& newCond) {
 		newCond = condition;

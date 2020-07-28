@@ -54,7 +54,7 @@ namespace CE::Decompiler::ExprTree
 	}
 
 	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
-		return operation == ReadValue || operation == Cast || operation == Functional;
+		return operation == ReadValue || operation == Cast || operation == Functional || operation == fFunctional;
 	}
 
 	static bool IsOperationFloatingPoint(OperationType operation) {

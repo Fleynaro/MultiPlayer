@@ -112,6 +112,7 @@ namespace CE::Decompiler::PCode
 				int dstSize;
 				int srcSize;
 				int maxSize = size;
+				bool float2intForNonVector = false;
 
 				switch (mnemonic)
 				{
@@ -171,6 +172,7 @@ namespace CE::Decompiler::PCode
 					instrId = InstructionId::ROUND;
 					dstSize = size;
 					srcSize = 0x8;
+					float2intForNonVector = true;
 					break;
 				case ZYDIS_MNEMONIC_CVTSD2SS:
 					instrId = InstructionId::INT2FLOAT;
@@ -195,6 +197,7 @@ namespace CE::Decompiler::PCode
 					instrId = InstructionId::ROUND;
 					dstSize = size;
 					srcSize = 0x4;
+					float2intForNonVector = true;
 					break;
 				case ZYDIS_MNEMONIC_CVTTPD2PI:
 					instrId = InstructionId::FLOAT2INT;
@@ -207,14 +210,10 @@ namespace CE::Decompiler::PCode
 					srcSize = 0x4;
 					break;
 				case ZYDIS_MNEMONIC_CVTTSD2SI:
-					instrId = InstructionId::FLOAT2INT;
-					dstSize = size;
-					srcSize = 0x8;
-					break;
 				case ZYDIS_MNEMONIC_CVTTSS2SI:
 					instrId = InstructionId::FLOAT2INT;
 					dstSize = size;
-					srcSize = 0x4;
+					srcSize = mnemonic == ZYDIS_MNEMONIC_CVTTSS2SI ? 0x8 : 0x4;
 					break;
 				}
 				
@@ -225,7 +224,7 @@ namespace CE::Decompiler::PCode
 				while (offset < maxSize) {
 					auto srcOpVarnode = requestOperandValue(srcOperand, srcSize, offset);
 					auto varnodeRegOutput = CreateVarnode(dstOperand.reg.value, dstSize, offset);
-					if (!varnodeRegOutput->m_register.isVector()) {
+					if (float2intForNonVector && !varnodeRegOutput->m_register.isVector()) {
 						//all float values store in vector registers then need cast when moving to non-vector register
 						auto varnodeOutput = new SymbolVarnode(size);
 						addMicroInstruction(instrId, srcOpVarnode, nullptr, varnodeOutput);
@@ -248,6 +247,8 @@ namespace CE::Decompiler::PCode
 
 			case ZYDIS_MNEMONIC_COMISD:
 			case ZYDIS_MNEMONIC_COMISS:
+			case ZYDIS_MNEMONIC_UCOMISD:
+			case ZYDIS_MNEMONIC_UCOMISS:
 			{
 				auto op1Varnode = requestOperandValue(m_curInstr->operands[0], size);
 				auto op2Varnode = requestOperandValue(m_curInstr->operands[1], size);
