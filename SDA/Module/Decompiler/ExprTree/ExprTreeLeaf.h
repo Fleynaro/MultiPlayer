@@ -79,4 +79,31 @@ namespace CE::Decompiler::ExprTree
 			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value) + "{"+ std::to_string((int)m_value) +"}");
 		}
 	};
+
+	class FloatNanLeaf : public Node, public INumber, public IFloatingPoint
+	{
+	public:
+		FloatNanLeaf()
+		{}
+
+		Mask getMask() override {
+			return 0xFF;
+		}
+
+		bool isLeaf() override {
+			return true;
+		}
+
+		Node* clone() override {
+			return this;
+		}
+
+		bool IsFloatingPoint() override {
+			return true;
+		}
+
+		std::string printDebug() override {
+			return m_updateDebugInfo = ("NaN");
+		}
+	};
 };

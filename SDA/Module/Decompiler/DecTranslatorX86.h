@@ -225,7 +225,7 @@ namespace CE::Decompiler::PCode
 				while (offset < maxSize) {
 					auto srcOpVarnode = requestOperandValue(srcOperand, srcSize, offset);
 					auto varnodeRegOutput = CreateVarnode(dstOperand.reg.value, dstSize, offset);
-					if (!varnodeRegOutput->m_register.m_isVector) {
+					if (!varnodeRegOutput->m_register.isVector()) {
 						//all float values store in vector registers then need cast when moving to non-vector register
 						auto varnodeOutput = new SymbolVarnode(size);
 						addMicroInstruction(instrId, srcOpVarnode, nullptr, varnodeOutput);
@@ -246,27 +246,60 @@ namespace CE::Decompiler::PCode
 				break;
 			}
 
+			case ZYDIS_MNEMONIC_COMISD:
+			case ZYDIS_MNEMONIC_COMISS:
+			{
+				auto op1Varnode = requestOperandValue(m_curInstr->operands[0], size);
+				auto op2Varnode = requestOperandValue(m_curInstr->operands[1], size);
+
+				auto varnodeNan1 = new SymbolVarnode(1);
+				addMicroInstruction(InstructionId::FLOAT_NAN, op1Varnode, nullptr, varnodeNan1);
+				auto varnodeNan2 = new SymbolVarnode(1);
+				addMicroInstruction(InstructionId::FLOAT_NAN, op2Varnode, nullptr, varnodeNan2);
+				auto flagPF = CreateVarnode(ZYDIS_CPUFLAG_PF);
+				addMicroInstruction(InstructionId::BOOL_OR, varnodeNan1, varnodeNan2, flagPF);
+				auto varnodeEq = new SymbolVarnode(1);
+				addMicroInstruction(InstructionId::FLOAT_EQUAL, op1Varnode, op2Varnode, varnodeEq);
+				addMicroInstruction(InstructionId::BOOL_OR, flagPF, varnodeEq, CreateVarnode(ZYDIS_CPUFLAG_ZF));
+				auto varnodeFl = new SymbolVarnode(1);
+				addMicroInstruction(InstructionId::FLOAT_LESS, op1Varnode, op2Varnode, varnodeFl);
+				addMicroInstruction(InstructionId::BOOL_OR, flagPF, varnodeFl, CreateVarnode(ZYDIS_CPUFLAG_CF));
+				auto zeroVanrnode = new ConstantVarnode(0x0, 1);
+				addMicroInstruction(InstructionId::COPY, zeroVanrnode, nullptr, CreateVarnode(ZYDIS_CPUFLAG_OF));
+				addMicroInstruction(InstructionId::COPY, zeroVanrnode, nullptr, CreateVarnode(ZYDIS_CPUFLAG_AF));
+				addMicroInstruction(InstructionId::COPY, zeroVanrnode, nullptr, CreateVarnode(ZYDIS_CPUFLAG_SF));
+				break;
+			}
+
 			case ZYDIS_MNEMONIC_MOVD:
 			case ZYDIS_MNEMONIC_MOVSS:
 			{
+				auto& dstOperand = m_curInstr->operands[0];
 				auto& srcOperand = m_curInstr->operands[1];
 				auto srcOpVarnode = requestOperandValue(srcOperand, 0x4, 0x0);
 				addGenericOperation(InstructionId::COPY, srcOpVarnode, nullptr, nullptr, false, 0x4, 0x0);
-				auto zero = new ConstantVarnode(0x0, 0x4);
-				addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 4);
-				addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 8);
-				addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 12);
+				if (mnemonic == ZYDIS_MNEMONIC_MOVD && dstOperand.type == ZYDIS_OPERAND_TYPE_REGISTER || mnemonic == ZYDIS_MNEMONIC_MOVSS && srcOperand.type == ZYDIS_OPERAND_TYPE_MEMORY) {
+					auto zero = new ConstantVarnode(0x0, 0x4);
+					addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 4);
+					if (size >= 0x10) {
+						addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 8);
+						addGenericOperation(InstructionId::COPY, zero, nullptr, nullptr, false, 0x4, 12);
+					}
+				}
 				break;
 			}
 
 			case ZYDIS_MNEMONIC_MOVQ:
 			case ZYDIS_MNEMONIC_MOVSD:
 			{
+				auto& dstOperand = m_curInstr->operands[0];
 				auto& srcOperand = m_curInstr->operands[1];
 				auto srcOpVarnode = requestOperandValue(srcOperand, 0x8, 0x0);
 				addGenericOperation(InstructionId::COPY, srcOpVarnode, nullptr, nullptr, false, 0x8, 0x0);
-				if (mnemonic == ZYDIS_MNEMONIC_MOVQ || m_curInstr->operands[1].type == ZYDIS_OPERAND_TYPE_MEMORY) {
-					addGenericOperation(InstructionId::COPY, new ConstantVarnode(0x0, 0x8), nullptr, nullptr, false, 0x8, 0x8);
+				if (mnemonic == ZYDIS_MNEMONIC_MOVQ && dstOperand.type != ZYDIS_OPERAND_TYPE_MEMORY) {
+					if (size >= 0x10) {
+						addGenericOperation(InstructionId::COPY, new ConstantVarnode(0x0, 0x8), nullptr, nullptr, false, 0x8, 0x8);
+					}
 				}
 				break;
 			}
@@ -1439,6 +1472,11 @@ namespace CE::Decompiler::PCode
 		}
 		
 		static Register CreateRegister(ZydisRegister reg) {
+			if(reg == ZYDIS_REGISTER_RIP)
+				return Register(reg, 0xFFFFFFFFFFFFFFFF, Register::Type::InstructionPointer);
+			if (reg == ZYDIS_REGISTER_RSP)
+				return Register(reg, 0xFFFFFFFFFFFFFFFF, Register::Type::StackPointer);
+
 			if (reg >= ZYDIS_REGISTER_AL && reg <= ZYDIS_REGISTER_BL) {
 				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AL, 0xFF);
 			}
@@ -1466,16 +1504,16 @@ namespace CE::Decompiler::PCode
 				return Register(reg, mask);
 			}
 			else if (reg >= ZYDIS_REGISTER_MM0 && reg <= ZYDIS_REGISTER_MM7) {
-				return Register(reg, 0xFF, true);
+				return Register(reg, 0xFF, Register::Type::Vector);
 			}
 			else if (reg >= ZYDIS_REGISTER_XMM0 && reg <= ZYDIS_REGISTER_XMM31) {
-				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_XMM0, 0xFFFF, true);
+				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_XMM0, 0xFFFF, Register::Type::Vector);
 			}
 			else if (reg >= ZYDIS_REGISTER_YMM0 && reg <= ZYDIS_REGISTER_YMM31) {
-				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_YMM0, 0xFFFFFFFF, true);
+				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_YMM0, 0xFFFFFFFF, Register::Type::Vector);
 			}
 			else if (reg >= ZYDIS_REGISTER_ZMM0 && reg <= ZYDIS_REGISTER_ZMM31) {
-				return Register(reg, 0xFFFFFFFFFFFFFFFF, true);
+				return Register(reg, 0xFFFFFFFFFFFFFFFF, Register::Type::Vector);
 			}
 
 			return Register();
@@ -1483,13 +1521,13 @@ namespace CE::Decompiler::PCode
 
 		static Register CreateFlagRegister(ZydisCPUFlag flag) {
 			auto mask = (uint64_t)1 << flag;
-			return Register(ZYDIS_REGISTER_RFLAGS, mask, false);
+			return Register(ZYDIS_REGISTER_RFLAGS, mask, Register::Type::Flag);
 		}
 
 		static RegisterVarnode* CreateVarnode(ZydisRegister regId, int size = 0x0, int offset = 0x0) {
 			auto reg = CreateRegister(regId);
 			if (size != 0x0) {
-				reg.m_valueRangeMask &= GetMaskBySize(size, reg.m_isVector) << (offset * (reg.m_isVector ? 0x1 : 0x8));
+				reg.m_valueRangeMask &= GetMaskBySize(size, reg.isVector()) << (offset * (reg.isVector() ? 0x1 : 0x8));
 			}
 			return new RegisterVarnode(reg);
 		}

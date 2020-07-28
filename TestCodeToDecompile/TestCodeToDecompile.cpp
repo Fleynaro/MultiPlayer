@@ -46,7 +46,7 @@ B g_b;
 C g_c;
 
 int TestFunctionToDecompile1() {
-	int b = GetTickCount();
+	float b = (float)GetTickCount();
 
 	/*b += func11(10) + func11(5);
 	b *= -1;
@@ -133,5 +133,5 @@ int TestFunctionToDecompile1() {
 		arr[GetTickCount()][GetTickCount()][GetTickCount()] = 300;*/
 
 	/*int a = GetTickCount() * GetTickCount() * GetTickCount() * GetTickCount();*/
-	return b/*b * a + 100 + *//*arr[1][2][3] + */ /*obj.a + a.b->a->b*/;
+	return (int)b/*b * a + 100 + *//*arr[1][2][3] + */ /*obj.a + a.b->a->b*/;
 }

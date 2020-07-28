@@ -62,7 +62,7 @@ namespace CE::Decompiler::ExprTree
 	}
 
 	static bool IsOperationWithSingleOperand(OperationType operation) {
-		return operation == ReadValue || operation == Cast || operation == Functional;
+		return operation == ReadValue || operation == Cast || operation == fFunctional;
 	}
 
 	static bool IsOperationOverflow(OperationType opType) {
@@ -304,13 +304,12 @@ namespace CE::Decompiler::ExprTree
 		enum class Id {
 			FABS,
 			FSQRT,
-			FNAN,
 			TRUNC,
 			CEIL,
 			FLOOR,
 			ROUND,
 			TOFLOAT,
-			TOINT
+			TOINT //todo: what is size of the result?
 		};
 		Id m_funcId;
 
@@ -335,7 +334,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			if (!m_leftNode || !m_rightNode)
+			if (!m_leftNode)
 				return "";
 			return m_updateDebugInfo = (std::string(magic_enum::enum_name(m_funcId)) + "(" + m_leftNode->printDebug() + ")");
 		}

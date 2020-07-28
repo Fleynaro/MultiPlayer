@@ -157,7 +157,6 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 
 	case InstructionId::FLOAT_ABS:
 	case InstructionId::FLOAT_SQRT:
-	case InstructionId::FLOAT_NAN:
 	case InstructionId::INT2FLOAT:
 	case InstructionId::FLOAT2INT:
 	case InstructionId::FLOAT2FLOAT:
@@ -172,9 +171,6 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		{
 		case InstructionId::FLOAT_SQRT:
 			id = ExprTree::FloatFunctionalNode::Id::FSQRT;
-			break;
-		case InstructionId::FLOAT_NAN:
-			id = ExprTree::FloatFunctionalNode::Id::FNAN;
 			break;
 		case InstructionId::INT2FLOAT:
 		case InstructionId::FLOAT2FLOAT:
@@ -239,6 +235,14 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 
 		bool isFloatingPoint = (InstructionId::FLOAT_EQUAL <= m_instr->m_id && m_instr->m_id <= InstructionId::FLOAT_LESSEQUAL);
 		auto result = new ExprTree::Condition(op1, op2, condType, isFloatingPoint);
+		m_ctx->setVarnode(m_instr->m_output, result);
+		break;
+	}
+
+	case InstructionId::FLOAT_NAN:
+	{
+		auto op1 = requestVarnode(m_instr->m_input0);
+		auto result = new ExprTree::Condition(op1, new ExprTree::FloatNanLeaf(), ExprTree::Condition::Eq, true);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}

@@ -121,7 +121,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 		regExpr = symbolLeaf;
 	}
 	else {
-		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask, reg.m_isVector);
+		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask, reg.isVector());
 	}
 
 	m_cachedRegisters.push_back(std::make_pair(varnodeRegister->m_register, new WrapperNode<ExprTree::Node>(regExpr)));

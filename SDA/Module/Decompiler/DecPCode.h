@@ -16,20 +16,36 @@ namespace CE::Decompiler::PCode
 	class Register
 	{
 	public:
+		enum class Type {
+			Generic,
+			StackPointer,
+			InstructionPointer,
+			Flag,
+			Vector
+		};
+
 		RegisterId m_genericId;
-		bool m_isVector = false;
+		Type m_type;
 		uint64_t m_valueRangeMask;
 
-		Register(RegisterId genericId = 0, uint64_t valueRangeMask = 0x0, bool isVector = false)
-			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_isVector(isVector)
+		Register(RegisterId genericId = 0, uint64_t valueRangeMask = 0x0, Type type = Type::Generic)
+			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_type(type)
 		{}
 
 		RegisterId getGenericId() const {
 			return m_genericId;
-		} 
+		}
+
+		bool isPointer() const {
+			return m_type == Type::StackPointer || m_type == Type::InstructionPointer;
+		}
+
+		bool isVector() const {
+			return m_type == Type::Vector;
+		}
 
 		int getSize() const {
-			auto size = GetBitCountOfMask(m_valueRangeMask) / (m_isVector ? 1 : 8);
+			auto size = GetBitCountOfMask(m_valueRangeMask) / (isVector() ? 1 : 8);
 			return max(1, size);
 		}
 
@@ -41,7 +57,7 @@ namespace CE::Decompiler::PCode
 			auto regId = (ZydisRegister)m_genericId;
 
 			std::string maskStr;
-			if (m_isVector) {
+			if (isVector()) {
 				auto bitCount = GetBitCountOfMask(m_valueRangeMask);
 				if (bitCount == 4 || bitCount == 8) {
 					maskStr = std::string(bitCount == 4 ? "D" : "Q") + (char)('a' + (char)(GetShiftValueOfMask(m_valueRangeMask) / bitCount));
@@ -67,6 +83,10 @@ namespace CE::Decompiler::PCode
 				flagName = "SF";
 			else if (flag == ZYDIS_CPUFLAG_ZF)
 				flagName = "ZF";
+			else if (flag == ZYDIS_CPUFLAG_AF)
+				flagName = "AF";
+			else if (flag == ZYDIS_CPUFLAG_PF)
+				flagName = "PF";
 			return flagName + ":1";
 		}
 	};

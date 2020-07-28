@@ -72,8 +72,8 @@ namespace CE::Decompiler::Optimization
 	}
 
 	static bool IsMemLocIntersected(ReadValueNode* memValueNode1, ReadValueNode* memValueNode2) {
-		std::map<ObjectHash::Hash, int64_t> terms1;
-		std::map<ObjectHash::Hash, int64_t> terms2;
+		TermsDict terms1;
+		TermsDict terms2;
 		int64_t constTerm1 = 0;
 		int64_t constTerm2 = 0;
 		GetTermsInExpr(memValueNode1->getAddress(), terms1, constTerm1);
@@ -183,8 +183,31 @@ namespace CE::Decompiler::Optimization
 			if (auto parentNode = dynamic_cast<Node*>(it)) {
 				GetConstantParentsOfNode(parentNode, parentNodes);
 			}
-			if (dynamic_cast<SeqLine*>(it) || dynamic_cast<SymbolAssignmentLine*>(it) || dynamic_cast<Block*>(it)) {
+			if (dynamic_cast<SeqLine*>(it) || dynamic_cast<Block*>(it)) {
 				parentNodes.push_back(it);
+			}
+		}
+	}
+
+	static void RemoveSeqLinesWithNotUsedMemVarDecompiledGraph(DecompiledCodeGraph* decGraph) {
+		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+			for (auto it = decBlock->getSeqLines().begin(); it != decBlock->getSeqLines().end(); it++) {
+				if (auto memSymbolLeaf = dynamic_cast<SymbolLeaf*>((*it)->m_destAddr)) {
+					if (auto memVariable = dynamic_cast<Symbol::MemoryVariable*>(memSymbolLeaf->m_symbol))
+					{
+						std::list<IParentNode*> parentNodes;
+						for (auto symbolLeaf : memVariable->m_symbolLeafs) {
+							GetConstantParentsOfNode(symbolLeaf, parentNodes);
+						}
+
+						//mem var must be in seq lines only of the same block
+						if (parentNodes.size() == 1)
+						{
+							decBlock->getSeqLines().erase(it);
+							delete* it;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -391,7 +414,7 @@ namespace CE::Decompiler::Optimization
 		OptimizeExprInDecompiledGraph(decGraph);
 		ExpandSymbolAssignmentLines(decGraph);
 		RemoveSeqLinesWithUndefinedRegisters(decGraph);
-		OptimizeSeqLinesOrderInDecompiledGraph(decGraph);
+		//RemoveSeqLinesWithNotUsedMemVarDecompiledGraph(decGraph);
 
 		//MemorySymbolization memorySymbolization(decGraph);
 		//memorySymbolization.start();

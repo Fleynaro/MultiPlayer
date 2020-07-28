@@ -585,7 +585,8 @@ namespace CE::Decompiler::Optimization
 
 	//get list of terms in expr: (5x - 10y) * 2 + 5		=>		x: 10, y: -20, constTerm: 5
 	//need mostly for array linear expr
-	static void GetTermsInExpr(Node* node, std::map<ObjectHash::Hash, int64_t>& terms, int64_t& constTerm, int64_t k = 1) {
+	using TermsDict = std::map<ObjectHash::Hash, std::pair<Node*, int64_t>>;
+	static void GetTermsInExpr(Node* node, TermsDict& terms, int64_t& constTerm, int64_t k = 1) {
 		if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
 			constTerm += (int64_t&)numberLeaf->m_value * k;
 			return;
@@ -606,15 +607,31 @@ namespace CE::Decompiler::Optimization
 
 		auto hash = node->getHash();
 		if (terms.find(hash) == terms.end()) {
-			terms[hash] = 0;
+			terms[hash] = std::make_pair(node, 0);
 		}
-		terms[hash] += k;
+		terms[hash] = std::make_pair(node, terms[hash].second + k);
 	}
 
-	static bool AreTermsEqual(std::map<ObjectHash::Hash, int64_t>& terms1, std::map<ObjectHash::Hash, int64_t>& terms2) {
+	static Node* GetBaseAddrTerm(TermsDict& terms) {
+		for (auto term : terms) {
+			if (term.second.second != 1)
+				continue;
+			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(term.second.first)) {
+				if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbolLeaf->m_symbol)) {
+					if (regSymbol->m_register.isPointer()) {
+						return symbolLeaf;
+					}
+				}
+			}
+		}
+		//opNodes...
+		return nullptr;
+	}
+
+	static bool AreTermsEqual(TermsDict& terms1, TermsDict& terms2) {
 		for (auto termList : { std::pair(&terms1, &terms2), std::pair(&terms2, &terms1) }) {
 			for (auto term : *termList.first) {
-				if (term.second == 0)
+				if (term.second.second == 0)
 					continue;
 				auto it = termList.second->find(term.first);
 				if (it == termList.second->end() || term.second != it->second)

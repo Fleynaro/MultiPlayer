@@ -111,7 +111,7 @@ namespace CE::Decompiler
 					auto& externalSymbol = **it;
 					auto regId = externalSymbol.m_reg.getGenericId(); //ah/al and xmm?
 					if (m_registersToSymbol.find(regId) == m_registersToSymbol.end()) {
-						m_registersToSymbol[regId] = RegSymbol(externalSymbol.m_reg.m_isVector);
+						m_registersToSymbol[regId] = RegSymbol(externalSymbol.m_reg.isVector());
 					}
 					m_curRegSymbol = &m_registersToSymbol[regId];
 					m_curRegSymbol->requiestId++;
@@ -120,7 +120,7 @@ namespace CE::Decompiler
 					auto mask = externalSymbol.m_needReadMask;
 					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
 					if (mask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
-						auto expr = CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_valueRangeMask, externalSymbol.m_reg.m_isVector);
+						auto expr = CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_valueRangeMask, externalSymbol.m_reg.isVector());
 						externalSymbol.m_symbol->replaceWith(expr);
 						delete externalSymbol.m_symbol->m_symbol;
 						delete externalSymbol.m_symbol;
