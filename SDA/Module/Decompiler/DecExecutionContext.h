@@ -35,21 +35,13 @@ namespace CE::Decompiler
 			return a->m_regMask > b->m_regMask;
 			});
 
-		/*Mask requestRegMaskForOpNode;
-		if (isVector) {
-			requestRegMaskForOpNode = requestRegMask;
-		} else {
-			requestRegMaskForOpNode = GetMaskByMask64(requestRegMask);
-		}*/
-
 		for (auto it : regParts) {
 			auto& regPart = *it;
 			auto sameRegExpr = regPart.m_expr;
 			int bitShift = GetShiftValueOfMask(regPart.m_regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
 
-			//see if is regPart.m_regMask bigger than requestRegMask
-			if ((regPart.m_regMask & ~requestRegMask) != 0x0) {
-				auto mask = (regPart.m_regMask & requestRegMask) >> bitShift;
+			if ((regPart.m_regMask & regPart.m_maskToChange) != regPart.m_regMask) {
+				auto mask = (regPart.m_regMask & regPart.m_maskToChange) >> bitShift;
 				if (isVector) mask = GetMask64ByMask(mask);
 				//for operations and etc...
 				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(mask), ExprTree::And/*, requestRegMaskForOpNode, true*/);
@@ -60,11 +52,16 @@ namespace CE::Decompiler
 				if (isVector) bitShift_ *= 8;
 				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((uint64_t)bitShift_), ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
 			}
+			else {
+				int bitRightShift = GetShiftValueOfMask(requestRegMask | ~regPart.m_regMask);
+				if (bitRightShift != 0) {
+					auto bitRightShift_ = bitRightShift;
+					if (isVector) bitRightShift_ *= 8;
+					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((uint64_t)bitRightShift_), ExprTree::Shr/*, requestRegMaskForOpNode, true*/);
+				}
+			}
 
 			if (resultExpr) {
-				auto mask = ~regPart.m_maskToChange;
-				if (isVector) mask = GetMask64ByMask(mask);
-				resultExpr = new ExprTree::OperationalNode(resultExpr, new ExprTree::NumberLeaf(mask), ExprTree::And/*, requestRegMaskForOpNode, true*/);
 				resultExpr = new ExprTree::OperationalNode(resultExpr, sameRegExpr, ExprTree::Or);
 			}
 			else {

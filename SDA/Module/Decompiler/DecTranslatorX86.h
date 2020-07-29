@@ -1584,7 +1584,7 @@ namespace CE::Decompiler::PCode
 		static RegisterVarnode* CreateVarnode(ZydisRegister regId, int size = 0x0, int offset = 0x0) {
 			auto reg = CreateRegister(regId);
 			if (size != 0x0) {
-				reg.m_valueRangeMask &= GetMaskBySize(size, reg.isVector()) << (offset * (reg.isVector() ? 0x1 : 0x8));
+				reg.m_valueRangeMask &= GetMaskBySize(size, reg.isVector()) << (GetShiftValueOfMask(reg.m_valueRangeMask) + offset * (reg.isVector() ? 0x1 : 0x8));
 			}
 			return new RegisterVarnode(reg);
 		}
