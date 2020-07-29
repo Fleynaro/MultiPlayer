@@ -305,6 +305,53 @@ namespace CE::Decompiler::PCode
 				break;
 			}
 
+			//unpckh
+			case ZYDIS_MNEMONIC_UNPCKHPD:
+			case ZYDIS_MNEMONIC_UNPCKHPS:
+			//unpckl
+			case ZYDIS_MNEMONIC_UNPCKLPD:
+			case ZYDIS_MNEMONIC_UNPCKLPS:
+			{
+				auto& dstOperand = m_curInstr->operands[0];
+				auto& srcOperand = m_curInstr->operands[1];
+				switch (mnemonic)
+				{
+				case ZYDIS_MNEMONIC_UNPCKHPD: {
+					auto dstOpVarnode = requestOperandValue(dstOperand, 0x8, 0x8);
+					auto srcOpVarnode = requestOperandValue(srcOperand, 0x8, 0x8);
+					addGenericOperation(InstructionId::COPY, dstOpVarnode, nullptr, nullptr, false, 0x8, 0x0);
+					addGenericOperation(InstructionId::COPY, srcOpVarnode, nullptr, nullptr, false, 0x8, 0x8);
+					break;
+				}
+				case ZYDIS_MNEMONIC_UNPCKHPS: {
+					auto dstOpVarnode1 = requestOperandValue(dstOperand, 0x4, 8);
+					auto srcOpVarnode1 = requestOperandValue(srcOperand, 0x4, 8);
+					auto dstOpVarnode2 = requestOperandValue(dstOperand, 0x4, 12);
+					auto srcOpVarnode2 = requestOperandValue(srcOperand, 0x4, 12);
+					addGenericOperation(InstructionId::COPY, dstOpVarnode1, nullptr, nullptr, false, 0x4, 0);
+					addGenericOperation(InstructionId::COPY, srcOpVarnode1, nullptr, nullptr, false, 0x4, 4);
+					addGenericOperation(InstructionId::COPY, dstOpVarnode2, nullptr, nullptr, false, 0x4, 8);
+					addGenericOperation(InstructionId::COPY, srcOpVarnode2, nullptr, nullptr, false, 0x4, 12);
+					break;
+				}
+				case ZYDIS_MNEMONIC_UNPCKLPD: {
+					auto srcOpVarnode = requestOperandValue(srcOperand, 0x8, 0x0);
+					addGenericOperation(InstructionId::COPY, srcOpVarnode, nullptr, nullptr, false, 0x8, 0x8);
+					break;
+				}
+				case ZYDIS_MNEMONIC_UNPCKLPS: {
+					auto dstOpVarnode = requestOperandValue(dstOperand, 0x4, 4);
+					auto srcOpVarnode1 = requestOperandValue(srcOperand, 0x4, 4);
+					auto srcOpVarnode2 = requestOperandValue(srcOperand, 0x4, 0);
+					addGenericOperation(InstructionId::COPY, dstOpVarnode, nullptr, nullptr, false, 0x4, 8);
+					addGenericOperation(InstructionId::COPY, srcOpVarnode1, nullptr, nullptr, false, 0x4, 12);
+					addGenericOperation(InstructionId::COPY, srcOpVarnode2, nullptr, nullptr, false, 0x4, 4);
+					break;
+				}
+				}
+				break;
+			}
+
 			//mov
 			case ZYDIS_MNEMONIC_MOVAPD:
 			case ZYDIS_MNEMONIC_MOVAPS:
@@ -357,6 +404,11 @@ namespace CE::Decompiler::PCode
 			//xor
 			case ZYDIS_MNEMONIC_XORPD:
 			case ZYDIS_MNEMONIC_XORPS:
+			//sqrt
+			case ZYDIS_MNEMONIC_SQRTPD:
+			case ZYDIS_MNEMONIC_SQRTPS:
+			case ZYDIS_MNEMONIC_SQRTSD:
+			case ZYDIS_MNEMONIC_SQRTSS:
 			{
 				VectorOperationGeneratorInfo info;
 				info.maxSize = size;
@@ -463,6 +515,10 @@ namespace CE::Decompiler::PCode
 				else if (ZYDIS_MNEMONIC_XORPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_XORPS) {
 					info.instrId1 = InstructionId::INT_XOR;
 					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_XORPD);
+				}
+				else if (ZYDIS_MNEMONIC_SQRTPD <= mnemonic && mnemonic <= ZYDIS_MNEMONIC_SQRTSS) {
+					info.instrId1 = InstructionId::FLOAT_SQRT;
+					operationSize = OperationSize(mnemonic - ZYDIS_MNEMONIC_SQRTPD);
 				}
 
 				switch (operationSize)
@@ -1192,7 +1248,7 @@ namespace CE::Decompiler::PCode
 					if (info.isOperationWithSingleOperand) {
 						idxOp1 = idxOp2 = (i < operationsCount / 2) ? idxOp1 : idxOp2;
 					}
-					if (info.instrId1 == InstructionId::COPY) {
+					if (info.instrId1 == InstructionId::COPY || info.instrId1 == InstructionId::FLOAT_SQRT) {
 						idxOp1 = idxOp2;
 						idxOp2 = -1;
 					}
@@ -1287,7 +1343,7 @@ namespace CE::Decompiler::PCode
 				return CreateVarnode(operand.reg.value, size, offset);
 			}
 			else if (operand.type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				return new ConstantVarnode(operand.imm.value.u & GetMaskBySize(size), size);
+				return new ConstantVarnode(operand.imm.value.u & GetMaskBySize(size, false), size);
 			}
 			else if (operand.type == ZYDIS_OPERAND_TYPE_MEMORY) {
 				Varnode* resultVarnode = nullptr;
