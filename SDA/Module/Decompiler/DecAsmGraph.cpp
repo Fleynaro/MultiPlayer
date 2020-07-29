@@ -206,7 +206,7 @@ void CE::Decompiler::test() {
 		size = calculateFunctionSize2((byte*)addr, 0);
 	}
 	else {
-#define SAMPLE_VAR sample300
+#define SAMPLE_VAR sample206
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}
@@ -218,7 +218,7 @@ void CE::Decompiler::test() {
 	graph.printDebug(addr);
 
 	auto info = GetFunctionCallDefaultInfo();
-	if(true)
+	if(false)
 	{
 		auto it = info.m_paramRegisters.begin();
 		*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, 0xFFFFFFFF);

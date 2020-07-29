@@ -282,6 +282,38 @@ namespace CE::Decompiler
 			}
 		}
 
+		bool hasAllRegistersGatheredOnWay(PrimaryTree::Block* block, PrimaryTree::Block* endBlock, uint64_t hasReadMask, std::map<PrimaryTree::Block*, int>& visitedBlocks) {
+			if (!visitedBlocks.empty()) {
+				auto it = m_curRegSymbol->blocks.find(block);
+				if (it != m_curRegSymbol->blocks.end()) {
+					auto& blockRegSymbol = it->second;
+					hasReadMask &= ~blockRegSymbol.canReadMask;
+				}
+			}
+
+			for (auto nextBlock : { block->m_nextNearBlock, block->m_nextFarBlock }) {
+				if (nextBlock == nullptr)
+					continue;
+				if (nextBlock->m_level <= block->m_level)
+					continue;
+				if (visitedBlocks.find(nextBlock) == visitedBlocks.end()) {
+					visitedBlocks.insert(std::make_pair(nextBlock, 0));
+				}
+				if (nextBlock == endBlock) {
+					if (hasReadMask) {
+						return false;
+					}
+				}
+				if (++visitedBlocks[nextBlock] == nextBlock->getRefHighBlocksCount()) {
+					if (nextBlock == endBlock)
+						return true;
+					if (hasAllRegistersGatheredOnWay(nextBlock, endBlock, hasReadMask, visitedBlocks))
+						return true;
+				}
+			}
+			return false;
+		}
+
 		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
 			auto remainToReadMask = needReadMask & ~hasReadMask;
 			int prevSymbolId = 0;
@@ -365,9 +397,20 @@ namespace CE::Decompiler
 					auto pressure = it.second;
 					if (block->m_level == maxLevel) //find blocks with the highest level down
 					{
+						if (pressure == 0x1000000000000000) {
+							if (needReadMask == requestMask) {
+								//if all registers have been gathered and no sense to continue
+								std::map<PrimaryTree::Block*, int> visitedBlocks;
+								if (hasAllRegistersGatheredOnWay(block, startBlock, requestMask, visitedBlocks)) {
+									return true;
+								}
+							}
+						}
+
 						bool isLoop = true;
 						if (!isStartBlock) {
 							if (handledBlocks.find(block) == handledBlocks.end()) {
+								//handle block
 								gatherRegisterPartsInBlock(block, reg, requestMask, needReadMask, hasReadMask, pressure);
 
 								if (pressure == 0x1000000000000000 && (needReadMask & ~hasReadMask) == 0) {
