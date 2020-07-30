@@ -103,7 +103,7 @@ namespace CE::Decompiler::PrimaryTree
 			if (auto cond = dynamic_cast<ExprTree::ICondition*>(node)) {
 				if (auto newCond = dynamic_cast<ExprTree::ICondition*>(newNode)) {
 					if (m_noJmpCond == cond) {
-						m_noJmpCond = cond;
+						m_noJmpCond = newCond;
 					}
 				}
 			}

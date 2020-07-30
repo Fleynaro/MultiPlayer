@@ -55,7 +55,9 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone() override {
-			return this;
+			auto funcCallCtx = new FunctionCallContext(m_destOffset, m_destination);
+			funcCallCtx->m_registerParams = m_registerParams;
+			return funcCallCtx;
 		}
 
 		std::string printDebug() override {

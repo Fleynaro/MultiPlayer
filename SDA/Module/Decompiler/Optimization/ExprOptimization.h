@@ -31,8 +31,9 @@ namespace CE::Decompiler::Optimization
 		return 0;
 	}
 
-	static void OptimizeConstCondition(ICondition* cond, ICondition*& newCond) {
+	static void OptimizeConstCondition(ICondition* cond) {
 		Node::UpdateDebugInfo(cond);
+		ICondition* newCond = nullptr;
 		if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
 			//[mem_16_32] == NaN		->		false
 			if (auto floatNanLeaf = dynamic_cast<FloatNanLeaf*>(simpleCond->m_rightNode)) {
@@ -42,20 +43,23 @@ namespace CE::Decompiler::Optimization
 			}
 
 			if (auto subCond = dynamic_cast<ICondition*>(simpleCond->m_leftNode)) {
-				OptimizeConstCondition(subCond, subCond);
-				if (auto numberLeaf = dynamic_cast<NumberLeaf*>(simpleCond->m_rightNode)) {
-					if (numberLeaf->m_value == 0x0 && (simpleCond->m_cond == Condition::Eq || simpleCond->m_cond == Condition::Ne)) {
-						newCond = subCond;
-						if (simpleCond->m_cond == Condition::Eq)
-							newCond->inverse();
-						cond->replaceWith(newCond);
-						delete cond;
+				OptimizeConstCondition(subCond);
+				if (auto subCond = dynamic_cast<ICondition*>(simpleCond->m_leftNode)) {
+					if (auto numberLeaf = dynamic_cast<NumberLeaf*>(simpleCond->m_rightNode)) {
+						if (numberLeaf->m_value == 0x0 && (simpleCond->m_cond == Condition::Eq || simpleCond->m_cond == Condition::Ne)) {
+							newCond = subCond;
+							if (simpleCond->m_cond == Condition::Eq)
+								newCond->inverse();
+							cond->replaceWith(newCond);
+							delete cond;
+						}
 					}
 				}
 			}
 		}
 		else if (auto compCond = dynamic_cast<CompositeCondition*>(cond)) {
-			OptimizeConstCondition(compCond->m_leftCond, compCond->m_leftCond);
+			OptimizeConstCondition(compCond->m_leftCond);
+			Node::UpdateDebugInfo(compCond->m_leftCond);
 
 			if (compCond->m_cond == CompositeCondition::Not || compCond->m_cond == CompositeCondition::None) {
 				//!false		->		true
@@ -66,7 +70,8 @@ namespace CE::Decompiler::Optimization
 				}
 			}
 			else {
-				OptimizeConstCondition(compCond->m_rightCond, compCond->m_rightCond);
+				OptimizeConstCondition(compCond->m_rightCond);
+				Node::UpdateDebugInfo(compCond->m_rightCond);
 
 				ICondition* conds[2] = { compCond->m_leftCond, compCond->m_rightCond };
 				bool val[2] = { false, false };
@@ -117,8 +122,7 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 	
-	static void OptimizeCondition_SBORROW(Condition* condition, ICondition*& newCond) {
-		newCond = condition;
+	static void OptimizeCondition_SBORROW(Condition* condition) {
 		//replace SBORROW condition with normal
 		//SBORROW(*(uint_32t*)([reg_rsp_64]), 0x4{4}) == ((*(uint_32t*)([reg_rsp_64]) + 0x3fffffffc{-4}) < 0x0{0}))
 		if (auto func = dynamic_cast<FunctionalNode*>(condition->m_leftNode)) {
@@ -128,7 +132,7 @@ namespace CE::Decompiler::Optimization
 						auto newCondType = Condition::Ge;
 						if(condition->m_cond == Condition::Ne)
 							newCondType = Condition::Lt;
-						newCond = new Condition(func->m_leftNode, func->m_rightNode, newCondType);
+						auto newCond = new Condition(func->m_leftNode, func->m_rightNode, newCondType);
 						condition->replaceWith(newCond);
 						delete condition;
 					}
@@ -151,8 +155,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//rax + -0x2 < 0		=>		rax < -0x2 * -1
-	static void OptimizeCondition_Add(Condition* condition, ICondition*& newCond) {
-		newCond = condition;
+	static void OptimizeCondition_Add(Condition* condition) {
 		auto curExpr = condition->m_leftNode;
 		while (curExpr) {
 			bool next = false;
@@ -163,7 +166,7 @@ namespace CE::Decompiler::Optimization
 						//move expr from left node of the condition to the right node being multiplied -1
 						auto newPartOfRightExpr = new OperationalNode(curAddExpr->m_rightNode, new NumberLeaf(uint64_t(-1) & GetMask64ByMask(mask)), Mul, mask);
 						auto newRightExpr = new OperationalNode(condition->m_rightNode, newPartOfRightExpr, Add);
-						newCond = new Condition(curAddExpr->m_leftNode, newRightExpr, condition->m_cond);
+						auto newCond = new Condition(curAddExpr->m_leftNode, newRightExpr, condition->m_cond);
 						condition->replaceWith(newCond);
 						delete condition;
 						curExpr = condition->m_leftNode;
@@ -204,8 +207,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//(x < 2 || x == 2)		->		(x <= 2)
-	static void OptimizeCompositeCondition(CompositeCondition* compCond, ICondition*& newCond) {
-		newCond = compCond;
+	static void OptimizeCompositeCondition(CompositeCondition* compCond) {
 		if (auto leftSimpleCond = dynamic_cast<Condition*>(compCond->m_leftCond)) {
 			if (auto rightSimpleCond = dynamic_cast<Condition*>(compCond->m_rightCond)) {
 				if (leftSimpleCond->m_leftNode->getHash() == rightSimpleCond->m_leftNode->getHash() && leftSimpleCond->m_rightNode->getHash() == rightSimpleCond->m_rightNode->getHash()) {
@@ -235,7 +237,6 @@ namespace CE::Decompiler::Optimization
 						auto newSimpleCond = new Condition(leftSimpleCond->m_leftNode, leftSimpleCond->m_rightNode, newCondType);
 						compCond->replaceWith(newSimpleCond);
 						delete compCond;
-						newCond = newSimpleCond;
 					}
 				}
 			}
@@ -243,23 +244,19 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//!(x == 2)		->		(x != 2)
-	static void InverseConditions(CompositeCondition* compCond, ICondition*& newCond) {
-		newCond = compCond;
+	static void InverseConditions(CompositeCondition* compCond) {
 		if (compCond->m_cond == CompositeCondition::Not) {
-			auto condClone = compCond->m_leftCond;
-			condClone->inverse();
-			compCond->replaceWith(condClone);
+			compCond->m_leftCond->inverse();
+			compCond->replaceWith(compCond->m_leftCond);
 			delete compCond;
-			newCond = condClone;
 		}
 		else if(compCond->m_cond == CompositeCondition::None) {
 			compCond->replaceWith(compCond->m_leftCond);
 			delete compCond;
-			newCond = compCond->m_leftCond;
 		}
 	}
 
-	static void IterateChildNodes(Node* node, std::function<void(Node*&)> func) {
+	static void IterateChildNodes(Node* node, std::function<void(Node*)> func) {
 		if (auto agregator = dynamic_cast<INodeAgregator*>(node)) {
 			auto list = agregator->getNodesList();
 			for (auto it : list) {
@@ -272,7 +269,7 @@ namespace CE::Decompiler::Optimization
 	//[var_2_32] ^ [var_2_32]		=>		0
 	//[var_2_32] + 0				=>		[var_2_32]
 	//[var_2_32] * 1				=>		[var_2_32]
-	static void OptimizeZeroInExpr(Node*& node) {
+	static void OptimizeZeroInExpr(Node* node) {
 		IterateChildNodes(node, OptimizeZeroInExpr);
 
 		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
@@ -285,13 +282,11 @@ namespace CE::Decompiler::Optimization
 						if (expr->m_operation == Mul || expr->m_operation == And) {
 							expr->replaceWith(new NumberLeaf((uint64_t)0));
 							delete expr;
-							expr = nullptr;
 						}
 						else {
 							auto newExpr = expr->m_leftNode;
 							expr->replaceWith(expr->m_leftNode);
 							delete expr;
-							expr = dynamic_cast<OperationalNode*>(newExpr);
 						}
 					}
 				}
@@ -300,7 +295,6 @@ namespace CE::Decompiler::Optimization
 						auto newExpr = expr->m_leftNode;
 						expr->replaceWith(newExpr);
 						delete expr;
-						expr = dynamic_cast<OperationalNode*>(newExpr);
 					}
 				}
 			}
@@ -308,7 +302,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//5 + 2		=>		7
-	static void OptimizeConstExpr(Node*& node) {
+	static void OptimizeConstExpr(Node* node) {
 		IterateChildNodes(node, OptimizeConstExpr);
 
 		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
@@ -316,19 +310,19 @@ namespace CE::Decompiler::Optimization
 				return;
 
 			//[sym1] & [sym1]	=>	 [sym1]
-			if (expr->m_leftNode == expr->m_rightNode) {
-				if (expr->m_operation == Xor) {
-					expr->replaceWith(new NumberLeaf((uint64_t)0));
-					delete expr;
-					expr = nullptr;
-					return;
-				}
-				else if (expr->m_operation == And || expr->m_operation == Or) {
-					auto newExpr = expr->m_leftNode;
-					expr->replaceWith(newExpr);
-					delete expr;
-					expr = dynamic_cast<OperationalNode*>(newExpr);
-					return;
+			if (expr->m_operation == Xor || expr->m_operation == And || expr->m_operation == Or) {
+				if (expr->m_leftNode->getHash() == expr->m_rightNode->getHash()) {
+					if (expr->m_operation == Xor) {
+						expr->replaceWith(new NumberLeaf((uint64_t)0));
+						delete expr;
+						return;
+					}
+					else {
+						auto newExpr = expr->m_leftNode;
+						expr->replaceWith(newExpr);
+						delete expr;
+						return;
+					}
 				}
 			}
 
@@ -339,7 +333,6 @@ namespace CE::Decompiler::Optimization
 						result &= GetMask64ByMask(expr->getMask());
 					expr->replaceWith(new NumberLeaf(result));
 					delete expr;
-					expr = nullptr;
 					return;
 				}
 			}
@@ -378,7 +371,7 @@ namespace CE::Decompiler::Optimization
 
 
 	//(0x2 + a)		=>		(a + 0x2)	
-	static void ChangeLeafPlaceInMovingOperations(Node*& node) {
+	static void ChangeLeafPlaceInMovingOperations(Node* node) {
 		IterateChildNodes(node, ChangeLeafPlaceInMovingOperations);
 		
 		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
@@ -419,7 +412,7 @@ namespace CE::Decompiler::Optimization
 
 
 	//(3x + x) + 5	=>	4x + 5
-	static void CalculateAddEqualNodes(Node*& node) {
+	static void CalculateAddEqualNodes(Node* node) {
 		IterateChildNodes(node, CalculateAddEqualNodes);
 
 		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
@@ -428,7 +421,6 @@ namespace CE::Decompiler::Optimization
 				if (resultExpr != nullptr) {
 					expr->replaceWith(resultExpr);
 					delete expr;
-					expr = resultExpr;
 				}
 			}
 		}
@@ -437,7 +429,7 @@ namespace CE::Decompiler::Optimization
 
 	//((rsp + 0x20) + (rax * 5)) + 0x10				=>		(rsp + 0x30) + (rax * 5)
 	//((((rsp & 0xF) + 0x9) + 0x2) + (-0x8))		=>		((rsp & 0xF) + 0x3)
-	static void MakeLeafPlaceDeeperAndCalculate(Node*& node, OperationalNode*& prevExpr) {
+	static void MakeLeafPlaceDeeperAndCalculate(Node* node, OperationalNode* prevExpr) {
 		Node::UpdateDebugInfo(node);
 		Node::UpdateDebugInfo(prevExpr);
 		bool isSameOperation = true;
@@ -507,7 +499,6 @@ namespace CE::Decompiler::Optimization
 						}
 						prevExpr->replaceWith(expr);
 						delete prevExpr;
-						prevExpr = expr;
 
 					}
 				}
@@ -524,7 +515,6 @@ namespace CE::Decompiler::Optimization
 							}
 							prevExpr->replaceWith(expr);
 							delete prevExpr;
-							prevExpr = expr;
 						}
 					}
 				}
@@ -532,17 +522,13 @@ namespace CE::Decompiler::Optimization
 
 			Node::UpdateDebugInfo(expr);
 			if (expr->m_rightNode) {
-				auto rightNode = expr->m_rightNode;
 				OperationalNode* prevExpr_ = nullptr;
-				MakeLeafPlaceDeeperAndCalculate(rightNode, prevExpr_);
+				MakeLeafPlaceDeeperAndCalculate(expr->m_rightNode, prevExpr_);
 			}
-			auto leftNode = expr->m_leftNode;
-			MakeLeafPlaceDeeperAndCalculate(leftNode, expr);
-			Node::UpdateDebugInfo(expr);
-			node = expr;
+			MakeLeafPlaceDeeperAndCalculate(expr->m_leftNode, expr);
 		}
 		else {
-			IterateChildNodes(node, [](Node*& childNode) {
+			IterateChildNodes(node, [](Node* childNode) {
 				OperationalNode* prevExpr_ = nullptr;
 				MakeLeafPlaceDeeperAndCalculate(childNode, prevExpr_);
 				});
@@ -550,7 +536,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//([reg_rbx_64] & 0xffffffff00000000{0} | [var_2_32]) & 0x1f{31}	=>		[var_2_32] & 0x1f{31}
-	static void RemoveZeroMaskMulExpr(OperationalNode*& expr, Mask mask) {
+	static void RemoveZeroMaskMulExpr(OperationalNode* expr, Mask mask) {
 		if (!IsOperationManipulatedWithBitVector(expr->m_operation))
 			return;
 
@@ -570,13 +556,12 @@ namespace CE::Decompiler::Optimization
 					expr->replaceWith(it.second);
 					*it.first = nullptr;
 					delete expr;
-					expr = nullptr;
 					return;
 				}
 			}
 		}
 
-		IterateChildNodes(expr, [mask](Node*& childNode) {
+		IterateChildNodes(expr, [mask](Node* childNode) {
 			if (auto opNode = dynamic_cast<OperationalNode*>(childNode)) {
 				RemoveZeroMaskMulExpr(opNode, mask);
 			}
@@ -584,7 +569,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 
-	static void CalculateMasksAndOptimize(Node*& node) {
+	static void CalculateMasksAndOptimize(Node* node) {
 		IterateChildNodes(node, CalculateMasksAndOptimize);
 
 		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
@@ -602,7 +587,6 @@ namespace CE::Decompiler::Optimization
 							//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
 							expr->replaceWith(new NumberLeaf((uint64_t)0));
 							delete expr;
-							expr = nullptr;
 							return;
 						}
 
@@ -615,7 +599,6 @@ namespace CE::Decompiler::Optimization
 									expr->replaceWith(newExpr);
 									expr->m_leftNode = nullptr;
 									delete expr;
-									expr = dynamic_cast<OperationalNode*>(newExpr);
 								}
 								else {
 									if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
@@ -700,63 +683,24 @@ namespace CE::Decompiler::Optimization
 		return true;
 	}
 
-	static void Optimize(Node* node) {
+	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
+	static void Optimize(Node*& node) {
 		Node::UpdateDebugInfo(node);
 		OptimizeConstExpr(node);
-		if (!node) return;
 		Node::UpdateDebugInfo(node);
 		ChangeLeafPlaceInMovingOperations(node);
-		if (!node) return;
 		Node::UpdateDebugInfo(node);
 		OperationalNode* prevExpr_ = nullptr;
 		MakeLeafPlaceDeeperAndCalculate(node, prevExpr_);
-		if (!node) return;
 		Node::UpdateDebugInfo(node);
 		OptimizeZeroInExpr(node);
-		if (!node) return;
 		Node::UpdateDebugInfo(node);
 		CalculateAddEqualNodes(node);
-		if (!node) return;
 		Node::UpdateDebugInfo(node);
 		CalculateMasksAndOptimize(node);
-		if (!node) return;
 		Node::UpdateDebugInfo(node);
 		OptimizeZeroInExpr(node);
-		if (!node) return;
 		Node::UpdateDebugInfo(node);
-	}
-
-	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
-	static void Optimize2(Node* node) {
-		/*auto list = GetNextOperationalsNodesToOpimize(node);
-		std::set<OperationalNode*> exprs;
-		for (auto it : list)
-			exprs.insert(it);
-
-		for(auto expr : exprs) {
-			Node::UpdateDebugInfo(expr);
-			OptimizeConstExpr(expr);
-			if (!expr) continue;
-			Node::UpdateDebugInfo(expr);
-			ChangeLeafPlaceInMovingOperations(expr);
-			if (!expr) continue;
-			Node::UpdateDebugInfo(expr);
-			if (MakeLeafPlaceDeeperAndCalculate(expr) == 1)
-				continue;
-			Node::UpdateDebugInfo(expr);
-			OptimizeZeroInExpr(expr);
-			if (!expr) continue;
-			Node::UpdateDebugInfo(expr);
-			CalculateAddEqualNodes(expr);
-			if (!expr) continue;
-			Node::UpdateDebugInfo(expr);
-			CalculateMasksAndOptimize(expr);
-			if (!expr) continue;
-			Node::UpdateDebugInfo(expr);
-			OptimizeZeroInExpr(expr);
-			if (!expr) continue;
-			Node::UpdateDebugInfo(expr);
-		}*/
 	}
 
 	static void OptimizeCondition(ICondition*& cond) {
@@ -765,27 +709,25 @@ namespace CE::Decompiler::Optimization
 			OptimizeCondition(compCond->m_rightCond);
 
 			Node::UpdateDebugInfo(compCond);
-			InverseConditions(compCond, cond);
+			InverseConditions(compCond);
 			if (auto compCond = dynamic_cast<CompositeCondition*>(cond)) {
 				Node::UpdateDebugInfo(compCond);
 				MakeOrderInCompositeCondition(compCond);
 				Node::UpdateDebugInfo(compCond);
-				OptimizeCompositeCondition(compCond, cond);
+				OptimizeCompositeCondition(compCond);
 				Node::UpdateDebugInfo(cond);
-				int a = 5;
 			}
 		}
 		else if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
 			Node::UpdateDebugInfo(simpleCond);
-			OptimizeCondition_SBORROW(simpleCond, cond);
+			OptimizeCondition_SBORROW(simpleCond);
 			if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
 				Node::UpdateDebugInfo(simpleCond);
-				OptimizeCondition_Add(simpleCond, cond);
+				OptimizeCondition_Add(simpleCond);
 				if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
 					Node::UpdateDebugInfo(simpleCond);
-					Optimize(simpleCond);
+					Optimize((Node*&)simpleCond);
 					Node::UpdateDebugInfo(simpleCond);
-					int a = 5;
 				}
 			}
 		}

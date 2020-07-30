@@ -112,12 +112,6 @@ namespace CE::Decompiler::Symbol
 			m_id = id++;
 		}
 
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue(m_id);
-			return hash.getHash();
-		}
-
 		std::string printDebug() override;
 	};
 };

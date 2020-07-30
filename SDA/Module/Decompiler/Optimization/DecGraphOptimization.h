@@ -92,9 +92,10 @@ namespace CE::Decompiler::Optimization
 			}
 			if (decBlock->m_noJmpCond != nullptr) {
 				Node::UpdateDebugInfo(decBlock->m_noJmpCond);
-				Optimization::Optimize(decBlock->m_noJmpCond);
+				Optimization::Optimize((Node*&)decBlock->m_noJmpCond);
 				Node::UpdateDebugInfo(decBlock->m_noJmpCond);
-				Optimization::OptimizeConstCondition(decBlock->m_noJmpCond, decBlock->m_noJmpCond);
+				Optimization::OptimizeConstCondition(decBlock->m_noJmpCond);
+				Node::UpdateDebugInfo(decBlock->m_noJmpCond);
 				Optimization::OptimizeCondition(decBlock->m_noJmpCond);
 			}
 			if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
@@ -121,7 +122,7 @@ namespace CE::Decompiler::Optimization
 
 
 	static void GetReadValueNodes(Node* node, std::list<ReadValueNode*>& readValueNodes) {
-		IterateChildNodes(node, [&](Node*& childNode) {
+		IterateChildNodes(node, [&](Node* childNode) {
 			GetReadValueNodes(childNode, readValueNodes);
 			});
 		if (auto readValueNode = dynamic_cast<ReadValueNode*>(node)) {
@@ -320,7 +321,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	static bool HasUndefinedRegister(Node* node, ExprTree::FunctionCallInfo& funcCallInfo) {
-		IterateChildNodes(node, [&](Node*& childNode) {
+		IterateChildNodes(node, [&](Node* childNode) {
 			HasUndefinedRegister(childNode, funcCallInfo);
 			});
 
@@ -357,7 +358,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	static void GetSymbolLeafs(Node* node, Symbol::Symbol* symbol, std::list<ExprTree::SymbolLeaf*>& symbolLeafs) {
-		IterateChildNodes(node, [&](Node*& childNode) {
+		IterateChildNodes(node, [&](Node* childNode) {
 			GetSymbolLeafs(childNode, symbol, symbolLeafs);
 			});
 
