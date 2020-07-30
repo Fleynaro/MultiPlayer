@@ -35,30 +35,24 @@ namespace CE::Decompiler
 			return a->m_regMask > b->m_regMask;
 			});
 
+		int bitRightShift = GetShiftValueOfMask(requestRegMask);
 		for (auto it : regParts) {
 			auto& regPart = *it;
 			auto sameRegExpr = regPart.m_expr;
-			int bitShift = GetShiftValueOfMask(regPart.m_regMask | ~requestRegMask); //e.g. if we requiest only AH,CH... registers.
+			int bitLeftShift = GetShiftValueOfMask(regPart.m_regMask); //e.g. if we requiest only AH,CH... registers.
+			auto bitShift = bitRightShift - bitLeftShift;
 
 			if ((regPart.m_regMask & regPart.m_maskToChange) != regPart.m_regMask) {
-				auto mask = (regPart.m_regMask & regPart.m_maskToChange) >> bitShift;
+				auto mask = (regPart.m_regMask & regPart.m_maskToChange) >> bitLeftShift;
 				if (isVector) mask = GetMask64ByMask(mask);
 				//for operations and etc...
 				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(mask), ExprTree::And/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (bitShift != 0) {
-				auto bitShift_ = bitShift;
+				auto bitShift_ = abs(bitShift);
 				if (isVector) bitShift_ *= 8;
-				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((uint64_t)bitShift_), ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
-			}
-			else {
-				int bitRightShift = GetShiftValueOfMask(requestRegMask | ~regPart.m_regMask);
-				if (bitRightShift != 0) {
-					auto bitRightShift_ = bitRightShift;
-					if (isVector) bitRightShift_ *= 8;
-					sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((uint64_t)bitRightShift_), ExprTree::Shr/*, requestRegMaskForOpNode, true*/);
-				}
+				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((uint64_t)bitShift_), bitShift > 0 ? ExprTree::Shr : ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (resultExpr) {
