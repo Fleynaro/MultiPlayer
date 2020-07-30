@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler
 {
-	struct RegisterPart : public ExprTree::IParentNode {
+	struct RegisterPart : public ExprTree::INodeAgregator {
 		uint64_t m_regMask = -1;
 		uint64_t m_maskToChange = -1;
 		ExprTree::Node* m_expr = nullptr;

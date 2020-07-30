@@ -31,46 +31,6 @@ namespace CE::Decompiler::Optimization
 		return 0;
 	}
 
-	static std::list<OperationalNode*> GetNextOperationalsNodesToOpimize(Node* node) {
-		if (auto operationalNode = dynamic_cast<OperationalNode*>(node)) {
-			return { operationalNode };
-		}
-
-		if (auto conditionNode = dynamic_cast<Condition*>(node)) {
-			auto list1 = GetNextOperationalsNodesToOpimize(conditionNode->m_leftNode);
-			auto list2 = GetNextOperationalsNodesToOpimize(conditionNode->m_rightNode);
-			list1.insert(list1.end(), list2.begin(), list2.end());
-			return list1;
-		}
-
-		if (auto compCondition = dynamic_cast<CompositeCondition*>(node)) {
-			auto list1 = GetNextOperationalsNodesToOpimize(compCondition->m_leftCond);
-			auto list2 = GetNextOperationalsNodesToOpimize(compCondition->m_rightCond);
-			list1.insert(list1.end(), list2.begin(), list2.end());
-			return list1;
-		}
-
-		if (auto functionCallCtx = dynamic_cast<FunctionCallContext*>(node)) {
-			auto resultList = GetNextOperationalsNodesToOpimize(functionCallCtx->m_destination);
-			for (const auto& it : functionCallCtx->m_registerParams) {
-				auto list = GetNextOperationalsNodesToOpimize(it.second);
-				resultList.insert(resultList.end(), list.begin(), list.end());
-			}
-			return resultList;
-		}
-
-		return {};
-	}
-
-	static std::list<OperationalNode*> GetNextOperationalsNodesToOpimize(OperationalNode* expr) {
-		auto list1 = GetNextOperationalsNodesToOpimize(expr->m_leftNode);
-		if (!IsOperationWithSingleOperand(expr->m_operation)) {
-			auto list2 = GetNextOperationalsNodesToOpimize(expr->m_rightNode);
-			list1.insert(list1.end(), list2.begin(), list2.end());
-		}
-		return list1;
-	}
-
 	static void OptimizeConstCondition(ICondition* cond, ICondition*& newCond) {
 		Node::UpdateDebugInfo(cond);
 		if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
@@ -286,7 +246,7 @@ namespace CE::Decompiler::Optimization
 	static void InverseConditions(CompositeCondition* compCond, ICondition*& newCond) {
 		newCond = compCond;
 		if (compCond->m_cond == CompositeCondition::Not) {
-			auto condClone = compCond->m_leftCond->cloneCond();
+			auto condClone = compCond->m_leftCond;
 			condClone->inverse();
 			compCond->replaceWith(condClone);
 			delete compCond;
@@ -299,93 +259,99 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	static void IterateChildNodes(Node* node, std::function<void(Node*&)> func) {
+		if (auto agregator = dynamic_cast<INodeAgregator*>(node)) {
+			auto list = agregator->getNodesList();
+			for (auto it : list) {
+				func(it);
+			}
+		}
+	}
+
 	//[var_2_32] * 0				=>		0
 	//[var_2_32] ^ [var_2_32]		=>		0
 	//[var_2_32] + 0				=>		[var_2_32]
 	//[var_2_32] * 1				=>		[var_2_32]
-	static void OptimizeZeroInExpr(OperationalNode*& expr) {	
-		auto list = GetNextOperationalsNodesToOpimize(expr);
-		for (auto it : list) {
-			OptimizeZeroInExpr(it);
-		}
+	static void OptimizeZeroInExpr(Node*& node) {
+		IterateChildNodes(node, OptimizeZeroInExpr);
 
-		if (IsOperationUnsupportedToCalculate(expr->m_operation))
-			return;
+		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+			if (IsOperationUnsupportedToCalculate(expr->m_operation))
+				return;
 
-		if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-			if (expr->m_operation != Div && expr->m_operation != Mod) {
-				if (rightNumberLeaf->m_value == 0) {
-					if (expr->m_operation == Mul || expr->m_operation == And) {
-						expr->replaceWith(new NumberLeaf((uint64_t)0));
-						delete expr;
-						expr = nullptr;
+			if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+				if (expr->m_operation != Div && expr->m_operation != Mod) {
+					if (rightNumberLeaf->m_value == 0) {
+						if (expr->m_operation == Mul || expr->m_operation == And) {
+							expr->replaceWith(new NumberLeaf((uint64_t)0));
+							delete expr;
+							expr = nullptr;
+						}
+						else {
+							auto newExpr = expr->m_leftNode;
+							expr->replaceWith(expr->m_leftNode);
+							delete expr;
+							expr = dynamic_cast<OperationalNode*>(newExpr);
+						}
 					}
-					else {
+				}
+				else {
+					if (rightNumberLeaf->m_value == 1) {
 						auto newExpr = expr->m_leftNode;
-						expr->replaceWith(expr->m_leftNode);
+						expr->replaceWith(newExpr);
 						delete expr;
 						expr = dynamic_cast<OperationalNode*>(newExpr);
 					}
 				}
 			}
-			else {
-				if (rightNumberLeaf->m_value == 1) {
+		}
+	}
+
+	//5 + 2		=>		7
+	static void OptimizeConstExpr(Node*& node) {
+		IterateChildNodes(node, OptimizeConstExpr);
+
+		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+			if (IsOperationUnsupportedToCalculate(expr->m_operation))
+				return;
+
+			//[sym1] & [sym1]	=>	 [sym1]
+			if (expr->m_leftNode == expr->m_rightNode) {
+				if (expr->m_operation == Xor) {
+					expr->replaceWith(new NumberLeaf((uint64_t)0));
+					delete expr;
+					expr = nullptr;
+					return;
+				}
+				else if (expr->m_operation == And || expr->m_operation == Or) {
 					auto newExpr = expr->m_leftNode;
 					expr->replaceWith(newExpr);
 					delete expr;
 					expr = dynamic_cast<OperationalNode*>(newExpr);
+					return;
 				}
 			}
-		}
-	}
 
-
-	//5 + 2		=>		7
-	static void OptimizeConstExpr(OperationalNode*& expr) {
-		Node::UpdateDebugInfo(expr);
-		auto list = GetNextOperationalsNodesToOpimize(expr);
-		for (auto it : list) {
-			OptimizeConstExpr(it);
-		}
-
-		if (IsOperationUnsupportedToCalculate(expr->m_operation))
-			return;
-
-		//[sym1] & [sym1]	=>	 [sym1]
-		if (expr->m_leftNode == expr->m_rightNode) {
-			if (expr->m_operation == Xor) {
-				expr->replaceWith(new NumberLeaf((uint64_t)0));
-				delete expr;
-				expr = nullptr;
-				return;
-			} else if (expr->m_operation == And || expr->m_operation == Or) {
-				auto newExpr = expr->m_leftNode;
-				expr->replaceWith(newExpr);
-				delete expr;
-				expr = dynamic_cast<OperationalNode*>(newExpr);
-				return;
+			if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
+				if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+					auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
+					if (expr->getMask())
+						result &= GetMask64ByMask(expr->getMask());
+					expr->replaceWith(new NumberLeaf(result));
+					delete expr;
+					expr = nullptr;
+					return;
+				}
 			}
-		}
-		
-		if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
-			if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-				auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
-				if (expr->getMask())
-					result &= GetMask64ByMask(expr->getMask());
-				expr->replaceWith(new NumberLeaf(result));
-				delete expr;
-				expr = nullptr;
-				return;
-			}
-		}
 
-		//a << 0x2{2}		=>		a * 4
-		if (expr->m_operation == Shl) {
-			if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-				auto value = numberLeaf->m_value;
-				if (value >= 1 && value <= 3) {
-					expr->m_operation = Mul;
-					numberLeaf->m_value = (uint64_t)1 << value;
+			//a << 0x2{2}		=>		a * 4
+			if (expr->m_operation == Shl) {
+				if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+					auto value = numberLeaf->m_value;
+					if (value >= 1 && value <= 3) {
+						expr->m_operation = Mul;
+						numberLeaf->m_value = (uint64_t)1 << value;
+					}
 				}
 			}
 		}
@@ -412,16 +378,16 @@ namespace CE::Decompiler::Optimization
 
 
 	//(0x2 + a)		=>		(a + 0x2)	
-	static void ChangeLeafPlaceInMovingOperations(OperationalNode*& expr) {
-		auto list = GetNextOperationalsNodesToOpimize(expr);
-		for (auto it : list) {
-			ChangeLeafPlaceInMovingOperations(it);
-		}
-		if (IsOperationMoving(expr->m_operation)) {
-			if (IsSwap(expr->m_leftNode, expr->m_rightNode)) {
-				auto tempNode = expr->m_rightNode;
-				expr->m_rightNode = expr->m_leftNode;
-				expr->m_leftNode = tempNode;
+	static void ChangeLeafPlaceInMovingOperations(Node*& node) {
+		IterateChildNodes(node, ChangeLeafPlaceInMovingOperations);
+		
+		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+			if (IsOperationMoving(expr->m_operation)) {
+				if (IsSwap(expr->m_leftNode, expr->m_rightNode)) {
+					auto tempNode = expr->m_rightNode;
+					expr->m_rightNode = expr->m_leftNode;
+					expr->m_leftNode = tempNode;
+				}
 			}
 		}
 	}
@@ -453,18 +419,17 @@ namespace CE::Decompiler::Optimization
 
 
 	//(3x + x) + 5	=>	4x + 5
-	static void CalculateAddEqualNodes(OperationalNode*& expr) {
-		auto list = GetNextOperationalsNodesToOpimize(expr);
-		for (auto it : list) {
-			CalculateAddEqualNodes(it);
-		}
+	static void CalculateAddEqualNodes(Node*& node) {
+		IterateChildNodes(node, CalculateAddEqualNodes);
 
-		if (expr->m_operation == Add) {
-			auto resultExpr = AddEqualNodes(expr->m_leftNode, expr->m_rightNode);
-			if (resultExpr != nullptr) {
-				expr->replaceWith(resultExpr);
-				delete expr;
-				expr = resultExpr;
+		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+			if (expr->m_operation == Add) {
+				auto resultExpr = AddEqualNodes(expr->m_leftNode, expr->m_rightNode);
+				if (resultExpr != nullptr) {
+					expr->replaceWith(resultExpr);
+					delete expr;
+					expr = resultExpr;
+				}
 			}
 		}
 	}
@@ -472,106 +437,116 @@ namespace CE::Decompiler::Optimization
 
 	//((rsp + 0x20) + (rax * 5)) + 0x10				=>		(rsp + 0x30) + (rax * 5)
 	//((((rsp & 0xF) + 0x9) + 0x2) + (-0x8))		=>		((rsp & 0xF) + 0x3)
-	static int MakeLeafPlaceDeeperAndCalculate(OperationalNode* expr, OperationalNode* prevExpr = nullptr) {
-		Node::UpdateDebugInfo(expr);
+	static void MakeLeafPlaceDeeperAndCalculate(Node*& node, OperationalNode*& prevExpr) {
+		Node::UpdateDebugInfo(node);
 		Node::UpdateDebugInfo(prevExpr);
 		bool isSameOperation = true;
-		int isPrevExprRemoved = 0;
 
-		if (prevExpr != nullptr) {
-			auto prevOperation = prevExpr->m_operation;
-			if (prevOperation != expr->m_operation) {
-				isSameOperation = false;
-			}
-		}
-
-		if (isSameOperation && prevExpr) {
-			if (IsOperationMoving(expr->m_operation)) {
-				if (IsSwap(prevExpr->m_rightNode, expr->m_rightNode)) {
-					OperationalNode* newExpr;
-					OperationalNode* newPrevExpr;
-					//we should check what type of instruction this node belongs to because of keeping suit
-					if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
-						newExpr = new InstructionOperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation, instrExpr->m_instr);
-					}
-					else {
-						newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation);
-					}
-					if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(prevExpr)) {
-						newPrevExpr = new InstructionOperationalNode(newExpr, expr->m_rightNode, expr->m_operation, instrExpr->m_instr);
-					}
-					else {
-						newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation);
-					}
-
-					prevExpr->replaceWith(newPrevExpr);
-					delete prevExpr;
-					isPrevExprRemoved = 2;
-					expr = newExpr;
-					prevExpr = newPrevExpr;
-					Node::UpdateDebugInfo(expr);
-					Node::UpdateDebugInfo(prevExpr);
+		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+			if (prevExpr != nullptr) {
+				auto prevOperation = prevExpr->m_operation;
+				if (prevOperation != expr->m_operation) {
+					isSameOperation = false;
 				}
 			}
 
-			if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-				if (auto prevNumberLeaf = dynamic_cast<NumberLeaf*>(prevExpr->m_rightNode)) {
-					auto result = numberLeaf->m_value;
-					switch (expr->m_operation)
-					{
-					case Shr:
-					case Shl:
-						result += prevNumberLeaf->m_value;
-						break;
-					case Div:
-						result *= prevNumberLeaf->m_value;
-						break;
-					default:
-						result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
-					}
-
-					auto mask = expr->getMask() | prevExpr->getMask();
-					if (mask)
-						result &= GetMask64ByMask(mask);
-
-					auto numberLeaf = new NumberLeaf(result);
-					if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
-						expr = new InstructionOperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation, instrExpr->m_instr);
-					}
-					else {
-						expr = new OperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation);
-					}
-					prevExpr->replaceWith(expr);
-					delete prevExpr;
-					isPrevExprRemoved = 2;
-				}
-			}
-			else {
-				//((y + 3x) + x)	=>	(y + 4x)
-				if (expr->m_operation == Add) {
-					auto resultExpr = AddEqualNodes(expr, prevExpr);
-					if (resultExpr != nullptr) {
+			if (isSameOperation && prevExpr) {
+				if (IsOperationMoving(expr->m_operation)) {
+					if (IsSwap(prevExpr->m_rightNode, expr->m_rightNode)) {
+						OperationalNode* newExpr;
+						OperationalNode* newPrevExpr;
+						//we should check what type of instruction this node belongs to because of keeping suit
 						if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
-							expr = new InstructionOperationalNode(expr->m_leftNode, resultExpr, Add, instrExpr->m_instr);
+							newExpr = new InstructionOperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation, instrExpr->m_instr);
 						}
 						else {
-							expr = new OperationalNode(expr->m_leftNode, resultExpr, Add);
+							newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation);
+						}
+						if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(prevExpr)) {
+							newPrevExpr = new InstructionOperationalNode(newExpr, expr->m_rightNode, expr->m_operation, instrExpr->m_instr);
+						}
+						else {
+							newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation);
+						}
+
+						prevExpr->replaceWith(newPrevExpr);
+						delete prevExpr;
+						expr = newExpr;
+						prevExpr = newPrevExpr;
+						Node::UpdateDebugInfo(expr);
+						Node::UpdateDebugInfo(prevExpr);
+					}
+				}
+
+				if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+					if (auto prevNumberLeaf = dynamic_cast<NumberLeaf*>(prevExpr->m_rightNode)) {
+						auto result = numberLeaf->m_value;
+						switch (expr->m_operation)
+						{
+						case Shr:
+						case Shl:
+							result += prevNumberLeaf->m_value;
+							break;
+						case Div:
+							result *= prevNumberLeaf->m_value;
+							break;
+						default:
+							result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
+						}
+
+						auto mask = expr->getMask() | prevExpr->getMask();
+						if (mask)
+							result &= GetMask64ByMask(mask);
+
+						auto numberLeaf = new NumberLeaf(result);
+						if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
+							expr = new InstructionOperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation, instrExpr->m_instr);
+						}
+						else {
+							expr = new OperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation);
 						}
 						prevExpr->replaceWith(expr);
 						delete prevExpr;
-						isPrevExprRemoved = 2;
+						prevExpr = expr;
+
+					}
+				}
+				else {
+					//((y + 3x) + x)	=>	(y + 4x)
+					if (expr->m_operation == Add) {
+						auto resultExpr = AddEqualNodes(expr, prevExpr);
+						if (resultExpr != nullptr) {
+							if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
+								expr = new InstructionOperationalNode(expr->m_leftNode, resultExpr, Add, instrExpr->m_instr);
+							}
+							else {
+								expr = new OperationalNode(expr->m_leftNode, resultExpr, Add);
+							}
+							prevExpr->replaceWith(expr);
+							delete prevExpr;
+							prevExpr = expr;
+						}
 					}
 				}
 			}
-		}
 
-		auto list = GetNextOperationalsNodesToOpimize(expr);
-		for (auto it : list) {
-			if (MakeLeafPlaceDeeperAndCalculate(it, expr) >= 1)
-				return 1;
+			Node::UpdateDebugInfo(expr);
+			if (expr->m_rightNode) {
+				auto rightNode = expr->m_rightNode;
+				OperationalNode* prevExpr_ = nullptr;
+				MakeLeafPlaceDeeperAndCalculate(rightNode, prevExpr_);
+			}
+			auto leftNode = expr->m_leftNode;
+			MakeLeafPlaceDeeperAndCalculate(leftNode, expr);
+			Node::UpdateDebugInfo(expr);
+			node = expr;
 		}
-
-		return isPrevExprRemoved;
+		else {
+			IterateChildNodes(node, [](Node*& childNode) {
+				OperationalNode* prevExpr_ = nullptr;
+				MakeLeafPlaceDeeperAndCalculate(childNode, prevExpr_);
+				});
+		}
 	}
 
 	//([reg_rbx_64] & 0xffffffff00000000{0} | [var_2_32]) & 0x1f{31}	=>		[var_2_32] & 0x1f{31}
@@ -585,7 +560,7 @@ namespace CE::Decompiler::Optimization
 		{
 			if (auto operand = dynamic_cast<INumber*>(*it.first)) {
 				if ((operand->getMask() & mask) == 0x0) {
-					//убрал, ибо не соблюдается главное условие оптимизации - заменяться все должно целиком
+					//убрал, ибо не соблюдается главное условие оптимизации - заменяться все должно целиком. updated: теперь можно, ибо клонирование сделано
 					/*if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(it.second)) {
 						RemoveZeroMaskMulExpr(expr, mask);
 						if (!expr)
@@ -601,67 +576,67 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		auto list = GetNextOperationalsNodesToOpimize(expr);
-		for (auto it : list) {
-			RemoveZeroMaskMulExpr(it, mask);
-		}
+		IterateChildNodes(expr, [mask](Node*& childNode) {
+			if (auto opNode = dynamic_cast<OperationalNode*>(childNode)) {
+				RemoveZeroMaskMulExpr(opNode, mask);
+			}
+			});
 	}
 
 
-	static void CalculateMasksAndOptimize(OperationalNode*& expr) {
-		auto list = GetNextOperationalsNodesToOpimize(expr);
-		for (auto it : list) {
-			CalculateMasksAndOptimize(it);
-		}
+	static void CalculateMasksAndOptimize(Node*& node) {
+		IterateChildNodes(node, CalculateMasksAndOptimize);
 
-		if (IsOperationWithSingleOperand(expr->m_operation))
-			return;
+		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+			if (IsOperationWithSingleOperand(expr->m_operation))
+				return;
 
-		if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
-			if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
-				if (expr->m_operation == And) {
-					auto mask1 = leftNode->getMask();
-					auto mask2 = rightNode->getMask();
-					expr->setMask(mask1 & mask2);
+			if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
+				if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
+					if (expr->m_operation == And) {
+						auto mask1 = leftNode->getMask();
+						auto mask2 = rightNode->getMask();
+						expr->setMask(mask1 & mask2);
 
-					if (expr->getMask() == 0x0) {
-						//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
-						expr->replaceWith(new NumberLeaf((uint64_t)0));
-						delete expr;
-						expr = nullptr;
-						return;
-					}
+						if (expr->getMask() == 0x0) {
+							//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
+							expr->replaceWith(new NumberLeaf((uint64_t)0));
+							delete expr;
+							expr = nullptr;
+							return;
+						}
 
-					if (mask1 <= 0xFF) {
-						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-							auto mask1_64 = GetMask64ByMask(mask1);
-							if ((mask1_64 & numberLeaf->m_value) == mask1_64) {
-								//[var_2_32] & 0xffffffff{-1}		=>		 [var_2_32]		
-								auto newExpr = expr->m_leftNode;
-								expr->replaceWith(newExpr);
-								expr->m_leftNode = nullptr;
-								delete expr;
-								expr = dynamic_cast<OperationalNode*>(newExpr);
-							}
-							else {
-								if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
-									RemoveZeroMaskMulExpr(leftExpr, mask2);
+						if (mask1 <= 0xFF) {
+							if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+								auto mask1_64 = GetMask64ByMask(mask1);
+								if ((mask1_64 & numberLeaf->m_value) == mask1_64) {
+									//[var_2_32] & 0xffffffff{-1}		=>		 [var_2_32]		
+									auto newExpr = expr->m_leftNode;
+									expr->replaceWith(newExpr);
+									expr->m_leftNode = nullptr;
+									delete expr;
+									expr = dynamic_cast<OperationalNode*>(newExpr);
+								}
+								else {
+									if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
+										RemoveZeroMaskMulExpr(leftExpr, mask2);
+									}
 								}
 							}
 						}
 					}
-				}
-				else if (expr->m_operation == Shl || expr->m_operation == Shr) {
-					if (expr->m_operation == Shl) {
-						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-							expr->setMask(leftNode->getMask() << (numberLeaf->m_value / 0x8 + (numberLeaf->m_value % 0x8 == 0 ? 0 : 1)));
-							return;
+					else if (expr->m_operation == Shl || expr->m_operation == Shr) {
+						if (expr->m_operation == Shl) {
+							if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+								expr->setMask(leftNode->getMask() << (numberLeaf->m_value / 0x8 + (numberLeaf->m_value % 0x8 == 0 ? 0 : 1)));
+								return;
+							}
 						}
+						expr->setMask(leftNode->getMask());
 					}
-					expr->setMask(leftNode->getMask());
-				}
-				else {
-					expr->setMask(leftNode->getMask() | rightNode->getMask());
+					else {
+						expr->setMask(leftNode->getMask() | rightNode->getMask());
+					}
 				}
 			}
 		}
@@ -725,9 +700,35 @@ namespace CE::Decompiler::Optimization
 		return true;
 	}
 
-	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
 	static void Optimize(Node* node) {
-		auto list = GetNextOperationalsNodesToOpimize(node);
+		Node::UpdateDebugInfo(node);
+		OptimizeConstExpr(node);
+		if (!node) return;
+		Node::UpdateDebugInfo(node);
+		ChangeLeafPlaceInMovingOperations(node);
+		if (!node) return;
+		Node::UpdateDebugInfo(node);
+		OperationalNode* prevExpr_ = nullptr;
+		MakeLeafPlaceDeeperAndCalculate(node, prevExpr_);
+		if (!node) return;
+		Node::UpdateDebugInfo(node);
+		OptimizeZeroInExpr(node);
+		if (!node) return;
+		Node::UpdateDebugInfo(node);
+		CalculateAddEqualNodes(node);
+		if (!node) return;
+		Node::UpdateDebugInfo(node);
+		CalculateMasksAndOptimize(node);
+		if (!node) return;
+		Node::UpdateDebugInfo(node);
+		OptimizeZeroInExpr(node);
+		if (!node) return;
+		Node::UpdateDebugInfo(node);
+	}
+
+	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
+	static void Optimize2(Node* node) {
+		/*auto list = GetNextOperationalsNodesToOpimize(node);
 		std::set<OperationalNode*> exprs;
 		for (auto it : list)
 			exprs.insert(it);
@@ -755,7 +756,7 @@ namespace CE::Decompiler::Optimization
 			OptimizeZeroInExpr(expr);
 			if (!expr) continue;
 			Node::UpdateDebugInfo(expr);
-		}
+		}*/
 	}
 
 	static void OptimizeCondition(ICondition*& cond) {

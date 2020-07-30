@@ -6,8 +6,6 @@ namespace CE::Decompiler::ExprTree
 	class ICondition : public Node, public INumber
 	{
 	public:
-		virtual ICondition* cloneCond() = 0;
-
 		virtual void inverse() = 0;
 
 		Mask getMask() override {
@@ -28,12 +26,8 @@ namespace CE::Decompiler::ExprTree
 			m_value ^= true;
 		}
 
-		ICondition* cloneCond() override {
-			return new BooleanValue(m_value);
-		}
-
 		Node* clone() override {
-			return cloneCond();
+			return new BooleanValue(m_value);
 		}
 
 		std::string printDebug() override {
@@ -41,7 +35,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class Condition : public ICondition, public IParentNode, public IFloatingPoint
+	class Condition : public ICondition, public INodeAgregator, public IFloatingPoint
 	{
 	public:
 		enum ConditionType
@@ -95,8 +89,8 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		ICondition* cloneCond() override {
-			return new Condition(m_leftNode, m_rightNode, m_cond);
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			return { &m_leftNode, &m_rightNode };
 		}
 
 		Node* clone() override {
@@ -141,7 +135,7 @@ namespace CE::Decompiler::ExprTree
 		bool m_isFloatingPoint;
 	};
 
-	class CompositeCondition : public ICondition, public IParentNode
+	class CompositeCondition : public ICondition, public INodeAgregator
 	{
 	public:
 		enum CompositeConditionType
@@ -185,12 +179,12 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		ICondition* cloneCond() override {
-			return new CompositeCondition(m_leftCond->cloneCond(), m_rightCond->cloneCond(), m_cond);
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			return { (ExprTree::Node**)&m_leftCond, (ExprTree::Node**)&m_rightCond };
 		}
 
 		Node* clone() override {
-			return new CompositeCondition(dynamic_cast<ICondition*>(m_leftCond->clone()), dynamic_cast<ICondition*>(m_rightCond->clone()), m_cond);
+			return new CompositeCondition(dynamic_cast<ICondition*>(m_leftCond->clone()), m_rightCond ? dynamic_cast<ICondition*>(m_rightCond->clone()) : nullptr, m_cond);
 		}
 
 		void inverse() override {

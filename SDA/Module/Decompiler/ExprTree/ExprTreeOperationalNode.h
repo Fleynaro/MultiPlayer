@@ -7,7 +7,6 @@ namespace CE::Decompiler::ExprTree
 	enum OperationType
 	{
 		None,
-		Temp,
 
 		//Arithmetic
 		Add,
@@ -101,7 +100,7 @@ namespace CE::Decompiler::ExprTree
 		return "_";
 	}
 
-	class OperationalNode : public Node, public IParentNode, public INumber, public IFloatingPoint
+	class OperationalNode : public Node, public INodeAgregator, public INumber, public IFloatingPoint
 	{
 		Mask m_mask;
 	public:
@@ -123,14 +122,7 @@ namespace CE::Decompiler::ExprTree
 			: OperationalNode(leftNode, rightNode, operation, GetMaskBySize(size), notChangedMask)
 		{}
 
-		OperationalNode(Node* leftNode)
-			: m_leftNode(leftNode), m_rightNode(nullptr), m_operation(Temp), m_mask(0x0), m_notChangedMask(false)
-		{}
-
 		~OperationalNode() {
-			if (m_operation == Temp)
-				return;
-
 			auto leftNode = m_leftNode;
 			if (leftNode != nullptr)
 				leftNode->removeBy(this);
@@ -145,6 +137,10 @@ namespace CE::Decompiler::ExprTree
 			else if (m_rightNode == node) {
 				m_rightNode = newNode;
 			}
+		}
+
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			return { &m_leftNode, &m_rightNode };
 		}
 
 		void setMask(Mask mask) {
@@ -162,7 +158,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone() override {
-			return new OperationalNode(m_leftNode->clone(), m_rightNode->clone(), m_operation, m_mask, m_notChangedMask);
+			return new OperationalNode(m_leftNode->clone(), m_rightNode ? m_rightNode->clone() : nullptr, m_operation, m_mask, m_notChangedMask);
 		}
 
 		std::string printDebug() override {
@@ -211,7 +207,7 @@ namespace CE::Decompiler::ExprTree
 	{
 	public:
 		ReadValueNode(Node* node, int size)
-			: OperationalNode(node, new NumberLeaf((uint64_t)size), ReadValue), m_size(size)
+			: OperationalNode(node, nullptr, ReadValue), m_size(size)
 		{}
 
 		Node* getAddress() {
@@ -231,7 +227,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			if (!m_leftNode || !m_rightNode)
+			if (!m_leftNode)
 				return "";
 			return m_updateDebugInfo = ("*(uint_" + std::to_string(8 * getSize()) + "t*)" + m_leftNode->printDebug());
 		}
@@ -244,7 +240,7 @@ namespace CE::Decompiler::ExprTree
 	{
 	public:
 		CastNode(Node* node, int size, bool isSigned)
-			: OperationalNode(node, new NumberLeaf((uint64_t)size), Cast), m_size(size), m_isSigned(isSigned)
+			: OperationalNode(node, nullptr, Cast), m_size(size), m_isSigned(isSigned)
 		{}
 
 		Mask getMask() override {
@@ -260,7 +256,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			if (!m_leftNode || !m_rightNode)
+			if (!m_leftNode)
 				return "";
 			return m_updateDebugInfo = ("("+ std::string(!m_isSigned ? "u" : "") +"int_" + std::to_string(8 * getSize()) + "t)" + m_leftNode->printDebug());
 		}

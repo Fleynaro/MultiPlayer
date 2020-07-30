@@ -6,7 +6,7 @@ namespace CE::Decompiler::PrimaryTree
 {
 	class Block;
 	template<typename T = ExprTree::Node>
-	class Line : public ExprTree::IParentNode
+	class Line : public ExprTree::INodeAgregator
 	{
 	public:
 		T* m_destAddr;
@@ -36,6 +36,10 @@ namespace CE::Decompiler::PrimaryTree
 			}
 		}
 
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			return { (ExprTree::Node**)&m_destAddr, &m_srcValue };
+		}
+
 		std::string printDebug() {
 			return m_destAddr->printDebug() + " = " + m_srcValue->printDebug() + "\n";
 		}
@@ -44,7 +48,7 @@ namespace CE::Decompiler::PrimaryTree
 	using SeqLine = Line<ExprTree::Node>;
 	using SymbolAssignmentLine = Line<ExprTree::SymbolLeaf>;
 
-	class Block : public ExprTree::IParentNode
+	class Block : public ExprTree::INodeAgregator
 	{
 	public:
 		int m_level = 0;
@@ -103,6 +107,10 @@ namespace CE::Decompiler::PrimaryTree
 					}
 				}
 			}
+		}
+
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			return { (ExprTree::Node**)&m_noJmpCond };
 		}
 
 		void setNoJumpCondition(ExprTree::ICondition* noJmpCond) {
@@ -173,6 +181,10 @@ namespace CE::Decompiler::PrimaryTree
 			if (m_returnNode == node) {
 				m_returnNode = newNode;
 			}
+		}
+
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			return { (ExprTree::Node**) & m_noJmpCond, &m_returnNode };
 		}
 
 		void setReturnNode(ExprTree::Node* returnNode) {

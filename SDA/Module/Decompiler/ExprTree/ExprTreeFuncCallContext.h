@@ -15,7 +15,7 @@ namespace CE::Decompiler::ExprTree
 		return info;
 	}
 
-	class FunctionCallContext : public Node, public IParentNode
+	class FunctionCallContext : public Node, public INodeAgregator
 	{
 	public:
 		int m_destOffset = 0;
@@ -44,6 +44,14 @@ namespace CE::Decompiler::ExprTree
 					}
 				}
 			}
+		}
+
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			std::list<ExprTree::Node**> list = { &m_destination };
+			for (auto& it : m_registerParams) {
+				list.push_back(&it.second);
+			}
+			return list;
 		}
 
 		Node* clone() override {

@@ -5,10 +5,22 @@
 namespace CE::Decompiler::ExprTree
 {
 	class Node;
-	class IParentNode
+	class INodeAgregator
 	{
 	public:
 		virtual void replaceNode(Node* node, Node * newNode) = 0;
+
+		virtual std::list<Node**> getNodePtrsList() = 0;
+
+		std::list<Node*> getNodesList() {
+			std::list<Node*> list;
+			for (auto it : getNodePtrsList()) {
+				if (*it != nullptr) {
+					list.push_back(*it);
+				}
+			}
+			return list;
+		}
 	};
 
 	class IFloatingPoint
@@ -46,7 +58,7 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		void removeBy(IParentNode* node) {
+		void removeBy(INodeAgregator* node) {
 			if (node != nullptr) {
 				node->replaceNode(this, nullptr);
 				removeParentNode(node);
@@ -55,17 +67,17 @@ namespace CE::Decompiler::ExprTree
 				delete this;
 		}
 
-		void addParentNode(IParentNode* node) {
+		void addParentNode(INodeAgregator* node) {
 			if (this == dynamic_cast<Node*>(node))
 				return;
 			m_parentNodes.push_back(node);
 		}
 
-		void removeParentNode(IParentNode* node) {
+		void removeParentNode(INodeAgregator* node) {
 			m_parentNodes.remove(node);
 		}
 
-		std::list<IParentNode*>& getParentNodes() {
+		std::list<INodeAgregator*>& getParentNodes() {
 			return m_parentNodes;
 		}
 
@@ -90,6 +102,6 @@ namespace CE::Decompiler::ExprTree
 		}
 
 	private:
-		std::list<IParentNode*> m_parentNodes;
+		std::list<INodeAgregator*> m_parentNodes;
 	};
 };

@@ -4,7 +4,7 @@
 
 namespace CE::Decompiler
 {
-	struct RegisterPart : public ExprTree::IParentNode {
+	struct RegisterPart : public ExprTree::INodeAgregator {
 		uint64_t m_regMask = -1;
 		uint64_t m_maskToChange = -1;
 		ExprTree::Node* m_expr = nullptr;
@@ -23,6 +23,10 @@ namespace CE::Decompiler
 			if (m_expr == node) {
 				m_expr = newNode;
 			}
+		}
+
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			return { &m_expr };
 		}
 	};
 
@@ -67,7 +71,7 @@ namespace CE::Decompiler
 
 	class Decompiler; //make interface later
 
-	struct ExternalSymbol : public ExprTree::IParentNode {
+	struct ExternalSymbol : public ExprTree::INodeAgregator {
 		PCode::Register m_reg;
 		RegisterParts m_regParts;
 		uint64_t m_needReadMask = 0x0;
@@ -86,6 +90,10 @@ namespace CE::Decompiler
 		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
 			
 		}
+
+		std::list<ExprTree::Node**> getNodePtrsList() override {
+			return { (ExprTree::Node**)&m_symbol };
+		}
 	};
 
 	class ExecutionBlockContext
@@ -94,7 +102,7 @@ namespace CE::Decompiler
 		Decompiler* m_decompiler;
 
 		template<typename T = ExprTree::Node>
-		class WrapperNode : public ExprTree::IParentNode
+		class WrapperNode : public ExprTree::INodeAgregator
 		{
 		public:
 			T* m_node;
@@ -114,6 +122,10 @@ namespace CE::Decompiler
 				if (m_node == node) {
 					m_node = static_cast<T*>(newNode);
 				}
+			}
+
+			std::list<ExprTree::Node**> getNodePtrsList() override {
+				return { (ExprTree::Node**)&m_node };
 			}
 		};
 
