@@ -373,7 +373,7 @@ namespace CE::Decompiler::Optimization
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			std::list<SeqLine*> newSeqLines;
 			for (auto symbolAssignmentLine : decBlock->getSymbolAssignmentLines()) {
-				newSeqLines.push_back(new SeqLine(symbolAssignmentLine->m_destAddr, symbolAssignmentLine->m_srcValue->clone(), decBlock));
+				newSeqLines.push_back(new SeqLine(symbolAssignmentLine->m_destAddr, symbolAssignmentLine->m_srcValue, decBlock));
 				delete symbolAssignmentLine;
 			}
 			decBlock->getSymbolAssignmentLines().clear();

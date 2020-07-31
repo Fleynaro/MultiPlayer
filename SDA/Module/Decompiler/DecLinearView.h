@@ -7,6 +7,7 @@ namespace CE::Decompiler::LinearView
 	class Block
 	{
 	public:
+		int m_linearLevel = 0;
 		PrimaryTree::Block* m_decBlock;
 		BlockList* m_blockList = nullptr;
 
@@ -15,12 +16,18 @@ namespace CE::Decompiler::LinearView
 		{}
 
 		virtual ~Block() {}
+
+		int getLinearLevel() {
+			return m_linearLevel;
+		}
 	};
 
 	class Condition;
 	class BlockList
 	{
 	public:
+		int m_minLinearLevel = 0;
+		int m_maxLinearLevel = 0;
 		Condition* m_condition;
 		Block* m_goto = nullptr;
 
@@ -33,16 +40,35 @@ namespace CE::Decompiler::LinearView
 			m_blocks.push_back(block);
 		}
 
+		void removeBlock(Block* block) {
+			block->m_blockList = nullptr;
+			m_blocks.remove(block);
+		}
+
 		std::list<Block*>& getBlocks() {
 			return m_blocks;
 		}
 
 		Block* findBlock(PrimaryTree::Block* decBlock);
+
+		int getMinLinearLevel() {
+			return m_minLinearLevel;
+		}
+
+		int getMaxLinearLevel() {
+			return m_maxLinearLevel;
+		}
 	private:
 		std::list<Block*> m_blocks;
 	};
 
-	class Condition : public Block
+	class IBlockListAgregator
+	{
+	public:
+		virtual std::list<BlockList*> getBlockLists() = 0;
+	};
+
+	class Condition : public Block, public IBlockListAgregator
 	{
 	public:
 		BlockList* m_mainBranch;
@@ -59,6 +85,10 @@ namespace CE::Decompiler::LinearView
 			delete m_mainBranch;
 			delete m_elseBranch;
 		}
+
+		std::list<BlockList*> getBlockLists() override {
+			return { m_mainBranch, m_elseBranch };
+		}
 	};
 
 	class WhileLoop : public Condition
@@ -69,7 +99,49 @@ namespace CE::Decompiler::LinearView
 		{}
 	};
 
-	class Converter2
+	static void CalculateLinearLevelForBlockList(BlockList* blockList, int& level) {
+		blockList->m_minLinearLevel = level;
+		for (auto block : blockList->getBlocks()) {
+			block->m_linearLevel = level++;
+			if (auto blockListAgregator = dynamic_cast<IBlockListAgregator*>(block)) {
+				for (auto blockList : blockListAgregator->getBlockLists()) {
+					CalculateLinearLevelForBlockList(blockList, level);
+				}
+			}
+		}
+		blockList->m_maxLinearLevel = level;
+	}
+
+	static void OptimizeBlockOrderBlockList(BlockList* blockList) {
+		auto farBlock = blockList->m_goto;
+		if (farBlock) {
+			auto farBlockList = farBlock->m_blockList;
+			if (blockList->getMinLinearLevel() > farBlock->getLinearLevel()) {
+				farBlockList->removeBlock(farBlock);
+				blockList->addBlock(farBlock);
+				blockList->m_goto = farBlockList->m_goto;
+				farBlockList->m_goto = farBlock;
+			}
+		}
+
+		for (auto block : blockList->getBlocks()) {
+			if (auto blockListAgregator = dynamic_cast<IBlockListAgregator*>(block)) {
+				for (auto blockList : blockListAgregator->getBlockLists()) {
+					OptimizeBlockOrderBlockList(blockList);
+				}
+			}
+		}
+	}
+
+	static void OptimizeBlockList(BlockList* blockList) {
+		int level = 1;
+		CalculateLinearLevelForBlockList(blockList, level);
+		//OptimizeBlockOrderBlockList(blockList);
+		level = 1;
+		CalculateLinearLevelForBlockList(blockList, level);
+	}
+
+	class Converter
 	{
 	public:
 		struct Loop {
@@ -87,7 +159,7 @@ namespace CE::Decompiler::LinearView
 			std::list<PrimaryTree::Block*> m_passedBlocks;
 		};
 
-		Converter2(DecompiledCodeGraph* asmGraph)
+		Converter(DecompiledCodeGraph* asmGraph)
 			: m_decCodeGraph(asmGraph)
 		{}
 

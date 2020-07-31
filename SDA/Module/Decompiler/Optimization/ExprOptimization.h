@@ -289,6 +289,14 @@ namespace CE::Decompiler::Optimization
 							delete expr;
 						}
 					}
+					else {
+						if (expr->m_operation == Or) {
+							if ((rightNumberLeaf->m_value | GetMask64ByMask(expr->getMask())) == rightNumberLeaf->m_value) {
+								expr->replaceWith(rightNumberLeaf);
+								delete expr;
+							}
+						}
+					}
 				}
 				else {
 					if (rightNumberLeaf->m_value == 1) {
