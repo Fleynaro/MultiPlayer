@@ -7,6 +7,7 @@ namespace CE::Decompiler::LinearView
 	class Block
 	{
 	public:
+		int m_backOrderId = 0;
 		int m_linearLevel = 0;
 		PrimaryTree::Block* m_decBlock;
 		BlockList* m_blockList = nullptr;
@@ -17,6 +18,10 @@ namespace CE::Decompiler::LinearView
 
 		virtual ~Block() {}
 
+		int getBackOrderId() {
+			return m_backOrderId;
+		}
+
 		int getLinearLevel() {
 			return m_linearLevel;
 		}
@@ -26,6 +31,7 @@ namespace CE::Decompiler::LinearView
 	class BlockList
 	{
 	public:
+		int m_backOrderId = 0;
 		int m_minLinearLevel = 0;
 		int m_maxLinearLevel = 0;
 		Condition* m_condition;
@@ -50,6 +56,18 @@ namespace CE::Decompiler::LinearView
 		}
 
 		Block* findBlock(PrimaryTree::Block* decBlock);
+
+		bool hasGoto() {
+			return m_goto && (m_goto->getBackOrderId() != getBackOrderId() && m_goto->getLinearLevel() > getMaxLinearLevel());
+		}
+
+		bool isEmpty() {
+			return getBlocks().size() == 0 && !hasGoto();
+		}
+
+		int getBackOrderId() {
+			return m_backOrderId;
+		}
 
 		int getMinLinearLevel() {
 			return m_minLinearLevel;
@@ -99,6 +117,22 @@ namespace CE::Decompiler::LinearView
 		{}
 	};
 
+	static void CalculateBackOrderIdsForBlockList(BlockList* blockList, int orderId = 1) {
+		for (auto it = blockList->getBlocks().rbegin(); it != blockList->getBlocks().rend(); it++) {
+			auto block = *it;
+			if (auto blockListAgregator = dynamic_cast<IBlockListAgregator*>(block)) {
+				for (auto blockList : blockListAgregator->getBlockLists()) {
+					blockList->m_backOrderId = orderId;
+					CalculateBackOrderIdsForBlockList(blockList, orderId);
+				}
+			}
+			else {
+				orderId ++;
+			}
+			block->m_backOrderId = orderId;
+		}
+	}
+
 	static void CalculateLinearLevelForBlockList(BlockList* blockList, int& level) {
 		blockList->m_minLinearLevel = level;
 		for (auto block : blockList->getBlocks()) {
@@ -139,6 +173,7 @@ namespace CE::Decompiler::LinearView
 		//OptimizeBlockOrderBlockList(blockList);
 		level = 1;
 		CalculateLinearLevelForBlockList(blockList, level);
+		CalculateBackOrderIdsForBlockList(blockList);
 	}
 
 	class Converter
