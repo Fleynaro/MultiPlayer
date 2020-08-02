@@ -86,7 +86,7 @@ namespace CE::Decompiler::PrimaryTree
 			return m_nextNearBlock != nullptr && m_nextFarBlock != nullptr;
 		}
 
-		bool isWhile() {
+		bool isCycle() {
 			return (int)m_blocksReferencedTo.size() != getRefHighBlocksCount();
 		}
 

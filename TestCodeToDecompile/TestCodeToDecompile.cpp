@@ -47,6 +47,7 @@ C g_c;
 
 int TestFunctionToDecompile1() {
 	float b = (float)GetTickCount();
+	float c = (float)GetTickCount();
 
 	/*b += func11(10) + func11(5);
 	b *= -1;
@@ -84,7 +85,7 @@ int TestFunctionToDecompile1() {
 		break;
 	}*/
 
-	if (b >= 1) {
+	/*if (b >= 1) {
 		b++;
 	}
 	if (b > 2) {
@@ -101,7 +102,28 @@ int TestFunctionToDecompile1() {
 	}
 	if (b != 6) {
 		b++;
+	}*/
+
+	while (b < 10) {
+		b++;
+		if (b == c) {
+			b--;
+			break;
+		}
+		if (b == c + 1)
+			continue;
+		if (b == c + 2)
+			break;
+		if (b == c + 10) {
+			b--;
+			continue;
+		}
+		if (b == c + 3) {
+			b += 2;
+		}
+		b++;
 	}
+
 	/*if (b == 10 && b == 20 || b == 30 && b == 40 && b == 50 || b == 60) {
 		b++;
 	}*/
