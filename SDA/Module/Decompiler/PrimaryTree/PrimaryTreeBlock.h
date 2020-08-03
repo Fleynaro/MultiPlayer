@@ -53,6 +53,7 @@ namespace CE::Decompiler::PrimaryTree
 	public:
 		std::string m_name;
 		int m_level = 0;
+		int m_maxHeight = 0;
 		std::list<Block*> m_blocksReferencedTo;
 		ExprTree::ICondition* m_noJmpCond = nullptr;
 		Block* m_nextNearBlock = nullptr;

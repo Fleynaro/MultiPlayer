@@ -39,6 +39,18 @@ namespace CE::Decompiler
 			CalculateLevelsForDecBlocks(block->m_nextFarBlock, path);
 			path.pop_back();
 		}
+
+		static int CalculateHeightForDecBlocks(PrimaryTree::Block* block) {
+			int height = 0;
+			for (auto refBlock : { block->m_nextNearBlock, block->m_nextFarBlock }) {
+				if (refBlock && refBlock->m_level > block->m_level) {
+					auto h = CalculateHeightForDecBlocks(refBlock);
+					height = max(height, h);
+				}
+			}
+			block->m_maxHeight = height + (int)block->getSeqLines().size();
+			return block->m_maxHeight;
+		}
 	private:
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
 		ExprTree::FunctionCallInfo m_functionCallInfo;

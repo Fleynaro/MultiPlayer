@@ -3,7 +3,16 @@
 
 namespace CE::Decompiler::LinearView
 {
+	enum class GotoType {
+		None,
+		Normal,
+		Continue,
+		Break
+	};
+
 	class BlockList;
+	class WhileCycle;
+
 	class IBlockListAgregator
 	{
 	public:
@@ -35,6 +44,8 @@ namespace CE::Decompiler::LinearView
 		int getLinearLevel() {
 			return m_linearLevel;
 		}
+
+		virtual WhileCycle* getWhileCycle();
 	};
 
 	class BlockList
@@ -66,12 +77,12 @@ namespace CE::Decompiler::LinearView
 
 		Block* findBlock(PrimaryTree::Block* decBlock);
 
-		bool hasGoto() {
-			return m_goto && (m_goto->getBackOrderId() != getBackOrderId() && m_goto->getLinearLevel() > getMaxLinearLevel());
-		}
+		GotoType getGotoType();
+
+		WhileCycle* getWhileCycle();
 
 		bool isEmpty() {
-			return getBlocks().size() == 0 && !hasGoto();
+			return getBlocks().size() == 0 && getGotoType() == GotoType::None;
 		}
 
 		int getBackOrderId() {
@@ -146,12 +157,23 @@ namespace CE::Decompiler::LinearView
 			delete m_mainBranch;
 		}
 
+		Block* getFirstBlock() {
+			if (!m_isDoWhileCycle) {
+				return this;
+			}
+			return *m_mainBranch->getBlocks().begin();
+		}
+
 		std::list<BlockList*> getBlockLists() override {
 			return { m_mainBranch };
 		}
 
 		bool isInversed() override {
 			return m_isDoWhileCycle;
+		}
+
+		WhileCycle* getWhileCycle() override {
+			return this;
 		}
 	};
 
@@ -271,9 +293,9 @@ namespace CE::Decompiler::LinearView
 			std::list<PrimaryTree::Block*> passedBlocks;
 			findAllLoops(startBlock, visitedBlocks, passedBlocks);
 
-			for (auto& it : m_loops) {
+			/*for (auto& it : m_loops) {
 				fillLoop(&it.second);
-			}
+			}*/
 
 			m_blockList = new BlockList;
 			std::set<PrimaryTree::Block*> usedBlocks;
@@ -367,7 +389,7 @@ namespace CE::Decompiler::LinearView
 					else {
 						auto blockInCond = curDecBlock->m_nextNearBlock;
 						auto blockBelowCond = curDecBlock->m_nextFarBlock;
-						if (usedBlocks.count(blockInCond) != 0) {
+						if (blockInCond->m_maxHeight > blockBelowCond->m_maxHeight || usedBlocks.count(blockInCond) != 0) {
 							std::swap(blockInCond, blockBelowCond);
 							cond->m_cond->inverse();
 						}
@@ -430,7 +452,12 @@ namespace CE::Decompiler::LinearView
 					//if a loop detected
 					if (startLoopBlockIt != blocks.end()) {
 						Loop loop(*startLoopBlockIt, block);
+						for (auto it = startLoopBlockIt; it != blocks.end(); it++) {
+							loop.m_blocks.insert(*it);
+						}
+						loop.m_blocks.insert(block);
 						m_loops.insert(std::make_pair(*startLoopBlockIt, loop));
+						//todo: blocks inside the loop but are not refering to the end of the loop are ignoring, the loop is not entire
 					}
 
 					if (goNext) {
@@ -460,7 +487,7 @@ namespace CE::Decompiler::LinearView
 						m_cycles.insert(std::make_pair(startCycleBlock, cycle));
 					}
 					auto& cycle = m_cycles[startCycleBlock];
-					cycle.m_endBlock = block;
+					cycle.m_endBlock = max(cycle.m_endBlock, block);
 					bool isBlockInCycle = false;
 					for (auto passedBlock : passedBlocks) {
 						if (passedBlock == cycle.m_startBlock)
@@ -480,7 +507,7 @@ namespace CE::Decompiler::LinearView
 			}
 		}
 
-		void fillLoop(Loop* loop) {
+		/*void fillLoop(Loop* loop) {
 			fillLoop(loop->m_startBlock, loop);
 			loop->m_blocks.insert(loop->m_endBlock);
 		}
@@ -492,6 +519,6 @@ namespace CE::Decompiler::LinearView
 					continue;
 				fillLoop(nextBlock, loop);
 			}
-		}
+		}*/
 	};
 };

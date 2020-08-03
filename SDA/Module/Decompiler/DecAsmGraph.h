@@ -110,6 +110,7 @@ namespace CE::Decompiler
 				auto& nextBlock = *std::next(it);
 				auto lastInstrId = curBlock.second.getLastInstruction()->m_id;
 				if (lastInstrId != PCode::InstructionId::BRANCHIND && lastInstrId != PCode::InstructionId::BRANCH && lastInstrId != PCode::InstructionId::RETURN) {
+					//in the case of condition jump we make reference to the next block
 					curBlock.second.setNextNearBlock(&nextBlock.second);
 				}
 			}
@@ -117,6 +118,7 @@ namespace CE::Decompiler
 			for (const auto& jmp_dir : jump_dirs) {
 				auto curBlock = getBlockAtOffset(jmp_dir.first);
 				auto nextFarBlock = getBlockAtOffset(jmp_dir.second);
+				//in any case we make reference to the far block that defined in the parameter of the jmp instruction
 				curBlock->setNextFarBlock(nextFarBlock);
 			}
 

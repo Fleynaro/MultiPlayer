@@ -431,6 +431,8 @@ namespace CE::Decompiler::Optimization
 		RemoveSeqLinesWithUndefinedRegisters(decGraph);
 		//RemoveSeqLinesWithNotUsedMemVarDecompiledGraph(decGraph);
 
+		DecompiledCodeGraph::CalculateHeightForDecBlocks(decGraph->getStartBlock());
+
 		//MemorySymbolization memorySymbolization(decGraph);
 		//memorySymbolization.start();
 		//optimize expressions again after memory symbolization

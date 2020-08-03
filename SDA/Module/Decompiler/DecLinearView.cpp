@@ -21,3 +21,33 @@ Block* BlockList::findBlock(PrimaryTree::Block* decBlock) {
 
 	return nullptr;
 }
+
+GotoType BlockList::getGotoType() {
+	if (!m_goto)
+		return GotoType::None;
+	if (m_goto->getLinearLevel() > getMaxLinearLevel()) {
+		if (m_goto->getBackOrderId() == getBackOrderId())
+			return GotoType::None;
+		auto whileCycle = getWhileCycle();
+		if (whileCycle && m_goto->getBackOrderId() == whileCycle->m_backOrderId - 1)
+			return GotoType::Break;
+	}
+	else {
+		auto whileCycle = getWhileCycle();
+		if (whileCycle && m_goto == whileCycle->getFirstBlock())
+			return GotoType::Continue;
+	}
+
+	return GotoType::Normal;
+}
+
+WhileCycle* BlockList::getWhileCycle() {
+	if (auto block = dynamic_cast<Block*>(m_parent)) {
+		return block->getWhileCycle();
+	}
+	return nullptr;
+}
+
+WhileCycle* Block::getWhileCycle() {
+	return m_blockList->getWhileCycle();
+}

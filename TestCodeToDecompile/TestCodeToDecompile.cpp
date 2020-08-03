@@ -110,8 +110,12 @@ int TestFunctionToDecompile1() {
 			b--;
 			break;
 		}
-		if (b == c + 1)
+		if (b == c + 1) {
+			while (b < 100) {
+				b++;
+			}
 			continue;
+		}
 		if (b == c + 2)
 			break;
 		if (b == c + 10) {
