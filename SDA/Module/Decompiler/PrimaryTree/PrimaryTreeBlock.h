@@ -51,6 +51,7 @@ namespace CE::Decompiler::PrimaryTree
 	class Block : public ExprTree::INodeAgregator
 	{
 	public:
+		std::string m_name;
 		int m_level = 0;
 		std::list<Block*> m_blocksReferencedTo;
 		ExprTree::ICondition* m_noJmpCond = nullptr;

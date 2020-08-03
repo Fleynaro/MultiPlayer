@@ -3,13 +3,17 @@
 
 namespace CE::Decompiler::LinearView
 {
+	class BlockList;
 	class IBlockListAgregator
 	{
 	public:
 		virtual std::list<BlockList*> getBlockLists() = 0;
+
+		virtual bool isInversed() {
+			return false;
+		}
 	};
 
-	class BlockList;
 	class Block
 	{
 	public:
@@ -33,7 +37,6 @@ namespace CE::Decompiler::LinearView
 		}
 	};
 
-	class Condition;
 	class BlockList
 	{
 	public:
@@ -122,12 +125,21 @@ namespace CE::Decompiler::LinearView
 		BlockList* m_mainBranch;
 		ExprTree::ICondition* m_cond;
 		bool m_isDoWhileCycle;
+		bool m_isInfinite;
 
-		WhileCycle(PrimaryTree::Block* decBlock, ExprTree::ICondition* cond = nullptr, bool isDoWhileCycle = false)
-			: Block(decBlock), m_isDoWhileCycle(isDoWhileCycle)
+		WhileCycle(PrimaryTree::Block* decBlock, bool isDoWhileCycle = false, bool isInfinite = false)
+			: Block(decBlock), m_isDoWhileCycle(isDoWhileCycle), m_isInfinite(isInfinite)
 		{
 			m_mainBranch = new BlockList(this);
-			m_cond = cond;
+			if (m_isInfinite) {
+				m_cond = new ExprTree::BooleanValue(true);
+			}
+			else {
+				m_cond = dynamic_cast<ExprTree::ICondition*>(decBlock->m_noJmpCond->clone());
+				if (isDoWhileCycle) {
+					m_cond->inverse();
+				}
+			}
 		}
 
 		~WhileCycle() {
@@ -137,21 +149,36 @@ namespace CE::Decompiler::LinearView
 		std::list<BlockList*> getBlockLists() override {
 			return { m_mainBranch };
 		}
+
+		bool isInversed() override {
+			return m_isDoWhileCycle;
+		}
 	};
 
 	static void CalculateBackOrderIdsForBlockList(BlockList* blockList, int orderId = 1) {
 		for (auto it = blockList->getBlocks().rbegin(); it != blockList->getBlocks().rend(); it++) {
 			auto block = *it;
+			orderId++;
 			if (auto blockListAgregator = dynamic_cast<IBlockListAgregator*>(block)) {
-				for (auto blockList : blockListAgregator->getBlockLists()) {
-					blockList->m_backOrderId = orderId;
+				if (blockListAgregator->isInversed()) {
+					auto blockList = *blockListAgregator->getBlockLists().begin();
+					block->m_backOrderId = blockList->m_backOrderId = orderId;
 					CalculateBackOrderIdsForBlockList(blockList, orderId);
+					if (!blockList->getBlocks().empty()) {
+						orderId = (*blockList->getBlocks().begin())->m_backOrderId;
+					}
+				}
+				else {
+					block->m_backOrderId = orderId;
+					for (auto blockList : blockListAgregator->getBlockLists()) {
+						CalculateBackOrderIdsForBlockList(blockList, orderId - 1);
+						blockList->m_backOrderId = orderId - 1;
+					}
 				}
 			}
 			else {
-				orderId ++;
+				block->m_backOrderId = orderId;
 			}
-			block->m_backOrderId = orderId;
 		}
 	}
 
@@ -160,8 +187,14 @@ namespace CE::Decompiler::LinearView
 		for (auto block : blockList->getBlocks()) {
 			block->m_linearLevel = level++;
 			if (auto blockListAgregator = dynamic_cast<IBlockListAgregator*>(block)) {
+				if (blockListAgregator->isInversed()) {
+					level--;
+				}
 				for (auto blockList : blockListAgregator->getBlockLists()) {
 					CalculateLinearLevelForBlockList(blockList, level);
+				}
+				if (blockListAgregator->isInversed()) {
+					block->m_linearLevel = level++;
 				}
 			}
 		}
@@ -244,7 +277,8 @@ namespace CE::Decompiler::LinearView
 
 			m_blockList = new BlockList;
 			std::set<PrimaryTree::Block*> usedBlocks;
-			convert(m_blockList, startBlock, usedBlocks);
+			std::set<PrimaryTree::Block*> createdCycleBlocks;
+			convert(m_blockList, startBlock, usedBlocks, createdCycleBlocks);
 
 			for (auto it : m_goto) {
 				auto block = m_blockList->findBlock(it.second);
@@ -264,71 +298,100 @@ namespace CE::Decompiler::LinearView
 		std::list<std::pair<BlockList*, PrimaryTree::Block*>> m_goto;
 		BlockList* m_blockList;
 
-		void convert(BlockList* blockList, PrimaryTree::Block* decBlock, std::set<PrimaryTree::Block*>& usedBlocks) {
+		void convert(BlockList* blockList, PrimaryTree::Block* decBlock, std::set<PrimaryTree::Block*>& usedBlocks, std::set<PrimaryTree::Block*>& createdCycleBlocks) {
 			std::list<std::pair<BlockList*, PrimaryTree::Block*>> nextBlocksToFill;
 			
-			while (decBlock != nullptr) {
-				if (usedBlocks.count(decBlock) != 0) {
-					m_goto.push_back(std::make_pair(blockList, decBlock));
+			auto curDecBlock = decBlock;
+			while (curDecBlock != nullptr) {
+				if (usedBlocks.count(curDecBlock) != 0) {
+					m_goto.push_back(std::make_pair(blockList, curDecBlock));
 					break;
 				}
 				PrimaryTree::Block* nextBlock = nullptr;
 
-				if (decBlock->isCondition()) {
-					if (decBlock->isCycle()) {
-						auto it = m_cycles.find(decBlock);
-						if (it != m_cycles.end()) {
-							auto& cycle = it->second;
-							if (decBlock->hasNoCode()) {
-								WhileCycle* whileCycle = new WhileCycle(decBlock, decBlock->m_noJmpCond);
-								blockList->addBlock(whileCycle);
-								nextBlocksToFill.push_back(std::make_pair(whileCycle->m_mainBranch, decBlock->m_nextNearBlock));
-								nextBlocksToFill.push_back(std::make_pair(blockList, decBlock->m_nextFarBlock));
-							}
-							else {
-								WhileCycle* doWhileCycle = new WhileCycle(decBlock, cycle.m_endBlock->m_noJmpCond, true);
-								blockList->addBlock(doWhileCycle);
-							}
-						}
-					}
-					else {
-						auto it = m_loops.find(decBlock);
-						if (it != m_loops.end()) {
-							auto& loop = it->second;
-							for (auto it : loop.m_blocks) {
-								if (usedBlocks.count(it) != 0) {
-									break;
-								}
-							}
+				if (createdCycleBlocks.count(curDecBlock) == 0 && curDecBlock->isCycle()) {
+					auto it = m_cycles.find(curDecBlock);
+					if (it != m_cycles.end()) {
+						auto& cycle = it->second;
+						auto startCycleBlock = cycle.m_startBlock;
+						auto endCycleBlock = cycle.m_endBlock;
 
-							nextBlock = loop.m_endBlock;
-						}
-
-						auto cond = new Condition(decBlock);
-						blockList->addBlock(cond);
-						nextBlocksToFill.push_back(std::make_pair(cond->m_mainBranch, cond->m_decBlock->m_nextNearBlock));
-						if (nextBlock) {
-							nextBlocksToFill.push_back(std::make_pair(cond->m_elseBranch, cond->m_decBlock->m_nextFarBlock));
+						if (startCycleBlock->isCondition() && startCycleBlock->hasNoCode() && cycle.m_blocks.count(startCycleBlock->m_nextFarBlock) == 0) {
+							WhileCycle* whileCycle = new WhileCycle(startCycleBlock, false);
+							blockList->addBlock(whileCycle);
+							nextBlocksToFill.push_front(std::make_pair(whileCycle->m_mainBranch, startCycleBlock->m_nextNearBlock));
+							nextBlock = startCycleBlock->m_nextFarBlock;
+							createdCycleBlocks.insert(curDecBlock);
 						}
 						else {
-							nextBlocksToFill.push_back(std::make_pair(blockList, cond->m_decBlock->m_nextFarBlock));
+							WhileCycle* whileCycle;
+							if (endCycleBlock->isCondition()) {
+								whileCycle = new WhileCycle(endCycleBlock, true);
+								nextBlock = endCycleBlock->m_nextNearBlock;
+							}
+							else {
+								whileCycle = new WhileCycle(endCycleBlock, true, true);
+								for (auto cycleBlock : cycle.m_blocks) {
+									if (cycleBlock->m_nextFarBlock && cycle.m_blocks.count(cycleBlock->m_nextFarBlock) == 0) {
+										nextBlock = cycleBlock->m_nextFarBlock;
+										break;
+									}
+								}
+							}
+							blockList->addBlock(whileCycle);
+							nextBlocksToFill.push_front(std::make_pair(whileCycle->m_mainBranch, startCycleBlock));
+							createdCycleBlocks.insert(curDecBlock);
+							curDecBlock = endCycleBlock;
 						}
 					}
 				}
+				else if (curDecBlock->isCondition()) {
+					auto it = m_loops.find(curDecBlock);
+					if (it != m_loops.end()) {
+						auto& loop = it->second;
+						nextBlock = loop.m_endBlock;
+						for (auto it : loop.m_blocks) {
+							if (usedBlocks.count(it) != 0) {
+								nextBlock = nullptr;
+								break;
+							}
+						}
+					}
+
+					auto cond = new Condition(curDecBlock);
+					blockList->addBlock(cond);
+					if (nextBlock) {
+						nextBlocksToFill.push_back(std::make_pair(cond->m_mainBranch, curDecBlock->m_nextNearBlock));
+						nextBlocksToFill.push_back(std::make_pair(cond->m_elseBranch, curDecBlock->m_nextFarBlock));
+					}
+					else {
+						auto blockInCond = curDecBlock->m_nextNearBlock;
+						auto blockBelowCond = curDecBlock->m_nextFarBlock;
+						if (usedBlocks.count(blockInCond) != 0) {
+							std::swap(blockInCond, blockBelowCond);
+							cond->m_cond->inverse();
+						}
+						nextBlocksToFill.push_back(std::make_pair(cond->m_mainBranch, blockInCond));
+						nextBlocksToFill.push_back(std::make_pair(blockList, blockBelowCond));
+						m_goto.push_back(std::make_pair(cond->m_elseBranch, blockBelowCond));
+					}
+				}
 				else {
-					blockList->addBlock(new Block(decBlock));
-					for (auto it : { decBlock->m_nextNearBlock, decBlock->m_nextFarBlock }) {
+					blockList->addBlock(new Block(curDecBlock));
+					for (auto it : { curDecBlock->m_nextNearBlock, curDecBlock->m_nextFarBlock }) {
 						if (it != nullptr)
 							nextBlock = it;
 					}
 				}
 
-				usedBlocks.insert(decBlock);
-				decBlock = nextBlock;
+				if (curDecBlock) {
+					usedBlocks.insert(curDecBlock);
+				}
+				curDecBlock = nextBlock;
 			}
 
 			for (auto block : nextBlocksToFill) {
-				convert(block.first, block.second, usedBlocks);
+				convert(block.first, block.second, usedBlocks, createdCycleBlocks);
 			}
 		}
 

@@ -199,7 +199,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone() override {
-			return new InstructionOperationalNode(m_leftNode->clone(), m_rightNode->clone(), m_operation, m_instr);
+			return new InstructionOperationalNode(m_leftNode->clone(), m_rightNode ? m_rightNode->clone() : nullptr, m_operation, m_instr);
 		}
 	};
 

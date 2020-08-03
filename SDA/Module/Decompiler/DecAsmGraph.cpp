@@ -64,6 +64,15 @@ bool g_SHOW_PCODE = false;
 bool g_SHOW_ALL_GOTO = true;
 bool g_SHOW_LINEAR_LEVEL_EXT = true;
 
+void ShowBlockCode(AsmGraphBlock* asmBlock, LinearView::Block* block, std::string tabStr) {
+	printf("%s//block %s (level: %i, backOrderId: %i, linearLevel: %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), block->m_decBlock->m_level, block->getBackOrderId(), block->getLinearLevel());
+	if (g_SHOW_ASM) {
+		asmBlock->printDebug(nullptr, tabStr, false, g_SHOW_PCODE);
+		printf("%s------------\n", tabStr.c_str());
+	}
+	block->m_decBlock->printDebug(false, tabStr);
+}
+
 void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, AsmGraphBlock*>& asmBlocks, int level = 0) {
 	std::string tabStr = "";
 	for (int i = 0; i < level; i++)
@@ -72,29 +81,33 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 	for (auto block : blockList->getBlocks()) {
 		auto decBlock = block->m_decBlock;
 		auto asmBlock = asmBlocks[decBlock];
-		printf("%s//block %s (level: %i, backOrderId: %i, linearLevel: %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), decBlock->m_level, block->getBackOrderId(), block->getLinearLevel());
 		
-		if (g_SHOW_ASM) {
-			asmBlock->printDebug(nullptr, tabStr, false, g_SHOW_PCODE);
-			printf("%s------------\n", tabStr.c_str());
-		}
-		decBlock->printDebug(false, tabStr);
-
 		if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
-			if (auto whileLoop = dynamic_cast<LinearView::WhileCycle*>(block)) {
-				printf("%swhile(%s) {\n", tabStr.c_str(), decBlock->m_noJmpCond ? decBlock->m_noJmpCond->printDebug().c_str() : "");
-				ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
+			ShowBlockCode(asmBlock, block, tabStr);
+			printf("%sif(%s) {\n", tabStr.c_str(), condition->m_cond ? condition->m_cond->printDebug().c_str() : "");
+			ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
+			if (g_SHOW_ALL_GOTO || !condition->m_elseBranch->isEmpty()) {
+				printf("%s} else {\n", tabStr.c_str());
+				ShowCode(condition->m_elseBranch, asmBlocks, level + 1);
+			}
+			printf("%s}\n", tabStr.c_str());
+		}
+		else if (auto whileCycle = dynamic_cast<LinearView::WhileCycle*>(block)) {
+			if (!whileCycle->m_isDoWhileCycle) {
+				ShowBlockCode(asmBlock, block, tabStr);
+				printf("%swhile(%s) {\n", tabStr.c_str(), whileCycle->m_cond ? whileCycle->m_cond->printDebug().c_str() : "");
+				ShowCode(whileCycle->m_mainBranch, asmBlocks, level + 1);
 				printf("%s}\n", tabStr.c_str());
 			}
 			else {
-				printf("%sif(%s) {\n", tabStr.c_str(), condition->m_cond ? condition->m_cond->printDebug().c_str() : "");
-				ShowCode(condition->m_mainBranch, asmBlocks, level + 1);
-				if (g_SHOW_ALL_GOTO || !condition->m_elseBranch->isEmpty()) {
-					printf("%s} else {\n", tabStr.c_str());
-					ShowCode(condition->m_elseBranch, asmBlocks, level + 1);
-				}
-				printf("%s}\n", tabStr.c_str());
+				printf("%sdo {\n", tabStr.c_str());
+				ShowCode(whileCycle->m_mainBranch, asmBlocks, level + 1);
+				ShowBlockCode(asmBlock, block, "\t" + tabStr);
+				printf("%s} while(%s);\n", tabStr.c_str(), whileCycle->m_cond ? whileCycle->m_cond->printDebug().c_str() : "");
 			}
+		}
+		else {
+			ShowBlockCode(asmBlock, block, tabStr);
 		}
 
 		if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
@@ -219,7 +232,7 @@ void CE::Decompiler::test() {
 
 	void* addr;
 	int size;
-	if (false) {
+	if (true) {
 		addr = &TestFunctionToDecompile1;
 		size = calculateFunctionSize2((byte*)addr, 0);
 
@@ -228,7 +241,7 @@ void CE::Decompiler::test() {
 		printf("\n");
 	}
 	else {
-#define SAMPLE_VAR sample1000
+#define SAMPLE_VAR sample1003
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}
@@ -274,7 +287,7 @@ void CE::Decompiler::test() {
 	LinearView::Converter converter(decCodeGraph);
 	converter.start();
 	auto blockList = converter.getBlockList();
-	//OptimizeBlockList(blockList, false);
+	OptimizeBlockList(blockList, false);
 	ShowCode(blockList, asmBlocks);
 
 	printf("\n\n\n********************* AFTER OPTIMIZATION: *********************\n\n");
@@ -282,7 +295,7 @@ void CE::Decompiler::test() {
 	converter = LinearView::Converter(decCodeGraph);
 	converter.start();
 	blockList = converter.getBlockList();
-	//OptimizeBlockList(blockList);
+	OptimizeBlockList(blockList);
 
 	ShowCode(blockList, asmBlocks);
 }

@@ -78,6 +78,7 @@ namespace CE::Decompiler
 					decompiledBlock.m_decBlock = new PrimaryTree::Block(asmBlock->m_level);
 				}
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this);
+				decompiledBlock.m_decBlock->m_name = Generic::String::NumberToHex(asmBlock->ID);
 
 				for (auto instr : asmBlock->getInstructions()) {
 					m_instructionInterpreter->execute(decompiledBlock.m_decBlock, decompiledBlock.m_execBlockCtx, instr);
