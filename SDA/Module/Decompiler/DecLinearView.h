@@ -30,6 +30,7 @@ namespace CE::Decompiler::LinearView
 		int m_linearLevel = 0;
 		PrimaryTree::Block* m_decBlock;
 		BlockList* m_blockList = nullptr;
+		std::list<BlockList*> m_refBlockLists;
 
 		Block(PrimaryTree::Block* decBlock)
 			: m_decBlock(decBlock)
@@ -43,6 +44,10 @@ namespace CE::Decompiler::LinearView
 
 		int getLinearLevel() {
 			return m_linearLevel;
+		}
+
+		std::list<BlockList*>& getRefBlockLists() {
+			return m_refBlockLists;
 		}
 
 		virtual WhileCycle* getWhileCycle();
@@ -60,6 +65,14 @@ namespace CE::Decompiler::LinearView
 		BlockList(IBlockListAgregator* parent = nullptr)
 			: m_parent(parent)
 		{}
+
+		void setGoto(Block* block) {
+			if (m_goto) {
+				m_goto->getRefBlockLists().remove(this);
+			}
+			block->getRefBlockLists().push_back(this);
+			m_goto = block;
+		}
 
 		void addBlock(Block* block) {
 			block->m_blockList = this;
@@ -232,7 +245,7 @@ namespace CE::Decompiler::LinearView
 		auto farBlock = blockList->m_goto;
 		if (farBlock) {
 			auto farBlockList = farBlock->m_blockList;
-			if (blockList->getMinLinearLevel() > farBlock->getLinearLevel()) {
+			if (blockList->getMinLinearLevel() > farBlock->getLinearLevel() && !farBlock->m_decBlock->isCycle()) {
 				farBlockList->removeBlock(farBlock);
 				blockList->addBlock(farBlock);
 				blockList->m_goto = farBlockList->m_goto;
@@ -253,7 +266,7 @@ namespace CE::Decompiler::LinearView
 		int level = 1;
 		CalculateLinearLevelForBlockList(blockList, level);
 		if (optimize) {
-			//OptimizeBlockOrderBlockList(blockList);
+			OptimizeBlockOrderBlockList(blockList);
 		}
 		level = 1;
 		CalculateLinearLevelForBlockList(blockList, level);
@@ -304,9 +317,16 @@ namespace CE::Decompiler::LinearView
 			convert(m_blockList, startBlock, usedBlocks, createdCycleBlocks);
 
 			for (auto it : m_goto) {
-				auto block = m_blockList->findBlock(it.second);
+				auto blockList = it.first;
+				auto nextBlock = it.second;
+				//if a condition block is above then not set goto as it is excess
+				if (!blockList->getBlocks().empty())
+					if (dynamic_cast<Condition*>(*std::prev(blockList->getBlocks().end())))
+						continue;
+
+				auto block = m_blockList->findBlock(nextBlock);
 				if (block != nullptr) {
-					it.first->m_goto = block;
+					blockList->setGoto(block);
 				}
 			}
 		}
@@ -332,7 +352,7 @@ namespace CE::Decompiler::LinearView
 				}
 				PrimaryTree::Block* nextBlock = nullptr;
 
-				if (createdCycleBlocks.count(curDecBlock) == 0 && curDecBlock->isCycle()) {
+				if (curDecBlock->isCycle() && createdCycleBlocks.count(curDecBlock) == 0) {
 					createdCycleBlocks.insert(curDecBlock);
 					auto it = m_cycles.find(curDecBlock);
 					if (it != m_cycles.end()) {

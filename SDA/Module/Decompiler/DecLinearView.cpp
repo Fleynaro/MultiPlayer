@@ -33,20 +33,24 @@ bool BlockList::hasGoto() {
 }
 
 GotoType BlockList::getGotoType() {
-	if (m_parent->isInversed() || !hasGoto())
+	if (!m_goto || m_parent->isInversed())
 		return GotoType::None;
 	auto whileCycle = getWhileCycle();
 	if (whileCycle) {
 		if (m_goto->getLinearLevel() >= getMaxLinearLevel()) {
-			if (m_goto->getBackOrderId() == whileCycle->m_backOrderId - 1)
+			if (m_goto->getBackOrderId() == whileCycle->getBackOrderId() - 1)
 				return GotoType::Break;
 		}
 		else {
-			if (m_goto == whileCycle->getFirstBlock())
+			if (m_goto == whileCycle->getFirstBlock()) {
+				if(getBackOrderId() == whileCycle->getBackOrderId() - 1)
+					return GotoType::None;
 				return GotoType::Continue;
+			}
 		}
 	}
-
+	if (!hasGoto())
+		return GotoType::None;
 	return GotoType::Normal;
 }
 

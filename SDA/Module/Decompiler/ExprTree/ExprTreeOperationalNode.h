@@ -116,6 +116,10 @@ namespace CE::Decompiler::ExprTree
 			if (rightNode != nullptr) {
 				rightNode->addParentNode(this);
 			}
+			else {
+				if (!IsOperationWithSingleOperand(operation))
+					throw std::logic_error("The second operand is empty in the binary operation.");
+			}
 		}
 
 		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, int size, bool notChangedMask = false)

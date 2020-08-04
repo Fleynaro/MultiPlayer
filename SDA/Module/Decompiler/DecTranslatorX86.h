@@ -717,14 +717,18 @@ namespace CE::Decompiler::PCode
 				case ZYDIS_MNEMONIC_INC:
 				case ZYDIS_MNEMONIC_DEC:
 				{
-					if (mnemonic == ZYDIS_MNEMONIC_INC || mnemonic == ZYDIS_MNEMONIC_SUB) {
+					auto flagOfInstrId = InstructionId::INT_SCARRY;
+					if (mnemonic == ZYDIS_MNEMONIC_INC || mnemonic == ZYDIS_MNEMONIC_DEC) {
 						varnodeInput1 = new ConstantVarnode(0x1, size);
+						if (mnemonic == ZYDIS_MNEMONIC_DEC) {
+							flagOfInstrId = InstructionId::INT_SBORROW;
+						}
 					}
 					else {
 						addMicroInstruction(InstructionId::INT_CARRY, varnodeInput0, varnodeInput1, CreateVarnode(ZYDIS_CPUFLAG_CF));
 					}
-					addMicroInstruction(InstructionId::INT_SCARRY, varnodeInput0, varnodeInput1, CreateVarnode(ZYDIS_CPUFLAG_OF));
-					varnodeOutput = addGenericOperation(mnemonic == ZYDIS_MNEMONIC_SUB ? InstructionId::INT_SUB : InstructionId::INT_ADD, varnodeInput0, varnodeInput1, memLocVarnode);
+					addMicroInstruction(flagOfInstrId, varnodeInput0, varnodeInput1, CreateVarnode(ZYDIS_CPUFLAG_OF));
+					varnodeOutput = addGenericOperation(mnemonic == ZYDIS_MNEMONIC_DEC ? InstructionId::INT_SUB : InstructionId::INT_ADD, varnodeInput0, varnodeInput1, memLocVarnode);
 					break;
 				}
 
