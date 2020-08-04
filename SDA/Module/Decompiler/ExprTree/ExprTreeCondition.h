@@ -30,6 +30,10 @@ namespace CE::Decompiler::ExprTree
 			return new BooleanValue(m_value);
 		}
 
+		ObjectHash::Hash getHash() override {
+			return m_value ? 0x111 : 0x222;
+		}
+
 		std::string printDebug() override {
 			return m_updateDebugInfo = (m_value ? "true" : "false");
 		}
@@ -95,6 +99,13 @@ namespace CE::Decompiler::ExprTree
 
 		Node* clone() override {
 			return new Condition(m_leftNode->clone(), m_rightNode->clone(), m_cond);
+		}
+
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue(m_leftNode->getHash() + m_rightNode->getHash());
+			hash.addValue((int)m_cond);
+			return hash.getHash();
 		}
 
 		bool IsFloatingPoint() override {
@@ -185,6 +196,13 @@ namespace CE::Decompiler::ExprTree
 
 		Node* clone() override {
 			return new CompositeCondition(dynamic_cast<ICondition*>(m_leftCond->clone()), m_rightCond ? dynamic_cast<ICondition*>(m_rightCond->clone()) : nullptr, m_cond);
+		}
+
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue(m_leftCond->getHash() + (m_rightCond ? m_rightCond->getHash() : 0x0));
+			hash.addValue((int)m_cond);
+			return hash.getHash();
 		}
 
 		void inverse() override {

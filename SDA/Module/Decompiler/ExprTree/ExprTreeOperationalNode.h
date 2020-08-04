@@ -108,6 +108,7 @@ namespace CE::Decompiler::ExprTree
 		Node* m_rightNode;
 		OperationType m_operation;
 		bool m_notChangedMask;
+		ObjectHash::Hash m_calcHash;
 
 		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, Mask mask = 0x0, bool notChangedMask = false)
 			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask)
@@ -163,6 +164,10 @@ namespace CE::Decompiler::ExprTree
 
 		Node* clone() override {
 			return new OperationalNode(m_leftNode->clone(), m_rightNode ? m_rightNode->clone() : nullptr, m_operation, m_mask, m_notChangedMask);
+		}
+
+		ObjectHash::Hash getHash() override {
+			return m_calcHash;
 		}
 
 		std::string printDebug() override {

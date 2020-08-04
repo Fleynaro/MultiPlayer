@@ -253,7 +253,7 @@ void CE::Decompiler::test() {
 		printf("\n");
 	}
 	else {
-#define SAMPLE_VAR sample1003
+#define SAMPLE_VAR sample1001
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}

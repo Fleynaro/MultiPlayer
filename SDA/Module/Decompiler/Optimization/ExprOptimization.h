@@ -265,6 +265,35 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	static void CalculateHashes(Node* node) {
+		IterateChildNodes(node, CalculateHashes);
+
+		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+			int64_t contentHash;
+			if (expr->m_rightNode) {
+				if (IsOperationMoving(expr->m_operation)) {
+					contentHash = expr->m_leftNode->getHash() + expr->m_rightNode->getHash();
+				}
+				else {
+					contentHash = expr->m_leftNode->getHash() + expr->m_rightNode->getHash() * 31;
+				}
+			}
+			else {
+				contentHash = expr->m_leftNode->getHash();
+			}
+
+			ObjectHash hash;
+			hash.addValue(contentHash);
+			if(auto funcNode = dynamic_cast<FunctionalNode*>(expr))
+				hash.addValue((int)funcNode->m_funcId);
+			else if (auto fFuncNode = dynamic_cast<FloatFunctionalNode*>(expr))
+				hash.addValue((int)fFuncNode->m_funcId);
+			else
+				hash.addValue((int)expr->m_operation);
+			expr->m_calcHash = hash.getHash();
+		}
+	}
+
 	//[var_2_32] * 0				=>		0
 	//[var_2_32] ^ [var_2_32]		=>		0
 	//[var_2_32] + 0				=>		[var_2_32]
@@ -413,7 +442,7 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		if (coreNode1 != coreNode2)
+		if (coreNode1->getHash() != coreNode2->getHash())
 			return nullptr;
 		return new OperationalNode(coreNode1, new NumberLeaf(k1 + k2), Mul);
 	}
@@ -694,6 +723,7 @@ namespace CE::Decompiler::Optimization
 	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
 	static void Optimize(Node*& node) {
 		Node::UpdateDebugInfo(node);
+		CalculateHashes(node);
 		OptimizeConstExpr(node);
 		Node::UpdateDebugInfo(node);
 		ChangeLeafPlaceInMovingOperations(node);
@@ -709,6 +739,7 @@ namespace CE::Decompiler::Optimization
 		Node::UpdateDebugInfo(node);
 		OptimizeZeroInExpr(node);
 		Node::UpdateDebugInfo(node);
+		CalculateHashes(node);
 	}
 
 	static void OptimizeCondition(ICondition*& cond) {

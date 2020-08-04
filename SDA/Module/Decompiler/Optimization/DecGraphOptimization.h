@@ -369,6 +369,38 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	static bool FixSymbolAssignmentLineAndConditionOrder(Node* node, std::map<ObjectHash::Hash, Symbol::LocalVariable*>& localVars) {
+		auto it = localVars.find(node->getHash());
+		if (it != localVars.end()) {
+			node->replaceWith(new SymbolLeaf(it->second));
+			delete node;
+			return true;
+		}
+
+		bool result = false;
+		IterateChildNodes(node, [&](Node* childNode) {
+			if(!result)
+				result = FixSymbolAssignmentLineAndConditionOrder(childNode, localVars);
+			});
+		return result;
+	}
+
+	static void FixSymbolAssignmentLineAndConditionOrder(DecompiledCodeGraph* decGraph) {
+		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+			if (decBlock->m_noJmpCond) {
+				std::map<ObjectHash::Hash, Symbol::LocalVariable*> localVars;
+				for (auto symbolAssignmentLine : decBlock->getSymbolAssignmentLines()) {
+					if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->m_destAddr->m_symbol)) {
+						CalculateHashes(symbolAssignmentLine->m_srcValue);
+						localVars.insert(std::make_pair(symbolAssignmentLine->m_srcValue->getHash(), localVar));
+					}
+				}
+				CalculateHashes(decBlock->m_noJmpCond);
+				FixSymbolAssignmentLineAndConditionOrder(decBlock->m_noJmpCond, localVars);
+			}
+		}
+	}
+
 	static void ExpandSymbolAssignmentLines(DecompiledCodeGraph* decGraph) {
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			std::list<SeqLine*> newSeqLines;
@@ -406,7 +438,8 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph) {
+	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph)
+	{
 		CloneExprInDecompiledGraph(decGraph);
 
 		//join conditions and remove useless blocks
@@ -425,6 +458,7 @@ namespace CE::Decompiler::Optimization
 		std::list<PrimaryTree::Block*> path;
 		DecompiledCodeGraph::CalculateLevelsForDecBlocks(decGraph->getStartBlock(), path);
 
+		FixSymbolAssignmentLineAndConditionOrder(decGraph);
 		OptimizeExprInDecompiledGraph(decGraph);
 		ExpandSymbolAssignmentLines(decGraph);
 		RemoveSeqLinesWithUndefinedRegisters(decGraph);
