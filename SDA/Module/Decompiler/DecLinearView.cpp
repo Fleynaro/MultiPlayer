@@ -22,20 +22,29 @@ Block* BlockList::findBlock(PrimaryTree::Block* decBlock) {
 	return nullptr;
 }
 
-GotoType BlockList::getGotoType() {
+bool BlockList::hasGoto() {
 	if (!m_goto)
-		return GotoType::None;
-	if (m_goto->getLinearLevel() > getMaxLinearLevel()) {
+		return false;
+	if (m_goto->getLinearLevel() >= getMaxLinearLevel()) {
 		if (m_goto->getBackOrderId() == getBackOrderId())
-			return GotoType::None;
-		auto whileCycle = getWhileCycle();
-		if (whileCycle && m_goto->getBackOrderId() == whileCycle->m_backOrderId - 1)
-			return GotoType::Break;
+			return false;
 	}
-	else {
-		auto whileCycle = getWhileCycle();
-		if (whileCycle && m_goto == whileCycle->getFirstBlock())
-			return GotoType::Continue;
+	return true;
+}
+
+GotoType BlockList::getGotoType() {
+	if (m_parent->isInversed() || !hasGoto())
+		return GotoType::None;
+	auto whileCycle = getWhileCycle();
+	if (whileCycle) {
+		if (m_goto->getLinearLevel() >= getMaxLinearLevel()) {
+			if (m_goto->getBackOrderId() == whileCycle->m_backOrderId - 1)
+				return GotoType::Break;
+		}
+		else {
+			if (m_goto == whileCycle->getFirstBlock())
+				return GotoType::Continue;
+		}
 	}
 
 	return GotoType::Normal;

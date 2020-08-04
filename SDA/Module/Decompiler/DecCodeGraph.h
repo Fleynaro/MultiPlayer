@@ -22,6 +22,12 @@ namespace CE::Decompiler
 			return m_functionCallInfo;;
 		}
 
+		void removeDecompiledBlock(PrimaryTree::Block* decBlock) {
+			m_decompiledBlocks.remove(decBlock);
+			m_removedDecompiledBlocks.push_back(decBlock);
+			decBlock->disconnect();
+		}
+
 		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
 			if (block == nullptr)
 				return;
@@ -35,15 +41,15 @@ namespace CE::Decompiler
 
 			path.push_back(block);
 			block->m_level = max(block->m_level, (int)path.size());
-			CalculateLevelsForDecBlocks(block->m_nextNearBlock, path);
-			CalculateLevelsForDecBlocks(block->m_nextFarBlock, path);
+			CalculateLevelsForDecBlocks(block->getNextNearBlock(), path);
+			CalculateLevelsForDecBlocks(block->getNextFarBlock(), path);
 			path.pop_back();
 		}
 
 		static int CalculateHeightForDecBlocks(PrimaryTree::Block* block) {
 			int height = 0;
-			for (auto refBlock : { block->m_nextNearBlock, block->m_nextFarBlock }) {
-				if (refBlock && refBlock->m_level > block->m_level) {
+			for (auto refBlock : block->getNextBlocks()) {
+				if (refBlock->m_level > block->m_level) {
 					auto h = CalculateHeightForDecBlocks(refBlock);
 					height = max(height, h);
 				}
@@ -53,6 +59,7 @@ namespace CE::Decompiler
 		}
 	private:
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
+		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
 		ExprTree::FunctionCallInfo m_functionCallInfo;
 	};
 };

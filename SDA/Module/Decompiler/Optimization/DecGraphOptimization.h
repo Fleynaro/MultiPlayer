@@ -9,10 +9,10 @@ namespace CE::Decompiler::Optimization
 	static void OptimizeConditionDecBlock(Block* block) {
 		if (!block->isCondition())
 			return;
-		auto delta = block->m_nextNearBlock->m_level - block->m_level;
-		if (delta >= 1 && delta < block->m_nextFarBlock->m_level - block->m_level)
+		auto delta = block->getNextNearBlock()->m_level - block->m_level;
+		if (delta >= 1 && delta < block->getNextFarBlock()->m_level - block->m_level)
 			return;
-		std::swap(block->m_nextNearBlock, block->m_nextFarBlock);
+		block->swapNextBlocks();
 		block->m_noJmpCond->inverse();
 	}
 
@@ -20,26 +20,26 @@ namespace CE::Decompiler::Optimization
 		if (!block->isCondition())
 			return nullptr;
 
-		auto removedBlock = block->m_nextNearBlock;
-		auto mutualBlock = block->m_nextFarBlock;
-		if (!removedBlock->hasNoCode() || !removedBlock->isCondition() || removedBlock->m_blocksReferencedTo.size() != 1)
+		auto removedBlock = block->getNextNearBlock();
+		auto mutualBlock = block->getNextFarBlock();
+		if (!removedBlock->hasNoCode() || !removedBlock->isCondition() || removedBlock->getRefBlocksCount() != 1)
 			return nullptr;
 
 		Block* targetBlock = nullptr;
 		auto removedBlockNoJmpCond = removedBlock->m_noJmpCond;
-		if (removedBlock->m_nextNearBlock == mutualBlock) {
-			targetBlock = removedBlock->m_nextFarBlock;
+		if (removedBlock->getNextNearBlock() == mutualBlock) {
+			targetBlock = removedBlock->getNextFarBlock();
 			removedBlockNoJmpCond->inverse();
 		}
-		else if (removedBlock->m_nextFarBlock == mutualBlock) {
-			targetBlock = removedBlock->m_nextNearBlock;
+		else if (removedBlock->getNextFarBlock() == mutualBlock) {
+			targetBlock = removedBlock->getNextNearBlock();
 		}
 		if (!targetBlock)
 			return nullptr;
 
 		block->setNoJumpCondition(new CompositeCondition(block->m_noJmpCond, removedBlockNoJmpCond, CompositeCondition::And));
-		block->m_nextNearBlock = targetBlock;
-		removedBlock->m_blocksReferencedTo.remove(block);
+		block->setNextNearBlock(targetBlock);
+		removedBlock->removeRefBlock(block);
 		return removedBlock;
 	}
 
@@ -414,8 +414,7 @@ namespace CE::Decompiler::Optimization
 			auto block = *it;
 			while (auto removedBlock = JoinCondition(block)) {
 				OptimizeConditionDecBlock(block);
-				decGraph->getDecompiledBlocks().remove(removedBlock);
-				delete removedBlock;
+				decGraph->removeDecompiledBlock(removedBlock);
 			}
 		}
 

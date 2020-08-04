@@ -92,15 +92,11 @@ namespace CE::Decompiler
 		void setAllBlocksLinks() {
 			for (const auto& it : m_decompiledBlocks) {
 				auto& decBlockInfo = it.second;
-
-				for (const auto& link : {
-					std::make_pair(&decBlockInfo.m_decBlock->m_nextNearBlock, decBlockInfo.m_asmBlock->getNextNearBlock()),
-					std::make_pair(&decBlockInfo.m_decBlock->m_nextFarBlock, decBlockInfo.m_asmBlock->getNextFarBlock()) })
-				{
-					if (!link.second)
-						continue;
-					auto block = *link.first = m_asmToDecBlocks[link.second];
-					block->m_blocksReferencedTo.push_back(decBlockInfo.m_decBlock);
+				if (auto nextAsmBlock = decBlockInfo.m_asmBlock->getNextNearBlock()) {
+					decBlockInfo.m_decBlock->setNextNearBlock(m_asmToDecBlocks[nextAsmBlock]);
+				}
+				if (auto nextAsmBlock = decBlockInfo.m_asmBlock->getNextFarBlock()) {
+					decBlockInfo.m_decBlock->setNextFarBlock(m_asmToDecBlocks[nextAsmBlock]);
 				}
 			}
 		}
@@ -129,9 +125,7 @@ namespace CE::Decompiler
 					}
 				}
 				
-				for (auto nextBlock : { block->m_nextNearBlock, block->m_nextFarBlock }) {
-					if (nextBlock == nullptr)
-						continue;
+				for (auto nextBlock : block->getNextBlocks()) {
 					if(nextBlock->m_level <= block->m_level)
 						continue;
 					visitedBlocks.insert(nextBlock);
@@ -174,12 +168,12 @@ namespace CE::Decompiler
 				}
 			}
 			
-			auto parentsCount = (int)block->m_blocksReferencedTo.size();
+			auto parentsCount = block->getRefBlocksCount();
 			if (parentsCount == 0) {
 				return;
 			}
 			else if (parentsCount == 1) {
-				auto parentBlock = *block->m_blocksReferencedTo.begin();
+				auto parentBlock = *block->getBlocksReferencedTo().begin();
 				requestRegisterParts(parentBlock, reg, mask, outRegParts);
 				return;
 			}
@@ -292,9 +286,7 @@ namespace CE::Decompiler
 				}
 			}
 
-			for (auto nextBlock : { block->m_nextNearBlock, block->m_nextFarBlock }) {
-				if (nextBlock == nullptr)
-					continue;
+			for (auto nextBlock : block->getNextBlocks()) {
 				if (nextBlock->m_level <= block->m_level)
 					continue;
 				if (visitedBlocks.find(nextBlock) == visitedBlocks.end()) {
@@ -431,7 +423,7 @@ namespace CE::Decompiler
 							isStartBlock = false;
 						}
 
-						auto parentsCount = isLoop ? (int)block->m_blocksReferencedTo.size() : block->getRefHighBlocksCount();
+						auto parentsCount = isLoop ? block->getRefBlocksCount() : block->getRefHighBlocksCount();
 						if (parentsCount == 0)
 							continue;
 						auto bits = (int)ceil(log2((double)parentsCount));
@@ -439,7 +431,7 @@ namespace CE::Decompiler
 						auto restAddPressure = addPressure * ((1 << bits) % parentsCount);
 						blockPressures[block] = 0x0;
 
-						for (auto parentBlock : block->m_blocksReferencedTo) {
+						for (auto parentBlock : block->getBlocksReferencedTo()) {
 							if (!isLoop && parentBlock->m_level >= block->m_level)
 								continue;
 

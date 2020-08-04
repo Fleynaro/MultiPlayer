@@ -77,6 +77,8 @@ namespace CE::Decompiler::LinearView
 
 		Block* findBlock(PrimaryTree::Block* decBlock);
 
+		bool hasGoto();
+
 		GotoType getGotoType();
 
 		WhileCycle* getWhileCycle();
@@ -178,6 +180,9 @@ namespace CE::Decompiler::LinearView
 	};
 
 	static void CalculateBackOrderIdsForBlockList(BlockList* blockList, int orderId = 1) {
+		if (blockList->hasGoto())
+			orderId++;
+
 		for (auto it = blockList->getBlocks().rbegin(); it != blockList->getBlocks().rend(); it++) {
 			auto block = *it;
 			orderId++;
@@ -193,8 +198,8 @@ namespace CE::Decompiler::LinearView
 				else {
 					block->m_backOrderId = orderId;
 					for (auto blockList : blockListAgregator->getBlockLists()) {
-						CalculateBackOrderIdsForBlockList(blockList, orderId - 1);
 						blockList->m_backOrderId = orderId - 1;
+						CalculateBackOrderIdsForBlockList(blockList, orderId - 1);
 					}
 				}
 			}
@@ -293,10 +298,6 @@ namespace CE::Decompiler::LinearView
 			std::list<PrimaryTree::Block*> passedBlocks;
 			findAllLoops(startBlock, visitedBlocks, passedBlocks);
 
-			/*for (auto& it : m_loops) {
-				fillLoop(&it.second);
-			}*/
-
 			m_blockList = new BlockList;
 			std::set<PrimaryTree::Block*> usedBlocks;
 			std::set<PrimaryTree::Block*> createdCycleBlocks;
@@ -332,37 +333,39 @@ namespace CE::Decompiler::LinearView
 				PrimaryTree::Block* nextBlock = nullptr;
 
 				if (createdCycleBlocks.count(curDecBlock) == 0 && curDecBlock->isCycle()) {
+					createdCycleBlocks.insert(curDecBlock);
 					auto it = m_cycles.find(curDecBlock);
 					if (it != m_cycles.end()) {
 						auto& cycle = it->second;
 						auto startCycleBlock = cycle.m_startBlock;
 						auto endCycleBlock = cycle.m_endBlock;
 
-						if (startCycleBlock->isCondition() && startCycleBlock->hasNoCode() && cycle.m_blocks.count(startCycleBlock->m_nextFarBlock) == 0) {
+						if (startCycleBlock->isCondition() && startCycleBlock->hasNoCode() && cycle.m_blocks.count(startCycleBlock->getNextFarBlock()) == 0) {
 							WhileCycle* whileCycle = new WhileCycle(startCycleBlock, false);
 							blockList->addBlock(whileCycle);
-							nextBlocksToFill.push_front(std::make_pair(whileCycle->m_mainBranch, startCycleBlock->m_nextNearBlock));
-							nextBlock = startCycleBlock->m_nextFarBlock;
-							createdCycleBlocks.insert(curDecBlock);
+							nextBlocksToFill.push_front(std::make_pair(whileCycle->m_mainBranch, startCycleBlock->getNextNearBlock()));
+							nextBlock = startCycleBlock->getNextFarBlock();
 						}
 						else {
 							WhileCycle* whileCycle;
 							if (endCycleBlock->isCondition()) {
 								whileCycle = new WhileCycle(endCycleBlock, true);
-								nextBlock = endCycleBlock->m_nextNearBlock;
+								nextBlock = endCycleBlock->getNextNearBlock();
 							}
 							else {
 								whileCycle = new WhileCycle(endCycleBlock, true, true);
 								for (auto cycleBlock : cycle.m_blocks) {
-									if (cycleBlock->m_nextFarBlock && cycle.m_blocks.count(cycleBlock->m_nextFarBlock) == 0) {
-										nextBlock = cycleBlock->m_nextFarBlock;
-										break;
+									auto farBlock = cycleBlock->getNextFarBlock();
+									if (farBlock && cycle.m_blocks.count(farBlock) == 0) {
+										nextBlock = farBlock;
+										if (farBlock->getRefBlocksCount() != 1) {
+											break;
+										}
 									}
 								}
 							}
 							blockList->addBlock(whileCycle);
 							nextBlocksToFill.push_front(std::make_pair(whileCycle->m_mainBranch, startCycleBlock));
-							createdCycleBlocks.insert(curDecBlock);
 							curDecBlock = endCycleBlock;
 						}
 					}
@@ -372,8 +375,10 @@ namespace CE::Decompiler::LinearView
 					if (it != m_loops.end()) {
 						auto& loop = it->second;
 						nextBlock = loop.m_endBlock;
-						for (auto it : loop.m_blocks) {
-							if (usedBlocks.count(it) != 0) {
+						for (auto block : loop.m_blocks) {
+							if (block == loop.m_endBlock)
+								continue;
+							if (usedBlocks.count(block) != 0) {
 								nextBlock = nullptr;
 								break;
 							}
@@ -383,12 +388,12 @@ namespace CE::Decompiler::LinearView
 					auto cond = new Condition(curDecBlock);
 					blockList->addBlock(cond);
 					if (nextBlock) {
-						nextBlocksToFill.push_back(std::make_pair(cond->m_mainBranch, curDecBlock->m_nextNearBlock));
-						nextBlocksToFill.push_back(std::make_pair(cond->m_elseBranch, curDecBlock->m_nextFarBlock));
+						nextBlocksToFill.push_back(std::make_pair(cond->m_mainBranch, curDecBlock->getNextNearBlock()));
+						nextBlocksToFill.push_back(std::make_pair(cond->m_elseBranch, curDecBlock->getNextFarBlock()));
 					}
 					else {
-						auto blockInCond = curDecBlock->m_nextNearBlock;
-						auto blockBelowCond = curDecBlock->m_nextFarBlock;
+						auto blockInCond = curDecBlock->getNextNearBlock();
+						auto blockBelowCond = curDecBlock->getNextFarBlock();
 						if (blockInCond->m_maxHeight > blockBelowCond->m_maxHeight || usedBlocks.count(blockInCond) != 0) {
 							std::swap(blockInCond, blockBelowCond);
 							cond->m_cond->inverse();
@@ -400,10 +405,7 @@ namespace CE::Decompiler::LinearView
 				}
 				else {
 					blockList->addBlock(new Block(curDecBlock));
-					for (auto it : { curDecBlock->m_nextNearBlock, curDecBlock->m_nextFarBlock }) {
-						if (it != nullptr)
-							nextBlock = it;
-					}
+					nextBlock = curDecBlock->getNextBlock();
 				}
 
 				if (curDecBlock) {
@@ -470,9 +472,7 @@ namespace CE::Decompiler::LinearView
 				passedBlocks.push_back(block);
 
 				PrimaryTree::Block* startCycleBlock = nullptr;
-				for (auto nextBlock : { block->m_nextNearBlock, block->m_nextFarBlock }) {
-					if (nextBlock == nullptr)
-						continue;
+				for (auto nextBlock : block->getNextBlocks()) {
 					if (nextBlock->m_level <= block->m_level) {
 						startCycleBlock = nextBlock;
 						continue;
@@ -506,19 +506,5 @@ namespace CE::Decompiler::LinearView
 				}
 			}
 		}
-
-		/*void fillLoop(Loop* loop) {
-			fillLoop(loop->m_startBlock, loop);
-			loop->m_blocks.insert(loop->m_endBlock);
-		}
-
-		void fillLoop(PrimaryTree::Block* block, Loop* loop) {
-			loop->m_blocks.insert(block);
-			for (auto nextBlock : { block->m_nextNearBlock, block->m_nextFarBlock }) {
-				if (nextBlock == nullptr || nextBlock->m_level >= loop->m_endBlock->m_level || nextBlock->m_level <= block->m_level)
-					continue;
-				fillLoop(nextBlock, loop);
-			}
-		}*/
 	};
 };

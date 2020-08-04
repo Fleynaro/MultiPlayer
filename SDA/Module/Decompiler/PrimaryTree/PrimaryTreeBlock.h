@@ -50,14 +50,14 @@ namespace CE::Decompiler::PrimaryTree
 
 	class Block : public ExprTree::INodeAgregator
 	{
+		std::list<Block*> m_blocksReferencedTo;
+		Block* m_nextNearBlock = nullptr;
+		Block* m_nextFarBlock = nullptr;
 	public:
 		std::string m_name;
 		int m_level = 0;
 		int m_maxHeight = 0;
-		std::list<Block*> m_blocksReferencedTo;
 		ExprTree::ICondition* m_noJmpCond = nullptr;
-		Block* m_nextNearBlock = nullptr;
-		Block* m_nextFarBlock = nullptr;
 
 		Block(int level)
 			: m_level(level)
@@ -75,13 +75,71 @@ namespace CE::Decompiler::PrimaryTree
 				m_noJmpCond->removeBy(this);
 			}
 
-			if (m_nextFarBlock) {
-				m_nextFarBlock->m_blocksReferencedTo.remove(this);
-			}
+			disconnect();
+		}
 
-			if (m_nextNearBlock) {
-				m_nextNearBlock->m_blocksReferencedTo.remove(this);
+		void disconnect() {
+			for (auto nextBlock : getNextBlocks()) {
+				nextBlock->removeRefBlock(this);
 			}
+			m_nextNearBlock = m_nextFarBlock = nullptr;
+		}
+
+		void removeRefBlock(Block* block) {
+			m_blocksReferencedTo.remove(block);
+		}
+
+		void setNextNearBlock(Block* nextBlock) {
+			if (nextBlock) {
+				nextBlock->removeRefBlock(m_nextNearBlock);
+				nextBlock->m_blocksReferencedTo.push_back(this);
+			}
+			m_nextNearBlock = nextBlock;
+		}
+
+		void setNextFarBlock(Block* nextBlock) {
+			if (nextBlock) {
+				nextBlock->removeRefBlock(m_nextFarBlock);
+				nextBlock->m_blocksReferencedTo.push_back(this);
+			}
+			m_nextFarBlock = nextBlock;
+		}
+
+		Block* getNextNearBlock() {
+			return m_nextNearBlock;
+		}
+
+		Block* getNextFarBlock() {
+			return m_nextFarBlock;
+		}
+
+		std::list<Block*>& getBlocksReferencedTo() {
+			return m_blocksReferencedTo;
+		}
+
+		std::list<Block*> getNextBlocks() {
+			std::list<Block*> nextBlocks;
+			if (m_nextFarBlock) {
+				nextBlocks.push_back(m_nextFarBlock);
+			}
+			if (m_nextNearBlock) {
+				nextBlocks.push_back(m_nextNearBlock);
+			}
+			return nextBlocks;
+		}
+
+		Block* getNextBlock() {
+			if (m_nextFarBlock) {
+				return m_nextFarBlock;
+			}
+			if (m_nextNearBlock) {
+				return m_nextNearBlock;
+			}
+			return nullptr;
+		}
+
+		void swapNextBlocks() {
+			std::swap(m_nextNearBlock, m_nextFarBlock);
 		}
 
 		bool isCondition() {
@@ -90,6 +148,10 @@ namespace CE::Decompiler::PrimaryTree
 
 		bool isCycle() {
 			return (int)m_blocksReferencedTo.size() != getRefHighBlocksCount();
+		}
+
+		int getRefBlocksCount() {
+			return (int)m_blocksReferencedTo.size();
 		}
 
 		int getRefHighBlocksCount() {
