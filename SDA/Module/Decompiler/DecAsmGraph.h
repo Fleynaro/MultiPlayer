@@ -73,7 +73,12 @@ namespace CE::Decompiler
 		{}
 
 		void build() {
-			std::map<int64_t, bool> split_offsets;
+			enum Direction {
+				None = 0,
+				In = 1,
+				Out = 2
+			};
+			std::map<int64_t, Direction> split_offsets;
 			std::list<std::pair<int64_t, int64_t>> jump_dirs;
 
 			for (auto instr : m_instructions) {
@@ -82,8 +87,16 @@ namespace CE::Decompiler
 						auto targetOffset = (int64_t&)varnodeOffset->m_value;
 						if (targetOffset >= 0 && targetOffset < getMaxOffset()) {
 							auto offset = instr->getOffset();
-							split_offsets.insert(std::make_pair(offset, false)); //out
-							split_offsets.insert(std::make_pair(targetOffset, true)); //in
+							for (auto pair : { std::pair(offset, Direction::Out), std::pair(targetOffset, Direction::In) } ) {
+								auto dir = Direction::None;
+								auto it = split_offsets.find(pair.first);
+								if (it != split_offsets.end()) {
+									dir = it->second;
+									split_offsets.erase(it);
+								}
+								split_offsets.insert(std::make_pair(pair.first, Direction(dir | pair.second)));
+							}
+
 							jump_dirs.push_back(std::make_pair(offset, targetOffset));
 						}
 					}
@@ -94,9 +107,18 @@ namespace CE::Decompiler
 			for (const auto& it : split_offsets) {
 				auto minOffset = offset;
 				auto maxOffset = it.first;
-				if (!it.second) { //out
+				auto dirs = it.second;
+				if (dirs & Direction::Out) { //out
 					auto instr = getInstructionByOffset(maxOffset);
-					maxOffset = instr->getFirstInstrOffsetInNextOrigInstr();
+					auto nextInstrOffset = instr->getFirstInstrOffsetInNextOrigInstr();
+					if (dirs & Direction::In) {
+						createBlockAtOffset(minOffset, maxOffset);
+						minOffset = maxOffset;
+						maxOffset = nextInstrOffset;
+					}
+					else {
+						maxOffset = nextInstrOffset;
+					}
 				}
 				if (minOffset < maxOffset) {
 					createBlockAtOffset(minOffset, maxOffset);

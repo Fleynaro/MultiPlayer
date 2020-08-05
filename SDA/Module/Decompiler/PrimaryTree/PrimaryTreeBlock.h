@@ -50,9 +50,6 @@ namespace CE::Decompiler::PrimaryTree
 
 	class Block : public ExprTree::INodeAgregator
 	{
-		std::list<Block*> m_blocksReferencedTo;
-		Block* m_nextNearBlock = nullptr;
-		Block* m_nextFarBlock = nullptr;
 	public:
 		std::string m_name;
 		int m_level = 0;
@@ -221,6 +218,9 @@ namespace CE::Decompiler::PrimaryTree
 			printf("%s", result.c_str());
 		}
 	private:
+		std::list<Block*> m_blocksReferencedTo;
+		Block* m_nextNearBlock = nullptr;
+		Block* m_nextFarBlock = nullptr;
 		std::list<SeqLine*> m_seqLines;
 		std::list<SymbolAssignmentLine*> m_symbolAssignmentLines;
 	};

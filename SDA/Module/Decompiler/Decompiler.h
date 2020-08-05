@@ -220,16 +220,8 @@ namespace CE::Decompiler
 				}
 			}
 
-			/*if (prevSymbolIds.size() == 1) {
-				for (auto& it : regSymbol.symbols) {
-					if (prevSymbolIds.count(it.first) != 0) {
-						it.first = regSymbol.requiestId;
-						return it.second;
-					}
-				}
-			}*/
-
-			auto symbol = new Symbol::LocalVariable(GetBitCountOfMask(needReadMask) / (regSymbol.isVector ? 1 : 8));
+			int size = GetBitCountOfMask(needReadMask) / (regSymbol.isVector ? 1 : 8);
+			auto symbol = new Symbol::LocalVariable(max(1, size));
 			auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 			regSymbol.symbols.push_back(std::make_pair(regSymbol.requiestId, symbolLeaf));
 
@@ -259,10 +251,6 @@ namespace CE::Decompiler
 						if (symbol.first == blockRegSymbol.symbolId) {
 							auto symbolLeaf = symbol.second;
 							auto regParts = blockRegSymbol.regParts;
-
-							//to avoide equal assignments: a = a, b = b, ....
-							if (false && regParts.size() == 1 && (*regParts.begin())->m_expr == symbolLeaf)
-								continue;
 							
 							auto symbolMask = GetMaskBySize(symbolLeaf->m_symbol->getSize(), regSymbol.isVector);
 							auto maskToChange = symbolMask & ~blockRegSymbol.canReadMask;
