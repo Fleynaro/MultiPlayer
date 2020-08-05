@@ -103,7 +103,9 @@ namespace CE::Decompiler
 				}
 				offset = maxOffset;
 			}
-			createBlockAtOffset(offset, getMaxOffset());
+			if (offset < getMaxOffset()) {
+				createBlockAtOffset(offset, getMaxOffset());
+			}
 
 			for (auto it = m_blocks.begin(); it != std::prev(m_blocks.end()); it++) {
 				auto& curBlock = *it;

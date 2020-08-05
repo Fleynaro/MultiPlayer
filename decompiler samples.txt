@@ -1,625 +1,278 @@
-SAMPLE 100
+
+SAMPLE 1000
 ********************* BEFORE OPTIMIZATION: *********************
 
-//block 0 (level 1)
-0x0 push rbx
-0x2 sub rsp, 0x20
-0x6 mov ebx, edx
-0x8 cmp edx, 0x0A
-0xb jle 0x00000225989257ED
-------------
-*(uint_64t*)([reg_rsp_64] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = [reg_rbx_64]
+//block 0 (level: 1, maxHeight: 0, backOrderId: 5, linearLevel: 1, refCount: 0)
 <Symbol assignments>:
-- [var_1_32] = [reg_rdx_32]
-if(!(((([reg_rdx_32] +.4 (0xa{10} *.4 0xffffffff{-1})) == 0x0{0}) || (SBORROW([reg_rdx_32], 0xa{10}) != (([reg_rdx_32] +.4 (0xa{10} *.4 0xffffffff{-1})) < 0x0{0}))))) {
-        //block d (level 2)
-        0xd lea eax, [rdx-0x0B]
-        0x10 cmp eax, 0x0D
-        0x13 jnbe 0x00000225989257EA
-        ------------
-        if(!(!(((([reg_rdx_32] +.4 0xfffffff5{-11}) < 0xd{13}) || ((([reg_rdx_32] +.4 0xfffffff5{-11}) +.4 (0xd{13} *.4 0xffffffff{-1})) == 0x0{0}))))) {
-                //block 15 (level 3)
-                0x15 add ebx, 0x19
-                0x18 jmp 0x00000225989257ED
-                ------------
-                <Symbol assignments>:
-                - [var_1_32] = ([reg_rdx_32] +.4 0x19{25})
-                //goto to block 1d
+- [var_1_64] = ([reg_rip:8] +.8 0x1c7b893{29866131})
+- [var_3_32] = ([reg_rdx:4] ^.4 [reg_rdx:4])
+do {
+        //block 9 (level: 2, maxHeight: 0, backOrderId: 4, linearLevel: 2, refCount: 2)
+        [mem_1_32] = *(uint_32t*)[var_1_64]
+        if((([mem_1_32] +.4 ([reg_rcx:4] *.4 0xffffffff{-1})) == 0x0{0})) {
+                //block 23 (level: 3, maxHeight: 0, backOrderId: 4, linearLevel: 3, refCount: 1)
+                [mem_3_64] = *(uint_64t*)[reg_rsp:8]
+                return [var_3_32]
+                //goto is null (backOrderId: 3; minLinLevel: 3, maxLinLevel: 4)
         } else {
-                //block 1a (level 3)
-                0x1a sub ebx, 0x0E
-                ------------
-                <Symbol assignments>:
-                - [var_1_32] = ([reg_rdx_32] +.4 (0xe{14} *.4 0xffffffff{-1}))
-                //goto to block 1d
+                //goto to block d (backOrderId: 3; minLinLevel: 4, maxLinLevel: 4) [None]
         }
-        //goto to block 1d
-} else {
-        //goto to block 1d
-}
-//block 1d (level 4)
-0x1d call 0x0000022598912238
-0x22 test rax, rax
-0x25 jz 0x0000022598925823
-------------
-[funcVar_1_32] = fun_49920744()
-if(!((([funcVar_1_32] &.8 [funcVar_1_32]) == 0x0{0}))) {
-        //block 27 (level 5)
-        0x27 cmp ebx, 0x31
-        0x2a jnbe 0x0000022598925823
-        ------------
-        if(!(!((([var_1_32] < 0x31{49}) || (([var_1_32] +.4 (0x31{49} *.4 0xffffffff{-1})) == 0x0{0}))))) {
-                //block 2c (level 6)
-                0x2c mov rdx, 0x343FFFFFFFFFF
-                0x36 bt rdx, rbx
-                0x3a jnb 0x0000022598925823
-                ------------
-                if(!(!((((0x343ffffffffff{-1} >>.8 ([var_1_32] &.8 0x3f{63})) &.8 0x1{1}) != 0x0{0})))) {
-                        //block 3c (level 7)
-                        0x3c mov rcx, [rax+0x48]
-                        0x40 mov r8, rax
-                        0x43 mov edx, ebx
-                        0x45 add rcx, 0x40
-                        0x49 add rsp, 0x20
-                        0x4d pop rbx
-                        0x4e jmp 0x0000022598236830
-                        ------------
-                        //goto is null
+        //goto is null (backOrderId: 3; minLinLevel: 2, maxLinLevel: 4)
+        //block d (level: 3, maxHeight: 0, backOrderId: 3, linearLevel: 4, refCount: 1)
+        <Symbol assignments>:
+        - [var_1_64] = ([var_1_64] +.8 0x20{32})
+        - [var_3_32] = ([var_3_32] +.4 0x1{1})
+} while((SBORROW(([var_1_64] +.8 0x20{32}), ([reg_rip:8] +.8 0x1c7bc88{29867144})) != ((([var_1_64] +.8 0x20{32}) +.8 (([reg_rip:8] +.8 0x1c7bc88{29867144}) *.8 0xffffffffffffffff{-1})) < 0x0{0})));
+//block 1f (level: 4, maxHeight: 0, backOrderId: 2, linearLevel: 5, refCount: 1)
+[mem_2_64] = *(uint_64t*)[reg_rsp:8]
+return ((([var_1_64] +.8 0x20{32}) &.0 0xffffffff{-1}) |.4 0xffffffff{-1})
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 6)
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 6, backOrderId: 5, linearLevel: 1, refCount: 0)
+[var_1_64] = ([reg_rip:8] +.8 0x1c7b893{29866131})
+[var_3_32] = 0x0{0}
+do {
+        //block 9 (level: 2, maxHeight: 4, backOrderId: 4, linearLevel: 2, refCount: 2)
+        [mem_1_32] = *(uint_32t*)[var_1_64]
+        if(([mem_1_32] == ([reg_rcx:4] *.4 0x1{1}))) {
+                //block 23 (level: 3, maxHeight: 1, backOrderId: 4, linearLevel: 3, refCount: 1)
+                [mem_3_64] = *(uint_64t*)[reg_rsp:8]
+                return [var_3_32]
+                //goto is null (backOrderId: 3; minLinLevel: 3, maxLinLevel: 4)
+        } else {
+                //goto to block d (backOrderId: 3; minLinLevel: 4, maxLinLevel: 4) [None]
+        }
+        //goto is null (backOrderId: 3; minLinLevel: 2, maxLinLevel: 4)
+        //block d (level: 3, maxHeight: 3, backOrderId: 3, linearLevel: 4, refCount: 1)
+        [var_1_64] = ([var_1_64] +.8 0x20{32})
+        [var_3_32] = ([var_3_32] +.4 0x1{1})
+} while(([var_1_64] < ([reg_rip:8] +.8 0x1c7bc88{29867144})));
+//block 1f (level: 4, maxHeight: 1, backOrderId: 2, linearLevel: 5, refCount: 1)
+[mem_2_64] = *(uint_64t*)[reg_rsp:8]
+return 0xffffffff{-1}
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 6)
+
+
+
+
+
+
+
+
+
+SAMPLE 1001
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 0, backOrderId: 3, linearLevel: 1, refCount: 0)
+<Symbol assignments>:
+- [var_9_32] = [reg_rdx:4]
+- [var_4_64] = [reg_rcx:8]
+- [var_a_32] = ([reg_r10:4] ^.4 [reg_r10:4])
+if(!((([reg_rcx:8] &.8 [reg_rcx:8]) == 0x0{0}))) {
+        //block 12 (level: 2, maxHeight: 0, backOrderId: 4, linearLevel: 2, refCount: 1)
+        [mem_1_8] = *(uint_8t*)[reg_rcx:8]
+        if(!(!((([mem_1_8] +.1 (0x22{34} *.1 0xff{255})) == 0x0{0})))) {
+                //block 17 (level: 3, maxHeight: 0, backOrderId: 4, linearLevel: 3, refCount: 1)
+                [mem_2_8] = *(uint_8t*)([reg_rcx:8] +.8 0x1{1})
+                <Symbol assignments>:
+                - [var_6_8] = [mem_2_8]
+                - [var_7_64] = ([reg_rcx:8] +.8 0x1{1})
+                if(!((([mem_2_8] &.1 [mem_2_8]) == 0x0{0}))) {
+                        //block 25 (level: 4, maxHeight: 0, backOrderId: 5, linearLevel: 4, refCount: 1)
+                        //block 2c (level: 5, maxHeight: 0, backOrderId: 4, linearLevel: 5, refCount: 2)
+                        while(!((([var_6_8] +.1 (0x22{34} *.1 0xff{255})) == 0x0{0}))) {
+                                //block 34 (level: 6, maxHeight: 0, backOrderId: 4, linearLevel: 6, refCount: 1)
+                                [mem_3_8] = *(uint_8t*)([var_6_8] +.8 ([reg_rip:8] +.8 0x773ab8{7813816}))
+                                [mem_4_8] = *(uint_8t*)([var_7_64] +.8 0x1{1})
+                                <Symbol assignments>:
+                                - [var_6_8] = [mem_4_8]
+                                - [var_9_32] = ((([var_9_32] +.4 [mem_3_8]) *.4 0x401{1025}) ^.4 ((([var_9_32] +.4 [mem_3_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})))
+                                - [var_7_64] = ([var_7_64] +.8 0x1{1})
+                                if(!(!((([mem_4_8] &.1 [mem_4_8]) == 0x0{0})))) {
+                                        //block 59 (level: 7, maxHeight: 0, backOrderId: 4, linearLevel: 7, refCount: 1)                                        //goto to block 117 (backOrderId: 3; minLinLevel: 7, maxLinLevel: 8) [break]
+                                } else {
+                                        //goto to block 2c (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [None]
+                                }
+                                //goto is null (backOrderId: 3; minLinLevel: 6, maxLinLevel: 8)
+                        }
+                        //goto to block 117 (backOrderId: 3; minLinLevel: 4, maxLinLevel: 8) [None]
                 } else {
-                        //goto to block 53
+                        //goto to block 117 (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [None]
                 }
-                //goto is null
+                //goto is null (backOrderId: 3; minLinLevel: 3, maxLinLevel: 8)
         } else {
-                //goto to block 53
+                //block 5e (level: 3, maxHeight: 0, backOrderId: 6, linearLevel: 8, refCount: 1)
+                if(!(!(((([reg_rcx:8] &.0 0xff{255}) &.1 0x3{3}) == 0x0{0})))) {
+                        //block 6e (level: 4, maxHeight: 0, backOrderId: 8, linearLevel: 9, refCount: 1)
+                        [mem_5_32] = *(uint_32t*)[reg_rcx:8]
+                        <Symbol assignments>:
+                        - [var_1_32] = [mem_5_32]
+                        do {
+                                //block e4 (level: 5, maxHeight: 0, backOrderId: 7, linearLevel: 10, refCount: 2)
+                                <Symbol assignments>:
+                                - [var_1_32] = ([var_1_32] +.4 (0x1010101{16843009} *.4 0xffffffff{-1}))
+                                if(!(((([var_1_32] +.4 (0x1010101{16843009} *.4 0xffffffff{-1})) &.4 0x80808080{-2139062144}) == 0x0{0}))) {
+                                        //block f0 (level: 6, maxHeight: 0, backOrderId: 8, linearLevel: 11, refCount: 1)
+                                        //goto to block 110 (backOrderId: 6; minLinLevel: 11, maxLinLevel: 12) [break]
+                                } else {
+                                        //goto to block 72 (backOrderId: 6; minLinLevel: 12, maxLinLevel: 12) [None]
+                                }
+                                //goto is null (backOrderId: 6; minLinLevel: 10, maxLinLevel: 12)
+                                //block 72 (level: 6, maxHeight: 0, backOrderId: 6, linearLevel: 12, refCount: 1)
+                                [mem_6_8] = *(uint_8t*)[var_4_64]
+                                [mem_7_8] = *(uint_8t*)([mem_6_8] +.8 ([reg_rip:8] +.8 0x773a7f{7813759}))
+                                [mem_8_8] = *(uint_8t*)(([var_4_64] +.8 0x4{4}) +.8 0xfffffffffffffffd{-3})
+                                [mem_9_8] = *(uint_8t*)([mem_8_8] +.8 ([reg_rip:8] +.8 0x773a7f{7813759}))
+                                [mem_a_8] = *(uint_8t*)(([var_4_64] +.8 0x4{4}) +.8 0xfffffffffffffffe{-2})
+                                [mem_b_8] = *(uint_8t*)([mem_a_8] +.8 ([reg_rip:8] +.8 0x773a7f{7813759}))
+                                [mem_c_8] = *(uint_8t*)(([var_4_64] +.8 0x4{4}) +.8 0xffffffffffffffff{-1})
+                                [mem_d_8] = *(uint_8t*)([mem_c_8] +.8 ([reg_rip:8] +.8 0x773a7f{7813759}))
+                                [mem_e_32] = *(uint_32t*)([var_4_64] +.8 0x4{4})
+                                <Symbol assignments>:
+                                - [var_1_32] = [mem_e_32]
+                                - [var_9_32] = ((([mem_d_8] +.4 (((([mem_b_8] +.4 (((([mem_9_8] +.4 (((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}))) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([mem_9_8] +.4 (((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}))) *.4 0x401{1025}))) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([mem_b_8] +.4 (((([mem_9_8] +.4 (((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}))) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([mem_9_8] +.4 (((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}))) *.4 0x401{1025}))) *.4 0x401{1025}))) *.4 0x401{1025}) ^.4 ((([mem_d_8] +.4 (((([mem_b_8] +.4 (((([mem_9_8] +.4 (((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}))) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([mem_9_8] +.4 (((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}))) *.4 0x401{1025}))) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([mem_b_8] +.4 (((([mem_9_8] +.4 (((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}))) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([mem_9_8] +.4 (((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}))) *.4 0x401{1025}))) *.4 0x401{1025}))) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})))
+                                - [var_4_64] = ([var_4_64] +.8 0x4{4})
+                        } while(true);
+                        //goto is null (backOrderId: 5; minLinLevel: 9, maxLinLevel: 13)
+                } else {
+                        //goto to block 110 (backOrderId: 5; minLinLevel: 13, maxLinLevel: 13) [None]
+                }
+                do {
+                        //block 110 (level: 7, maxHeight: 0, backOrderId: 5, linearLevel: 13, refCount: 3)
+                        [mem_10_8] = *(uint_8t*)[var_4_64]
+                        if(!((([mem_10_8] &.1 [mem_10_8]) == 0x0{0}))) {
+                                //goto to block f2 (backOrderId: 4; minLinLevel: 14, maxLinLevel: 14) [None]
+                        } else {
+                                //goto to block 117 (backOrderId: 4; minLinLevel: 14, maxLinLevel: 14) [break]
+                        }
+                        //goto is null (backOrderId: 4; minLinLevel: 13, maxLinLevel: 14)
+                        //block f2 (level: 8, maxHeight: 0, backOrderId: 4, linearLevel: 14, refCount: 1)
+                        [mem_f_8] = *(uint_8t*)([mem_10_8] +.8 ([reg_rip:8] +.8 0x773a7f{7813759}))
+                        <Symbol assignments>:
+                        - [var_9_32] = ((([var_9_32] +.4 [mem_f_8]) *.4 0x401{1025}) ^.4 ((([var_9_32] +.4 [mem_f_8]) *.4 0x401{1025}) >>.4 (0x6{6} &.8 0x3f{63})))
+                        - [var_4_64] = ([var_4_64] +.8 0x1{1})
+                } while(true);
+                //goto is null (backOrderId: 3; minLinLevel: 8, maxLinLevel: 15)
         }
-        //goto to block 53
+        //block 117 (level: 8, maxHeight: 0, backOrderId: 3, linearLevel: 15, refCount: 4)
+        <Symbol assignments>:
+        - [var_a_32] = [var_9_32]
+        //goto to block 11a (backOrderId: 2; minLinLevel: 2, maxLinLevel: 16) [None]
 } else {
-        //goto to block 53
+        //goto to block 11a (backOrderId: 2; minLinLevel: 16, maxLinLevel: 16) [None]
 }
-//block 53 (level 7)
-0x53 xor eax, eax
-0x55 add rsp, 0x20
-0x59 pop rbx
-0x5a ret
-------------
-return (([funcVar_1_32] &.0 0xffffffff{-1}) ^.4 ([funcVar_1_32] &.0 0xffffffff{-1}))
-//goto is null
+//block 11a (level: 9, maxHeight: 0, backOrderId: 2, linearLevel: 16, refCount: 2)
+[mem_11_64] = *(uint_64t*)[reg_rsp:8]
+return ((([var_a_32] +.4 ([var_a_32] *.4 0x8{8})) ^.4 (([var_a_32] +.4 ([var_a_32] *.4 0x8{8})) >>.4 (0xb{11} &.8 0x3f{63}))) *.4 0x8001{32769})
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 17)
 
 
 
 ********************* AFTER OPTIMIZATION: *********************
 
-//block 0 (level 1)
-0x0 push rbx
-0x2 sub rsp, 0x20
-0x6 mov ebx, edx
-0x8 cmp edx, 0x0A
-0xb jle 0x00000225989257ED
-------------
-*(uint_64t*)([reg_rsp_64] +.8 0xfffffffffffffff8{-8}) = [reg_rbx_64]
-<Symbol assignments>:
-- [var_1_32] = [reg_rdx_32]
-if(([reg_rdx_32] > 0xa{10})) {
-        //block d (level 2)
-        0xd lea eax, [rdx-0x0B]
-        0x10 cmp eax, 0x0D
-        0x13 jnbe 0x00000225989257EA
-        ------------
-        if(([reg_rdx_32] <= 0x18{24})) {
-                //block 15 (level 3)
-                0x15 add ebx, 0x19
-                0x18 jmp 0x00000225989257ED
-                ------------
-                <Symbol assignments>:
-                - [var_1_32] = ([reg_rdx_32] +.4 0x19{25})
-                //goto to block 1d
+//block 0 (level: 1, maxHeight: 19, backOrderId: 3, linearLevel: 1, refCount: 0)
+[var_9_32] = [reg_rdx:4]
+[var_4_64] = [reg_rcx:8]
+[var_a_32] = 0x0{0}
+if((([var_4_64] &.8 [reg_rcx:8]) != 0x0{0})) {
+        //block 12 (level: 2, maxHeight: 16, backOrderId: 4, linearLevel: 2, refCount: 1)
+        [mem_1_8] = *(uint_8t*)[reg_rcx:8]
+        if(([mem_1_8] == 0x22{34})) {
+                //block 17 (level: 3, maxHeight: 10, backOrderId: 4, linearLevel: 3, refCount: 1)
+                [mem_2_8] = *(uint_8t*)([reg_rcx:8] +.8 0x1{1})
+                [var_6_8] = [mem_2_8]
+                [var_7_64] = ([reg_rcx:8] +.8 0x1{1})
+                if((([var_6_8] &.1 [mem_2_8]) != 0x0{0})) {
+                        //block 25 (level: 4, maxHeight: 7, backOrderId: 5, linearLevel: 4, refCount: 1)
+                        //block 2c (level: 5, maxHeight: 7, backOrderId: 4, linearLevel: 5, refCount: 2)
+                        while(([var_6_8] != 0x22{34})) {
+                                //block 34 (level: 6, maxHeight: 7, backOrderId: 4, linearLevel: 6, refCount: 1)
+                                [mem_3_8] = *(uint_8t*)(([reg_rip:8] +.8 0x773ab8{7813816}) +.8 [var_6_8])
+                                [mem_4_8] = *(uint_8t*)([var_7_64] +.8 0x1{1})
+                                [var_6_8] = [mem_4_8]
+                                [var_9_32] = ((([var_9_32] +.4 [mem_3_8]) *.4 0x401{1025}) ^.4 ((([var_9_32] +.4 [mem_3_8]) *.4 0x401{1025}) >>.4 0x6{6}))
+                                [var_7_64] = ([var_7_64] +.8 0x1{1})
+                                if((([var_6_8] &.1 [mem_4_8]) == 0x0{0})) {
+                                        //block 59 (level: 7, maxHeight: 2, backOrderId: 4, linearLevel: 7, refCount: 1)                                        
+										//goto to block 117 (backOrderId: 3; minLinLevel: 7, maxLinLevel: 8) [break]
+                                } else {
+                                        //goto to block 2c (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [None]
+                                }
+                                //goto is null (backOrderId: 3; minLinLevel: 6, maxLinLevel: 8)
+                        }
+                        //goto to block 117 (backOrderId: 3; minLinLevel: 4, maxLinLevel: 8) [None]
+                } else {
+                        //goto to block 117 (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [None]
+                }
+                //goto is null (backOrderId: 3; minLinLevel: 3, maxLinLevel: 8)
         } else {
-                //block 1a (level 3)
-                0x1a sub ebx, 0x0E
-                ------------
-                <Symbol assignments>:
-                - [var_1_32] = ([reg_rdx_32] +.4 0xfffffff2{-14})
-                //goto to block 1d
+                //block 5e (level: 3, maxHeight: 15, backOrderId: 6, linearLevel: 8, refCount: 1)
+                if((([reg_rcx:8] &.1 0x3{3}) == 0x0{0})) {
+                        //block 6e (level: 4, maxHeight: 15, backOrderId: 8, linearLevel: 9, refCount: 1)
+                        [mem_5_32] = *(uint_32t*)[reg_rcx:8]
+                        [var_1_32] = [mem_5_32]
+                        do {
+                                //block e4 (level: 5, maxHeight: 13, backOrderId: 7, linearLevel: 10, refCount: 2)
+                                [var_1_32] = ([var_1_32] +.4 0xfefefeff{-16843009})
+                                if((([var_1_32] &.4 0x80808080{-2139062144}) != 0x0{0})) {
+                                        //block f0 (level: 6, maxHeight: 4, backOrderId: 8, linearLevel: 11, refCount: 1)
+                                        //goto to block 110 (backOrderId: 6; minLinLevel: 11, maxLinLevel: 12) [break]
+                                } else {
+                                        //goto to block 72 (backOrderId: 6; minLinLevel: 12, maxLinLevel: 12) [None]
+                                }
+                                //goto is null (backOrderId: 6; minLinLevel: 10, maxLinLevel: 12)
+                                //block 72 (level: 6, maxHeight: 12, backOrderId: 6, linearLevel: 12, refCount: 1)
+                                [mem_6_8] = *(uint_8t*)[var_4_64]
+                                [mem_7_8] = *(uint_8t*)(([reg_rip:8] +.8 0x773a7f{7813759}) +.8 [mem_6_8])
+                                [mem_8_8] = *(uint_8t*)([var_4_64] +.8 0x1{1})
+                                [mem_9_8] = *(uint_8t*)(([reg_rip:8] +.8 0x773a7f{7813759}) +.8 [mem_8_8])
+                                [mem_a_8] = *(uint_8t*)([var_4_64] +.8 0x2{2})
+                                [mem_b_8] = *(uint_8t*)(([reg_rip:8] +.8 0x773a7f{7813759}) +.8 [mem_a_8])
+                                [mem_c_8] = *(uint_8t*)([var_4_64] +.8 0x3{3})
+                                [mem_d_8] = *(uint_8t*)(([reg_rip:8] +.8 0x773a7f{7813759}) +.8 [mem_c_8])
+                                [mem_e_32] = *(uint_32t*)([var_4_64] +.8 0x4{4})
+                                [var_1_32] = [mem_e_32]
+                                [var_9_32] = ((((((((((((((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025})) +.4 [mem_9_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (((((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025})) +.4 [mem_9_8]) *.4 0x401{1025})) +.4 [mem_b_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (((((((((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025})) +.4 [mem_9_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (((((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025})) +.4 [mem_9_8]) *.4 0x401{1025})) +.4 [mem_b_8]) *.4 0x401{1025})) +.4 [mem_d_8]) *.4 0x401{1025}) ^.4 ((((((((((((((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025})) +.4 [mem_9_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (((((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025})) +.4 [mem_9_8]) *.4 0x401{1025})) +.4 [mem_b_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (((((((((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025})) +.4 [mem_9_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (((((([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025}) >>.4 0x6{6}) ^.4 (([var_9_32] +.4 [mem_7_8]) *.4 0x401{1025})) +.4 [mem_9_8]) *.4 0x401{1025})) +.4 [mem_b_8]) *.4 0x401{1025})) +.4 [mem_d_8]) *.4 0x401{1025}) >>.4 0x6{6}))
+                                [var_4_64] = ([var_4_64] +.8 0x4{4})
+                        } while(true);
+                        //goto is null (backOrderId: 5; minLinLevel: 9, maxLinLevel: 13)
+                } else {
+                        //goto to block 110 (backOrderId: 5; minLinLevel: 13, maxLinLevel: 13) [None]
+                }
+                do {
+                        //block 110 (level: 7, maxHeight: 4, backOrderId: 5, linearLevel: 13, refCount: 3)
+                        [mem_10_8] = *(uint_8t*)[var_4_64]
+                        if(([mem_10_8] != 0x0{0})) {
+                                //goto to block f2 (backOrderId: 4; minLinLevel: 14, maxLinLevel: 14) [None]
+                        } else {
+                                //goto to block 117 (backOrderId: 4; minLinLevel: 14, maxLinLevel: 14) [break]
+                        }
+                        //goto is null (backOrderId: 4; minLinLevel: 13, maxLinLevel: 14)
+                        //block f2 (level: 8, maxHeight: 3, backOrderId: 4, linearLevel: 14, refCount: 1)
+                        [mem_f_8] = *(uint_8t*)(([reg_rip:8] +.8 0x773a7f{7813759}) +.8 [mem_10_8])
+                        [var_9_32] = ((([var_9_32] +.4 [mem_f_8]) *.4 0x401{1025}) ^.4 ((([var_9_32] +.4 [mem_f_8]) *.4 0x401{1025}) >>.4 0x6{6}))
+                        [var_4_64] = ([var_4_64] +.8 0x1{1})
+                } while(true);
+                //goto is null (backOrderId: 3; minLinLevel: 8, maxLinLevel: 15)
         }
-        //goto to block 1d
+        //block 117 (level: 8, maxHeight: 2, backOrderId: 3, linearLevel: 15, refCount: 4)
+        [var_a_32] = [var_9_32]
+        //goto to block 11a (backOrderId: 2; minLinLevel: 2, maxLinLevel: 16) [None]
 } else {
-        //goto to block 1d
+        //goto to block 11a (backOrderId: 2; minLinLevel: 16, maxLinLevel: 16) [None]
 }
-//block 1d (level 4)
-0x1d call 0x0000022598912238
-0x22 test rax, rax
-0x25 jz 0x0000022598925823
-------------
-[funcVar_1_32] = fun_49920744()
-if((((((0x343ffffffffff{-1} >>.8 ([var_1_32] &.8 0x3f{63})) &.8 0x1{1}) == 0x0{0}) || ([var_1_32] > 0x31{49})) || ([funcVar_1_32] == 0x0{0}))) {
-        //block 53 (level 5)
-        0x53 xor eax, eax
-        0x55 add rsp, 0x20
-        0x59 pop rbx
-        0x5a ret
-        ------------
-        return 0x0{0}
-        //goto is null
-} else {
-        //block 3c (level 5)
-        0x3c mov rcx, [rax+0x48]
-        0x40 mov r8, rax
-        0x43 mov edx, ebx
-        0x45 add rcx, 0x40
-        0x49 add rsp, 0x20
-        0x4d pop rbx
-        0x4e jmp 0x0000022598236830
-        ------------
-        //goto is null
-}
-//goto is null
+//block 11a (level: 9, maxHeight: 1, backOrderId: 2, linearLevel: 16, refCount: 2)
+[mem_11_64] = *(uint_64t*)[reg_rsp:8]
+return ((([var_a_32] *.4 0x9{9}) ^.4 (([var_a_32] *.4 0x9{9}) >>.4 0xb{11})) *.4 0x8001{32769})
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 17)
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SAMPLE 102
-********************* BEFORE OPTIMIZATION: *********************
-
-//block 0 (level 1)
-0x0 sub rsp, 0x28
-0x4 mov eax, [rsp+0x38]
-0x8 lea rdx, [rsp+0x40]
-0xd mov dword ptr [rsp+0x40], 0xFFFF
-0x15 or eax, 0xFFFFFFF
-0x1a and eax, 0xFFFFFFF
-0x1f mov [rsp+0x38], eax
-0x23 call 0x000001FCA1AF6028
-0x28 movzx ecx, word ptr [rsp+0x40]
-0x2d mov [rsp+0x38], cx
-0x32 mov ecx, [rsp+0x38]
-0x36 mov r8, rax
-0x39 or ecx, 0xFFF0000
-0x3f xor eax, eax
-0x41 btr ecx, 0x1C
-0x45 cmp cx, 0xFFFF
-0x4a jz 0x000001FCA123D10C
-------------
-*(uint_32t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) = 0xffff{65535}
-*(uint_32t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x38{56}) = ((*(uint_32t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x38{56}) |.4 0xfffffff{268435455}) &.4 0xfffffff{268435455})
-[funcVar_1_32] = fun_59146232()
-*(uint_16t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x38{56}) = (*(uint_16t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) &.0 0xffff{65535})
-<Symbol assignments>:
-- [var_1_32] = (([funcVar_1_32] &.0 0xffffffff{-1}) ^.4 ([funcVar_1_32] &.0 0xffffffff{-1}))
-if(!((((((*(uint_32t*)(([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x38{56}) |.4 0xfff0000{268369920}) &.4 ~(0x1{1} <<.8 (0x1c{28} &.8 0x3f{63}))) &.0 0xffff{65535}) +.2 (0xffff{65535} *.2 0xffff{65535})) == 0x0{0}))) {
-        //block 4c (level 2)
-        0x4c test r8, r8
-        0x4f jz 0x000001FCA123D10C
-        ------------
-        if(!((([funcVar_1_32] &.8 [funcVar_1_32]) == 0x0{0}))) {
-                //block 51 (level 3)
-                0x51 movzx eax, byte ptr [r8+0x518]
-                0x59 and eax, 0x1F
-                ------------
-                <Symbol assignments>:
-                - [var_1_32] = (*(uint_8t*)([funcVar_1_32] +.8 0x518{1304}) &.4 0x1f{31})
-                //goto to block 5c
-        } else {
-                //goto to block 5c
-        }
-        //goto to block 5c
-} else {
-        //goto to block 5c
-}
-//block 5c (level 4)
-0x5c add rsp, 0x28
-0x60 ret
-0x62 push rsp
-------------
-*(uint_64t*)(((([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x28{40}) +.8 0x8{8}) +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = (((([reg_rsp_64] +.8 (0x28{40} *.8 0xffffffffffffffff{-1})) +.8 0x28{40}) +.8 0x8{8}) +.8 (0x8{8} *.8 0xffffffffffffffff{-1}))
-return [var_1_32]
-//goto is null
-
-
-
-********************* AFTER OPTIMIZATION: *********************
-
-//block 0 (level 1)
-0x0 sub rsp, 0x28
-0x4 mov eax, [rsp+0x38]
-0x8 lea rdx, [rsp+0x40]
-0xd mov dword ptr [rsp+0x40], 0xFFFF
-0x15 or eax, 0xFFFFFFF
-0x1a and eax, 0xFFFFFFF
-0x1f mov [rsp+0x38], eax
-0x23 call 0x000001FCA1AF6028
-0x28 movzx ecx, word ptr [rsp+0x40]
-0x2d mov [rsp+0x38], cx
-0x32 mov ecx, [rsp+0x38]
-0x36 mov r8, rax
-0x39 or ecx, 0xFFF0000
-0x3f xor eax, eax
-0x41 btr ecx, 0x1C
-0x45 cmp cx, 0xFFFF
-0x4a jz 0x000001FCA123D10C
-------------
-*(uint_32t*)([reg_rsp_64] +.8 0x18{24}) = 0xffff{65535}
-*(uint_32t*)([reg_rsp_64] +.8 0x10{16}) = ((*(uint_32t*)([reg_rsp_64] +.8 0x10{16}) |.4 0xfffffff{268435455}) &.4 0xfffffff{268435455})
-[funcVar_1_32] = fun_59146232()
-*(uint_16t*)([reg_rsp_64] +.8 0x10{16}) = *(uint_16t*)([reg_rsp_64] +.8 0x18{24})
-<Symbol assignments>:
-- [var_1_32] = 0x0{0}
-if((((*(uint_32t*)([reg_rsp_64] +.8 0x10{16}) &.4 0xffff{65535}) != 0xffff{65535}) && ([funcVar_1_32] != 0x0{0}))) {
-        //block 51 (level 2)
-        0x51 movzx eax, byte ptr [r8+0x518]
-        0x59 and eax, 0x1F
-        ------------
-        <Symbol assignments>:
-        - [var_1_32] = (*(uint_8t*)([funcVar_1_32] +.8 0x518{1304}) &.4 0x1f{31})
-        //goto to block 5c
-} else {
-        //goto to block 5c
-}
-//block 5c (level 3)
-0x5c add rsp, 0x28
-0x60 ret
-0x62 push rsp
-------------
-*(uint_64t*)[reg_rsp_64] = [reg_rsp_64]
-return [var_1_32]
-//goto is null
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SAMPLE 101
-********************* BEFORE OPTIMIZATION: *********************
-
-//block 0 (level 1)
-0x0 sub rsp, 0x28
-0x4 call 0x0000013ECD997414
-0x9 test rax, rax
-0xc jz 0x0000013ECD9AC20C
-------------
-[funcVar_1_32] = fun_49914532()
-<Symbol assignments>:
-- [var_1_32] = ([funcVar_1_32] &.0 0xffffffff{-1})
-if(!((([funcVar_1_32] &.8 [funcVar_1_32]) == 0x0{0}))) {
-        //block e (level 2)
-        0xe mov rax, [rax+0x20]
-        0x12 movzx eax, byte ptr [rax+0x518]
-        0x19 and eax, 0x1F
-        ------------
-        <Symbol assignments>:
-        - [var_1_32] = (*(uint_8t*)(*(uint_64t*)([funcVar_1_32] +.8 0x20{32}) +.8 0x518{1304}) &.4 0x1f{31})
-        //goto to block 1c
-} else {
-        //goto to block 1c
-}
-//block 1c (level 3)
-0x1c add rsp, 0x28
-0x20 ret
-0x22 mov ebp, ebp
-------------
-return [var_1_32]
-//goto is null
-
-
-
-********************* AFTER OPTIMIZATION: *********************
-
-//block 0 (level 1)
-0x0 sub rsp, 0x28
-0x4 call 0x0000013ECD997414
-0x9 test rax, rax
-0xc jz 0x0000013ECD9AC20C
-------------
-[funcVar_1_32] = fun_49914532()
-<Symbol assignments>:
-- [var_1_32] = [funcVar_1_32]
-if(([funcVar_1_32] != 0x0{0})) {
-        //block e (level 2)
-        0xe mov rax, [rax+0x20]
-        0x12 movzx eax, byte ptr [rax+0x518]
-        0x19 and eax, 0x1F
-        ------------
-        <Symbol assignments>:
-        - [var_1_32] = (*(uint_8t*)(*(uint_64t*)([funcVar_1_32] +.8 0x20{32}) +.8 0x518{1304}) &.4 0x1f{31})
-        //goto to block 1c
-} else {
-        //goto to block 1c
-}
-//block 1c (level 3)
-0x1c add rsp, 0x28
-0x20 ret
-0x22 mov ebp, ebp
-------------
-return [var_1_32]
-//goto is null
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SAMPLE 25
-********************* BEFORE OPTIMIZATION: *********************
-
-//block 0 (level 1)
-0x0 cmp eax, 0x00
-0x3 jnl 0x00000230C6B9C0A7
-------------
-<Symbol assignments>:
-- [var_5_32] = [reg_rax_32]
-if(!((SBORROW([reg_rax_32], 0x0{0}) == (([reg_rax_32] +.4 (0x0{0} *.4 0xffffffff{-1})) < 0x0{0})))) {
-        //block 5 (level 2)
-        0x5 neg eax
-        ------------
-        <Symbol assignments>:
-        - [var_5_32] = ([reg_rax_32] *.4 0xffffffff{-1})
-        //goto to block 7
-} else {
-        //goto to block 7
-}
-//block 7 (level 3)
-0x7 cmp ebx, 0x00
-0xa jnl 0x00000230C6B9C0AE
-------------
-<Symbol assignments>:
-- [var_3_32] = [reg_rbx_32]
-if(!((SBORROW([reg_rbx_32], 0x0{0}) == (([reg_rbx_32] +.4 (0x0{0} *.4 0xffffffff{-1})) < 0x0{0})))) {
-        //block c (level 4)
-        0xc neg ebx
-        ------------
-        <Symbol assignments>:
-        - [var_3_32] = ([reg_rbx_32] *.4 0xffffffff{-1})
-        //goto to block e
-} else {
-        //goto to block e
-}
-//block e (level 5)
-0xe cmp eax, ebx
-0x10 jnl 0x00000230C6B9C0B3
-------------
-if(!((SBORROW([var_5_32], [var_3_32]) == (([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1})) < 0x0{0})))) {
-        //block 12 (level 6)
-        0x12 xchg ebx, eax
-        ------------
-        <Symbol assignments>:
-        - [var_5_32] = [var_3_32]
-        - [var_3_32] = [var_5_32]
-        //goto to block 13
-} else {
-        //goto to block 13
-}
-//block 13 (level 7)
-0x13 cmp ebx, 0x00
-0x16 jz 0x00000230C6B9C0BC
-------------
-if(!((([var_3_32] +.4 (0x0{0} *.4 0xffffffff{-1})) == 0x0{0}))) {
-        //block 18 (level 8)
-        0x18 sub eax, ebx
-        0x1a jmp 0x00000230C6B9C0AE
-        ------------
-        <Symbol assignments>:
-        - [var_5_32] = ([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1}))
-        //goto to block e
-} else {
-        //block 1c (level 8)
-        0x1c mov [rsp], eax
-        0x1f mov [rsp], ebx
-        ------------
-        *(uint_32t*)[reg_rsp_64] = [var_5_32]
-        *(uint_32t*)[reg_rsp_64] = [var_3_32]
-        //goto is null
-}
-//goto is null
-
-
-
-********************* AFTER OPTIMIZATION: *********************
-
-//block 0 (level 1)
-0x0 cmp eax, 0x00
-0x3 jnl 0x00000230C6B9C0A7
-------------
-<Symbol assignments>:
-- [var_5_32] = [reg_rax_32]
-if(([reg_rax_32] < 0x0{0})) {
-        //block 5 (level 2)
-        0x5 neg eax
-        ------------
-        <Symbol assignments>:
-        - [var_5_32] = ([reg_rax_32] *.4 0xffffffff{-1})
-        //goto to block 7
-} else {
-        //goto to block 7
-}
-//block 7 (level 3)
-0x7 cmp ebx, 0x00
-0xa jnl 0x00000230C6B9C0AE
-------------
-<Symbol assignments>:
-- [var_3_32] = [reg_rbx_32]
-if(([reg_rbx_32] < 0x0{0})) {
-        //block c (level 4)
-        0xc neg ebx
-        ------------
-        <Symbol assignments>:
-        - [var_3_32] = ([reg_rbx_32] *.4 0xffffffff{-1})
-        //goto to block e
-} else {
-        //goto to block e
-}
-//block e (level 5)
-0xe cmp eax, ebx
-0x10 jnl 0x00000230C6B9C0B3
-------------
-if(([var_5_32] < [var_3_32])) {
-        //block 12 (level 6)
-        0x12 xchg ebx, eax
-        ------------
-        <Symbol assignments>:
-        - [var_5_32] = [var_3_32]
-        - [var_3_32] = [var_5_32]
-        //goto to block 13
-} else {
-        //goto to block 13
-}
-//block 13 (level 70
-0x13 cmp ebx, 0x00
-0x16 jz 0x00000230C6B9C0BC
-------------
-if(([var_3_32] != 0x0{0})) {
-        //block 18 (level 8)
-        0x18 sub eax, ebx
-        0x1a jmp 0x00000230C6B9C0AE
-        ------------
-        <Symbol assignments>:
-        - [var_5_32] = ([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1}))
-        //goto to block e
-} else {
-        //block 1c (level 8)
-        0x1c mov [rsp], eax
-        0x1f mov [rsp], ebx
-        ------------
-        *(uint_32t*)[reg_rsp_64] = [var_5_32]
-        *(uint_32t*)[reg_rsp_64] = [var_3_32]
-        //goto is null
-}
-//goto is null
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SAMPLE 23
-********************* BEFORE OPTIMIZATION: *********************
-
-//block 0 (level 1)
-0x0 mul ecx
-0x2 add eax, 0x05
-0x5 mov [rsp+0x04], eax
-------------
-*(uint_32t*)([reg_rsp_64] +.8 0x4{4}) = (((([reg_rax_32] *.8 [reg_rcx_32]) >>.8 (0x0{0} *.4 0x8{8})) &.4 0xffffffff{-1}) +.4 0x5{5})
-//goto is null
-
-
-
-********************* AFTER OPTIMIZATION: *********************
-
-//block 0 (level 1)
-0x0 mul ecx
-0x2 add eax, 0x05
-0x5 mov [rsp+0x04], eax
-------------
-*(uint_32t*)([reg_rsp_64] +.8 0x4{4}) = ((([reg_rax_32] *.8 [reg_rcx_32]) &.4 0xffffffff{-1}) +.4 0x5{5})
-//goto is null
+SAMPLE 1002

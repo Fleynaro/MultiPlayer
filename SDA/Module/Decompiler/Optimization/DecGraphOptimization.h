@@ -391,8 +391,12 @@ namespace CE::Decompiler::Optimization
 				std::map<ObjectHash::Hash, Symbol::LocalVariable*> localVars;
 				for (auto symbolAssignmentLine : decBlock->getSymbolAssignmentLines()) {
 					if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->m_destAddr->m_symbol)) {
-						CalculateHashes(symbolAssignmentLine->m_srcValue);
-						localVars.insert(std::make_pair(symbolAssignmentLine->m_srcValue->getHash(), localVar));
+						std::list<ExprTree::SymbolLeaf*> symbolLeafs;
+						GetSymbolLeafs(symbolAssignmentLine->m_srcValue, localVar, symbolLeafs);
+						if (!symbolLeafs.empty()) {
+							CalculateHashes(symbolAssignmentLine->m_srcValue);
+							localVars.insert(std::make_pair(symbolAssignmentLine->m_srcValue->getHash(), localVar));
+						}
 					}
 				}
 				CalculateHashes(decBlock->m_noJmpCond);

@@ -66,9 +66,17 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg
 	std::list<SameRegInfo> sameRegisters;
 	//select same registeres
 	for (auto it : m_varnodes) {
-		if (changedRegistersOnly && !it.m_changed)
-			continue;
 		if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it.m_varnode)) {
+			if (!it.m_changed) {
+				if (changedRegistersOnly)
+					continue;
+				//to avoide ([rcx] & 0xFF00) | ([rcx] & 0xFF)
+				if ((mask & ~sameRegVarnode->m_register.m_valueRangeMask) != 0) {
+					if (m_resolvedExternalSymbols.find(sameRegVarnode) != m_resolvedExternalSymbols.end())
+						continue;
+				}
+			}
+
 			if (reg.getGenericId() == sameRegVarnode->m_register.getGenericId()) {
 				sameRegisters.push_back(std::make_pair(sameRegVarnode->m_register, it.m_expr->m_node));
 			}
@@ -112,7 +120,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 	if (mask) {
 		auto symbol = new Symbol::RegisterVariable(reg, reg.getSize());
 		auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
-		auto externalSymbol = new ExternalSymbol(reg, mask, symbolLeaf, regParts);
+		auto externalSymbol = new ExternalSymbol(varnodeRegister, mask, symbolLeaf, regParts);
 		m_externalSymbols.push_back(externalSymbol);
 
 		if (mask == reg.m_valueRangeMask) {

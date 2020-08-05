@@ -106,22 +106,24 @@ namespace CE::Decompiler
 				auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
 				for (auto it = ctx->m_externalSymbols.begin(); it != ctx->m_externalSymbols.end(); it ++) {
 					auto& externalSymbol = **it;
-					auto regId = externalSymbol.m_reg.getGenericId(); //ah/al and xmm?
+					auto& reg = externalSymbol.m_regVarnode->m_register;
+					auto regId = reg.getGenericId(); //ah/al and xmm?
 					if (m_registersToSymbol.find(regId) == m_registersToSymbol.end()) {
-						m_registersToSymbol[regId] = RegSymbol(externalSymbol.m_reg.isVector());
+						m_registersToSymbol[regId] = RegSymbol(reg.isVector());
 					}
 					m_curRegSymbol = &m_registersToSymbol[regId];
 					m_curRegSymbol->requiestId++;
 
 					auto regParts = externalSymbol.m_regParts;
 					auto mask = externalSymbol.m_needReadMask;
-					requestRegisterParts(block, externalSymbol.m_reg, mask, regParts, false);
+					requestRegisterParts(block, reg, mask, regParts, false);
 					if (mask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
-						auto expr = CreateExprFromRegisterParts(regParts, externalSymbol.m_reg.m_valueRangeMask, externalSymbol.m_reg.isVector());
-						externalSymbol.m_symbol->replaceWith(expr);
+						auto expr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask, reg.isVector());
+						externalSymbol.m_symbol->replaceWith(expr); //todo: remove this, make special node where another replacing method will be implemented. On this step no replaceWith uses!
 						delete externalSymbol.m_symbol->m_symbol;
 						delete externalSymbol.m_symbol;
 						ctx->m_externalSymbols.erase(it);
+						ctx->m_resolvedExternalSymbols.insert(externalSymbol.m_regVarnode);
 					}
 				}
 				

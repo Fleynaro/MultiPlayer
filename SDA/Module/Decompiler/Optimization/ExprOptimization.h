@@ -155,6 +155,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//rax + -0x2 < 0		=>		rax < -0x2 * -1
+	//if(((((([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}) *.4 0xffffffff{-1}) +.4 [mem_3_32]) == 0x0{0}))			->			if(([mem_3_32] == ((([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}) *.4 0x1{1})))
 	static void OptimizeCondition_Add(Condition* condition) {
 		auto curExpr = condition->m_leftNode;
 		while (curExpr) {
@@ -162,11 +163,22 @@ namespace CE::Decompiler::Optimization
 			if (auto curAddExpr = dynamic_cast<OperationalNode*>(curExpr)) {
 				auto mask = curAddExpr->getMask();
 				if (curAddExpr->m_operation == Add) {
+					auto leftNode = curAddExpr->m_leftNode;
+					auto rightNode = curAddExpr->m_rightNode;
+					bool isTermMoving = false;
 					if (dynamic_cast<NumberLeaf*>(curAddExpr->m_rightNode) || IsNegative(curAddExpr->m_rightNode, mask)) {
+						isTermMoving = true;
+					}
+					else if(IsNegative(curAddExpr->m_leftNode, mask)) {
+						std::swap(leftNode, rightNode);
+						isTermMoving = true;
+					}
+
+					if (isTermMoving) {
 						//move expr from left node of the condition to the right node being multiplied -1
-						auto newPartOfRightExpr = new OperationalNode(curAddExpr->m_rightNode, new NumberLeaf(uint64_t(-1) & GetMask64ByMask(mask)), Mul, mask);
+						auto newPartOfRightExpr = new OperationalNode(rightNode, new NumberLeaf(uint64_t(-1) & GetMask64ByMask(mask)), Mul, mask);
 						auto newRightExpr = new OperationalNode(condition->m_rightNode, newPartOfRightExpr, Add);
-						auto newCond = new Condition(curAddExpr->m_leftNode, newRightExpr, condition->m_cond);
+						auto newCond = new Condition(leftNode, newRightExpr, condition->m_cond);
 						condition->replaceWith(newCond);
 						delete condition;
 						curExpr = condition->m_leftNode;

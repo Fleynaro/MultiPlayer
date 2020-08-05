@@ -72,13 +72,13 @@ namespace CE::Decompiler
 	class Decompiler; //make interface later
 
 	struct ExternalSymbol : public ExprTree::INodeAgregator {
-		PCode::Register m_reg;
+		PCode::RegisterVarnode* m_regVarnode;
 		RegisterParts m_regParts;
 		uint64_t m_needReadMask = 0x0;
 		ExprTree::SymbolLeaf* m_symbol = nullptr;
 
-		ExternalSymbol(PCode::Register reg, uint64_t needReadMask, ExprTree::SymbolLeaf* symbol, RegisterParts regParts)
-			: m_reg(reg), m_needReadMask(needReadMask), m_symbol(symbol), m_regParts(regParts)
+		ExternalSymbol(PCode::RegisterVarnode* regVarnode, uint64_t needReadMask, ExprTree::SymbolLeaf* symbol, RegisterParts regParts)
+			: m_regVarnode(regVarnode), m_needReadMask(needReadMask), m_symbol(symbol), m_regParts(regParts)
 		{
 			symbol->addParentNode(this);
 		}
@@ -133,7 +133,7 @@ namespace CE::Decompiler
 			PCode::Varnode* m_varnode;
 			WrapperNode<ExprTree::Node>* m_expr;
 			bool m_changed;
-
+			
 			VarnodeExpr(PCode::Varnode* varnode, WrapperNode<ExprTree::Node>* expr, bool changed)
 				: m_varnode(varnode), m_expr(expr), m_changed(changed)
 			{}
@@ -142,6 +142,7 @@ namespace CE::Decompiler
 		std::list<std::pair<PCode::Register, WrapperNode<ExprTree::Node>*>> m_cachedRegisters;
 		std::list<PCode::RegisterVarnode*> m_ownRegVarnodes;
 		std::list<ExternalSymbol*> m_externalSymbols;
+		std::set<PCode::RegisterVarnode*> m_resolvedExternalSymbols;
 
 		ExecutionBlockContext(Decompiler* decompiler);
 
