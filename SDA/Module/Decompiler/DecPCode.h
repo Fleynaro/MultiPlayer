@@ -26,9 +26,9 @@ namespace CE::Decompiler::PCode
 
 		RegisterId m_genericId;
 		Type m_type;
-		uint64_t m_valueRangeMask;
+		BitMask m_valueRangeMask;
 
-		Register(RegisterId genericId = 0, uint64_t valueRangeMask = 0x0, Type type = Type::Generic)
+		Register(RegisterId genericId = 0, BitMask valueRangeMask = 0x0, Type type = Type::Generic)
 			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_type(type)
 		{}
 
@@ -45,8 +45,7 @@ namespace CE::Decompiler::PCode
 		}
 
 		int getSize() const {
-			auto size = GetBitCountOfMask(m_valueRangeMask) / (isVector() ? 1 : 8);
-			return max(1, size);
+			return m_valueRangeMask.getSize();
 		}
 
 		bool operator ==(const Register& reg) const {
@@ -56,25 +55,17 @@ namespace CE::Decompiler::PCode
 		std::string printDebug() {
 			auto regId = (ZydisRegister)m_genericId;
 
-			std::string maskStr;
-			if (isVector()) {
-				auto bitCount = GetBitCountOfMask(m_valueRangeMask);
-				if (bitCount == 4 || bitCount == 8) {
-					maskStr = std::string(bitCount == 4 ? "D" : "Q") + (char)('a' + (char)(GetShiftValueOfMask(m_valueRangeMask) / bitCount));
-				}
-				else {
-					maskStr = std::to_string(bitCount);
-				}
-			}
-			else {
-				maskStr = std::to_string(getSize());
+			auto size = getSize();
+			std::string maskStr = std::to_string(size);
+			if (size == 4 || size == 8) {
+				maskStr = std::string(size == 4 ? "D" : "Q") + (char)('a' + (char)(m_valueRangeMask.getOffset() / (size * 8)));
 			}
 
 			if (regId != ZYDIS_REGISTER_RFLAGS)
 				return std::string(ZydisRegisterGetString(regId)) + ":" + maskStr;
 
 			std::string flagName = "flag";
-			auto flag = (ZydisCPUFlag)GetShiftValueOfMask(m_valueRangeMask);
+			auto flag = (ZydisCPUFlag)m_valueRangeMask.getOffset();
 			if (flag == ZYDIS_CPUFLAG_CF)
 				flagName = "CF";
 			else if (flag == ZYDIS_CPUFLAG_OF)
@@ -98,8 +89,8 @@ namespace CE::Decompiler::PCode
 
 		virtual int getSize() = 0;
 
-		Mask getMask() {
-			return GetMaskBySize(getSize());
+		virtual BitMask getMask() {
+			return BitMask(getSize());
 		}
 
 		virtual std::string printDebug() = 0;
@@ -116,6 +107,10 @@ namespace CE::Decompiler::PCode
 
 		int getSize() override {
 			return m_register.getSize();
+		}
+
+		BitMask getMask() override {
+			return m_register.m_valueRangeMask;
 		}
 
 		std::string printDebug() override {

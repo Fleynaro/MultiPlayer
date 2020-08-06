@@ -66,7 +66,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		case InstructionId::INT_SUB:
 			opType = ExprTree::Add;
 			if (m_instr->m_id == InstructionId::INT_SUB)
-				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & GetMask64ByMask(m_instr->m_input1->getMask())), ExprTree::Mul, m_instr->m_input1->getSize());
+				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & m_instr->m_input1->getMask().getBitMask64()), ExprTree::Mul, m_instr->m_input1->getSize());
 			break;
 		case InstructionId::INT_MULT:
 			opType = ExprTree::Mul;
@@ -119,7 +119,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::INT_2COMP:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		auto nodeMask = new ExprTree::NumberLeaf(-1 & GetMask64ByMask(m_instr->m_input0->getMask()));
+		auto nodeMask = new ExprTree::NumberLeaf(-1 & m_instr->m_input0->getMask().getBitMask64());
 		auto opType = (m_instr->m_id == InstructionId::INT_2COMP) ? ExprTree::Mul : ExprTree::Xor;
 		m_ctx->setVarnode(m_instr->m_output, new ExprTree::InstructionOperationalNode(expr, nodeMask, opType, m_instr));
 		break;
@@ -142,7 +142,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto shiftExpr = requestVarnode(m_instr->m_input1);
 		shiftExpr = new ExprTree::OperationalNode(shiftExpr, new ExprTree::NumberLeaf((uint64_t)0x8), ExprTree::Mul, m_instr->m_input1->getSize());
 		expr = new ExprTree::OperationalNode(expr, shiftExpr, ExprTree::Shr, m_instr->m_input0->getSize());
-		expr = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(GetMaskBySize(m_instr->m_output->getSize(), false)), ExprTree::And, m_instr);
+		expr = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(m_instr->m_output->getMask().getBitMask64()), ExprTree::And, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, expr);
 		break;
 	}
@@ -332,7 +332,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		ExprTree::Node* dstExpr = nullptr;
 		auto& dstRegister = funcCallInfo.m_resultRegister.getGenericId() != 0 ? funcCallInfo.m_resultRegister : funcCallInfo.m_resultVectorRegister;
 		if (dstRegister.getGenericId() != 0) {
-			auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.getSize());
+			auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.m_valueRangeMask);
 			dstExpr = new ExprTree::SymbolLeaf(funcResultVar);
 			m_ctx->setVarnode(dstRegister, dstExpr);
 		}

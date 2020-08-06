@@ -20,6 +20,10 @@ namespace CE::Decompiler::Symbol
 			return 8;
 		}
 
+		virtual BitMask getMask() {
+			return BitMask(getSize());
+		}
+
 		virtual ObjectHash::Hash getHash() {
 			ObjectHash hash;
 			hash.addValue((int64_t)this);
@@ -32,15 +36,19 @@ namespace CE::Decompiler::Symbol
 	class Variable : public Symbol
 	{
 	public:
-		Variable(int size)
-			: m_size(size)
+		Variable(BitMask mask)
+			: m_mask(mask)
 		{}
 
 		int getSize() override {
-			return m_size;
+			return m_mask.getSize();
+		}
+
+		BitMask getMask() override {
+			return m_mask;
 		}
 	private:
-		int m_size;
+		BitMask m_mask;
 	};
 
 	class MemoryVariable : public Variable
@@ -66,8 +74,8 @@ namespace CE::Decompiler::Symbol
 	public:
 		int m_id;
 
-		LocalVariable(int size)
-			: Variable(size)
+		LocalVariable(BitMask mask)
+			: Variable(mask)
 		{
 			static int id = 1;
 			m_id = id++;
@@ -83,8 +91,8 @@ namespace CE::Decompiler::Symbol
 	public:
 		PCode::Register m_register;
 
-		RegisterVariable(PCode::Register reg, int size)
-			: m_register(reg), Variable(size)
+		RegisterVariable(PCode::Register reg)
+			: m_register(reg), Variable(reg.m_valueRangeMask)
 		{}
 
 		ObjectHash::Hash getHash() override {
@@ -105,8 +113,8 @@ namespace CE::Decompiler::Symbol
 		int m_id;
 		ExprTree::FunctionCallContext* m_funcCallContext;
 
-		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext, int size)
-			: m_funcCallContext(funcCallContext), Variable(size)
+		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext, BitMask mask)
+			: m_funcCallContext(funcCallContext), Variable(mask)
 		{
 			static int id = 1;
 			m_id = id++;

@@ -8,8 +8,8 @@ namespace CE::Decompiler::ExprTree
 	public:
 		virtual void inverse() = 0;
 
-		Mask getMask() override {
-			return 0b1;
+		BitMask getMask() override {
+			return BitMask((uint64_t)0b1);
 		}
 	};
 

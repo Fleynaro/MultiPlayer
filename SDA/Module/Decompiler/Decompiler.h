@@ -109,7 +109,7 @@ namespace CE::Decompiler
 					auto& reg = externalSymbol.m_regVarnode->m_register;
 					auto regId = reg.getGenericId(); //ah/al and xmm?
 					if (m_registersToSymbol.find(regId) == m_registersToSymbol.end()) {
-						m_registersToSymbol[regId] = RegSymbol(reg.isVector());
+						m_registersToSymbol[regId] = RegSymbol();
 					}
 					m_curRegSymbol = &m_registersToSymbol[regId];
 					m_curRegSymbol->requiestId++;
@@ -118,7 +118,7 @@ namespace CE::Decompiler
 					auto mask = externalSymbol.m_needReadMask;
 					requestRegisterParts(block, reg, mask, regParts, false);
 					if (mask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
-						auto expr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask, reg.isVector());
+						auto expr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 						externalSymbol.m_symbol->replaceWith(expr); //todo: remove this, make special node where another replacing method will be implemented. On this step no replaceWith uses!
 						delete externalSymbol.m_symbol->m_symbol;
 						delete externalSymbol.m_symbol;
@@ -137,34 +137,29 @@ namespace CE::Decompiler
 		}
 
 		struct BlockRegSymbol {
-			uint64_t canReadMask = 0x0;
+			BitMask canReadMask;
 			RegisterParts regParts;
 			int symbolId = 0;
 			int prevSymbolId = 0;
 		};
 
 		struct RegSymbol {
-			bool isVector;
 			std::map<PrimaryTree::Block*, BlockRegSymbol> blocks;
 			std::list<std::pair<int, ExprTree::SymbolLeaf*>> symbols;
 			int requiestId = 0;
-
-			RegSymbol(bool isVector = false)
-				: isVector(isVector)
-			{}
 		};
 
 		std::map<PCode::RegisterId, RegSymbol> m_registersToSymbol;
 		RegSymbol* m_curRegSymbol = nullptr;
 
-		void requestRegisterParts(PrimaryTree::Block* block, const PCode::Register& reg, uint64_t& mask, RegisterParts& outRegParts, bool isFound = true) {
+		void requestRegisterParts(PrimaryTree::Block* block, const PCode::Register& reg, BitMask& mask, RegisterParts& outRegParts, bool isFound = true) {
 			if (isFound) {
 				auto it = m_decompiledBlocks.find(block);
 				if (it != m_decompiledBlocks.end()) {
 					auto ctx = it->second.m_execBlockCtx;
 					auto regParts = ctx->getRegisterParts(reg, mask);
 					outRegParts.insert(outRegParts.begin(), regParts.begin(), regParts.end());
-					if (!mask) {
+					if (mask.isZero()) {
 						return;
 					}
 				}
@@ -181,19 +176,19 @@ namespace CE::Decompiler
 			}
 
 
-			uint64_t needReadMask = 0x0;
-			uint64_t hasReadMask = 0x0;
+			BitMask needReadMask;
+			BitMask hasReadMask;
 			std::map<PrimaryTree::Block*, uint64_t> blockPressure;
 			PrimaryTree::Block* nextBlock = nullptr;
 			auto isSuccess = gatherBlocksWithRegisters(block, reg, mask, needReadMask, hasReadMask, nextBlock);
-			if (needReadMask) {
+			if (!needReadMask.isZero()) {
 				//todo: we should create symbol anyway [1]: e.g. loop with simple 2 branches (if() mov eax, 1 else mov eax, 2)
 				auto symbol = createSymbolForRequest(reg, needReadMask); //after gatherBlocksWithRegisters we need to create a new symbols for gathered blocks with incremented symbol's id
 				if ((mask & ~needReadMask) != mask) {
 					auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
 					outRegParts.push_back(regPart);
 					mask = mask & ~needReadMask;
-					if (!mask) {
+					if (mask.isZero()) {
 						return;
 					}
 				}
@@ -203,7 +198,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		ExprTree::Node* createSymbolForRequest(const PCode::Register& reg, uint64_t needReadMask) {
+		ExprTree::Node* createSymbolForRequest(const PCode::Register& reg, BitMask needReadMask) {
 			auto& regSymbol = *m_curRegSymbol;
 			std::set<int> prevSymbolIds;
 			for (auto& it : regSymbol.blocks) {
@@ -220,8 +215,7 @@ namespace CE::Decompiler
 				}
 			}
 
-			int size = GetBitCountOfMask(needReadMask) / (regSymbol.isVector ? 1 : 8);
-			auto symbol = new Symbol::LocalVariable(max(1, size));
+			auto symbol = new Symbol::LocalVariable(needReadMask);
 			auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 			regSymbol.symbols.push_back(std::make_pair(regSymbol.requiestId, symbolLeaf));
 
@@ -252,14 +246,14 @@ namespace CE::Decompiler
 							auto symbolLeaf = symbol.second;
 							auto regParts = blockRegSymbol.regParts;
 							
-							auto symbolMask = GetMaskBySize(symbolLeaf->m_symbol->getSize(), regSymbol.isVector);
+							auto symbolMask = dynamic_cast<Symbol::Variable*>(symbolLeaf->m_symbol)->getMask();
 							auto maskToChange = symbolMask & ~blockRegSymbol.canReadMask;
 
 							if (maskToChange != 0) {
 								regParts.push_back(new RegisterPart(symbolMask, maskToChange, symbolLeaf));
 							}
 
-							auto expr = CreateExprFromRegisterParts(regParts, symbolMask, regSymbol.isVector);
+							auto expr = CreateExprFromRegisterParts(regParts, symbolMask);
 							decBlock->addSymbolAssignmentLine(symbolLeaf, expr);
 						}
 					}
@@ -267,12 +261,12 @@ namespace CE::Decompiler
 			}
 		}
 
-		bool hasAllRegistersGatheredOnWay(PrimaryTree::Block* block, PrimaryTree::Block* endBlock, uint64_t hasReadMask, std::map<PrimaryTree::Block*, int>& visitedBlocks) {
+		bool hasAllRegistersGatheredOnWay(PrimaryTree::Block* block, PrimaryTree::Block* endBlock, BitMask hasReadMask, std::map<PrimaryTree::Block*, int>& visitedBlocks) {
 			if (!visitedBlocks.empty()) {
 				auto it = m_curRegSymbol->blocks.find(block);
 				if (it != m_curRegSymbol->blocks.end()) {
 					auto& blockRegSymbol = it->second;
-					hasReadMask &= ~blockRegSymbol.canReadMask;
+					hasReadMask = hasReadMask & ~blockRegSymbol.canReadMask;
 				}
 			}
 
@@ -283,7 +277,7 @@ namespace CE::Decompiler
 					visitedBlocks.insert(std::make_pair(nextBlock, 0));
 				}
 				if (nextBlock == endBlock) {
-					if (hasReadMask) {
+					if (!hasReadMask.isZero()) {
 						return false;
 					}
 				}
@@ -297,7 +291,7 @@ namespace CE::Decompiler
 			return false;
 		}
 
-		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, uint64_t pressure) {
+		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, BitMask requestMask, BitMask& needReadMask, BitMask& hasReadMask, uint64_t pressure) {
 			auto remainToReadMask = needReadMask & ~hasReadMask;
 			int prevSymbolId = 0;
 
@@ -311,7 +305,7 @@ namespace CE::Decompiler
 						hasReadMask = ~(remainToReadMask & ~blockRegSymbol.canReadMask);
 					}
 					else {
-						needReadMask |= blockRegSymbol.canReadMask;
+						needReadMask = needReadMask | blockRegSymbol.canReadMask;
 					}
 					return;
 				}
@@ -329,7 +323,7 @@ namespace CE::Decompiler
 				for (auto it = regParts.begin(); it != regParts.end(); it++) {
 					if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>((*it)->m_expr)) {
 						if (auto symbol = dynamic_cast<Symbol::LocalVariable*>(symbolLeaf->m_symbol)) {
-							mask |= (*it)->m_maskToChange;
+							mask = mask | (*it)->m_maskToChange;
 							regParts.erase(it);
 						}
 					}
@@ -337,16 +331,16 @@ namespace CE::Decompiler
 			}
 
 			if (!regParts.empty()) {
-				uint64_t canReadMask = 0x0;
+				BitMask canReadMask;
 				for (auto regPart : regParts) {
-					canReadMask |= regPart->m_maskToChange;
+					canReadMask = canReadMask | regPart->m_maskToChange;
 				}
 
 				if (pressure == 0x1000000000000000) {
 					hasReadMask = ~mask;
 				}
 				else {
-					needReadMask |= canReadMask;
+					needReadMask = needReadMask | canReadMask;
 				}
 
 				BlockRegSymbol blockRegSymbol;
@@ -358,7 +352,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const PCode::Register& reg, uint64_t requestMask, uint64_t& needReadMask, uint64_t& hasReadMask, PrimaryTree::Block*& nextBlock) {
+		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const PCode::Register& reg, BitMask requestMask, BitMask& needReadMask, BitMask& hasReadMask, PrimaryTree::Block*& nextBlock) {
 			std::map<PrimaryTree::Block*, uint64_t> blockPressures;
 			std::set<PrimaryTree::Block*> handledBlocks;
 			blockPressures[startBlock] = 0x1000000000000000;

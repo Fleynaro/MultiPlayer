@@ -24,7 +24,7 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 		for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
 			if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it->m_varnode)) {
 				if (reg.getGenericId() == sameRegVarnode->m_register.getGenericId()) {
-					if ((GetMaskWithException(sameRegVarnode->m_register.m_valueRangeMask) & ~GetMaskWithException(reg.m_valueRangeMask)) == 0) {
+					if ((GetMaskWithException(sameRegVarnode->m_register.m_valueRangeMask) & ~GetMaskWithException(reg.m_valueRangeMask)).isZero()) {
 						oldWrapperNodes.push_back(it->m_expr);
 						m_varnodes.erase(it);
 					}
@@ -60,7 +60,7 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 	}
 }
 
-RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg, uint64_t& mask, bool changedRegistersOnly) {
+RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg, BitMask& mask, bool changedRegistersOnly) {
 	RegisterParts regParts;
 	using SameRegInfo = std::pair<PCode::Register, ExprTree::Node*>;
 	std::list<SameRegInfo> sameRegisters;
@@ -71,7 +71,7 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg
 				if (changedRegistersOnly)
 					continue;
 				//to avoide ([rcx] & 0xFF00) | ([rcx] & 0xFF)
-				if ((mask & ~sameRegVarnode->m_register.m_valueRangeMask) != 0) {
+				if (!(mask & ~sameRegVarnode->m_register.m_valueRangeMask).isZero()) {
 					if (m_resolvedExternalSymbols.find(sameRegVarnode) != m_resolvedExternalSymbols.end())
 						continue;
 				}
@@ -84,14 +84,14 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg
 	}
 
 	//sort asc
-	sameRegisters.sort([](SameRegInfo a, SameRegInfo b) {
+	sameRegisters.sort([](SameRegInfo& a, SameRegInfo& b) {
 		return a.first.m_valueRangeMask < b.first.m_valueRangeMask;
 		});
 
 	//gather need parts
 	for (auto sameRegInfo : sameRegisters) {
 		//exception: eax(no ax, ah, al!) overwrite rax!!!
-		auto sameRegMask = sameRegInfo.first.m_valueRangeMask;
+		auto& sameRegMask = sameRegInfo.first.m_valueRangeMask;
 		auto sameRegExceptionMask = GetMaskWithException(sameRegMask); //for x86 only!!!
 		auto remainToReadMask = mask & ~sameRegExceptionMask;
 		if (remainToReadMask != mask) {
@@ -117,8 +117,8 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 	auto& reg = varnodeRegister->m_register;
 	auto mask = varnodeRegister->m_register.m_valueRangeMask;
 	auto regParts = getRegisterParts(reg, mask);
-	if (mask) {
-		auto symbol = new Symbol::RegisterVariable(reg, reg.getSize());
+	if (!mask.isZero()) {
+		auto symbol = new Symbol::RegisterVariable(reg);
 		auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 		auto externalSymbol = new ExternalSymbol(varnodeRegister, mask, symbolLeaf, regParts);
 		m_externalSymbols.push_back(externalSymbol);
