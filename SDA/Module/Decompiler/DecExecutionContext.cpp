@@ -67,17 +67,16 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg
 	//select same registeres
 	for (auto it : m_varnodes) {
 		if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it.m_varnode)) {
-			if (!it.m_changed) {
-				if (changedRegistersOnly)
-					continue;
-				//to avoide ([rcx] & 0xFF00) | ([rcx] & 0xFF)
-				if (!(mask & ~sameRegVarnode->m_register.m_valueRangeMask).isZero()) {
-					if (m_resolvedExternalSymbols.find(sameRegVarnode) != m_resolvedExternalSymbols.end())
-						continue;
-				}
-			}
-
 			if (reg.getGenericId() == sameRegVarnode->m_register.getGenericId()) {
+				if (!it.m_changed) {
+					if (changedRegistersOnly)
+						continue;
+					//to avoide ([rcx] & 0xFF00) | ([rcx] & 0xFF)
+					if (!(mask & ~sameRegVarnode->m_register.m_valueRangeMask).isZero()) {
+						if (m_resolvedExternalSymbols.find(sameRegVarnode) != m_resolvedExternalSymbols.end())
+							continue;
+					}
+				}
 				sameRegisters.push_back(std::make_pair(sameRegVarnode->m_register, it.m_expr->m_node));
 			}
 		}
@@ -129,7 +128,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 		regExpr = symbolLeaf;
 	}
 	else {
-		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask, reg.isVector());
+		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 	}
 
 	m_cachedRegisters.push_back(std::make_pair(varnodeRegister->m_register, new WrapperNode<ExprTree::Node>(regExpr)));

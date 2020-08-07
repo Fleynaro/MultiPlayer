@@ -144,7 +144,7 @@ namespace CE::Decompiler::Optimization
 	//check negative of expr node
 	static bool IsNegative(Node* node, BitMask& mask) {
 		if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
-			if ((numberLeaf->m_value >> (mask.getBitsCount() * 0x8 - 1)) & 0b1)
+			if ((numberLeaf->m_value >> (mask.getBitsCount() - 1)) & 0b1)
 				return true;
 		}
 		else if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
@@ -632,7 +632,7 @@ namespace CE::Decompiler::Optimization
 						auto mask2 = rightNode->getMask();
 						expr->setMask(mask1 & mask2);
 
-						if (expr->getMask() == 0x0) {
+						if (expr->getMask().isZero()) {
 							//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
 							expr->replaceWith(new NumberLeaf((uint64_t)0));
 							delete expr;
@@ -660,7 +660,7 @@ namespace CE::Decompiler::Optimization
 					else if (expr->m_operation == Shl || expr->m_operation == Shr) {
 						if (expr->m_operation == Shl) {
 							if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-								expr->setMask(leftNode->getMask() << (numberLeaf->m_value / 0x8 + (numberLeaf->m_value % 0x8 == 0 ? 0 : 1)));
+								expr->setMask(leftNode->getMask() << (int)numberLeaf->m_value);
 								return;
 							}
 						}
@@ -769,7 +769,8 @@ namespace CE::Decompiler::Optimization
 				Node::UpdateDebugInfo(cond);
 			}
 		}
-		else if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
+		
+		if (auto simpleCond = dynamic_cast<Condition*>(cond)) {
 			Node::UpdateDebugInfo(simpleCond);
 			OptimizeCondition_SBORROW(simpleCond);
 			if (auto simpleCond = dynamic_cast<Condition*>(cond)) {

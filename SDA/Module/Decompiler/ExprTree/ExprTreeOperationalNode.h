@@ -110,7 +110,7 @@ namespace CE::Decompiler::ExprTree
 		bool m_notChangedMask;
 		ObjectHash::Hash m_calcHash;
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, BitMask mask = (uint64_t)0x0, bool notChangedMask = false)
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, BitMask mask = BitMask(0), bool notChangedMask = false)
 			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask)
 		{
 			leftNode->addParentNode(this);
@@ -285,7 +285,7 @@ namespace CE::Decompiler::ExprTree
 		{}
 
 		BitMask getMask() override {
-			return uint64_t(0b1);
+			return BitMask(1);
 		}
 
 		Node* clone() override {

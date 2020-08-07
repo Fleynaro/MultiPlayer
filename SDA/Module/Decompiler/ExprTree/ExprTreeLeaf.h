@@ -58,8 +58,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		BitMask getMask() override {
-			uint64_t bitMask[4] = { m_value, 0x0, 0x0, 0x0 };
-			return BitMask(bitMask);
+			return BitMask(m_value, uint8_t(0));
 		}
 
 		bool isLeaf() override {

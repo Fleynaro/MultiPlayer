@@ -759,7 +759,7 @@ namespace CE::Decompiler::PCode
 					Varnode* varnodeCF = CreateVarnode(ZYDIS_CPUFLAG_CF);
 
 					if (operandsCount == 1) {
-						varnodeDst = varnodeMul1 = CreateVarnode(GetRegisterBySize(ZYDIS_REGISTER_RAX, size));
+						varnodeDst = varnodeMul1 = CreateVarnode(ZYDIS_REGISTER_RAX, size);
 						varnodeMul2 = varnodeInput0;
 					}
 					else if (operandsCount == 2) {
@@ -785,7 +785,7 @@ namespace CE::Decompiler::PCode
 
 					Varnode* varnodeSubpiece;
 					if (operandsCount == 1) {
-						varnodeSubpiece = CreateVarnode(GetRegisterBySize(ZYDIS_REGISTER_RDX, size));
+						varnodeSubpiece = CreateVarnode(ZYDIS_REGISTER_RDX, size);
 					}
 					else {
 						varnodeSubpiece = new SymbolVarnode(size * 2);
@@ -823,8 +823,8 @@ namespace CE::Decompiler::PCode
 						instrRem = InstructionId::INT_SREM;
 					}
 
-					auto varnodeRax = CreateVarnode(GetRegisterBySize(ZYDIS_REGISTER_RAX, size));
-					auto varnodeRdx = CreateVarnode(GetRegisterBySize(ZYDIS_REGISTER_RDX, size));
+					auto varnodeRax = CreateVarnode(ZYDIS_REGISTER_RAX, size);
+					auto varnodeRdx = CreateVarnode(ZYDIS_REGISTER_RDX, size);
 					auto varnodeExt = new SymbolVarnode(size * 2);
 					addMicroInstruction(instrExt, varnodeInput0, nullptr, varnodeExt);
 
@@ -940,7 +940,7 @@ namespace CE::Decompiler::PCode
 			case ZYDIS_MNEMONIC_PUSH:
 			{
 				auto varnodeReg = requestOperandValue(m_curInstr->operands[0], size);
-				auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP);
+				auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP, 0x8);
 				addMicroInstruction(InstructionId::INT_SUB, varnodeRsp, new ConstantVarnode(size, 0x8), varnodeRsp);
 				addMicroInstruction(InstructionId::STORE, varnodeRsp, varnodeReg);
 				break;
@@ -949,7 +949,7 @@ namespace CE::Decompiler::PCode
 			case ZYDIS_MNEMONIC_POP:
 			{
 				auto varnodeReg = requestOperandValue(m_curInstr->operands[0], size);
-				auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP);
+				auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP, 0x8);
 				addMicroInstruction(InstructionId::LOAD, varnodeRsp, nullptr, varnodeReg);
 				addMicroInstruction(InstructionId::INT_ADD, varnodeRsp, new ConstantVarnode(size, 0x8), varnodeRsp);
 				break;
@@ -957,8 +957,8 @@ namespace CE::Decompiler::PCode
 
 			case ZYDIS_MNEMONIC_RET:
 			{
-				auto varnodeRip = CreateVarnode(ZYDIS_REGISTER_RIP);
-				auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP);
+				auto varnodeRip = CreateVarnode(ZYDIS_REGISTER_RIP, 0x8);
+				auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP, 0x8);
 				addMicroInstruction(InstructionId::LOAD, varnodeRsp, nullptr, varnodeRip);
 				addMicroInstruction(InstructionId::INT_ADD, varnodeRsp, new ConstantVarnode(size, 0x8), varnodeRsp);
 				addMicroInstruction(InstructionId::RETURN, varnodeRip, nullptr);
@@ -983,7 +983,7 @@ namespace CE::Decompiler::PCode
 				}
 				else {
 					if (false) {
-						auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP);
+						auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP, 0x8);
 						addMicroInstruction(InstructionId::INT_SUB, varnodeRsp, new ConstantVarnode(0x8, 0x8), varnodeRsp);
 						auto offset = getNextInstrOffset();
 						addMicroInstruction(InstructionId::STORE, varnodeRsp, new ConstantVarnode((uint64_t&)offset, 0x8));
@@ -1337,19 +1337,16 @@ namespace CE::Decompiler::PCode
 				Varnode* resultVarnode = nullptr;
 				RegisterVarnode* baseRegVarnode = nullptr;
 				RegisterVarnode* indexRegVarnode = nullptr;
-				auto memLocExprMask = BitMask(memLocExprSize);
-
+				
 				if (operand.mem.base != ZYDIS_REGISTER_NONE) {
-					baseRegVarnode = CreateVarnode(operand.mem.base);
-					baseRegVarnode->m_register.m_valueRangeMask = memLocExprMask;
+					baseRegVarnode = CreateVarnode(operand.mem.base, memLocExprSize);
 				}
 
 				if (operand.mem.index != ZYDIS_REGISTER_NONE) {
-					resultVarnode = indexRegVarnode = CreateVarnode(operand.mem.index);
-					indexRegVarnode->m_register.m_valueRangeMask = memLocExprMask;
+					resultVarnode = indexRegVarnode = CreateVarnode(operand.mem.index, memLocExprSize);
 					if (operand.mem.scale != 1) {
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);
-						addMicroInstruction(InstructionId::INT_MULT, resultVarnode, new ConstantVarnode(operand.mem.scale & memLocExprMask.getBitMask64(), memLocExprSize), symbolVarnode);
+						addMicroInstruction(InstructionId::INT_MULT, resultVarnode, new ConstantVarnode(operand.mem.scale & resultVarnode->getMask().getBitMask64(), memLocExprSize), symbolVarnode);
 						resultVarnode = symbolVarnode;
 					}
 					if (baseRegVarnode != nullptr) {
@@ -1363,7 +1360,7 @@ namespace CE::Decompiler::PCode
 				}
 
 				if (operand.mem.disp.has_displacement) {
-					auto dispVarnode = new ConstantVarnode((uint64_t&)operand.mem.disp.value & memLocExprMask.getBitMask64(), memLocExprSize);
+					auto dispVarnode = new ConstantVarnode((uint64_t&)operand.mem.disp.value & resultVarnode->getMask().getBitMask64(), memLocExprSize);
 					if (resultVarnode != nullptr) {
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);
 						addMicroInstruction(InstructionId::INT_ADD, resultVarnode, dispVarnode, symbolVarnode);
@@ -1499,66 +1496,43 @@ namespace CE::Decompiler::PCode
 			}
 			return result;
 		}
-
-		static ZydisRegister GetRegisterBySize(ZydisRegister reg, int size) {
-			int idx = reg - ZYDIS_REGISTER_RAX;
-			switch (size)
-			{
-			case 1:
-				return ZydisRegister(ZYDIS_REGISTER_AL + idx + (idx >= 3 ? 4 : 0));
-			case 2:
-				return ZydisRegister(ZYDIS_REGISTER_AX + idx);
-			case 4:
-				return ZydisRegister(ZYDIS_REGISTER_EAX + idx);
-			case 8:
-				return ZydisRegister(ZYDIS_REGISTER_RAX + idx);
-			}
-			return ZYDIS_REGISTER_NONE;
-		}
 		
-		static Register CreateRegister(ZydisRegister reg) {
+		static Register CreateRegister(ZydisRegister reg, int size, int offset = 0x0) {
+			auto mask = BitMask(size, offset);
 			if(reg == ZYDIS_REGISTER_RIP)
-				return Register(reg, BitMask((uint64_t)0b11111111), Register::Type::InstructionPointer);
+				return Register(reg, mask, Register::Type::InstructionPointer);
 			if (reg == ZYDIS_REGISTER_RSP)
-				return Register(reg, BitMask((uint64_t)0b11111111), Register::Type::StackPointer);
+				return Register(reg, mask, Register::Type::StackPointer);
 
 			if (reg >= ZYDIS_REGISTER_AL && reg <= ZYDIS_REGISTER_BL) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AL, BitMask((uint64_t)0b1));
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AL, mask);
 			}
 			else if (reg >= ZYDIS_REGISTER_AH && reg <= ZYDIS_REGISTER_BH) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, BitMask((uint64_t)0b10));
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, mask);
 			}
 			else if (reg >= ZYDIS_REGISTER_SPL && reg <= ZYDIS_REGISTER_R15B) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, BitMask((uint64_t)0b1));
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, mask);
 			}
 			else if (reg >= ZYDIS_REGISTER_AX && reg <= ZYDIS_REGISTER_R15W) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AX, BitMask((uint64_t)0b11));
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AX, mask);
 			}
 			else if (reg >= ZYDIS_REGISTER_EAX && reg <= ZYDIS_REGISTER_R15D) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_EAX, BitMask((uint64_t)0b1111));
+				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_EAX, mask);
 			}
 			else if (reg >= ZYDIS_REGISTER_RAX && reg <= ZYDIS_REGISTER_R15) {
-				return Register(reg, BitMask((uint64_t)0b11111111));
-			}
-			else if (reg >= ZYDIS_REGISTER_IP && reg <= ZYDIS_REGISTER_RIP) {
-				uint64_t byteMask = 0b11111111;
-				if (reg == ZYDIS_REGISTER_EIP)
-					byteMask = 0b1111;
-				if (reg == ZYDIS_REGISTER_IP)
-					byteMask = 0b11;
-				return Register(reg, byteMask);
+				return Register(reg, mask);
 			}
 			else if (reg >= ZYDIS_REGISTER_MM0 && reg <= ZYDIS_REGISTER_MM7) {
-				return Register(reg, BitMask((uint64_t)0b11111111), Register::Type::Vector);
+				return Register(reg, mask, Register::Type::Vector);
 			}
 			else if (reg >= ZYDIS_REGISTER_XMM0 && reg <= ZYDIS_REGISTER_XMM31) {
-				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_XMM0, BitMask((uint64_t)0xFFFF), Register::Type::Vector);
+				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_XMM0, mask, Register::Type::Vector);
 			}
 			else if (reg >= ZYDIS_REGISTER_YMM0 && reg <= ZYDIS_REGISTER_YMM31) {
-				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_YMM0, BitMask((uint64_t)0xFFFFFFFF), Register::Type::Vector);
+				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_YMM0, mask, Register::Type::Vector);
 			}
 			else if (reg >= ZYDIS_REGISTER_ZMM0 && reg <= ZYDIS_REGISTER_ZMM31) {
-				return Register(reg, BitMask((uint64_t)0xFFFFFFFFFFFFFFFF), Register::Type::Vector);
+				return Register(reg, mask, Register::Type::Vector);
 			}
 
 			return Register();
@@ -1566,14 +1540,11 @@ namespace CE::Decompiler::PCode
 
 		static Register CreateFlagRegister(ZydisCPUFlag flag) {
 			auto mask = (uint64_t)1 << flag;
-			return Register(ZYDIS_REGISTER_RFLAGS, mask, Register::Type::Flag);
+			return Register(ZYDIS_REGISTER_RFLAGS, BitMask(mask, uint8_t(0)), Register::Type::Flag);
 		}
 
-		static RegisterVarnode* CreateVarnode(ZydisRegister regId, int size = 0x0, int offset = 0x0) {
-			auto reg = CreateRegister(regId);
-			if (size != 0x0) {
-				reg.m_valueRangeMask = reg.m_valueRangeMask & BitMask(size, offset);
-			}
+		static RegisterVarnode* CreateVarnode(ZydisRegister regId, int size, int offset = 0x0) {
+			auto reg = CreateRegister(regId, size, offset);
 			return new RegisterVarnode(reg);
 		}
 

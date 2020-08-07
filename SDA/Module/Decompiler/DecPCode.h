@@ -57,8 +57,10 @@ namespace CE::Decompiler::PCode
 
 			auto size = getSize();
 			std::string maskStr = std::to_string(size);
-			if (size == 4 || size == 8) {
-				maskStr = std::string(size == 4 ? "D" : "Q") + (char)('a' + (char)(m_valueRangeMask.getOffset() / (size * 8)));
+			if (isVector()) {
+				if (size == 4 || size == 8) {
+					maskStr = std::string(size == 4 ? "D" : "Q") + (char)('a' + (char)(m_valueRangeMask.getOffset() / (size * 8)));
+				}
 			}
 
 			if (regId != ZYDIS_REGISTER_RFLAGS)

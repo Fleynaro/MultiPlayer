@@ -59,7 +59,7 @@ void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr =
 }
 
 
-bool g_SHOW_ASM = true;
+bool g_SHOW_ASM = false;
 bool g_SHOW_PCODE = false;
 bool g_SHOW_ALL_GOTO = true;
 bool g_SHOW_LINEAR_LEVEL_EXT = true;
@@ -268,20 +268,20 @@ void CE::Decompiler::test() {
 	if(true)
 	{
 		auto it = info.m_paramRegisters.begin();
-		*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, 0xFFFFFFFF);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, 0xFFFFFFFF);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_R8, 0xFFFFFFFF);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, BitMask(4));
+		*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, BitMask(4));
+		*(it++) = PCode::Register(ZYDIS_REGISTER_R8, BitMask(4));
 		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, 0xF, PCode::Register::Type::Vector);
-		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, 0xFFFFFFFF);
+		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, BitMask(4));
 	}
 	else if (true)
 	{
 		auto it = info.m_paramRegisters.begin();
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM0, 0xF, PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM1, 0xF, PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM2, 0xF, PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, 0xF, PCode::Register::Type::Vector);
-		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_ZMM0, 0xF, PCode::Register::Type::Vector);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM0, BitMask(4), PCode::Register::Type::Vector);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM1, BitMask(4), PCode::Register::Type::Vector);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM2, BitMask(4), PCode::Register::Type::Vector);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, BitMask(4), PCode::Register::Type::Vector);
+		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_ZMM0, BitMask(4), PCode::Register::Type::Vector);
 	}
 
 	auto decCodeGraph = new DecompiledCodeGraph(info);

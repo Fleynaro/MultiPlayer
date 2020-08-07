@@ -9,7 +9,7 @@ namespace CE::Decompiler::ExprTree
 		virtual void inverse() = 0;
 
 		BitMask getMask() override {
-			return BitMask((uint64_t)0b1);
+			return BitMask(1);
 		}
 	};
 

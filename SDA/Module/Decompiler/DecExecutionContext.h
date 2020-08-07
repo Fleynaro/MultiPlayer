@@ -48,7 +48,7 @@ namespace CE::Decompiler
 
 			if ((regPart.m_regMask & regPart.m_maskToChange) != regPart.m_regMask) {
 				auto mask = (regPart.m_regMask & regPart.m_maskToChange) >> bitLeftShift;
-				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(mask), ExprTree::And/*, requestRegMaskForOpNode, true*/);
+				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(mask.getBitMask64()), ExprTree::And/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (bitShift != 0) {

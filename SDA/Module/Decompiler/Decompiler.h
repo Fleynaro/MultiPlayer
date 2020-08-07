@@ -261,34 +261,18 @@ namespace CE::Decompiler
 			}
 		}
 
-		bool hasAllRegistersGatheredOnWay(PrimaryTree::Block* block, PrimaryTree::Block* endBlock, BitMask hasReadMask, std::map<PrimaryTree::Block*, int>& visitedBlocks) {
-			if (!visitedBlocks.empty()) {
-				auto it = m_curRegSymbol->blocks.find(block);
-				if (it != m_curRegSymbol->blocks.end()) {
-					auto& blockRegSymbol = it->second;
-					hasReadMask = hasReadMask & ~blockRegSymbol.canReadMask;
-				}
+		bool hasAllRegistersGatheredOnWay(PrimaryTree::Block* block, PrimaryTree::Block* endBlock, BitMask hasReadMask) {
+			if (block == endBlock) {
+				return hasReadMask.isZero();
 			}
 
 			for (auto nextBlock : block->getNextBlocks()) {
 				if (nextBlock->m_level <= block->m_level)
 					continue;
-				if (visitedBlocks.find(nextBlock) == visitedBlocks.end()) {
-					visitedBlocks.insert(std::make_pair(nextBlock, 0));
-				}
-				if (nextBlock == endBlock) {
-					if (!hasReadMask.isZero()) {
-						return false;
-					}
-				}
-				if (++visitedBlocks[nextBlock] == nextBlock->getRefHighBlocksCount()) {
-					if (nextBlock == endBlock)
-						return true;
-					if (hasAllRegistersGatheredOnWay(nextBlock, endBlock, hasReadMask, visitedBlocks))
-						return true;
-				}
+				if (!hasAllRegistersGatheredOnWay(nextBlock, endBlock, hasReadMask))
+					return false;
 			}
-			return false;
+			return true;
 		}
 
 		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, BitMask requestMask, BitMask& needReadMask, BitMask& hasReadMask, uint64_t pressure) {
@@ -298,7 +282,7 @@ namespace CE::Decompiler
 			auto it = m_curRegSymbol->blocks.find(block);
 			if (it != m_curRegSymbol->blocks.end()) {
 				auto& blockRegSymbol = it->second;
-				if ((requestMask & blockRegSymbol.canReadMask) == 0) {
+				if ((requestMask & blockRegSymbol.canReadMask).isZero()) {
 					blockRegSymbol.prevSymbolId = blockRegSymbol.symbolId;
 					blockRegSymbol.symbolId = m_curRegSymbol->requiestId;
 					if (pressure == 0x1000000000000000) {
@@ -377,8 +361,7 @@ namespace CE::Decompiler
 						if (pressure == 0x1000000000000000) {
 							if (needReadMask == requestMask) {
 								//if all registers have been gathered and no sense to continue
-								std::map<PrimaryTree::Block*, int> visitedBlocks;
-								if (hasAllRegistersGatheredOnWay(block, startBlock, requestMask, visitedBlocks)) {
+								if (hasAllRegistersGatheredOnWay(block, startBlock, requestMask)) {
 									return true;
 								}
 							}
@@ -390,7 +373,7 @@ namespace CE::Decompiler
 								//handle block
 								gatherRegisterPartsInBlock(block, reg, requestMask, needReadMask, hasReadMask, pressure);
 
-								if (pressure == 0x1000000000000000 && (needReadMask & ~hasReadMask) == 0) {
+								if (pressure == 0x1000000000000000 && (needReadMask & ~hasReadMask).isZero()) {
 									nextBlock = block;
 									return true;
 								}
