@@ -261,28 +261,17 @@ namespace CE::Decompiler
 			}
 		}
 
-		bool hasAllRegistersGatheredOnWay(PrimaryTree::Block* block, PrimaryTree::Block* endBlock, BitMask hasReadMask) {
-			if (block == endBlock) {
-				return hasReadMask.isZero();
-			}
-
-			for (auto nextBlock : block->getNextBlocks()) {
-				if (nextBlock->m_level <= block->m_level)
-					continue;
-				if (!hasAllRegistersGatheredOnWay(nextBlock, endBlock, hasReadMask))
-					return false;
-			}
-			return true;
-		}
-
-		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, BitMask requestMask, BitMask& needReadMask, BitMask& hasReadMask, uint64_t pressure) {
-			auto remainToReadMask = needReadMask & ~hasReadMask;
+		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, BitMask requestMask, BitMask& needReadMask, BitMask& hasReadMask, BitMask notNeedToReadMask, uint64_t pressure) {
+			auto remainToReadMask = needReadMask & ~hasReadMask & ~notNeedToReadMask;
+			requestMask = requestMask & ~notNeedToReadMask;
 			int prevSymbolId = 0;
 
+			//if the block has been already handled
 			auto it = m_curRegSymbol->blocks.find(block);
 			if (it != m_curRegSymbol->blocks.end()) {
 				auto& blockRegSymbol = it->second;
 				if ((requestMask & blockRegSymbol.canReadMask).isZero()) {
+					//just change mask
 					blockRegSymbol.prevSymbolId = blockRegSymbol.symbolId;
 					blockRegSymbol.symbolId = m_curRegSymbol->requiestId;
 					if (pressure == 0x1000000000000000) {
@@ -294,10 +283,12 @@ namespace CE::Decompiler
 					return;
 				}
 				else {
+					//it means some parts of the registers have not been read
 					prevSymbolId = blockRegSymbol.symbolId;
 				}
 			}
 			
+			//handle the block first time
 			auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
 			auto mask = (pressure == 0x1000000000000000) ? remainToReadMask : requestMask;
 			auto regParts = ctx->getRegisterParts(reg, mask, pressure != 0x1000000000000000);
@@ -314,6 +305,7 @@ namespace CE::Decompiler
 				}
 			}
 
+			//if the block can be read somehow
 			if (!regParts.empty()) {
 				BitMask canReadMask;
 				for (auto regPart : regParts) {
@@ -327,6 +319,7 @@ namespace CE::Decompiler
 					needReadMask = needReadMask | canReadMask;
 				}
 
+				//just mark the block as having been read
 				BlockRegSymbol blockRegSymbol;
 				blockRegSymbol.regParts = regParts;
 				blockRegSymbol.canReadMask = canReadMask; //that is what read
@@ -337,15 +330,23 @@ namespace CE::Decompiler
 		}
 
 		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const PCode::Register& reg, BitMask requestMask, BitMask& needReadMask, BitMask& hasReadMask, PrimaryTree::Block*& nextBlock) {
-			std::map<PrimaryTree::Block*, uint64_t> blockPressures;
+			struct BlockToHandle {
+				uint64_t m_pressure = 0x0;
+				BitMask m_notNeedToReadMask;
+				BlockToHandle() = default;
+				BlockToHandle(uint64_t pressure, BitMask canReadMask)
+					: m_pressure(pressure), m_notNeedToReadMask(canReadMask)
+				{}
+			};
+			std::map<PrimaryTree::Block*, BlockToHandle> blocksToHandle;
 			std::set<PrimaryTree::Block*> handledBlocks;
-			blockPressures[startBlock] = 0x1000000000000000;
+			blocksToHandle[startBlock] = BlockToHandle(0x1000000000000000, BitMask(0)); //set the start block
 			bool isStartBlock = true;
 
 			while (true)
 			{
 				int maxLevel = 0;
-				for (auto it : blockPressures) {
+				for (auto it : blocksToHandle) {
 					auto block = it.first;
 					if (block->m_level > maxLevel) {
 						maxLevel = it.first->m_level;
@@ -353,31 +354,24 @@ namespace CE::Decompiler
 				}
 
 				int nextBlocksCount = 0;
-				for (auto it : blockPressures) {
+				for (auto it : blocksToHandle) {
 					auto block = it.first;
-					auto pressure = it.second;
+					auto blockToHandleInfo = it.second;
 					if (block->m_level == maxLevel) //find blocks with the highest level down
 					{
-						if (pressure == 0x1000000000000000) {
-							if (needReadMask == requestMask) {
-								//if all registers have been gathered and no sense to continue
-								if (hasAllRegistersGatheredOnWay(block, startBlock, requestMask)) {
-									return true;
-								}
-							}
-						}
-
 						bool isLoop = true;
-						if (!isStartBlock) {
-							if (handledBlocks.find(block) == handledBlocks.end()) {
+						if (!isStartBlock) { //ignore handling of the start block first time, if it is a cycle then handle it next time
+							if (handledBlocks.find(block) == handledBlocks.end()) { //if not handled yet
 								//handle block
-								gatherRegisterPartsInBlock(block, reg, requestMask, needReadMask, hasReadMask, pressure);
+								gatherRegisterPartsInBlock(block, reg, requestMask, needReadMask, hasReadMask, blockToHandleInfo.m_notNeedToReadMask, blockToHandleInfo.m_pressure);
 
-								if (pressure == 0x1000000000000000 && (needReadMask & ~hasReadMask).isZero()) {
-									nextBlock = block;
-									return true;
+								//check if all registers have been gathered
+								if (blockToHandleInfo.m_pressure == 0x1000000000000000) {
+									if ((needReadMask & ~hasReadMask).isZero()) {
+										nextBlock = block;
+										return true;
+									}
 								}
-
 								handledBlocks.insert(block);
 								if(block == startBlock)
 									isLoop = false;
@@ -390,28 +384,38 @@ namespace CE::Decompiler
 							isStartBlock = false;
 						}
 
+						//if the start block is cycle then distribute the pressure for all referenced blocks. Next time don't it.
 						auto parentsCount = isLoop ? block->getRefBlocksCount() : block->getRefHighBlocksCount();
 						if (parentsCount == 0)
 							continue;
+						//calculate pressure for next blocks
 						auto bits = (int)ceil(log2((double)parentsCount));
-						auto addPressure = pressure >> bits;
+						auto addPressure = blockToHandleInfo.m_pressure >> bits;
 						auto restAddPressure = addPressure * ((1 << bits) % parentsCount);
-						blockPressures[block] = 0x0;
+						blocksToHandle[block].m_pressure = 0x0;
+						
+						auto mask = blockToHandleInfo.m_notNeedToReadMask;
+						auto it = m_curRegSymbol->blocks.find(block);
+						if (it != m_curRegSymbol->blocks.end()) {
+							mask = mask | it->second.canReadMask;
+						}
 
+						//distribute the calculated pressure for each next block
 						for (auto parentBlock : block->getBlocksReferencedTo()) {
 							if (!isLoop && parentBlock->m_level >= block->m_level)
 								continue;
 
-							if (blockPressures.find(parentBlock) == blockPressures.end()) {
-								blockPressures[parentBlock] = 0x0;
+							if (blocksToHandle.find(parentBlock) == blocksToHandle.end()) {
+								blocksToHandle.insert(std::make_pair(parentBlock, BlockToHandle(0x0, mask)));
 							}
-							blockPressures[parentBlock] += addPressure + restAddPressure;
+							blocksToHandle[parentBlock].m_pressure += addPressure + restAddPressure;
+							blocksToHandle[parentBlock].m_notNeedToReadMask = blocksToHandle[parentBlock].m_notNeedToReadMask & mask;
 							restAddPressure = 0;
 							nextBlocksCount++;
 						}
 
-						if (blockPressures[block] == 0x0) {
-							blockPressures.erase(block);
+						if (blocksToHandle[block].m_pressure == 0x0) {
+							blocksToHandle.erase(block);
 						}
 					}
 				}

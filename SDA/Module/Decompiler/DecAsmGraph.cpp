@@ -59,7 +59,7 @@ void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr =
 }
 
 
-bool g_SHOW_ASM = false;
+bool g_SHOW_ASM = true;
 bool g_SHOW_PCODE = false;
 bool g_SHOW_ALL_GOTO = true;
 bool g_SHOW_LINEAR_LEVEL_EXT = true;
@@ -253,7 +253,7 @@ void CE::Decompiler::test() {
 		printf("\n");
 	}
 	else {
-#define SAMPLE_VAR sample1002
+#define SAMPLE_VAR sample202
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}
@@ -265,7 +265,7 @@ void CE::Decompiler::test() {
 	graph.printDebug(addr);
 
 	auto info = GetFunctionCallDefaultInfo();
-	if(true)
+	if(false)
 	{
 		auto it = info.m_paramRegisters.begin();
 		*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, BitMask(4));

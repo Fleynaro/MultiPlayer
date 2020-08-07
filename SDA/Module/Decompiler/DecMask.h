@@ -17,7 +17,7 @@ namespace CE::Decompiler
 		{}
 
 		BitMask(int size, int offset = 0x0)
-			: BitMask(GetBitMask64BySize(size) << uint64_t(offset % 8), uint8_t(offset / 8))
+			: BitMask(GetBitMask64BySize(size) << uint64_t((offset % 8) * 8), uint8_t(offset / 8))
 		{}
 
 		BitMask(uint64_t byteMask)

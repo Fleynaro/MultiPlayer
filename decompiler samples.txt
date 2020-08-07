@@ -1,3 +1,114 @@
+SAMPLE 25
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 0, backOrderId: 7, linearLevel: 1, refCount: 0)
+<Symbol assignments>:
+- [var_5_32] = [reg_rcx:4]
+if(!((SBORROW([reg_rcx:4], 0x0{0}) == (([reg_rcx:4] +.4 (0x0{0} *.4 0xffffffff{-1})) < 0x0{0})))) {
+        //block 9 (level: 2, maxHeight: 0, backOrderId: 7, linearLevel: 2, refCount: 1)
+        <Symbol assignments>:
+        - [var_5_32] = ([reg_rcx:4] *.4 0xffffffff{-1})
+        //goto to block b (backOrderId: 6; minLinLevel: 2, maxLinLevel: 3) [None]
+} else {
+        //goto to block b (backOrderId: 6; minLinLevel: 3, maxLinLevel: 3) [None]
+}
+//block b (level: 3, maxHeight: 0, backOrderId: 6, linearLevel: 3, refCount: 2)
+<Symbol assignments>:
+- [var_3_32] = [reg_rdx:4]
+if(!((SBORROW([reg_rdx:4], 0x0{0}) == (([reg_rdx:4] +.4 (0x0{0} *.4 0xffffffff{-1})) < 0x0{0})))) {
+        //block 10 (level: 4, maxHeight: 0, backOrderId: 6, linearLevel: 4, refCount: 1)
+        <Symbol assignments>:
+        - [var_3_32] = ([reg_rdx:4] *.4 0xffffffff{-1})
+        //goto to block 12 (backOrderId: 5; minLinLevel: 4, maxLinLevel: 5) [None]
+} else {
+        //goto to block 12 (backOrderId: 5; minLinLevel: 5, maxLinLevel: 5) [None]
+}
+do {
+        //block 12 (level: 5, maxHeight: 0, backOrderId: 5, linearLevel: 5, refCount: 3)
+        if(!((SBORROW([var_5_32], [var_3_32]) == (([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1})) < 0x0{0})))) {
+                //block 16 (level: 6, maxHeight: 0, backOrderId: 5, linearLevel: 6, refCount: 1)
+                <Symbol assignments>:
+                - [var_5_32] = [var_3_32]
+                - [var_3_32] = [var_5_32]
+                //goto to block 17 (backOrderId: 4; minLinLevel: 6, maxLinLevel: 7) [None]
+        } else {
+                //goto to block 17 (backOrderId: 4; minLinLevel: 7, maxLinLevel: 7) [None]
+        }
+        //block 17 (level: 7, maxHeight: 0, backOrderId: 4, linearLevel: 7, refCount: 2)
+        if((([var_3_32] +.4 (0x0{0} *.4 0xffffffff{-1})) == 0x0{0})) {
+                //goto to block 20 (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [break]
+        } else {
+                //goto to block 1c (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [None]
+        }
+        //goto is null (backOrderId: 3; minLinLevel: 5, maxLinLevel: 8)
+        //block 1c (level: 8, maxHeight: 0, backOrderId: 3, linearLevel: 8, refCount: 1)
+        <Symbol assignments>:
+        - [var_5_32] = ([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1}))
+} while(true);
+//block 20 (level: 8, maxHeight: 0, backOrderId: 2, linearLevel: 9, refCount: 1)
+*(uint_32t*)[reg_rsp:8] = [var_5_32]
+*(uint_32t*)[reg_rsp:8] = [var_3_32]
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 10)
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 9, backOrderId: 7, linearLevel: 1, refCount: 0)
+[var_5_32] = [reg_rcx:4]
+if(([reg_rcx:4] < 0x0{0})) {
+        //block 9 (level: 2, maxHeight: 8, backOrderId: 7, linearLevel: 2, refCount: 1)
+        [var_5_32] = ([reg_rcx:4] *.4 0xffffffff{-1})
+        //goto to block b (backOrderId: 6; minLinLevel: 2, maxLinLevel: 3) [None]
+} else {
+        //goto to block b (backOrderId: 6; minLinLevel: 3, maxLinLevel: 3) [None]
+}
+//block b (level: 3, maxHeight: 7, backOrderId: 6, linearLevel: 3, refCount: 2)
+[var_3_32] = [reg_rdx:4]
+if(([reg_rdx:4] < 0x0{0})) {
+        //block 10 (level: 4, maxHeight: 6, backOrderId: 6, linearLevel: 4, refCount: 1)
+        [var_3_32] = ([reg_rdx:4] *.4 0xffffffff{-1})
+        //goto to block 12 (backOrderId: 5; minLinLevel: 4, maxLinLevel: 5) [None]
+} else {
+        //goto to block 12 (backOrderId: 5; minLinLevel: 5, maxLinLevel: 5) [None]
+}
+do {
+        //block 12 (level: 5, maxHeight: 5, backOrderId: 5, linearLevel: 5, refCount: 3)
+        if(([var_5_32] < [var_3_32])) {
+                //block 16 (level: 6, maxHeight: 5, backOrderId: 5, linearLevel: 6, refCount: 1)
+                [var_6_32] = [var_5_32]
+                [var_5_32] = [var_3_32]
+                [var_3_32] = [var_6_32]
+                //goto to block 17 (backOrderId: 4; minLinLevel: 6, maxLinLevel: 7) [None]
+        } else {
+                //goto to block 17 (backOrderId: 4; minLinLevel: 7, maxLinLevel: 7) [None]
+        }
+        //block 17 (level: 7, maxHeight: 2, backOrderId: 4, linearLevel: 7, refCount: 2)
+        if(([var_3_32] == 0x0{0})) {
+                //goto to block 20 (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [break]
+        } else {
+                //goto to block 1c (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [None]
+        }
+        //goto is null (backOrderId: 3; minLinLevel: 5, maxLinLevel: 8)
+        //block 1c (level: 8, maxHeight: 1, backOrderId: 3, linearLevel: 8, refCount: 1)
+        [var_5_32] = ([var_5_32] +.4 ([var_3_32] *.4 0xffffffff{-1}))
+} while(true);
+//block 20 (level: 8, maxHeight: 2, backOrderId: 2, linearLevel: 9, refCount: 1)
+*(uint_32t*)[reg_rsp:8] = [var_5_32]
+*(uint_32t*)[reg_rsp:8] = [var_3_32]
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 10)
+
+
+
+
+
+
+
+
+
+
+
+
 
 SAMPLE 1000
 ********************* BEFORE OPTIMIZATION: *********************
@@ -113,8 +224,6 @@ if(!((([reg_rcx:8] &.8 [reg_rcx:8]) == 0x0{0}))) {
                         - [var_1_32] = [mem_5_32]
                         do {
                                 //block e4 (level: 5, maxHeight: 0, backOrderId: 7, linearLevel: 10, refCount: 2)
-                                <Symbol assignments>:
-                                - [var_1_32] = ([var_1_32] +.4 (0x1010101{16843009} *.4 0xffffffff{-1}))
                                 if(!(((([var_1_32] +.4 (0x1010101{16843009} *.4 0xffffffff{-1})) &.4 0x80808080{-2139062144}) == 0x0{0}))) {
                                         //block f0 (level: 6, maxHeight: 0, backOrderId: 8, linearLevel: 11, refCount: 1)
                                         //goto to block 110 (backOrderId: 6; minLinLevel: 11, maxLinLevel: 12) [break]
@@ -174,19 +283,19 @@ return ((([var_a_32] +.4 ([var_a_32] *.4 0x8{8})) ^.4 (([var_a_32] +.4 ([var_a_3
 
 ********************* AFTER OPTIMIZATION: *********************
 
-//block 0 (level: 1, maxHeight: 19, backOrderId: 3, linearLevel: 1, refCount: 0)
+//block 0 (level: 1, maxHeight: 18, backOrderId: 3, linearLevel: 1, refCount: 0)
 [var_9_32] = [reg_rdx:4]
 [var_4_64] = [reg_rcx:8]
 [var_a_32] = 0x0{0}
-if((([var_4_64] &.8 [reg_rcx:8]) != 0x0{0})) {
-        //block 12 (level: 2, maxHeight: 16, backOrderId: 4, linearLevel: 2, refCount: 1)
+if(([reg_rcx:8] != 0x0{0})) {
+        //block 12 (level: 2, maxHeight: 15, backOrderId: 4, linearLevel: 2, refCount: 1)
         [mem_1_8] = *(uint_8t*)[reg_rcx:8]
         if(([mem_1_8] == 0x22{34})) {
                 //block 17 (level: 3, maxHeight: 10, backOrderId: 4, linearLevel: 3, refCount: 1)
                 [mem_2_8] = *(uint_8t*)([reg_rcx:8] +.8 0x1{1})
                 [var_6_8] = [mem_2_8]
                 [var_7_64] = ([reg_rcx:8] +.8 0x1{1})
-                if((([var_6_8] &.1 [mem_2_8]) != 0x0{0})) {
+                if(([mem_2_8] != 0x0{0})) {
                         //block 25 (level: 4, maxHeight: 7, backOrderId: 5, linearLevel: 4, refCount: 1)
                         //block 2c (level: 5, maxHeight: 7, backOrderId: 4, linearLevel: 5, refCount: 2)
                         while(([var_6_8] != 0x22{34})) {
@@ -196,9 +305,8 @@ if((([var_4_64] &.8 [reg_rcx:8]) != 0x0{0})) {
                                 [var_6_8] = [mem_4_8]
                                 [var_9_32] = ((([var_9_32] +.4 [mem_3_8]) *.4 0x401{1025}) ^.4 ((([var_9_32] +.4 [mem_3_8]) *.4 0x401{1025}) >>.4 0x6{6}))
                                 [var_7_64] = ([var_7_64] +.8 0x1{1})
-                                if((([var_6_8] &.1 [mem_4_8]) == 0x0{0})) {
-                                        //block 59 (level: 7, maxHeight: 2, backOrderId: 4, linearLevel: 7, refCount: 1)                                        
-										//goto to block 117 (backOrderId: 3; minLinLevel: 7, maxLinLevel: 8) [break]
+                                if(([mem_4_8] == 0x0{0})) {
+                                        //block 59 (level: 7, maxHeight: 2, backOrderId: 4, linearLevel: 7, refCount: 1)                                        //goto to block 117 (backOrderId: 3; minLinLevel: 7, maxLinLevel: 8) [break]
                                 } else {
                                         //goto to block 2c (backOrderId: 3; minLinLevel: 8, maxLinLevel: 8) [None]
                                 }
@@ -210,15 +318,14 @@ if((([var_4_64] &.8 [reg_rcx:8]) != 0x0{0})) {
                 }
                 //goto is null (backOrderId: 3; minLinLevel: 3, maxLinLevel: 8)
         } else {
-                //block 5e (level: 3, maxHeight: 15, backOrderId: 6, linearLevel: 8, refCount: 1)
+                //block 5e (level: 3, maxHeight: 14, backOrderId: 6, linearLevel: 8, refCount: 1)
                 if((([reg_rcx:8] &.1 0x3{3}) == 0x0{0})) {
-                        //block 6e (level: 4, maxHeight: 15, backOrderId: 8, linearLevel: 9, refCount: 1)
+                        //block 6e (level: 4, maxHeight: 14, backOrderId: 8, linearLevel: 9, refCount: 1)
                         [mem_5_32] = *(uint_32t*)[reg_rcx:8]
                         [var_1_32] = [mem_5_32]
                         do {
-                                //block e4 (level: 5, maxHeight: 13, backOrderId: 7, linearLevel: 10, refCount: 2)
-                                [var_1_32] = ([var_1_32] +.4 0xfefefeff{-16843009})
-                                if((([var_1_32] &.4 0x80808080{-2139062144}) != 0x0{0})) {
+                                //block e4 (level: 5, maxHeight: 12, backOrderId: 7, linearLevel: 10, refCount: 2)
+                                if(((([var_1_32] +.4 0xfefefeff{-16843009}) &.4 0x80808080{-2139062144}) != 0x0{0})) {
                                         //block f0 (level: 6, maxHeight: 4, backOrderId: 8, linearLevel: 11, refCount: 1)
                                         //goto to block 110 (backOrderId: 6; minLinLevel: 11, maxLinLevel: 12) [break]
                                 } else {
@@ -276,3 +383,372 @@ return ((([var_a_32] *.4 0x9{9}) ^.4 (([var_a_32] *.4 0x9{9}) >>.4 0xb{11})) *.4
 
 
 SAMPLE 1002
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 0, backOrderId: 4, linearLevel: 1, refCount: 0)
+*(uint_64t*)([reg_rsp:8] +.8 0x8{8}) = [reg_rbx:8]
+*(uint_64t*)([reg_rsp:8] +.8 0x10{16}) = [reg_rbp:8]
+*(uint_64t*)([reg_rsp:8] +.8 0x18{24}) = [reg_rsi:8]
+*(uint_64t*)([reg_rsp:8] +.8 0x20{32}) = [reg_rdi:8]
+*(uint_64t*)([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = [reg_r14:8]
+[mem_1_64] = *(uint_64t*)([reg_rip:8] +.8 0x172bf8c{24297356})
+[mem_2_32] = *(uint_32t*)([mem_1_64] +.8 0x20{32})
+[mem_3_32] = *(uint_32t*)([mem_1_64] +.8 0x10{16})
+<Symbol assignments>:
+- [var_6_32] = ((([mem_3_32] +.4 ((([mem_2_32] <<.4 (0x2{2} &.8 0x3f{63})) >>.4 (0x2{2} &.8 0x3f{63})) *.4 0xffffffff{-1})) &.0 0xff{255}) |.0 ([var_6_32] &.0 0xffffff00{-256}))
+if(!(!((([mem_3_32] +.4 ((([mem_2_32] <<.4 (0x2{2} &.8 0x3f{63})) >>.4 (0x2{2} &.8 0x3f{63})) *.4 0xffffffff{-1})) == 0x0{0})))) {
+        //block 3b (level: 2, maxHeight: 0, backOrderId: 6, linearLevel: 2, refCount: 1)
+        <Symbol assignments>:
+        - [var_2_8] = [reg_rdx:1]
+        if(!((([reg_rdx:1] &.1 [reg_rdx:1]) == 0x0{0}))) {
+                //block 3f (level: 3, maxHeight: 0, backOrderId: 6, linearLevel: 3, refCount: 1)
+                [mem_4_8] = *(uint_8t*)([reg_rcx:8] +.8 0x3dfc0{253888})
+                if(!((([mem_4_8] &.1 0x4{4}) == 0x0{0}))) {
+                        //goto to block 48 (backOrderId: 5; minLinLevel: 4, maxLinLevel: 4) [None]
+                } else {
+                        //block 4f (level: 4, maxHeight: 0, backOrderId: 9, linearLevel: 4, refCount: 1)
+                        [mem_5_64] = *(uint_64t*)([reg_rcx:8] +.8 0x28{40})
+                        <Symbol assignments>:
+                        - [var_3_64] = [mem_5_64]
+                        - [var_1_8] = (([mem_5_64] &.8 [mem_5_64]) == 0x0{0})
+                        //block 56 (level: 5, maxHeight: 0, backOrderId: 8, linearLevel: 5, refCount: 2)
+                        while(!(([var_1_8] != 0x0{0}))) {
+                                //block 5c (level: 6, maxHeight: 0, backOrderId: 10, linearLevel: 6, refCount: 1)
+                                [mem_6_64] = *(uint_64t*)([var_3_64] +.8 0x8{8})
+                                [mem_7_64] = *(uint_64t*)([var_3_64] +.8 0x10{16})
+                                if(!((([mem_6_64] &.8 [mem_6_64]) == 0x0{0}))) {
+                                        //block 69 (level: 7, maxHeight: 0, backOrderId: 10, linearLevel: 7, refCount: 1)
+                                        [mem_8_64] = *(uint_64t*)[mem_6_64]
+                                        [mem_9_64] = *(uint_64t*)([mem_8_64] +.8 0x90{144})
+                                        [funcVar_1_32] = fun_50000000(([mem_6_64] &.0 0xffffffff{-1}), [reg_rdx:1], (([mem_2_32] <<.4 (0x2{2} &.8 0x3f{63})) >>.4 (0x2{2} &.8 0x3f{63})), [reg_zmm3:7])
+                                        if(((([funcVar_1_32] &.0 0xff{255}) &.1 ([funcVar_1_32] &.0 0xff{255})) == 0x0{0})) {
+                                                //block 81 (level: 8, maxHeight: 0, backOrderId: 13, linearLevel: 8, refCount: 1)
+                                                [mem_a_64] = *(uint_64t*)([mem_6_64] +.8 0x10{16})
+                                                [mem_b_64] = *(uint_64t*)([reg_rcx:8] +.8 0x3dfa8{253864})
+                                                [mem_c_32] = *(uint_32t*)[mem_a_64]
+                                                [mem_d_64] = *(uint_64t*)[mem_6_64]
+                                                [mem_e_64] = *(uint_64t*)([mem_d_64] +.8 0x8{8})
+                                                [funcVar_2_32] = fun_50000000(([mem_6_64] &.0 0xffffffff{-1}), [reg_rdx:1], (([mem_2_32] <<.4 (0x2{2} &.8 0x3f{63})) >>.4 (0x2{2} &.8 0x3f{63})), [reg_zmm3:7])
+                                                *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x30{48} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) = [mem_c_32]
+                                                [funcVar_3_32] = fun_37824360(([mem_b_64] &.0 0xffffffff{-1}), (([reg_rip:8] +.8 0x3df097{4059287}) &.0 0xffffffff{-1}), (([reg_rip:8] +.8 0x2b1972{2824562}) &.0 0xffffffff{-1}), [reg_zmm3:7])                                                [mem_f_64] = *(uint_64t*)([reg_rcx:8] +.8 0x3dfa8{253864})
+                                                [mem_10_64] = *(uint_64t*)[mem_f_64]
+                                                [mem_11_64] = *(uint_64t*)([mem_10_64] +.8 0x30{48})
+                                                [funcVar_4_32] = fun_50000000(([mem_f_64] &.0 0xffffffff{-1}), (([reg_rip:8] +.8 0x340ef0{3411696}) &.0 0xffffffff{-1}), (([reg_rip:8] +.8 0x42a48a{4367498}) &.0 0xffffffff{-1}), [reg_zmm3:7])                                                [mem_12_64] = *(uint_64t*)[mem_6_64]
+                                                [mem_13_64] = *(uint_64t*)[mem_12_64]
+                                                [funcVar_5_32] = fun_50000000(([mem_6_64] &.0 0xffffffff{-1}), 0x1{1}, (([reg_rip:8] +.8 0x42a48a{4367498}) &.0 0xffffffff{-1}), [reg_zmm3:7])
+                                                [mem_14_64] = *(uint_64t*)([reg_rcx:8] +.8 0x28{40})
+                                                <Symbol assignments>:
+                                                - [var_4_32] = 0x1{1}
+                                                if(!(!((([var_3_64] +.8 ([mem_14_64] *.8 0xffffffffffffffff{-1})) == 0x0{0})))) {
+                                                        //block e2 (level: 9, maxHeight: 0, backOrderId: 13, linearLevel: 9, refCount: 1)
+                                                        [mem_15_64] = *(uint_64t*)([var_3_64] +.8 0x10{16})
+                                                        *(uint_64t*)([reg_rcx:8] +.8 0x28{40}) = [mem_15_64]
+                                                        //goto to block ea (backOrderId: 12; minLinLevel: 9, maxLinLevel: 10) [None]
+                                                } else {
+                                                        //goto to block ea (backOrderId: 12; minLinLevel: 10, maxLinLevel: 10) [None]
+                                                }
+                                                //block ea (level: 10, maxHeight: 0, backOrderId: 12, linearLevel: 10, refCount: 2)
+                                                [mem_16_64] = *(uint_64t*)([reg_rcx:8] +.8 0x30{48})
+                                                if(!(!((([var_3_64] +.8 ([mem_16_64] *.8 0xffffffffffffffff{-1})) == 0x0{0})))) {
+                                                        //block f0 (level: 11, maxHeight: 0, backOrderId: 12, linearLevel: 11, refCount: 1)
+                                                        [mem_17_64] = *(uint_64t*)([var_3_64] +.8 0x18{24})
+                                                        *(uint_64t*)([reg_rcx:8] +.8 0x30{48}) = [mem_17_64]
+                                                        <Symbol assignments>:
+                                                        - [var_4_32] = ([mem_17_64] &.0 0xffffffff{-1})
+                                                        //goto to block f8 (backOrderId: 11; minLinLevel: 11, maxLinLevel: 12) [None]
+                                                } else {
+                                                        //goto to block f8 (backOrderId: 11; minLinLevel: 12, maxLinLevel: 12) [None]
+                                                }
+                                                //block f8 (level: 12, maxHeight: 0, backOrderId: 11, linearLevel: 12, refCount: 2)
+                                                [funcVar_6_32] = fun_50007008(([var_3_64] &.0 0xffffffff{-1}), [var_4_32], (([reg_rip:8] +.8 0x42a48a{4367498}) &.0 0xffffffff{-1}), [reg_zmm3:7])
+                                                [mem_18_64] = *(uint_64t*)[var_3_64]
+                                                [mem_19_64] = *(uint_64t*)[mem_18_64]
+                                                [funcVar_7_32] = fun_50000000(([var_3_64] &.0 0xffffffff{-1}), 0x1{1}, ([mem_18_64] &.0 0xffffffff{-1}), [reg_zmm3:7])
+                                                <Symbol assignments>:
+                                                - [var_6_32] = (([funcVar_7_32] &.0 0xffffff00{-256}) |.0 ([var_6_32] &.0 0xff{255}))
+                                                //goto to block 10e (backOrderId: 9; minLinLevel: 8, maxLinLevel: 13) [!!!Normal!!!]
+                                        } else {
+                                                //goto to block 79 (backOrderId: 9; minLinLevel: 13, maxLinLevel: 13) [None]
+                                        }
+                                        //goto is null (backOrderId: 9; minLinLevel: 7, maxLinLevel: 13)
+                                } else {
+                                        //goto to block 79 (backOrderId: 9; minLinLevel: 13, maxLinLevel: 13) [None]
+                                }
+                                //block 79 (level: 8, maxHeight: 0, backOrderId: 9, linearLevel: 13, refCount: 2)
+                                <Symbol assignments>:
+                                - [var_3_64] = [mem_7_64]
+                                - [var_1_8] = (([mem_7_64] &.8 [mem_7_64]) == 0x0{0})
+                                //goto to block 56 (backOrderId: 7; minLinLevel: 6, maxLinLevel: 14) [None]
+                        }
+                        //block 12b (level: 6, maxHeight: 0, backOrderId: 7, linearLevel: 14, refCount: 1)
+                        [mem_20_64] = *(uint_64t*)([reg_rip:8] +.8 0x172bec2{24297154})
+                        if(!((([mem_20_64] &.8 [mem_20_64]) == 0x0{0}))) {
+                                //block 137 (level: 7, maxHeight: 0, backOrderId: 7, linearLevel: 15, refCount: 1)
+                                [mem_21_64] = *(uint_64t*)[mem_20_64]
+                                [mem_22_64] = *(uint_64t*)([mem_21_64] +.8 0x18{24})
+                                [funcVar_8_32] = fun_50000000(([mem_20_64] &.0 0xffffffff{-1}), 0x1{1}, (([mem_2_32] <<.4 (0x2{2} &.8 0x3f{63})) >>.4 (0x2{2} &.8 0x3f{63})), [reg_zmm3:7])
+                                <Symbol assignments>:
+                                - [var_6_32] = (([funcVar_8_32] &.0 0xffffff00{-256}) |.0 ([var_6_32] &.0 0xff{255}))
+                                - [var_2_8] = 0x1{1}
+                                //goto to block 13f (backOrderId: 6; minLinLevel: 15, maxLinLevel: 16) [None]
+                        } else {
+                                //goto to block 13f (backOrderId: 6; minLinLevel: 16, maxLinLevel: 16) [None]
+                        }
+                        //block 13f (level: 8, maxHeight: 0, backOrderId: 6, linearLevel: 16, refCount: 2)
+                        [funcVar_9_32] = fun_46252784((([mem_20_64] &.0 0xffffffff{-1}) ^.4 ([mem_20_64] &.0 0xffffffff{-1})), [var_2_8], (([mem_2_32] <<.4 (0x2{2} &.8 0x3f{63})) >>.4 (0x2{2} &.8 0x3f{63})), [reg_zmm3:7])
+                        <Symbol assignments>:
+                        - [var_6_32] = (([funcVar_9_32] &.0 0xff{255}) |.0 ([var_6_32] &.0 0xffffff00{-256}))
+                        //goto to block 48 (backOrderId: 5; minLinLevel: 4, maxLinLevel: 17) [None]
+                }
+                //goto is null (backOrderId: 5; minLinLevel: 3, maxLinLevel: 17)
+        } else {
+                //goto to block 48 (backOrderId: 5; minLinLevel: 17, maxLinLevel: 17) [None]
+        }
+        //block 48 (level: 9, maxHeight: 0, backOrderId: 5, linearLevel: 17, refCount: 3)
+        <Symbol assignments>:
+        - [var_6_32] = (([var_6_32] &.0 0xffffff00{-256}) |.0 ([var_6_32] ^.1 [var_6_32]))
+        //goto to block 110 (backOrderId: 3; minLinLevel: 2, maxLinLevel: 18) [!!!Normal!!!]
+} else {
+        //goto to block 10e (backOrderId: 3; minLinLevel: 18, maxLinLevel: 18) [None]
+}
+//block 10e (level: 13, maxHeight: 0, backOrderId: 3, linearLevel: 18, refCount: 2)
+<Symbol assignments>:
+- [var_6_32] = (([var_6_32] &.0 0xffffff00{-256}) |.0 0x1{1})
+//block 110 (level: 14, maxHeight: 0, backOrderId: 2, linearLevel: 19, refCount: 2)
+[mem_1a_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x30{48} *.8 0xffffffffffffffff{-1})) +.8 0x40{64})
+[mem_1b_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x30{48} *.8 0xffffffffffffffff{-1})) +.8 0x48{72})
+[mem_1c_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x30{48} *.8 0xffffffffffffffff{-1})) +.8 0x50{80})
+[mem_1d_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x30{48} *.8 0xffffffffffffffff{-1})) +.8 0x58{88})
+[mem_1e_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x30{48} *.8 0xffffffffffffffff{-1})) +.8 0x30{48})
+[mem_1f_64] = *(uint_64t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x30{48} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0x8{8})
+return [var_6_32]
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 20)
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 49, backOrderId: 4, linearLevel: 1, refCount: 0)
+[mem_1_64] = *(uint_64t*)([reg_rip:8] +.8 0x172bf8c{24297356})
+[mem_2_32] = *(uint_32t*)([mem_1_64] +.8 0x20{32})
+[mem_3_32] = *(uint_32t*)([mem_1_64] +.8 0x10{16})
+[var_6_32] = (((((([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}) *.4 0xffffffff{-1}) +.4 [mem_3_32]) &.1 0xff{255}) |.4 ([var_6_32] &.3 0xffffff00{-256}))
+if(([mem_3_32] == ((([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}) *.4 0x1{1}))) {
+        //block 3b (level: 2, maxHeight: 45, backOrderId: 6, linearLevel: 2, refCount: 1)
+        [var_2_8] = [reg_rdx:1]
+        if(([reg_rdx:1] != 0x0{0})) {
+                //block 3f (level: 3, maxHeight: 44, backOrderId: 6, linearLevel: 3, refCount: 1)
+                [mem_4_8] = *(uint_8t*)([reg_rcx:8] +.8 0x3dfc0{253888})
+                if((([mem_4_8] &.1 0x4{4}) != 0x0{0})) {
+                        //goto to block 48 (backOrderId: 5; minLinLevel: 4, maxLinLevel: 4) [None]
+                } else {
+                        //block 4f (level: 4, maxHeight: 43, backOrderId: 9, linearLevel: 4, refCount: 1)
+                        [mem_5_64] = *(uint_64t*)([reg_rcx:8] +.8 0x28{40})
+                        [var_3_64] = [mem_5_64]
+                        [var_1_8] = ([mem_5_64] == 0x0{0})
+                        //block 56 (level: 5, maxHeight: 40, backOrderId: 8, linearLevel: 5, refCount: 2)
+                        while(([var_1_8] == 0x0{0})) {
+                                //block 5c (level: 6, maxHeight: 40, backOrderId: 10, linearLevel: 6, refCount: 1)
+                                [mem_6_64] = *(uint_64t*)([var_3_64] +.8 0x8{8})
+                                [mem_7_64] = *(uint_64t*)([var_3_64] +.8 0x10{16})
+                                if(([mem_6_64] != 0x0{0})) {
+                                        //block 69 (level: 7, maxHeight: 38, backOrderId: 10, linearLevel: 7, refCount: 1)
+                                        [mem_8_64] = *(uint_64t*)[mem_6_64]
+                                        [mem_9_64] = *(uint_64t*)([mem_8_64] +.8 0x90{144})
+                                        [funcVar_1_32] = fun_50000000(([mem_6_64] &.4 0xffffffff{-1}), [reg_rdx:1], (([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}), [reg_zmm3:7])
+                                        if((([funcVar_1_32] &.1 0xff{255}) == 0x0{0})) {
+                                                //block 81 (level: 8, maxHeight: 35, backOrderId: 13, linearLevel: 8, refCount: 1)
+                                                [mem_a_64] = *(uint_64t*)([mem_6_64] +.8 0x10{16})
+                                                [mem_b_64] = *(uint_64t*)([reg_rcx:8] +.8 0x3dfa8{253864})
+                                                [mem_c_32] = *(uint_32t*)[mem_a_64]
+                                                [mem_d_64] = *(uint_64t*)[mem_6_64]
+                                                [mem_e_64] = *(uint_64t*)([mem_d_64] +.8 0x8{8})
+                                                [funcVar_2_32] = fun_50000000(([mem_6_64] &.4 0xffffffff{-1}), [reg_rdx:1], (([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}), [reg_zmm3:7])
+                                                *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) = [mem_c_32]
+                                                [funcVar_3_32] = fun_37824360(([mem_b_64] &.4 0xffffffff{-1}), (([reg_rip:8] +.8 0x3df097{4059287}) &.4 0xffffffff{-1}), (([reg_rip:8] +.8 0x2b1972{2824562}) &.4 0xffffffff{-1}), [reg_zmm3:7])                                                [mem_f_64] = *(uint_64t*)([reg_rcx:8] +.8 0x3dfa8{253864})
+                                                [mem_10_64] = *(uint_64t*)[mem_f_64]
+                                                [mem_11_64] = *(uint_64t*)([mem_10_64] +.8 0x30{48})
+                                                [funcVar_4_32] = fun_50000000(([mem_f_64] &.4 0xffffffff{-1}), (([reg_rip:8] +.8 0x340ef0{3411696}) &.4 0xffffffff{-1}), (([reg_rip:8] +.8 0x42a48a{4367498}) &.4 0xffffffff{-1}), [reg_zmm3:7])                                                [mem_12_64] = *(uint_64t*)[mem_6_64]
+                                                [mem_13_64] = *(uint_64t*)[mem_12_64]
+                                                [funcVar_5_32] = fun_50000000(([mem_6_64] &.4 0xffffffff{-1}), 0x1{1}, (([reg_rip:8] +.8 0x42a48a{4367498}) &.4 0xffffffff{-1}), [reg_zmm3:7])
+                                                [mem_14_64] = *(uint_64t*)([reg_rcx:8] +.8 0x28{40})
+                                                [var_4_32] = 0x1{1}
+                                                if(([var_3_64] == ([mem_14_64] *.8 0x1{1}))) {
+                                                        //block e2 (level: 9, maxHeight: 18, backOrderId: 13, linearLevel: 9, refCount: 1)
+                                                        [mem_15_64] = *(uint_64t*)([var_3_64] +.8 0x10{16})
+                                                        *(uint_64t*)([reg_rcx:8] +.8 0x28{40}) = [mem_15_64]
+                                                        //goto to block ea (backOrderId: 12; minLinLevel: 9, maxLinLevel: 10) [None]
+                                                } else {
+                                                        //goto to block ea (backOrderId: 12; minLinLevel: 10, maxLinLevel: 10) [None]
+                                                }
+                                                //block ea (level: 10, maxHeight: 16, backOrderId: 12, linearLevel: 10, refCount: 2)
+                                                [mem_16_64] = *(uint_64t*)([reg_rcx:8] +.8 0x30{48})
+                                                if(([var_3_64] == ([mem_16_64] *.8 0x1{1}))) {
+                                                        //block f0 (level: 11, maxHeight: 15, backOrderId: 12, linearLevel: 11, refCount: 1)
+                                                        [mem_17_64] = *(uint_64t*)([var_3_64] +.8 0x18{24})
+                                                        *(uint_64t*)([reg_rcx:8] +.8 0x30{48}) = [mem_17_64]
+                                                        [var_4_32] = ([mem_17_64] &.4 0xffffffff{-1})
+                                                        //goto to block f8 (backOrderId: 11; minLinLevel: 11, maxLinLevel: 12) [None]
+                                                } else {
+                                                        //goto to block f8 (backOrderId: 11; minLinLevel: 12, maxLinLevel: 12) [None]
+                                                }
+                                                //block f8 (level: 12, maxHeight: 12, backOrderId: 11, linearLevel: 12, refCount: 2)
+                                                [funcVar_6_32] = fun_50007008(([var_3_64] &.4 0xffffffff{-1}), [var_4_32], (([reg_rip:8] +.8 0x42a48a{4367498}) &.4 0xffffffff{-1}), [reg_zmm3:7])
+                                                [mem_18_64] = *(uint_64t*)[var_3_64]
+                                                [mem_19_64] = *(uint_64t*)[mem_18_64]
+                                                [funcVar_7_32] = fun_50000000(([var_3_64] &.4 0xffffffff{-1}), 0x1{1}, ([mem_18_64] &.4 0xffffffff{-1}), [reg_zmm3:7])
+                                                [var_6_32] = (([funcVar_7_32] &.3 0xffffff00{-256}) |.4 ([var_6_32] &.1 0xff{255}))
+                                                //goto to block 10e (backOrderId: 9; minLinLevel: 8, maxLinLevel: 13) [!!!Normal!!!]
+                                        } else {
+                                                //goto to block 79 (backOrderId: 9; minLinLevel: 13, maxLinLevel: 13) [None]
+                                        }
+                                        //goto is null (backOrderId: 9; minLinLevel: 7, maxLinLevel: 13)
+                                } else {
+                                        //goto to block 79 (backOrderId: 9; minLinLevel: 13, maxLinLevel: 13) [None]
+                                }
+                                //block 79 (level: 8, maxHeight: 2, backOrderId: 9, linearLevel: 13, refCount: 2)
+                                [var_3_64] = [mem_7_64]
+                                [var_1_8] = ([mem_7_64] == 0x0{0})
+                                //goto to block 56 (backOrderId: 7; minLinLevel: 6, maxLinLevel: 14) [None]
+                        }
+                        //block 12b (level: 6, maxHeight: 15, backOrderId: 7, linearLevel: 14, refCount: 1)
+                        [mem_20_64] = *(uint_64t*)([reg_rip:8] +.8 0x172bec2{24297154})
+                        if(([mem_20_64] != 0x0{0})) {
+                                //block 137 (level: 7, maxHeight: 14, backOrderId: 7, linearLevel: 15, refCount: 1)
+                                [mem_21_64] = *(uint_64t*)[mem_20_64]
+                                [mem_22_64] = *(uint_64t*)([mem_21_64] +.8 0x18{24})
+                                [funcVar_8_32] = fun_50000000(([mem_20_64] &.4 0xffffffff{-1}), 0x1{1}, (([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}), [reg_zmm3:7])
+                                [var_6_32] = (([funcVar_8_32] &.3 0xffffff00{-256}) |.4 ([var_6_32] &.1 0xff{255}))
+                                [var_2_8] = 0x1{1}
+                                //goto to block 13f (backOrderId: 6; minLinLevel: 15, maxLinLevel: 16) [None]
+                        } else {
+                                //goto to block 13f (backOrderId: 6; minLinLevel: 16, maxLinLevel: 16) [None]
+                        }
+                        //block 13f (level: 8, maxHeight: 9, backOrderId: 6, linearLevel: 16, refCount: 2)
+                        [funcVar_9_32] = fun_46252784(0x0{0}, [var_2_8], (([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}), [reg_zmm3:7])
+                        [var_6_32] = (([funcVar_9_32] &.1 0xff{255}) |.4 ([var_6_32] &.3 0xffffff00{-256}))
+                        //goto to block 48 (backOrderId: 5; minLinLevel: 4, maxLinLevel: 17) [None]
+                }
+                //goto is null (backOrderId: 5; minLinLevel: 3, maxLinLevel: 17)
+        } else {
+                //goto to block 48 (backOrderId: 5; minLinLevel: 17, maxLinLevel: 17) [None]
+        }
+        //block 48 (level: 9, maxHeight: 7, backOrderId: 5, linearLevel: 17, refCount: 3)
+        [var_6_32] = ([var_6_32] &.3 0xffffff00{-256})
+        //goto to block 110 (backOrderId: 3; minLinLevel: 2, maxLinLevel: 18) [!!!Normal!!!]
+} else {
+        //goto to block 10e (backOrderId: 3; minLinLevel: 18, maxLinLevel: 18) [None]
+}
+//block 10e (level: 13, maxHeight: 7, backOrderId: 3, linearLevel: 18, refCount: 2)
+[var_6_32] = 0x1{1}
+//block 110 (level: 14, maxHeight: 6, backOrderId: 2, linearLevel: 19, refCount: 2)
+[mem_1a_64] = *(uint_64t*)([reg_rsp:8] +.8 0x8{8})
+[mem_1b_64] = *(uint_64t*)([reg_rsp:8] +.8 0x10{16})
+[mem_1c_64] = *(uint_64t*)([reg_rsp:8] +.8 0x18{24})
+[mem_1d_64] = *(uint_64t*)([reg_rsp:8] +.8 0x20{32})
+[mem_1e_64] = *(uint_64t*)([reg_rsp:8] +.8 0xfffffffffffffff8{-8})
+[mem_1f_64] = *(uint_64t*)[reg_rsp:8]
+return [var_6_32]
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 20)
+
+
+
+
+
+
+
+
+SAMPLE 1003
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 0, backOrderId: 6, linearLevel: 1, refCount: 0)
+*(uint_64t*)([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = [reg_rbx:8]
+<Symbol assignments>:
+- [var_2_64] = 0x32{50}
+- [var_1_64] = [reg_rcx:8]
+do {
+        //goto to block 1a (backOrderId: 5; minLinLevel: 2, maxLinLevel: 2) [None]
+        //block 1a (level: 2, maxHeight: 0, backOrderId: 5, linearLevel: 2, refCount: 2)
+        [mem_1_8] = *(uint_8t*)(([reg_rdx:8] +.8 ([reg_rcx:8] *.8 0xffffffffffffffff{-1})) +.8 [var_1_64])
+        *(uint_8t*)[var_1_64] = [mem_1_8]
+        <Symbol assignments>:
+        - [var_2_64] = ([var_2_64] +.8 (0x1{1} *.8 0xffffffffffffffff{-1}))
+        - [var_1_64] = ([var_1_64] +.8 0x1{1})
+} while(!((([var_2_64] +.8 (0x1{1} *.8 0xffffffffffffffff{-1})) == 0x0{0})));
+//block 29 (level: 3, maxHeight: 0, backOrderId: 4, linearLevel: 3, refCount: 1)
+<Symbol assignments>:
+- [var_3_64] = ([reg_rcx:8] +.8 0x32{50})
+- [var_4_64] = 0x64{100}
+do {
+        //goto to block 32 (backOrderId: 3; minLinLevel: 4, maxLinLevel: 4) [None]
+        //block 32 (level: 4, maxHeight: 0, backOrderId: 3, linearLevel: 4, refCount: 2)
+        [mem_2_8] = *(uint_8t*)([var_3_64] +.8 ([reg_rdx:8] +.8 ([reg_rcx:8] *.8 0xffffffffffffffff{-1})))
+        *(uint_8t*)[var_3_64] = [mem_2_8]
+        <Symbol assignments>:
+        - [var_3_64] = ([var_3_64] +.8 0x1{1})
+        - [var_4_64] = ([var_4_64] +.8 (0x1{1} *.8 0xffffffffffffffff{-1}))
+} while(!((([var_4_64] +.8 (0x1{1} *.8 0xffffffffffffffff{-1})) == 0x0{0})));
+//block 40 (level: 5, maxHeight: 0, backOrderId: 2, linearLevel: 5, refCount: 1)
+[mem_3_8] = *(uint_8t*)([reg_rdx:8] +.8 0x96{150})
+*(uint_8t*)([reg_rcx:8] +.8 0x96{150}) = [mem_3_8]
+[mem_4_32] = *(uint_32t*)([reg_rdx:8] +.8 0x98{152})
+*(uint_32t*)([reg_rcx:8] +.8 0x98{152}) = [mem_4_32]
+[mem_5_16] = *(uint_16t*)([reg_rdx:8] +.8 0xa0{160})
+[mem_6_32] = *(uint_32t*)([reg_rdx:8] +.8 0x9c{156})
+[funcVar_1_32] = fun_70744500((([reg_rcx:8] +.8 0x9c{156}) &.0 0xffffffff{-1}), [mem_6_32], (([mem_5_16] >>.4 (0x8{8} &.8 0x3f{63})) &.4 0x7f{127}), [reg_zmm3:7])
+[mem_7_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x20{32} *.8 0xffffffffffffffff{-1})) +.8 0x20{32})
+[mem_8_64] = *(uint_64t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x20{32} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x8{8})
+return ([reg_rcx:8] &.0 0xffffffff{-1})
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 6)
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 21, backOrderId: 6, linearLevel: 1, refCount: 0)
+[var_2_64] = 0x32{50}
+[var_1_64] = [reg_rcx:8]
+do {
+        //goto to block 1a (backOrderId: 5; minLinLevel: 2, maxLinLevel: 2) [None]
+        //block 1a (level: 2, maxHeight: 19, backOrderId: 5, linearLevel: 2, refCount: 2)
+        [mem_1_8] = *(uint_8t*)(([reg_rdx:8] +.8 ([reg_rcx:8] *.8 0xffffffffffffffff{-1})) +.8 [var_1_64])
+        *(uint_8t*)[var_1_64] = [mem_1_8]
+        [var_2_64] = ([var_2_64] +.8 0xffffffffffffffff{-1})
+        [var_1_64] = ([var_1_64] +.8 0x1{1})
+} while(([var_2_64] != 0x0{0}));
+//block 29 (level: 3, maxHeight: 15, backOrderId: 4, linearLevel: 3, refCount: 1)
+[var_3_64] = ([reg_rcx:8] +.8 0x32{50})
+[var_4_64] = 0x64{100}
+do {
+        //goto to block 32 (backOrderId: 3; minLinLevel: 4, maxLinLevel: 4) [None]
+        //block 32 (level: 4, maxHeight: 13, backOrderId: 3, linearLevel: 4, refCount: 2)
+        [mem_2_8] = *(uint_8t*)(([reg_rdx:8] +.8 ([reg_rcx:8] *.8 0xffffffffffffffff{-1})) +.8 [var_3_64])
+        *(uint_8t*)[var_3_64] = [mem_2_8]
+        [var_3_64] = ([var_3_64] +.8 0x1{1})
+        [var_4_64] = ([var_4_64] +.8 0xffffffffffffffff{-1})
+} while(([var_4_64] != 0x0{0}));
+//block 40 (level: 5, maxHeight: 9, backOrderId: 2, linearLevel: 5, refCount: 1)
+[mem_3_8] = *(uint_8t*)([reg_rdx:8] +.8 0x96{150})
+*(uint_8t*)([reg_rcx:8] +.8 0x96{150}) = [mem_3_8]
+[mem_4_32] = *(uint_32t*)([reg_rdx:8] +.8 0x98{152})
+*(uint_32t*)([reg_rcx:8] +.8 0x98{152}) = [mem_4_32]
+[mem_5_16] = *(uint_16t*)([reg_rdx:8] +.8 0xa0{160})
+[mem_6_32] = *(uint_32t*)([reg_rdx:8] +.8 0x9c{156})
+[funcVar_1_32] = fun_70744500((([reg_rcx:8] +.8 0x9c{156}) &.4 0xffffffff{-1}), [mem_6_32], (([mem_5_16] >>.4 0x8{8}) &.4 0x7f{127}), [reg_zmm3:7])
+[mem_7_64] = *(uint_64t*)([reg_rsp:8] +.8 0xfffffffffffffff8{-8})
+[mem_8_64] = *(uint_64t*)[reg_rsp:8]
+return ([reg_rcx:8] &.4 0xffffffff{-1})
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 6)
+
+
+
+
+
+
+
+
+
+
+
+
+SAMPLE 206
