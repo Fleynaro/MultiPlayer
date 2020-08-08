@@ -20,8 +20,8 @@ namespace CE::Decompiler::ExprTree
 			m_symbol->m_symbolLeafs.remove(this);
 		}
 
-		BitMask getMask() override {
-			return m_symbol->getMask();
+		BitMask64 getMask() override {
+			return m_symbol->getMask().getBitMask64().withoutOffset();
 		}
 
 		bool isLeaf() override {
@@ -57,8 +57,8 @@ namespace CE::Decompiler::ExprTree
 			else (double&)m_value = value;
 		}
 
-		BitMask getMask() override {
-			return BitMask(m_value, uint8_t(0));
+		BitMask64 getMask() override {
+			return BitMask64(m_value);
 		}
 
 		bool isLeaf() override {
@@ -86,8 +86,8 @@ namespace CE::Decompiler::ExprTree
 		FloatNanLeaf()
 		{}
 
-		BitMask getMask() override {
-			return BitMask(8);
+		BitMask64 getMask() override {
+			return BitMask64(8);
 		}
 
 		bool isLeaf() override {

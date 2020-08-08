@@ -26,9 +26,9 @@ namespace CE::Decompiler::PCode
 
 		RegisterId m_genericId;
 		Type m_type;
-		BitMask m_valueRangeMask;
+		ExtBitMask m_valueRangeMask;
 
-		Register(RegisterId genericId = 0, BitMask valueRangeMask = 0x0, Type type = Type::Generic)
+		Register(RegisterId genericId = 0, ExtBitMask valueRangeMask = 0x0, Type type = Type::Generic)
 			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_type(type)
 		{}
 
@@ -89,9 +89,9 @@ namespace CE::Decompiler::PCode
 		}
 	};
 
-	static BitMask GetValueRangeMaskWithException(const PCode::Register& reg) {
-		if (reg.m_type == Register::Type::Generic && reg.m_valueRangeMask == BitMask(4))
-			return BitMask(8);
+	static ExtBitMask GetValueRangeMaskWithException(const PCode::Register& reg) {
+		if (reg.m_type == Register::Type::Generic && reg.m_valueRangeMask == ExtBitMask(4))
+			return ExtBitMask(8);
 		return reg.m_valueRangeMask;
 	}
 
@@ -102,8 +102,8 @@ namespace CE::Decompiler::PCode
 
 		virtual int getSize() = 0;
 
-		virtual BitMask getMask() {
-			return BitMask(getSize());
+		virtual ExtBitMask getMask() {
+			return ExtBitMask(getSize());
 		}
 
 		virtual std::string printDebug() = 0;
@@ -122,7 +122,7 @@ namespace CE::Decompiler::PCode
 			return m_register.getSize();
 		}
 
-		BitMask getMask() override {
+		ExtBitMask getMask() override {
 			return m_register.m_valueRangeMask;
 		}
 

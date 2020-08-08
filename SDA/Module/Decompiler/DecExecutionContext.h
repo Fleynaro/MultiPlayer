@@ -5,11 +5,11 @@
 namespace CE::Decompiler
 {
 	struct RegisterPart : public ExprTree::INodeAgregator {
-		BitMask m_regMask;
-		BitMask m_maskToChange;
+		ExtBitMask m_regMask;
+		ExtBitMask m_maskToChange;
 		ExprTree::Node* m_expr = nullptr;
 
-		RegisterPart(BitMask regMask, BitMask maskToChange, ExprTree::Node* expr)
+		RegisterPart(ExtBitMask regMask, ExtBitMask maskToChange, ExprTree::Node* expr)
 			: m_regMask(regMask), m_maskToChange(maskToChange), m_expr(expr)
 		{
 			m_expr->addParentNode(this);
@@ -32,7 +32,7 @@ namespace CE::Decompiler
 
 	using RegisterParts = std::list<RegisterPart*>;
 
-	static ExprTree::Node* CreateExprFromRegisterParts(RegisterParts regParts, BitMask requestRegMask) {
+	static ExprTree::Node* CreateExprFromRegisterParts(RegisterParts regParts, ExtBitMask requestRegMask) {
 		ExprTree::Node* resultExpr = nullptr;
 
 		regParts.sort([](const RegisterPart* a, const RegisterPart* b) {
@@ -48,7 +48,7 @@ namespace CE::Decompiler
 
 			if ((regPart.m_regMask & regPart.m_maskToChange) != regPart.m_regMask) {
 				auto mask = (regPart.m_regMask & regPart.m_maskToChange) >> bitLeftShift;
-				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(mask.getBitMask64()), ExprTree::And/*, requestRegMaskForOpNode, true*/);
+				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(mask.getBitMask64().getValue()), ExprTree::And/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (bitShift != 0) {
@@ -70,10 +70,10 @@ namespace CE::Decompiler
 	struct ExternalSymbol : public ExprTree::INodeAgregator {
 		PCode::RegisterVarnode* m_regVarnode;
 		RegisterParts m_regParts;
-		BitMask m_needReadMask;
+		ExtBitMask m_needReadMask;
 		ExprTree::SymbolLeaf* m_symbol = nullptr;
 
-		ExternalSymbol(PCode::RegisterVarnode* regVarnode, BitMask needReadMask, ExprTree::SymbolLeaf* symbol, RegisterParts regParts)
+		ExternalSymbol(PCode::RegisterVarnode* regVarnode, ExtBitMask needReadMask, ExprTree::SymbolLeaf* symbol, RegisterParts regParts)
 			: m_regVarnode(regVarnode), m_needReadMask(needReadMask), m_symbol(symbol), m_regParts(regParts)
 		{
 			symbol->addParentNode(this);
@@ -146,7 +146,7 @@ namespace CE::Decompiler
 
 		void setVarnode(PCode::Varnode* varnode, ExprTree::Node* expr, bool rewrite = true);
 
-		RegisterParts getRegisterParts(PCode::RegisterId registerId, BitMask& mask, bool changedRegistersOnly = false);
+		RegisterParts getRegisterParts(PCode::RegisterId registerId, ExtBitMask& mask, bool changedRegistersOnly = false);
 
 		ExprTree::Node* requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister);
 

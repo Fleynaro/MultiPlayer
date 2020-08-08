@@ -462,7 +462,7 @@ namespace CE::Decompiler::Optimization
 		std::list<PrimaryTree::Block*> path;
 		DecompiledCodeGraph::CalculateLevelsForDecBlocks(decGraph->getStartBlock(), path);
 
-		FixSymbolAssignmentLineAndConditionOrder(decGraph);
+		FixSymbolAssignmentLineAndConditionOrder(decGraph); 
 		OptimizeExprInDecompiledGraph(decGraph);
 		ExpandSymbolAssignmentLines(decGraph);
 		RemoveSeqLinesWithUndefinedRegisters(decGraph);

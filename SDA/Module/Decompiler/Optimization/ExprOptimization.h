@@ -142,7 +142,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//check negative of expr node
-	static bool IsNegative(Node* node, BitMask& mask) {
+	static bool IsNegative(Node* node, BitMask64& mask) {
 		if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
 			if ((numberLeaf->m_value >> (mask.getBitsCount() - 1)) & 0b1)
 				return true;
@@ -176,7 +176,7 @@ namespace CE::Decompiler::Optimization
 
 					if (isTermMoving) {
 						//move expr from left node of the condition to the right node being multiplied -1
-						auto newPartOfRightExpr = new OperationalNode(rightNode, new NumberLeaf(uint64_t(-1) & mask.getBitMask64()), Mul, mask);
+						auto newPartOfRightExpr = new OperationalNode(rightNode, new NumberLeaf(uint64_t(-1) & mask.getValue()), Mul, mask);
 						auto newRightExpr = new OperationalNode(condition->m_rightNode, newPartOfRightExpr, Add);
 						auto newCond = new Condition(leftNode, newRightExpr, condition->m_cond);
 						condition->replaceWith(newCond);
@@ -332,7 +332,7 @@ namespace CE::Decompiler::Optimization
 					}
 					else {
 						if (expr->m_operation == Or) {
-							if ((rightNumberLeaf->m_value | expr->getMask().getBitMask64()) == rightNumberLeaf->m_value) {
+							if ((rightNumberLeaf->m_value | expr->getMask().getValue()) == rightNumberLeaf->m_value) {
 								expr->replaceWith(rightNumberLeaf);
 								delete expr;
 							}
@@ -378,8 +378,8 @@ namespace CE::Decompiler::Optimization
 			if (auto leftNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_leftNode)) {
 				if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
 					auto result = Calculate(leftNumberLeaf->m_value, rightNumberLeaf->m_value, expr->m_operation);
-					if (expr->getMask().getBitMask64())
-						result &= expr->getMask().getBitMask64();
+					if (expr->getMask() != 0)
+						result &= expr->getMask().getValue();
 					expr->replaceWith(new NumberLeaf(result));
 					delete expr;
 					return;
@@ -535,9 +535,9 @@ namespace CE::Decompiler::Optimization
 							result = Calculate(result, prevNumberLeaf->m_value, expr->m_operation);
 						}
 
-						auto mask = expr->getMask().getBitMask64() | prevExpr->getMask().getBitMask64();
-						if (mask)
-							result &= mask;
+						auto mask = expr->getMask() | prevExpr->getMask();
+						if (mask != 0)
+							result &= mask.getValue();
 
 						auto numberLeaf = new NumberLeaf(result);
 						if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
@@ -585,7 +585,7 @@ namespace CE::Decompiler::Optimization
 	}
 
 	//([reg_rbx_64] & 0xffffffff00000000{0} | [var_2_32]) & 0x1f{31}	=>		[var_2_32] & 0x1f{31}
-	static void RemoveZeroMaskMulExpr(OperationalNode* expr, BitMask mask) {
+	static void RemoveZeroMaskMulExpr(OperationalNode* expr, BitMask64 mask) {
 		if (!IsOperationManipulatedWithBitVector(expr->m_operation))
 			return;
 
@@ -594,7 +594,7 @@ namespace CE::Decompiler::Optimization
 			std::make_pair(&expr->m_rightNode, expr->m_leftNode) })
 		{
 			if (auto operand = dynamic_cast<INumber*>(*it.first)) {
-				if ((operand->getMask().getBitMask64() & mask.getBitMask64()) == 0x0) {
+				if ((operand->getMask() & mask) == 0x0) {
 					//убрал, ибо не соблюдается главное условие оптимизации - заменяться все должно целиком. updated: теперь можно, ибо клонирование сделано
 					/*if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(it.second)) {
 						RemoveZeroMaskMulExpr(expr, mask);
@@ -632,16 +632,16 @@ namespace CE::Decompiler::Optimization
 						auto mask2 = rightNode->getMask();
 						expr->setMask(mask1 & mask2);
 
-						if (expr->getMask().isZero()) {
+						if (expr->getMask() == 0x0) {
 							//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
 							expr->replaceWith(new NumberLeaf((uint64_t)0));
 							delete expr;
 							return;
 						}
 
-						if (mask1.getBitMask64() <= 0xFF) {
+						if (mask1 <= 0xFF) {
 							if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-								auto mask1_64 = mask1.getBitMask64();
+								auto mask1_64 = mask1;
 								if ((mask1_64 & numberLeaf->m_value) == mask1_64) {
 									//[var_2_32] & 0xffffffff{-1}		=>		 [var_2_32]		
 									auto newExpr = expr->m_leftNode;
@@ -732,7 +732,7 @@ namespace CE::Decompiler::Optimization
 		return true;
 	}
 
-	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс.
+	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс. 
 	static void Optimize(Node*& node) {
 		Node::UpdateDebugInfo(node);
 		CalculateHashes(node);

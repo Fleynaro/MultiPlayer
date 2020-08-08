@@ -751,4 +751,1365 @@ return ([reg_rcx:8] &.4 0xffffffff{-1})
 
 
 
+SAMPLE 202
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 0, backOrderId: 3, linearLevel: 1, refCount: 0)
+0x0 push rbx
+0x2 sub rsp, 0x50
+0x6 movaps [rsp+0x40], xmm6
+0xb movss xmm6, dword ptr [0x0000020B9C9117A4]
+0x13 mov rbx, rcx
+0x16 movaps [rsp+0x30], xmm7
+0x1b movss xmm7, dword ptr [0x0000020B9C9117A8]
+0x23 mov ecx, edx
+0x25 movaps [rsp+0x20], xmm8
+0x2b movss xmm8, dword ptr [0x0000020B9C9117AC]
+0x34 call 0x0000020B9A97B208
+0x39 test rax, rax
+0x3c jz 0x0000020B9A99D1C2
+------------
+*(uint_64t*)([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = [reg_rbx:8]
+*(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) = [reg_zmm6:Da]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0x4{4}) = [reg_zmm6:Db]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0x8{8}) = [reg_zmm6:Dc]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0xc{12}) = [reg_zmm6:Dd]
+[mem_1_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f74621{32982561})
+*(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) = [reg_zmm7:Da]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0x4{4}) = [reg_zmm7:Db]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0x8{8}) = [reg_zmm7:Dc]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0xc{12}) = [reg_zmm7:Dd]
+[mem_2_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f74615{32982549})
+*(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) = [reg_zmm8:Da]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x4{4}) = [reg_zmm8:Db]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x8{8}) = [reg_zmm8:Dc]
+*(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0xc{12}) = [reg_zmm8:Dd]
+[mem_3_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f74608{32982536})
+[funcVar_1_32] = fun_49860888([reg_zmm0:Da], [reg_zmm1:Da], [reg_zmm2:Da], [reg_zmm3:Da])
+<Symbol assignments>:
+- [var_1_32] = [mem_1_32]
+- [var_2_32] = [mem_2_32]
+- [var_3_32] = [mem_3_32]
+if(!((([reg_rax:8] &.8 [reg_rax:8]) == 0x0{0}))) {
+        //block 3e (level: 2, maxHeight: 0, backOrderId: 3, linearLevel: 2, refCount: 1)
+        0x3e movaps xmm6, [rax+0x70]
+        0x42 movaps xmm7, xmm6
+        0x45 movaps xmm8, xmm6
+        0x49 shufps xmm7, xmm6, 0x55
+        0x4d shufps xmm8, xmm6, 0xAA
+        ------------
+        [mem_4_32] = *(uint_32t*)([reg_rax:8] +.8 0x70{112})
+        [mem_5_32] = *(uint_32t*)(([reg_rax:8] +.8 0x70{112}) +.8 0x4{4})
+        [mem_6_32] = *(uint_32t*)(([reg_rax:8] +.8 0x70{112}) +.8 0x8{8})
+        [mem_7_32] = *(uint_32t*)(([reg_rax:8] +.8 0x70{112}) +.8 0xc{12})
+        <Symbol assignments>:
+        - [var_1_32] = [mem_4_32]
+        - [var_2_32] = [mem_5_32]
+        - [var_3_32] = [mem_6_32]
+        //goto to block 52 (backOrderId: 2; minLinLevel: 2, maxLinLevel: 3) [None]
+} else {
+        //goto to block 52 (backOrderId: 2; minLinLevel: 3, maxLinLevel: 3) [None]
+}
+//block 52 (level: 3, maxHeight: 0, backOrderId: 2, linearLevel: 3, refCount: 2)
+0x52 movss [rbx], xmm6
+0x56 movaps xmm6, [rsp+0x40]
+0x5b movss [rbx+0x08], xmm7
+0x60 movaps xmm7, [rsp+0x30]
+0x65 mov rax, rbx
+0x68 movss [rbx+0x10], xmm8
+0x6e movaps xmm8, [rsp+0x20]
+0x74 add rsp, 0x50
+0x78 pop rbx
+0x79 ret
+------------
+*(uint_32t*)[reg_rcx:8] = [var_1_32]
+[mem_8_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64})
+[mem_9_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0x4{4})
+[mem_a_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0x8{8})
+[mem_b_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0xc{12})
+*(uint_32t*)([reg_rcx:8] +.8 0x8{8}) = [var_2_32]
+[mem_c_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x30{48})
+[mem_d_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0x4{4})
+[mem_e_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0x8{8})
+[mem_f_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0xc{12})
+*(uint_32t*)([reg_rcx:8] +.8 0x10{16}) = [var_3_32]
+[mem_10_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32})
+[mem_11_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x4{4})
+[mem_12_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x8{8})
+[mem_13_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0xc{12})
+[mem_14_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x50{80})
+[mem_15_64] = *(uint_64t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x50{80}) +.8 0x8{8})
+return [funcVar_1_32]
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 4)
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 31, backOrderId: 3, linearLevel: 1, refCount: 0)
+0x0 push rbx
+0x2 sub rsp, 0x50
+0x6 movaps [rsp+0x40], xmm6
+0xb movss xmm6, dword ptr [0x0000020B9C9117A4]
+0x13 mov rbx, rcx
+0x16 movaps [rsp+0x30], xmm7
+0x1b movss xmm7, dword ptr [0x0000020B9C9117A8]
+0x23 mov ecx, edx
+0x25 movaps [rsp+0x20], xmm8
+0x2b movss xmm8, dword ptr [0x0000020B9C9117AC]
+0x34 call 0x0000020B9A97B208
+0x39 test rax, rax
+0x3c jz 0x0000020B9A99D1C2
+------------
+[mem_1_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f74621{32982561})
+[mem_2_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f74615{32982549})
+[mem_3_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f74608{32982536})
+[funcVar_1_32] = fun_49860888([reg_zmm0:Da], [reg_zmm1:Da], [reg_zmm2:Da], [reg_zmm3:Da])
+[var_1_32] = [mem_1_32]
+[var_2_32] = [mem_2_32]
+[var_3_32] = [mem_3_32]
+if(([reg_rax:8] != 0x0{0})) {
+        //block 3e (level: 2, maxHeight: 24, backOrderId: 3, linearLevel: 2, refCount: 1)
+        0x3e movaps xmm6, [rax+0x70]
+        0x42 movaps xmm7, xmm6
+        0x45 movaps xmm8, xmm6
+        0x49 shufps xmm7, xmm6, 0x55
+        0x4d shufps xmm8, xmm6, 0xAA
+        ------------
+        [mem_4_32] = *(uint_32t*)([reg_rax:8] +.8 0x70{112})
+        [mem_5_32] = *(uint_32t*)([reg_rax:8] +.8 0x74{116})
+        [mem_6_32] = *(uint_32t*)([reg_rax:8] +.8 0x78{120})
+        [mem_7_32] = *(uint_32t*)([reg_rax:8] +.8 0x7c{124})
+        [var_1_32] = [mem_4_32]
+        [var_2_32] = [mem_5_32]
+        [var_3_32] = [mem_6_32]
+        //goto to block 52 (backOrderId: 2; minLinLevel: 2, maxLinLevel: 3) [None]
+} else {
+        //goto to block 52 (backOrderId: 2; minLinLevel: 3, maxLinLevel: 3) [None]
+}
+//block 52 (level: 3, maxHeight: 17, backOrderId: 2, linearLevel: 3, refCount: 2)
+0x52 movss [rbx], xmm6
+0x56 movaps xmm6, [rsp+0x40]
+0x5b movss [rbx+0x08], xmm7
+0x60 movaps xmm7, [rsp+0x30]
+0x65 mov rax, rbx
+0x68 movss [rbx+0x10], xmm8
+0x6e movaps xmm8, [rsp+0x20]
+0x74 add rsp, 0x50
+0x78 pop rbx
+0x79 ret
+------------
+*(uint_32t*)[reg_rcx:8] = [var_1_32]
+[mem_8_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe8{-24})
+[mem_9_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffec{-20})
+[mem_a_32] = *(uint_32t*)([reg_rsp:8] +.8 0xfffffffffffffff0{-16})
+[mem_b_32] = *(uint_32t*)([reg_rsp:8] +.8 0xfffffffffffffff4{-12})
+*(uint_32t*)([reg_rcx:8] +.8 0x8{8}) = [var_2_32]
+[mem_c_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd8{-40})
+[mem_d_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffdc{-36})
+[mem_e_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe0{-32})
+[mem_f_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe4{-28})
+*(uint_32t*)([reg_rcx:8] +.8 0x10{16}) = [var_3_32]
+[mem_10_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffc8{-56})
+[mem_11_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffcc{-52})
+[mem_12_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd0{-48})
+[mem_13_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd4{-44})
+[mem_14_64] = *(uint_64t*)([reg_rsp:8] +.8 0xfffffffffffffff8{-8})
+[mem_15_64] = *(uint_64t*)[reg_rsp:8]
+return [funcVar_1_32]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SAMPLE 205
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 0, backOrderId: 3, linearLevel: 1, refCount: 0)
+0x0 mov rax, rsp
+0x3 mov [rax+0x08], rbx
+0x7 mov [rax+0x10], rsi
+0xb push rdi
+0xc sub rsp, 0x60
+0x10 movaps [rax-0x18], xmm6
+0x14 movss xmm6, dword ptr [0x000001FAB8DB1700]
+0x1c movaps [rax-0x28], xmm7
+0x20 movss xmm7, dword ptr [0x000001FAB8DB1704]
+0x28 mov rbx, rcx
+0x2b mov ecx, edx
+0x2d mov sil, r8b
+0x30 movaps [rax-0x38], xmm8
+0x35 movaps [rax-0x48], xmm9
+0x3a movss xmm9, dword ptr [0x000001FAB8DB16FC]
+0x43 call 0x000001FAB6E1B194
+0x48 mov rdi, rax
+0x4b test rax, rax
+0x4e jz 0x000001FAB6E3E21A
+------------
+*(uint_64t*)([reg_rsp:8] +.8 0x8{8}) = [reg_rbx:8]
+*(uint_64t*)([reg_rsp:8] +.8 0x10{16}) = [reg_rsi:8]
+*(uint_64t*)([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = [reg_rdi:8]
+*(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) = [reg_zmm6:Da]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) +.8 0x4{4}) = [reg_zmm6:Db]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) +.8 0x8{8}) = [reg_zmm6:Dc]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) +.8 0xc{12}) = [reg_zmm6:Dd]
+[mem_1_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f735b4{32978356})
+*(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) = [reg_zmm7:Da]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) +.8 0x4{4}) = [reg_zmm7:Db]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) +.8 0x8{8}) = [reg_zmm7:Dc]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) +.8 0xc{12}) = [reg_zmm7:Dd]
+[mem_2_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f735ac{32978348})
+*(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffc8{-56}) = [reg_zmm8:Da]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffc8{-56}) +.8 0x4{4}) = [reg_zmm8:Db]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffc8{-56}) +.8 0x8{8}) = [reg_zmm8:Dc]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffc8{-56}) +.8 0xc{12}) = [reg_zmm8:Dd]
+*(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffb8{-72}) = [reg_zmm9:Da]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffb8{-72}) +.8 0x4{4}) = [reg_zmm9:Db]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffb8{-72}) +.8 0x8{8}) = [reg_zmm9:Dc]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffb8{-72}) +.8 0xc{12}) = [reg_zmm9:Dd]
+[mem_3_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f73589{32978313})
+[funcVar_1_32] = fun_49856740([reg_rdx:4], [reg_rdx:4], [reg_r8:1], [reg_zmm3:7])
+<Symbol assignments>:
+- [var_2_32] = [mem_1_32]
+- [var_3_32] = [mem_2_32]
+- [var_1_32] = [mem_3_32]
+if(!((([funcVar_1_32] &.8 [funcVar_1_32]) == 0x0{0}))) {
+        //block 54 (level: 2, maxHeight: 0, backOrderId: 3, linearLevel: 2, refCount: 1)
+        0x54 mov rdx, [rax]
+        0x57 mov rcx, rax
+        0x5a call [rdx+0x368]
+        0x60 movss xmm9, dword ptr [rax]
+        0x65 movss xmm6, dword ptr [rax+0x04]
+        0x6a movss xmm7, dword ptr [rax+0x08]
+        0x6f test sil, sil
+        0x72 jz 0x000001FAB6E3E21A
+        ------------
+        [mem_4_64] = *(uint_64t*)[funcVar_1_32]
+        [mem_5_64] = *(uint_64t*)([mem_4_64] +.8 0x368{872})
+        [funcVar_2_32] = fun_50000000(([funcVar_1_32] &.0 0xffffffff{-1}), ([mem_4_64] &.0 0xffffffff{-1}), [reg_r8:1], [reg_zmm3:7])
+        [mem_6_32] = *(uint_32t*)[funcVar_2_32]
+        [mem_7_32] = *(uint_32t*)([funcVar_2_32] +.8 0x4{4})
+        [mem_8_32] = *(uint_32t*)([funcVar_2_32] +.8 0x8{8})
+        <Symbol assignments>:
+        - [var_2_32] = [mem_7_32]
+        - [var_3_32] = [mem_8_32]
+        - [var_1_32] = [mem_6_32]
+        if(!((([reg_r8:1] &.1 [reg_r8:1]) == 0x0{0}))) {
+                //block 74 (level: 3, maxHeight: 0, backOrderId: 3, linearLevel: 3, refCount: 1)
+                0x74 mov rax, [rdi]
+                0x77 mov rcx, rdi
+                0x7a call [rax+0x368]
+                0x80 movaps xmm8, [rdi+0x60]
+                0x85 movaps xmm7, [rdi+0x70]
+                0x89 movaps xmm5, [rdi+0x80]
+                0x90 xorps xmm6, xmm6
+                0x93 pshufd xmm1, [rax], 0x00
+                0x98 pshufd xmm0, [rax], 0x55
+                0x9d pshufd xmm3, [rax], 0xAA
+                0xa2 movaps xmm4, xmm8
+                0xa6 movaps xmm2, xmm7
+                0xa9 unpckhps xmm7, xmm6
+                0xac unpckhps xmm8, xmm5
+                0xb0 unpcklps xmm2, xmm6
+                0xb3 unpcklps xmm4, xmm5
+                0xb6 unpcklps xmm8, xmm7
+                0xba movaps xmm9, xmm4
+                0xbe unpckhps xmm9, xmm2
+                0xc2 unpcklps xmm4, xmm2
+                0xc5 mulps xmm8, xmm3
+                0xc9 mulps xmm9, xmm0
+                0xcd mulps xmm4, xmm1
+                0xd0 addps xmm9, xmm4
+                0xd4 addps xmm9, xmm8
+                0xd8 movaps xmm6, xmm9
+                0xdc movaps xmm7, xmm9
+                0xe0 shufps xmm6, xmm9, 0x55
+                0xe5 shufps xmm7, xmm9, 0xAA
+                ------------
+                [mem_9_64] = *(uint_64t*)[funcVar_1_32]
+                [mem_a_64] = *(uint_64t*)([mem_9_64] +.8 0x368{872})
+                [funcVar_3_32] = fun_50000000(([funcVar_1_32] &.0 0xffffffff{-1}), ([mem_4_64] &.0 0xffffffff{-1}), [reg_r8:1], [reg_zmm3:7])
+                [mem_b_32] = *(uint_32t*)([funcVar_1_32] +.8 0x60{96})
+                [mem_c_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x60{96}) +.8 0x4{4})
+                [mem_d_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x60{96}) +.8 0x8{8})
+                [mem_e_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x60{96}) +.8 0xc{12})
+                [mem_f_32] = *(uint_32t*)([funcVar_1_32] +.8 0x70{112})
+                [mem_10_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x70{112}) +.8 0x4{4})
+                [mem_11_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x70{112}) +.8 0x8{8})
+                [mem_12_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x70{112}) +.8 0xc{12})
+                [mem_13_32] = *(uint_32t*)([funcVar_1_32] +.8 0x80{128})
+                [mem_14_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x80{128}) +.8 0x4{4})
+                [mem_15_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x80{128}) +.8 0x8{8})
+                [mem_16_32] = *(uint_32t*)(([funcVar_1_32] +.8 0x80{128}) +.8 0xc{12})
+                [mem_17_32] = *(uint_32t*)[funcVar_3_32]
+                [mem_18_32] = *(uint_32t*)[funcVar_3_32]
+                [mem_19_32] = *(uint_32t*)[funcVar_3_32]
+                [mem_1a_32] = *(uint_32t*)[funcVar_3_32]
+                [mem_1b_32] = *(uint_32t*)([funcVar_3_32] +.8 0x4{4})
+                [mem_1c_32] = *(uint_32t*)([funcVar_3_32] +.8 0x4{4})
+                [mem_1d_32] = *(uint_32t*)([funcVar_3_32] +.8 0x4{4})
+                [mem_1e_32] = *(uint_32t*)([funcVar_3_32] +.8 0x4{4})
+                [mem_1f_32] = *(uint_32t*)([funcVar_3_32] +.8 0x8{8})
+                [mem_20_32] = *(uint_32t*)([funcVar_3_32] +.8 0x8{8})
+                [mem_21_32] = *(uint_32t*)([funcVar_3_32] +.8 0x8{8})
+                [mem_22_32] = *(uint_32t*)([funcVar_3_32] +.8 0x8{8})
+                <Symbol assignments>:
+                - [var_2_32] = ((([mem_10_32] *.4f [mem_1c_32]) +.4f ([mem_f_32] *.4f [mem_18_32])) +.4f ([mem_11_32] *.4f [mem_20_32]))
+                - [var_3_32] = ((([mem_14_32] *.4f [mem_1d_32]) +.4f ([mem_13_32] *.4f [mem_19_32])) +.4f ([mem_15_32] *.4f [mem_21_32]))
+                - [var_1_32] = ((([mem_c_32] *.4f [mem_1b_32]) +.4f ([mem_b_32] *.4f [mem_17_32])) +.4f ([mem_d_32] *.4f [mem_1f_32]))
+                //goto to block ea (backOrderId: 2; minLinLevel: 3, maxLinLevel: 4) [None]
+        } else {
+                //goto to block ea (backOrderId: 2; minLinLevel: 4, maxLinLevel: 4) [None]
+        }
+        //goto is null (backOrderId: 2; minLinLevel: 2, maxLinLevel: 4)
+} else {
+        //goto to block ea (backOrderId: 2; minLinLevel: 4, maxLinLevel: 4) [None]
+}
+//block ea (level: 4, maxHeight: 0, backOrderId: 2, linearLevel: 4, refCount: 3)
+0xea mov rsi, [rsp+0x78]
+0xef movaps xmm8, [rsp+0x30]
+0xf5 movss [rbx], xmm9
+0xfa movaps xmm9, [rsp+0x20]
+0x100 movss [rbx+0x08], xmm6
+0x105 movaps xmm6, [rsp+0x50]
+0x10a movss [rbx+0x10], xmm7
+0x10f mov rax, rbx
+0x112 mov rbx, [rsp+0x70]
+0x117 movaps xmm7, [rsp+0x40]
+0x11c add rsp, 0x60
+0x120 pop rdi
+0x121 ret
+------------
+[mem_23_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x78{120})
+[mem_24_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x30{48})
+[mem_25_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0x4{4})
+[mem_26_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0x8{8})
+[mem_27_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x30{48}) +.8 0xc{12})
+*(uint_32t*)[reg_rcx:8] = [var_1_32]
+[mem_28_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x20{32})
+[mem_29_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x4{4})
+[mem_2a_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x8{8})
+[mem_2b_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0xc{12})
+*(uint_32t*)([reg_rcx:8] +.8 0x8{8}) = [var_2_32]
+[mem_2c_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x50{80})
+[mem_2d_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x50{80}) +.8 0x4{4})
+[mem_2e_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x50{80}) +.8 0x8{8})
+[mem_2f_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x50{80}) +.8 0xc{12})
+*(uint_32t*)([reg_rcx:8] +.8 0x10{16}) = [var_3_32]
+[mem_30_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x70{112})
+[mem_31_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x40{64})
+[mem_32_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0x4{4})
+[mem_33_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0x8{8})
+[mem_34_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0xc{12})
+[mem_35_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x60{96})
+[mem_36_64] = *(uint_64t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x60{96} *.8 0xffffffffffffffff{-1})) +.8 0x60{96}) +.8 0x8{8})
+return ([reg_rcx:8] &.0 0xffffffff{-1})
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 5)
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 69, backOrderId: 3, linearLevel: 1, refCount: 0)
+0x0 mov rax, rsp
+0x3 mov [rax+0x08], rbx
+0x7 mov [rax+0x10], rsi
+0xb push rdi
+0xc sub rsp, 0x60
+0x10 movaps [rax-0x18], xmm6
+0x14 movss xmm6, dword ptr [0x000001FAB8DB1700]
+0x1c movaps [rax-0x28], xmm7
+0x20 movss xmm7, dword ptr [0x000001FAB8DB1704]
+0x28 mov rbx, rcx
+0x2b mov ecx, edx
+0x2d mov sil, r8b
+0x30 movaps [rax-0x38], xmm8
+0x35 movaps [rax-0x48], xmm9
+0x3a movss xmm9, dword ptr [0x000001FAB8DB16FC]
+0x43 call 0x000001FAB6E1B194
+0x48 mov rdi, rax
+0x4b test rax, rax
+0x4e jz 0x000001FAB6E3E21A
+------------
+[mem_1_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f735b4{32978356})
+[mem_2_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f735ac{32978348})
+[mem_3_32] = *(uint_32t*)([reg_rip:8] +.8 0x1f73589{32978313})
+[funcVar_1_32] = fun_49856740([reg_rdx:4], [reg_rdx:4], [reg_r8:1], [reg_zmm3:7])
+[var_2_32] = [mem_1_32]
+[var_3_32] = [mem_2_32]
+[var_1_32] = [mem_3_32]
+if(([funcVar_1_32] != 0x0{0})) {
+        //block 54 (level: 2, maxHeight: 62, backOrderId: 3, linearLevel: 2, refCount: 1)
+        0x54 mov rdx, [rax]
+        0x57 mov rcx, rax
+        0x5a call [rdx+0x368]
+        0x60 movss xmm9, dword ptr [rax]
+        0x65 movss xmm6, dword ptr [rax+0x04]
+        0x6a movss xmm7, dword ptr [rax+0x08]
+        0x6f test sil, sil
+        0x72 jz 0x000001FAB6E3E21A
+        ------------
+        [mem_4_64] = *(uint_64t*)[funcVar_1_32]
+        [mem_5_64] = *(uint_64t*)([mem_4_64] +.8 0x368{872})
+        [funcVar_2_32] = fun_50000000([funcVar_1_32], ([mem_4_64] &.4 0xffffffff{-1}), [reg_r8:1], [reg_zmm3:7])
+        [mem_6_32] = *(uint_32t*)[funcVar_2_32]
+        [mem_7_32] = *(uint_32t*)([funcVar_2_32] +.8 0x4{4})
+        [mem_8_32] = *(uint_32t*)([funcVar_2_32] +.8 0x8{8})
+        [var_2_32] = [mem_7_32]
+        [var_3_32] = [mem_8_32]
+        [var_1_32] = [mem_6_32]
+        if(([reg_r8:1] != 0x0{0})) {
+                //block 74 (level: 3, maxHeight: 53, backOrderId: 3, linearLevel: 3, refCount: 1)
+                0x74 mov rax, [rdi]
+                0x77 mov rcx, rdi
+                0x7a call [rax+0x368]
+                0x80 movaps xmm8, [rdi+0x60]
+                0x85 movaps xmm7, [rdi+0x70]
+                0x89 movaps xmm5, [rdi+0x80]
+                0x90 xorps xmm6, xmm6
+                0x93 pshufd xmm1, [rax], 0x00
+                0x98 pshufd xmm0, [rax], 0x55
+                0x9d pshufd xmm3, [rax], 0xAA
+                0xa2 movaps xmm4, xmm8
+                0xa6 movaps xmm2, xmm7
+                0xa9 unpckhps xmm7, xmm6
+                0xac unpckhps xmm8, xmm5
+                0xb0 unpcklps xmm2, xmm6
+                0xb3 unpcklps xmm4, xmm5
+                0xb6 unpcklps xmm8, xmm7
+                0xba movaps xmm9, xmm4
+                0xbe unpckhps xmm9, xmm2
+                0xc2 unpcklps xmm4, xmm2
+                0xc5 mulps xmm8, xmm3
+                0xc9 mulps xmm9, xmm0
+                0xcd mulps xmm4, xmm1
+                0xd0 addps xmm9, xmm4
+                0xd4 addps xmm9, xmm8
+                0xd8 movaps xmm6, xmm9
+                0xdc movaps xmm7, xmm9
+                0xe0 shufps xmm6, xmm9, 0x55
+                0xe5 shufps xmm7, xmm9, 0xAA
+                ------------
+                [mem_9_64] = *(uint_64t*)[funcVar_1_32]
+                [mem_a_64] = *(uint_64t*)([mem_9_64] +.8 0x368{872})
+                [funcVar_3_32] = fun_50000000([funcVar_1_32], ([mem_4_64] &.4 0xffffffff{-1}), [reg_r8:1], [reg_zmm3:7])                [mem_b_32] = *(uint_32t*)([funcVar_1_32] +.8 0x60{96})
+                [mem_c_32] = *(uint_32t*)([funcVar_1_32] +.8 0x64{100})
+                [mem_d_32] = *(uint_32t*)([funcVar_1_32] +.8 0x68{104})
+                [mem_e_32] = *(uint_32t*)([funcVar_1_32] +.8 0x6c{108})
+                [mem_f_32] = *(uint_32t*)([funcVar_1_32] +.8 0x70{112})
+                [mem_10_32] = *(uint_32t*)([funcVar_1_32] +.8 0x74{116})
+                [mem_11_32] = *(uint_32t*)([funcVar_1_32] +.8 0x78{120})
+                [mem_12_32] = *(uint_32t*)([funcVar_1_32] +.8 0x7c{124})
+                [mem_13_32] = *(uint_32t*)([funcVar_1_32] +.8 0x80{128})
+                [mem_14_32] = *(uint_32t*)([funcVar_1_32] +.8 0x84{132})
+                [mem_15_32] = *(uint_32t*)([funcVar_1_32] +.8 0x88{136})
+                [mem_16_32] = *(uint_32t*)([funcVar_1_32] +.8 0x8c{140})
+                [mem_17_32] = *(uint_32t*)[funcVar_3_32]
+                [mem_18_32] = *(uint_32t*)[funcVar_3_32]
+                [mem_19_32] = *(uint_32t*)[funcVar_3_32]
+                [mem_1a_32] = *(uint_32t*)[funcVar_3_32]
+                [mem_1b_32] = *(uint_32t*)([funcVar_3_32] +.8 0x4{4})
+                [mem_1c_32] = *(uint_32t*)([funcVar_3_32] +.8 0x4{4})
+                [mem_1d_32] = *(uint_32t*)([funcVar_3_32] +.8 0x4{4})
+                [mem_1e_32] = *(uint_32t*)([funcVar_3_32] +.8 0x4{4})
+                [mem_1f_32] = *(uint_32t*)([funcVar_3_32] +.8 0x8{8})
+                [mem_20_32] = *(uint_32t*)([funcVar_3_32] +.8 0x8{8})
+                [mem_21_32] = *(uint_32t*)([funcVar_3_32] +.8 0x8{8})
+                [mem_22_32] = *(uint_32t*)([funcVar_3_32] +.8 0x8{8})
+                [var_2_32] = ((([mem_10_32] *.4f [mem_1c_32]) +.4f ([mem_f_32] *.4f [mem_18_32])) +.4f ([mem_11_32] *.4f [mem_20_32]))
+                [var_3_32] = ((([mem_14_32] *.4f [mem_1d_32]) +.4f ([mem_13_32] *.4f [mem_19_32])) +.4f ([mem_15_32] *.4f [mem_21_32]))
+                [var_1_32] = ((([mem_c_32] *.4f [mem_1b_32]) +.4f ([mem_b_32] *.4f [mem_17_32])) +.4f ([mem_d_32] *.4f [mem_1f_32]))
+                //goto to block ea (backOrderId: 2; minLinLevel: 3, maxLinLevel: 4) [None]
+        } else {
+                //goto to block ea (backOrderId: 2; minLinLevel: 4, maxLinLevel: 4) [None]
+        }
+        //goto is null (backOrderId: 2; minLinLevel: 2, maxLinLevel: 4)
+} else {
+        //goto to block ea (backOrderId: 2; minLinLevel: 4, maxLinLevel: 4) [None]
+}
+//block ea (level: 4, maxHeight: 23, backOrderId: 2, linearLevel: 4, refCount: 3)
+0xea mov rsi, [rsp+0x78]
+0xef movaps xmm8, [rsp+0x30]
+0xf5 movss [rbx], xmm9
+0xfa movaps xmm9, [rsp+0x20]
+0x100 movss [rbx+0x08], xmm6
+0x105 movaps xmm6, [rsp+0x50]
+0x10a movss [rbx+0x10], xmm7
+0x10f mov rax, rbx
+0x112 mov rbx, [rsp+0x70]
+0x117 movaps xmm7, [rsp+0x40]
+0x11c add rsp, 0x60
+0x120 pop rdi
+0x121 ret
+------------
+[mem_23_64] = *(uint_64t*)([reg_rsp:8] +.8 0x10{16})
+[mem_24_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffc8{-56})
+[mem_25_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffcc{-52})
+[mem_26_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd0{-48})
+[mem_27_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd4{-44})
+*(uint_32t*)[reg_rcx:8] = [var_1_32]
+[mem_28_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffb8{-72})
+[mem_29_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffbc{-68})
+[mem_2a_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffc0{-64})
+[mem_2b_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffc4{-60})
+*(uint_32t*)([reg_rcx:8] +.8 0x8{8}) = [var_2_32]
+[mem_2c_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe8{-24})
+[mem_2d_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffec{-20})
+[mem_2e_32] = *(uint_32t*)([reg_rsp:8] +.8 0xfffffffffffffff0{-16})
+[mem_2f_32] = *(uint_32t*)([reg_rsp:8] +.8 0xfffffffffffffff4{-12})
+*(uint_32t*)([reg_rcx:8] +.8 0x10{16}) = [var_3_32]
+[mem_30_64] = *(uint_64t*)([reg_rsp:8] +.8 0x8{8})
+[mem_31_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd8{-40})
+[mem_32_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffdc{-36})
+[mem_33_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe0{-32})
+[mem_34_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe4{-28})
+[mem_35_64] = *(uint_64t*)([reg_rsp:8] +.8 0xfffffffffffffff8{-8})
+[mem_36_64] = *(uint_64t*)[reg_rsp:8]
+return ([reg_rcx:8] &.4 0xffffffff{-1})
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 SAMPLE 206
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 0, backOrderId: 7, linearLevel: 1, refCount: 0)
+0x0 sub rsp, 0x38
+0x4 movaps [rsp+0x20], xmm6
+0x9 movaps xmm6, xmm0
+0xc movaps xmm4, xmm1
+0xf mulss xmm1, xmm1
+0x13 mulss xmm6, xmm6
+0x17 mulss xmm4, xmm3
+0x1b movaps xmm5, xmm2
+0x1e addss xmm6, xmm1
+0x22 mulss xmm0, xmm5
+0x26 xorps xmm2, xmm2
+0x29 comiss xmm6, xmm2
+0x2c addss xmm0, xmm4
+0x30 jbe 0x000002265F94E29B
+------------
+*(uint_32t*)(([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) = [reg_zmm6:Da]
+*(uint_32t*)((([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x4{4}) = [reg_zmm6:Db]
+*(uint_32t*)((([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x8{8}) = [reg_zmm6:Dc]
+*(uint_32t*)((([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0xc{12}) = [reg_zmm6:Dd]
+if(!((((((([reg_zmm0:Da] *.4f [reg_zmm0:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm1:Da])) == NaN) || (([reg_zmm2:Da] ^.4 [reg_zmm2:Da]) == NaN)) || ((([reg_zmm0:Da] *.4f [reg_zmm0:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm1:Da])) < ([reg_zmm2:Da] ^.4 [reg_zmm2:Da]))) || ((((([reg_zmm0:Da] *.4f [reg_zmm0:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm1:Da])) == NaN) || (([reg_zmm2:Da] ^.4 [reg_zmm2:Da]) == NaN)) || ((([reg_zmm0:Da] *.4f [reg_zmm0:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm1:Da])) == ([reg_zmm2:Da] ^.4 [reg_zmm2:Da])))))) {
+        //block 32 (level: 2, maxHeight: 0, backOrderId: 7, linearLevel: 2, refCount: 1)
+        0x32 xorps xmm4, xmm4
+        0x35 sqrtss xmm4, xmm6
+        0x39 jmp 0x000002265F94E29E
+        ------------
+        <Symbol assignments>:
+        - [var_2_32] = FSQRT((([reg_zmm0:Da] *.4f [reg_zmm0:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm1:Da])))
+        //goto to block 3e (backOrderId: 6; minLinLevel: 2, maxLinLevel: 3) [None]
+} else {
+        //block 3b (level: 2, maxHeight: 0, backOrderId: 7, linearLevel: 3, refCount: 1)
+        0x3b movaps xmm4, xmm2
+        ------------
+        <Symbol assignments>:
+        - [var_2_32] = ([reg_zmm2:Da] ^.4 [reg_zmm2:Da])
+        //goto to block 3e (backOrderId: 6; minLinLevel: 3, maxLinLevel: 4) [None]
+}
+//block 3e (level: 3, maxHeight: 0, backOrderId: 6, linearLevel: 4, refCount: 2)
+0x3e mulss xmm5, xmm5
+0x42 mulss xmm3, xmm3
+0x46 addss xmm5, xmm3
+0x4a comiss xmm5, xmm2
+0x4d jbe 0x000002265F94E2B8
+------------
+<Symbol assignments>:
+- [var_b_32] = ([reg_zmm2:Da] ^.4 [reg_zmm2:Da])
+if(!((((((([reg_zmm2:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm3:Da] *.4f [reg_zmm3:Da])) == NaN) || (([reg_zmm2:Da] ^.4 [reg_zmm2:Da]) == NaN)) || ((([reg_zmm2:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm3:Da] *.4f [reg_zmm3:Da])) < ([reg_zmm2:Da] ^.4 [reg_zmm2:Da]))) || ((((([reg_zmm2:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm3:Da] *.4f [reg_zmm3:Da])) == NaN) || (([reg_zmm2:Da] ^.4 [reg_zmm2:Da]) == NaN)) || ((([reg_zmm2:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm3:Da] *.4f [reg_zmm3:Da])) == ([reg_zmm2:Da] ^.4 [reg_zmm2:Da])))))) {
+        //block 4f (level: 4, maxHeight: 0, backOrderId: 6, linearLevel: 5, refCount: 1)
+        0x4f xorps xmm1, xmm1
+        0x52 sqrtss xmm1, xmm5
+        0x56 jmp 0x000002265F94E2BB
+        ------------
+        <Symbol assignments>:
+        - [var_1_32] = FSQRT((([reg_zmm2:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm3:Da] *.4f [reg_zmm3:Da])))
+        //goto to block 5b (backOrderId: 5; minLinLevel: 5, maxLinLevel: 6) [None]
+} else {
+        //block 58 (level: 4, maxHeight: 0, backOrderId: 6, linearLevel: 6, refCount: 1)
+        0x58 movaps xmm1, xmm2
+        ------------
+        <Symbol assignments>:
+        - [var_1_32] = ([reg_zmm2:Da] ^.4 [reg_zmm2:Da])
+        //goto to block 5b (backOrderId: 5; minLinLevel: 6, maxLinLevel: 7) [None]
+}
+//block 5b (level: 5, maxHeight: 0, backOrderId: 5, linearLevel: 7, refCount: 2)
+0x5b movss xmm3, dword ptr [0x000002266074A21C]
+0x63 mulss xmm1, xmm4
+0x67 divss xmm0, xmm1
+0x6b comiss xmm0, xmm3
+0x6e jnb 0x000002265F94E2D3
+------------
+[mem_1_32] = *(uint_32t*)([reg_rip:8] +.8 0xdfbf59{14663513})
+<Symbol assignments>:
+- [var_7_32] = ((([reg_zmm0:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm3:Da])) /.4f ([var_1_32] *.4f [var_2_32]))
+if(!(!((((((([reg_zmm0:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm3:Da])) /.4f ([var_1_32] *.4f [var_2_32])) == NaN) || ([mem_1_32] == NaN)) || (((([reg_zmm0:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm3:Da])) /.4f ([var_1_32] *.4f [var_2_32])) < [mem_1_32]))))) {
+        //block 70 (level: 6, maxHeight: 0, backOrderId: 5, linearLevel: 8, refCount: 1)
+        0x70 movaps xmm0, xmm3
+        ------------
+        <Symbol assignments>:
+        - [var_7_32] = [mem_1_32]
+        //goto to block 73 (backOrderId: 4; minLinLevel: 8, maxLinLevel: 9) [None]
+} else {
+        //goto to block 73 (backOrderId: 4; minLinLevel: 9, maxLinLevel: 9) [None]
+}
+//block 73 (level: 7, maxHeight: 0, backOrderId: 4, linearLevel: 9, refCount: 2)
+0x73 movss xmm1, dword ptr [0x00000226608098B0]
+0x7b comiss xmm0, xmm1
+0x7e jbe 0x000002265F94E2E3
+------------
+[mem_2_32] = *(uint_32t*)([reg_rip:8] +.8 0xebb5d5{15447509})
+if(!((((([var_7_32] == NaN) || ([mem_2_32] == NaN)) || ([var_7_32] < [mem_2_32])) || ((([var_7_32] == NaN) || ([mem_2_32] == NaN)) || ([var_7_32] == [mem_2_32]))))) {
+        //block 80 (level: 8, maxHeight: 0, backOrderId: 4, linearLevel: 10, refCount: 1)
+        0x80 movaps xmm0, xmm1
+        ------------
+        <Symbol assignments>:
+        - [var_7_32] = [mem_2_32]
+        //goto to block 83 (backOrderId: 3; minLinLevel: 10, maxLinLevel: 11) [None]
+} else {
+        //goto to block 83 (backOrderId: 3; minLinLevel: 11, maxLinLevel: 11) [None]
+}
+//block 83 (level: 9, maxHeight: 0, backOrderId: 3, linearLevel: 11, refCount: 2)
+0x83 comiss xmm0, xmm3
+0x86 jbe 0x000002265F94E2F7
+------------
+if(!((((([var_7_32] == NaN) || ([mem_1_32] == NaN)) || ([var_7_32] < [mem_1_32])) || ((([var_7_32] == NaN) || ([mem_1_32] == NaN)) || ([var_7_32] == [mem_1_32]))))) {
+        //block 88 (level: 10, maxHeight: 0, backOrderId: 3, linearLevel: 12, refCount: 1)
+        0x88 comiss xmm0, xmm1
+        0x8b jnb 0x000002265F94E2FF
+        ------------
+        if(!(!(((([var_7_32] == NaN) || ([mem_2_32] == NaN)) || ([var_7_32] < [mem_2_32]))))) {
+                //block 8d (level: 11, maxHeight: 0, backOrderId: 3, linearLevel: 13, refCount: 1)
+                0x8d call 0x0000022660613204
+                0x92 movaps xmm2, xmm0
+                0x95 jmp 0x000002265F94E2FF
+                ------------
+                [funcVar_1_32] = fun_63389732([var_7_32], [mem_2_32], ([reg_zmm2:Da] ^.4 [reg_zmm2:Da]), [mem_1_32])
+                <Symbol assignments>:
+                - [var_b_32] = [funcVar_1_32]
+                //goto to block 9f (backOrderId: 2; minLinLevel: 13, maxLinLevel: 14) [None]
+        } else {
+                //goto to block 9f (backOrderId: 2; minLinLevel: 14, maxLinLevel: 14) [None]
+        }
+        //goto is null (backOrderId: 2; minLinLevel: 12, maxLinLevel: 14)
+} else {
+        //block 97 (level: 10, maxHeight: 0, backOrderId: 3, linearLevel: 14, refCount: 1)
+        0x97 movss xmm2, dword ptr [0x000002266074FBEC]
+        ------------
+        [mem_3_32] = *(uint_32t*)([reg_rip:8] +.8 0xe018ed{14686445})
+        <Symbol assignments>:
+        - [var_b_32] = [mem_3_32]
+        //goto to block 9f (backOrderId: 2; minLinLevel: 14, maxLinLevel: 15) [None]
+}
+//block 9f (level: 12, maxHeight: 0, backOrderId: 2, linearLevel: 15, refCount: 3)
+0x9f mulss xmm2, [0x000002266074A1F8]
+0xa7 movaps xmm6, [rsp+0x20]
+0xac movaps xmm0, xmm2
+0xaf add rsp, 0x38
+0xb3 ret
+------------
+[mem_4_32] = *(uint_32t*)([reg_rip:8] +.8 0xdfbef1{14663409})
+[mem_5_32] = *(uint_32t*)(([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x20{32})
+[mem_6_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x4{4})
+[mem_7_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0x8{8})
+[mem_8_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) +.8 0xc{12})
+[mem_9_64] = *(uint_64t*)(([reg_rsp:8] +.8 (0x38{56} *.8 0xffffffffffffffff{-1})) +.8 0x38{56})
+return ([var_b_32] *.4f [mem_4_32])
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 16)
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 16, backOrderId: 7, linearLevel: 1, refCount: 0)
+0x0 sub rsp, 0x38
+0x4 movaps [rsp+0x20], xmm6
+0x9 movaps xmm6, xmm0
+0xc movaps xmm4, xmm1
+0xf mulss xmm1, xmm1
+0x13 mulss xmm6, xmm6
+0x17 mulss xmm4, xmm3
+0x1b movaps xmm5, xmm2
+0x1e addss xmm6, xmm1
+0x22 mulss xmm0, xmm5
+0x26 xorps xmm2, xmm2
+0x29 comiss xmm6, xmm2
+0x2c addss xmm0, xmm4
+0x30 jbe 0x000002265F94E29B
+------------
+if(((([reg_zmm0:Da] *.4f [reg_zmm0:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm1:Da])) > 0x0{0})) {
+        //block 32 (level: 2, maxHeight: 16, backOrderId: 7, linearLevel: 2, refCount: 1)
+        0x32 xorps xmm4, xmm4
+        0x35 sqrtss xmm4, xmm6
+        0x39 jmp 0x000002265F94E29E
+        ------------
+        [var_2_32] = FSQRT((([reg_zmm0:Da] *.4f [reg_zmm0:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm1:Da])))
+        //goto to block 3e (backOrderId: 6; minLinLevel: 2, maxLinLevel: 3) [None]
+} else {
+        //block 3b (level: 2, maxHeight: 16, backOrderId: 7, linearLevel: 3, refCount: 1)
+        0x3b movaps xmm4, xmm2
+        ------------
+        [var_2_32] = 0x0{0}
+        //goto to block 3e (backOrderId: 6; minLinLevel: 3, maxLinLevel: 4) [None]
+}
+//block 3e (level: 3, maxHeight: 15, backOrderId: 6, linearLevel: 4, refCount: 2)
+0x3e mulss xmm5, xmm5
+0x42 mulss xmm3, xmm3
+0x46 addss xmm5, xmm3
+0x4a comiss xmm5, xmm2
+0x4d jbe 0x000002265F94E2B8
+------------
+[var_b_32] = 0x0{0}
+if(((([reg_zmm2:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm3:Da] *.4f [reg_zmm3:Da])) > 0x0{0})) {
+        //block 4f (level: 4, maxHeight: 14, backOrderId: 6, linearLevel: 5, refCount: 1)
+        0x4f xorps xmm1, xmm1
+        0x52 sqrtss xmm1, xmm5
+        0x56 jmp 0x000002265F94E2BB
+        ------------
+        [var_1_32] = FSQRT((([reg_zmm2:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm3:Da] *.4f [reg_zmm3:Da])))
+        //goto to block 5b (backOrderId: 5; minLinLevel: 5, maxLinLevel: 6) [None]
+} else {
+        //block 58 (level: 4, maxHeight: 14, backOrderId: 6, linearLevel: 6, refCount: 1)
+        0x58 movaps xmm1, xmm2
+        ------------
+        [var_1_32] = 0x0{0}
+        //goto to block 5b (backOrderId: 5; minLinLevel: 6, maxLinLevel: 7) [None]
+}
+//block 5b (level: 5, maxHeight: 13, backOrderId: 5, linearLevel: 7, refCount: 2)
+0x5b movss xmm3, dword ptr [0x000002266074A21C]
+0x63 mulss xmm1, xmm4
+0x67 divss xmm0, xmm1
+0x6b comiss xmm0, xmm3
+0x6e jnb 0x000002265F94E2D3
+------------
+[mem_1_32] = *(uint_32t*)([reg_rip:8] +.8 0xdfbf59{14663513})
+[var_7_32] = ((([reg_zmm0:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm3:Da])) /.4f ([var_1_32] *.4f [var_2_32]))
+if((((([reg_zmm0:Da] *.4f [reg_zmm2:Da]) +.4f ([reg_zmm1:Da] *.4f [reg_zmm3:Da])) /.4f ([var_1_32] *.4f [var_2_32])) < [mem_1_32])) {
+        //block 70 (level: 6, maxHeight: 11, backOrderId: 5, linearLevel: 8, refCount: 1)
+        0x70 movaps xmm0, xmm3
+        ------------
+        [var_7_32] = [mem_1_32]
+        //goto to block 73 (backOrderId: 4; minLinLevel: 8, maxLinLevel: 9) [None]
+} else {
+        //goto to block 73 (backOrderId: 4; minLinLevel: 9, maxLinLevel: 9) [None]
+}
+//block 73 (level: 7, maxHeight: 10, backOrderId: 4, linearLevel: 9, refCount: 2)
+0x73 movss xmm1, dword ptr [0x00000226608098B0]
+0x7b comiss xmm0, xmm1
+0x7e jbe 0x000002265F94E2E3
+------------
+[mem_2_32] = *(uint_32t*)([reg_rip:8] +.8 0xebb5d5{15447509})
+if(([var_7_32] > [mem_2_32])) {
+        //block 80 (level: 8, maxHeight: 9, backOrderId: 4, linearLevel: 10, refCount: 1)
+        0x80 movaps xmm0, xmm1
+        ------------
+        [var_7_32] = [mem_2_32]
+        //goto to block 83 (backOrderId: 3; minLinLevel: 10, maxLinLevel: 11) [None]
+} else {
+        //goto to block 83 (backOrderId: 3; minLinLevel: 11, maxLinLevel: 11) [None]
+}
+//block 83 (level: 9, maxHeight: 8, backOrderId: 3, linearLevel: 11, refCount: 2)
+0x83 comiss xmm0, xmm3
+0x86 jbe 0x000002265F94E2F7
+------------
+if(([var_7_32] > [mem_1_32])) {
+        //block 88 (level: 10, maxHeight: 8, backOrderId: 3, linearLevel: 12, refCount: 1)
+        0x88 comiss xmm0, xmm1
+        0x8b jnb 0x000002265F94E2FF
+        ------------
+        if(([var_7_32] < [mem_2_32])) {
+                //block 8d (level: 11, maxHeight: 8, backOrderId: 3, linearLevel: 13, refCount: 1)
+                0x8d call 0x0000022660613204
+                0x92 movaps xmm2, xmm0
+                0x95 jmp 0x000002265F94E2FF
+                ------------
+                [funcVar_1_32] = fun_63389732([var_7_32], [mem_2_32], 0x0{0}, [mem_1_32])
+                [var_b_32] = [funcVar_1_32]
+                //goto to block 9f (backOrderId: 2; minLinLevel: 13, maxLinLevel: 14) [None]
+        } else {
+                //goto to block 9f (backOrderId: 2; minLinLevel: 14, maxLinLevel: 14) [None]
+        }
+        //goto is null (backOrderId: 2; minLinLevel: 12, maxLinLevel: 14)
+} else {
+        //block 97 (level: 10, maxHeight: 8, backOrderId: 3, linearLevel: 14, refCount: 1)
+        0x97 movss xmm2, dword ptr [0x000002266074FBEC]
+        ------------
+        [mem_3_32] = *(uint_32t*)([reg_rip:8] +.8 0xe018ed{14686445})
+        [var_b_32] = [mem_3_32]
+        //goto to block 9f (backOrderId: 2; minLinLevel: 14, maxLinLevel: 15) [None]
+}
+//block 9f (level: 12, maxHeight: 6, backOrderId: 2, linearLevel: 15, refCount: 3)
+0x9f mulss xmm2, [0x000002266074A1F8]
+0xa7 movaps xmm6, [rsp+0x20]
+0xac movaps xmm0, xmm2
+0xaf add rsp, 0x38
+0xb3 ret
+------------
+[mem_4_32] = *(uint_32t*)([reg_rip:8] +.8 0xdfbef1{14663409})
+[mem_5_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe8{-24})
+[mem_6_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffec{-20})
+[mem_7_32] = *(uint_32t*)([reg_rsp:8] +.8 0xfffffffffffffff0{-16})
+[mem_8_32] = *(uint_32t*)([reg_rsp:8] +.8 0xfffffffffffffff4{-12})
+[mem_9_64] = *(uint_64t*)[reg_rsp:8]
+return ([var_b_32] *.4f [mem_4_32])
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 16)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SAMPLE 300
+********************* BEFORE OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 0, backOrderId: 5, linearLevel: 1, refCount: 0)
+0x0 mov rax, rsp
+0x3 mov [rax+0x08], rbx
+0x7 mov [rax+0x10], rsi
+0xb mov [rax+0x18], rdi
+0xf mov [rax+0x20], r14
+0x13 push rbp
+0x14 mov rbp, rsp
+0x17 sub rsp, 0x50
+0x1b movaps [rax-0x18], xmm6
+0x1f lea r9, [0x000002A458DC9DE0]
+0x26 mov rsi, r8
+0x29 movaps xmm6, xmm3
+0x2c mov r14, rdx
+0x2f mov edi, ecx
+0x31 call 0x000002A457F3B094
+0x36 mov r9, rax
+0x39 test rax, rax
+0x3c jz 0x000002A457F2E3B8
+------------
+*(uint_64t*)([reg_rsp:8] +.8 0x8{8}) = [reg_rbx:8]
+*(uint_64t*)([reg_rsp:8] +.8 0x10{16}) = [reg_rsi:8]
+*(uint_64t*)([reg_rsp:8] +.8 0x18{24}) = [reg_rdi:8]
+*(uint_64t*)([reg_rsp:8] +.8 0x20{32}) = [reg_r14:8]
+*(uint_64t*)([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) = [reg_rbp:8]
+*(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) = [reg_zmm6:Da]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) +.8 0x4{4}) = [reg_zmm6:Db]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) +.8 0x8{8}) = [reg_zmm6:Dc]
+*(uint_32t*)(([reg_rsp:8] +.8 0xffffffffffffffe8{-24}) +.8 0xc{12}) = [reg_zmm6:Dd]
+[funcVar_1_32] = fun_50052596([reg_rcx:4], ([reg_rdx:8] &.0 0xffffffff{-1}), ([reg_r8:8] &.0 0xffffffff{-1}), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+<Symbol assignments>:
+- [var_5_32] = (([reg_rdx:8] &.0 0xffffff00{-256}) |.0 ([var_5_32] &.0 0xff{255}))
+- [var_6_32] = (([reg_r8:8] &.0 0xffffff00{-256}) |.0 ([var_6_32] &.0 0xff{255}))
+if(!((([funcVar_1_32] &.8 [funcVar_1_32]) == 0x0{0}))) {
+        //block 3e (level: 2, maxHeight: 0, backOrderId: 6, linearLevel: 2, refCount: 1)
+        0x3e mov rax, [rax+0x10]
+        0x42 test rax, rax
+        0x45 jz 0x000002A457F2E375
+        ------------
+        [mem_1_64] = *(uint_64t*)([funcVar_1_32] +.8 0x10{16})
+        if(!((([mem_1_64] &.8 [mem_1_64]) == 0x0{0}))) {
+                //block 47 (level: 3, maxHeight: 0, backOrderId: 6, linearLevel: 3, refCount: 1)
+                0x47 mov cl, [rax+0x214]
+                0x4d shr cl, 0x06
+                0x50 and cl, 0x01
+                0x53 jmp 0x000002A457F2E377
+                ------------
+                [mem_2_8] = *(uint_8t*)([mem_1_64] +.8 0x214{532})
+                <Symbol assignments>:
+                - [var_1_8] = (([mem_2_8] >>.1 (0x6{6} &.8 0x3f{63})) &.1 0x1{1})
+                //goto to block 57 (backOrderId: 5; minLinLevel: 3, maxLinLevel: 4) [None]
+        } else {
+                //block 55 (level: 3, maxHeight: 0, backOrderId: 6, linearLevel: 4, refCount: 1)
+                0x55 xor cl, cl
+                ------------
+                <Symbol assignments>:
+                - [var_1_8] = (([reg_rcx:4] &.0 0xff{255}) ^.1 ([reg_rcx:4] &.0 0xff{255}))
+                //goto to block 57 (backOrderId: 5; minLinLevel: 4, maxLinLevel: 5) [None]
+        }
+        //block 57 (level: 4, maxHeight: 0, backOrderId: 5, linearLevel: 5, refCount: 2)
+        0x57 test cl, cl
+        0x59 jnz 0x000002A457F2E3B8
+        ------------
+        if(!(!((([var_1_8] &.1 [var_1_8]) == 0x0{0})))) {
+                //block 5b (level: 5, maxHeight: 0, backOrderId: 7, linearLevel: 6, refCount: 1)
+                0x5b mov eax, [0x000002A4592EEF4C]
+                0x61 test al, 0x01
+                0x63 jnz 0x000002A457F2E39B
+                ------------
+                [mem_3_32] = *(uint_32t*)([reg_rip:8] +.8 0x13c0bcb{20712395})
+                if(!(!(((([mem_3_32] &.0 0xff{255}) &.1 0x1{1}) == 0x0{0})))) {
+                        //block 65 (level: 6, maxHeight: 0, backOrderId: 7, linearLevel: 7, refCount: 1)
+                        0x65 or eax, 0x01
+                        0x68 mov [0x000002A4592EEF4C], eax
+                        0x6e mov eax, 0x7E68C088
+                        0x73 mov [0x000002A4592EEF48], eax
+                        0x79 jmp 0x000002A457F2E3A1
+                        ------------
+                        *(uint_32t*)([reg_rip:8] +.8 0x13c0bbe{20712382}) = ([mem_3_32] |.4 0x1{1})
+                        *(uint_32t*)([reg_rip:8] +.8 0x13c0baf{20712367}) = 0x7e68c088{2120794248}
+                        <Symbol assignments>:
+                        - [var_8_32] = 0x7e68c088{2120794248}
+                        //goto to block 81 (backOrderId: 6; minLinLevel: 7, maxLinLevel: 8) [None]
+                } else {
+                        //block 7b (level: 6, maxHeight: 0, backOrderId: 7, linearLevel: 8, refCount: 1)
+                        0x7b mov eax, [0x000002A4592EEF48]
+                        ------------
+                        [mem_4_32] = *(uint_32t*)([reg_rip:8] +.8 0x13c0ba7{20712359})
+                        <Symbol assignments>:
+                        - [var_8_32] = [mem_4_32]
+                        //goto to block 81 (backOrderId: 6; minLinLevel: 8, maxLinLevel: 9) [None]
+                }
+                //block 81 (level: 7, maxHeight: 0, backOrderId: 6, linearLevel: 9, refCount: 2)
+                0x81 lea rdx, [rbp-0x20]
+                0x85 movaps xmm2, xmm6
+                0x88 mov rcx, r9
+                0x8b mov [rbp-0x20], eax
+                0x8e call 0x000002A457D47E9C
+                0x93 jmp 0x000002A457F2E480
+                ------------
+                *(uint_32t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe0{-32}) = [var_8_32]
+                [funcVar_2_32] = fun_48008188(([funcVar_1_32] &.0 0xffffffff{-1}), ((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe0{-32}) &.0 0xffffffff{-1}), ([reg_r8:8] &.0 0xffffffff{-1}), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+                <Symbol assignments>:
+                - [var_8_32] = [funcVar_2_32]
+                //goto to block 160 (backOrderId: 4; minLinLevel: 6, maxLinLevel: 10) [!!!Normal!!!]
+        } else {
+                //goto to block 98 (backOrderId: 4; minLinLevel: 10, maxLinLevel: 10) [None]
+        }
+        //goto is null (backOrderId: 4; minLinLevel: 2, maxLinLevel: 10)
+} else {
+        //goto to block 98 (backOrderId: 4; minLinLevel: 10, maxLinLevel: 10) [None]
+}
+//block 98 (level: 5, maxHeight: 0, backOrderId: 4, linearLevel: 10, refCount: 2)
+0x98 mov r8b, 0x01
+0x9b mov r9d, 0x07
+0xa1 mov ecx, edi
+0xa3 mov dl, r8b
+0xa6 call 0x000002A457F3A528
+0xab mov rbx, rax
+0xae test rax, rax
+0xb1 jz 0x000002A457F2E418
+------------
+[funcVar_3_32] = fun_50049672([reg_rcx:4], (([reg_rdx:8] &.0 0xffffff00{-256}) |.0 0x1{1}), (([reg_r8:8] &.0 0xffffff00{-256}) |.0 0x1{1}), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+<Symbol assignments>:
+- [var_4_64] = [funcVar_3_32]
+- [var_6_32] = (([var_6_32] &.0 0xffffff00{-256}) |.0 0x1{1})
+if(!((([funcVar_3_32] &.8 [funcVar_3_32]) == 0x0{0}))) {
+        //block b3 (level: 6, maxHeight: 0, backOrderId: 4, linearLevel: 11, refCount: 1)
+        0xb3 mov rdx, rsi
+        0xb6 xor ecx, ecx
+        0xb8 call 0x000002A45870FB24
+        0xbd mov rdx, r14
+        0xc0 xor ecx, ecx
+        0xc2 mov [rbp-0x20], eax
+        0xc5 call 0x000002A45870FB24
+        0xca lea r9, [rbp-0x14]
+        0xce mov [rbp-0x1C], eax
+        0xd1 lea rax, [rbp-0x18]
+        0xd5 lea r8, [rbp-0x20]
+        0xd9 lea rdx, [rbp-0x1C]
+        0xdd mov rcx, rbx
+        0xe0 mov [rsp+0x20], rax
+        0xe5 call 0x000002A457F3A46C
+        0xea test al, al
+        0xec jz 0x000002A457F2E418
+        ------------
+        [funcVar_4_32] = fun_58263684(([reg_rcx:4] ^.4 [reg_rcx:4]), ([reg_r8:8] &.0 0xffffffff{-1}), (([reg_r8:8] &.0 0xffffff00{-256}) |.0 0x1{1}), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+        *(uint_32t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe0{-32}) = [funcVar_4_32]        [funcVar_5_32] = fun_58263684((([reg_rcx:4] ^.4 [reg_rcx:4]) ^.4 ([reg_rcx:4] ^.4 [reg_rcx:4])), ([reg_rdx:8] &.0 0xffffffff{-1}), (([reg_r8:8] &.0 0xffffff00{-256}) |.0 0x1{1}), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+        *(uint_32t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe4{-28}) = [funcVar_5_32]        *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) = (([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe8{-24})
+        [funcVar_6_32] = fun_50049484(([funcVar_3_32] &.0 0xffffffff{-1}), ((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe4{-28}) &.0 0xffffffff{-1}), ((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe0{-32}) &.0 0xffffffff{-1}), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+        <Symbol assignments>:
+        - [var_5_32] = ((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe4{-28}) &.0 0xffffffff{-1})
+        - [var_6_32] = ((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe0{-32}) &.0 0xffffffff{-1})
+        if(!(((([funcVar_6_32] &.0 0xff{255}) &.1 ([funcVar_6_32] &.0 0xff{255})) == 0x0{0}))) {
+                //block ee (level: 7, maxHeight: 0, backOrderId: 6, linearLevel: 12, refCount: 1)
+                0xee mov r9b, [rbp-0x18]
+                0xf2 mov r8d, [rbp-0x14]
+                0xf6 jmp 0x000002A457F2E475
+                ------------
+                [mem_5_8] = *(uint_8t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe8{-24})
+                [mem_6_32] = *(uint_32t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffec{-20})
+                <Symbol assignments>:
+                - [var_6_32] = [mem_6_32]
+                //block 155 (level: 10, maxHeight: 0, backOrderId: 5, linearLevel: 13, refCount: 2)
+                0x155 movaps xmm1, xmm6
+                0x158 mov rcx, rbx
+                0x15b call 0x000002A457814DF4
+                ------------
+                [funcVar_11_32] = fun_42556244(([var_4_64] &.0 0xffffffff{-1}), [var_5_32], [var_6_32], ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+                <Symbol assignments>:
+                - [var_8_32] = [funcVar_11_32]
+                //goto to block 160 (backOrderId: 3; minLinLevel: 12, maxLinLevel: 14) [!!!Normal!!!]
+        } else {
+                //goto to block f8 (backOrderId: 3; minLinLevel: 14, maxLinLevel: 14) [None]
+        }
+        //goto is null (backOrderId: 3; minLinLevel: 11, maxLinLevel: 14)
+} else {
+        //goto to block f8 (backOrderId: 3; minLinLevel: 14, maxLinLevel: 14) [None]
+}
+//block f8 (level: 7, maxHeight: 0, backOrderId: 3, linearLevel: 14, refCount: 2)
+0xf8 mov r9d, 0x07
+0xfe xor r8d, r8d
+0x101 mov dl, 0x01
+0x103 mov ecx, edi
+0x105 call 0x000002A457F3A528
+0x10a mov rbx, rax
+0x10d test rax, rax
+0x110 jz 0x000002A457F2E480
+------------
+[funcVar_7_32] = fun_50049672([reg_rcx:4], (([var_5_32] <<.0 0x8{8}) |.0 0x1{1}), ([var_6_32] ^.4 [var_6_32]), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+<Symbol assignments>:
+- [var_8_32] = [funcVar_7_32]
+- [var_4_64] = [funcVar_7_32]
+if(!((([funcVar_7_32] &.8 [funcVar_7_32]) == 0x0{0}))) {
+        //block 112 (level: 8, maxHeight: 0, backOrderId: 3, linearLevel: 15, refCount: 1)
+        0x112 mov rdx, rsi
+        0x115 xor ecx, ecx
+        0x117 call 0x000002A45870FB24
+        0x11c mov rdx, r14
+        0x11f xor ecx, ecx
+        0x121 mov [rbp-0x14], eax
+        0x124 call 0x000002A45870FB24
+        0x129 lea r9, [rbp-0x20]
+        0x12d mov [rbp-0x18], eax
+        0x130 lea rax, [rbp-0x1C]
+        0x134 lea r8, [rbp-0x14]
+        0x138 lea rdx, [rbp-0x18]
+        0x13c mov rcx, rbx
+        0x13f mov [rsp+0x20], rax
+        0x144 call 0x000002A457F3A46C
+        0x149 test al, al
+        0x14b jz 0x000002A457F2E480
+        ------------
+        [funcVar_8_32] = fun_58263684(([reg_rcx:4] ^.4 [reg_rcx:4]), ([reg_r8:8] &.0 0xffffffff{-1}), ([var_6_32] ^.4 [var_6_32]), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+        *(uint_32t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffec{-20}) = [funcVar_8_32]        [funcVar_9_32] = fun_58263684((([reg_rcx:4] ^.4 [reg_rcx:4]) ^.4 ([reg_rcx:4] ^.4 [reg_rcx:4])), ([reg_rdx:8] &.0 0xffffffff{-1}), ([var_6_32] ^.4 [var_6_32]), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+        *(uint_32t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe8{-24}) = [funcVar_9_32]        *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x20{32}) = (([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe4{-28})
+        [funcVar_10_32] = fun_50049484(([funcVar_7_32] &.0 0xffffffff{-1}), ((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe8{-24}) &.0 0xffffffff{-1}), ((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffec{-20}) &.0 0xffffffff{-1}), ((([reg_zmm3:Db] &.0 0xffffff{16777215}) <<.0 0x20{32}) |.0 [reg_zmm3:Da]))
+        <Symbol assignments>:
+        - [var_8_32] = [funcVar_10_32]
+        - [var_5_32] = ((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe8{-24}) &.0 0xffffffff{-1})
+        if(!(((([funcVar_10_32] &.0 0xff{255}) &.1 ([funcVar_10_32] &.0 0xff{255})) == 0x0{0}))) {
+                //block 14d (level: 9, maxHeight: 0, backOrderId: 4, linearLevel: 16, refCount: 1)
+                0x14d mov r9b, [rbp-0x1C]
+                0x151 mov r8d, [rbp-0x20]
+                ------------
+                [mem_7_8] = *(uint_8t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe4{-28})
+                [mem_8_32] = *(uint_32t*)(([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 0xffffffffffffffe0{-32})
+                <Symbol assignments>:
+                - [var_6_32] = [mem_8_32]
+                //goto to block 155 (backOrderId: 2; minLinLevel: 16, maxLinLevel: 17) [!!!Normal!!!]
+        } else {
+                //goto to block 160 (backOrderId: 2; minLinLevel: 17, maxLinLevel: 17) [None]
+        }
+        //goto is null (backOrderId: 2; minLinLevel: 15, maxLinLevel: 17)
+} else {
+        //goto to block 160 (backOrderId: 2; minLinLevel: 17, maxLinLevel: 17) [None]
+}
+//block 160 (level: 11, maxHeight: 0, backOrderId: 2, linearLevel: 17, refCount: 4)
+0x160 mov rbx, [rsp+0x60]
+0x165 mov rsi, [rsp+0x68]
+0x16a mov rdi, [rsp+0x70]
+0x16f movaps xmm6, [rsp+0x40]
+0x174 mov r14, [rsp+0x78]
+0x179 add rsp, 0x50
+0x17d pop rbp
+0x17e ret
+------------
+[mem_9_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x60{96})
+[mem_a_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x68{104})
+[mem_b_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x70{112})
+[mem_c_32] = *(uint_32t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64})
+[mem_d_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0x4{4})
+[mem_e_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0x8{8})
+[mem_f_32] = *(uint_32t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x40{64}) +.8 0xc{12})
+[mem_10_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x78{120})
+[mem_11_64] = *(uint_64t*)((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x50{80})
+[mem_12_64] = *(uint_64t*)(((([reg_rsp:8] +.8 (0x8{8} *.8 0xffffffffffffffff{-1})) +.8 (0x50{80} *.8 0xffffffffffffffff{-1})) +.8 0x50{80}) +.8 0x8{8})
+return [var_8_32]
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 18)
+
+
+
+********************* AFTER OPTIMIZATION: *********************
+
+//block 0 (level: 1, maxHeight: 43, backOrderId: 5, linearLevel: 1, refCount: 0)
+0x0 mov rax, rsp
+0x3 mov [rax+0x08], rbx
+0x7 mov [rax+0x10], rsi
+0xb mov [rax+0x18], rdi
+0xf mov [rax+0x20], r14
+0x13 push rbp
+0x14 mov rbp, rsp
+0x17 sub rsp, 0x50
+0x1b movaps [rax-0x18], xmm6
+0x1f lea r9, [0x000002A458DC9DE0]
+0x26 mov rsi, r8
+0x29 movaps xmm6, xmm3
+0x2c mov r14, rdx
+0x2f mov edi, ecx
+0x31 call 0x000002A457F3B094
+0x36 mov r9, rax
+0x39 test rax, rax
+0x3c jz 0x000002A457F2E3B8
+------------
+[funcVar_1_32] = fun_50052596([reg_rcx:4], ([reg_rdx:8] &.4 0xffffffff{-1}), ([reg_r8:8] &.4 0xffffffff{-1}), ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+[var_5_32] = (([reg_rdx:8] &.3 0xffffff00{-256}) |.4 ([var_5_32] &.1 0xff{255}))
+[var_6_32] = (([reg_r8:8] &.3 0xffffff00{-256}) |.4 ([var_6_32] &.1 0xff{255}))
+if(([funcVar_1_32] != 0x0{0})) {
+        //block 3e (level: 2, maxHeight: 40, backOrderId: 6, linearLevel: 2, refCount: 1)
+        0x3e mov rax, [rax+0x10]
+        0x42 test rax, rax
+        0x45 jz 0x000002A457F2E375
+        ------------
+        [mem_1_64] = *(uint_64t*)([funcVar_1_32] +.8 0x10{16})
+        if(([mem_1_64] != 0x0{0})) {
+                //block 47 (level: 3, maxHeight: 39, backOrderId: 6, linearLevel: 3, refCount: 1)
+                0x47 mov cl, [rax+0x214]
+                0x4d shr cl, 0x06
+                0x50 and cl, 0x01
+                0x53 jmp 0x000002A457F2E377
+                ------------
+                [mem_2_8] = *(uint_8t*)([mem_1_64] +.8 0x214{532})
+                [var_1_8] = (([mem_2_8] >>.1 0x6{6}) &.1 0x1{1})
+                //goto to block 57 (backOrderId: 5; minLinLevel: 3, maxLinLevel: 4) [None]
+        } else {
+                //block 55 (level: 3, maxHeight: 38, backOrderId: 6, linearLevel: 4, refCount: 1)
+                0x55 xor cl, cl
+                ------------
+                [var_1_8] = 0x0{0}
+                //goto to block 57 (backOrderId: 5; minLinLevel: 4, maxLinLevel: 5) [None]
+        }
+        //block 57 (level: 4, maxHeight: 37, backOrderId: 5, linearLevel: 5, refCount: 2)
+        0x57 test cl, cl
+        0x59 jnz 0x000002A457F2E3B8
+        ------------
+        if(([var_1_8] == 0x0{0})) {
+                //block 5b (level: 5, maxHeight: 17, backOrderId: 7, linearLevel: 6, refCount: 1)
+                0x5b mov eax, [0x000002A4592EEF4C]
+                0x61 test al, 0x01
+                0x63 jnz 0x000002A457F2E39B
+                ------------
+                [mem_3_32] = *(uint_32t*)([reg_rip:8] +.8 0x13c0bcb{20712395})
+                if((([mem_3_32] &.1 0x1{1}) == 0x0{0})) {
+                        //block 65 (level: 6, maxHeight: 16, backOrderId: 7, linearLevel: 7, refCount: 1)
+                        0x65 or eax, 0x01
+                        0x68 mov [0x000002A4592EEF4C], eax
+                        0x6e mov eax, 0x7E68C088
+                        0x73 mov [0x000002A4592EEF48], eax
+                        0x79 jmp 0x000002A457F2E3A1
+                        ------------
+                        *(uint_32t*)([reg_rip:8] +.8 0x13c0bbe{20712382}) = ([mem_3_32] |.4 0x1{1})
+                        *(uint_32t*)([reg_rip:8] +.8 0x13c0baf{20712367}) = 0x7e68c088{2120794248}
+                        [var_8_32] = 0x7e68c088{2120794248}
+                        //goto to block 81 (backOrderId: 6; minLinLevel: 7, maxLinLevel: 8) [None]
+                } else {
+                        //block 7b (level: 6, maxHeight: 15, backOrderId: 7, linearLevel: 8, refCount: 1)
+                        0x7b mov eax, [0x000002A4592EEF48]
+                        ------------
+                        [mem_4_32] = *(uint_32t*)([reg_rip:8] +.8 0x13c0ba7{20712359})
+                        [var_8_32] = [mem_4_32]
+                        //goto to block 81 (backOrderId: 6; minLinLevel: 8, maxLinLevel: 9) [None]
+                }
+                //block 81 (level: 7, maxHeight: 13, backOrderId: 6, linearLevel: 9, refCount: 2)
+                0x81 lea rdx, [rbp-0x20]
+                0x85 movaps xmm2, xmm6
+                0x88 mov rcx, r9
+                0x8b mov [rbp-0x20], eax
+                0x8e call 0x000002A457D47E9C
+                0x93 jmp 0x000002A457F2E480
+                ------------
+                *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) = [var_8_32]
+                [funcVar_2_32] = fun_48008188([funcVar_1_32], (([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) &.4 0xffffffff{-1}), ([reg_r8:8] &.4 0xffffffff{-1}), ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+                [var_8_32] = [funcVar_2_32]
+                //goto to block 160 (backOrderId: 4; minLinLevel: 6, maxLinLevel: 10) [!!!Normal!!!]
+        } else {
+                //goto to block 98 (backOrderId: 4; minLinLevel: 10, maxLinLevel: 10) [None]
+        }
+        //goto is null (backOrderId: 4; minLinLevel: 2, maxLinLevel: 10)
+} else {
+        //goto to block 98 (backOrderId: 4; minLinLevel: 10, maxLinLevel: 10) [None]
+}
+//block 98 (level: 5, maxHeight: 37, backOrderId: 4, linearLevel: 10, refCount: 2)
+0x98 mov r8b, 0x01
+0x9b mov r9d, 0x07
+0xa1 mov ecx, edi
+0xa3 mov dl, r8b
+0xa6 call 0x000002A457F3A528
+0xab mov rbx, rax
+0xae test rax, rax
+0xb1 jz 0x000002A457F2E418
+------------
+[funcVar_3_32] = fun_50049672([reg_rcx:4], 0x1{1}, 0x1{1}, ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+[var_4_64] = [funcVar_3_32]
+[var_6_32] = 0x1{1}
+if(([funcVar_3_32] != 0x0{0})) {
+        //block b3 (level: 6, maxHeight: 34, backOrderId: 4, linearLevel: 11, refCount: 1)
+        0xb3 mov rdx, rsi
+        0xb6 xor ecx, ecx
+        0xb8 call 0x000002A45870FB24
+        0xbd mov rdx, r14
+        0xc0 xor ecx, ecx
+        0xc2 mov [rbp-0x20], eax
+        0xc5 call 0x000002A45870FB24
+        0xca lea r9, [rbp-0x14]
+        0xce mov [rbp-0x1C], eax
+        0xd1 lea rax, [rbp-0x18]
+        0xd5 lea r8, [rbp-0x20]
+        0xd9 lea rdx, [rbp-0x1C]
+        0xdd mov rcx, rbx
+        0xe0 mov [rsp+0x20], rax
+        0xe5 call 0x000002A457F3A46C
+        0xea test al, al
+        0xec jz 0x000002A457F2E418
+        ------------
+        [funcVar_4_32] = fun_58263684(0x0{0}, ([reg_r8:8] &.4 0xffffffff{-1}), 0x1{1}, ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+        *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) = [funcVar_4_32]
+        [funcVar_5_32] = fun_58263684(0x0{0}, ([reg_rdx:8] &.4 0xffffffff{-1}), 0x1{1}, ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+        *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffdc{-36}) = [funcVar_5_32]
+        *(uint_64t*)([reg_rsp:8] +.8 0xffffffffffffffc8{-56}) = ([reg_rsp:8] +.8 0xffffffffffffffe0{-32})
+        [funcVar_6_32] = fun_50049484([funcVar_3_32], (([reg_rsp:8] +.8 0xffffffffffffffdc{-36}) &.4 0xffffffff{-1}), (([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) &.4 0xffffffff{-1}), ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+        [var_5_32] = (([reg_rsp:8] +.8 0xffffffffffffffdc{-36}) &.4 0xffffffff{-1})
+        [var_6_32] = (([reg_rsp:8] +.8 0xffffffffffffffd8{-40}) &.4 0xffffffff{-1})
+        if((([funcVar_6_32] &.1 0xff{255}) != 0x0{0})) {
+                //block ee (level: 7, maxHeight: 15, backOrderId: 4, linearLevel: 12, refCount: 1)
+                0xee mov r9b, [rbp-0x18]
+                0xf2 mov r8d, [rbp-0x14]
+                0xf6 jmp 0x000002A457F2E475
+                ------------
+                [mem_5_8] = *(uint_8t*)([reg_rsp:8] +.8 0xffffffffffffffe0{-32})
+                [mem_6_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe4{-28})
+                [var_6_32] = [mem_6_32]
+                //goto to block 155 (backOrderId: 3; minLinLevel: 12, maxLinLevel: 13) [None]
+        } else {
+                //goto to block f8 (backOrderId: 3; minLinLevel: 13, maxLinLevel: 13) [None]
+        }
+        //goto is null (backOrderId: 3; minLinLevel: 11, maxLinLevel: 13)
+} else {
+        //goto to block f8 (backOrderId: 3; minLinLevel: 13, maxLinLevel: 13) [None]
+}
+//block f8 (level: 7, maxHeight: 26, backOrderId: 3, linearLevel: 13, refCount: 2)
+0xf8 mov r9d, 0x07
+0xfe xor r8d, r8d
+0x101 mov dl, 0x01
+0x103 mov ecx, edi
+0x105 call 0x000002A457F3A528
+0x10a mov rbx, rax
+0x10d test rax, rax
+0x110 jz 0x000002A457F2E480
+------------
+[funcVar_7_32] = fun_50049672([reg_rcx:4], 0x1{1}, 0x0{0}, ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+[var_8_32] = [funcVar_7_32]
+[var_4_64] = [funcVar_7_32]
+if(([funcVar_7_32] != 0x0{0})) {
+        //block 112 (level: 8, maxHeight: 23, backOrderId: 5, linearLevel: 14, refCount: 1)
+        0x112 mov rdx, rsi
+        0x115 xor ecx, ecx
+        0x117 call 0x000002A45870FB24
+        0x11c mov rdx, r14
+        0x11f xor ecx, ecx
+        0x121 mov [rbp-0x14], eax
+        0x124 call 0x000002A45870FB24
+        0x129 lea r9, [rbp-0x20]
+        0x12d mov [rbp-0x18], eax
+        0x130 lea rax, [rbp-0x1C]
+        0x134 lea r8, [rbp-0x14]
+        0x138 lea rdx, [rbp-0x18]
+        0x13c mov rcx, rbx
+        0x13f mov [rsp+0x20], rax
+        0x144 call 0x000002A457F3A46C
+        0x149 test al, al
+        0x14b jz 0x000002A457F2E480
+        ------------
+        [funcVar_8_32] = fun_58263684(0x0{0}, ([reg_r8:8] &.4 0xffffffff{-1}), 0x0{0}, ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+        *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe4{-28}) = [funcVar_8_32]
+        [funcVar_9_32] = fun_58263684(0x0{0}, ([reg_rdx:8] &.4 0xffffffff{-1}), 0x0{0}, ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+        *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe0{-32}) = [funcVar_9_32]
+        *(uint_64t*)([reg_rsp:8] +.8 0xffffffffffffffc8{-56}) = ([reg_rsp:8] +.8 0xffffffffffffffdc{-36})
+        [funcVar_10_32] = fun_50049484([funcVar_7_32], (([reg_rsp:8] +.8 0xffffffffffffffe0{-32}) &.4 0xffffffff{-1}), (([reg_rsp:8] +.8 0xffffffffffffffe4{-28}) &.4 0xffffffff{-1}), ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+        [var_8_32] = [funcVar_10_32]
+        [var_5_32] = (([reg_rsp:8] +.8 0xffffffffffffffe0{-32}) &.4 0xffffffff{-1})
+        if((([funcVar_10_32] &.1 0xff{255}) == 0x0{0})) {
+                //goto to block 160 (backOrderId: 4; minLinLevel: 15, maxLinLevel: 15) [!!!Normal!!!]
+        } else {
+                //goto to block 14d (backOrderId: 4; minLinLevel: 15, maxLinLevel: 15) [None]
+        }
+        //block 14d (level: 9, maxHeight: 15, backOrderId: 4, linearLevel: 15, refCount: 1)
+        0x14d mov r9b, [rbp-0x1C]
+        0x151 mov r8d, [rbp-0x20]
+        ------------
+        [mem_7_8] = *(uint_8t*)([reg_rsp:8] +.8 0xffffffffffffffdc{-36})
+        [mem_8_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffd8{-40})
+        [var_6_32] = [mem_8_32]
+        //block 155 (level: 10, maxHeight: 12, backOrderId: 3, linearLevel: 16, refCount: 2)
+        0x155 movaps xmm1, xmm6
+        0x158 mov rcx, rbx
+        0x15b call 0x000002A457814DF4
+        ------------
+        [funcVar_11_32] = fun_42556244(([var_4_64] &.4 0xffffffff{-1}), [var_5_32], [var_6_32], ((([reg_zmm3:Db] &.3 0xffffff{16777215}) <<.3 0x20{32}) |.7 [reg_zmm3:Da]))
+        [var_8_32] = [funcVar_11_32]
+        //goto to block 160 (backOrderId: 2; minLinLevel: 14, maxLinLevel: 17) [None]
+} else {
+        //goto to block 160 (backOrderId: 2; minLinLevel: 17, maxLinLevel: 17) [None]
+}
+//block 160 (level: 11, maxHeight: 10, backOrderId: 2, linearLevel: 17, refCount: 4)
+0x160 mov rbx, [rsp+0x60]
+0x165 mov rsi, [rsp+0x68]
+0x16a mov rdi, [rsp+0x70]
+0x16f movaps xmm6, [rsp+0x40]
+0x174 mov r14, [rsp+0x78]
+0x179 add rsp, 0x50
+0x17d pop rbp
+0x17e ret
+------------
+[mem_9_64] = *(uint_64t*)([reg_rsp:8] +.8 0x8{8})
+[mem_a_64] = *(uint_64t*)([reg_rsp:8] +.8 0x10{16})
+[mem_b_64] = *(uint_64t*)([reg_rsp:8] +.8 0x18{24})
+[mem_c_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffe8{-24})
+[mem_d_32] = *(uint_32t*)([reg_rsp:8] +.8 0xffffffffffffffec{-20})
+[mem_e_32] = *(uint_32t*)([reg_rsp:8] +.8 0xfffffffffffffff0{-16})
+[mem_f_32] = *(uint_32t*)([reg_rsp:8] +.8 0xfffffffffffffff4{-12})
+[mem_10_64] = *(uint_64t*)([reg_rsp:8] +.8 0x20{32})
+[mem_11_64] = *(uint_64t*)([reg_rsp:8] +.8 0xfffffffffffffff8{-8})
+[mem_12_64] = *(uint_64t*)[reg_rsp:8]
+return [var_8_32]
+//goto is null (backOrderId: 0; minLinLevel: 1, maxLinLevel: 18)

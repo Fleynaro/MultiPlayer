@@ -58,7 +58,7 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 	}
 }
 
-RegisterParts ExecutionBlockContext::getRegisterParts(PCode::RegisterId registerId, BitMask& needReadMask, bool changedRegistersOnly) {
+RegisterParts ExecutionBlockContext::getRegisterParts(PCode::RegisterId registerId, ExtBitMask& needReadMask, bool changedRegistersOnly) {
 	RegisterParts regParts;
 	using SameRegInfo = std::pair<PCode::Register, ExprTree::Node*>;
 	std::list<SameRegInfo> sameRegisters;

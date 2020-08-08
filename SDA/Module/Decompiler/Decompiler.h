@@ -137,7 +137,7 @@ namespace CE::Decompiler
 		}
 
 		struct BlockRegSymbol {
-			BitMask canReadMask;
+			ExtBitMask canReadMask;
 			RegisterParts regParts;
 			int symbolId = 0;
 			int prevSymbolId = 0;
@@ -152,7 +152,7 @@ namespace CE::Decompiler
 		std::map<PCode::RegisterId, RegSymbol> m_registersToSymbol;
 		RegSymbol* m_curRegSymbol = nullptr;
 
-		void requestRegisterParts(PrimaryTree::Block* block, const PCode::Register& reg, BitMask& mask, RegisterParts& outRegParts, bool isFound = true) {
+		void requestRegisterParts(PrimaryTree::Block* block, const PCode::Register& reg, ExtBitMask& mask, RegisterParts& outRegParts, bool isFound = true) {
 			if (isFound) {
 				auto it = m_decompiledBlocks.find(block);
 				if (it != m_decompiledBlocks.end()) {
@@ -176,8 +176,8 @@ namespace CE::Decompiler
 			}
 
 
-			BitMask needReadMask;
-			BitMask hasReadMask;
+			ExtBitMask needReadMask;
+			ExtBitMask hasReadMask;
 			std::map<PrimaryTree::Block*, uint64_t> blockPressure;
 			PrimaryTree::Block* nextBlock = nullptr;
 			auto isSuccess = gatherBlocksWithRegisters(block, reg, mask, needReadMask, hasReadMask, nextBlock);
@@ -198,7 +198,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		ExprTree::Node* createSymbolForRequest(const PCode::Register& reg, BitMask needReadMask) {
+		ExprTree::Node* createSymbolForRequest(const PCode::Register& reg, ExtBitMask needReadMask) {
 			auto& regSymbol = *m_curRegSymbol;
 			std::set<int> prevSymbolIds;
 			for (auto& it : regSymbol.blocks) {
@@ -261,7 +261,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, BitMask requestMask, BitMask& needReadMask, BitMask& hasReadMask, BitMask notNeedToReadMask, uint64_t pressure) {
+		void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, ExtBitMask requestMask, ExtBitMask& needReadMask, ExtBitMask& hasReadMask, ExtBitMask notNeedToReadMask, uint64_t pressure) {
 			auto remainToReadMask = needReadMask & ~hasReadMask & ~notNeedToReadMask;
 			requestMask = requestMask & ~notNeedToReadMask;
 			int prevSymbolId = 0;
@@ -307,7 +307,7 @@ namespace CE::Decompiler
 
 			//if the block can be read somehow
 			if (!regParts.empty()) {
-				BitMask canReadMask;
+				ExtBitMask canReadMask;
 				for (auto regPart : regParts) {
 					canReadMask = canReadMask | regPart->m_maskToChange;
 				}
@@ -329,18 +329,18 @@ namespace CE::Decompiler
 			}
 		}
 
-		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const PCode::Register& reg, BitMask requestMask, BitMask& needReadMask, BitMask& hasReadMask, PrimaryTree::Block*& nextBlock) {
+		bool gatherBlocksWithRegisters(PrimaryTree::Block* startBlock, const PCode::Register& reg, ExtBitMask requestMask, ExtBitMask& needReadMask, ExtBitMask& hasReadMask, PrimaryTree::Block*& nextBlock) {
 			struct BlockToHandle {
 				uint64_t m_pressure = 0x0;
-				BitMask m_notNeedToReadMask;
+				ExtBitMask m_notNeedToReadMask;
 				BlockToHandle() = default;
-				BlockToHandle(uint64_t pressure, BitMask canReadMask)
+				BlockToHandle(uint64_t pressure, ExtBitMask canReadMask)
 					: m_pressure(pressure), m_notNeedToReadMask(canReadMask)
 				{}
 			};
 			std::map<PrimaryTree::Block*, BlockToHandle> blocksToHandle;
 			std::set<PrimaryTree::Block*> handledBlocks;
-			blocksToHandle[startBlock] = BlockToHandle(0x1000000000000000, BitMask(0)); //set the start block
+			blocksToHandle[startBlock] = BlockToHandle(0x1000000000000000, ExtBitMask(0)); //set the start block
 			bool isStartBlock = true;
 
 			while (true)

@@ -1331,7 +1331,7 @@ namespace CE::Decompiler::PCode
 				return CreateVarnode(operand.reg.value, size, offset);
 			}
 			else if (operand.type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-				return new ConstantVarnode(operand.imm.value.u & BitMask::GetBitMask64BySize(size), size);
+				return new ConstantVarnode(operand.imm.value.u & BitMask64(size).getValue(), size);
 			}
 			else if (operand.type == ZYDIS_OPERAND_TYPE_MEMORY) {
 				Varnode* resultVarnode = nullptr;
@@ -1346,7 +1346,7 @@ namespace CE::Decompiler::PCode
 					resultVarnode = indexRegVarnode = CreateVarnode(operand.mem.index, memLocExprSize);
 					if (operand.mem.scale != 1) {
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);
-						addMicroInstruction(InstructionId::INT_MULT, resultVarnode, new ConstantVarnode(operand.mem.scale & resultVarnode->getMask().getBitMask64(), memLocExprSize), symbolVarnode);
+						addMicroInstruction(InstructionId::INT_MULT, resultVarnode, new ConstantVarnode(operand.mem.scale & resultVarnode->getMask().getBitMask64().getValue(), memLocExprSize), symbolVarnode);
 						resultVarnode = symbolVarnode;
 					}
 					if (baseRegVarnode != nullptr) {
@@ -1360,7 +1360,7 @@ namespace CE::Decompiler::PCode
 				}
 
 				if (operand.mem.disp.has_displacement) {
-					auto dispVarnode = new ConstantVarnode((uint64_t&)operand.mem.disp.value & resultVarnode->getMask().getBitMask64(), memLocExprSize);
+					auto dispVarnode = new ConstantVarnode((uint64_t&)operand.mem.disp.value & resultVarnode->getMask().getBitMask64().getValue(), memLocExprSize);
 					if (resultVarnode != nullptr) {
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);
 						addMicroInstruction(InstructionId::INT_ADD, resultVarnode, dispVarnode, symbolVarnode);
@@ -1498,7 +1498,7 @@ namespace CE::Decompiler::PCode
 		}
 		
 		static Register CreateRegister(ZydisRegister reg, int size, int offset = 0x0) {
-			auto mask = BitMask(size, offset);
+			auto mask = ExtBitMask(size, offset);
 			if(reg == ZYDIS_REGISTER_RIP)
 				return Register(reg, mask, Register::Type::InstructionPointer);
 			if (reg == ZYDIS_REGISTER_RSP)
@@ -1539,8 +1539,8 @@ namespace CE::Decompiler::PCode
 		}
 
 		static Register CreateFlagRegister(ZydisCPUFlag flag) {
-			auto mask = (uint64_t)1 << flag;
-			return Register(ZYDIS_REGISTER_RFLAGS, BitMask(mask, uint8_t(0)), Register::Type::Flag);
+			BitMask64 mask = (uint64_t)1 << flag;
+			return Register(ZYDIS_REGISTER_RFLAGS, ExtBitMask(mask, uint8_t(0)), Register::Type::Flag);
 		}
 
 		static RegisterVarnode* CreateVarnode(ZydisRegister regId, int size, int offset = 0x0) {

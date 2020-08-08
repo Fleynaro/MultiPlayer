@@ -253,7 +253,7 @@ void CE::Decompiler::test() {
 		printf("\n");
 	}
 	else {
-#define SAMPLE_VAR sample202
+#define SAMPLE_VAR sample7
 		addr = SAMPLE_VAR.data();
 		size = (int)SAMPLE_VAR.size();
 	}
@@ -265,23 +265,23 @@ void CE::Decompiler::test() {
 	graph.printDebug(addr);
 
 	auto info = GetFunctionCallDefaultInfo();
-	if(false)
+	if(true)
 	{
 		auto it = info.m_paramRegisters.begin();
-		*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, BitMask(4));
-		*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, BitMask(4));
-		*(it++) = PCode::Register(ZYDIS_REGISTER_R8, BitMask(4));
+		*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, ExtBitMask(4));
+		*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, ExtBitMask(4));
+		*(it++) = PCode::Register(ZYDIS_REGISTER_R8, ExtBitMask(4));
 		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, 0xF, PCode::Register::Type::Vector);
-		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, BitMask(4));
+		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, ExtBitMask(4));
 	}
-	else if (true)
+	else if (false)
 	{
 		auto it = info.m_paramRegisters.begin();
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM0, BitMask(4), PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM1, BitMask(4), PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM2, BitMask(4), PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, BitMask(4), PCode::Register::Type::Vector);
-		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_ZMM0, BitMask(4), PCode::Register::Type::Vector);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM1, ExtBitMask(4), PCode::Register::Type::Vector);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM2, ExtBitMask(4), PCode::Register::Type::Vector);
+		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, ExtBitMask(4), PCode::Register::Type::Vector);
+		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
 	}
 
 	auto decCodeGraph = new DecompiledCodeGraph(info);
