@@ -360,7 +360,22 @@ namespace CE::Decompiler::LinearView
 						auto startCycleBlock = cycle.m_startBlock;
 						auto endCycleBlock = cycle.m_endBlock;
 
-						if (startCycleBlock->isCondition() && startCycleBlock->hasNoCode() && cycle.m_blocks.count(startCycleBlock->getNextFarBlock()) == 0) {
+						bool isDoWhileCycleBetter = true;
+						if (startCycleBlock->isCondition() && startCycleBlock->hasNoCode()) {
+							auto nextBlockAfterCycle1 = startCycleBlock->getNextFarBlock();
+							if (cycle.m_blocks.count(nextBlockAfterCycle1) == 0) {
+								isDoWhileCycleBetter = false;
+
+								if (endCycleBlock->isCondition()) {
+									auto nextBlockAfterCycle2 = endCycleBlock->getNextNearBlock();
+									if (nextBlockAfterCycle1->m_maxHeight < nextBlockAfterCycle2->m_maxHeight) {
+										isDoWhileCycleBetter = true;
+									}
+								}
+							}
+						}
+
+						if (!isDoWhileCycleBetter) {
 							WhileCycle* whileCycle = new WhileCycle(startCycleBlock, false);
 							blockList->addBlock(whileCycle);
 							nextBlocksToFill.push_front(std::make_pair(whileCycle->m_mainBranch, startCycleBlock->getNextNearBlock()));

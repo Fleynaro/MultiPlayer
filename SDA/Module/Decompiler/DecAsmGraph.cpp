@@ -142,6 +142,72 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 	}
 }
 
+
+void testSamples(std::list<std::pair<int, std::vector<byte>*>> samples, std::set<int> samplesWithXMM, bool showAsmBefore = true)
+{
+	for (auto sample : samples) {
+		auto data = sample.second->data();
+		auto size = (int)sample.second->size();
+		printf("SAMPLE %i <----\n", sample.first);
+
+		PCode::TranslatorX86 translatorX86;
+		translatorX86.start(data, size);
+		AsmGraph graph(translatorX86.m_result);
+		graph.build();
+		if(showAsmBefore)
+			graph.printDebug(data);
+
+		auto info = GetFunctionCallDefaultInfo();
+		if (samplesWithXMM.count(sample.first) == 0)
+		{
+			auto it = info.m_paramRegisters.begin();
+			*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, ExtBitMask(4));
+			*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, ExtBitMask(4));
+			*(it++) = PCode::Register(ZYDIS_REGISTER_R8, ExtBitMask(4));
+			*(it++) = PCode::Register(ZYDIS_REGISTER_R9, ExtBitMask(4), PCode::Register::Type::Vector);
+			info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, ExtBitMask(4));
+		}
+		else
+		{
+			auto it = info.m_paramRegisters.begin();
+			*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
+			*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM1, ExtBitMask(4), PCode::Register::Type::Vector);
+			*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM2, ExtBitMask(4), PCode::Register::Type::Vector);
+			*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, ExtBitMask(4), PCode::Register::Type::Vector);
+			info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
+		}
+
+		auto decCodeGraph = new DecompiledCodeGraph(info);
+		auto decompiler = new CE::Decompiler::Decompiler(&graph, decCodeGraph);
+		decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
+			auto absAddr = (std::intptr_t)data + offset;
+			return info;
+		};
+		decompiler->start();
+
+		auto asmBlocks = decompiler->getAsmBlocks();
+
+		//show code
+		printf("********************* BEFORE OPTIMIZATION: *********************\n\n");
+		LinearView::Converter converter(decCodeGraph);
+		converter.start();
+		auto blockList = converter.getBlockList();
+		OptimizeBlockList(blockList, false);
+		ShowCode(blockList, asmBlocks);
+
+		printf("\n\n\n********************* AFTER OPTIMIZATION: *********************\n\n");
+		Optimization::OptimizeDecompiledGraph(decCodeGraph);
+		converter = LinearView::Converter(decCodeGraph);
+		converter.start();
+		blockList = converter.getBlockList();
+		OptimizeBlockList(blockList);
+
+		ShowCode(blockList, asmBlocks);
+		printf("\n\n\n\n\n");
+	}
+}
+
+
 void CE::Decompiler::test() {
 	//TestFunctionToDecompile1();
 
@@ -240,74 +306,33 @@ void CE::Decompiler::test() {
 	//FUN_7ff612dc2b0c
 	std::vector<byte> sample1003 = { 0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x4C, 0x8B, 0xCA, 0x48, 0x8B, 0xD9, 0x4C, 0x8B, 0xC1, 0x4C, 0x2B, 0xC9, 0xB9, 0x32, 0x00, 0x00, 0x00, 0x4C, 0x8B, 0xD2, 0x43, 0x8A, 0x04, 0x01, 0x41, 0x88, 0x00, 0x49, 0xFF, 0xC0, 0x48, 0xFF, 0xC9, 0x75, 0xF1, 0x48, 0x8D, 0x4B, 0x32, 0xBA, 0x64, 0x00, 0x00, 0x00, 0x42, 0x8A, 0x04, 0x09, 0x88, 0x01, 0x48, 0xFF, 0xC1, 0x48, 0xFF, 0xCA, 0x75, 0xF2, 0x41, 0x8A, 0x82, 0x96, 0x00, 0x00, 0x00, 0x48, 0x8D, 0x8B, 0x9C, 0x00, 0x00, 0x00, 0x88, 0x83, 0x96, 0x00, 0x00, 0x00, 0x41, 0x8B, 0x82, 0x98, 0x00, 0x00, 0x00, 0x89, 0x83, 0x98, 0x00, 0x00, 0x00, 0x45, 0x0F, 0xB7, 0x82, 0xA0, 0x00, 0x00, 0x00, 0x41, 0x8B, 0x92, 0x9C, 0x00, 0x00, 0x00, 0x45, 0x0F, 0xB6, 0xC8, 0x41, 0xC1, 0xE8, 0x08, 0x41, 0x83, 0xE0, 0x7F, 0xE8, 0xB3, 0x88, 0x3C, 0x01, 0x48, 0x8B, 0xC3, 0x48, 0x83, 0xC4, 0x20, 0x5B, 0xC3 };
 	//**** Other ****
-	
 
-	void* addr;
-	int size;
-	if (false) {
-		addr = &TestFunctionToDecompile1;
-		size = calculateFunctionSize2((byte*)addr, 0);
+	std::set<int> samplesWithXmm = { 206 };
+	void* addr = &TestFunctionToDecompile1;
+	auto size = calculateFunctionSize2((byte*)addr, 0);
+	std::vector<byte> sample0((byte*)addr, (byte*)addr + size);
 
-		for (int i = 0; i < size; i++)
-			printf("%02x ", ((byte*)addr)[i]);
-		printf("\n");
-	}
-	else {
-#define SAMPLE_VAR sample7
-		addr = SAMPLE_VAR.data();
-		size = (int)SAMPLE_VAR.size();
+	if (true) {
+		//testSamples({ std::pair(1002, &sample1002) }, samplesWithXmm, true);
 	}
 
-	PCode::TranslatorX86 translatorX86;
-	translatorX86.start(addr, size);
-	AsmGraph graph(translatorX86.m_result);
-	graph.build();
-	graph.printDebug(addr);
-
-	auto info = GetFunctionCallDefaultInfo();
-	if(true)
-	{
-		auto it = info.m_paramRegisters.begin();
-		*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, ExtBitMask(4));
-		*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, ExtBitMask(4));
-		*(it++) = PCode::Register(ZYDIS_REGISTER_R8, ExtBitMask(4));
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, 0xF, PCode::Register::Type::Vector);
-		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, ExtBitMask(4));
+	if (true) {
+		printf("\n\n\n\nOTHER:\n\n");
+		testSamples({
+			std::pair(0, &sample0),
+			std::pair(7, &sample7),
+			std::pair(25, &sample25),
+			std::pair(100, &sample100),
+			std::pair(101, &sample101),
+			std::pair(102, &sample102),
+			std::pair(202, &sample202),
+			std::pair(205, &sample205),
+			std::pair(206, &sample206),
+			std::pair(300, &sample300),
+			std::pair(1000, &sample1000),
+			std::pair(1001, &sample1001),
+			std::pair(1002, &sample1002),
+			std::pair(1003, &sample1003),
+			}, samplesWithXmm, false);
 	}
-	else if (false)
-	{
-		auto it = info.m_paramRegisters.begin();
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM1, ExtBitMask(4), PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM2, ExtBitMask(4), PCode::Register::Type::Vector);
-		*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, ExtBitMask(4), PCode::Register::Type::Vector);
-		info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
-	}
-
-	auto decCodeGraph = new DecompiledCodeGraph(info);
-	auto decompiler = new Decompiler(&graph, decCodeGraph);
-	decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
-		auto absAddr = (std::intptr_t)addr + offset;
-		return info;
-	};
-	decompiler->start();
-	
-	auto asmBlocks = decompiler->getAsmBlocks();
-
-	//show code
-	printf("\n\n\n********************* BEFORE OPTIMIZATION: *********************\n\n");
-	LinearView::Converter converter(decCodeGraph);
-	converter.start();
-	auto blockList = converter.getBlockList();
-	OptimizeBlockList(blockList, false);
-	ShowCode(blockList, asmBlocks);
-
-	printf("\n\n\n********************* AFTER OPTIMIZATION: *********************\n\n");
-	Optimization::OptimizeDecompiledGraph(decCodeGraph);
-	converter = LinearView::Converter(decCodeGraph);
-	converter.start();
-	blockList = converter.getBlockList();
-	OptimizeBlockList(blockList);
-
-	ShowCode(blockList, asmBlocks);
 }

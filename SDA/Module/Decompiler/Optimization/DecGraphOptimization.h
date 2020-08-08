@@ -452,6 +452,7 @@ namespace CE::Decompiler::Optimization
 			while (auto removedBlock = JoinCondition(block)) {
 				OptimizeConditionDecBlock(block);
 				decGraph->removeDecompiledBlock(removedBlock);
+				it = decGraph->getDecompiledBlocks().rbegin();
 			}
 		}
 

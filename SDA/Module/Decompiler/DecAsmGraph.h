@@ -108,22 +108,23 @@ namespace CE::Decompiler
 				auto minOffset = offset;
 				auto maxOffset = it.first;
 				auto dirs = it.second;
-				if (dirs & Direction::Out) { //out
-					auto instr = getInstructionByOffset(maxOffset);
-					auto nextInstrOffset = instr->getFirstInstrOffsetInNextOrigInstr();
-					if (dirs & Direction::In) {
+
+				if (dirs & Direction::In) {
+					if (minOffset < maxOffset) {
 						createBlockAtOffset(minOffset, maxOffset);
-						minOffset = maxOffset;
-						maxOffset = nextInstrOffset;
-					}
-					else {
-						maxOffset = nextInstrOffset;
+						offset = maxOffset;
 					}
 				}
-				if (minOffset < maxOffset) {
-					createBlockAtOffset(minOffset, maxOffset);
+				if (dirs & Direction::Out) { //out
+					int64_t nextInstrOffset;
+					auto instrIt = std::next(getInstructionByOffset(maxOffset));
+					if (instrIt != m_instructions.end())
+						nextInstrOffset = (*instrIt)->getOffset();
+					else nextInstrOffset = getMaxOffset();
+
+					createBlockAtOffset(offset, nextInstrOffset);
+					offset = nextInstrOffset;
 				}
-				offset = maxOffset;
 			}
 			if (offset < getMaxOffset()) {
 				createBlockAtOffset(offset, getMaxOffset());
@@ -171,12 +172,12 @@ namespace CE::Decompiler
 			}
 		}
 	private:
-		PCode::Instruction* getInstructionByOffset(int64_t offset) {
-			for (auto instr : m_instructions) {
-				if (instr->getOffset() == offset) //todo: binary search
-					return instr;
+		std::list<PCode::Instruction*>::iterator getInstructionByOffset(int64_t offset) {
+			for (auto it = m_instructions.begin(); it != m_instructions.end(); it ++) {
+				if ((*it)->getOffset() == offset) //todo: binary search
+					return it;
 			}
-			return nullptr;
+			return m_instructions.end();
 		}
 
 		void createBlockAtOffset(int64_t minOffset, int64_t maxOffset) {
