@@ -115,9 +115,9 @@ namespace CE::Decompiler
 					m_curRegSymbol->requiestId++;
 
 					auto regParts = externalSymbol.m_regParts;
-					auto mask = externalSymbol.m_needReadMask;
-					requestRegisterParts(block, reg, mask, regParts, false);
-					if (mask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
+					auto remainToReadMask = externalSymbol.m_needReadMask;
+					requestRegisterParts(block, reg, remainToReadMask, regParts, false);
+					if (remainToReadMask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
 						auto expr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 						externalSymbol.m_symbol->replaceWith(expr); //todo: remove this, make special node where another replacing method will be implemented. On this step no replaceWith uses!
 						delete externalSymbol.m_symbol->m_symbol;
@@ -157,7 +157,7 @@ namespace CE::Decompiler
 				auto it = m_decompiledBlocks.find(block);
 				if (it != m_decompiledBlocks.end()) {
 					auto ctx = it->second.m_execBlockCtx;
-					auto regParts = ctx->getRegisterParts(reg, mask);
+					auto regParts = ctx->getRegisterParts(reg.getGenericId(), mask);
 					outRegParts.insert(outRegParts.begin(), regParts.begin(), regParts.end());
 					if (mask.isZero()) {
 						return;
@@ -291,7 +291,7 @@ namespace CE::Decompiler
 			//handle the block first time
 			auto ctx = m_decompiledBlocks[block].m_execBlockCtx;
 			auto mask = (pressure == 0x1000000000000000) ? remainToReadMask : requestMask;
-			auto regParts = ctx->getRegisterParts(reg, mask, pressure != 0x1000000000000000);
+			auto regParts = ctx->getRegisterParts(reg.getGenericId(), mask, pressure != 0x1000000000000000);
 
 			//think about that more ???
 			if (pressure == 0x1000000000000000) { //to symbols assignments be less

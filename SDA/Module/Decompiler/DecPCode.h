@@ -48,6 +48,11 @@ namespace CE::Decompiler::PCode
 			return m_valueRangeMask.getSize();
 		}
 
+		bool intersect(const Register& reg) const {
+			//if the masks intersected
+			return m_genericId == reg.m_genericId && !(m_valueRangeMask & reg.m_valueRangeMask).isZero();
+		}
+
 		bool operator ==(const Register& reg) const {
 			return m_genericId == reg.m_genericId && m_valueRangeMask == reg.m_valueRangeMask;
 		}
@@ -83,6 +88,12 @@ namespace CE::Decompiler::PCode
 			return flagName + ":1";
 		}
 	};
+
+	static BitMask GetValueRangeMaskWithException(const PCode::Register& reg) {
+		if (reg.m_type == Register::Type::Generic && reg.m_valueRangeMask == BitMask(4))
+			return BitMask(8);
+		return reg.m_valueRangeMask;
+	}
 
 	class Varnode
 	{

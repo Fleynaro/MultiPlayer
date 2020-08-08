@@ -23,17 +23,15 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 		auto& reg = varnodeRegister->m_register;
 		for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
 			if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it->m_varnode)) {
-				if (reg.getGenericId() == sameRegVarnode->m_register.getGenericId()) {
-					if ((GetMaskWithException(sameRegVarnode->m_register.m_valueRangeMask) & ~GetMaskWithException(reg.m_valueRangeMask)).isZero()) {
-						oldWrapperNodes.push_back(it->m_expr);
-						m_varnodes.erase(it);
-					}
+				if (reg.intersect(sameRegVarnode->m_register)) {
+					oldWrapperNodes.push_back(it->m_expr);
+					m_varnodes.erase(it);
 				}
 			}
 		}
 
 		for (auto it = m_cachedRegisters.begin(); it != m_cachedRegisters.end(); it++) {
-			if (it->first.getGenericId() == varnodeRegister->m_register.getGenericId()) {
+			if (reg.intersect(it->first)) {
 				oldWrapperNodes.push_back(it->second);
 				m_cachedRegisters.erase(it);
 			}
@@ -60,21 +58,23 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 	}
 }
 
-RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg, BitMask& mask, bool changedRegistersOnly) {
+RegisterParts ExecutionBlockContext::getRegisterParts(PCode::RegisterId registerId, BitMask& needReadMask, bool changedRegistersOnly) {
 	RegisterParts regParts;
 	using SameRegInfo = std::pair<PCode::Register, ExprTree::Node*>;
 	std::list<SameRegInfo> sameRegisters;
 	//select same registeres
 	for (auto it : m_varnodes) {
 		if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it.m_varnode)) {
-			if (reg.getGenericId() == sameRegVarnode->m_register.getGenericId()) {
+			if (registerId == sameRegVarnode->m_register.getGenericId()) {
 				if (!it.m_changed) {
 					if (changedRegistersOnly)
 						continue;
 					//to avoide ([rcx] & 0xFF00) | ([rcx] & 0xFF)
-					if (!(mask & ~sameRegVarnode->m_register.m_valueRangeMask).isZero()) {
-						if (m_resolvedExternalSymbols.find(sameRegVarnode) != m_resolvedExternalSymbols.end())
-							continue;
+					if (!m_resolvedExternalSymbols.empty()) {
+						if (!(needReadMask & ~sameRegVarnode->m_register.m_valueRangeMask).isZero()) {
+							if (m_resolvedExternalSymbols.find(sameRegVarnode) != m_resolvedExternalSymbols.end())
+								continue;
+						}
 					}
 				}
 				sameRegisters.push_back(std::make_pair(sameRegVarnode->m_register, it.m_expr->m_node));
@@ -89,17 +89,16 @@ RegisterParts ExecutionBlockContext::getRegisterParts(const PCode::Register& reg
 
 	//gather need parts
 	for (auto sameRegInfo : sameRegisters) {
-		//exception: eax(no ax, ah, al!) overwrite rax!!!
-		auto& sameRegMask = sameRegInfo.first.m_valueRangeMask;
-		auto sameRegExceptionMask = GetMaskWithException(sameRegMask); //for x86 only!!!
-		auto remainToReadMask = mask & ~sameRegExceptionMask;
-		if (remainToReadMask != mask) {
-			auto part = new RegisterPart(sameRegMask, mask & sameRegExceptionMask, sameRegInfo.second);
+		auto& sameReg = sameRegInfo.first;
+		auto sameRegExceptionMask = GetValueRangeMaskWithException(sameReg); //for x86 only!!!
+		//if the masks intersected
+		if (!(needReadMask & sameRegExceptionMask).isZero()) {
+			auto part = new RegisterPart(sameReg.m_valueRangeMask, needReadMask & sameRegExceptionMask, sameRegInfo.second);
 			regParts.push_back(part);
-			mask = remainToReadMask;
+			needReadMask = needReadMask & ~sameRegExceptionMask;
 		}
 
-		if (mask == 0)
+		if (needReadMask == 0)
 			break;
 	}
 	return regParts;
@@ -114,15 +113,15 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 
 	ExprTree::Node* regExpr;
 	auto& reg = varnodeRegister->m_register;
-	auto mask = varnodeRegister->m_register.m_valueRangeMask;
-	auto regParts = getRegisterParts(reg, mask);
-	if (!mask.isZero()) {
+	auto needReadMask = varnodeRegister->m_register.m_valueRangeMask;
+	auto regParts = getRegisterParts(reg.getGenericId(), needReadMask);
+	if (!needReadMask.isZero()) {
 		auto symbol = new Symbol::RegisterVariable(reg);
 		auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
-		auto externalSymbol = new ExternalSymbol(varnodeRegister, mask, symbolLeaf, regParts);
+		auto externalSymbol = new ExternalSymbol(varnodeRegister, needReadMask, symbolLeaf, regParts);
 		m_externalSymbols.push_back(externalSymbol);
 
-		if (mask == reg.m_valueRangeMask) {
+		if (needReadMask == reg.m_valueRangeMask) {
 			setVarnode(varnodeRegister, symbolLeaf, false);
 		}
 		regExpr = symbolLeaf;

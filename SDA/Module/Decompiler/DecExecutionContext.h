@@ -146,7 +146,7 @@ namespace CE::Decompiler
 
 		void setVarnode(PCode::Varnode* varnode, ExprTree::Node* expr, bool rewrite = true);
 
-		RegisterParts getRegisterParts(const PCode::Register& reg, BitMask& mask, bool changedRegistersOnly = false);
+		RegisterParts getRegisterParts(PCode::RegisterId registerId, BitMask& mask, bool changedRegistersOnly = false);
 
 		ExprTree::Node* requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister);
 

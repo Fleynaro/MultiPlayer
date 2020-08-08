@@ -156,12 +156,6 @@ namespace CE::Decompiler
 		virtual BitMask getMask() = 0;
 	};
 
-	static BitMask GetMaskWithException(BitMask& mask) {
-		if (mask == BitMask(4))
-			return BitMask(8);
-		return mask;
-	}
-
 	/*
 	static int GetShiftValueOfMask(Mask mask) {
 		int result = 0;
