@@ -18,8 +18,6 @@ public:
         getCurrentDir().createIfNotExists();
         m_programModule = new ProgramModule(getCurrentDir());
 
-        auto f = &rand;
-
         m_programModule->initDataBase("database.db");
         m_programModule->initManagers();
         m_programModule->load();
@@ -33,6 +31,7 @@ public:
         if (m_programModule != nullptr)
             delete m_programModule;
     }
+
 
     FS::Directory getCurrentDir() {
         char filename[MAX_PATH];
@@ -683,6 +682,6 @@ int main(int argc, char** argv) {
     SetConsoleOutputCP(1251);
     DebugOutput_Console = true;
 
-	//return RUN_ALL_TESTS();
-    test11111();  return 0;
+	return RUN_ALL_TESTS();
+    //test11111();  return 0;
 }

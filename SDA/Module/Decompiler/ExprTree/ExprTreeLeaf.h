@@ -1,6 +1,6 @@
 #pragma once
 #include "ExprTreeNode.h"
-#include "../Symbol.h"
+#include "../DecSymbol.h"
 #include <Utility/Generic.h>
 
 namespace CE::Decompiler::ExprTree

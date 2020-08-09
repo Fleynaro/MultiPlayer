@@ -18,6 +18,34 @@ create table sda_ghidra_sync
     objectsCount    INTEGER
 );
 
+CREATE TABLE "sda_symbols"
+(
+	"symbol_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+	"name"	TEXT,
+	"type_id"	INTEGER NOT NULL,
+	"pointer_lvl"	TEXT,
+	"comment"	TEXT,
+	"save_id"	INTEGER,
+	"ghidra_sync_id"	INTEGER,
+	"deleted"	INTEGER DEFAULT 0
+);
+
+CREATE TABLE "sda_mem_area_symbols" (
+	"symbol_id"	INTEGER,
+	"area_id"	INTEGER,
+	"offset"	INTEGER,
+	PRIMARY KEY("area_id","symbol_id","offset")
+);
+
+CREATE TABLE "sda_mem_areas" (
+	"mem_area_id"	INTEGER,
+	"type"	INTEGER,
+    "size"  INTEGER,
+    "save_id"	INTEGER,
+    "deleted"	INTEGER DEFAULT 0,
+	PRIMARY KEY("mem_area_id")
+);
+
 create table sda_process_modules
 (
     module_id         INTEGER
