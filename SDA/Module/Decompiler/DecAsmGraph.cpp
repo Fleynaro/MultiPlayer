@@ -313,10 +313,10 @@ void CE::Decompiler::test() {
 	std::vector<byte> sample0((byte*)addr, (byte*)addr + size);
 
 	if (true) {
-		//testSamples({ std::pair(1002, &sample1002) }, samplesWithXmm, true);
+		testSamples({ std::pair(202, &sample202) }, samplesWithXmm, true);
 	}
 
-	if (true) {
+	if (false) {
 		printf("\n\n\n\nOTHER:\n\n");
 		testSamples({
 			std::pair(0, &sample0),
