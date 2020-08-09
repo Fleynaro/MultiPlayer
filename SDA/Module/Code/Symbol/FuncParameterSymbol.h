@@ -13,8 +13,5 @@ namespace CE::Symbol
 		Type getType() override {
 			return FUNC_PARAMETER;
 		}
-
-	private:
-
 	};
 };

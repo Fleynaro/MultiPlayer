@@ -3,6 +3,7 @@
 #include "MethodDeclaration.h"
 #include <Address/AddressRange.h>
 #include <GhidraSync/GhidraObject.h>
+#include "../Symbol/MemoryArea/MemoryArea.h"
 
 namespace CE
 {
@@ -50,6 +51,10 @@ namespace CE
 
 			bool isContainingAddress(void* addr);
 
+			Symbol::MemoryArea* getStackMemoryArea();
+
+			void setStackMemoryArea(Symbol::MemoryArea* stackMemoryArea);
+
 			Trigger::Function::Hook* getHook();
 
 			bool hasHook();
@@ -78,6 +83,7 @@ namespace CE
 		private:
 			ProcessModule* m_module;
 			AddressRangeList m_ranges;
+			Symbol::MemoryArea* m_stackMemoryArea = nullptr;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionDecl* m_decl;
 			CodeGraph::Node::FunctionBody* m_funcBody = nullptr;

@@ -2,7 +2,6 @@
 #include "AbstractManager.h"
 #include <Code/Function/FunctionDefinition.h>
 #include "FunctionDeclManager.h"
-#include <Utils/Iterator.h>
 
 namespace DB {
 	class FunctionDefMapper;

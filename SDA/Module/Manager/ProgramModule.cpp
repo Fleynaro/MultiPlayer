@@ -15,10 +15,12 @@ ProgramModule::ProgramModule(FS::Directory dir)
 }
 
 ProgramModule::~ProgramModule() {
-	if (m_typeManager != nullptr) {
+	if (haveAllManagersBeenLoaded()) {
 		delete m_processModuleManager;
 		delete m_functionManager;
 		delete m_statManager;
+		delete m_symbolManager;
+		delete m_memoryAreaManager;
 		delete m_gvarManager;
 		delete m_triggerManager;
 		delete m_triggerGroupManager;
@@ -42,6 +44,8 @@ void ProgramModule::load()
 {
 	getProcessModuleManager()->loadProcessModules();
 	getTypeManager()->loadTypes();
+	getSymbolManager()->loadSymbols();
+	getMemoryAreaManager()->loadMemoryAreas();
 	getGVarManager()->loadGlobalVars();
 	getFunctionManager()->loadFunctions();
 	getTypeManager()->loadClasses();
@@ -55,6 +59,8 @@ void ProgramModule::initManagers()
 	m_processModuleManager = new ProcessModuleManager(this);
 	m_typeManager = new TypeManager(this);
 	m_functionManager = new FunctionManager(this, new FunctionDeclManager(this));
+	m_symbolManager = new SymbolManager(this);
+	m_memoryAreaManager = new MemoryAreaManager(this);
 	m_gvarManager = new GlobalVarManager(this);
 	m_vtableManager = new VtableManager(this);
 	m_triggerManager = new TriggerManager(this);
@@ -101,6 +107,14 @@ TypeManager* ProgramModule::getTypeManager() {
 	return m_typeManager;
 }
 
+SymbolManager* ProgramModule::getSymbolManager() {
+	return m_symbolManager;
+}
+
+MemoryAreaManager* ProgramModule::getMemoryAreaManager() {
+	return m_memoryAreaManager;
+}
+
 GlobalVarManager* ProgramModule::getGVarManager() {
 	return m_gvarManager;
 }
@@ -131,6 +145,10 @@ TriggerGroupManager* ProgramModule::getTriggerGroupManager() {
 
 StatManager* ProgramModule::getStatManager() {
 	return m_statManager;
+}
+
+Symbol::MemoryArea* ProgramModule::getGlobalMemoryArea() {
+	return getMemoryAreaManager()->getMainGlobalMemoryArea();
 }
 
 DB::ITransaction* ProgramModule::getTransaction() {

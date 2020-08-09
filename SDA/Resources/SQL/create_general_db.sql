@@ -21,6 +21,7 @@ create table sda_ghidra_sync
 CREATE TABLE "sda_symbols"
 (
 	"symbol_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+    "type" INTEGER,
 	"name"	TEXT,
 	"type_id"	INTEGER NOT NULL,
 	"pointer_lvl"	TEXT,
@@ -32,9 +33,9 @@ CREATE TABLE "sda_symbols"
 
 CREATE TABLE "sda_mem_area_symbols" (
 	"symbol_id"	INTEGER,
-	"area_id"	INTEGER,
+	"mem_area_id"	INTEGER,
 	"offset"	INTEGER,
-	PRIMARY KEY("area_id","symbol_id","offset")
+	PRIMARY KEY("mem_area_id","symbol_id","offset")
 );
 
 CREATE TABLE "sda_mem_areas" (
@@ -142,8 +143,9 @@ create table sda_func_defs
 (
     def_id  INTEGER
         primary key autoincrement,
-    decl_id INTEGER,
-    module_id  INTEGER,
+    decl_id             INTEGER,
+    module_id           INTEGER,
+    stack_mem_area_id   INTEGER DEFAULT 0,
     save_id             INTEGER,
     ghidra_sync_id      INTEGER,
     deleted             INTEGER DEFAULT 0

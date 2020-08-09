@@ -1,4 +1,4 @@
-#include "Symbol.h"
+#include "DecSymbol.h"
 #include "ExprTree/ExprTreeFuncCallContext.h"
 
 using namespace CE::Decompiler;

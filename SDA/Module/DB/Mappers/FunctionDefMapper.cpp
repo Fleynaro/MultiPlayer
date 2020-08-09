@@ -1,6 +1,7 @@
 #include "FunctionDefMapper.h"
 #include <Manager/FunctionDefManager.h>
 #include <Manager/ProcessModuleManager.h>
+#include <Manager/MemoryAreaManager.h>
 #include <GhidraSync/Mappers/GhidraFunctionDefMapper.h>
 
 using namespace DB;
@@ -29,6 +30,7 @@ IDomainObject* FunctionDefMapper::doLoad(Database* db, SQLite::Statement& query)
 	int def_id = query.getColumn("def_id");
 	int decl_id = query.getColumn("decl_id");
 	int module_id = query.getColumn("module_id");
+	int stack_mem_area_id = query.getColumn("stack_mem_area_id");
 
 	auto decl = getManager()->getFunctionDeclManager()->getFunctionDeclById(decl_id);
 	if (decl == nullptr)
@@ -44,6 +46,12 @@ IDomainObject* FunctionDefMapper::doLoad(Database* db, SQLite::Statement& query)
 			decl
 		);
 
+	if (stack_mem_area_id) {
+		auto stack_mem_area = getManager()->getProgramModule()->getMemoryAreaManager()->getMemoryAreaById(stack_mem_area_id);
+		if (stack_mem_area != nullptr) {
+			definition->setStackMemoryArea(stack_mem_area);
+		}
+	}
 	
 	definition->setId(def_id);
 	definition->setGhidraMapper(getManager()->m_ghidraFunctionDefMapper);
@@ -93,11 +101,11 @@ void FunctionDefMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 void FunctionDefMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto& def = *static_cast<CE::Function::FunctionDefinition*>(obj);
 
-	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_func_defs (def_id, decl_id, module_id, save_id)\
-				VALUES(?1, ?2, ?3, ?4)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_func_defs (def_id, decl_id, module_id, stack_mem_area_id, save_id)\
+				VALUES(?1, ?2, ?3, ?4, ?5)");
 	query.bind(1, def.getId());
 	bind(query, def);
-	query.bind(4, ctx->m_saveId);
+	query.bind(5, ctx->m_saveId);
 	query.exec();
 	saveFunctionRanges(ctx, def);
 }
@@ -113,4 +121,7 @@ void FunctionDefMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
 void FunctionDefMapper::bind(SQLite::Statement& query, CE::Function::FunctionDefinition& def) {
 	query.bind(2, def.getDeclaration().getId());
 	query.bind(3, def.getProcessModule()->getId());
+	if (def.getStackMemoryArea()) {
+		query.bind(4, def.getStackMemoryArea()->getId());
+	}
 }

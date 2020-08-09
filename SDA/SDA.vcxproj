@@ -225,9 +225,11 @@
     <ClCompile Include="Module\DB\Mappers\FunctionTagMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\FunctionTriggerMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\GlobalVarMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\MemoryAreaMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\ProcessModuleMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\SignatureTypeMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\StructureTypeMapper.cpp" />
+    <ClCompile Include="Module\DB\Mappers\SymbolMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TriggerGroupMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TriggerMapper.cpp" />
     <ClCompile Include="Module\DB\Mappers\TypedefTypeMapper.cpp" />
@@ -241,7 +243,7 @@
     <ClCompile Include="Module\Decompiler\Decompiler.cpp" />
     <ClCompile Include="Module\Decompiler\Optimization\ExprOptimization.cpp" />
     <ClCompile Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.cpp" />
-    <ClCompile Include="Module\Decompiler\Symbol.cpp" />
+    <ClCompile Include="Module\Decompiler\DecSymbol.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmDecoder.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmInstructions.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmOperand.cpp" />
@@ -275,9 +277,11 @@
     <ClCompile Include="Module\Manager\FunctionDefManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionTagManager.cpp" />
     <ClCompile Include="Module\Manager\GlobalVarManager.cpp" />
+    <ClCompile Include="Module\Manager\MemoryAreaManager.cpp" />
     <ClCompile Include="Module\Manager\ProcessModuleManager.cpp" />
     <ClCompile Include="Module\Manager\ProgramModule.cpp" />
     <ClCompile Include="Module\Manager\StatManager.cpp" />
+    <ClCompile Include="Module\Manager\SymbolManager.cpp" />
     <ClCompile Include="Module\Manager\TriggerGroupManager.cpp" />
     <ClCompile Include="Module\Manager\TriggerManager.cpp" />
     <ClCompile Include="Module\Statistic\Function\Analysis\FunctionStatAnalyser.cpp" />
@@ -333,6 +337,11 @@
     <ClInclude Include="Module\Address\AddressRange.h" />
     <ClInclude Include="Module\Code\Function\FunctionDeclaration.h" />
     <ClInclude Include="Module\Code\Function\FunctionDefinition.h" />
+    <ClInclude Include="Module\Code\Symbol\FuncParameterSymbol.h" />
+    <ClInclude Include="Module\Code\Symbol\MemoryArea\MemoryArea.h" />
+    <ClInclude Include="Module\Code\Symbol\MemorySymbol.h" />
+    <ClInclude Include="Module\Code\Symbol\AbstractSymbol.h" />
+    <ClInclude Include="Module\Code\Symbol\Symbol.h" />
     <ClInclude Include="Module\Code\Type\FunctionSignature.h" />
     <ClInclude Include="Module\Code\Type\Structure.h" />
     <ClInclude Include="Module\DB\DomainObject.h" />
@@ -345,9 +354,11 @@
     <ClInclude Include="Module\DB\Mappers\FunctionTagMapper.h" />
     <ClInclude Include="Module\DB\Mappers\FunctionTriggerMapper.h" />
     <ClInclude Include="Module\DB\Mappers\GlobalVarMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\MemoryAreaMapper.h" />
     <ClInclude Include="Module\DB\Mappers\ProcessModuleMapper.h" />
     <ClInclude Include="Module\DB\Mappers\SignatureTypeMapper.h" />
     <ClInclude Include="Module\DB\Mappers\StructureTypeMapper.h" />
+    <ClInclude Include="Module\DB\Mappers\SymbolMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TriggerGroupMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TriggerMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
@@ -373,7 +384,7 @@
     <ClInclude Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeGOAR.h" />
     <ClInclude Include="Module\Decompiler\SDA\Transformation\DecGraphTransformation.h" />
-    <ClInclude Include="Module\Decompiler\Symbol.h" />
+    <ClInclude Include="Module\Decompiler\DecSymbol.h" />
     <ClInclude Include="Module\Disassembler\DisasmDecoder.h" />
     <ClInclude Include="Module\Disassembler\DisasmInstructions.h" />
     <ClInclude Include="Module\Disassembler\DisasmOperand.h" />
@@ -427,9 +438,11 @@
     <ClInclude Include="Module\Manager\FunctionTagManager.h" />
     <ClInclude Include="Module\Manager\GlobalVarManager.h" />
     <ClInclude Include="Module\Manager\Managers.h" />
+    <ClInclude Include="Module\Manager\MemoryAreaManager.h" />
     <ClInclude Include="Module\Manager\ProcessModuleManager.h" />
     <ClInclude Include="Module\Manager\ProgramModule.h" />
     <ClInclude Include="Module\Manager\StatManager.h" />
+    <ClInclude Include="Module\Manager\SymbolManager.h" />
     <ClInclude Include="Module\Manager\TriggerGroupManager.h" />
     <ClInclude Include="Module\Manager\TriggerManager.h" />
     <ClInclude Include="Module\Manager\TypeManager.h" />

@@ -17,13 +17,16 @@ namespace CE
 
 		void loadMemoryAreas();
 
+		void createMainGlobalMemoryArea(int size);
+
 		Symbol::MemoryArea* createMemoryArea(Symbol::MemoryArea::Type type, int size);
 
-		Symbol::MemoryArea* getMemoryAreaById(DB::Id id) {
-			return static_cast<Symbol::MemoryArea*>(find(id));
-		}
+		Symbol::MemoryArea* getMemoryAreaById(DB::Id id);
+
+		Symbol::MemoryArea* getMainGlobalMemoryArea();
 
 	private:
+		Symbol::MemoryArea* m_globalMemoryArea = nullptr;
 		DB::MemoryAreaMapper* m_memoryAreaMapper;
 	};
 };

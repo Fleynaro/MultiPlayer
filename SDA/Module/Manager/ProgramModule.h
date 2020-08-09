@@ -10,6 +10,8 @@ namespace CE
 {
 	class ProcessModuleManager;
 	class TypeManager;
+	class SymbolManager;
+	class MemoryAreaManager;
 	class GlobalVarManager;
 	class FunctionManager;
 	class FunctionDeclManager;
@@ -19,9 +21,12 @@ namespace CE
 	class TriggerGroupManager;
 	class StatManager;
 
-	namespace Ghidra
-	{
+	namespace Ghidra {
 		class Client;
+	};
+
+	namespace Symbol {
+		class MemoryArea;
 	};
 
 	class ProgramModule
@@ -47,6 +52,10 @@ namespace CE
 
 		TypeManager* getTypeManager();
 
+		SymbolManager* getSymbolManager();
+
+		MemoryAreaManager* getMemoryAreaManager();
+
 		GlobalVarManager* getGVarManager();
 
 		FunctionManager* getFunctionManager();
@@ -63,6 +72,8 @@ namespace CE
 
 		StatManager* getStatManager();
 
+		Symbol::MemoryArea* getGlobalMemoryArea();
+
 		DB::ITransaction* getTransaction();
 
 		FS::Directory& getDirectory();
@@ -76,6 +87,8 @@ namespace CE
 
 		ProcessModuleManager* m_processModuleManager = nullptr;
 		TypeManager* m_typeManager = nullptr;
+		SymbolManager* m_symbolManager = nullptr;
+		MemoryAreaManager* m_memoryAreaManager = nullptr;
 		GlobalVarManager* m_gvarManager = nullptr;
 		FunctionManager* m_functionManager = nullptr;
 		VtableManager* m_vtableManager = nullptr;
@@ -83,5 +96,9 @@ namespace CE
 		TriggerGroupManager* m_triggerGroupManager = nullptr;
 		StatManager* m_statManager = nullptr;
 		Ghidra::Sync* m_ghidraSync;
+
+		bool haveAllManagersBeenLoaded() {
+			return m_typeManager != nullptr;
+		}
 	};
 };

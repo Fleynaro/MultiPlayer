@@ -58,6 +58,14 @@ bool FunctionDefinition::isContainingAddress(void* addr) {
 	return false;
 }
 
+Symbol::MemoryArea* FunctionDefinition::getStackMemoryArea() {
+	return m_stackMemoryArea;
+}
+
+void FunctionDefinition::setStackMemoryArea(Symbol::MemoryArea* stackMemoryArea) {
+	m_stackMemoryArea = stackMemoryArea;
+}
+
 CE::Trigger::Function::Hook* FunctionDefinition::getHook() {
 	return m_hook;
 }

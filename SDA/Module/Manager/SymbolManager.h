@@ -8,20 +8,18 @@ namespace DB {
 
 namespace CE
 {
-	class GlobalVarManager : public AbstractItemManager
+	class SymbolManager : public AbstractItemManager
 	{
 	public:
 		using Iterator = AbstractIterator<Symbol::AbstractSymbol>;
 		
-		GlobalVarManager(ProgramModule* module);
+		SymbolManager(ProgramModule* module);
 
 		void loadSymbols();
 
-		//Symbol::AbstractSymbol* createSymbol(DataTypePtr type, const std::string& name, const std::string& comment = "");
+		Symbol::AbstractSymbol* createSymbol(Symbol::Type type, DataTypePtr dataType, const std::string& name, const std::string& comment = "");
 
-		Symbol::AbstractSymbol* getSymbolById(DB::Id id) {
-			return static_cast<Symbol::AbstractSymbol*>(find(id));
-		}
+		Symbol::AbstractSymbol* getSymbolById(DB::Id id);
 
 	private:
 		DB::SymbolMapper* m_symbolMapper;

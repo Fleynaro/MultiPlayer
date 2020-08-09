@@ -73,6 +73,8 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
     EXPECT_GE(m_programModule->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 20);
     auto tr = m_programModule->getTransaction();
     auto typeManager = m_programModule->getTypeManager();
+    auto symbolManager = m_programModule->getSymbolManager();
+    auto memoryAreaManager = m_programModule->getMemoryAreaManager();
     auto gvarManager = m_programModule->getGVarManager();
     auto funcManager = m_programModule->getFunctionManager();
     auto declManager = funcManager->getFunctionDeclManager();
@@ -133,6 +135,18 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
             tagManager->createUserTag(function1->getDeclarationPtr(), tagManager->m_getTag, "tag1", "test GET tag1");
             tagManager->createUserTag(function2->getDeclarationPtr(), tagManager->m_setTag, "tag2", "test SET tag2");
         }
+    }
+
+    //for symbols & memory areas
+    {
+        using namespace Symbol;
+        auto stackVar_0x10 = dynamic_cast<MemorySymbol*>(symbolManager->createSymbol(LOCAL_STACK_VAR, DataType::GetUnit(typeManager->getTypeByName("int32_t")), "stackVar_0x10"));
+        auto stackVar_0x20 = dynamic_cast<MemorySymbol*>(symbolManager->createSymbol(LOCAL_STACK_VAR, DataType::GetUnit(typeManager->getTypeByName("int64_t")), "stackVar_0x20"));
+        auto stackFrame = memoryAreaManager->createMemoryArea(MemoryArea::STACK_SPACE, 0x100);
+        stackFrame->addSymbol(stackVar_0x10, 0x10);
+        stackFrame->addSymbol(stackVar_0x20, 0x20);
+
+        memoryAreaManager->createMainGlobalMemoryArea(0x10000);
     }
 
     //for global vars
@@ -222,6 +236,19 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
 
             auto tags = tagManager->getTagCollection(func);
             ASSERT_EQ(tags.getTags().size(), 3);
+        }
+    }
+
+    //for symbols & memory areas
+    {
+        auto symbolManager = m_programModule->getSymbolManager();
+        ASSERT_GE(symbolManager->getItemsCount(), 1);
+        auto memoryAreaManager = m_programModule->getMemoryAreaManager();
+        ASSERT_GE(memoryAreaManager->getItemsCount(), 1);
+
+        if (auto testStackFrame = memoryAreaManager->getMemoryAreaById(1)) {
+            ASSERT_EQ(testStackFrame->getSymbols().size(), 2);
+            //testStackFrame->getSymbolAt(0x10);
         }
     }
 

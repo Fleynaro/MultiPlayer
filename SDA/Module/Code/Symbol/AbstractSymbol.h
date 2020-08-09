@@ -7,17 +7,17 @@ namespace CE
 
 	namespace Symbol
 	{
+		enum Type {
+			FUNCTION = 1,
+			GLOBAL_VAR,
+			LOCAL_INSTR_VAR,
+			LOCAL_STACK_VAR,
+			FUNC_PARAMETER
+		};
+
 		class AbstractSymbol : public DB::DomainObject, public Descrtiption
 		{
 		public:
-			enum Type {
-				FUNCTION = 1,
-				GLOBAL_VAR,
-				LOCAL_VAR,
-				LOCAL_STACK_VAR,
-				FUNC_PARAMETER
-			};
-
 			AbstractSymbol(SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "")
 				: m_manager(manager), m_dataType(dataType), Descrtiption(name, comment)
 			{}
