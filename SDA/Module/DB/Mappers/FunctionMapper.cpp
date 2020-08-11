@@ -17,6 +17,7 @@ void FunctionMapper::loadAll() {
 	auto& db = getManager()->getProgramModule()->getDB();
 	Statement query(db, "SELECT * FROM sda_functions WHERE deleted=0");
 	load(&db, query);
+	loadFunctionRanges(&db);
 }
 
 Id FunctionMapper::getNextId() {
@@ -34,6 +35,7 @@ IDomainObject* FunctionMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int func_symbol_id = query.getColumn("func_symbol_id");
 	int module_id = query.getColumn("module_id");
 	int stack_mem_area_id = query.getColumn("stack_mem_area_id");
+	int body_mem_area_id = query.getColumn("body_mem_area_id");
 	int is_exported = query.getColumn("exported");
 
 	auto symbol = dynamic_cast<Symbol::FunctionSymbol*>(getManager()->getProgramModule()->getSymbolManager()->getSymbolById(func_symbol_id));
@@ -55,22 +57,34 @@ IDomainObject* FunctionMapper::doLoad(Database* db, SQLite::Statement& query) {
 			function->setStackMemoryArea(stack_mem_area);
 		}
 	}
+
+	if (body_mem_area_id) {
+		auto body_mem_area = getManager()->getProgramModule()->getMemoryAreaManager()->getMemoryAreaById(body_mem_area_id);
+		if (body_mem_area != nullptr) {
+			function->setBodyMemoryArea(body_mem_area);
+		}
+	}
 	
 	function->setId(func_id);
 	function->setGhidraMapper(getManager()->m_ghidraFunctionMapper);
-	loadFunctionRanges(db, *function);
 	return function;
 }
 
-void FunctionMapper::loadFunctionRanges(Database* db, CE::Function::Function& function) {
-	SQLite::Statement query(*db, "SELECT * FROM sda_func_ranges WHERE func_id=?1 GROUP BY order_id");
-	query.bind(1, function.getId());
+void FunctionMapper::loadFunctionRanges(Database* db) {
+	SQLite::Statement query(*db, "SELECT * FROM sda_func_ranges ORDER BY func_id, order_id");
 
 	while (query.executeStep())
 	{
-		function.addRange(AddressRange(
-			function.getProcessModule()->toAbsAddr(query.getColumn("min_offset")),
-			function.getProcessModule()->toAbsAddr(query.getColumn("max_offset"))
+		int func_id = query.getColumn("func_id");
+		auto function = getManager()->getFunctionById(func_id);
+		if (!function)
+			continue;
+
+		int min_offset = query.getColumn("min_offset");
+		int max_offset = query.getColumn("max_offset");
+		function->addRange(AddressRange(
+			function->getProcessModule()->toAbsAddr(min_offset),
+			function->getProcessModule()->toAbsAddr(max_offset)
 		));
 	}
 }
@@ -104,11 +118,11 @@ void FunctionMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 void FunctionMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto& def = *static_cast<CE::Function::Function*>(obj);
 
-	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_functions (func_id, func_symbol_id, signature_id, module_id, stack_mem_area_id, exported, save_id)\
-				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_functions (func_id, func_symbol_id, signature_id, module_id, stack_mem_area_id, body_mem_area_id, exported, save_id)\
+				VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)");
 	query.bind(1, def.getId());
 	bind(query, def);
-	query.bind(7, ctx->m_saveId);
+	query.bind(8, ctx->m_saveId);
 	query.exec();
 	saveFunctionRanges(ctx, def);
 }
@@ -126,5 +140,6 @@ void FunctionMapper::bind(SQLite::Statement& query, CE::Function::Function& def)
 	query.bind(3, def.getSignature()->getId());
 	query.bind(4, def.getProcessModule()->getId());
 	query.bind(5, def.getStackMemoryArea() ? def.getStackMemoryArea()->getId() : 0);
-	query.bind(6, def.isExported());
+	query.bind(6, def.getBodyMemoryArea() ? def.getBodyMemoryArea()->getId() : 0);
+	query.bind(7, def.isExported());
 }

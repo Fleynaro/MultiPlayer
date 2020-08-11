@@ -45,6 +45,10 @@ namespace CE
 
 			void setStackMemoryArea(Symbol::MemoryArea* stackMemoryArea);
 
+			Symbol::MemoryArea* getBodyMemoryArea();
+
+			void setBodyMemoryArea(Symbol::MemoryArea* bodyMemoryArea);
+
 			Trigger::Function::Hook* getHook();
 
 			bool hasHook();
@@ -66,6 +70,7 @@ namespace CE
 			AddressRangeList m_ranges;
 			DataType::Signature* m_signature;
 			Symbol::MemoryArea* m_stackMemoryArea = nullptr;
+			Symbol::MemoryArea* m_bodyMemoryArea = nullptr;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionManager* m_manager;
 			bool m_exported = false;

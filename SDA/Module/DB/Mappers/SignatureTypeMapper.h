@@ -9,14 +9,15 @@ namespace DB
 	public:
 		SignatureTypeMapper(DataTypeMapper* parentMapper);
 
+		void loadStorages(Database* db);
+
+		void loadParameterSymbols(Database* db);
+
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
 	protected:
-		void loadStorages(Database* db, CE::DataType::Signature& sig);
 
 		void saveStorages(TransactionContext* ctx, CE::DataType::Signature& sig);
-
-		void loadParameterSymbols(Database* db, CE::DataType::Signature& sig);
 
 		void saveParameterSymbols(TransactionContext* ctx, CE::DataType::Signature& sig);
 

@@ -75,7 +75,6 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
     auto modulesManager = m_programModule->getProcessModuleManager();
     ProcessModule* kernel32;
     ProcessModule* ucrtbase;
-
     memoryAreaManager->createMainGlobalMemoryArea(0x1000000);
 
     //for processes
@@ -208,7 +207,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     //for functions
     {
         auto funcManager = m_programModule->getFunctionManager();
-        ASSERT_EQ(funcManager->getItemsCount(), 7);
+        ASSERT_EQ(funcManager->getItemsCount(), 8);
         
         auto func = funcManager->getFunctionAt(&setRot);
         ASSERT_EQ(func->getSignature()->getParameters().size(), 5);
@@ -231,9 +230,9 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         auto symbolManager = m_programModule->getSymbolManager();
         ASSERT_GE(symbolManager->getItemsCount(), 1);
         auto memoryAreaManager = m_programModule->getMemoryAreaManager();
-        ASSERT_GE(memoryAreaManager->getItemsCount(), 1);
+        ASSERT_GE(memoryAreaManager->getItemsCount(), 2);
 
-        if (auto testStackFrame = memoryAreaManager->getMemoryAreaById(1)) {
+        if (auto testStackFrame = memoryAreaManager->getMemoryAreaById(2)) {
             ASSERT_EQ(testStackFrame->getSymbols().size(), 2);
             //testStackFrame->getSymbolAt(0x10);
         }

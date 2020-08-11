@@ -18,23 +18,26 @@ IDomainObject* SignatureTypeMapper::doLoad(Database* db, SQLite::Statement& quer
 	);
 	type->setId(query.getColumn("id"));
 	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_signatureTypeMapper);
-	loadParameterSymbols(db, *type);
-	loadStorages(db, *type);
 	return type;
 }
 
-void SignatureTypeMapper::loadStorages(Database* db, DataType::Signature& sig) {
-	Statement query(*db, "SELECT * FROM sda_signature_storages WHERE signature_id=?1");
-	query.bind(1, sig.getId());
-
+void SignatureTypeMapper::loadStorages(Database* db) {
+	Statement query(*db, "SELECT * FROM sda_signature_storages");
+	
 	while (query.executeStep())
 	{
+		int signature_id = query.getColumn("signature_id");
+		auto signature = dynamic_cast<DataType::Signature*>(getParentMapper()->getManager()->getTypeById(signature_id));
+		if (!signature)
+			continue;
+
 		int index = query.getColumn("idx");
 		auto storage_type = (DataType::Storage::StorageType)(int)query.getColumn("storage_type");
 		int register_id = query.getColumn("register_id");
 		int offset = query.getColumn("offset");
+
 		auto storage = new DataType::Storage(index, storage_type, register_id, offset);
-		sig.getCustomStorages().push_back(storage);
+		signature->getCustomStorages().push_back(storage);
 	}
 }
 
@@ -59,18 +62,21 @@ void SignatureTypeMapper::saveStorages(TransactionContext* ctx, DataType::Signat
 	}
 }
 
-void SignatureTypeMapper::loadParameterSymbols(Database* db, DataType::Signature& sig) {
-	Statement query(*db, "SELECT * FROM sda_signature_params WHERE signature_id=?1 ORDER BY order_id");
-	query.bind(1, sig.getId());
-
+void SignatureTypeMapper::loadParameterSymbols(Database* db) {
+	Statement query(*db, "SELECT * FROM sda_signature_params ORDER BY signature_id, order_id");
+	
 	while (query.executeStep())
 	{
+		int signature_id = query.getColumn("signature_id");
 		int param_symbol_id = query.getColumn("param_symbol_id");
+		auto signature = dynamic_cast<DataType::Signature*>(getParentMapper()->getManager()->getTypeById(signature_id));
+		if (!signature)
+			continue;
 		auto param_symbol = dynamic_cast<Symbol::FuncParameterSymbol*>(getParentMapper()->getManager()->getProgramModule()->getSymbolManager()->getSymbolById(param_symbol_id));
 		if (!param_symbol) {
 			param_symbol = getParentMapper()->getManager()->getProgramModule()->getSymbolManager()->getDefaultFuncParameterSymbol();
 		}
-		sig.addParameter(param_symbol);
+		signature->addParameter(param_symbol);
 	}
 }
 

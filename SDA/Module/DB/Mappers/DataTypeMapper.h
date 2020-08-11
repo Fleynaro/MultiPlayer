@@ -25,9 +25,9 @@ namespace DB
 
 		DataTypeMapper(IRepository* repository);
 
-		void loadAll();
+		void loadBefore();
 
-		void loadStructsAndClasses();
+		void loadAfter();
 
 		Id getNextId() override;
 

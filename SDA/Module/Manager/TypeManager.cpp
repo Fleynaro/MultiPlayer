@@ -100,12 +100,12 @@ void TypeManager::addGhidraTypedefs() {
 	}
 }
 
-void TypeManager::loadTypes() {
-	m_dataTypeMapper->loadAll();
+void TypeManager::loadBefore() {
+	m_dataTypeMapper->loadBefore();
 }
 
-void TypeManager::loadClasses() {
-	m_dataTypeMapper->loadStructsAndClasses();
+void TypeManager::loadAfter() {
+	m_dataTypeMapper->loadAfter();
 }
 
 void TypeManager::loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket) {

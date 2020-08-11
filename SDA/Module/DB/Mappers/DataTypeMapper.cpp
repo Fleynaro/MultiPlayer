@@ -21,7 +21,7 @@ DataTypeMapper::DataTypeMapper(IRepository* repository)
 	m_signatureTypeMapper = new SignatureTypeMapper(this);
 }
 
-void DataTypeMapper::loadAll() {
+void DataTypeMapper::loadBefore() {
 	auto& db = getManager()->getProgramModule()->getDB();
 	Statement query(db, "SELECT * FROM sda_types WHERE id >= 1000 AND deleted = 0");
 	load(&db, query);
@@ -29,10 +29,12 @@ void DataTypeMapper::loadAll() {
 	m_typedefTypeMapper->loadTypedefs(&db);
 }
 
-void DataTypeMapper::loadStructsAndClasses() {
+void DataTypeMapper::loadAfter() {
 	auto& db = getManager()->getProgramModule()->getDB();
 	m_structureTypeMapper->loadStructures(&db);
 	m_classTypeMapper->loadClasses(&db);
+	m_signatureTypeMapper->loadParameterSymbols(&db);
+	m_signatureTypeMapper->loadStorages(&db);
 }
 
 Id DataTypeMapper::getNextId() {

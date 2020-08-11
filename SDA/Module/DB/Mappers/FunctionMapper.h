@@ -21,7 +21,7 @@ namespace DB
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
-		void loadFunctionRanges(Database* db, CE::Function::Function& function);
+		void loadFunctionRanges(Database* db);
 
 		void saveFunctionRanges(TransactionContext* ctx, CE::Function::Function& function);
 

@@ -31,9 +31,9 @@ namespace CE
 
 		void addGhidraTypedefs();
 
-		void loadTypes();
+		void loadBefore();
 
-		void loadClasses();
+		void loadAfter();
 
 		void loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 

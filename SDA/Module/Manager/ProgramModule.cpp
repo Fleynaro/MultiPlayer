@@ -42,11 +42,11 @@ void ProgramModule::initTransaction() {
 void ProgramModule::load()
 {
 	getProcessModuleManager()->loadProcessModules();
-	getTypeManager()->loadTypes();
+	getTypeManager()->loadBefore();
 	getSymbolManager()->loadSymbols();
 	getMemoryAreaManager()->loadMemoryAreas();
 	getFunctionManager()->loadFunctions();
-	getTypeManager()->loadClasses();
+	getTypeManager()->loadAfter();
 	getFunctionTagManager()->loadUserTags();
 	getTriggerManager()->loadTriggers();
 	getTriggerGroupManager()->loadTriggerGroups();

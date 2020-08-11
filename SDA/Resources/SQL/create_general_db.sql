@@ -132,6 +132,7 @@ create table sda_functions
     signature_id        INTEGER,
     module_id           INTEGER,
     stack_mem_area_id   INTEGER DEFAULT 0,
+    body_mem_area_id    INTEGER DEFAULT 0,
     exported            INTEGER,
     save_id             INTEGER,
     ghidra_sync_id      INTEGER,

@@ -34,6 +34,8 @@ DataType::Signature* Function::Function::getSignature() {
 }
 
 void* Function::Function::getAddress() {
+	if (m_ranges.empty())
+		return nullptr;
 	return m_ranges.begin()->getMinAddress();
 }
 
@@ -60,6 +62,14 @@ Symbol::MemoryArea* Function::Function::getStackMemoryArea() {
 
 void Function::Function::setStackMemoryArea(Symbol::MemoryArea* stackMemoryArea) {
 	m_stackMemoryArea = stackMemoryArea;
+}
+
+Symbol::MemoryArea* Function::Function::getBodyMemoryArea() {
+	return m_bodyMemoryArea;
+}
+
+void Function::Function::setBodyMemoryArea(Symbol::MemoryArea* bodyMemoryArea) {
+	m_bodyMemoryArea = bodyMemoryArea;
 }
 
 CE::Trigger::Function::Hook* Function::Function::getHook() {
