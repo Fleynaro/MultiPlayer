@@ -1,5 +1,5 @@
 #pragma once
-#include <Code/Function/FunctionDeclaration.h>
+#include <Code/Function/FunctionDefinition.h>
 #include <DB/DomainObject.h>
 #include <Utils/Description.h>
 
@@ -48,18 +48,18 @@ namespace CE::Function::Tag
 	public:
 		UserTag(Tag* parent, const std::string& name, const std::string& comment = "");
 
-		UserTag(FunctionDecl* decl, Tag* parent, const std::string& name, const std::string& comment = "");
+		UserTag(Function* func, Tag* parent, const std::string& name, const std::string& comment = "");
 
 		void setParent(Tag* parent);
 
 		Type getType() override;
 
-		bool isDefinedForDecl();
+		bool isDefinedForFunc();
 
-		void setDeclaration(FunctionDecl* decl);
+		void setFunction(Function* func);
 
-		FunctionDecl* getDeclaration();
+		Function* getFunction();
 	private:
-		FunctionDecl* m_decl = nullptr;
+		Function* m_function = nullptr;
 	};
 };

@@ -98,7 +98,7 @@ void TableLog::addBeforeCallRow(CE::Hook::DynHook* hook, bool filter)
 	if (size() > 10000)
 		return;
 
-	auto funcDef = (CE::Function::FunctionDefinition*)hook->getUserPtr();
+	auto funcDef = (CE::Function::Function*)hook->getUserPtr();
 
 	m_mutex.lock();
 	addRow(
@@ -121,7 +121,7 @@ void TableLog::addAfterCallRow(CE::Hook::DynHook* hook, bool filter)
 	auto row = getRow(hook->getUID());
 	if (row == nullptr)
 		return;
-	auto funcDef = (CE::Function::FunctionDefinition*)hook->getUserPtr();
+	auto funcDef = (CE::Function::Function*)hook->getUserPtr();
 	m_mutex.lock();
 	std::get<RetValue>(*row) = getRetValue(funcDef, hook);
 	m_mutex.unlock();
@@ -130,9 +130,9 @@ void TableLog::addAfterCallRow(CE::Hook::DynHook* hook, bool filter)
 	std::get<Stat>(*row).m_filterAfter = filter;
 }
 
-std::list<Value> TableLog::getArgValues(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook) {
+std::list<Value> TableLog::getArgValues(CE::Function::Function* funcDef, CE::Hook::DynHook* hook) {
 	std::list<Value> values;
-	auto& argTypes = funcDef->getDeclaration().getSignature()->getParameters();
+	auto& argTypes = funcDef->getSignature()->getParameters();
 	for (int argIdx = 1; argIdx <= min(hook->getArgCount(), argTypes.size()); argIdx++) {
 		auto type = argTypes[argIdx - 1]->getDataType();
 		void* rawData = nullptr;
@@ -152,8 +152,8 @@ std::list<Value> TableLog::getArgValues(CE::Function::FunctionDefinition* funcDe
 	return values;
 }
 
-Value TableLog::getRetValue(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook) {
-	auto retType = funcDef->getDeclaration().getSignature()->getReturnType();
+Value TableLog::getRetValue(CE::Function::Function* funcDef, CE::Hook::DynHook* hook) {
+	auto retType = funcDef->getSignature()->getReturnType();
 	void* rawData = nullptr;
 
 	if (retType->isPointer()) {

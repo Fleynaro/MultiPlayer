@@ -1,7 +1,7 @@
 #pragma once
 #include "Structure.h"
 #include "SystemType.h"
-#include "../Function/MethodDeclaration.h"
+#include "../Function/FunctionDefinition.h"
 #include "../VTable/VTable.h"
 #include <Utils/Iterator.h>
 
@@ -17,16 +17,16 @@ namespace CE::DataType
 	class Class : public Structure
 	{
 	public:
-		using MethodListType = std::list<Function::MethodDecl*>;
+		using MethodListType = std::list<Function::Function*>;
 
-		class MethodIterator : public IIterator<Function::MethodDecl*>
+		class MethodIterator : public IIterator<Function::Function*>
 		{
 		public:
 			MethodIterator(Class* Class);
 
 			bool hasNext() override;
 
-			Function::MethodDecl* next() override;
+			Function::Function* next() override;
 		private:
 			Function::VTable* m_vtable;
 			std::list<Class*> m_classes;
@@ -43,7 +43,7 @@ namespace CE::DataType
 
 		MethodListType& getMethods();
 
-		void addMethod(Function::MethodDecl* method);
+		void addMethod(Function::Function* method);
 
 		std::list<Class*> getClassesInHierarchy();
 

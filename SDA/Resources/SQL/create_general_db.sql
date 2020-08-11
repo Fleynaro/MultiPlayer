@@ -60,7 +60,7 @@ INSERT INTO sda_process_modules VALUES (1, '', 'main', '');
 
 create table sda_callnodes
 (
-    def_id     INTEGER,
+    func_id     INTEGER,
     id         INTEGER,
     item_group INTEGER,
     item_id    INTEGER,
@@ -80,8 +80,8 @@ create table sda_struct_fields
 create table sda_class_methods
 (
     struct_id   INTEGER,
-    decl_id     INTEGER,
-    primary key (struct_id, decl_id)
+    func_id     INTEGER,
+    primary key (struct_id, func_id)
 );
 
 create table sda_structures
@@ -131,28 +131,16 @@ create table sda_signatures
     ret_pointer_lvl TEXT
 );
 
-create table sda_func_decls
+create table sda_functions
 (
-    decl_id         INTEGER
+    func_id  INTEGER
         primary key autoincrement,
-    name            TEXT
+    func_symbol_id  INTEGER,
         unique,
-    role            INTEGER,
-    signature_id    INTEGER,
-    exported        INTEGER,
-    desc            TEXT,
-    save_id             INTEGER,
-    ghidra_sync_id      INTEGER,
-    deleted             INTEGER DEFAULT 0
-);
-
-create table sda_func_defs
-(
-    def_id  INTEGER
-        primary key autoincrement,
-    decl_id             INTEGER,
+    signature_id        INTEGER,
     module_id           INTEGER,
     stack_mem_area_id   INTEGER DEFAULT 0,
+    exported            INTEGER,
     save_id             INTEGER,
     ghidra_sync_id      INTEGER,
     deleted             INTEGER DEFAULT 0
@@ -160,7 +148,7 @@ create table sda_func_defs
 
 create table sda_func_ranges
 (
-    def_id     INTEGER,
+    func_id     INTEGER,
     order_id   INTEGER,
     min_offset INTEGER,
     max_offset INTEGER
@@ -248,9 +236,9 @@ UPDATE SQLITE_SEQUENCE SET seq=1000 WHERE name='sda_types';
 create table sda_vtable_funcs
 (
     vtable_id INTEGER,
-    def_id    INTEGER,
+    func_id    INTEGER,
     id        INTEGER,
-    primary key (vtable_id, def_id)
+    primary key (vtable_id, func_id)
 );
 
 create table sda_vtables

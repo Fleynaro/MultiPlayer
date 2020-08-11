@@ -75,9 +75,7 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
     auto typeManager = m_programModule->getTypeManager();
     auto symbolManager = m_programModule->getSymbolManager();
     auto memoryAreaManager = m_programModule->getMemoryAreaManager();
-    auto gvarManager = m_programModule->getGVarManager();
     auto funcManager = m_programModule->getFunctionManager();
-    auto declManager = funcManager->getFunctionDeclManager();
     auto modulesManager = m_programModule->getProcessModuleManager();
     ProcessModule* kernel32;
     ProcessModule* ucrtbase;
@@ -114,26 +112,26 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         sumArraySig->addParameter("arr", DataType::GetUnit(typeManager->getTypeByName("int32_t"), "*[3][2]"));
         sumArraySig->addParameter("str", DataType::GetUnit(typeManager->getTypeByName("char"), "*"));
 
-        auto function1 = funcManager->createFunction(module,    { AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                 declManager->createFunctionDecl(setRotSig, g_testFuncName, "set rot to an entity"));
-        auto function2 = funcManager->createFunction(module,    { AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },         declManager->createFunctionDecl(typeManager->createSignature("changeGvarSig"), "changeGvar", ""));
-        auto function3 = funcManager->createFunction(ucrtbase,  { AddressRange(&rand, calculateFunctionSize((byte*)&rand)) },                     declManager->createFunctionDecl(typeManager->createSignature("randSig"), "rand", ""));
-        auto function4 = funcManager->createFunction(module,    { AddressRange(&setPlayerPos, calculateFunctionSize((byte*)&setPlayerPos)) },     declManager->createFunctionDecl(typeManager->createSignature("setPlayerPosSig"), "setPlayerPos", ""));
-        auto function5 = funcManager->createFunction(module,    { AddressRange(&setPlayerVel, calculateFunctionSize((byte*)&setPlayerVel)) },     declManager->createFunctionDecl(typeManager->createSignature("setPlayerVelSig"), "setPlayerVel", ""));
-        auto function6 = funcManager->createFunction(module,    { AddressRange(&sumArray, calculateFunctionSize((byte*)&sumArray)) },             declManager->createFunctionDecl(sumArraySig, "sumArray", ""));
+        auto function1 = funcManager->createFunction(g_testFuncName, module,    { AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                   setRotSig, "set rot to an entity");
+        auto function2 = funcManager->createFunction("changeGvar", module,    { AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },             typeManager->createSignature("changeGvarSig"));
+        auto function3 = funcManager->createFunction("rand", ucrtbase,  { AddressRange(&rand, calculateFunctionSize((byte*)&rand)) },                               typeManager->createSignature("randSig"));
+        auto function4 = funcManager->createFunction("setPlayerPos", module,    { AddressRange(&setPlayerPos, calculateFunctionSize((byte*)&setPlayerPos)) },       typeManager->createSignature("setPlayerPosSig"));
+        auto function5 = funcManager->createFunction("setPlayerVel", module,    { AddressRange(&setPlayerVel, calculateFunctionSize((byte*)&setPlayerVel)) },       typeManager->createSignature("setPlayerVelSig"));
+        auto function6 = funcManager->createFunction("sumArray", module,    { AddressRange(&sumArray, calculateFunctionSize((byte*)&sumArray)) },                   sumArraySig);
         
         auto libExportedFunctions = kernel32->getExportedFunctions();
         for (auto it : libExportedFunctions) {
             if (it.first != "GetErrorMode")
                 continue;
-            auto function = funcManager->createFunction(ucrtbase, { AddressRange(it.second, calculateFunctionSize((byte*)it.second)) }, declManager->createFunctionDecl(typeManager->createSignature(it.first + "_sig"), it.first, "exported function from kernel32.dll"));
-            tagManager->createUserTag(function->getDeclarationPtr(), tagManager->m_setTag, "WinAPI", "From kernel32.dll");
+            auto function = funcManager->createFunction(it.first, ucrtbase, { AddressRange(it.second, calculateFunctionSize((byte*)it.second)) }, typeManager->createSignature(it.first + "_sig"), "exported function from kernel32.dll");
+            tagManager->createUserTag(function, tagManager->m_setTag, "WinAPI", "From kernel32.dll");
             function->setExported(true);
         }
 
         //for function tags
         {
-            tagManager->createUserTag(function1->getDeclarationPtr(), tagManager->m_getTag, "tag1", "test GET tag1");
-            tagManager->createUserTag(function2->getDeclarationPtr(), tagManager->m_setTag, "tag2", "test SET tag2");
+            tagManager->createUserTag(function1, tagManager->m_getTag, "tag1", "test GET tag1");
+            tagManager->createUserTag(function2, tagManager->m_setTag, "tag2", "test SET tag2");
         }
     }
 
@@ -147,12 +145,6 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         stackFrame->addSymbol(stackVar_0x20, 0x20);
 
         memoryAreaManager->createMainGlobalMemoryArea(0x10000);
-    }
-
-    //for global vars
-    {
-        auto gvar1 = gvarManager->createGlobalVar(modulesManager->getMainModule(), &g_IntegerVal, "g_IntegerVal", "test global var");
-        gvar1->setType(DataType::GetUnit(typeManager->getTypeByName("int32_t")));
     }
 
     //for types
@@ -185,8 +177,8 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         auto ped = typeManager->createClass("Ped", "this is a derrived class type");
         ped->setBaseClass(entity);
         ped->addField(100, "head_angle", DataType::GetUnit(typeManager->getTypeByName("float")));
-        auto methodDecl = declManager->createMethodDecl(typeManager->createSignature("getHeadAngleSig"), "getHeadAngle");
-        ped->addMethod(methodDecl);
+        auto method = funcManager->createFunction("getHeadAngle", modulesManager->getMainModule(), {}, typeManager->createSignature("getHeadAngleSig"));
+        ped->addMethod(method);
     }
 
     //for triggers
@@ -223,19 +215,18 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         ASSERT_EQ(funcManager->getItemsCount(), 7);
         
         auto func = funcManager->getFunctionAt(&setRot);
-        ASSERT_EQ(func->getDeclaration().getSignature()->getParameters().size(), 5);
-        ASSERT_EQ(func->getDeclaration().getFunctions().size(), 1);
+        ASSERT_EQ(func->getSignature()->getParameters().size(), 5);
         ASSERT_EQ(func->getAddressRangeList().size(), 1);
         ASSERT_EQ(func->getAddressRangeList().begin()->getMinAddress(), &setRot);
         ASSERT_EQ(func->getName(), g_testFuncName);
 
         //for function tags
         {
-            auto tagManager = m_programModule->getFunctionTagManager();
+            /*auto tagManager = m_programModule->getFunctionTagManager();
             ASSERT_EQ(tagManager->getItemsCount(), 3 + 2);
 
             auto tags = tagManager->getTagCollection(func);
-            ASSERT_EQ(tags.getTags().size(), 3);
+            ASSERT_EQ(tags.getTags().size(), 3);*/
         }
     }
 
@@ -250,12 +241,6 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
             ASSERT_EQ(testStackFrame->getSymbols().size(), 2);
             //testStackFrame->getSymbolAt(0x10);
         }
-    }
-
-    //for global vars
-    {
-        auto gvarManager = m_programModule->getGVarManager();
-        ASSERT_EQ(gvarManager->getItemsCount(), 1);
     }
 
     //for types
@@ -447,7 +432,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     //iterator 1
     {
         int i = 0;
-        DereferenceIterator it(arr3, function->getDeclaration().getSignature()->getParameters()[0]->getDataType());
+        DereferenceIterator it(arr3, function->getSignature()->getParameters()[0]->getDataType());
         while (it.hasNext()) {
             auto item = it.next();
             auto value = *(int*)item.first;
@@ -509,30 +494,6 @@ TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
     ASSERT_EQ(provider->getFoundRecords().size(), 100);
 }
 
-#include <CodeGraph/Analysis/CompareFunctionBodies.h>
-#include <CodeGraph/Analysis/ContextDistance.h>
-#include <CodeGraph/Analysis/GenericAnalysis.h>
-#include <CodeGraph/FunctionBodyBuilder.h>
-TEST_F(ProgramModuleFixture, Test_CodeGraph)
-{
-    using namespace CodeGraph;
-    auto funcManager = m_programModule->getFunctionManager();
-
-    auto function = funcManager->getFunctionAt(&setRot);
-    ASSERT_NE(function, nullptr);
-
-    FunctionBodyBuilder builder(function->getBody(), function->getAddressRangeList(), funcManager);
-    builder.build();
-
-
-    CallGraphIterator it(funcManager);
-    it.iterate([&](Node::Node* node, CallStack& stack)
-        {
-            
-            return true;
-        });
-}
-
 #include <GhidraSync/GhidraSyncCommitment.h>
 TEST_F(ProgramModuleFixture, Test_GhidraSync)
 {
@@ -540,7 +501,6 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
     auto sync = m_programModule->getGhidraSync();
     auto typeManager = m_programModule->getTypeManager();
     auto funcManager = m_programModule->getFunctionManager();
-    auto gvarManager = m_programModule->getGVarManager();
     DataType::Structure* screen2d_vtable = nullptr;
 
     //download
@@ -563,8 +523,7 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
 
         typeManager->loadTypesFrom(&dataPacket);
         funcManager->loadFunctionsFrom(&dataPacket);
-        gvarManager->loadGlobalVarsFrom(&dataPacket);
-
+        
         auto type = typeManager->getTypeByName("Screen2D");
         if (type != nullptr) {
             int runCode = rand();

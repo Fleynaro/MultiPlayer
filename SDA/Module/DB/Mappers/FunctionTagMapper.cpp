@@ -1,6 +1,6 @@
 #include "FunctionTagMapper.h"
 #include <Manager/FunctionTagManager.h>
-#include <Manager/FunctionDeclManager.h>
+#include <Manager/FunctionDefManager.h>
 
 using namespace CE;
 using namespace DB;
@@ -31,11 +31,11 @@ IDomainObject* FunctionUserTagMapper::doLoad(Database* db, SQLite::Statement& qu
 	if (parentTag == nullptr)
 		return nullptr;
 
-	auto decl = getManager()->getProgramModule()->getFunctionDeclManager()->getFunctionDeclById(query.getColumn("decl_id"));
-	if (decl == nullptr)
+	auto func = getManager()->getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("func_id"));
+	if (func == nullptr)
 		return nullptr;
 
-	auto userTag = new UserTag(decl, parentTag, query.getColumn("name"), query.getColumn("desc"));
+	auto userTag = new UserTag(func, parentTag, query.getColumn("name"), query.getColumn("desc"));
 	userTag->setId(tag_id);
 	return userTag;
 }
@@ -54,7 +54,7 @@ void FunctionUserTagMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj
 {
 	auto userTag = static_cast<CE::Function::Tag::UserTag*>(obj);
 
-	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_func_tags (tag_id, parent_tag_id, decl_id, name, desc) VALUES(?1, ?2, ?3, ?4, ?5)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_func_tags (tag_id, parent_tag_id, func_id, name, desc) VALUES(?1, ?2, ?3, ?4, ?5)");
 	query.bind(1, userTag->getId());
 	bind(query, *userTag);
 	query.exec();
@@ -70,7 +70,7 @@ void FunctionUserTagMapper::doRemove(TransactionContext* ctx, IDomainObject* obj
 void FunctionUserTagMapper::bind(SQLite::Statement& query, CE::Function::Tag::UserTag& tag)
 {
 	query.bind(2, tag.getParent()->getId());
-	query.bind(3, tag.isDefinedForDecl() ? tag.getDeclaration()->getId() : 0);
+	query.bind(3, tag.isDefinedForFunc() ? tag.getId() : 0);
 	query.bind(4, tag.getName());
 	query.bind(5, tag.getComment());
 }

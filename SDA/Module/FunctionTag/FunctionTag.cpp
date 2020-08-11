@@ -7,8 +7,8 @@ UserTag::UserTag(Tag* parent, const std::string& name, const std::string& commen
 	: Tag(parent, name, comment)
 {}
 
-UserTag::UserTag(Function::FunctionDecl* decl, Tag* parent, const std::string& name, const std::string& comment)
-	: m_decl(decl), Tag(parent, name, comment)
+UserTag::UserTag(Function* function, Tag* parent, const std::string& name, const std::string& comment)
+	: m_function(function), Tag(parent, name, comment)
 {}
 
 void UserTag::setParent(Tag* parent) {
@@ -19,16 +19,16 @@ Tag::Type UserTag::getType() {
 	return getParent()->getType();
 }
 
-bool UserTag::isDefinedForDecl() {
-	return getDeclaration() != nullptr;
+bool UserTag::isDefinedForFunc() {
+	return getFunction() != nullptr;
 }
 
-void UserTag::setDeclaration(Function::FunctionDecl* decl) {
-	m_decl = decl;
+void UserTag::setFunction(Function* func) {
+	m_function = func;
 }
 
-Function::FunctionDecl* UserTag::getDeclaration() {
-	return m_decl;
+Function::Function* UserTag::getFunction() {
+	return m_function;
 }
 
 SetTag::SetTag()

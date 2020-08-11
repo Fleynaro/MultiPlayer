@@ -15,9 +15,8 @@ Class::MethodListType& CE::DataType::Class::getMethods() {
 	return m_methods;
 }
 
-void Class::addMethod(Function::MethodDecl* method) {
+void Class::addMethod(Function::Function* method) {
 	getMethods().push_back(method);
-	method->setClass(this);
 }
 
 std::list<Class*> Class::getClassesInHierarchy() {
@@ -85,7 +84,7 @@ bool Class::MethodIterator::hasNext() {
 	return true;
 }
 
-Function::MethodDecl* Class::MethodIterator::next() {
+Function::Function* Class::MethodIterator::next() {
 	//vtable...
 
 	if (m_iterator == m_end) {

@@ -48,15 +48,13 @@ IDomainObject* ClassTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 
 void ClassTypeMapper::loadMethodsForClass(Database* db, DataType::Class* Class)
 {
-	SQLite::Statement query(*db, "SELECT decl_id FROM sda_class_methods WHERE struct_id=?1");
+	SQLite::Statement query(*db, "SELECT func_id FROM sda_class_methods WHERE struct_id=?1");
 	query.bind(1, Class->getId());
 
 	while (query.executeStep())
 	{
-		auto decl = getParentMapper()->getManager()->getProgramModule()->getFunctionManager()->getFunctionDeclManager()->getFunctionDeclById(query.getColumn("decl_id"));
-		if (auto methodDecl = dynamic_cast<Function::MethodDecl*>(decl)) {
-			Class->addMethod(methodDecl);
-		}
+		auto func = getParentMapper()->getManager()->getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("func_id"));
+		Class->addMethod(func);
 	}
 }
 
@@ -70,7 +68,7 @@ void ClassTypeMapper::saveMethodsForClass(TransactionContext* ctx, DataType::Cla
 
 	{
 		for (auto method : Class->getMethods()) {
-			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_class_methods (struct_id, decl_id) VALUES(?1, ?2)");
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_class_methods (struct_id, func_id) VALUES(?1, ?2)");
 			query.bind(1, Class->getId());
 			query.bind(2, method->getId());
 			query.exec();

@@ -1,7 +1,6 @@
 #pragma once
 #include "AbstractManager.h"
 #include <FunctionTag/FunctionTagCollection.h>
-#include <CodeGraph/Iterator/CallGraphIterator.h>
 #include <Code/Function/FunctionDefinition.h>
 
 namespace DB {
@@ -30,13 +29,13 @@ namespace CE
 
 		void calculateAllTags();
 
-		UserTag* createUserTag(Function::FunctionDecl* decl, Tag* parent, std::string name, std::string desc = "");
+		UserTag* createUserTag(Function::Function* func, Tag* parent, std::string name, std::string desc = "");
 
 		UserTag* createUserTag(Tag* parent, std::string name, std::string desc = "");
 
 		Tag* getTagById(int id);
 
-		TagCollection* getGlobalTagCollectionByDecl(Function::FunctionDecl* decl, bool create = false);
+		TagCollection* getGlobalTagCollectionByFunc(Function::Function* func, bool create = false);
 
 		TagCollection getTagCollection(Function::Function* function);
 	private:

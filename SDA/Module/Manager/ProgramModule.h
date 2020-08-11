@@ -12,9 +12,7 @@ namespace CE
 	class TypeManager;
 	class SymbolManager;
 	class MemoryAreaManager;
-	class GlobalVarManager;
 	class FunctionManager;
-	class FunctionDeclManager;
 	class FunctionTagManager;
 	class VtableManager;
 	class TriggerManager;
@@ -56,11 +54,7 @@ namespace CE
 
 		MemoryAreaManager* getMemoryAreaManager();
 
-		GlobalVarManager* getGVarManager();
-
 		FunctionManager* getFunctionManager();
-
-		FunctionDeclManager* getFunctionDeclManager();
 
 		FunctionTagManager* getFunctionTagManager();
 
@@ -89,7 +83,6 @@ namespace CE
 		TypeManager* m_typeManager = nullptr;
 		SymbolManager* m_symbolManager = nullptr;
 		MemoryAreaManager* m_memoryAreaManager = nullptr;
-		GlobalVarManager* m_gvarManager = nullptr;
 		FunctionManager* m_functionManager = nullptr;
 		VtableManager* m_vtableManager = nullptr;
 		TriggerManager* m_triggerManager = nullptr;

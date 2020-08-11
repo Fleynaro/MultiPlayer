@@ -28,9 +28,9 @@ void FunctionTagManager::calculateUserTags() {
 	while (it.hasNext()) {
 		auto tag = it.next();
 		if (auto userTag = dynamic_cast<UserTag*>(tag)) {
-			if (!userTag->isDefinedForDecl())
+			if (!userTag->isDefinedForFunc())
 				continue;
-			TagCollection* collection = getGlobalTagCollectionByDecl(userTag->getDeclaration(), true);
+			TagCollection* collection = getGlobalTagCollectionByFunc(userTag->getFunction(), true);
 			collection->add(userTag);
 		}
 	}
@@ -42,46 +42,13 @@ void FunctionTagManager::calculateAllTags() {
 	std::deque<std::pair<int, Tag*>> tags;
 
 	using namespace CodeGraph;
-	CallGraphIterator iter(m_funcManager);
-	iter.iterate([&](Node::Node* node, CallStack& stack)
-		{
-			if (auto funcBody = dynamic_cast<Node::FunctionBody*>(node))
-			{
-				while (!tags.empty()) {
-					if (tags.front().first >= stack.size()) {
-						tags.pop_front();
-						continue;
-					}
-					break;
-				}
-
-				TagCollection tempCollection;
-				for (auto it : tags) {
-					tempCollection.add(it.second);
-				}
-
-				auto gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclarationPtr());
-				if (gCollection != nullptr) {
-					for (auto tag : gCollection->getTags()) {
-						if (tag->getType() == Tag::GET) {
-							tags.push_front(std::make_pair(stack.size(), tag));
-						}
-					}
-				}
-
-				if (!tempCollection.empty()) {
-					gCollection = getGlobalTagCollectionByDecl(funcBody->getFunction()->getDeclarationPtr(), true);
-					gCollection->add(tempCollection);
-				}
-			}
-			return true;
-		});
+	//removed code...
 }
 
-UserTag* FunctionTagManager::createUserTag(Function::FunctionDecl* decl, Tag* parent, std::string name, std::string desc) {
+UserTag* FunctionTagManager::createUserTag(Function::Function* func, Tag* parent, std::string name, std::string desc) {
 	UserTag* tag;
-	if (decl != nullptr)
-		tag = new UserTag(decl, parent, name, desc);
+	if (func != nullptr)
+		tag = new UserTag(func, parent, name, desc);
 	else tag = new UserTag(parent, name, desc);
 
 	tag->setMapper(m_userTagMapper);
@@ -98,42 +65,27 @@ Tag* FunctionTagManager::getTagById(int id) {
 	return static_cast<Tag*>(find(id));
 }
 
-TagCollection* FunctionTagManager::getGlobalTagCollectionByDecl(Function::FunctionDecl* decl, bool create) {
-	auto decl_id = decl->getId();
-	if (m_tagCollections.find(decl_id) == m_tagCollections.end()) {
+TagCollection* FunctionTagManager::getGlobalTagCollectionByFunc(Function::Function* func, bool create) {
+	auto func_id = func->getId();
+	if (m_tagCollections.find(func_id) == m_tagCollections.end()) {
 		if (!create) {
 			return nullptr;
 		}
-		m_tagCollections[decl_id] = TagCollection();
+		m_tagCollections[func_id] = TagCollection();
 	}
-	return &m_tagCollections[decl_id];
+	return &m_tagCollections[func_id];
 }
 
 TagCollection FunctionTagManager::getTagCollection(Function::Function* function) {
 	TagCollection collection;
 
-	auto globalCollection = getGlobalTagCollectionByDecl(function->getDeclarationPtr());
+	auto globalCollection = getGlobalTagCollectionByFunc(function);
 	if (globalCollection != nullptr) {
 		collection.add(*globalCollection);
 	}
 
 	using namespace CodeGraph;
-	FunctionBodyIterator it(function->getBody());
-	it.iterateCallStack([&](Node::Node* node, CallStack& stack)
-		{
-			auto funcNode = static_cast<Node::FunctionNode*>(node);
-			if (!funcNode->isNotCalculated()) {
-				auto gCollection = getGlobalTagCollectionByDecl(funcNode->getFunction()->getDeclarationPtr());
-				if (gCollection != nullptr) {
-					for (auto tag : gCollection->getTags()) {
-						if (tag->getType() == Tag::SET && !collection.contains(tag)) {
-							collection.add(tag);
-						}
-					}
-				}
-			}
-			return true;
-		}, FunctionBodyIterator::Filter::FunctionNode);
+	//removed code...
 
 	return collection;
 }

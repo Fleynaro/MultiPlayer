@@ -21,7 +21,6 @@ ProgramModule::~ProgramModule() {
 		delete m_statManager;
 		delete m_symbolManager;
 		delete m_memoryAreaManager;
-		delete m_gvarManager;
 		delete m_triggerManager;
 		delete m_triggerGroupManager;
 		delete m_vtableManager;
@@ -46,7 +45,6 @@ void ProgramModule::load()
 	getTypeManager()->loadTypes();
 	getSymbolManager()->loadSymbols();
 	getMemoryAreaManager()->loadMemoryAreas();
-	getGVarManager()->loadGlobalVars();
 	getFunctionManager()->loadFunctions();
 	getTypeManager()->loadClasses();
 	getFunctionTagManager()->loadUserTags();
@@ -58,10 +56,9 @@ void ProgramModule::initManagers()
 {
 	m_processModuleManager = new ProcessModuleManager(this);
 	m_typeManager = new TypeManager(this);
-	m_functionManager = new FunctionManager(this, new FunctionDeclManager(this));
+	m_functionManager = new FunctionManager(this);
 	m_symbolManager = new SymbolManager(this);
 	m_memoryAreaManager = new MemoryAreaManager(this);
-	m_gvarManager = new GlobalVarManager(this);
 	m_vtableManager = new VtableManager(this);
 	m_triggerManager = new TriggerManager(this);
 	m_triggerGroupManager = new TriggerGroupManager(this);
@@ -115,16 +112,8 @@ MemoryAreaManager* ProgramModule::getMemoryAreaManager() {
 	return m_memoryAreaManager;
 }
 
-GlobalVarManager* ProgramModule::getGVarManager() {
-	return m_gvarManager;
-}
-
 FunctionManager* ProgramModule::getFunctionManager() {
 	return m_functionManager;
-}
-
-FunctionDeclManager* ProgramModule::getFunctionDeclManager() {
-	return m_functionManager->getFunctionDeclManager();
 }
 
 FunctionTagManager* ProgramModule::getFunctionTagManager() {

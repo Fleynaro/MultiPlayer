@@ -71,9 +71,7 @@ namespace CE
 
 			void addParameter(Symbol::FuncParameterSymbol* symbol);
 
-			void addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment = "") {
-
-			}
+			void addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment = "");
 
 			void removeLastParameter();
 

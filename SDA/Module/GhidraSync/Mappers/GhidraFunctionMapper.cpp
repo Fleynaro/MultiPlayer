@@ -17,8 +17,7 @@ void FunctionDefMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 		if (function == nullptr) {
 			auto mainModule = m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule();
 			auto signatureType = m_functionManager->getProgramModule()->getTypeManager()->createSignature("", "");
-			auto funcDecl = m_functionManager->getFunctionDeclManager()->createFunctionDecl(signatureType, "", "");
-			function = m_functionManager->createFunction(mainModule, {}, funcDecl);
+			function = m_functionManager->createFunction("", mainModule, {}, signatureType);
 		}
 		changeFunctionByDesc(function, funcDesc);
 	}
@@ -55,8 +54,8 @@ AddressRangeList FunctionDefMapper::getRangesFromDesc(const std::vector<function
 }
 
 void FunctionDefMapper::changeFunctionByDesc(Function::Function* function, const function::SFunction& funcDesc) {
-	function->getDeclaration().setName(funcDesc.name);
-	function->getDeclaration().setComment(funcDesc.comment);
+	function->setName(funcDesc.name);
+	function->setComment(funcDesc.comment);
 	function->getAddressRangeList().clear();
 	function->getAddressRangeList() = getRangesFromDesc(funcDesc.ranges);
 	m_dataTypeMapper->m_signatureTypeMapper->changeSignatureByDesc(function->getSignature(), funcDesc.signature);

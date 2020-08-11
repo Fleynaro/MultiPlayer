@@ -71,7 +71,7 @@ void Writer::writeArgument(int argIdx) {
 }
 
 void Writer::writeArgumentExtra(int argIdx, void* argAddrValue) {
-	auto& argTypes = getFunctionDef()->getDeclaration().getSignature()->getParameters();
+	auto& argTypes = getFunctionDef()->getSignature()->getParameters();
 	if (argIdx > argTypes.size())
 		return;
 	if (writeTypeValue(getStream(), argAddrValue, argTypes[argIdx - 1]->getDataType())) {

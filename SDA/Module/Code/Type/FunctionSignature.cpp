@@ -1,5 +1,6 @@
 #include "FunctionSignature.h"
 #include <Manager/TypeManager.h>
+#include <Manager/SymbolManager.h>
 
 using namespace CE;
 using namespace CE::DataType;
@@ -46,6 +47,11 @@ std::vector<Symbol::FuncParameterSymbol*>& Signature::getParameters() {
 
 void Signature::addParameter(Symbol::FuncParameterSymbol* symbol) {
 	m_parameters.push_back(symbol);
+}
+
+void Signature::addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment = "") {
+	auto paramSymbol = dynamic_cast<Symbol::FuncParameterSymbol*>(getTypeManager()->getProgramModule()->getSymbolManager()->createSymbol(Symbol::FUNC_PARAMETER, dataType, name, comment));
+	addParameter(paramSymbol);
 }
 
 void Signature::removeLastParameter() {

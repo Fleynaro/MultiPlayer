@@ -1,5 +1,6 @@
 #include "FunctionDefManager.h"
 #include "TypeManager.h"
+#include "SymbolManager.h"
 #include <DB/Mappers/FunctionDefMapper.h>
 #include <GhidraSync/Mappers/GhidraFunctionDefMapper.h>
 #include <CodeGraph/FunctionBodyBuilder.h>
@@ -7,8 +8,8 @@
 
 using namespace CE;
 
-FunctionManager::FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager)
-	: AbstractItemManager(module), m_funcDeclManager(funcDeclManager)
+FunctionManager::FunctionManager(ProgramModule* module)
+	: AbstractItemManager(module)
 {
 	m_funcDefMapper = new DB::FunctionDefMapper(this);
 	m_ghidraFunctionDefMapper = new Ghidra::FunctionDefMapper(this, getProgramModule()->getTypeManager()->m_ghidraDataTypeMapper);
@@ -16,12 +17,10 @@ FunctionManager::FunctionManager(ProgramModule* module, FunctionDeclManager* fun
 }
 
 FunctionManager::~FunctionManager() {
-	delete m_funcDeclManager;
 	delete m_ghidraFunctionDefMapper;
 }
 
 void FunctionManager::loadFunctions() {
-	m_funcDeclManager->loadFunctionDecls();
 	m_funcDefMapper->loadAll();
 }
 
@@ -29,19 +28,24 @@ void FunctionManager::loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dat
 	m_ghidraFunctionDefMapper->load(dataPacket);
 }
 
-Function::Function* FunctionManager::createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl) {
-	auto def = new Function::Function(this, module, ranges, decl);
-	def->setMapper(m_funcDefMapper);
-	def->setGhidraMapper(m_ghidraFunctionDefMapper);
-	def->setId(m_funcDefMapper->getNextId());
-	getProgramModule()->getTransaction()->markAsNew(def);
-	return def;
+Function::Function* FunctionManager::createFunction(Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature) {
+	auto func = new Function::Function(this, functionSymbol, module, ranges, signature);
+	func->setMapper(m_funcDefMapper);
+	func->setGhidraMapper(m_ghidraFunctionDefMapper);
+	func->setId(m_funcDefMapper->getNextId());
+	getProgramModule()->getTransaction()->markAsNew(func);
+	return func;
+}
+
+Function::Function* FunctionManager::createFunction(const std::string& name, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature, const std::string& comment) {
+	auto symbol = dynamic_cast<Symbol::FunctionSymbol*>(getProgramModule()->getSymbolManager()->createSymbol(Symbol::FUNCTION, DataType::GetUnit(signature), name, comment));
+	return createFunction(symbol, module, ranges, signature);
 }
 
 void FunctionManager::createDefaultFunction() {
 	auto sig = new DataType::Signature(getProgramModule()->getTypeManager(), "defSig");
-	m_defFunction = new Function::Function(this, nullptr, {},
-		new Function::FunctionDecl(getFunctionDeclManager(), sig, "DefaultFunction", "This function created automatically."));
+	auto symbol = new Symbol::FunctionSymbol(getProgramModule()->getSymbolManager(), DataType::GetUnit(sig), "defFunction");
+	m_defFunction = new Function::Function(this, symbol, nullptr, {}, sig);
 }
 
 Function::Function* FunctionManager::getDefaultFunction() {
@@ -73,10 +77,6 @@ Function::Function* FunctionManager::getFunctionAt(void* addr) {
 		}
 	}
 	return nullptr;
-}
-
-FunctionDeclManager* FunctionManager::getFunctionDeclManager() {
-	return m_funcDeclManager;
 }
 
 #include <Address/Address.h>

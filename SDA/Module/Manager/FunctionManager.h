@@ -1,7 +1,6 @@
 #pragma once
 #include "AbstractManager.h"
 #include <Code/Function/FunctionDefinition.h>
-#include "FunctionDeclManager.h"
 
 namespace DB {
 	class FunctionDefMapper;
@@ -21,7 +20,7 @@ namespace CE
 		using Iterator = AbstractIterator<Function::Function>;
 		Ghidra::FunctionDefMapper* m_ghidraFunctionDefMapper;
 
-		FunctionManager(ProgramModule* module, FunctionDeclManager* funcDeclManager);
+		FunctionManager(ProgramModule* module);
 
 		~FunctionManager();
 
@@ -29,7 +28,9 @@ namespace CE
 
 		void loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
-		Function::Function* createFunction(ProcessModule* module, AddressRangeList ranges, CE::Function::FunctionDecl* decl);
+		Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature);
+
+		Function::Function* createFunction(const std::string& name, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature, const std::string& comment = "");
 
 		void createDefaultFunction();
 
@@ -41,8 +42,6 @@ namespace CE
 
 		Function::Function* getFunctionAt(void* addr);
 
-		FunctionDeclManager* getFunctionDeclManager();
-
 		void buildFunctionBodies();
 
 		void buildFunctionBasicInfo();
@@ -51,11 +50,8 @@ namespace CE
 
 		FunctionTagManager* getFunctionTagManager();
 	private:
-		FunctionDeclManager* m_funcDeclManager;
 		FunctionTagManager* m_tagManager;
 		Function::Function* m_defFunction = nullptr;
 		DB::FunctionDefMapper* m_funcDefMapper;
 	};
-
-	using FunctionDefManager = FunctionManager;
 };

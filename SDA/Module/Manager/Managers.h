@@ -7,7 +7,6 @@
 #include "FunctionTagManager.h"
 #include "SymbolManager.h"
 #include "MemoryAreaManager.h"
-#include "GlobalVarManager.h"
 #include "VTableManager.h"
 #include "StatManager.h"
 #include "TriggerManager.h"
