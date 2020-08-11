@@ -1,6 +1,7 @@
 #include "SignatureTypeMapper.h"
 #include <GhidraSync/Mappers/GhidraSignatureTypeMapper.h>
 #include <Manager/TypeManager.h>
+#include <Manager/SymbolManager.h>
 
 using namespace DB;
 using namespace CE;
@@ -17,46 +18,81 @@ IDomainObject* SignatureTypeMapper::doLoad(Database* db, SQLite::Statement& quer
 	);
 	type->setId(query.getColumn("id"));
 	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_signatureTypeMapper);
-	loadFunctionDeclArguments(db, *type);
+	loadParameterSymbols(db, *type);
+	loadStorages(db, *type);
 	return type;
 }
 
-void SignatureTypeMapper::loadFunctionDeclArguments(Database* db, DataType::Signature& sig) {
-	Statement query(*db, "SELECT * FROM sda_signature_args WHERE signature_id=?1 GROUP BY id");
+void SignatureTypeMapper::loadStorages(Database* db, DataType::Signature& sig) {
+	Statement query(*db, "SELECT * FROM sda_signature_storages WHERE signature_id=?1");
 	query.bind(1, sig.getId());
 
 	while (query.executeStep())
 	{
-		auto type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getTypeById(query.getColumn("type_id"));
-		if (type == nullptr) {
-			type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getDefaultType();
-		}
-
-		sig.addArgument(query.getColumn("name"), DataType::GetUnit(type, query.getColumn("pointer_lvl")));
+		int index = query.getColumn("idx");
+		auto storage_type = (DataType::Storage::StorageType)(int)query.getColumn("storage_type");
+		int register_id = query.getColumn("register_id");
+		int offset = query.getColumn("offset");
+		auto storage = new DataType::Storage(index, storage_type, register_id, offset);
+		sig.getCustomStorages().push_back(storage);
 	}
 }
 
-void SignatureTypeMapper::saveFunctionDeclArguments(TransactionContext* ctx, DataType::Signature& sig) {
-	removeFunctionDeclArguments(ctx, sig);
+void SignatureTypeMapper::saveStorages(TransactionContext* ctx, DataType::Signature& sig) {
+	{
+		SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_signature_storages WHERE signature_id=?1");
+		query.bind(1, sig.getId());
+		query.exec();
+	}
+
+	{
+		for (auto storage : sig.getCustomStorages()) {
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_signature_storages (signature_id, idx, storage_type, register_id, offset) \
+					VALUES(?1, ?2, ?3, ?4, ?5)");
+			query.bind(1, sig.getId());
+			query.bind(2, storage->getIndex());
+			query.bind(3, storage->getType());
+			query.bind(4, storage->getRegisterId());
+			query.bind(5, storage->getOffset());
+			query.exec();
+		}
+	}
+}
+
+void SignatureTypeMapper::loadParameterSymbols(Database* db, DataType::Signature& sig) {
+	Statement query(*db, "SELECT * FROM sda_signature_params WHERE signature_id=?1 ORDER BY order_id");
+	query.bind(1, sig.getId());
+
+	while (query.executeStep())
+	{
+		int param_symbol_id = query.getColumn("param_symbol_id");
+		auto param_symbol = dynamic_cast<Symbol::FuncParameterSymbol*>(getParentMapper()->getManager()->getProgramModule()->getSymbolManager()->getSymbolById(param_symbol_id));
+		if (!param_symbol) {
+			param_symbol = getParentMapper()->getManager()->getProgramModule()->getSymbolManager()->getDefaultFuncParameterSymbol();
+		}
+		sig.addParameter(param_symbol);
+	}
+}
+
+void SignatureTypeMapper::saveParameterSymbols(TransactionContext* ctx, DataType::Signature& sig) {
+	removeParameterSymbols(ctx, sig);
 
 	{
 		int id = 0;
-		for (auto arg : sig.getArguments()) {
-			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_signature_args (signature_id, id, name, type_id, pointer_lvl) \
-					VALUES(?1, ?2, ?3, ?4, ?5)");
+		for (auto param : sig.getParameters()) {
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_signature_params (signature_id, order_id, param_symbol_id) \
+					VALUES(?1, ?2, ?3)");
 			query.bind(1, sig.getId());
 			query.bind(2, id);
-			query.bind(3, arg.first);
-			query.bind(4, arg.second->getId());
-			query.bind(5, DataType::GetPointerLevelStr(arg.second));
+			query.bind(3, param->getId());
 			query.exec();
 			id++;
 		}
 	}
 }
 
-void SignatureTypeMapper::removeFunctionDeclArguments(TransactionContext* ctx, CE::DataType::Signature& sig) {
-	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_signature_args WHERE signature_id=?1");
+void SignatureTypeMapper::removeParameterSymbols(TransactionContext* ctx, CE::DataType::Signature& sig) {
+	SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_signature_params WHERE signature_id=?1");
 	query.bind(1, sig.getId());
 	query.exec();
 }
@@ -71,7 +107,8 @@ void SignatureTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) 
 	query.bind(1, signature->getId());
 	bind(query, *signature);
 	query.exec();
-	saveFunctionDeclArguments(ctx, *signature);
+	saveParameterSymbols(ctx, *signature);
+	saveStorages(ctx, *signature);
 }
 
 void SignatureTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
@@ -82,7 +119,7 @@ void SignatureTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) 
 	query.exec();
 
 	auto signature = static_cast<DataType::Signature*>(obj);
-	removeFunctionDeclArguments(ctx, *signature);
+	removeParameterSymbols(ctx, *signature);
 }
 
 void SignatureTypeMapper::bind(SQLite::Statement& query, DataType::Signature& sig) {

@@ -1,20 +1,65 @@
 #pragma once
 #include "UserType.h"
+#include "../Symbol/FuncParameterSymbol.h"
 
 namespace CE
 {
 	namespace DataType
 	{
+		class Storage {
+		public:
+			enum StorageType {
+				STORAGE_REGISTER,
+				STORAGE_STACK,
+				STORAGE_GLOBAL
+			};
+
+			Storage(int index, StorageType storageType, int registerId, int offset)
+				: m_index(index), m_storageType(storageType), m_registerId(registerId), m_offset(offset)
+			{}
+
+			int getIndex() {
+				return m_index;
+			}
+
+			StorageType getType() {
+				return m_storageType;
+			}
+
+			int getRegisterId() {
+				return m_registerId;
+			}
+
+			int getOffset() {
+				return m_offset;
+			}
+		private:
+			int m_index;
+			StorageType m_storageType;
+			int m_registerId;
+			int m_offset;
+		};
+
 		class Signature : public UserType
 		{
 		public:
-			using ArgList = std::vector<std::pair<std::string, DataTypePtr>>;
+			enum CallingConvetion {
+				FASTCALL
+			};
 
-			Signature(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
+			Signature(TypeManager* typeManager, const std::string& name, const std::string& comment = "", CallingConvetion callingConvetion = FASTCALL);
 			
 			Group getGroup() override;
 
 			int getSize() override;
+
+			CallingConvetion getCallingConvetion() {
+				return m_callingConvetion;
+			}
+
+			std::list<Storage*>& getCustomStorages() {
+				return m_customStorages;
+			}
 
 			std::string getSigName();
 
@@ -22,19 +67,22 @@ namespace CE
 
 			DataTypePtr getReturnType();
 
-			ArgList& getArguments();
+			std::vector<Symbol::FuncParameterSymbol*>& getParameters();
 
-			void addArgument(const std::string& name, DataTypePtr type);
+			void addParameter(Symbol::FuncParameterSymbol* symbol);
 
-			void setArgumentName(int idx, const std::string& name);
+			void addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment = "") {
 
-			void setArgumentType(int idx, DataTypePtr type);
+			}
 
-			void removeLastArgument();
+			void removeLastParameter();
 
-			void deleteAllArguments();
+			void deleteAllParameters();
+
 		private:
-			ArgList m_args;
+			CallingConvetion m_callingConvetion;
+			std::list<Storage*> m_customStorages;
+			std::vector<Symbol::FuncParameterSymbol*> m_parameters;
 			DataTypePtr m_returnType;
 		};
 	};

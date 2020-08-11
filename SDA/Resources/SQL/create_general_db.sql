@@ -106,13 +106,20 @@ create table sda_enum_fields
     value   INTEGER
 );
 
-create table sda_signature_args
+create table sda_signature_storages
 (
-    id              INTEGER,
-    signature_id    INTEGER,
-    name            TEXT,
-    type_id         INTEGER not null,
-    pointer_lvl     TEXT,
+    signature_id        INTEGER,
+    idx                 INTEGER,
+    storage_type        INTEGER,
+    register_id         INTEGER,
+    offset              INTEGER
+);
+
+create table sda_signature_params
+(
+    order_id            INTEGER,
+    signature_id        INTEGER,
+    param_symbol_id     INTEGER,
     primary key (id, signature_id)
 );
 

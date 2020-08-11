@@ -15,11 +15,11 @@ CE::Function::MethodDecl::MethodDecl(FunctionDeclManager* manager, DataType::Sig
 void CE::Function::MethodDecl::setClass(DataType::Class* Class)
 {
 	auto typeUnit = DataType::GetUnit(Class, "*");
-	if (getSignature()->getArguments().size() > 0) {
-		getSignature()->setArgumentType(0, typeUnit);
+	if (getSignature()->getParameters().size() > 0) {
+		getSignature()->getParameters()[0]->setDataType(typeUnit);
 	}
 	else {
-		getSignature()->addArgument("this", typeUnit);
+		getSignature()->addParameter("this", typeUnit);
 	}
 }
 

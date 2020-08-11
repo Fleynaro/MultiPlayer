@@ -12,11 +12,15 @@ namespace DB
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
 	protected:
-		void loadFunctionDeclArguments(Database* db, CE::DataType::Signature& sig);
+		void loadStorages(Database* db, CE::DataType::Signature& sig);
 
-		void saveFunctionDeclArguments(TransactionContext* ctx, CE::DataType::Signature& sig);
+		void saveStorages(TransactionContext* ctx, CE::DataType::Signature& sig);
 
-		void removeFunctionDeclArguments(TransactionContext* ctx, CE::DataType::Signature& sig);
+		void loadParameterSymbols(Database* db, CE::DataType::Signature& sig);
+
+		void saveParameterSymbols(TransactionContext* ctx, CE::DataType::Signature& sig);
+
+		void removeParameterSymbols(TransactionContext* ctx, CE::DataType::Signature& sig);
 
 		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 

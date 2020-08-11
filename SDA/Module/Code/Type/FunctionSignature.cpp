@@ -4,8 +4,8 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Signature::Signature(TypeManager* typeManager, const std::string& name, const std::string& comment)
-	: UserType(typeManager, name, comment)
+Signature::Signature(TypeManager* typeManager, const std::string& name, const std::string& comment, CallingConvetion callingConvetion)
+	: UserType(typeManager, name, comment), m_callingConvetion(callingConvetion)
 {
 	setReturnType(DataType::GetUnit(typeManager->getProgramModule()->getTypeManager()->getDefaultReturnType()));
 }
@@ -21,9 +21,9 @@ int Signature::getSize() {
 std::string Signature::getSigName() {
 	std::string name = getReturnType()->getDisplayName() + " " + getName() + "(";
 
-	auto& argList = getArguments();
+	auto& argList = getParameters();
 	for (int i = 0; i < argList.size(); i++) {
-		name += argList[i].second->getDisplayName() + " " + argList[i].first + ", ";
+		name += argList[i]->getDataType()->getDisplayName() + " " + argList[i]->getName() + ", ";
 	}
 	if (argList.size() > 0) {
 		name.pop_back();
@@ -40,27 +40,19 @@ DataTypePtr Signature::getReturnType() {
 	return m_returnType;
 }
 
-Signature::ArgList& Signature::getArguments() {
-	return m_args;
+std::vector<Symbol::FuncParameterSymbol*>& Signature::getParameters() {
+	return m_parameters;
 }
 
-void Signature::addArgument(const std::string& name, DataTypePtr type) {
-	m_args.push_back(std::make_pair(name, type));
+void Signature::addParameter(Symbol::FuncParameterSymbol* symbol) {
+	m_parameters.push_back(symbol);
 }
 
-void Signature::setArgumentName(int idx, const std::string& name) {
-	m_args[idx] = std::make_pair(name, m_args[idx].second);
+void Signature::removeLastParameter() {
+	m_parameters.pop_back();
 }
 
-void Signature::setArgumentType(int idx, DataTypePtr type) {
-	m_args[idx] = std::make_pair(m_args[idx].first, type);
-}
-
-void Signature::removeLastArgument() {
-	m_args.pop_back();
-}
-
-void Signature::deleteAllArguments() {
-	m_args.clear();
+void Signature::deleteAllParameters() {
+	m_parameters.clear();
 }
 

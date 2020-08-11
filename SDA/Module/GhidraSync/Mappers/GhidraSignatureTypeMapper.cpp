@@ -34,10 +34,10 @@ datatype::SDataTypeSignature SignatureTypeMapper::buildDesc(DataType::Signature*
 	sigDesc.__set_type(m_dataTypeMapper->buildDesc(sig));
 	sigDesc.__set_returnType(m_dataTypeMapper->buildTypeUnitDesc(sig->getReturnType()));
 
-	for (auto arg : sig->getArguments()) {
+	for (auto param : sig->getParameters()) {
 		datatype::SFunctionArgument argDesc;
-		argDesc.__set_name(arg.first);
-		argDesc.__set_type(m_dataTypeMapper->buildTypeUnitDesc(arg.second));
+		argDesc.__set_name(param->getName());
+		argDesc.__set_type(m_dataTypeMapper->buildTypeUnitDesc(param->getDataType()));
 		sigDesc.arguments.push_back(argDesc);
 	}
 	return sigDesc;
@@ -46,8 +46,8 @@ datatype::SDataTypeSignature SignatureTypeMapper::buildDesc(DataType::Signature*
 void SignatureTypeMapper::changeSignatureByDesc(DataType::Signature* sig, const datatype::SDataTypeSignature& sigDesc) {
 	m_dataTypeMapper->changeUserTypeByDesc(sig, sigDesc.type);
 	sig->setReturnType(m_dataTypeMapper->getTypeByDesc(sigDesc.returnType));
-	sig->deleteAllArguments();
+	sig->deleteAllParameters();
 	for (auto argDesc : sigDesc.arguments) {
-		sig->addArgument(argDesc.name, m_dataTypeMapper->getTypeByDesc(argDesc.type));
+		sig->addParameter(argDesc.name, m_dataTypeMapper->getTypeByDesc(argDesc.type));
 	}
 }

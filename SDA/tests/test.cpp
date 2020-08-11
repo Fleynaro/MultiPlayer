@@ -104,15 +104,15 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         auto module = m_programModule->getProcessModuleManager()->getMainModule();
 
         auto setRotSig = typeManager->createSignature("setRotSig");
-        setRotSig->addArgument("arg1", DataType::GetUnit(typeManager->getTypeByName("int32_t")));
-        setRotSig->addArgument("arg2", DataType::GetUnit(typeManager->getTypeByName("float")));
-        setRotSig->addArgument("arg3", DataType::GetUnit(typeManager->getTypeByName("float")));
-        setRotSig->addArgument("arg4", DataType::GetUnit(typeManager->getTypeByName("float")));
-        setRotSig->addArgument("arg5", DataType::GetUnit(typeManager->getTypeByName("int32_t")));
+        setRotSig->addParameter("arg1", DataType::GetUnit(typeManager->getTypeByName("int32_t")));
+        setRotSig->addParameter("arg2", DataType::GetUnit(typeManager->getTypeByName("float")));
+        setRotSig->addParameter("arg3", DataType::GetUnit(typeManager->getTypeByName("float")));
+        setRotSig->addParameter("arg4", DataType::GetUnit(typeManager->getTypeByName("float")));
+        setRotSig->addParameter("arg5", DataType::GetUnit(typeManager->getTypeByName("int32_t")));
 
         auto sumArraySig = typeManager->createSignature("sumArraySig");
-        sumArraySig->addArgument("arr", DataType::GetUnit(typeManager->getTypeByName("int32_t"), "*[3][2]"));
-        sumArraySig->addArgument("str", DataType::GetUnit(typeManager->getTypeByName("char"), "*"));
+        sumArraySig->addParameter("arr", DataType::GetUnit(typeManager->getTypeByName("int32_t"), "*[3][2]"));
+        sumArraySig->addParameter("str", DataType::GetUnit(typeManager->getTypeByName("char"), "*"));
 
         auto function1 = funcManager->createFunction(module,    { AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                 declManager->createFunctionDecl(setRotSig, g_testFuncName, "set rot to an entity"));
         auto function2 = funcManager->createFunction(module,    { AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },         declManager->createFunctionDecl(typeManager->createSignature("changeGvarSig"), "changeGvar", ""));
@@ -223,7 +223,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
         ASSERT_EQ(funcManager->getItemsCount(), 7);
         
         auto func = funcManager->getFunctionAt(&setRot);
-        ASSERT_EQ(func->getDeclaration().getSignature()->getArguments().size(), 5);
+        ASSERT_EQ(func->getDeclaration().getSignature()->getParameters().size(), 5);
         ASSERT_EQ(func->getDeclaration().getFunctions().size(), 1);
         ASSERT_EQ(func->getAddressRangeList().size(), 1);
         ASSERT_EQ(func->getAddressRangeList().begin()->getMinAddress(), &setRot);
@@ -447,7 +447,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
     //iterator 1
     {
         int i = 0;
-        DereferenceIterator it(arr3, function->getDeclaration().getSignature()->getArguments()[0].second);
+        DereferenceIterator it(arr3, function->getDeclaration().getSignature()->getParameters()[0]->getDataType());
         while (it.hasNext()) {
             auto item = it.next();
             auto value = *(int*)item.first;
@@ -583,8 +583,8 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
                     vfunc1->setComment("runCode = " + std::to_string(runCode));
                     it++;
                     if (auto vfunc2 = dynamic_cast<DataType::Signature*>(it->second->getType()->getType())) {
-                        ASSERT_EQ(vfunc2->getArguments().size(), 1);
-                        ASSERT_EQ(vfunc2->getArguments()[0].second->getType(), screen2d);
+                        ASSERT_EQ(vfunc2->getParameters().size(), 1);
+                        ASSERT_EQ(vfunc2->getParameters()[0]->getDataType()->getType(), screen2d);
                     }
                 }
             }
