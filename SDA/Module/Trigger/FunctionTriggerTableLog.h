@@ -91,9 +91,9 @@ namespace CE::Trigger::Function
 
 		void addAfterCallRow(CE::Hook::DynHook* hook, bool filter);
 
-		std::list<Value> getArgValues(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook);
+		std::list<Value> getArgValues(CE::Function::Function* funcDef, CE::Hook::DynHook* hook);
 
-		Value getRetValue(CE::Function::FunctionDefinition* funcDef, CE::Hook::DynHook* hook);
+		Value getRetValue(CE::Function::Function* funcDef, CE::Hook::DynHook* hook);
 
 		void getExtraValue(void* addrValue, CE::DataTypePtr argType, void*& dest);
 

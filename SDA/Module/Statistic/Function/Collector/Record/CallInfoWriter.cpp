@@ -44,6 +44,6 @@ bool Record::CallInfoWriter::writeTypeValue(Buffer::Stream& bufferStream, void* 
 	return true;
 }
 
-CE::Function::FunctionDefinition* Record::CallInfoWriter::getFunctionDef() {
-	return (CE::Function::FunctionDefinition*)m_hook->getUserPtr();
+CE::Function::Function* Record::CallInfoWriter::getFunctionDef() {
+	return (CE::Function::Function*)m_hook->getUserPtr();
 }

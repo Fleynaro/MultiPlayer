@@ -1,23 +1,22 @@
-#include "FunctionDefManager.h"
+#include "FunctionManager.h"
+#include "MemoryAreaManager.h"
 #include "TypeManager.h"
 #include "SymbolManager.h"
-#include <DB/Mappers/FunctionDefMapper.h>
-#include <GhidraSync/Mappers/GhidraFunctionDefMapper.h>
-#include <CodeGraph/FunctionBodyBuilder.h>
-#include <CodeGraph/Analysis/GenericAnalysis.h>
+#include <DB/Mappers/FunctionMapper.h>
+#include <GhidraSync/Mappers/GhidraFunctionMapper.h>
 
 using namespace CE;
 
 FunctionManager::FunctionManager(ProgramModule* module)
 	: AbstractItemManager(module)
 {
-	m_funcDefMapper = new DB::FunctionDefMapper(this);
-	m_ghidraFunctionDefMapper = new Ghidra::FunctionDefMapper(this, getProgramModule()->getTypeManager()->m_ghidraDataTypeMapper);
+	m_funcDefMapper = new DB::FunctionMapper(this);
+	m_ghidraFunctionMapper = new Ghidra::FunctionMapper(this, getProgramModule()->getTypeManager()->m_ghidraDataTypeMapper);
 	createDefaultFunction();
 }
 
 FunctionManager::~FunctionManager() {
-	delete m_ghidraFunctionDefMapper;
+	delete m_ghidraFunctionMapper;
 }
 
 void FunctionManager::loadFunctions() {
@@ -25,13 +24,13 @@ void FunctionManager::loadFunctions() {
 }
 
 void FunctionManager::loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dataPacket) {
-	m_ghidraFunctionDefMapper->load(dataPacket);
+	m_ghidraFunctionMapper->load(dataPacket);
 }
 
 Function::Function* FunctionManager::createFunction(Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature) {
 	auto func = new Function::Function(this, functionSymbol, module, ranges, signature);
 	func->setMapper(m_funcDefMapper);
-	func->setGhidraMapper(m_ghidraFunctionDefMapper);
+	func->setGhidraMapper(m_ghidraFunctionMapper);
 	func->setId(m_funcDefMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(func);
 	return func;
@@ -39,7 +38,11 @@ Function::Function* FunctionManager::createFunction(Symbol::FunctionSymbol* func
 
 Function::Function* FunctionManager::createFunction(const std::string& name, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature, const std::string& comment) {
 	auto symbol = dynamic_cast<Symbol::FunctionSymbol*>(getProgramModule()->getSymbolManager()->createSymbol(Symbol::FUNCTION, DataType::GetUnit(signature), name, comment));
-	return createFunction(symbol, module, ranges, signature);
+	auto func = createFunction(symbol, module, ranges, signature);
+	if (auto memSymbol = dynamic_cast<Symbol::MemorySymbol*>(symbol)) {
+		getProgramModule()->getGlobalMemoryArea()->addSymbol(memSymbol, module->toRelAddr(func->getAddress()));
+	}
+	return func;
 }
 
 void FunctionManager::createDefaultFunction() {
@@ -77,25 +80,6 @@ Function::Function* FunctionManager::getFunctionAt(void* addr) {
 		}
 	}
 	return nullptr;
-}
-
-#include <Address/Address.h>
-void FunctionManager::buildFunctionBodies() {
-	Iterator it(this);
-	while (it.hasNext()) {
-		auto func = it.next();
-		if (func->getBody()->getNodeList().size() > 0)
-			continue;
-		CodeGraph::FunctionBodyBuilder bodyBuilder(func->getBody(), func->getAddressRangeList(), this);
-		if(Address(func->getAddress()).canBeRead())
-			bodyBuilder.build();
-	}
-}
-
-void FunctionManager::buildFunctionBasicInfo()
-{
-	CodeGraph::Analyser::GenericAll analyser(this);
-	analyser.doAnalyse();
 }
 
 void FunctionManager::setFunctionTagManager(FunctionTagManager* manager) {

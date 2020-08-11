@@ -3,8 +3,6 @@
 #include <Utility/FileWrapper.h>
 #include <Utils/ITaskMonitor.h>
 
-using namespace SQLite;
-
 namespace CE::Stat::Function
 {
 	class BufferLoader

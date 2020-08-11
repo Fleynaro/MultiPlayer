@@ -1,7 +1,7 @@
 #include "ClassTypeMapper.h"
 #include <Code/Type/Class.h>
 #include <Manager/TypeManager.h>
-#include <Manager/FunctionDefManager.h>
+#include <Manager/FunctionManager.h>
 #include <Manager/VTableManager.h>
 #include <GhidraSync/Mappers/GhidraClassTypeMapper.h>
 

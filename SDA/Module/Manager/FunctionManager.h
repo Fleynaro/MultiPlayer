@@ -1,13 +1,13 @@
 #pragma once
 #include "AbstractManager.h"
-#include <Code/Function/FunctionDefinition.h>
+#include <Code/Function/Function.h>
 
 namespace DB {
-	class FunctionDefMapper;
+	class FunctionMapper;
 };
 
 namespace CE::Ghidra {
-	class FunctionDefMapper;
+	class FunctionMapper;
 };
 
 namespace CE
@@ -18,7 +18,7 @@ namespace CE
 	{
 	public:
 		using Iterator = AbstractIterator<Function::Function>;
-		Ghidra::FunctionDefMapper* m_ghidraFunctionDefMapper;
+		Ghidra::FunctionMapper* m_ghidraFunctionMapper;
 
 		FunctionManager(ProgramModule* module);
 
@@ -42,16 +42,12 @@ namespace CE
 
 		Function::Function* getFunctionAt(void* addr);
 
-		void buildFunctionBodies();
-
-		void buildFunctionBasicInfo();
-
 		void setFunctionTagManager(FunctionTagManager* manager);
 
 		FunctionTagManager* getFunctionTagManager();
 	private:
 		FunctionTagManager* m_tagManager;
 		Function::Function* m_defFunction = nullptr;
-		DB::FunctionDefMapper* m_funcDefMapper;
+		DB::FunctionMapper* m_funcDefMapper;
 	};
 };

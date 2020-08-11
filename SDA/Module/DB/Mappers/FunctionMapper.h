@@ -1,4 +1,5 @@
 #pragma once
+#include <DB/AbstractMapper.h>
 #include <Code/Function/Function.h>
 
 namespace CE {
@@ -7,10 +8,10 @@ namespace CE {
 
 namespace DB
 {
-	class FunctionDefMapper : public AbstractMapper
+	class FunctionMapper : public AbstractMapper
 	{
 	public:
-		FunctionDefMapper(CE::FunctionManager* repository);
+		FunctionMapper(CE::FunctionManager* repository);
 
 		void loadAll();
 
@@ -20,9 +21,9 @@ namespace DB
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
-		void loadFunctionRanges(Database* db, CE::Function::Function& definition);
+		void loadFunctionRanges(Database* db, CE::Function::Function& function);
 
-		void saveFunctionRanges(TransactionContext* ctx, CE::Function::Function& definition);
+		void saveFunctionRanges(TransactionContext* ctx, CE::Function::Function& function);
 
 		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 

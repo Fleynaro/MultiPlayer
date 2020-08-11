@@ -41,7 +41,6 @@ void FunctionTagManager::calculateAllTags() {
 	calculateUserTags();
 	std::deque<std::pair<int, Tag*>> tags;
 
-	using namespace CodeGraph;
 	//removed code...
 }
 
@@ -84,7 +83,6 @@ TagCollection FunctionTagManager::getTagCollection(Function::Function* function)
 		collection.add(*globalCollection);
 	}
 
-	using namespace CodeGraph;
 	//removed code...
 
 	return collection;

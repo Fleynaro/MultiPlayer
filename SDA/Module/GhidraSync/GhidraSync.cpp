@@ -1,5 +1,5 @@
 #include "GhidraSync.h"
-#include <Manager/FunctionDefManager.h>
+#include <Manager/FunctionManager.h>
 #include <Manager/TypeManager.h>
 
 using namespace CE;

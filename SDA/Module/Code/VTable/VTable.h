@@ -1,5 +1,5 @@
 #pragma once
-#include "../Function/FunctionDefinition.h"
+#include "../Function/Function.h"
 
 namespace CE
 {

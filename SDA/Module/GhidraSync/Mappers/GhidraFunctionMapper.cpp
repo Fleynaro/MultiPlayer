@@ -1,17 +1,17 @@
-#include "GhidraFunctionDefMapper.h"
+#include "GhidraFunctionMapper.h"
 #include "GhidraSignatureTypeMapper.h"
 #include <Manager/TypeManager.h>
-#include <Manager/FunctionDefManager.h>
+#include <Manager/FunctionManager.h>
 #include <Manager/ProcessModuleManager.h>
 
 using namespace CE;
 using namespace CE::Ghidra;
 
-FunctionDefMapper::FunctionDefMapper(CE::FunctionManager* functionManager, DataTypeMapper* dataTypeMapper)
+FunctionMapper::FunctionMapper(CE::FunctionManager* functionManager, DataTypeMapper* dataTypeMapper)
 	: m_functionManager(functionManager), m_dataTypeMapper(dataTypeMapper)
 {}
 
-void FunctionDefMapper::load(packet::SDataFullSyncPacket* dataPacket) {
+void FunctionMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	for (auto funcDesc : dataPacket->functions) {
 		auto function = m_functionManager->getFunctionByGhidraId(funcDesc.id);
 		if (function == nullptr) {
@@ -30,19 +30,19 @@ void markObjectAsSynced(SyncContext* ctx, Function::Function* func) {
 	query.exec();
 }
 
-void FunctionDefMapper::upsert(SyncContext* ctx, IObject* obj) {
+void FunctionMapper::upsert(SyncContext* ctx, IObject* obj) {
 	auto func = static_cast<Function::Function*>(obj);
 	ctx->m_dataPacket->functions.push_back(buildDesc(func));
 	markObjectAsSynced(ctx, func);
 }
 
-void FunctionDefMapper::remove(SyncContext* ctx, IObject* obj) {
+void FunctionMapper::remove(SyncContext* ctx, IObject* obj) {
 	auto func = static_cast<Function::Function*>(obj);
 	ctx->m_dataPacket->removed_functions.push_back(func->getGhidraId());
 	markObjectAsSynced(ctx, func);
 }
 
-AddressRangeList FunctionDefMapper::getRangesFromDesc(const std::vector<function::SFunctionRange>& rangeDescs) {
+AddressRangeList FunctionMapper::getRangesFromDesc(const std::vector<function::SFunctionRange>& rangeDescs) {
 	AddressRangeList ranges;
 	for (auto& range : rangeDescs) {
 		ranges.push_back(AddressRange(
@@ -53,7 +53,7 @@ AddressRangeList FunctionDefMapper::getRangesFromDesc(const std::vector<function
 	return ranges;
 }
 
-void FunctionDefMapper::changeFunctionByDesc(Function::Function* function, const function::SFunction& funcDesc) {
+void FunctionMapper::changeFunctionByDesc(Function::Function* function, const function::SFunction& funcDesc) {
 	function->setName(funcDesc.name);
 	function->setComment(funcDesc.comment);
 	function->getAddressRangeList().clear();
@@ -61,7 +61,7 @@ void FunctionDefMapper::changeFunctionByDesc(Function::Function* function, const
 	m_dataTypeMapper->m_signatureTypeMapper->changeSignatureByDesc(function->getSignature(), funcDesc.signature);
 }
 
-function::SFunction FunctionDefMapper::buildDesc(Function::Function* function) {
+function::SFunction FunctionMapper::buildDesc(Function::Function* function) {
 	function::SFunction funcDesc;
 	funcDesc.__set_id(function->getGhidraId());
 

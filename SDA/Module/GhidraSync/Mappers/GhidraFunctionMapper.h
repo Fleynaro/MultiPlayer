@@ -1,6 +1,6 @@
 #pragma once
 #include <GhidraSync/GhidraAbstractMapper.h>
-#include <Code/Function/FunctionDefinition.h>
+#include <Code/Function/Function.h>
 
 namespace CE {
 	class FunctionManager;
@@ -13,10 +13,10 @@ namespace CE::Ghidra
 
 	class DataTypeMapper;
 
-	class FunctionDefMapper : public IMapper
+	class FunctionMapper : public IMapper
 	{
 	public:
-		FunctionDefMapper(CE::FunctionManager* functionManager, DataTypeMapper* dataTypeMapper);
+		FunctionMapper(CE::FunctionManager* functionManager, DataTypeMapper* dataTypeMapper);
 
 		void load(packet::SDataFullSyncPacket* dataPacket) override;
 

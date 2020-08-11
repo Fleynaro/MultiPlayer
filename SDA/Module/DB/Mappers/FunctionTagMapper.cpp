@@ -1,6 +1,6 @@
 #include "FunctionTagMapper.h"
 #include <Manager/FunctionTagManager.h>
-#include <Manager/FunctionDefManager.h>
+#include <Manager/FunctionManager.h>
 
 using namespace CE;
 using namespace DB;

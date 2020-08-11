@@ -1,5 +1,5 @@
 #pragma once
-#include <Code/Function/FunctionDefinition.h>
+#include <Code/Function/Function.h>
 #include <DB/DomainObject.h>
 #include <Utils/Description.h>
 

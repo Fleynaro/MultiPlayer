@@ -1,7 +1,7 @@
 #pragma once
 #include "Structure.h"
 #include "SystemType.h"
-#include "../Function/FunctionDefinition.h"
+#include "../Function/Function.h"
 #include "../VTable/VTable.h"
 #include <Utils/Iterator.h>
 

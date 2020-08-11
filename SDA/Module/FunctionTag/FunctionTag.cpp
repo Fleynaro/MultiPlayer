@@ -7,7 +7,7 @@ UserTag::UserTag(Tag* parent, const std::string& name, const std::string& commen
 	: Tag(parent, name, comment)
 {}
 
-UserTag::UserTag(Function* function, Tag* parent, const std::string& name, const std::string& comment)
+UserTag::UserTag(CE::Function::Function* function, Tag* parent, const std::string& name, const std::string& comment)
 	: m_function(function), Tag(parent, name, comment)
 {}
 
@@ -23,11 +23,11 @@ bool UserTag::isDefinedForFunc() {
 	return getFunction() != nullptr;
 }
 
-void UserTag::setFunction(Function* func) {
+void UserTag::setFunction(CE::Function::Function* func) {
 	m_function = func;
 }
 
-Function::Function* UserTag::getFunction() {
+CE::Function::Function* UserTag::getFunction() {
 	return m_function;
 }
 

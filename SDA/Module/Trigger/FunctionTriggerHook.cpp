@@ -3,12 +3,12 @@
 
 using namespace CE::Trigger::Function;
 
-Hook::Hook(CE::Function::FunctionDefinition* definition)
+Hook::Hook(CE::Function::Function* function)
 {
-	m_hook = CE::Hook::DynHook(definition->getAddress(), &callback_before, &callback_after);
+	m_hook = CE::Hook::DynHook(function->getAddress(), &callback_before, &callback_after);
 	m_hook.setMethod(new CE::Hook::Method::Method2<TriggerState>(&m_hook));
-	m_hook.setArgCount(max(4, (int)definition->getSignature()->getParameters().size()));
-	m_hook.setUserPtr(definition);
+	m_hook.setArgCount(max(4, (int)function->getSignature()->getParameters().size()));
+	m_hook.setUserPtr(function);
 }
 
 std::list<Trigger*>& Hook::getActiveTriggers() {
@@ -19,8 +19,8 @@ CE::Hook::DynHook* Hook::getDynHook() {
 	return &m_hook;
 }
 
-CE::Function::FunctionDefinition* Hook::getFunctionDef() {
-	return static_cast<CE::Function::FunctionDefinition*>(getDynHook()->getUserPtr());
+CE::Function::Function* Hook::getFunctionDef() {
+	return static_cast<CE::Function::Function*>(getDynHook()->getUserPtr());
 }
 
 void Hook::addActiveTrigger(Trigger* trigger) {

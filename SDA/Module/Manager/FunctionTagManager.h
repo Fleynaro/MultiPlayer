@@ -1,7 +1,7 @@
 #pragma once
 #include "AbstractManager.h"
 #include <FunctionTag/FunctionTagCollection.h>
-#include <Code/Function/FunctionDefinition.h>
+#include <Code/Function/Function.h>
 
 namespace DB {
 	class FunctionUserTagMapper;

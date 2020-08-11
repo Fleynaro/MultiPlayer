@@ -58,14 +58,6 @@ create table sda_process_modules
 
 INSERT INTO sda_process_modules VALUES (1, '', 'main', '');
 
-create table sda_callnodes
-(
-    func_id     INTEGER,
-    id         INTEGER,
-    item_group INTEGER,
-    item_id    INTEGER,
-    extra      BLOB
-);
 
 create table sda_struct_fields
 (
@@ -120,7 +112,7 @@ create table sda_signature_params
     order_id            INTEGER,
     signature_id        INTEGER,
     param_symbol_id     INTEGER,
-    primary key (id, signature_id)
+    primary key (order_id, signature_id)
 );
 
 create table sda_signatures
@@ -135,7 +127,7 @@ create table sda_functions
 (
     func_id  INTEGER
         primary key autoincrement,
-    func_symbol_id  INTEGER,
+    func_symbol_id  INTEGER
         unique,
     signature_id        INTEGER,
     module_id           INTEGER,
@@ -159,7 +151,7 @@ create table sda_func_tags
     tag_id        INTEGER
         primary key autoincrement,
     parent_tag_id INTEGER,
-    decl_id       INTEGER,
+    func_id       INTEGER,
     name          TEXT,
     desc          TEXT
 );
@@ -172,21 +164,6 @@ CREATE TABLE "sda_func_trigger_filters" (
 	"filter_id"	    INTEGER,
 	"filter_idx"	INTEGER,
 	"data"	BLOB
-);
-
-create table sda_gvars
-(
-    id          INTEGER
-        primary key autoincrement,
-    name        TEXT,
-    module_id   INTEGER,
-    offset      INTEGER,
-    type_id     INTEGER,
-    pointer_lvl TEXT,
-    desc        TEXT,
-    save_id             INTEGER,
-    ghidra_sync_id      INTEGER,
-    deleted             INTEGER DEFAULT 0
 );
 
 CREATE TABLE "sda_trigger_group_triggers" (

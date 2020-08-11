@@ -21,10 +21,6 @@ public:
         m_programModule->initDataBase("database.db");
         m_programModule->initManagers();
         m_programModule->load();
-
-        m_programModule->getFunctionManager()->buildFunctionBodies();
-        m_programModule->getFunctionManager()->buildFunctionBasicInfo();
-        m_programModule->getFunctionTagManager()->calculateAllTags();
     }
 
     ~ProgramModuleFixtureBase() {
@@ -79,6 +75,8 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
     auto modulesManager = m_programModule->getProcessModuleManager();
     ProcessModule* kernel32;
     ProcessModule* ucrtbase;
+
+    memoryAreaManager->createMainGlobalMemoryArea(0x1000000);
 
     //for processes
     {
@@ -143,8 +141,6 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         auto stackFrame = memoryAreaManager->createMemoryArea(MemoryArea::STACK_SPACE, 0x100);
         stackFrame->addSymbol(stackVar_0x10, 0x10);
         stackFrame->addSymbol(stackVar_0x20, 0x20);
-
-        memoryAreaManager->createMainGlobalMemoryArea(0x10000);
     }
 
     //for types

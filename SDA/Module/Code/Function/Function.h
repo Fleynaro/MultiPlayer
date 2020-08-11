@@ -14,58 +14,61 @@ namespace CE
 	class FunctionManager;
 	class ProcessModule;
 
-	class Function : public DB::DomainObject, public Ghidra::Object, public IDescription
+	namespace Function
 	{
-	public:
-		Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature);
+		class Function : public DB::DomainObject, public Ghidra::Object, public IDescription
+		{
+		public:
+			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature);
 
-		Symbol::FunctionSymbol* getFunctionSymbol();
+			Symbol::FunctionSymbol* getFunctionSymbol();
 
-		const std::string getName() override;
+			const std::string getName() override;
 
-		const std::string getComment() override;
+			const std::string getComment() override;
 
-		void setName(const std::string& name) override;
+			void setName(const std::string& name) override;
 
-		void setComment(const std::string& comment) override;
+			void setComment(const std::string& comment) override;
 
-		DataType::Signature* getSignature();
+			DataType::Signature* getSignature();
 
-		void* getAddress();
+			void* getAddress();
 
-		AddressRangeList& getAddressRangeList();
+			AddressRangeList& getAddressRangeList();
 
-		void addRange(AddressRange range);
+			void addRange(AddressRange range);
 
-		bool isContainingAddress(void* addr);
+			bool isContainingAddress(void* addr);
 
-		Symbol::MemoryArea* getStackMemoryArea();
+			Symbol::MemoryArea* getStackMemoryArea();
 
-		void setStackMemoryArea(Symbol::MemoryArea* stackMemoryArea);
+			void setStackMemoryArea(Symbol::MemoryArea* stackMemoryArea);
 
-		Trigger::Function::Hook* getHook();
+			Trigger::Function::Hook* getHook();
 
-		bool hasHook();
+			bool hasHook();
 
-		void createHook();
+			void createHook();
 
-		void setExported(bool toggle);
+			void setExported(bool toggle);
 
-		bool isExported();
+			bool isExported();
 
-		Ghidra::Id getGhidraId() override;
+			Ghidra::Id getGhidraId() override;
 
-		ProcessModule* getProcessModule();
+			ProcessModule* getProcessModule();
 
-		FunctionManager* getManager();
-	private:
-		Symbol::FunctionSymbol* m_functionSymbol;
-		ProcessModule* m_module;
-		AddressRangeList m_ranges;
-		DataType::Signature* m_signature;
-		Symbol::MemoryArea* m_stackMemoryArea = nullptr;
-		Trigger::Function::Hook* m_hook = nullptr;
-		FunctionManager* m_manager;
-		bool m_exported = false;
+			FunctionManager* getManager();
+		private:
+			Symbol::FunctionSymbol* m_functionSymbol;
+			ProcessModule* m_module;
+			AddressRangeList m_ranges;
+			DataType::Signature* m_signature;
+			Symbol::MemoryArea* m_stackMemoryArea = nullptr;
+			Trigger::Function::Hook* m_hook = nullptr;
+			FunctionManager* m_manager;
+			bool m_exported = false;
+		};
 	};
 };
