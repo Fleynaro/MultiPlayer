@@ -37,7 +37,7 @@ datatype::SDataTypeStructure StructureTypeMapper::buildDesc(DataType::Structure*
 		datatype::SDataTypeStructureField structFieldDesc;
 		structFieldDesc.__set_name(field->getName());
 		structFieldDesc.__set_offset(field->getOffset());
-		structFieldDesc.__set_type(m_dataTypeMapper->buildTypeUnitDesc(field->getType()));
+		structFieldDesc.__set_type(m_dataTypeMapper->buildTypeUnitDesc(field->getDataType()));
 		structFieldDesc.__set_comment(field->getComment());
 		structDesc.fields.push_back(structFieldDesc);
 	}

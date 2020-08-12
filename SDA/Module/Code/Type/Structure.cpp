@@ -4,32 +4,49 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Structure::Field::Field(Structure* structure, const std::string& name, DataTypePtr type, int offset, const std::string& comment)
-	: m_structure(structure), m_offset(offset), Descrtiption(name, comment)
+Structure::Field::Field(Structure* structure, const std::string& name, DataTypePtr type, int absBitOffset, int bitSize, const std::string& comment)
+	: m_structure(structure), m_absBitOffset(absBitOffset), m_bitSize(bitSize), Descrtiption(name, comment)
 {
-	setType(type);
+	setDataType(type);
+}
+
+int Structure::Field::getBitSize() {
+	return m_bitSize;
+}
+
+int Structure::Field::getBitOffset() {
+	return m_absBitOffset - getOffset() * 0x8;
+}
+
+int Structure::Field::getSize() {
+	return m_type->getSize();
 }
 
 int Structure::Field::getOffset() {
-	return m_offset;
+	auto byteOffset = m_absBitOffset / 0x8;
+	return byteOffset - (isBitField() ? (byteOffset % getSize()) : 0);
+}
+
+bool Structure::Field::isBitField() {
+	return (m_bitSize % 0x8) != 0 || (m_absBitOffset % 0x8) != 0;
 }
 
 bool Structure::Field::isDefault() {
 	return m_structure->getDefaultField() == this;
 }
 
-void Structure::Field::setType(DataTypePtr type) {
+void Structure::Field::setDataType(DataTypePtr type) {
 	m_type = type;
 }
 
-DataTypePtr Structure::Field::getType() {
+DataTypePtr Structure::Field::getDataType() {
 	return m_type;
 }
 
 Structure::Structure(TypeManager* typeManager, const std::string& name, const std::string& comment)
 	: UserType(typeManager, name, comment)
 {
-	m_defaultField = new Field(this, "undefined", GetUnit(getTypeManager()->getTypeByName("byte")), -1);
+	m_defaultField = new Field(this, "undefined", GetUnit(getTypeManager()->getTypeByName("byte")), -1, -1);
 }
 
 Structure::~Structure() {
@@ -51,36 +68,42 @@ void Structure::resize(int size) {
 }
 
 int Structure::getSizeByLastField() {
-	if (m_fields.size() == 0)
+	if (m_fields.empty())
 		return 0;
-	auto lastField = --m_fields.end();
-	return lastField->first + lastField->second->getType()->getSize();
+	auto lastField = std::prev(m_fields.end())->second;
+	return lastField->getOffset() + lastField->getSize();
 }
 
 Structure::FieldMapType& Structure::getFields() {
 	return m_fields;
 }
 
-int Structure::getNextEmptyBytesCount(int offset) {
-	auto it = m_fields.upper_bound(offset);
+int Structure::getNextEmptyBitsCount(int bitOffset) {
+	auto it = m_fields.upper_bound(bitOffset);
 	if (it != m_fields.end()) {
-		return it->first - offset;
+		return it->first - bitOffset;
 	}
-	return m_size - offset;
+	return m_size - bitOffset;
 }
 
-bool Structure::areEmptyFields(int offset, int size) {
-	if (offset < 0 || size <= 0)
+bool Structure::areEmptyFields(int bitOffset, int bitSize) {
+	if (bitOffset < 0 || bitSize <= 0)
 		return false;
 
-	if (getNextEmptyBytesCount(offset) < size)
+	//check free space to the next field starting at the bitOffset
+	if (getNextEmptyBitsCount(bitOffset) < bitSize)
 		return false;
 
-	return getFieldIterator(offset) == m_fields.end();
+	//check intersecting with an existing field at the bitOffset
+	return getFieldIterator(bitOffset) == m_fields.end();
 }
 
-Structure::Field* Structure::getField(int offset) {
-	auto it = getFieldIterator(offset);
+bool Structure::areEmptyFieldsInBytes(int offset, int size) {
+	return areEmptyFields(offset * 0x8, size * 0x8);
+}
+
+Structure::Field* Structure::getField(int bitOffset) {
+	auto it = getFieldIterator(bitOffset);
 	if (it != m_fields.end()) {
 		return it->second;
 	}
@@ -88,16 +111,20 @@ Structure::Field* Structure::getField(int offset) {
 }
 
 void Structure::addField(int offset, const std::string& name, DataTypePtr type, const std::string& desc) {
-	m_fields.insert(std::make_pair(offset, new Field(this, name, type, offset, desc)));
-	m_size = max(m_size, offset + type->getSize());
+	addField(offset * 0x8, type->getSize() * 0x8, name, type, desc);
+}
+
+void Structure::addField(int bitOffset, int bitSize, const std::string& name, DataTypePtr type, const std::string& desc) {
+	m_fields.insert(std::make_pair(bitOffset, new Field(this, name, type, bitOffset, bitSize, desc)));
+	m_size = getSizeByLastField();
 }
 
 bool Structure::removeField(Field* field) {
-	removeField(field->getOffset());
+	removeField(field->m_absBitOffset);
 }
 
-bool Structure::removeField(int offset) {
-	auto it = getFieldIterator(offset);
+bool Structure::removeField(int bitOffset) {
+	auto it = getFieldIterator(bitOffset);
 	if (it != m_fields.end()) {
 		m_fields.erase(it);
 		return true;
@@ -105,49 +132,54 @@ bool Structure::removeField(int offset) {
 	return false;
 }
 
-bool Structure::moveField(int offset, int bytesCount) {
-	auto field = getFieldIterator(offset);
-	if (field == m_fields.end())
+bool Structure::moveField(int bitOffset, int bitsCount) {
+	auto it = getFieldIterator(bitOffset);
+	if (it == m_fields.end())
 		return false;
+	auto field = it->second;
 
-	if (bytesCount > 0) {
-		if (!areEmptyFields(field->first + field->second->getType()->getSize(), std::abs(bytesCount)))
+	if (bitsCount > 0) {
+		if (!areEmptyFields(field->m_absBitOffset + field->getBitSize(), std::abs(bitsCount)))
 			return false;
 	}
 	else {
-		if (!areEmptyFields(field->first - std::abs(bytesCount), std::abs(bytesCount)))
+		if (!areEmptyFields(field->m_absBitOffset - std::abs(bitsCount), std::abs(bitsCount)))
 			return false;
 	}
 
-	moveField_(offset, bytesCount);
+	moveField_(field->m_absBitOffset, bitsCount);
+	field->m_absBitOffset += bitsCount;
 	return true;
 }
 
-bool Structure::moveFields(int offset, int bytesCount) {
-	int firstOffset = offset;
-	int lastOffset = m_size - 1;
-	if (!areEmptyFields((bytesCount > 0 ? lastOffset : firstOffset) - std::abs(bytesCount), std::abs(bytesCount)))
+bool Structure::moveFields(int bitOffset, int bitsCount) {
+	int firstBitOffset = bitOffset;
+	int lastBitOffset = m_size * 0x8 - 1;
+	if (!areEmptyFields((bitsCount > 0 ? lastBitOffset : firstBitOffset) - std::abs(bitsCount), std::abs(bitsCount)))
 		return false;
 
-	auto it = getFieldIterator(firstOffset);
+	auto it = getFieldIterator(firstBitOffset);
 	auto end = m_fields.end();
-	if (bytesCount > 0) {
+	if (bitsCount > 0) {
 		end--;
 		it--;
 		std::swap(it, end);
 	}
 	while (it != end) {
-		moveField_(it->first, bytesCount);
-		if (bytesCount > 0)
+		auto field = it->second;
+		moveField_(field->m_absBitOffset, bitsCount);
+		field->m_absBitOffset += bitsCount;
+		if (bitsCount > 0)
 			it--; else it++;
 	}
 	return true;
 }
 
-Structure::FieldMapType::iterator Structure::getFieldIterator(int offset) {
-	auto it = m_fields.lower_bound(offset);
+Structure::FieldMapType::iterator Structure::getFieldIterator(int bitOffset) {
+	auto it = std::prev(m_fields.upper_bound(bitOffset));
 	if (it != m_fields.end()) {
-		if (it->first <= offset && it->first + it->second->getType()->getSize() > offset) {
+		auto field = it->second;
+		if (field->m_absBitOffset <= bitOffset && field->m_absBitOffset + field->getBitSize() > bitOffset) {
 			return it;
 		}
 	}
@@ -158,8 +190,8 @@ Structure::Field* Structure::getDefaultField() {
 	return m_defaultField;
 }
 
-void Structure::moveField_(int offset, int bytesCount) {
-	auto field_ = m_fields.extract(offset);
-	field_.key() += bytesCount;
+void Structure::moveField_(int bitOffset, int bitsCount) {
+	auto field_ = m_fields.extract(bitOffset);
+	field_.key() += bitsCount;
 	m_fields.insert(std::move(field_));
 }

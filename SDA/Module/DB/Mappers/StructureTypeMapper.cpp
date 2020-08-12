@@ -62,8 +62,8 @@ void StructureTypeMapper::saveFieldsForStructure(TransactionContext* ctx, CE::Da
 			query.bind(1, structure->getId());
 			query.bind(2, field->getOffset());
 			query.bind(3, field->getName());
-			query.bind(4, field->getType()->getId());
-			query.bind(5, DataType::GetPointerLevelStr(field->getType()));
+			query.bind(4, field->getDataType()->getId());
+			query.bind(5, DataType::GetPointerLevelStr(field->getDataType()));
 			query.exec();
 		}
 	}

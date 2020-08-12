@@ -8,19 +8,29 @@ namespace CE::DataType
 	public:
 		class Field : public Descrtiption
 		{
+			friend class Structure;
 		public:
-			Field(Structure* structure, const std::string& name, DataTypePtr type, int offset, const std::string& comment = "");
+			Field(Structure* structure, const std::string& name, DataTypePtr type, int absBitOffset, int bitSize, const std::string& comment = "");
 
-			void setType(DataTypePtr type);
+			void setDataType(DataTypePtr type);
 
-			DataTypePtr getType();
+			DataTypePtr getDataType();
+
+			int getBitSize();
+
+			int getBitOffset();
+
+			int getSize();
 
 			int getOffset();
+
+			bool isBitField();
 
 			bool isDefault();
 		private:
 			DataTypePtr m_type;
-			int m_offset;
+			int m_bitSize;
+			int m_absBitOffset;
 			Structure* m_structure;
 		};
 
@@ -40,28 +50,32 @@ namespace CE::DataType
 
 		FieldMapType& getFields();
 
-		int getNextEmptyBytesCount(int offset);
+		int getNextEmptyBitsCount(int bitOffset);
 
-		bool areEmptyFields(int offset, int size);
+		bool areEmptyFields(int bitOffset, int bitSize);
 
-		Field* getField(int offset);
+		bool areEmptyFieldsInBytes(int offset, int size);
+
+		Field* getField(int bitOffset);
+
+		void addField(int bitOffset, int bitSize, const std::string& name, DataTypePtr type, const std::string& desc = "");
 
 		void addField(int offset, const std::string& name, DataTypePtr type, const std::string& desc = "");
 
 		bool removeField(Field* field);
 
-		bool removeField(int offset);
+		bool removeField(int bitOffset);
 
-		bool moveField(int offset, int bytesCount);
+		bool moveField(int bitOffset, int bitsCount);
 
-		bool moveFields(int offset, int bytesCount);
+		bool moveFields(int bitOffset, int bitsCount);
 
 	private:
-		FieldMapType::iterator getFieldIterator(int offset);
+		FieldMapType::iterator getFieldIterator(int bitOffset);
 
 		Field* getDefaultField();
 
-		void moveField_(int offset, int bytesCount);
+		void moveField_(int bitOffset, int bitsCount);
 
 	protected:
 		int m_size = 0;

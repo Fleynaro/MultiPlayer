@@ -167,6 +167,27 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
         entity->addField(30, "pos", tPos, "position of entity");
         entity->addField(50, "screen", DataType::GetUnit(screen), "screen of entity");
         ASSERT_EQ(entity->getSize(), 58);
+        {
+            //check space
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(0, 20), true);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(19, 1), true);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(20, 4), false);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(23, 1), false);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(24, 6), true);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(30, 3), false);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(30, 50), false);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(49, 1), true);
+            //move field
+            entity->moveField(20 * 0x8, -10 * 0x8);
+            entity->moveFields(30 * 0x8, -10 * 0x8);
+            entity->moveField(40 * 0x8, 10 * 0x8);
+            //check space
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(0, 20), false);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(13, 1), false);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(14, 1), true);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(20, 1), false);
+            ASSERT_EQ(entity->areEmptyFieldsInBytes(40, 1), false);
+        }
 
         //derrived class
         auto ped = typeManager->createClass("Ped", "this is a derrived class type");
@@ -530,13 +551,13 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
 
                 auto vtable = screen2d->getFields().begin()->second;
                 ASSERT_EQ(vtable->getName(), "vtable");
-                if (screen2d_vtable = dynamic_cast<DataType::Structure*>(vtable->getType()->getType())) {
+                if (screen2d_vtable = dynamic_cast<DataType::Structure*>(vtable->getDataType()->getType())) {
                     ASSERT_EQ(screen2d_vtable->getSize(), 0x10);
                     auto it = screen2d_vtable->getFields().begin();
                     auto vfunc1 = it->second;
                     vfunc1->setComment("runCode = " + std::to_string(runCode));
                     it++;
-                    if (auto vfunc2 = dynamic_cast<DataType::Signature*>(it->second->getType()->getType())) {
+                    if (auto vfunc2 = dynamic_cast<DataType::Signature*>(it->second->getDataType()->getType())) {
                         ASSERT_EQ(vfunc2->getParameters().size(), 1);
                         ASSERT_EQ(vfunc2->getParameters()[0]->getDataType()->getType(), screen2d);
                     }
