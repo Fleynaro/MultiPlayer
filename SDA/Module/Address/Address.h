@@ -63,8 +63,8 @@ namespace CE
 		Address m_addr;
 		Address m_curAddr;
 		DataTypePtr m_type;
-		std::vector<int> m_levels;
-		std::vector<int> m_cur_levels;
+		std::list<int> m_levels;
+		std::list<int> m_cur_levels;
 		bool m_isEnd = false;
 
 		void goNext();

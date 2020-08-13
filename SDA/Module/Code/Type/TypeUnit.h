@@ -8,7 +8,7 @@ namespace CE
 		class Unit : public Type
 		{
 		public:
-			Unit(DataType::Type* type, std::vector<int> levels = {});
+			Unit(DataType::Type* type, std::list<int> levels = {});
 
 			Group getGroup() override;
 
@@ -18,7 +18,11 @@ namespace CE
 
 			bool isPointer();
 
-			std::vector<int> getPointerLevels();
+			std::list<int> getPointerLevels();
+
+			void addPointerLevelInFront(int size = 1);
+
+			void addPointerLevelInBack(int size = 1);
 
 			bool isString();
 
@@ -47,7 +51,7 @@ namespace CE
 			void setMapper(DB::IMapper* mapper) override;
 		private:
 			DataType::Type* m_type;
-			std::vector<int> m_levels;
+			std::list<int> m_levels;
 		};
 	};
 
@@ -57,6 +61,7 @@ namespace CE
 	{
 		DataTypePtr GetUnit(DataType::Type* type, const std::string& levels = "");
 		std::string GetPointerLevelStr(DataTypePtr type);
-		std::vector<int> ParsePointerLevelsStr(const std::string& str);
+		std::list<int> ParsePointerLevelsStr(const std::string& str);
+		DataTypePtr CloneUnit(DataTypePtr dataType);
 	};
 };

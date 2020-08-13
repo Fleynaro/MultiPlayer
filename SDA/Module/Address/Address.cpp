@@ -91,7 +91,7 @@ DereferenceIterator::DereferenceIterator(Address addr, DataTypePtr type)
 	: m_addr(addr), m_curAddr(nullptr), m_type(type)
 {
 	m_levels = m_type->getPointerLevels();
-	m_cur_levels = std::vector<int>(m_levels.size(), 0);
+	m_cur_levels = std::list<int>(m_levels.size(), 0);
 
 	/*if (type->isString()) {
 		m_levels.pop_back();
@@ -119,32 +119,34 @@ DereferenceIteratorItemType DereferenceIterator::next() {
 }
 
 void DereferenceIterator::goNext() {
-	int idx = (int)m_cur_levels.size() - 1;
-	while (idx >= 0) {
-		if (++m_cur_levels[idx] < m_levels[idx]) {
+	auto it = m_cur_levels.rbegin();
+	auto it2 = m_levels.rbegin();
+	while (it != m_cur_levels.rend()) {
+		if (++(*it) < *it2) {
 			break;
 		}
-		m_cur_levels[idx] = 0;
-		idx--;
+		*it = 0;
+		it++;
+		it2++;
 	}
-	if (idx < 0) {
+	if (it == m_cur_levels.rend()) {
 		m_isEnd = true;
 	}
 }
 
 Address DereferenceIterator::dereference() {
-	int idx = 0;
+	auto it = m_cur_levels.begin();
 	Address addr = m_addr;
-	while (idx < (int)m_cur_levels.size() - 1) {
-		addr.addOffset(m_cur_levels[idx] * 0x8);
+	while (it != std::prev(m_cur_levels.end())) {
+		addr.addOffset(*it * 0x8);
 		if (!addr.canBeRead()) {
 			return Address(nullptr);
 		}
 		addr = addr.dereference();
-		idx++;
+		it++;
 	}
-	if (m_cur_levels.size() > 0) {
-		addr.addOffset(m_cur_levels[idx] * m_type->getBaseType()->getSize());
+	if (!m_cur_levels.empty()) {
+		addr.addOffset(*it * m_type->getBaseType()->getSize());
 	}
 	return addr;
 }

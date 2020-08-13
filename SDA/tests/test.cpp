@@ -1,6 +1,8 @@
 #include "test.h"
 using namespace CE;
 
+bool GHIDRA_TEST = false;
+
 TEST(DataType, Parsing)
 {
     ASSERT_EQ(DataType::GetPointerLevelStr(DataType::GetUnit(new DataType::Float, "*")), "[1]");
@@ -513,6 +515,8 @@ TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
 #include <GhidraSync/GhidraSyncCommitment.h>
 TEST_F(ProgramModuleFixture, Test_GhidraSync)
 {
+    if (!GHIDRA_TEST)
+        return;
     using namespace Ghidra;
     auto sync = m_programModule->getGhidraSync();
     auto typeManager = m_programModule->getTypeManager();
@@ -684,6 +688,6 @@ int main(int argc, char** argv) {
     SetConsoleOutputCP(1251);
     DebugOutput_Console = true;
 
-	return RUN_ALL_TESTS();
-    //test11111();  return 0;
+	//return RUN_ALL_TESTS();
+    test11111();  return 0;
 }

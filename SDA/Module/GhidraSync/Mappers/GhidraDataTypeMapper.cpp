@@ -117,7 +117,7 @@ shared::STypeUnit DataTypeMapper::buildTypeUnitDesc(DataTypePtr type) {
 }
 
 DataTypePtr DataTypeMapper::getTypeByDesc(const shared::STypeUnit& desc) {
-	std::vector<int> ptr_levels;
+	std::list<int> ptr_levels;
 	for (auto lvl : desc.pointerLvls) {
 		ptr_levels.push_back((int)lvl);
 	}

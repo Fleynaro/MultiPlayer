@@ -164,7 +164,7 @@ void testSamples(std::list<std::pair<int, std::vector<byte>*>> samples, std::set
 			*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, ExtBitMask(4));
 			*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, ExtBitMask(4));
 			*(it++) = PCode::Register(ZYDIS_REGISTER_R8, ExtBitMask(4));
-			*(it++) = PCode::Register(ZYDIS_REGISTER_R9, ExtBitMask(4), PCode::Register::Type::Vector);
+			*(it++) = PCode::Register(ZYDIS_REGISTER_R9, ExtBitMask(4));
 			info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, ExtBitMask(4));
 		}
 		else
@@ -308,12 +308,12 @@ void CE::Decompiler::test() {
 	//**** Other ****
 
 	std::set<int> samplesWithXmm = { 206 };
-	void* addr = &TestFunctionToDecompile1;
+	void* addr = &Test_Array;
 	auto size = calculateFunctionSize2((byte*)addr, 0);
 	std::vector<byte> sample0((byte*)addr, (byte*)addr + size);
 
 	if (true) {
-		testSamples({ std::pair(202, &sample202) }, samplesWithXmm, true);
+		testSamples({ std::pair(0, &sample0) }, samplesWithXmm, true);
 	}
 
 	if (false) {

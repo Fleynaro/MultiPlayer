@@ -351,6 +351,7 @@
     <ClInclude Include="Module\Decompiler\Optimization\DecGraphOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprOptimization.h" />
     <ClInclude Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.h" />
+    <ClInclude Include="Module\Decompiler\SDA\DecSdaSymbol.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeGOAR.h" />
     <ClInclude Include="Module\Decompiler\SDA\Transformation\DecGraphTransformation.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />

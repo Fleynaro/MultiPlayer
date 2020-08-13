@@ -82,6 +82,9 @@ namespace CE::Decompiler::PCode
 			auto mnemonic = m_curInstr->mnemonic;
 			auto size = m_curInstr->operands[0].size / 0x8;
 			auto operandsCount = getFirstExplicitOperandsCount();
+
+			auto varnodeRip = CreateVarnode(ZYDIS_REGISTER_RIP, 0x8);
+			addMicroInstruction(InstructionId::COPY, new ConstantVarnode(m_curOffset + m_curInstr->length, 0x8), nullptr, varnodeRip);
 			
 			switch (mnemonic)
 			{
