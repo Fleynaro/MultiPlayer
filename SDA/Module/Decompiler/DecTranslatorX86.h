@@ -83,9 +83,6 @@ namespace CE::Decompiler::PCode
 			auto size = m_curInstr->operands[0].size / 0x8;
 			auto operandsCount = getFirstExplicitOperandsCount();
 
-			auto varnodeRip = CreateVarnode(ZYDIS_REGISTER_RIP, 0x8);
-			addMicroInstruction(InstructionId::COPY, new ConstantVarnode(m_curOffset + m_curInstr->length, 0x8), nullptr, varnodeRip);
-			
 			switch (mnemonic)
 			{
 			case ZYDIS_MNEMONIC_CVTDQ2PD:
@@ -1343,6 +1340,9 @@ namespace CE::Decompiler::PCode
 				
 				if (operand.mem.base != ZYDIS_REGISTER_NONE) {
 					baseRegVarnode = CreateVarnode(operand.mem.base, memLocExprSize);
+					if (operand.mem.base == ZYDIS_REGISTER_RIP) {
+						offset += m_curOffset + m_curInstr->length;
+					}
 				}
 
 				if (operand.mem.index != ZYDIS_REGISTER_NONE) {

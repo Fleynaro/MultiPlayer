@@ -23,7 +23,8 @@ int Test_StructsAndArray(TestA* a) {
 	auto c = g_c;
 	auto obj = fff(*c.b->a);
 
-	g_c.b->arr2[rand() * 2][rand() + 5].arr[rand()] = 1;
+	g_c.b->arr2[rand() *
+		2][rand() + 5].arr[rand()] = 1;
 	*a = obj;
 }
 
