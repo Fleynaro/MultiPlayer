@@ -71,7 +71,7 @@ namespace CE::Decompiler::ExprTree
 	public:
 		DataTypePtr m_dataType;
 		IGOAR* m_base;
-		int m_bitOffset;
+		int m_bitOffset; //offset + bitOffset?
 		Node* m_index;
 		int m_readSize = 0x0;
 		
