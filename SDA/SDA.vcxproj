@@ -342,9 +342,11 @@
     <ClInclude Include="Module\Decompiler\DecPCode.h" />
     <ClInclude Include="Module\Decompiler\DecRegister.h" />
     <ClInclude Include="Module\Decompiler\DecTranslatorX86.h" />
+    <ClInclude Include="Module\Decompiler\ExprTree\ExprTree.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeCondition.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeFuncCallContext.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeLeaf.h" />
+    <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeLinearExpr.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeNode.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeOperationalNode.h" />
     <ClInclude Include="Module\Decompiler\DecInstructionInterpreter.h" />
@@ -353,7 +355,7 @@
     <ClInclude Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.h" />
     <ClInclude Include="Module\Decompiler\SDA\DecSdaSymbol.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeGOAR.h" />
-    <ClInclude Include="Module\Decompiler\SDA\Transformation\DecGraphTransformation.h" />
+    <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />
     <ClInclude Include="Module\Disassembler\DisasmDecoder.h" />
     <ClInclude Include="Module\Disassembler\DisasmInstructions.h" />

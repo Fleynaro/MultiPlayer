@@ -36,8 +36,8 @@ namespace CE::Decompiler::PrimaryTree
 			}
 		}
 
-		std::list<ExprTree::Node**> getNodePtrsList() override {
-			return { (ExprTree::Node**)&m_destAddr, &m_srcValue };
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_destAddr, m_srcValue };
 		}
 
 		std::string printDebug() {
@@ -170,8 +170,8 @@ namespace CE::Decompiler::PrimaryTree
 			}
 		}
 
-		std::list<ExprTree::Node**> getNodePtrsList() override {
-			return { (ExprTree::Node**)&m_noJmpCond };
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_noJmpCond };
 		}
 
 		void setNoJumpCondition(ExprTree::ICondition* noJmpCond) {
@@ -247,8 +247,8 @@ namespace CE::Decompiler::PrimaryTree
 			}
 		}
 
-		std::list<ExprTree::Node**> getNodePtrsList() override {
-			return { (ExprTree::Node**) & m_noJmpCond, &m_returnNode };
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_noJmpCond, m_returnNode };
 		}
 
 		void setReturnNode(ExprTree::Node* returnNode) {

@@ -109,9 +109,10 @@ namespace CE::Decompiler::ExprTree
 		OperationType m_operation;
 		bool m_notChangedMask;
 		ObjectHash::Hash m_calcHash;
+		PCode::Instruction* m_instr;
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, BitMask64 mask = BitMask64(0), bool notChangedMask = false)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask)
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, BitMask64 mask = BitMask64(0), bool notChangedMask = false, PCode::Instruction* instr = nullptr)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask), m_instr(instr)
 		{
 			leftNode->addParentNode(this);
 			if (rightNode != nullptr) {
@@ -123,6 +124,10 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
+		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, PCode::Instruction* instr)
+			: OperationalNode(leftNode, rightNode, operation, BitMask64(0), false, instr)
+		{}
+
 		~OperationalNode() {
 			auto leftNode = m_leftNode;
 			if (leftNode != nullptr)
@@ -131,7 +136,7 @@ namespace CE::Decompiler::ExprTree
 				m_rightNode->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node * newNode) override {
+		void replaceNode(Node* node, Node* newNode) override {
 			if (m_leftNode == node) {
 				m_leftNode = newNode;
 			}
@@ -140,8 +145,9 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<ExprTree::Node**> getNodePtrsList() override {
-			return { &m_leftNode, &m_rightNode };
+
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_leftNode, m_rightNode };
 		}
 
 		void setMask(BitMask64 mask) {
@@ -151,6 +157,9 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		BitMask64 getMask() override {
+			if (m_instr) {
+				return m_instr->m_output->getMask().getBitMask64().withoutOffset();
+			}
 			return m_mask;
 		}
 
@@ -159,7 +168,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone() override {
-			return new OperationalNode(m_leftNode->clone(), m_rightNode ? m_rightNode->clone() : nullptr, m_operation, m_mask, m_notChangedMask);
+			return new OperationalNode(m_leftNode->clone(), m_rightNode ? m_rightNode->clone() : nullptr, m_operation, m_mask, m_notChangedMask, m_instr);
 		}
 
 		ObjectHash::Hash getHash() override {
@@ -175,36 +184,21 @@ namespace CE::Decompiler::ExprTree
 					result = "~" + m_leftNode->printDebug();
 				}
 			}
+			
+			if(result.empty())
+				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + ""+ getOpSize(getMask().getSize(), IsFloatingPoint()) +" " + m_rightNode->printDebug() + ")";
+			return (m_updateDebugInfo = result);
+		}
 
+		static std::string getOpSize(int size, bool isFloat) {
 			std::string opSize = "";
 			if (true) {
-				opSize = "."+ std::to_string(getMask().getSize());
-				if (IsFloatingPoint()) {
+				opSize = "." + std::to_string(size);
+				if (isFloat) {
 					opSize += "f";
 				}
 			}
-			
-			if(result.empty())
-				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + ""+ opSize +" " + m_rightNode->printDebug() + ")";
-			return (m_updateDebugInfo = result);
-		}
-	};
-
-	class InstructionOperationalNode : public OperationalNode
-	{
-	public:
-		PCode::Instruction* m_instr;
-
-		InstructionOperationalNode(Node* leftNode, Node* rightNode, OperationType operation, PCode::Instruction* instr)
-			: OperationalNode(leftNode, rightNode, operation, 0, true), m_instr(instr)
-		{}
-
-		BitMask64 getMask() override {
-			return m_instr->m_output->getMask().getBitMask64().withoutOffset();
-		}
-
-		Node* clone() override {
-			return new InstructionOperationalNode(m_leftNode->clone(), m_rightNode ? m_rightNode->clone() : nullptr, m_operation, m_instr);
+			return opSize;
 		}
 	};
 

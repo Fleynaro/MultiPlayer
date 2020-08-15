@@ -110,7 +110,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			break;
 		}
 
-		auto result = new ExprTree::InstructionOperationalNode(op1, op2, opType, m_instr);
+		auto result = new ExprTree::OperationalNode(op1, op2, opType, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -121,7 +121,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto expr = requestVarnode(m_instr->m_input0);
 		auto nodeMask = new ExprTree::NumberLeaf(-1 & m_instr->m_input0->getMask().getBitMask64().getValue());
 		auto opType = (m_instr->m_id == InstructionId::INT_2COMP) ? ExprTree::Mul : ExprTree::Xor;
-		m_ctx->setVarnode(m_instr->m_output, new ExprTree::InstructionOperationalNode(expr, nodeMask, opType, m_instr));
+		m_ctx->setVarnode(m_instr->m_output, new ExprTree::OperationalNode(expr, nodeMask, opType, m_instr));
 		break;
 	}
 
@@ -142,7 +142,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto shiftExpr = requestVarnode(m_instr->m_input1);
 		shiftExpr = new ExprTree::OperationalNode(shiftExpr, new ExprTree::NumberLeaf((uint64_t)0x8), ExprTree::Mul, m_instr->m_input1->getSize());
 		expr = new ExprTree::OperationalNode(expr, shiftExpr, ExprTree::Shr, m_instr->m_input0->getSize());
-		expr = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(m_instr->m_output->getMask().getBitMask64().getValue()), ExprTree::And, m_instr);
+		expr = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(m_instr->m_output->getMask().getBitMask64().getValue()), ExprTree::And, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, expr);
 		break;
 	}
@@ -150,7 +150,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::FLOAT_NEG:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		auto result = new ExprTree::InstructionOperationalNode(expr, new ExprTree::NumberLeaf(-1.0, m_instr->m_input0->getSize()), ExprTree::fMul, m_instr);
+		auto result = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(-1.0, m_instr->m_input0->getSize()), ExprTree::fMul, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}

@@ -84,7 +84,7 @@ namespace CE::Decompiler::ExprTree
 				m_rightNode->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node * newNode) override {
+		void replaceNode(Node* node, Node* newNode) override {
 			if (m_leftNode == node) {
 				m_leftNode = newNode;
 			}
@@ -93,8 +93,8 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<ExprTree::Node**> getNodePtrsList() override {
-			return { &m_leftNode, &m_rightNode };
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_leftNode, m_rightNode };
 		}
 
 		Node* clone() override {
@@ -190,8 +190,8 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<ExprTree::Node**> getNodePtrsList() override {
-			return { (ExprTree::Node**)&m_leftCond, (ExprTree::Node**)&m_rightCond };
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_leftCond, m_rightCond };
 		}
 
 		Node* clone() override {

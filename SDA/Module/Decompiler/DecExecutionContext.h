@@ -25,8 +25,8 @@ namespace CE::Decompiler
 			}
 		}
 
-		std::list<ExprTree::Node**> getNodePtrsList() override {
-			return { &m_expr };
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_expr };
 		}
 	};
 
@@ -87,8 +87,8 @@ namespace CE::Decompiler
 			
 		}
 
-		std::list<ExprTree::Node**> getNodePtrsList() override {
-			return { (ExprTree::Node**)&m_symbol };
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_symbol };
 		}
 	};
 
@@ -120,8 +120,8 @@ namespace CE::Decompiler
 				}
 			}
 
-			std::list<ExprTree::Node**> getNodePtrsList() override {
-				return { (ExprTree::Node**)&m_node };
+			std::list<ExprTree::Node*> getNodesList() override {
+				return { m_node };
 			}
 		};
 

@@ -50,6 +50,33 @@ bool Unit::isString() {
 	return dynamic_cast<Char*>(baseType) || dynamic_cast<WChar*>(baseType);
 }
 
+bool Unit::equal(DataType::Unit* typeUnit) {
+	if (getBaseType() != typeUnit->getBaseType())
+		return false;
+	auto ptrList1 = getPointerLevels();
+	auto ptrList2 = typeUnit->getPointerLevels();
+	if (ptrList1.size() != ptrList2.size())
+		return false;
+	auto it1 = ptrList1.begin();
+	auto it2 = ptrList2.begin();
+	while (it1 != ptrList1.end()) {
+		if (*it1 != *it2)
+			return false;
+		it1++;
+		it2++;
+	}
+	return true;
+}
+
+int Unit::getPriority() {
+	auto baseType = getBaseType();
+	auto size = min(baseType->getSize(), 0x8);
+	bool hasPointerLvl = getPointerLvl() != 0;
+	bool isSigned = baseType->isSigned();
+	bool isNotSimple = baseType->getGroup() != Simple;
+	return size | (hasPointerLvl << 3) | (isSigned << 4) | (isNotSimple << 5);
+}
+
 const std::string Unit::getName() {
 	return m_type->getName();
 }

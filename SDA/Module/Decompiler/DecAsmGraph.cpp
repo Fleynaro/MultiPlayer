@@ -21,6 +21,7 @@ void ff() {
 #include "Decompiler.h"
 #include "DecLinearView.h"
 #include "Optimization/DecGraphOptimization.h"
+#include "SDA/Symbolization/DecGraphSymbolization.h"
 #include "TestCodeToDecompile.h"
 #include "DecTranslatorX86.h"
 
@@ -201,8 +202,11 @@ void testSamples(std::list<std::pair<int, std::vector<byte>*>> samples, std::set
 		converter.start();
 		blockList = converter.getBlockList();
 		OptimizeBlockList(blockList);
-
 		ShowCode(blockList, asmBlocks);
+
+		printf("\n\n\n********************* AFTER SYMBOLIZATION: *********************\n\n");
+		//Symbolization::
+
 		printf("\n\n\n\n\n");
 	}
 }

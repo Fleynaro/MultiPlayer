@@ -26,6 +26,10 @@ namespace CE
 
 			bool isString();
 
+			bool equal(DataType::Unit* typeUnit);
+
+			int getPriority();
+
 			const std::string getName() override;
 
 			const std::string getComment() override;

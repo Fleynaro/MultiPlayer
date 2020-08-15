@@ -8,19 +8,9 @@ namespace CE::Decompiler::ExprTree
 	class INodeAgregator
 	{
 	public:
-		virtual void replaceNode(Node* node, Node * newNode) = 0;
+		virtual void replaceNode(Node* node, Node* newNode) = 0;
 
-		virtual std::list<Node**> getNodePtrsList() = 0;
-
-		std::list<Node*> getNodesList() {
-			std::list<Node*> list;
-			for (auto it : getNodePtrsList()) {
-				if (*it != nullptr) {
-					list.push_back(*it);
-				}
-			}
-			return list;
-		}
+		virtual std::list<Node*> getNodesList() = 0;
 	};
 
 	class IFloatingPoint

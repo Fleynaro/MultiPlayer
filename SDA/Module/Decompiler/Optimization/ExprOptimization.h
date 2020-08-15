@@ -1,6 +1,5 @@
 #pragma once
-#include "../ExprTree/ExprTreeCondition.h"
-#include "../ExprTree/ExprTreeFuncCallContext.h"
+#include "../ExprTree/ExprTree.h"
 
 namespace CE::Decompiler::Optimization
 {
@@ -29,6 +28,65 @@ namespace CE::Decompiler::Optimization
 			return op1 << op2;
 		}
 		return 0;
+	}
+
+	//get list of terms in expr: (5x - 10y) * 2 + 5		=>		x: 10, y: -20, constTerm: 5
+	//need mostly for array linear expr
+	using TermsDict = std::map<ObjectHash::Hash, std::pair<Node*, int64_t>>;
+	static void GetTermsInExpr(Node* node, TermsDict& terms, int64_t& constTerm, int64_t k = 1) {
+		if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
+			constTerm += (int64_t&)numberLeaf->m_value * k;
+			return;
+		}
+
+		if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
+			if (opNode->m_operation == Add) {
+				GetTermsInExpr(opNode->m_leftNode, terms, constTerm, k);
+				GetTermsInExpr(opNode->m_rightNode, terms, constTerm, k);
+				return;
+			}
+			else if (opNode->m_operation == Mul) {
+				if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(opNode->m_rightNode)) {
+					GetTermsInExpr(opNode->m_leftNode, terms, constTerm, k * rightNumberLeaf->m_value);
+					return;
+				}
+			}
+		}
+
+		auto hash = node->getHash();
+		if (terms.find(hash) == terms.end()) {
+			terms[hash] = std::make_pair(node, 0);
+		}
+		terms[hash] = std::make_pair(node, terms[hash].second + k);
+	}
+
+	static Node* GetBaseAddrTerm(TermsDict& terms) {
+		for (auto term : terms) {
+			if (term.second.second != 1)
+				continue;
+			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(term.second.first)) {
+				if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbolLeaf->m_symbol)) {
+					if (regSymbol->m_register.isPointer()) {
+						return symbolLeaf;
+					}
+				}
+			}
+		}
+		//opNodes...
+		return nullptr;
+	}
+
+	static bool AreTermsEqual(TermsDict& terms1, TermsDict& terms2) {
+		for (auto termList : { std::pair(&terms1, &terms2), std::pair(&terms2, &terms1) }) {
+			for (auto term : *termList.first) {
+				if (term.second.second == 0)
+					continue;
+				auto it = termList.second->find(term.first);
+				if (it == termList.second->end() || term.second != it->second)
+					return false;
+			}
+		}
+		return true;
 	}
 
 	static void OptimizeConstCondition(ICondition* cond) {
@@ -271,8 +329,10 @@ namespace CE::Decompiler::Optimization
 	static void IterateChildNodes(Node* node, std::function<void(Node*)> func) {
 		if (auto agregator = dynamic_cast<INodeAgregator*>(node)) {
 			auto list = agregator->getNodesList();
-			for (auto it : list) {
-				func(it);
+			for (auto node : list) {
+				if (node) {
+					func(node);
+				}
 			}
 		}
 	}
@@ -303,6 +363,16 @@ namespace CE::Decompiler::Optimization
 			else
 				hash.addValue((int)expr->m_operation);
 			expr->m_calcHash = hash.getHash();
+		}
+		else if (auto linearExpr = dynamic_cast<LinearExpr*>(node)) {
+			ObjectHash::Hash sumHash = 0x0;
+			for (auto term : linearExpr->getTerms()) {
+				sumHash += term->getHash();
+			}
+			ObjectHash hash;
+			hash.addValue(sumHash);
+			hash.addValue((int)linearExpr->m_operation);
+			linearExpr->m_calcHash = hash.getHash();
 		}
 	}
 
@@ -435,44 +505,26 @@ namespace CE::Decompiler::Optimization
 	}
 
 
-	//(3x + x)	=>	4x
-	static OperationalNode* AddEqualNodes(Node* node1, Node* node2) {
-		auto coreNode1 = node1;
-		auto coreNode2 = node2;
-		uint64_t k1 = 1;
-		uint64_t k2 = 1;
+	//((y + 3x) + x) * 2 + 5	=>	(y + 8x) + 5
+	static void ExpandLinearExprs(Node* node) {
+		TermsDict terms;
+		int64_t constTerm = 0;
+		GetTermsInExpr(node, terms, constTerm);
 
-		for (auto& it : { std::make_pair(&k1, &coreNode1), std::make_pair(&k2, &coreNode2) }) {
-			if (auto opNode = dynamic_cast<OperationalNode*>(*it.second)) {
-				if (auto numberLeaf = dynamic_cast<NumberLeaf*>(opNode->m_rightNode)) {
-					if (opNode->m_operation == Mul) {
-						*it.first = numberLeaf->m_value;
-						*it.second = opNode->m_leftNode;
-						continue;
-					}
-				}
+		if (terms.size() >= 1 && constTerm != 0x0) {
+			auto linearExpr = new LinearExpr();
+			for (auto termInfo : terms) {
+				auto multiplier = (uint64_t&)termInfo.second.second;
+				auto term = (multiplier == 1 ? termInfo.second.first : new OperationalNode(termInfo.second.first, new NumberLeaf(multiplier), Mul));
+				linearExpr->addTerm(term);
 			}
+			linearExpr->setConstTerm(constTerm);
+			node->replaceWith(linearExpr);
+			delete node;
+			node = linearExpr;
 		}
 
-		if (coreNode1->getHash() != coreNode2->getHash())
-			return nullptr;
-		return new OperationalNode(coreNode1, new NumberLeaf(k1 + k2), Mul);
-	}
-
-
-	//(3x + x) + 5	=>	4x + 5
-	static void CalculateAddEqualNodes(Node* node) {
-		IterateChildNodes(node, CalculateAddEqualNodes);
-
-		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
-			if (expr->m_operation == Add) {
-				auto resultExpr = AddEqualNodes(expr->m_leftNode, expr->m_rightNode);
-				if (resultExpr != nullptr) {
-					expr->replaceWith(resultExpr);
-					delete expr;
-				}
-			}
-		}
+		IterateChildNodes(node, ExpandLinearExprs);
 	}
 
 
@@ -496,19 +548,8 @@ namespace CE::Decompiler::Optimization
 					if (IsSwap(prevExpr->m_rightNode, expr->m_rightNode)) {
 						OperationalNode* newExpr;
 						OperationalNode* newPrevExpr;
-						//we should check what type of instruction this node belongs to because of keeping suit
-						if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
-							newExpr = new InstructionOperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation, instrExpr->m_instr);
-						}
-						else {
-							newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation);
-						}
-						if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(prevExpr)) {
-							newPrevExpr = new InstructionOperationalNode(newExpr, expr->m_rightNode, expr->m_operation, instrExpr->m_instr);
-						}
-						else {
-							newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation);
-						}
+						newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation, expr->m_instr);
+						newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation, prevExpr->m_instr);
 
 						prevExpr->replaceWith(newPrevExpr);
 						delete prevExpr;
@@ -540,31 +581,9 @@ namespace CE::Decompiler::Optimization
 							result &= mask.getValue();
 
 						auto numberLeaf = new NumberLeaf(result);
-						if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
-							expr = new InstructionOperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation, instrExpr->m_instr);
-						}
-						else {
-							expr = new OperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation);
-						}
+						expr = new OperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation, expr->m_instr);
 						prevExpr->replaceWith(expr);
 						delete prevExpr;
-
-					}
-				}
-				else {
-					//((y + 3x) + x)	=>	(y + 4x)
-					if (expr->m_operation == Add) {
-						auto resultExpr = AddEqualNodes(expr, prevExpr);
-						if (resultExpr != nullptr) {
-							if (auto instrExpr = dynamic_cast<InstructionOperationalNode*>(expr)) {
-								expr = new InstructionOperationalNode(expr->m_leftNode, resultExpr, Add, instrExpr->m_instr);
-							}
-							else {
-								expr = new OperationalNode(expr->m_leftNode, resultExpr, Add);
-							}
-							prevExpr->replaceWith(expr);
-							delete prevExpr;
-						}
 					}
 				}
 			}
@@ -674,64 +693,6 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	//get list of terms in expr: (5x - 10y) * 2 + 5		=>		x: 10, y: -20, constTerm: 5
-	//need mostly for array linear expr
-	using TermsDict = std::map<ObjectHash::Hash, std::pair<Node*, int64_t>>;
-	static void GetTermsInExpr(Node* node, TermsDict& terms, int64_t& constTerm, int64_t k = 1) {
-		if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
-			constTerm += (int64_t&)numberLeaf->m_value * k;
-			return;
-		}
-
-		if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
-			if (opNode->m_operation == Add) {
-				GetTermsInExpr(opNode->m_leftNode, terms, constTerm, k);
-				GetTermsInExpr(opNode->m_rightNode, terms, constTerm, k);
-				return;
-			} else if (opNode->m_operation == Mul) {
-				if (auto rightNumberLeaf = dynamic_cast<NumberLeaf*>(opNode->m_rightNode)) {
-					GetTermsInExpr(opNode->m_leftNode, terms, constTerm, k * rightNumberLeaf->m_value);
-					return;
-				}
-			}
-		}
-
-		auto hash = node->getHash();
-		if (terms.find(hash) == terms.end()) {
-			terms[hash] = std::make_pair(node, 0);
-		}
-		terms[hash] = std::make_pair(node, terms[hash].second + k);
-	}
-
-	static Node* GetBaseAddrTerm(TermsDict& terms) {
-		for (auto term : terms) {
-			if (term.second.second != 1)
-				continue;
-			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(term.second.first)) {
-				if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbolLeaf->m_symbol)) {
-					if (regSymbol->m_register.isPointer()) {
-						return symbolLeaf;
-					}
-				}
-			}
-		}
-		//opNodes...
-		return nullptr;
-	}
-
-	static bool AreTermsEqual(TermsDict& terms1, TermsDict& terms2) {
-		for (auto termList : { std::pair(&terms1, &terms2), std::pair(&terms2, &terms1) }) {
-			for (auto term : *termList.first) {
-				if (term.second.second == 0)
-					continue;
-				auto it = termList.second->find(term.first);
-				if (it == termList.second->end() || term.second != it->second)
-					return false;
-			}
-		}
-		return true;
-	}
-
 	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс. 
 	static void Optimize(Node*& node) {
 		Node::UpdateDebugInfo(node);
@@ -745,7 +706,7 @@ namespace CE::Decompiler::Optimization
 		Node::UpdateDebugInfo(node);
 		OptimizeZeroInExpr(node);
 		Node::UpdateDebugInfo(node);
-		CalculateAddEqualNodes(node);
+		ExpandLinearExprs(node);
 		Node::UpdateDebugInfo(node);
 		CalculateMasksAndOptimize(node);
 		Node::UpdateDebugInfo(node);
