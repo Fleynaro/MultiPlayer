@@ -96,7 +96,11 @@ void Unit::setComment(const std::string& comment)
 }
 
 std::string Unit::getDisplayName() {
-	return m_type->getDisplayName() + "*";
+	auto name = m_type->getDisplayName();
+	for (auto level : m_levels) {
+		name += (level == 1 ? "*" : ("[" + std::to_string(level) + "]"));
+	}
+	return name;
 }
 
 int Unit::getSize() {

@@ -22,10 +22,21 @@ namespace CE::Decompiler::ExprTree
 		Node* m_destination;
 		std::list<std::pair<PCode::Register, Node*>> m_registerParams;
 		
+		
 		FunctionCallContext(int destOffset, Node* destination)
 			: m_destOffset(destOffset), m_destination(destination)
 		{
 			m_destination->addParentNode(this);
+		}
+
+		~FunctionCallContext() {
+			if (m_destination)
+				m_destination->removeBy(this);
+			for (auto& it : m_registerParams) {
+				if (it.second) {
+					it.second->removeBy(this);
+				}
+			}
 		}
 
 		void addRegisterParam(PCode::Register reg, Node* node) {
@@ -52,6 +63,14 @@ namespace CE::Decompiler::ExprTree
 				list.push_back(it.second);
 			}
 			return list;
+		}
+
+		BitMask64 getMask() override {
+			return 0x0; //todo
+		}
+
+		bool isFloatingPoint() override {
+			return false;
 		}
 
 		Node* clone() override {

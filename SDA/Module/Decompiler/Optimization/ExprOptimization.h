@@ -612,7 +612,7 @@ namespace CE::Decompiler::Optimization
 			std::make_pair(&expr->m_leftNode, expr->m_rightNode),
 			std::make_pair(&expr->m_rightNode, expr->m_leftNode) })
 		{
-			if (auto operand = dynamic_cast<INumber*>(*it.first)) {
+			if (auto operand = *it.first) {
 				if ((operand->getMask() & mask) == 0x0) {
 					//убрал, ибо не соблюдается главное условие оптимизации - заменяться все должно целиком. updated: теперь можно, ибо клонирование сделано
 					/*if (auto expr = dynamic_cast<ExprTree::OperationalNode*>(it.second)) {
@@ -644,50 +644,48 @@ namespace CE::Decompiler::Optimization
 			if (IsOperationWithSingleOperand(expr->m_operation))
 				return;
 
-			if (auto leftNode = dynamic_cast<INumber*>(expr->m_leftNode)) {
-				if (auto rightNode = dynamic_cast<INumber*>(expr->m_rightNode)) {
-					if (expr->m_operation == And) {
-						auto mask1 = leftNode->getMask();
-						auto mask2 = rightNode->getMask();
-						expr->setMask(mask1 & mask2);
+			if (expr->m_leftNode && expr->m_rightNode) {
+				if (expr->m_operation == And) {
+					auto mask1 = expr->m_leftNode->getMask();
+					auto mask2 = expr->m_rightNode->getMask();
+					expr->setMask(mask1 & mask2);
 
-						if (expr->getMask() == 0x0) {
-							//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
-							expr->replaceWith(new NumberLeaf((uint64_t)0));
-							delete expr;
+					if (expr->getMask() == 0x0) {
+						//[var_2_32] & 0xffffffff00000000{0}		=>		0x0
+						expr->replaceWith(new NumberLeaf((uint64_t)0));
+						delete expr;
+						return;
+					}
+
+					if (mask1 <= 0xFF) {
+						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+							auto mask1_64 = mask1;
+							if ((mask1_64 & numberLeaf->m_value) == mask1_64) {
+								//[var_2_32] & 0xffffffff{-1}		=>		 [var_2_32]		
+								auto newExpr = expr->m_leftNode;
+								expr->replaceWith(newExpr);
+								expr->m_leftNode = nullptr;
+								delete expr;
+							}
+							else {
+								if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
+									RemoveZeroMaskMulExpr(leftExpr, mask2);
+								}
+							}
+						}
+					}
+				}
+				else if (expr->m_operation == Shl || expr->m_operation == Shr) {
+					if (expr->m_operation == Shl) {
+						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
+							expr->setMask(expr->m_leftNode->getMask() << (int)numberLeaf->m_value);
 							return;
 						}
-
-						if (mask1 <= 0xFF) {
-							if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-								auto mask1_64 = mask1;
-								if ((mask1_64 & numberLeaf->m_value) == mask1_64) {
-									//[var_2_32] & 0xffffffff{-1}		=>		 [var_2_32]		
-									auto newExpr = expr->m_leftNode;
-									expr->replaceWith(newExpr);
-									expr->m_leftNode = nullptr;
-									delete expr;
-								}
-								else {
-									if (auto leftExpr = dynamic_cast<OperationalNode*>(expr->m_leftNode)) {
-										RemoveZeroMaskMulExpr(leftExpr, mask2);
-									}
-								}
-							}
-						}
 					}
-					else if (expr->m_operation == Shl || expr->m_operation == Shr) {
-						if (expr->m_operation == Shl) {
-							if (auto numberLeaf = dynamic_cast<NumberLeaf*>(expr->m_rightNode)) {
-								expr->setMask(leftNode->getMask() << (int)numberLeaf->m_value);
-								return;
-							}
-						}
-						expr->setMask(leftNode->getMask());
-					}
-					else {
-						expr->setMask(leftNode->getMask() | rightNode->getMask());
-					}
+					expr->setMask(expr->m_leftNode->getMask());
+				}
+				else {
+					expr->setMask(expr->m_leftNode->getMask() | expr->m_rightNode->getMask());
 				}
 			}
 		}

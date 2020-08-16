@@ -13,12 +13,6 @@ namespace CE::Decompiler::ExprTree
 		virtual std::list<Node*> getNodesList() = 0;
 	};
 
-	class IFloatingPoint
-	{
-	public:
-		virtual bool IsFloatingPoint() = 0;
-	};
-
 	class Node
 	{
 	public:
@@ -83,6 +77,12 @@ namespace CE::Decompiler::ExprTree
 			ObjectHash hash;
 			hash.addValue((int64_t)this);
 			return hash.getHash();
+		}
+
+		virtual BitMask64 getMask() = 0;
+
+		virtual bool isFloatingPoint() {
+			return false;
 		}
 
 		virtual Node* clone() = 0;

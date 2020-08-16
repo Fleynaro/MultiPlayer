@@ -65,8 +65,10 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		case InstructionId::INT_ADD:
 		case InstructionId::INT_SUB:
 			opType = ExprTree::Add;
-			if (m_instr->m_id == InstructionId::INT_SUB)
-				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & m_instr->m_input1->getMask().getBitMask64().getValue()), ExprTree::Mul, m_instr->m_input1->getSize());
+			if (m_instr->m_id == InstructionId::INT_SUB) {
+				auto maskValue = m_instr->m_input1->getMask().getBitMask64().getValue();
+				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & maskValue), ExprTree::Mul, m_instr->m_input1->getSize());
+			}
 			break;
 		case InstructionId::INT_MULT:
 			opType = ExprTree::Mul;
@@ -234,7 +236,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		}
 
 		bool isFloatingPoint = (InstructionId::FLOAT_EQUAL <= m_instr->m_id && m_instr->m_id <= InstructionId::FLOAT_LESSEQUAL);
-		auto result = new ExprTree::Condition(op1, op2, condType, isFloatingPoint);
+		auto result = new ExprTree::Condition(op1, op2, condType);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -242,7 +244,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::FLOAT_NAN:
 	{
 		auto op1 = requestVarnode(m_instr->m_input0);
-		auto result = new ExprTree::Condition(op1, new ExprTree::FloatNanLeaf(), ExprTree::Condition::Eq, true);
+		auto result = new ExprTree::Condition(op1, new ExprTree::FloatNanLeaf(), ExprTree::Condition::Eq);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}

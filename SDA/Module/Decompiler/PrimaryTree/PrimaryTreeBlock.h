@@ -174,6 +174,21 @@ namespace CE::Decompiler::PrimaryTree
 			return { m_noJmpCond };
 		}
 
+		std::list<ExprTree::Node*> getAllTopNodes() {
+			std::list<ExprTree::Node*> result;
+			for (auto line : getSeqLines()) {
+				for (auto node : line->getNodesList()) {
+					result.push_back(node);
+				}
+			}
+
+			for (auto node : getNodesList()) {
+				if (!node) continue;
+				result.push_back(node);
+			}
+			return result;
+		}
+
 		void setNoJumpCondition(ExprTree::ICondition* noJmpCond) {
 			if (m_noJmpCond) {
 				m_noJmpCond->removeBy(this);

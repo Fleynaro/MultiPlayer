@@ -43,6 +43,7 @@ namespace CE::Decompiler::Optimization
 		return removedBlock;
 	}
 
+	//todo: сделать клонирование графа, а не изменение его как сейчас
 	static void CloneExprInDecompiledGraph(DecompiledCodeGraph* decGraph) {
 		//optimize expressions
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {

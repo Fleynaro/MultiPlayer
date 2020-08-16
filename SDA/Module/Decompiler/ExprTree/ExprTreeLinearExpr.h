@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class LinearExpr : public Node, public INodeAgregator, public INumber, public IFloatingPoint
+	class LinearExpr : public Node, public INodeAgregator
 	{
 	public:
 		std::list<ExprTree::Node*> m_terms;
@@ -49,21 +49,19 @@ namespace CE::Decompiler::ExprTree
 		BitMask64 getMask() override {
 			BitMask64 mask;
 			for (auto term : m_terms) {
-				if (auto num = dynamic_cast<INumber*>(term)) {
-					mask = mask | num->getMask();
-				}
+				mask = mask | term->getMask();
 			}
 			return mask;
 		}
 
-		bool IsFloatingPoint() override {
+		bool isFloatingPoint() override {
 			return IsOperationFloatingPoint(m_operation);
 		}
 
 		Node* clone() override {
 			auto newLinearExpr = new LinearExpr(m_constTerm, m_operation);
 			for (auto term : m_terms) {
-				newLinearExpr->addTerm(term);
+				newLinearExpr->addTerm(term->clone());
 			}
 			return newLinearExpr;
 		}
@@ -77,7 +75,7 @@ namespace CE::Decompiler::ExprTree
 			for (auto it = m_terms.begin(); it != m_terms.end(); it ++) {
 				result += (*it)->printDebug();
 				if (it != std::prev(m_terms.end()) || m_constTerm) {
-					result += " " + ShowOperation(m_operation) + OperationalNode::getOpSize(getMask().getSize(), IsFloatingPoint()) + " ";
+					result += " " + ShowOperation(m_operation) + OperationalNode::getOpSize(getMask().getSize(), isFloatingPoint()) + " ";
 				}
 			}
 

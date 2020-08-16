@@ -227,6 +227,7 @@
     <ClCompile Include="Module\Decompiler\DecInstructionInterpreter.cpp" />
     <ClCompile Include="Module\Decompiler\DecLinearView.cpp" />
     <ClCompile Include="Module\Decompiler\Decompiler.cpp" />
+    <ClCompile Include="Module\Decompiler\DecTest.cpp" />
     <ClCompile Include="Module\Decompiler\Optimization\ExprOptimization.cpp" />
     <ClCompile Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.cpp" />
     <ClCompile Include="Module\Decompiler\DecSymbol.cpp" />
@@ -341,6 +342,7 @@
     <ClInclude Include="Module\Decompiler\DecOperand.h" />
     <ClInclude Include="Module\Decompiler\DecPCode.h" />
     <ClInclude Include="Module\Decompiler\DecRegister.h" />
+    <ClInclude Include="Module\Decompiler\DecTest.h" />
     <ClInclude Include="Module\Decompiler\DecTranslatorX86.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTree.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeCondition.h" />
@@ -354,7 +356,7 @@
     <ClInclude Include="Module\Decompiler\Optimization\ExprOptimization.h" />
     <ClInclude Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.h" />
     <ClInclude Include="Module\Decompiler\SDA\DecSdaSymbol.h" />
-    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeGOAR.h" />
+    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSda.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />
     <ClInclude Include="Module\Disassembler\DisasmDecoder.h" />

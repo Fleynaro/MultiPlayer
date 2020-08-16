@@ -673,10 +673,7 @@ int sumArray(arrType arr[3][2], char* str)
     return sum;
 }
 
-#include <Decompiler/DecAsmGraph.h>
-void test11111() {
-    Decompiler::test();
-}
+#include <Decompiler/DecTest.h>
 
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
@@ -689,5 +686,5 @@ int main(int argc, char** argv) {
     DebugOutput_Console = true;
 
 	//return RUN_ALL_TESTS();
-    test11111();  return 0;
+    CE::test((new ProgramModuleFixtureBase(true))->m_programModule); return 0;
 }

@@ -100,7 +100,7 @@ namespace CE::Decompiler::ExprTree
 		return "_";
 	}
 
-	class OperationalNode : public Node, public INodeAgregator, public INumber, public IFloatingPoint
+	class OperationalNode : public Node, public INodeAgregator
 	{
 		BitMask64 m_mask;
 	public:
@@ -163,7 +163,7 @@ namespace CE::Decompiler::ExprTree
 			return m_mask;
 		}
 
-		bool IsFloatingPoint() override {
+		bool isFloatingPoint() override {
 			return IsOperationFloatingPoint(m_operation);
 		}
 
@@ -186,7 +186,7 @@ namespace CE::Decompiler::ExprTree
 			}
 			
 			if(result.empty())
-				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + ""+ getOpSize(getMask().getSize(), IsFloatingPoint()) +" " + m_rightNode->printDebug() + ")";
+				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + ""+ getOpSize(getMask().getSize(), isFloatingPoint()) +" " + m_rightNode->printDebug() + ")";
 			return (m_updateDebugInfo = result);
 		}
 
@@ -320,7 +320,7 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(m_size);
 		}
 
-		bool IsFloatingPoint() override {
+		bool isFloatingPoint() override {
 			return m_funcId != Id::TOINT;
 		}
 

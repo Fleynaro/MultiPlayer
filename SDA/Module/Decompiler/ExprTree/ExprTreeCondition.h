@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class ICondition : public Node, public INumber
+	class ICondition : public Node
 	{
 	public:
 		virtual void inverse() = 0;
@@ -39,7 +39,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class Condition : public ICondition, public INodeAgregator, public IFloatingPoint
+	class Condition : public ICondition, public INodeAgregator
 	{
 	public:
 		enum ConditionType
@@ -70,8 +70,8 @@ namespace CE::Decompiler::ExprTree
 		Node* m_rightNode;
 		ConditionType m_cond;
 
-		Condition(Node* leftNode, Node* rightNode, ConditionType cond, bool isFloatingPoint = false)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond), m_isFloatingPoint(isFloatingPoint)
+		Condition(Node* leftNode, Node* rightNode, ConditionType cond)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond)
 		{
 			leftNode->addParentNode(this);
 			rightNode->addParentNode(this);
@@ -108,10 +108,6 @@ namespace CE::Decompiler::ExprTree
 			return hash.getHash();
 		}
 
-		bool IsFloatingPoint() override {
-			return m_isFloatingPoint;
-		}
-
 		void inverse() override {
 			switch (m_cond)
 			{
@@ -141,9 +137,6 @@ namespace CE::Decompiler::ExprTree
 				return "";
 			return m_updateDebugInfo = ("(" + m_leftNode->printDebug() + " " + ShowConditionType(m_cond) + " " + m_rightNode->printDebug() + ")");
 		}
-
-	private:
-		bool m_isFloatingPoint;
 	};
 
 	class CompositeCondition : public ICondition, public INodeAgregator
@@ -177,6 +170,13 @@ namespace CE::Decompiler::ExprTree
 			if (rightCond != nullptr) {
 				rightCond->addParentNode(this);
 			}
+		}
+
+		~CompositeCondition() {
+			if (m_leftCond != nullptr)
+				m_leftCond->removeBy(this);
+			if (m_rightCond != nullptr)
+				m_rightCond->removeBy(this);
 		}
 
 		void replaceNode(Node* node, Node* newNode) override {

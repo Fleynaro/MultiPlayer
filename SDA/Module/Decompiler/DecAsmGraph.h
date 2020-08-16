@@ -213,6 +213,5 @@ namespace CE::Decompiler
 			path.pop_back();
 		}
 	};
-
-	void test();
 };
+

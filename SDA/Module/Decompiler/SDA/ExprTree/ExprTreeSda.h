@@ -5,7 +5,67 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class SdaSymbolLeaf : public Node, public INumber, public IFloatingPoint
+	class ISdaNode
+	{
+	public:
+		virtual DataTypePtr getDataType() = 0;
+
+		virtual std::string printDebugGoar() {
+			return "";
+		}
+	};
+
+	class SdaNode : public Node, public INodeAgregator, public ISdaNode
+	{
+	public:
+		Node* m_node;
+		DataTypePtr m_calcDataType;
+		bool m_explicitCast;
+
+		SdaNode(Node* node)
+			: m_node(node)
+		{}
+
+		~SdaNode() {
+			m_node->removeBy(this);
+		}
+
+		void replaceNode(Node* node, Node* newNode) override {
+			if (m_node == node) {
+				m_node = newNode;
+			}
+		}
+
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_node };
+		}
+
+		DataTypePtr getDataType() override {
+			return m_calcDataType;
+		}
+
+		BitMask64 getMask() override {
+			return m_node->getMask();
+		}
+
+		bool isFloatingPoint() override {
+			return m_node->isFloatingPoint();
+		}
+
+		Node* clone() override {
+			return new SdaNode(m_node->clone());
+		}
+
+		std::string printDebug() override {
+			auto result = m_node->printDebug();
+			if (m_calcDataType != nullptr && m_explicitCast) {
+				result = "("+ m_calcDataType->getDisplayName() +")" + result + "";
+			}
+			return m_updateDebugInfo = result;
+		}
+	};
+
+	class SdaSymbolLeaf : public Node, public ISdaNode
 	{
 	public:
 		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol)
@@ -24,23 +84,18 @@ namespace CE::Decompiler::ExprTree
 			return nullptr;
 		}
 
-		bool IsFloatingPoint() override {
+		bool isFloatingPoint() override {
 			return false;
 		}
 
+		DataTypePtr getDataType() override {
+			return m_sdaSymbol->getDataType();
+		}
 	private:
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;
 	};
 
-	class IGOAR
-	{
-	public:
-		virtual DataTypePtr getDataType() = 0;
-
-		virtual std::string printDebugGoar() = 0;
-	};
-
-	class GoarSymbolBase : public IGOAR
+	class GoarSymbolBase : public ISdaNode
 	{
 	public:
 		GoarSymbolBase(CE::Symbol::AbstractSymbol* sdaSymbol)
@@ -66,16 +121,16 @@ namespace CE::Decompiler::ExprTree
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;
 	};
 
-	class GoarNode : public Node, public INodeAgregator, public INumber, public IFloatingPoint, public IGOAR
+	class GoarNode : public Node, public INodeAgregator, public ISdaNode
 	{
 	public:
 		DataTypePtr m_dataType;
-		IGOAR* m_base;
+		ISdaNode* m_base;
 		int m_bitOffset; //offset + bitOffset?
 		Node* m_index;
 		int m_readSize = 0x0;
 		
-		GoarNode(DataTypePtr dataType, IGOAR* base, int bitOffset, Node* index)
+		GoarNode(DataTypePtr dataType, ISdaNode* base, int bitOffset, Node* index)
 			: m_dataType(dataType), m_base(base), m_bitOffset(bitOffset), m_index(index)
 		{}
 
@@ -87,7 +142,7 @@ namespace CE::Decompiler::ExprTree
 			return nullptr;
 		}
 
-		bool IsFloatingPoint() override {
+		bool isFloatingPoint() override {
 			return false;
 		}
 

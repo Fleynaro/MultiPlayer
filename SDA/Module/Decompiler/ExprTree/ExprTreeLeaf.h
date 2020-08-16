@@ -5,7 +5,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class SymbolLeaf : public Node, public INumber
+	class SymbolLeaf : public Node
 	{
 	public:
 		Symbol::Symbol* m_symbol;
@@ -41,7 +41,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class NumberLeaf : public Node, public INumber
+	class NumberLeaf : public Node
 	{
 	public:
 		uint64_t m_value;
@@ -80,7 +80,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class FloatNanLeaf : public Node, public INumber, public IFloatingPoint
+	class FloatNanLeaf : public Node
 	{
 	public:
 		FloatNanLeaf()
@@ -98,7 +98,7 @@ namespace CE::Decompiler::ExprTree
 			return this;
 		}
 
-		bool IsFloatingPoint() override {
+		bool isFloatingPoint() override {
 			return true;
 		}
 

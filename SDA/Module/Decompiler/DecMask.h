@@ -188,10 +188,4 @@ namespace CE::Decompiler
 			return m_bitMask64.getOffset() + m_index * 64;
 		}
 	};
-
-	class INumber
-	{
-	public:
-		virtual BitMask64 getMask() = 0;
-	};
 };
