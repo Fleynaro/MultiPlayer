@@ -73,7 +73,13 @@ namespace CE::Decompiler::Symbolization
 			});
 
 		if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
-			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(sdaNode->m_node)) {
+			auto symbolLeaf = dynamic_cast<SymbolLeaf*>(sdaNode->m_node);
+			auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node);
+			if (symbolLeaf || linearExpr) {
+
+			}
+
+			if (symbolLeaf) {
 				sdaNode->m_calcDataType = ctx.getSymbolType(symbolLeaf->m_symbol);
 			}
 			else if (auto opNode = dynamic_cast<OperationalNode*>(sdaNode->m_node)) {
@@ -82,9 +88,6 @@ namespace CE::Decompiler::Symbolization
 						sdaNode->m_calcDataType = CalculateDataType(sdaLeftNode->getDataType(), sdaRightNode->getDataType());
 					}
 				}
-			}
-			else if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
-
 			}
 
 			if (sdaNode->m_calcDataType == nullptr) {
