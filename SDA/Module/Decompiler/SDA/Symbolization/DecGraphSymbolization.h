@@ -1,17 +1,21 @@
 #pragma once
+#include "../AutoSdaSymbol.h"
 #include "../ExprTree/ExprTreeSda.h"
 #include "../../ExprTree/ExprTree.h"
 #include "../../Optimization/DecGraphOptimization.h"
 #include <Code/Symbol/MemoryArea/MemoryArea.h>
+#include <Code/Type/FunctionSignature.h>
 #include <Manager/ProgramModule.h>
 #include <Manager/TypeManager.h>
 
 namespace CE::Decompiler::Symbolization
 {
 	using namespace Optimization;
+	using namespace DataType;
 
 	struct UserSymbolDef {
 		CE::ProgramModule* m_programModule;
+		Signature* m_signature = nullptr;
 		CE::Symbol::MemoryArea* m_globalMemoryArea = nullptr;
 		CE::Symbol::MemoryArea* m_stackMemoryArea = nullptr;
 		CE::Symbol::MemoryArea* m_funcBodyMemoryArea = nullptr;
@@ -21,19 +25,124 @@ namespace CE::Decompiler::Symbolization
 		{}
 	};
 
-	struct CalcTypeContext {
-		UserSymbolDef* m_userSymbolDef;
-		std::map<Symbol::Symbol*, DataTypePtr> m_symbolTypes;
+	class SdaSymbolBuilding
+	{
+	public:
+		SdaSymbolBuilding()
+		{}
 
-		DataTypePtr getSymbolType(Symbol::Symbol* symbol) {
-			auto it = m_symbolTypes.find(symbol);
-			if(it != m_symbolTypes.end())
-				return it->second;
-			return m_symbolTypes[symbol] = getDefaultType(symbol->getSize());
+		void buildSdaSymbols(Node* node) {
+			IterateChildNodes(node, [&](Node* childNode) {
+				buildSdaSymbols(childNode);
+				});
+
+			if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
+				if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(sdaNode->m_node)) {
+
+				}
+				if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
+
+				}
+			}
 		}
 
-		DataTypePtr getDefaultType(Node* node) {
-			return getDefaultType(node->getMask().getSize());
+	private:
+		UserSymbolDef* m_userSymbolDef;
+		std::map<Symbol::Symbol*, CE::Symbol::AbstractSymbol*> m_symbolsToSymbols;
+		std::map<int, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
+		std::map<int, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
+
+		CE::Symbol::AbstractSymbol* findOrCreateSymbol(Symbol::Symbol* symbol, int size, int offset = 0x0) {
+			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
+				auto& reg = regSymbol->m_register;
+				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
+					auto it = m_stackToSymbols.find(offset);
+					if (it != m_stackToSymbols.end())
+						return it->second;
+				} else if (reg.getGenericId() == ZYDIS_REGISTER_RIP) {
+					auto it = m_globalToSymbols.find(offset);
+					if (it != m_globalToSymbols.end())
+						return it->second;
+				}
+			}
+
+			auto it = m_symbolsToSymbols.find(symbol);
+			if (it != m_symbolsToSymbols.end())
+				return it->second;
+			
+			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
+				int paramIdx = 0;
+				auto& reg = regSymbol->m_register;
+				auto signature = m_userSymbolDef->m_signature;
+				if (signature->getCallingConvetion() == Signature::FASTCALL) {
+					if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
+						if (offset >= 0x8 && offset % 0x8 == 0) {
+							paramIdx = 4 + offset / 0x8;
+						}
+					}
+					else {
+						static std::map<PCode::RegisterId, int> regToParams = {
+							std::pair(ZYDIS_REGISTER_RCX, 1),
+							std::pair(ZYDIS_REGISTER_RDX, 2),
+							std::pair(ZYDIS_REGISTER_R8, 3),
+							std::pair(ZYDIS_REGISTER_R9, 4)
+						};
+						auto it = regToParams.find(reg.getGenericId());
+						if (it != regToParams.end()) {
+							paramIdx = it->second;
+						}
+					}
+				}
+
+				if (paramIdx == 0) {
+					for (auto storage : signature->getCustomStorages()) {
+						if (storage->getType() == Storage::STORAGE_REGISTER && reg.getGenericId() == storage->getRegisterId() || (offset == storage->getOffset() &&
+								(storage->getType() == Storage::STORAGE_STACK && reg.getGenericId() == ZYDIS_REGISTER_RSP ||
+									storage->getType() == Storage::STORAGE_GLOBAL && reg.getGenericId() == ZYDIS_REGISTER_RIP)) ) {
+							paramIdx = storage->getIndex();
+							break;
+						}
+					}
+				}
+
+				if (paramIdx != 0) {
+					auto& funcParams = signature->getParameters();
+					if (paramIdx <= funcParams.size()) {
+						auto sdaSymbol = funcParams[paramIdx - 1];
+						storeSdaSymbol(sdaSymbol, symbol, size, offset);
+						return sdaSymbol;
+					}
+					auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::FUNC_PARAMETER, "param" + std::to_string(paramIdx), size);
+					storeSdaSymbol(sdaSymbol, symbol, size, offset);
+					return sdaSymbol;
+				}
+
+				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "in_" + reg.printDebug(), size);
+				storeSdaSymbol(sdaSymbol, symbol, size, offset);
+				return sdaSymbol;
+			}
+
+			return nullptr;
+		}
+
+		CE::Symbol::AutoSdaSymbol* createAutoSdaSymbol(CE::Symbol::Type type, const std::string& name, int size) {
+			auto dataType = getDefaultType(size);
+			return new CE::Symbol::AutoSdaSymbol(type, m_userSymbolDef->m_programModule->getSymbolManager(), dataType, name);
+		}
+
+		void storeSdaSymbol(CE::Symbol::AbstractSymbol* sdaSymbol, Symbol::Symbol* symbol, int size, int offset) {
+			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
+				auto& reg = regSymbol->m_register;
+				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
+					m_stackToSymbols[offset] = sdaSymbol;
+					return;
+				}
+				else if (reg.getGenericId() == ZYDIS_REGISTER_RIP) {
+					m_globalToSymbols[offset] = sdaSymbol;
+					return;
+				}
+			}
+			m_symbolsToSymbols[symbol] = sdaSymbol;
 		}
 
 		DataTypePtr getDefaultType(int size) {

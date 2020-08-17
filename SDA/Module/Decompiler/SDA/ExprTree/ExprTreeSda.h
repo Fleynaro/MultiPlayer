@@ -5,7 +5,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class ISdaNode
+	class AbstractSdaNode : public Node
 	{
 	public:
 		virtual DataTypePtr getDataType() = 0;
@@ -15,7 +15,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class SdaNode : public Node, public INodeAgregator, public ISdaNode
+	class SdaNode : public AbstractSdaNode, public INodeAgregator
 	{
 	public:
 		Node* m_node;
@@ -40,7 +40,7 @@ namespace CE::Decompiler::ExprTree
 			return { m_node };
 		}
 
-		DataTypePtr getDataType() override {
+		virtual DataTypePtr getDataType() {
 			return m_calcDataType;
 		}
 
@@ -65,7 +65,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class SdaSymbolLeaf : public Node, public ISdaNode
+	class SdaSymbolLeaf : public AbstractSdaNode
 	{
 	public:
 		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol)
@@ -89,48 +89,32 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		DataTypePtr getDataType() override {
+			if (m_isGettingAddr) {
+				auto dataType = DataType::CloneUnit(m_sdaSymbol->getDataType());
+				dataType->addPointerLevelInFront();
+				return dataType;
+			}
 			return m_sdaSymbol->getDataType();
 		}
+
+		bool isGettingAddr() {
+			return m_isGettingAddr;
+		}
 	private:
+		bool m_isGettingAddr = false;
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;
 	};
-
-	class GoarSymbolBase : public ISdaNode
-	{
-	public:
-		GoarSymbolBase(CE::Symbol::AbstractSymbol* sdaSymbol)
-			: m_sdaSymbol(sdaSymbol)
-		{
-			m_dataType = m_sdaSymbol->getDataType();
-			if (sdaSymbol->getType() != CE::Symbol::FUNC_PARAMETER) {
-				m_dataType = DataType::CloneUnit(m_dataType);
-				m_dataType->addPointerLevelInFront();
-			}
-		}
-
-		DataTypePtr getDataType() override {
-			return m_dataType;
-		}
-
-		std::string printDebugGoar() override {
-			return m_sdaSymbol->getName();
-		}
-
-	private:
-		DataTypePtr m_dataType;
-		CE::Symbol::AbstractSymbol* m_sdaSymbol;
-	};
-
-	class GoarNode : public Node, public INodeAgregator, public ISdaNode
+	
+	class GoarNode : public AbstractSdaNode, public INodeAgregator
 	{
 	public:
 		DataTypePtr m_dataType;
-		ISdaNode* m_base;
+		AbstractSdaNode* m_base;
 		int m_bitOffset; //offset + bitOffset?
 		Node* m_index;
 		int m_readSize = 0x0;
 		
-		GoarNode(DataTypePtr dataType, ISdaNode* base, int bitOffset, Node* index)
+		GoarNode(DataTypePtr dataType, AbstractSdaNode* base, int bitOffset, Node* index)
 			: m_dataType(dataType), m_base(base), m_bitOffset(bitOffset), m_index(index)
 		{}
 
