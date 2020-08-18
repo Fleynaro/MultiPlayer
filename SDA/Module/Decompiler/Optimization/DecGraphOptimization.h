@@ -108,6 +108,27 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	static void GetConstantParentsOfNode(Node* node, std::list<INodeAgregator*>& parentNodes) {
+		for (auto it : node->getParentNodes()) {
+			if (auto parentNode = dynamic_cast<Node*>(it)) {
+				GetConstantParentsOfNode(parentNode, parentNodes);
+			}
+			if (dynamic_cast<SeqLine*>(it) || dynamic_cast<Block*>(it)) {
+				parentNodes.push_back(it);
+			}
+		}
+	}
+
+	static void FindRelatedInstructionsForLocalVars(DecompiledCodeGraph* decGraph) {
+		for (auto symbol : decGraph->getSymbols()) {
+			if (auto localVarSymbol = dynamic_cast<Symbol::LocalVariable*>(symbol)) {
+				for (auto symbolLeaf : localVarSymbol->m_symbolLeafs) {
+					symbolLeaf->getParentNodes();
+				}
+			}
+		}
+	}
+
 	static bool IsMemLocIntersected(ReadValueNode* memValueNode1, ReadValueNode* memValueNode2) {
 		TermsDict terms1;
 		TermsDict terms2;
@@ -120,8 +141,7 @@ namespace CE::Decompiler::Optimization
 		auto delta = constTerm2 - constTerm1;
 		return !(delta >= memValueNode1->getSize() || -delta >= memValueNode2->getSize());
 	}
-
-
+	
 	static void GetReadValueNodes(Node* node, std::list<ReadValueNode*>& readValueNodes) {
 		IterateChildNodes(node, [&](Node* childNode) {
 			GetReadValueNodes(childNode, readValueNodes);
@@ -208,17 +228,6 @@ namespace CE::Decompiler::Optimization
 
 		auto result = DoesLineHavePathToOtherLine(lines.begin(), lines, pushedOutLines);
 		return result;
-	}
-
-	static void GetConstantParentsOfNode(Node* node, std::list<INodeAgregator*>& parentNodes) {
-		for (auto it : node->getParentNodes()) {
-			if (auto parentNode = dynamic_cast<Node*>(it)) {
-				GetConstantParentsOfNode(parentNode, parentNodes);
-			}
-			if (dynamic_cast<SeqLine*>(it) || dynamic_cast<Block*>(it)) {
-				parentNodes.push_back(it);
-			}
-		}
 	}
 
 	static void RemoveSeqLinesWithNotUsedMemVarDecompiledGraph(DecompiledCodeGraph* decGraph) {
@@ -464,7 +473,8 @@ namespace CE::Decompiler::Optimization
 		std::list<PrimaryTree::Block*> path;
 		DecompiledCodeGraph::CalculateLevelsForDecBlocks(decGraph->getStartBlock(), path);
 
-		FixSymbolAssignmentLineAndConditionOrder(decGraph); 
+		FixSymbolAssignmentLineAndConditionOrder(decGraph);
+		FindRelatedInstructionsForLocalVars(decGraph);
 		OptimizeExprInDecompiledGraph(decGraph);
 		ExpandSymbolAssignmentLines(decGraph);
 		RemoveSeqLinesWithUndefinedRegisters(decGraph);

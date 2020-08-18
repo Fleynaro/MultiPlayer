@@ -18,23 +18,15 @@ namespace CE
 		class AbstractSymbol : public DB::DomainObject, public Descrtiption
 		{
 		public:
-			AbstractSymbol(SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "")
-				: m_manager(manager), m_dataType(dataType), Descrtiption(name, comment)
-			{}
+			AbstractSymbol(SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "");
 
-			SymbolManager* getManager() {
-				return m_manager;
-			}
+			SymbolManager* getManager();
 
 			virtual Type getType() = 0;
 
-			DataTypePtr getDataType() {
-				return m_dataType;
-			}
+			DataTypePtr getDataType();
 
-			void setDataType(DataTypePtr dataType) {
-				m_dataType = dataType;
-			}
+			void setDataType(DataTypePtr dataType);
 		private:
 			DataTypePtr m_dataType;
 			SymbolManager* m_manager;

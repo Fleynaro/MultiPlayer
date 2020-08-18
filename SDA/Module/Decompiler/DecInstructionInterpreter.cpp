@@ -22,8 +22,10 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
 		auto readSize = m_instr->m_output->getSize();
-		expr = new ExprTree::ReadValueNode(expr, readSize);
-		auto memSymbolLeaf = new ExprTree::SymbolLeaf(new Symbol::MemoryVariable(expr, readSize));
+		auto loadValueExpr = new ExprTree::ReadValueNode(expr, readSize);
+		auto memVar = new Symbol::MemoryVariable(loadValueExpr, readSize);
+		m_block->m_decompiledGraph->addSymbol(memVar);
+		auto memSymbolLeaf = new ExprTree::SymbolLeaf(memVar);
 		m_block->addSeqLine(memSymbolLeaf, expr);
 		m_ctx->setVarnode(m_instr->m_output, memSymbolLeaf);
 		break;
@@ -195,7 +197,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			break;
 		}
 
-		m_ctx->setVarnode(m_instr->m_output, new ExprTree::FloatFunctionalNode(expr, id, m_instr->m_input0->getSize()));
+		m_ctx->setVarnode(m_instr->m_output, new ExprTree::FloatFunctionalNode(expr, id, m_instr->m_input0->getSize(), m_instr));
 		break;
 	}
 
@@ -236,7 +238,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		}
 
 		bool isFloatingPoint = (InstructionId::FLOAT_EQUAL <= m_instr->m_id && m_instr->m_id <= InstructionId::FLOAT_LESSEQUAL);
-		auto result = new ExprTree::Condition(op1, op2, condType);
+		auto result = new ExprTree::Condition(op1, op2, condType, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -244,7 +246,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::FLOAT_NAN:
 	{
 		auto op1 = requestVarnode(m_instr->m_input0);
-		auto result = new ExprTree::Condition(op1, new ExprTree::FloatNanLeaf(), ExprTree::Condition::Eq);
+		auto result = new ExprTree::Condition(op1, new ExprTree::FloatNanLeaf(), ExprTree::Condition::Eq, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -253,7 +255,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto cond = toBoolean(requestVarnode(m_instr->m_input0));
 		if (cond) {
-			auto result = new ExprTree::CompositeCondition(cond, nullptr, ExprTree::CompositeCondition::Not);
+			auto result = new ExprTree::CompositeCondition(cond, nullptr, ExprTree::CompositeCondition::Not, m_instr);
 			m_ctx->setVarnode(m_instr->m_output, result);
 		}
 		break;
@@ -273,13 +275,13 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 					auto notCondOp2 = new ExprTree::CompositeCondition(condOp2, nullptr, ExprTree::CompositeCondition::Not);
 					auto case1 = new ExprTree::CompositeCondition(notCondOp1, condOp2, ExprTree::CompositeCondition::And);
 					auto case2 = new ExprTree::CompositeCondition(condOp1, notCondOp2, ExprTree::CompositeCondition::And);
-					result = new ExprTree::CompositeCondition(case1, case2, ExprTree::CompositeCondition::Or);
+					result = new ExprTree::CompositeCondition(case1, case2, ExprTree::CompositeCondition::Or, m_instr);
 				}
 				else {
 					auto condType = ExprTree::CompositeCondition::And;
 					if (m_instr->m_id == InstructionId::BOOL_OR)
 						condType = ExprTree::CompositeCondition::Or;
-					result = new ExprTree::CompositeCondition(condOp1, condOp2, condType);
+					result = new ExprTree::CompositeCondition(condOp1, condOp2, condType, m_instr);
 				}
 				m_ctx->setVarnode(m_instr->m_output, result);
 			}
@@ -299,7 +301,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		else if (m_instr->m_id == InstructionId::INT_SBORROW)
 			funcId = ExprTree::FunctionalNode::Id::SBORROW;
 
-		auto result = new ExprTree::FunctionalNode(op1, op2, funcId);
+		auto result = new ExprTree::FunctionalNode(op1, op2, funcId, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -308,7 +310,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto flagCond = toBoolean(requestVarnode(m_instr->m_input1));
 		if (flagCond) {
-			auto notFlagCond = new ExprTree::CompositeCondition(flagCond, nullptr, ExprTree::CompositeCondition::Not);
+			auto notFlagCond = new ExprTree::CompositeCondition(flagCond, nullptr, ExprTree::CompositeCondition::Not, m_instr);
 			m_block->setNoJumpCondition(notFlagCond);
 		}
 		break;
@@ -324,7 +326,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		}
 
 		auto funcCallInfo = m_ctx->m_decompiler->m_funcCallInfoCallback(dstLocOffset, dstLocExpr);
-		auto funcCallCtx = new ExprTree::FunctionCallContext(dstLocOffset, dstLocExpr);
+		auto funcCallCtx = new ExprTree::FunctionCallContext(dstLocOffset, dstLocExpr, m_instr);
 
 		for (auto paramReg : funcCallInfo.m_paramRegisters) {
 			auto reg = m_ctx->requestRegisterExpr(paramReg);
@@ -335,6 +337,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto& dstRegister = funcCallInfo.m_resultRegister.getGenericId() != 0 ? funcCallInfo.m_resultRegister : funcCallInfo.m_resultVectorRegister;
 		if (dstRegister.getGenericId() != 0) {
 			auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.m_valueRangeMask);
+			m_block->m_decompiledGraph->addSymbol(funcResultVar);
 			dstExpr = new ExprTree::SymbolLeaf(funcResultVar);
 			m_ctx->setVarnode(dstRegister, dstExpr);
 		}

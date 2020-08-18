@@ -10,41 +10,28 @@ namespace CE
 		class MemoryArea : public DB::DomainObject
 		{
 		public:
-			enum Type {
+			enum MemoryAreaType {
 				GLOBAL_SPACE = 1,
 				STACK_SPACE = 2
 			};
 
-			MemoryArea(MemoryAreaManager* manager, Type type, int size)
-				: m_manager(manager), m_type(type), m_size(size)
-			{}
+			MemoryArea(MemoryAreaManager* manager, MemoryAreaType type, int size);
 
-			MemoryAreaManager* getManager() {
-				return m_manager;
-			}
+			MemoryAreaManager* getManager();
 
-			Type getType() {
-				return m_type;
-			}
+			MemoryAreaType getType();
 
-			int getSize() {
-				return m_size;
-			}
+			int getSize();
 
-			void addSymbol(MemorySymbol* memSymbol, int offset) {
-				memSymbol->setMemoryArea(this);
-				m_symbols.insert(std::make_pair(offset, memSymbol));
-			}
+			void addSymbol(MemorySymbol* memSymbol, int offset);
 
-			MemorySymbol* getSymbolAt(int offset) {
+			std::pair<int, MemorySymbol*> getSymbolAt(int offset);
 
-			}
+			std::map<int, MemorySymbol*>::iterator getSymbolIterator(int offset);
 
-			std::map<int, MemorySymbol*>& getSymbols() {
-				return m_symbols;
-			}
+			std::map<int, MemorySymbol*>& getSymbols();
 		private:
-			Type m_type;
+			MemoryAreaType m_type;
 			int m_size;
 			std::map<int, MemorySymbol*> m_symbols;
 			MemoryAreaManager* m_manager;

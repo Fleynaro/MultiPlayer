@@ -3,14 +3,27 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class ICondition : public Node
+	class ICondition : public Node, public PCode::IRelatedToInstruction
 	{
 	public:
+		ICondition(PCode::Instruction* instr = nullptr)
+			: m_instr(instr)
+		{}
+
 		virtual void inverse() = 0;
 
 		BitMask64 getMask() override {
 			return BitMask64(1);
 		}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			if (m_instr)
+				return { m_instr };
+			return {};
+		}
+
+	private:
+		PCode::Instruction* m_instr;
 	};
 
 	class BooleanValue : public ICondition
@@ -18,8 +31,8 @@ namespace CE::Decompiler::ExprTree
 	public:
 		bool m_value;
 
-		BooleanValue(bool value)
-			: m_value(value)
+		BooleanValue(bool value, PCode::Instruction* instr = nullptr)
+			: m_value(value), ICondition(instr)
 		{}
 
 		void inverse() override {
@@ -70,8 +83,8 @@ namespace CE::Decompiler::ExprTree
 		Node* m_rightNode;
 		ConditionType m_cond;
 
-		Condition(Node* leftNode, Node* rightNode, ConditionType cond)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond)
+		Condition(Node* leftNode, Node* rightNode, ConditionType cond, PCode::Instruction* instr = nullptr)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond), ICondition(instr)
 		{
 			leftNode->addParentNode(this);
 			rightNode->addParentNode(this);
@@ -163,8 +176,8 @@ namespace CE::Decompiler::ExprTree
 		ICondition* m_rightCond;
 		CompositeConditionType m_cond;
 
-		CompositeCondition(ICondition* leftCond, ICondition* rightCond = nullptr, CompositeConditionType cond = None)
-			: m_leftCond(leftCond), m_rightCond(rightCond), m_cond(cond)
+		CompositeCondition(ICondition* leftCond, ICondition* rightCond = nullptr, CompositeConditionType cond = None, PCode::Instruction* instr = nullptr)
+			: m_leftCond(leftCond), m_rightCond(rightCond), m_cond(cond), ICondition(instr)
 		{
 			leftCond->addParentNode(this);
 			if (rightCond != nullptr) {

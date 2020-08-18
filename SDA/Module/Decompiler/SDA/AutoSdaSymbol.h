@@ -6,8 +6,8 @@ namespace CE::Symbol
 	class AutoSdaSymbol : public AbstractSymbol
 	{
 	public:
-		AutoSdaSymbol(Type type, SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "")
-			: m_type(type), AbstractSymbol(manager, dataType, name, comment)
+		AutoSdaSymbol(Type type, int value, SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "")
+			: m_type(type), m_value(value), AbstractSymbol(manager, dataType, name, comment)
 		{}
 
 		Type getType() override {
@@ -16,5 +16,6 @@ namespace CE::Symbol
 
 	private:
 		Type m_type;
+		int m_value;
 	};
 };

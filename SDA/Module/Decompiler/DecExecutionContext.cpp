@@ -117,6 +117,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 	auto regParts = getRegisterParts(reg.getGenericId(), needReadMask);
 	if (!needReadMask.isZero()) {
 		auto symbol = new Symbol::RegisterVariable(reg);
+		m_decompiler->m_decompiledGraph->addSymbol(symbol);
 		auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 		auto externalSymbol = new ExternalSymbol(varnodeRegister, needReadMask, symbolLeaf, regParts);
 		m_externalSymbols.push_back(externalSymbol);

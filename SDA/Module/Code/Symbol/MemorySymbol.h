@@ -39,7 +39,7 @@ namespace CE::Symbol
 		}
 
 		int getSize() override {
-			return 0;
+			return 1;
 		}
 	};
 

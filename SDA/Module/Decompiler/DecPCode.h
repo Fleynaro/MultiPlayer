@@ -298,4 +298,10 @@ namespace CE::Decompiler::PCode
 		int m_originalInstructionLength;
 		int m_orderId;
 	};
+
+	class IRelatedToInstruction
+	{
+	public:
+		virtual std::list<PCode::Instruction*> getInstructionsRelatedTo() = 0;
+	};
 };

@@ -22,10 +22,23 @@ namespace CE::Decompiler
 			return m_functionCallInfo;;
 		}
 
+		std::list<Symbol::Symbol*>& getSymbols() {
+			return m_symbols;
+		}
+
 		void removeDecompiledBlock(PrimaryTree::Block* decBlock) {
 			m_decompiledBlocks.remove(decBlock);
 			m_removedDecompiledBlocks.push_back(decBlock);
 			decBlock->disconnect();
+		}
+
+		void addSymbol(Symbol::Symbol* symbol) {
+			symbol->setDecGraph(this);
+			m_symbols.push_back(symbol);
+		}
+
+		void removeSymbol(Symbol::Symbol* symbol) {
+			m_symbols.remove(symbol);
 		}
 
 		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
@@ -61,5 +74,6 @@ namespace CE::Decompiler
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
 		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
 		ExprTree::FunctionCallInfo m_functionCallInfo;
+		std::list<Symbol::Symbol*> m_symbols;
 	};
 };

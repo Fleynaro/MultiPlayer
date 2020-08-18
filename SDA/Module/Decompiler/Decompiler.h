@@ -72,14 +72,15 @@ namespace CE::Decompiler
 				DecompiledBlockInfo decompiledBlock;
 				decompiledBlock.m_asmBlock = asmBlock;
 				if (!asmBlock->getNextNearBlock() && !asmBlock->getNextFarBlock()) {
-					decompiledBlock.m_decBlock = new PrimaryTree::EndBlock(asmBlock->m_level);
+					decompiledBlock.m_decBlock = new PrimaryTree::EndBlock(m_decompiledGraph, asmBlock->m_level);
 				}
 				else {
-					decompiledBlock.m_decBlock = new PrimaryTree::Block(asmBlock->m_level);
+					decompiledBlock.m_decBlock = new PrimaryTree::Block(m_decompiledGraph, asmBlock->m_level);
 				}
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this);
 				decompiledBlock.m_decBlock->m_name = Generic::String::NumberToHex(asmBlock->ID);
 
+				//execute the instructions and then change the execution context
 				for (auto instr : asmBlock->getInstructions()) {
 					m_instructionInterpreter->execute(decompiledBlock.m_decBlock, decompiledBlock.m_execBlockCtx, instr);
 				}
@@ -216,6 +217,7 @@ namespace CE::Decompiler
 			}
 
 			auto symbol = new Symbol::LocalVariable(needReadMask);
+			m_decompiledGraph->addSymbol(symbol);
 			auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
 			regSymbol.symbols.push_back(std::make_pair(regSymbol.requiestId, symbolLeaf));
 

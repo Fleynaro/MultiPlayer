@@ -3,10 +3,13 @@
 #include <Utility/Generic.h>
 #include "Utils/ObjectHash.h"
 
-namespace CE::Decompiler::ExprTree {
-	class Node;
-	class FunctionCallContext;
-	class SymbolLeaf;
+namespace CE::Decompiler {
+	class DecompiledCodeGraph;
+	namespace ExprTree {
+		class ReadValueNode;
+		class FunctionCallContext;
+		class SymbolLeaf;
+	};
 };
 
 namespace CE::Decompiler::Symbol
@@ -15,6 +18,8 @@ namespace CE::Decompiler::Symbol
 	{
 	public:
 		std::list<ExprTree::SymbolLeaf*> m_symbolLeafs;
+
+		virtual ~Symbol();
 
 		virtual int getSize() {
 			return 8;
@@ -30,7 +35,14 @@ namespace CE::Decompiler::Symbol
 			return hash.getHash();
 		}
 
+		void setDecGraph(DecompiledCodeGraph* decGraph) {
+			m_decGraph = decGraph;
+		}
+
 		virtual std::string printDebug() = 0;
+
+	private:
+		DecompiledCodeGraph* m_decGraph;
 	};
 
 	class Variable : public Symbol
@@ -51,34 +63,41 @@ namespace CE::Decompiler::Symbol
 		ExtBitMask m_mask;
 	};
 
-	class MemoryVariable : public Variable
+	class MemoryVariable : public Variable, public PCode::IRelatedToInstruction
 	{
 	public:
 		int m_id;
-		ExprTree::Node* m_loadValueExpr;
+		ExprTree::ReadValueNode* m_loadValueExpr;
 		
-		MemoryVariable(ExprTree::Node* loadValueExpr, int size)
+		MemoryVariable(ExprTree::ReadValueNode* loadValueExpr, int size)
 			: m_loadValueExpr(loadValueExpr), Variable(size)
 		{
 			static int id = 1;
 			m_id = id++;
 		}
 
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;
+
 		std::string printDebug() override {
 			return "[mem_" + Generic::String::NumberToHex(m_id) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 
-	class LocalVariable : public Variable
+	class LocalVariable : public Variable, public PCode::IRelatedToInstruction
 	{
 	public:
 		int m_id;
+		std::list<PCode::Instruction*> m_instructionsRelatedTo;
 
 		LocalVariable(ExtBitMask mask)
 			: Variable(mask)
 		{
 			static int id = 1;
 			m_id = id++;
+		}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			return m_instructionsRelatedTo;
 		}
 
 		std::string printDebug() override {
@@ -107,7 +126,7 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
-	class FunctionResultVar : public Variable
+	class FunctionResultVar : public Variable, public PCode::IRelatedToInstruction
 	{
 	public:
 		int m_id;
@@ -119,6 +138,8 @@ namespace CE::Decompiler::Symbol
 			static int id = 1;
 			m_id = id++;
 		}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;
 
 		std::string printDebug() override;
 	};

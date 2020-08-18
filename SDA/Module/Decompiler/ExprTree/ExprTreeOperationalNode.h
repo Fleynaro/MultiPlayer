@@ -100,16 +100,16 @@ namespace CE::Decompiler::ExprTree
 		return "_";
 	}
 
-	class OperationalNode : public Node, public INodeAgregator
+	class OperationalNode : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
 		BitMask64 m_mask;
+		PCode::Instruction* m_instr;
 	public:
 		Node* m_leftNode;
 		Node* m_rightNode;
 		OperationType m_operation;
 		bool m_notChangedMask;
 		ObjectHash::Hash m_calcHash;
-		PCode::Instruction* m_instr;
 
 		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, BitMask64 mask = BitMask64(0), bool notChangedMask = false, PCode::Instruction* instr = nullptr)
 			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask), m_instr(instr)
@@ -145,9 +145,14 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-
 		std::list<ExprTree::Node*> getNodesList() override {
 			return { m_leftNode, m_rightNode };
+		}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			if (m_instr)
+				return { m_instr };
+			return {};
 		}
 
 		void setMask(BitMask64 mask) {
@@ -205,7 +210,7 @@ namespace CE::Decompiler::ExprTree
 	class ReadValueNode : public OperationalNode
 	{
 	public:
-		ReadValueNode(Node* node, int size)
+		ReadValueNode(Node* node, int size, PCode::Instruction* instr = nullptr)
 			: OperationalNode(node, nullptr, ReadValue), m_size(size)
 		{}
 
@@ -274,7 +279,7 @@ namespace CE::Decompiler::ExprTree
 		};
 		Id m_funcId;
 
-		FunctionalNode(Node* node1, Node* node2, Id id)
+		FunctionalNode(Node* node1, Node* node2, Id id, PCode::Instruction* instr = nullptr)
 			: OperationalNode(node1, node2, Functional, 0b1, true), m_funcId(id)
 		{}
 
@@ -308,7 +313,7 @@ namespace CE::Decompiler::ExprTree
 		};
 		Id m_funcId;
 
-		FloatFunctionalNode(Node* node1, Id id, int size)
+		FloatFunctionalNode(Node* node1, Id id, int size, PCode::Instruction* instr = nullptr)
 			: OperationalNode(node1, nullptr, fFunctional, BitMask64(size), true), m_funcId(id), m_size(size)
 		{}
 

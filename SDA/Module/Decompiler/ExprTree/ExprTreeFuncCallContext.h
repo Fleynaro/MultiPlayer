@@ -21,10 +21,10 @@ namespace CE::Decompiler::ExprTree
 		int m_destOffset = 0;
 		Node* m_destination;
 		std::list<std::pair<PCode::Register, Node*>> m_registerParams;
+		PCode::Instruction* m_instr;
 		
-		
-		FunctionCallContext(int destOffset, Node* destination)
-			: m_destOffset(destOffset), m_destination(destination)
+		FunctionCallContext(int destOffset, Node* destination, PCode::Instruction* instr)
+			: m_destOffset(destOffset), m_destination(destination), m_instr(instr)
 		{
 			m_destination->addParentNode(this);
 		}
@@ -74,7 +74,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone() override {
-			auto funcCallCtx = new FunctionCallContext(m_destOffset, m_destination->clone());
+			auto funcCallCtx = new FunctionCallContext(m_destOffset, m_destination->clone(), m_instr);
 			for (auto it : m_registerParams) {
 				funcCallCtx->addRegisterParam(it.first, it.second->clone());
 			}

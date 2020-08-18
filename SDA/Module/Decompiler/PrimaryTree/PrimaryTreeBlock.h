@@ -55,9 +55,10 @@ namespace CE::Decompiler::PrimaryTree
 		int m_level = 0;
 		int m_maxHeight = 0;
 		ExprTree::ICondition* m_noJmpCond = nullptr;
+		DecompiledCodeGraph* m_decompiledGraph;
 
-		Block(int level)
-			: m_level(level)
+		Block(DecompiledCodeGraph* decompiledGraph, int level)
+			: m_decompiledGraph(decompiledGraph), m_level(level)
 		{}
 
 		~Block() {
@@ -245,8 +246,8 @@ namespace CE::Decompiler::PrimaryTree
 	public:
 		ExprTree::Node* m_returnNode = nullptr;
 
-		EndBlock(int level)
-			: Block(level)
+		EndBlock(DecompiledCodeGraph* decompiledGraph, int level)
+			: Block(decompiledGraph, level)
 		{}
 
 		~EndBlock() {

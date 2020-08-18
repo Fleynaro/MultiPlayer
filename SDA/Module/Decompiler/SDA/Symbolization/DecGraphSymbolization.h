@@ -19,6 +19,7 @@ namespace CE::Decompiler::Symbolization
 		CE::Symbol::MemoryArea* m_globalMemoryArea = nullptr;
 		CE::Symbol::MemoryArea* m_stackMemoryArea = nullptr;
 		CE::Symbol::MemoryArea* m_funcBodyMemoryArea = nullptr;
+		int m_offset;
 
 		UserSymbolDef(CE::ProgramModule* programModule = nullptr)
 			: m_programModule(programModule)
@@ -52,7 +53,7 @@ namespace CE::Decompiler::Symbolization
 		std::map<int, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
 		std::map<int, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
 
-		CE::Symbol::AbstractSymbol* findOrCreateSymbol(Symbol::Symbol* symbol, int size, int offset = 0x0) {
+		CE::Symbol::AbstractSymbol* findOrCreateSymbol(Symbol::Symbol* symbol, int size, int& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
 				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
@@ -112,22 +113,42 @@ namespace CE::Decompiler::Symbolization
 						storeSdaSymbol(sdaSymbol, symbol, size, offset);
 						return sdaSymbol;
 					}
-					auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::FUNC_PARAMETER, "param" + std::to_string(paramIdx), size);
+					auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::FUNC_PARAMETER, "param" + std::to_string(paramIdx), paramIdx, size);
 					storeSdaSymbol(sdaSymbol, symbol, size, offset);
 					return sdaSymbol;
 				}
 
-				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "in_" + reg.printDebug(), size);
+				if (reg.getGenericId() == ZYDIS_REGISTER_RSP)
+					return createMemorySymbol(m_userSymbolDef->m_stackMemoryArea, CE::Symbol::LOCAL_STACK_VAR, "stack", symbol, offset, size);
+				else if (reg.getGenericId() == ZYDIS_REGISTER_RIP)
+					return createMemorySymbol(m_userSymbolDef->m_globalMemoryArea, CE::Symbol::GLOBAL_VAR, "global", symbol, offset, size);
+
+				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "in_" + reg.printDebug(), 0, size);
 				storeSdaSymbol(sdaSymbol, symbol, size, offset);
 				return sdaSymbol;
 			}
 
+
+
 			return nullptr;
 		}
 
-		CE::Symbol::AutoSdaSymbol* createAutoSdaSymbol(CE::Symbol::Type type, const std::string& name, int size) {
+		CE::Symbol::AbstractSymbol* createMemorySymbol(CE::Symbol::MemoryArea* memoryArea, CE::Symbol::Type type, const std::string& name, Symbol::Symbol* symbol, int& offset, int size) {
+			auto symbolPair = memoryArea->getSymbolAt(offset);
+			if (symbolPair.second != nullptr) {
+				offset -= symbolPair.first;
+				auto sdaSymbol = symbolPair.second;
+				storeSdaSymbol(sdaSymbol, symbol, size, symbolPair.first);
+				return sdaSymbol;
+			}
+			auto sdaSymbol = createAutoSdaSymbol(type, name + "_0x" + Generic::String::NumberToHex((uint32_t)-offset), offset, size);
+			storeSdaSymbol(sdaSymbol, symbol, size, offset);
+			return sdaSymbol;
+		}
+
+		CE::Symbol::AutoSdaSymbol* createAutoSdaSymbol(CE::Symbol::Type type, const std::string& name, int value, int size) {
 			auto dataType = getDefaultType(size);
-			return new CE::Symbol::AutoSdaSymbol(type, m_userSymbolDef->m_programModule->getSymbolManager(), dataType, name);
+			return new CE::Symbol::AutoSdaSymbol(type, value, m_userSymbolDef->m_programModule->getSymbolManager(), dataType, name);
 		}
 
 		void storeSdaSymbol(CE::Symbol::AbstractSymbol* sdaSymbol, Symbol::Symbol* symbol, int size, int offset) {
@@ -150,6 +171,14 @@ namespace CE::Decompiler::Symbolization
 			if (size != 0)
 				sizeStr = std::to_string(size * 0x8);
 			return DataType::GetUnit(m_userSymbolDef->m_programModule->getTypeManager()->getTypeByName("uint" + sizeStr + "_t"));
+		}
+
+		int toGlobalOffset(int offset) {
+			return m_userSymbolDef->m_offset + offset;
+		}
+
+		int toLocalOffset(int offset) {
+			return offset - m_userSymbolDef->m_offset;
 		}
 	};
 
