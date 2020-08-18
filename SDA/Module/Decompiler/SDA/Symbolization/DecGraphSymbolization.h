@@ -205,7 +205,7 @@ namespace CE::Decompiler::Symbolization
 		return type1;
 	}
 
-	static void CalculateTypesAndBuildGoarForExpr(Node* node, CalcTypeContext& ctx) {
+	/*static void CalculateTypesAndBuildGoarForExpr(Node* node, CalcTypeContext& ctx) {
 		IterateChildNodes(node, [&](Node* childNode) {
 			CalculateTypesAndBuildGoarForExpr(childNode, ctx);
 			});
@@ -233,16 +233,13 @@ namespace CE::Decompiler::Symbolization
 			}
 			sdaNode->m_explicitCast = true;
 		}
-	}
+	}*/
 
 	static void SymbolizeWithSDA(DecompiledCodeGraph* decGraph, UserSymbolDef& userSymbolDef) {
-		CalcTypeContext ctx;
-		ctx.m_userSymbolDef = &userSymbolDef;
-		
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto topNode : decBlock->getAllTopNodes()) {
 				auto sdaTopNode = BuildSdaNodes(topNode);
-				CalculateTypesAndBuildGoarForExpr(sdaTopNode, ctx);
+				//CalculateTypesAndBuildGoarForExpr(sdaTopNode, ctx);
 			}
 		}
 	}

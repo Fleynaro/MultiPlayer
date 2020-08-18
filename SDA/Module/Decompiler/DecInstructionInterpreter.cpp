@@ -26,7 +26,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto memVar = new Symbol::MemoryVariable(loadValueExpr, readSize);
 		m_block->m_decompiledGraph->addSymbol(memVar);
 		auto memSymbolLeaf = new ExprTree::SymbolLeaf(memVar);
-		m_block->addSeqLine(memSymbolLeaf, expr);
+		m_block->addSeqLine(memSymbolLeaf, loadValueExpr);
 		m_ctx->setVarnode(m_instr->m_output, memSymbolLeaf);
 		break;
 	}

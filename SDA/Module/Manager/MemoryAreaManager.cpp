@@ -28,7 +28,7 @@ void MemoryAreaManager::createMainGlobalMemoryArea(int size) {
 	m_globalMemoryArea = createMemoryArea(MemoryArea::GLOBAL_SPACE, size);
 }
 
-MemoryArea* MemoryAreaManager::createMemoryArea(MemoryArea::Type type, int size) {
+MemoryArea* MemoryAreaManager::createMemoryArea(MemoryArea::MemoryAreaType type, int size) {
 	auto symbol = new MemoryArea(this, type, size);
 	symbol->setMapper(m_memoryAreaMapper);
 	symbol->setId(m_memoryAreaMapper->getNextId());

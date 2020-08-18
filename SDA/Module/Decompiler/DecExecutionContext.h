@@ -1,6 +1,7 @@
 #pragma once
 #include "DecPCode.h"
 #include "PrimaryTree/PrimaryTreeBlock.h"
+#include "DecTopNode.h"
 
 namespace CE::Decompiler
 {
@@ -97,45 +98,17 @@ namespace CE::Decompiler
 	public:
 		Decompiler* m_decompiler;
 
-		template<typename T = ExprTree::Node>
-		class WrapperNode : public ExprTree::INodeAgregator
-		{
-		public:
-			T* m_node;
-			WrapperNode(T* node)
-				: m_node(node)
-			{
-				node->addParentNode(this);
-			}
-
-			~WrapperNode() {
-				if (m_node) {
-					m_node->removeBy(this);
-				}
-			}
-
-			void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
-				if (m_node == node) {
-					m_node = static_cast<T*>(newNode);
-				}
-			}
-
-			std::list<ExprTree::Node*> getNodesList() override {
-				return { m_node };
-			}
-		};
-
 		struct VarnodeExpr {
 			PCode::Varnode* m_varnode;
-			WrapperNode<ExprTree::Node>* m_expr;
+			TopNode<ExprTree::Node>* m_expr;
 			bool m_changed;
 			
-			VarnodeExpr(PCode::Varnode* varnode, WrapperNode<ExprTree::Node>* expr, bool changed)
+			VarnodeExpr(PCode::Varnode* varnode, TopNode<ExprTree::Node>* expr, bool changed)
 				: m_varnode(varnode), m_expr(expr), m_changed(changed)
 			{}
 		};
 		std::list<VarnodeExpr> m_varnodes;
-		std::list<std::pair<PCode::Register, WrapperNode<ExprTree::Node>*>> m_cachedRegisters;
+		std::list<std::pair<PCode::Register, TopNode<ExprTree::Node>*>> m_cachedRegisters;
 		std::list<PCode::RegisterVarnode*> m_ownRegVarnodes;
 		std::list<ExternalSymbol*> m_externalSymbols;
 		std::set<PCode::RegisterVarnode*> m_resolvedExternalSymbols;

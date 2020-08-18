@@ -28,7 +28,7 @@ MemoryAreaManager* MemoryAreaMapper::getManager() {
 
 IDomainObject* MemoryAreaMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int mem_area_id = query.getColumn("mem_area_id");
-	auto type = (MemoryArea::Type)(int)query.getColumn("type");
+	auto type = (MemoryArea::MemoryAreaType)(int)query.getColumn("type");
 	int size = query.getColumn("size");
 
 	auto memoryArea = new MemoryArea(getManager(), type, size);

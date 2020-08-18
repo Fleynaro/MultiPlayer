@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class LinearExpr : public Node, public INodeAgregator
+	class LinearExpr : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
 	public:
 		std::list<ExprTree::Node*> m_terms;
@@ -44,6 +44,10 @@ namespace CE::Decompiler::ExprTree
 
 		std::list<ExprTree::Node*> getNodesList() override {
 			return m_terms;
+		}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			return {};
 		}
 
 		BitMask64 getMask() override {

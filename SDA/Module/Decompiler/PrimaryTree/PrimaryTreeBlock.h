@@ -1,65 +1,161 @@
 #pragma once
 #include "../ExprTree/ExprTreeCondition.h"
 #include "../ExprTree/ExprTreeFuncCallContext.h"
+#include "../DecTopNode.h"
 
 namespace CE::Decompiler::PrimaryTree
 {
 	class Block;
 	template<typename T = ExprTree::Node>
-	class Line : public ExprTree::INodeAgregator
+	class Line : public ExprTree::Node, public ExprTree::INodeAgregator
 	{
 	public:
-		T* m_destAddr;
-		ExprTree::Node* m_srcValue;
+		template<typename T = ExprTree::Node>
+		class LineTopNode : public TopNode<T>
+		{
+		public:
+			Line* m_line;
+
+			LineTopNode(Line* line, T* node = nullptr)
+				: m_line(line), TopNode<T>(node)
+			{}
+		};
+
+		class DstTopNode : public LineTopNode<T>
+		{
+		public:
+			DstTopNode(Line* line, T* node = nullptr)
+				: LineTopNode<T>(line, node)
+			{}
+		};
+
+		class SrcTopNode : public LineTopNode<ExprTree::Node>
+		{
+		public:
+			SrcTopNode(Line* line, ExprTree::Node* node = nullptr)
+				: LineTopNode<ExprTree::Node>(line, node)
+			{}
+		};
+
+	public:
+		DstTopNode* m_destAddr;
+		SrcTopNode* m_srcValue;
 		Block* m_block;
 
 		Line(T* destAddr, ExprTree::Node* srcValue, Block* block)
 			: m_destAddr(destAddr), m_srcValue(srcValue), m_block(block)
 		{
-			destAddr->addParentNode(this);
-			srcValue->addParentNode(this);
+			m_destAddr = new DstTopNode(destAddr);
+			m_srcValue = new SrcTopNode(srcValue);
 		}
 
 		~Line() {
-			if (m_destAddr)
-				m_destAddr->removeBy(this);
-			if (m_srcValue)
-				m_srcValue->removeBy(this);
+			delete m_destAddr;
+			delete m_srcValue;
 		}
 
-		void replaceNode(ExprTree::Node* node, ExprTree::Node * newNode) override {
-			if (node == m_destAddr) {
-				m_destAddr = static_cast<T*>(newNode);
-			}
-			if (node == m_srcValue) {
-				m_srcValue = newNode;
-			}
-		}
+		void replaceNode(Node* node, Node* newNode) override {}
 
 		std::list<ExprTree::Node*> getNodesList() override {
-			return { m_destAddr, m_srcValue };
+			return { getDstNode(), getSrcNode() };
 		}
 
-		std::string printDebug() {
-			return m_destAddr->printDebug() + " = " + m_srcValue->printDebug() + "\n";
+		T* getDstNode() {
+			return m_destAddr->getNode();
+		}
+
+		ExprTree::Node* getSrcNode() {
+			return m_srcValue->getNode();
+		}
+
+		T** getDstNodePtr() {
+			return m_destAddr->getNodePtr();
+		}
+
+		ExprTree::Node** getSrcNodePtr() {
+			return m_srcValue->getNodePtr();
+		}
+
+		BitMask64 getMask() override {
+			return m_srcValue->getNode()->getMask();
+		}
+
+		ObjectHash::Hash getHash() override {
+			return m_destAddr->getNode()->getHash() * 31 + m_srcValue->getNode()->getHash();
+		}
+
+		Node* clone() override {
+			return new Line<T>(m_destAddr->getNode()->clone(), m_srcValue->getNode()->clone(), m_block);
+		}
+
+		std::string printDebug() override {
+			return m_destAddr->getNode()->printDebug() + " = " + m_srcValue->getNode()->printDebug() + "\n";
 		}
 	};
 
 	using SeqLine = Line<ExprTree::Node>;
 	using SymbolAssignmentLine = Line<ExprTree::SymbolLeaf>;
 
-	class Block : public ExprTree::INodeAgregator
+
+	class Block
 	{
+	public:
+		template<typename T = ExprTree::Node>
+		class BlockTopNode : public TopNode<T>
+		{
+		public:
+			Block* m_block;
+
+			BlockTopNode(Block* block, ExprTree::Node* node = nullptr)
+				: m_block(block), TopNode<T>(node)
+			{}
+		};
+
+		class JumpTopNode : public BlockTopNode<ExprTree::ICondition>
+		{
+		public:
+			JumpTopNode(Block* block)
+				: BlockTopNode(block)
+			{}
+		};
+
+		class ReturnTopNode : public BlockTopNode<ExprTree::Node>
+		{
+		public:
+			ReturnTopNode(Block* block)
+				: BlockTopNode(block)
+			{}
+		};
+
+		class SeqLineTopNode : public BlockTopNode<SeqLine>
+		{
+		public:
+			SeqLineTopNode(Block* block, SeqLine* line)
+				: BlockTopNode(block, line)
+			{}
+		};
+
+		class SymbolAssignmentLineTopNode : public BlockTopNode<SymbolAssignmentLine>
+		{
+		public:
+			SymbolAssignmentLineTopNode(Block* block, SymbolAssignmentLine* line)
+				: BlockTopNode(block, line)
+			{}
+		};
+
+	private:
+		JumpTopNode* m_noJmpCond;
 	public:
 		std::string m_name;
 		int m_level = 0;
 		int m_maxHeight = 0;
-		ExprTree::ICondition* m_noJmpCond = nullptr;
 		DecompiledCodeGraph* m_decompiledGraph;
 
 		Block(DecompiledCodeGraph* decompiledGraph, int level)
 			: m_decompiledGraph(decompiledGraph), m_level(level)
-		{}
+		{
+			m_noJmpCond = new JumpTopNode(this);
+		}
 
 		~Block() {
 			for (auto refBlock : m_blocksReferencedTo) {
@@ -69,10 +165,7 @@ namespace CE::Decompiler::PrimaryTree
 					refBlock->m_nextFarBlock = nullptr;
 			}
 
-			if (m_noJmpCond) {
-				m_noJmpCond->removeBy(this);
-			}
-
+			delete m_noJmpCond;
 			disconnect();
 		}
 
@@ -161,56 +254,44 @@ namespace CE::Decompiler::PrimaryTree
 			return count;
 		}
 
-		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
-			if (auto cond = dynamic_cast<ExprTree::ICondition*>(node)) {
-				if (auto newCond = dynamic_cast<ExprTree::ICondition*>(newNode)) {
-					if (m_noJmpCond == cond) {
-						m_noJmpCond = newCond;
-					}
-				}
-			}
-		}
-
-		std::list<ExprTree::Node*> getNodesList() override {
-			return { m_noJmpCond };
-		}
-
-		std::list<ExprTree::Node*> getAllTopNodes() {
-			std::list<ExprTree::Node*> result;
+		virtual std::list<ITopNode*> getAllTopNodes() {
+			std::list<ITopNode*> result;
 			for (auto line : getSeqLines()) {
-				for (auto node : line->getNodesList()) {
-					result.push_back(node);
-				}
+				result.push_back(line);
+			}
+			for (auto line : getSymbolAssignmentLines()) {
+				result.push_back(line);
 			}
 
-			for (auto node : getNodesList()) {
-				if (!node) continue;
-				result.push_back(node);
-			}
+			if(getNoJumpCondition())
+				result.push_back(m_noJmpCond);
 			return result;
+		}
+
+		ExprTree::ICondition* getNoJumpCondition() {
+			return m_noJmpCond->getNode();
 		}
 
 		void setNoJumpCondition(ExprTree::ICondition* noJmpCond) {
 			if (m_noJmpCond) {
-				m_noJmpCond->removeBy(this);
+				m_noJmpCond->clear();
 			}
-			m_noJmpCond = noJmpCond;
-			m_noJmpCond->addParentNode(this);
+			m_noJmpCond->setNode(noJmpCond);
 		}
 
 		void addSeqLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue) {
-			m_seqLines.push_back(new SeqLine(destAddr, srcValue, this));
+			m_seqLines.push_back(new SeqLineTopNode(this, new SeqLine(destAddr, srcValue, this)));
 		}
 
-		std::list<SeqLine*>& getSeqLines() {
+		std::list<SeqLineTopNode*>& getSeqLines() {
 			return m_seqLines;
 		}
 
 		void addSymbolAssignmentLine(ExprTree::SymbolLeaf* symbolLeaf, ExprTree::Node* srcValue) {
-			m_symbolAssignmentLines.push_back(new SymbolAssignmentLine(symbolLeaf, srcValue, this));
+			m_symbolAssignmentLines.push_back(new SymbolAssignmentLineTopNode(this, new SymbolAssignmentLine(symbolLeaf, srcValue, this)));
 		}
 
-		std::list<SymbolAssignmentLine*>& getSymbolAssignmentLines() {
+		std::list<SymbolAssignmentLineTopNode*>& getSymbolAssignmentLines() {
 			return m_symbolAssignmentLines;
 		}
 
@@ -221,15 +302,15 @@ namespace CE::Decompiler::PrimaryTree
 		void printDebug(bool cond = true, const std::string& tabStr = "") {
 			std::string result = "";
 			for (auto line : m_seqLines) {
-				result += tabStr + line->printDebug();
+				result += tabStr + line->getNode()->printDebug();
 			}
 			if(!m_symbolAssignmentLines.empty())
 				result += tabStr + "<Symbol assignments>:\n";
 			for (auto line : m_symbolAssignmentLines) {
-				result += tabStr + "- " + line->printDebug();
+				result += tabStr + "- " + line->getNode()->printDebug();
 			}
 			if (cond && m_noJmpCond != nullptr) {
-				result += "------> Condition: " + m_noJmpCond->printDebug() + "\n";
+				result += "------> Condition: " + m_noJmpCond->getNode()->printDebug() + "\n";
 			}
 			printf("%s", result.c_str());
 		}
@@ -237,42 +318,41 @@ namespace CE::Decompiler::PrimaryTree
 		std::list<Block*> m_blocksReferencedTo;
 		Block* m_nextNearBlock = nullptr;
 		Block* m_nextFarBlock = nullptr;
-		std::list<SeqLine*> m_seqLines;
-		std::list<SymbolAssignmentLine*> m_symbolAssignmentLines;
+		std::list<SeqLineTopNode*> m_seqLines;
+		std::list<SymbolAssignmentLineTopNode*> m_symbolAssignmentLines;
 	};
 
 	class EndBlock : public Block
 	{
+		ReturnTopNode* m_returnNode = nullptr;
 	public:
-		ExprTree::Node* m_returnNode = nullptr;
-
 		EndBlock(DecompiledCodeGraph* decompiledGraph, int level)
 			: Block(decompiledGraph, level)
-		{}
+		{
+			m_returnNode = new ReturnTopNode(this);
+		}
 
 		~EndBlock() {
-			if (m_returnNode) {
-				m_returnNode->removeBy(this);
-			}
+			delete m_returnNode;
 		}
 
-		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
-			Block::replaceNode(node, newNode);
-			if (m_returnNode == node) {
-				m_returnNode = newNode;
+		std::list<ITopNode*> getAllTopNodes() override {
+			auto list = Block::getAllTopNodes();
+			if (getReturnNode()) {
+				list.push_back(m_returnNode);
 			}
+			return list;
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
-			return { m_noJmpCond, m_returnNode };
+		ExprTree::Node* getReturnNode() {
+			return m_returnNode->getNode();
 		}
 
 		void setReturnNode(ExprTree::Node* returnNode) {
 			if (m_returnNode) {
-				m_returnNode->removeBy(this);
+				m_returnNode->clear();
 			}
-			m_returnNode = returnNode;
-			returnNode->addParentNode(this);
+			m_returnNode->setNode(returnNode);
 		}
 	};
 };

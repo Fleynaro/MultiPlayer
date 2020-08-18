@@ -194,6 +194,8 @@
     <ClCompile Include="Module\Address\ProcessModule.cpp" />
     <ClCompile Include="Module\Address\AddressRange.cpp" />
     <ClCompile Include="Module\Code\Function\Function.cpp" />
+    <ClCompile Include="Module\Code\Symbol\AbstractSymbol.cpp" />
+    <ClCompile Include="Module\Code\Symbol\MemoryArea\MemoryArea.cpp" />
     <ClCompile Include="Module\Code\Type\FunctionSignature.cpp" />
     <ClCompile Include="Module\Code\Type\AbstractType.cpp" />
     <ClCompile Include="Module\Code\Type\Class.cpp" />
@@ -343,6 +345,7 @@
     <ClInclude Include="Module\Decompiler\DecPCode.h" />
     <ClInclude Include="Module\Decompiler\DecRegister.h" />
     <ClInclude Include="Module\Decompiler\DecTest.h" />
+    <ClInclude Include="Module\Decompiler\DecTopNode.h" />
     <ClInclude Include="Module\Decompiler\DecTranslatorX86.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTree.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeCondition.h" />
@@ -355,7 +358,7 @@
     <ClInclude Include="Module\Decompiler\Optimization\DecGraphOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprOptimization.h" />
     <ClInclude Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.h" />
-    <ClInclude Include="Module\Decompiler\SDA\DecSdaSymbol.h" />
+    <ClInclude Include="Module\Decompiler\SDA\AutoSdaSymbol.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSda.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />

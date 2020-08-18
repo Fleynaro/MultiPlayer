@@ -19,7 +19,7 @@ namespace CE
 
 		void createMainGlobalMemoryArea(int size);
 
-		Symbol::MemoryArea* createMemoryArea(Symbol::MemoryArea::Type type, int size);
+		Symbol::MemoryArea* createMemoryArea(Symbol::MemoryArea::MemoryAreaType type, int size);
 
 		Symbol::MemoryArea* getMemoryAreaById(DB::Id id);
 

@@ -15,7 +15,7 @@ void ExecutionBlockContext::setVarnode(const PCode::Register& reg, ExprTree::Nod
 }
 
 void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* newExpr, bool rewrite) {
-	std::list<WrapperNode<ExprTree::Node>*> oldWrapperNodes;
+	std::list<TopNode<ExprTree::Node>*> oldTopNodes;
 	
 	//remove all old registers/symbols
 	if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
@@ -24,7 +24,7 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 		for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
 			if (auto sameRegVarnode = dynamic_cast<PCode::RegisterVarnode*>(it->m_varnode)) {
 				if (reg.intersect(sameRegVarnode->m_register)) {
-					oldWrapperNodes.push_back(it->m_expr);
+					oldTopNodes.push_back(it->m_expr);
 					m_varnodes.erase(it);
 				}
 			}
@@ -32,14 +32,14 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 
 		for (auto it = m_cachedRegisters.begin(); it != m_cachedRegisters.end(); it++) {
 			if (reg.intersect(it->first)) {
-				oldWrapperNodes.push_back(it->second);
+				oldTopNodes.push_back(it->second);
 				m_cachedRegisters.erase(it);
 			}
 		}
 	} else if (auto varnodeSymbol = dynamic_cast<PCode::SymbolVarnode*>(varnode)) {
 		for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
 			if (it->m_varnode == varnodeSymbol) {
-				oldWrapperNodes.push_back(it->m_expr);
+				oldTopNodes.push_back(it->m_expr);
 				m_varnodes.erase(it);
 				break;
 			}
@@ -48,12 +48,12 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 
 	//set new register/symbol
 	if (newExpr) {
-		auto varnodeExpr = VarnodeExpr(varnode, new WrapperNode<ExprTree::Node>(newExpr), rewrite);
+		auto varnodeExpr = VarnodeExpr(varnode, new TopNode<ExprTree::Node>(newExpr), rewrite);
 		m_varnodes.push_back(varnodeExpr);
 	}
 	
 	//delete only here because new expr may be the same as old expr: mov rax, rax
-	for (auto it : oldWrapperNodes) {
+	for (auto it : oldTopNodes) {
 		delete it;
 	}
 }
@@ -77,7 +77,7 @@ RegisterParts ExecutionBlockContext::getRegisterParts(PCode::RegisterId register
 						}
 					}
 				}
-				sameRegisters.push_back(std::make_pair(sameRegVarnode->m_register, it.m_expr->m_node));
+				sameRegisters.push_back(std::make_pair(sameRegVarnode->m_register, it.m_expr->getNode()));
 			}
 		}
 	}
@@ -107,7 +107,7 @@ RegisterParts ExecutionBlockContext::getRegisterParts(PCode::RegisterId register
 ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister) {
 	for (auto it : m_cachedRegisters) {
 		if (it.first == varnodeRegister->m_register) {
-			return it.second->m_node;
+			return it.second->getNode();
 		}
 	}
 
@@ -131,7 +131,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 	}
 
-	m_cachedRegisters.push_back(std::make_pair(varnodeRegister->m_register, new WrapperNode<ExprTree::Node>(regExpr)));
+	m_cachedRegisters.push_back(std::make_pair(varnodeRegister->m_register, new TopNode<ExprTree::Node>(regExpr)));
 	return regExpr;
 }
 
@@ -146,7 +146,7 @@ ExprTree::Node* ExecutionBlockContext::requestSymbolExpr(PCode::SymbolVarnode* s
 {
 	for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
 		if (symbolVarnode == it->m_varnode) {
-			return it->m_expr->m_node;
+			return it->m_expr->getNode();
 		}
 	}
 	return nullptr;
