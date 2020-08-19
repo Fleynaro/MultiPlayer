@@ -5,6 +5,7 @@
 #include "SDA/Symbolization/DecGraphSymbolization.h"
 #include "TestCodeToDecompile.h"
 #include "DecTranslatorX86.h"
+#include <Manager/Managers.h>
 
 using namespace CE;
 using namespace CE::Decompiler;
@@ -143,6 +144,10 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 void initUserSymbolDefsForSamples(CE::ProgramModule* programModule, std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs)
 {
 	userSymbolDefs[0] = Symbolization::UserSymbolDef(programModule);
+	userSymbolDefs[0].m_signature = new CE::DataType::Signature(programModule->getTypeManager(), "test");
+	userSymbolDefs[0].m_globalMemoryArea = programModule->getGlobalMemoryArea();
+	userSymbolDefs[0].m_stackMemoryArea = new CE::Symbol::MemoryArea(programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
+	userSymbolDefs[0].m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
 }
 
 void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, const std::set<int>& samplesWithXMM, const std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs, bool showAsmBefore = true)
@@ -223,6 +228,7 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 
 void CE::test(CE::ProgramModule* programModule) {
 	//TestFunctionToDecompile1();
+	programModule->getMemoryAreaManager()->createMainGlobalMemoryArea(0x1000000);
 
 	/*
 		(После масштабных изменений)

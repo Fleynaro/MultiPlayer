@@ -14,7 +14,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::COPY:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		m_ctx->setVarnode(m_instr->m_output, expr);
+		m_ctx->setVarnode(m_instr->m_output, new ExprTree::MirrorNode(expr, m_instr));
 		break;
 	}
 
@@ -26,7 +26,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto memVar = new Symbol::MemoryVariable(loadValueExpr, readSize);
 		m_block->m_decompiledGraph->addSymbol(memVar);
 		auto memSymbolLeaf = new ExprTree::SymbolLeaf(memVar);
-		m_block->addSeqLine(memSymbolLeaf, loadValueExpr);
+		m_block->addSeqLine(memSymbolLeaf, loadValueExpr, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, memSymbolLeaf);
 		break;
 	}
@@ -36,7 +36,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto dstExpr = requestVarnode(m_instr->m_input0);
 		auto srcExpr = requestVarnode(m_instr->m_input1);
 		dstExpr = new ExprTree::ReadValueNode(dstExpr, m_instr->m_input1->getSize());
-		m_block->addSeqLine(dstExpr, srcExpr);
+		m_block->addSeqLine(dstExpr, srcExpr, m_instr);
 		break;
 	}
 

@@ -376,6 +376,14 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	static void RemoveMirrorNodesInExpr(Node* node) {
+		IterateChildNodes(node, RemoveMirrorNodesInExpr);
+		if (auto mirrorNode = dynamic_cast<MirrorNode*>(node)) {
+			mirrorNode->replaceWith(mirrorNode->m_node);
+			delete mirrorNode;
+		}
+	}
+
 	//[var_2_32] * 0				=>		0
 	//[var_2_32] ^ [var_2_32]		=>		0
 	//[var_2_32] + 0				=>		[var_2_32]
@@ -694,6 +702,7 @@ namespace CE::Decompiler::Optimization
 	//TODO: сделать несколько проходов с возвратом кол-ва оптимизированных выражений. Некоторые оптимизации объединить в одну функцию для быстродействия. Сформулировать ясно каждый метод оптимизации. Объединить всё в класс. 
 	static void Optimize(Node*& node) {
 		Node::UpdateDebugInfo(node);
+		RemoveMirrorNodesInExpr(node);
 		CalculateHashes(node);
 		OptimizeConstExpr(node);
 		Node::UpdateDebugInfo(node);

@@ -19,19 +19,19 @@ int MemoryArea::getSize() {
 	return m_size;
 }
 
-void MemoryArea::addSymbol(MemorySymbol* memSymbol, int offset) {
+void MemoryArea::addSymbol(MemorySymbol* memSymbol, int64_t offset) {
 	memSymbol->setMemoryArea(this);
 	m_symbols.insert(std::make_pair(offset, memSymbol));
 }
 
-std::pair<int, MemorySymbol*> MemoryArea::getSymbolAt(int offset) {
+std::pair<int64_t, MemorySymbol*> MemoryArea::getSymbolAt(int64_t offset) {
 	auto it = getSymbolIterator(offset);
 	if (it != m_symbols.end())
 		return std::make_pair(it->first, it->second);
 	return std::make_pair(0, nullptr);
 }
 
-std::map<int, MemorySymbol*>::iterator MemoryArea::getSymbolIterator(int offset) {
+std::map<int64_t, MemorySymbol*>::iterator MemoryArea::getSymbolIterator(int64_t offset) {
 	auto it = std::prev(m_symbols.upper_bound(offset));
 	if (it != m_symbols.end()) {
 		auto symbolOffset = it->first;
@@ -43,6 +43,6 @@ std::map<int, MemorySymbol*>::iterator MemoryArea::getSymbolIterator(int offset)
 	return m_symbols.end();
 }
 
-std::map<int, MemorySymbol*>& MemoryArea::getSymbols() {
+std::map<int64_t, MemorySymbol*>& MemoryArea::getSymbols() {
 	return m_symbols;
 }

@@ -23,17 +23,17 @@ namespace CE
 
 			int getSize();
 
-			void addSymbol(MemorySymbol* memSymbol, int offset);
+			void addSymbol(MemorySymbol* memSymbol, int64_t offset);
 
-			std::pair<int, MemorySymbol*> getSymbolAt(int offset);
+			std::pair<int64_t, MemorySymbol*> getSymbolAt(int64_t offset);
 
-			std::map<int, MemorySymbol*>::iterator getSymbolIterator(int offset);
+			std::map<int64_t, MemorySymbol*>::iterator getSymbolIterator(int64_t offset);
 
-			std::map<int, MemorySymbol*>& getSymbols();
+			std::map<int64_t, MemorySymbol*>& getSymbols();
 		private:
 			MemoryAreaType m_type;
 			int m_size;
-			std::map<int, MemorySymbol*> m_symbols;
+			std::map<int64_t, MemorySymbol*> m_symbols;
 			MemoryAreaManager* m_manager;
 		};
 	};

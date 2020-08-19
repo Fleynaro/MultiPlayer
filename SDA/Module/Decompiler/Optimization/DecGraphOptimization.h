@@ -77,7 +77,12 @@ namespace CE::Decompiler::Optimization
 		for (auto symbol : decGraph->getSymbols()) {
 			if (auto localVarSymbol = dynamic_cast<Symbol::LocalVariable*>(symbol)) {
 				for (auto symbolLeaf : localVarSymbol->m_symbolLeafs) {
-					//symbolLeaf->getParentNodes();
+					if (auto assignmentNode = dynamic_cast<ExprTree::AssignmentNode*>(symbolLeaf->getParentNode())) {
+						if (symbolLeaf == assignmentNode->getDstNode()) {
+							for(auto instr : assignmentNode->getInstructionsRelatedTo())
+								localVarSymbol->m_instructionsRelatedTo.push_back(instr);
+						}
+					}
 				}
 			}
 		}
@@ -296,9 +301,13 @@ namespace CE::Decompiler::Optimization
 	}
 
 	static bool HasUndefinedRegister(Node* node, ExprTree::FunctionCallInfo& funcCallInfo) {
+		bool result = false;
 		IterateChildNodes(node, [&](Node* childNode) {
-			HasUndefinedRegister(childNode, funcCallInfo);
+			if(!result)
+				result = HasUndefinedRegister(childNode, funcCallInfo);
 			});
+		if (result)
+			return true;
 
 		if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
 			if (auto regVar = dynamic_cast<Symbol::RegisterVariable*>(symbolLeaf->m_symbol)) {
@@ -382,11 +391,7 @@ namespace CE::Decompiler::Optimization
 
 	static void ExpandSymbolAssignmentLines(DecompiledCodeGraph* decGraph) {
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
-			std::list<Block::SymbolAssignmentLine*> newSeqLines;
-			for (auto symbolAssignmentLine : decBlock->getSymbolAssignmentLines()) {
-				newSeqLines.push_back(new Block::SymbolAssignmentLine(decBlock, symbolAssignmentLine->getDstSymbol(), symbolAssignmentLine->getSrcNode()));
-				delete symbolAssignmentLine;
-			}
+			auto newSeqLines = decBlock->getSymbolAssignmentLines();
 			decBlock->getSymbolAssignmentLines().clear();
 
 			for (auto it = newSeqLines.begin(); it != newSeqLines.end(); it ++) {
@@ -445,6 +450,7 @@ namespace CE::Decompiler::Optimization
 		RemoveSeqLinesWithUndefinedRegisters(decGraph);
 		//RemoveSeqLinesWithNotUsedMemVarDecompiledGraph(decGraph);
 
+		decGraph->generateSymbolIds();
 		DecompiledCodeGraph::CalculateHeightForDecBlocks(decGraph->getStartBlock());
 
 		//MemorySymbolization memorySymbolization(decGraph);

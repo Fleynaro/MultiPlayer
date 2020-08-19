@@ -353,6 +353,7 @@
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeFuncCallContext.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeLeaf.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeLinearExpr.h" />
+    <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeMirrorNode.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeNode.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeOperationalNode.h" />
     <ClInclude Include="Module\Decompiler\DecInstructionInterpreter.h" />

@@ -43,7 +43,7 @@ void MemoryAreaMapper::loadSymbolsForAllMemAreas(Database* db) {
 	{
 		int symbol_id = query.getColumn("symbol_id");
 		int mem_area_id = query.getColumn("mem_area_id");
-		int offset = query.getColumn("offset");
+		int64_t offset = query.getColumn("offset");
 
 		auto memoryArea = getManager()->getMemoryAreaById(mem_area_id);
 		if (memoryArea == nullptr)

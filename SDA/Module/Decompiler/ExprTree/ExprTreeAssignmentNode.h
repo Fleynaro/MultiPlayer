@@ -1,16 +1,18 @@
 #pragma once
+#include "../DecPCode.h"
 #include "ExprTreeNode.h"
 
 namespace CE::Decompiler::ExprTree
 {
-	class AssignmentNode : public Node, public INodeAgregator
+	class AssignmentNode : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
-	public:
 		Node* m_dstNode;
 		Node* m_srcNode;
+	public:
+		PCode::Instruction* m_instr;
 
-		AssignmentNode(Node* dstNode, Node* srcNode)
-			: m_dstNode(dstNode), m_srcNode(srcNode)
+		AssignmentNode(Node* dstNode, Node* srcNode, PCode::Instruction* instr = nullptr)
+			: m_dstNode(dstNode), m_srcNode(srcNode), m_instr(instr)
 		{
 			m_dstNode->addParentNode(this);
 			m_srcNode->addParentNode(this);
@@ -33,7 +35,17 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::list<Node*> getNodesList() override {
-			return { getDstNode(), getSrcNode() };
+			return { m_dstNode, m_srcNode };
+		}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			if (m_instr)
+				return { m_instr };
+			if (auto nodeRelToInstr = dynamic_cast<PCode::IRelatedToInstruction*>(m_dstNode))
+				return nodeRelToInstr->getInstructionsRelatedTo();
+			if (auto nodeRelToInstr = dynamic_cast<PCode::IRelatedToInstruction*>(m_srcNode))
+				return nodeRelToInstr->getInstructionsRelatedTo();
+			return {};
 		}
 
 		Node* getDstNode() {

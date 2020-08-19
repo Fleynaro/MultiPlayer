@@ -29,7 +29,8 @@ namespace CE::Decompiler::Symbolization
 	class SdaSymbolBuilding
 	{
 	public:
-		SdaSymbolBuilding()
+		SdaSymbolBuilding(UserSymbolDef* userSymbolDef)
+			: m_userSymbolDef(userSymbolDef)
 		{}
 
 		void buildSdaSymbols(Node* node) {
@@ -38,11 +39,71 @@ namespace CE::Decompiler::Symbolization
 				});
 
 			if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
+				//find symbol and offset
+				Symbol::Symbol* symbol = nullptr;
+				int64_t offset;
+				std::list<ExprTree::SymbolLeaf*> symbolLeafsToReplace;
+
 				if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(sdaNode->m_node)) {
-
+					symbol = symbolLeaf->m_symbol;
+					offset = 0x0;
+					symbolLeafsToReplace = symbol->m_symbolLeafs;
 				}
-				if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
+				else if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
+					for (auto term : linearExpr->getTerms()) {
+						if (auto sdaTerm = dynamic_cast<SdaNode*>(term)) {
+							if (auto termSymbolLeaf = dynamic_cast<SymbolLeaf*>(sdaTerm->m_node)) {
+								if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
+									if (regSymbol->m_register.isPointer()) {
+										symbol = regSymbol;
+										offset = linearExpr->m_constTerm;
+										symbolLeafsToReplace.push_back(termSymbolLeaf);
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+				if (!symbol)
+					return;
 
+				//calculate size
+				int size = 0x0;
+				bool transformToLocalOffset = false;
+				if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
+					if (regSymbol->m_register.isPointer()) {
+						//handle later anyway
+						if (dynamic_cast<LinearExpr*>(sdaNode->getParentNode()))
+							return;
+						//if reading presence
+						if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaNode->getParentNode())) {
+							size = readValueNode->getSize();
+						}
+						//transform to global offset
+						if (regSymbol->m_register.getGenericId() == ZYDIS_REGISTER_RIP) {
+							offset = toGlobalOffset(offset);
+							transformToLocalOffset = true;
+						}
+					}
+				}
+				if (size == 0x0) {
+					size = symbol->getSize();
+				}
+
+				//find symbol or create it
+				auto sdaSymbol = findOrCreateSymbol(symbol, size, offset);
+				//replace all symbol leafs
+				for (auto symbolLeaf : symbolLeafsToReplace) {
+					symbolLeaf->replaceWith(new SdaSymbolLeaf(sdaSymbol));
+					delete symbolLeaf;
+				}
+
+				//change offset
+				if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
+					if (transformToLocalOffset)
+						offset = toLocalOffset(offset);
+					linearExpr->m_constTerm = offset;
 				}
 			}
 		}
@@ -50,10 +111,10 @@ namespace CE::Decompiler::Symbolization
 	private:
 		UserSymbolDef* m_userSymbolDef;
 		std::map<Symbol::Symbol*, CE::Symbol::AbstractSymbol*> m_symbolsToSymbols;
-		std::map<int, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
-		std::map<int, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
+		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
+		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
 
-		CE::Symbol::AbstractSymbol* findOrCreateSymbol(Symbol::Symbol* symbol, int size, int& offset) {
+		CE::Symbol::AbstractSymbol* findOrCreateSymbol(Symbol::Symbol* symbol, int size, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
 				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
@@ -78,7 +139,7 @@ namespace CE::Decompiler::Symbolization
 				if (signature->getCallingConvetion() == Signature::FASTCALL) {
 					if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
 						if (offset >= 0x8 && offset % 0x8 == 0) {
-							paramIdx = 4 + offset / 0x8;
+							paramIdx = 4 + (int)offset / 0x8;
 						}
 					}
 					else {
@@ -110,11 +171,11 @@ namespace CE::Decompiler::Symbolization
 					auto& funcParams = signature->getParameters();
 					if (paramIdx <= funcParams.size()) {
 						auto sdaSymbol = funcParams[paramIdx - 1];
-						storeSdaSymbol(sdaSymbol, symbol, size, offset);
+						storeSdaSymbol(sdaSymbol, symbol, offset);
 						return sdaSymbol;
 					}
 					auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::FUNC_PARAMETER, "param" + std::to_string(paramIdx), paramIdx, size);
-					storeSdaSymbol(sdaSymbol, symbol, size, offset);
+					storeSdaSymbol(sdaSymbol, symbol, offset);
 					return sdaSymbol;
 				}
 
@@ -124,34 +185,56 @@ namespace CE::Decompiler::Symbolization
 					return createMemorySymbol(m_userSymbolDef->m_globalMemoryArea, CE::Symbol::GLOBAL_VAR, "global", symbol, offset, size);
 
 				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "in_" + reg.printDebug(), 0, size);
-				storeSdaSymbol(sdaSymbol, symbol, size, offset);
+				storeSdaSymbol(sdaSymbol, symbol, offset);
 				return sdaSymbol;
 			}
 
+			std::list<int64_t> instrOffsets;
+			if (auto symbolRelToInstr = dynamic_cast<PCode::IRelatedToInstruction*>(symbol)) {
+				for (auto instr : symbolRelToInstr->getInstructionsRelatedTo()) {
+					instrOffsets.push_back(instr->getOffset());
+				}
 
+				if (!instrOffsets.empty()) {
+					for (auto instrOffset : instrOffsets) {
+						auto symbolPair = m_userSymbolDef->m_funcBodyMemoryArea->getSymbolAt(instrOffset);
+						if (symbolPair.second != nullptr) {
+							auto sdaSymbol = symbolPair.second;
+							storeSdaSymbol(sdaSymbol, symbol, offset);
+							return sdaSymbol;
+						}
+					}
+				}
+			}
+
+			if (auto symbolWithId = dynamic_cast<Symbol::SymbolWithId*>(symbol)) {
+				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "localVar" + std::to_string(symbolWithId->getId()), 0, size, instrOffsets);
+				storeSdaSymbol(sdaSymbol, symbol, offset);
+				return sdaSymbol;
+			}
 
 			return nullptr;
 		}
 
-		CE::Symbol::AbstractSymbol* createMemorySymbol(CE::Symbol::MemoryArea* memoryArea, CE::Symbol::Type type, const std::string& name, Symbol::Symbol* symbol, int& offset, int size) {
+		CE::Symbol::AbstractSymbol* createMemorySymbol(CE::Symbol::MemoryArea* memoryArea, CE::Symbol::Type type, const std::string& name, Symbol::Symbol* symbol, int64_t& offset, int size) {
 			auto symbolPair = memoryArea->getSymbolAt(offset);
 			if (symbolPair.second != nullptr) {
 				offset -= symbolPair.first;
 				auto sdaSymbol = symbolPair.second;
-				storeSdaSymbol(sdaSymbol, symbol, size, symbolPair.first);
+				storeSdaSymbol(sdaSymbol, symbol, symbolPair.first);
 				return sdaSymbol;
 			}
 			auto sdaSymbol = createAutoSdaSymbol(type, name + "_0x" + Generic::String::NumberToHex((uint32_t)-offset), offset, size);
-			storeSdaSymbol(sdaSymbol, symbol, size, offset);
+			storeSdaSymbol(sdaSymbol, symbol, offset);
 			return sdaSymbol;
 		}
 
-		CE::Symbol::AutoSdaSymbol* createAutoSdaSymbol(CE::Symbol::Type type, const std::string& name, int value, int size) {
+		CE::Symbol::AutoSdaSymbol* createAutoSdaSymbol(CE::Symbol::Type type, const std::string& name, int64_t value, int size, std::list<int64_t> instrOffsets = {}) {
 			auto dataType = getDefaultType(size);
-			return new CE::Symbol::AutoSdaSymbol(type, value, m_userSymbolDef->m_programModule->getSymbolManager(), dataType, name);
+			return new CE::Symbol::AutoSdaSymbol(type, value, instrOffsets, m_userSymbolDef->m_programModule->getSymbolManager(), dataType, name);
 		}
 
-		void storeSdaSymbol(CE::Symbol::AbstractSymbol* sdaSymbol, Symbol::Symbol* symbol, int size, int offset) {
+		void storeSdaSymbol(CE::Symbol::AbstractSymbol* sdaSymbol, Symbol::Symbol* symbol, int64_t offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
 				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
@@ -173,11 +256,11 @@ namespace CE::Decompiler::Symbolization
 			return DataType::GetUnit(m_userSymbolDef->m_programModule->getTypeManager()->getTypeByName("uint" + sizeStr + "_t"));
 		}
 
-		int toGlobalOffset(int offset) {
+		int64_t toGlobalOffset(int64_t offset) {
 			return m_userSymbolDef->m_offset + offset;
 		}
 
-		int toLocalOffset(int offset) {
+		int64_t toLocalOffset(int64_t offset) {
 			return offset - m_userSymbolDef->m_offset;
 		}
 	};
@@ -238,9 +321,12 @@ namespace CE::Decompiler::Symbolization
 	}*/
 
 	static void SymbolizeWithSDA(DecompiledCodeGraph* decGraph, UserSymbolDef& userSymbolDef) {
+		SdaSymbolBuilding sdaSymbolBuilding(&userSymbolDef);
+
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto topNode : decBlock->getAllTopNodes()) {
 				BuildSdaNodes(topNode->getNode());
+				sdaSymbolBuilding.buildSdaSymbols(topNode->getNode());
 				//CalculateTypesAndBuildGoarForExpr(sdaTopNode, ctx);
 			}
 		}

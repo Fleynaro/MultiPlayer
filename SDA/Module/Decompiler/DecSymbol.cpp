@@ -14,7 +14,7 @@ std::list<PCode::Instruction*> FunctionResultVar::getInstructionsRelatedTo() {
 }
 
 std::string FunctionResultVar::printDebug() {
-	return "[funcVar_" + std::to_string(m_id) + "_" + std::to_string(getSize() * 8) + "]";
+	return "[funcVar_" + std::to_string(getId()) + "_" + std::to_string(getSize() * 8) + "]";
 }
 
 std::list<PCode::Instruction*> MemoryVariable::getInstructionsRelatedTo() {

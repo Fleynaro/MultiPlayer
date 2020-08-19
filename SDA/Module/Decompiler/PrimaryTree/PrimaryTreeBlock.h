@@ -1,7 +1,5 @@
 #pragma once
-#include "../ExprTree/ExprTreeCondition.h"
-#include "../ExprTree/ExprTreeFuncCallContext.h"
-#include "../ExprTree/ExprTreeAssignmentNode.h"
+#include "../ExprTree/ExprTree.h"
 #include "../DecTopNode.h"
 
 namespace CE::Decompiler::PrimaryTree
@@ -46,8 +44,8 @@ namespace CE::Decompiler::PrimaryTree
 		class SeqLine : public BlockTopNode
 		{
 		public:
-			SeqLine(Block* block, ExprTree::Node* dstNode, ExprTree::Node* srcNode)
-				: BlockTopNode(block, new ExprTree::AssignmentNode(dstNode, srcNode))
+			SeqLine(Block* block, ExprTree::Node* dstNode, ExprTree::Node* srcNode, PCode::Instruction* instr)
+				: BlockTopNode(block, new ExprTree::AssignmentNode(dstNode, srcNode, instr))
 			{}
 
 			ExprTree::AssignmentNode* getAssignmentNode() {
@@ -66,8 +64,8 @@ namespace CE::Decompiler::PrimaryTree
 		class SymbolAssignmentLine : public SeqLine
 		{
 		public:
-			SymbolAssignmentLine(Block* block, ExprTree::SymbolLeaf* dstNode, ExprTree::Node* srcNode)
-				: SeqLine(block, dstNode, srcNode)
+			SymbolAssignmentLine(Block* block, ExprTree::SymbolLeaf* dstNode, ExprTree::Node* srcNode, PCode::Instruction* instr)
+				: SeqLine(block, dstNode, srcNode, instr)
 			{}
 
 			ExprTree::SymbolLeaf* getDstSymbol() {
@@ -211,16 +209,16 @@ namespace CE::Decompiler::PrimaryTree
 			m_noJmpCond->setNode(noJmpCond);
 		}
 
-		void addSeqLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue) {
-			m_seqLines.push_back(new SeqLine(this, destAddr, srcValue));
+		void addSeqLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue, PCode::Instruction* instr = nullptr) {
+			m_seqLines.push_back(new SeqLine(this, destAddr, srcValue, instr));
 		}
 
 		std::list<SeqLine*>& getSeqLines() {
 			return m_seqLines;
 		}
 
-		void addSymbolAssignmentLine(ExprTree::SymbolLeaf* symbolLeaf, ExprTree::Node* srcValue) {
-			m_symbolAssignmentLines.push_back(new SymbolAssignmentLine(this, symbolLeaf, srcValue));
+		void addSymbolAssignmentLine(ExprTree::SymbolLeaf* symbolLeaf, ExprTree::Node* srcValue, PCode::Instruction* instr = nullptr) {
+			m_symbolAssignmentLines.push_back(new SymbolAssignmentLine(this, symbolLeaf, srcValue, instr));
 		}
 
 		std::list<SymbolAssignmentLine*>& getSymbolAssignmentLines() {

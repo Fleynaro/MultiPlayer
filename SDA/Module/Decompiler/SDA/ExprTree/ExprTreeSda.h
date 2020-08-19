@@ -100,6 +100,11 @@ namespace CE::Decompiler::ExprTree
 		bool isGettingAddr() {
 			return m_isGettingAddr;
 		}
+
+		std::string printDebug() override {
+			auto result = m_sdaSymbol->getName();
+			return m_updateDebugInfo = result;
+		}
 	private:
 		bool m_isGettingAddr = false;
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;

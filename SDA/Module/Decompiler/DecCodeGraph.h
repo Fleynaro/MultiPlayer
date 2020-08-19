@@ -41,6 +41,21 @@ namespace CE::Decompiler
 			m_symbols.remove(symbol);
 		}
 
+		void generateSymbolIds() {
+			int memVar_id = 1;
+			int localVar_id = 1;
+			int funcVar_id = 1;
+			for (auto symbol : m_symbols) {
+				if (auto var = dynamic_cast<Symbol::MemoryVariable*>(symbol)) {
+					var->setId(memVar_id++);
+				} else if (auto var = dynamic_cast<Symbol::LocalVariable*>(symbol)) {
+					var->setId(localVar_id++);
+				} else if (auto var = dynamic_cast<Symbol::FunctionResultVar*>(symbol)) {
+					var->setId(funcVar_id++);
+				}
+			}
+		}
+
 		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
 			if (block == nullptr)
 				return;

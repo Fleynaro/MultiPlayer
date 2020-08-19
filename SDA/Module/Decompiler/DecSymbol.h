@@ -14,6 +14,20 @@ namespace CE::Decompiler {
 
 namespace CE::Decompiler::Symbol
 {
+	class SymbolWithId {
+	public:
+		int getId() {
+			return m_id;
+		}
+
+		void setId(int id) {
+			m_id = id;
+		}
+
+	private:
+		int m_id = 0x0;
+	};
+
 	class Symbol
 	{
 	public:
@@ -63,45 +77,37 @@ namespace CE::Decompiler::Symbol
 		ExtBitMask m_mask;
 	};
 
-	class MemoryVariable : public Variable, public PCode::IRelatedToInstruction
+	class MemoryVariable : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
 	{
 	public:
-		int m_id;
 		ExprTree::ReadValueNode* m_loadValueExpr;
 		
 		MemoryVariable(ExprTree::ReadValueNode* loadValueExpr, int size)
 			: m_loadValueExpr(loadValueExpr), Variable(size)
-		{
-			static int id = 1;
-			m_id = id++;
-		}
+		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;
 
 		std::string printDebug() override {
-			return "[mem_" + Generic::String::NumberToHex(m_id) + "_" + std::to_string(getSize() * 8) + "]";
+			return "[mem_" + Generic::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 
-	class LocalVariable : public Variable, public PCode::IRelatedToInstruction
+	class LocalVariable : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
 	{
 	public:
-		int m_id;
 		std::list<PCode::Instruction*> m_instructionsRelatedTo;
 
 		LocalVariable(ExtBitMask mask)
 			: Variable(mask)
-		{
-			static int id = 1;
-			m_id = id++;
-		}
+		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
 			return m_instructionsRelatedTo;
 		}
 
 		std::string printDebug() override {
-			return "[var_" + Generic::String::NumberToHex(m_id) + "_" + std::to_string(getSize() * 8) + "]";
+			return "[var_" + Generic::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 	};
 
@@ -126,18 +132,14 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
-	class FunctionResultVar : public Variable, public PCode::IRelatedToInstruction
+	class FunctionResultVar : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
 	{
 	public:
-		int m_id;
 		ExprTree::FunctionCallContext* m_funcCallContext;
 
 		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext, ExtBitMask mask)
 			: m_funcCallContext(funcCallContext), Variable(mask)
-		{
-			static int id = 1;
-			m_id = id++;
-		}
+		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;
 
