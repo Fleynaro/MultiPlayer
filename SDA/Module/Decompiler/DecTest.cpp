@@ -109,8 +109,8 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 		}
 
 		if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
-			if (endBlock->m_returnNode != nullptr) {
-				printf("%sreturn %s\n", tabStr.c_str(), endBlock->m_returnNode->printDebug().c_str());
+			if (endBlock->getReturnNode() != nullptr) {
+				printf("%sreturn %s\n", tabStr.c_str(), endBlock->getReturnNode()->printDebug().c_str());
 			}
 		}
 	}

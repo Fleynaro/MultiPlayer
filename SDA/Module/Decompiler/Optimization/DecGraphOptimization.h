@@ -48,10 +48,10 @@ namespace CE::Decompiler::Optimization
 		//clone expressions
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto topNode : decBlock->getAllTopNodes()) {
-				auto newNode = topNode->getGenNode()->clone();
+				auto newNode = topNode->getNode()->clone();
 				newNode->addParentNode(topNode);
 				topNode->clear();
-				topNode->setGenNode(newNode);
+				topNode->setNode(newNode);
 			}
 		}
 	}
@@ -60,8 +60,15 @@ namespace CE::Decompiler::Optimization
 		//optimize expressions
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto topNode : decBlock->getAllTopNodes()) {
-				Node::UpdateDebugInfo(topNode->getGenNode());
-				Optimization::Optimize(*topNode->getGenNodePtr());
+				Node::UpdateDebugInfo(topNode->getNode());
+				Optimization::Optimize(*topNode->getNodePtr());
+
+				if (auto jmpTopNode = dynamic_cast<Block::JumpTopNode*>(topNode)) {
+					Node::UpdateDebugInfo(jmpTopNode->getCond());
+					Optimization::OptimizeConstCondition(jmpTopNode->getCond());
+					Node::UpdateDebugInfo(jmpTopNode->getCond());
+					Optimization::OptimizeCondition(*jmpTopNode->getNodePtr());
+				}
 			}
 		}
 	}
@@ -98,7 +105,7 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	static void GetReadValueNodes(PrimaryTree::SeqLine* line, std::list<ReadValueNode*>& readValueNodes) {
+	static void GetReadValueNodes(Block::SeqLine* line, std::list<ReadValueNode*>& readValueNodes) {
 		auto destAddr = line->getDstNode();
 		if (auto readValueNode = dynamic_cast<ReadValueNode*>(line->getDstNode())) {
 			destAddr = readValueNode->getAddress();
@@ -107,15 +114,15 @@ namespace CE::Decompiler::Optimization
 		GetReadValueNodes(line->getSrcNode(), readValueNodes);
 	}
 
-	static bool AreSeqLinesInterconnected(PrimaryTree::SeqLine* line1, PrimaryTree::SeqLine* line2) {
+	static bool AreSeqLinesInterconnected(Block::SeqLine* line1, Block::SeqLine* line2) {
 		//case 1: function call
-		if (dynamic_cast<FunctionCallContext*>(line1->m_srcValue) || dynamic_cast<FunctionCallContext*>(line2->m_srcValue)) {
+		if (dynamic_cast<FunctionCallContext*>(line1->getSrcNode()) || dynamic_cast<FunctionCallContext*>(line2->getSrcNode())) {
 			return true;
 		}
 		
 		//case 2: read-write or write-read
 		for (auto linePair : { std::pair(line1, line2), std::pair(line2, line1) }) {
-			if (auto writeValueNode = dynamic_cast<ReadValueNode*>(linePair.first->m_destAddr)) {
+			if (auto writeValueNode = dynamic_cast<ReadValueNode*>(linePair.first->getDstNode())) {
 				std::list<ReadValueNode*> readValueNodes;
 				GetReadValueNodes(linePair.second, readValueNodes);
 
@@ -128,22 +135,22 @@ namespace CE::Decompiler::Optimization
 		}
 
 		//case 3: write-write
-		auto writeValueNode1 = dynamic_cast<ReadValueNode*>(line1->m_destAddr);
-		auto writeValueNode2 = dynamic_cast<ReadValueNode*>(line2->m_destAddr);
+		auto writeValueNode1 = dynamic_cast<ReadValueNode*>(line1->getDstNode());
+		auto writeValueNode2 = dynamic_cast<ReadValueNode*>(line2->getDstNode());
 		if (!writeValueNode1 || !writeValueNode2) {
 			return false;
 		}
 		return IsMemLocIntersected(writeValueNode1, writeValueNode2);
 	}
 
-	static bool DoesLineHavePathToOtherLine(std::list<Block::SeqLineTopNode*>::iterator lineIt, std::list<Block::SeqLineTopNode*>& lines, std::list<Block::SeqLineTopNode*>& pushedOutLines, bool isTop = true) {
+	static bool DoesLineHavePathToOtherLine(std::list<Block::SeqLine*>::iterator lineIt, std::list<Block::SeqLine*>& lines, std::list<Block::SeqLine*>& pushedOutLines, bool isTop = true) {
 		if (!isTop && lineIt == prev(lines.end()))
 			return false;
 		while (lineIt != (isTop ? prev(prev(lines.end())) : prev(lines.end()))) {
 			auto curLineIt = lineIt;
 			auto nextLineIt = std::next(lineIt);
 
-			bool areSeqLinesInterconnected = AreSeqLinesInterconnected((*curLineIt)->getNode(), (*nextLineIt)->getNode());
+			bool areSeqLinesInterconnected = AreSeqLinesInterconnected(*curLineIt, *nextLineIt);
 			if (areSeqLinesInterconnected) {
 				if (DoesLineHavePathToOtherLine(nextLineIt, lines, pushedOutLines, false)) {
 					continue;
@@ -164,12 +171,12 @@ namespace CE::Decompiler::Optimization
 		return true;
 	}
 
-	static bool DoesLineHavePathToOtherLine(Block::SeqLineTopNode* firstSeqLine, std::list<Block::SeqLineTopNode*>::iterator lineIt1, std::list<Block::SeqLineTopNode*>::iterator lineIt2, std::list<Block::SeqLineTopNode*>& pushedOutLines) {
-		std::list<Block::SeqLineTopNode*> lines;
+	static bool DoesLineHavePathToOtherLine(Block::SeqLine* firstSeqLine, std::list<Block::SeqLine*>::iterator lineIt1, std::list<Block::SeqLine*>::iterator lineIt2, std::list<Block::SeqLine*>& pushedOutLines) {
+		std::list<Block::SeqLine*> lines;
 		lines.push_back(firstSeqLine);
 		for (auto it = lineIt1; it != std::next(lineIt2); it++) {
-			Node::UpdateDebugInfo((*it)->getNode()->getDstNode());
-			Node::UpdateDebugInfo((*it)->getNode()->getSrcNode());
+			Node::UpdateDebugInfo((*it)->getDstNode());
+			Node::UpdateDebugInfo((*it)->getSrcNode());
 			lines.push_back(*it);
 		}
 
@@ -182,7 +189,7 @@ namespace CE::Decompiler::Optimization
 			if (auto parentNode = dynamic_cast<Node*>(it)) {
 				GetConstantParentsOfNode(parentNode, parentNodes);
 			}
-			if (dynamic_cast<SeqLine*>(it) || dynamic_cast<Block*>(it)) {
+			if (dynamic_cast<Block::BlockTopNode*>(it)) {
 				parentNodes.push_back(it);
 			}
 		}
@@ -191,7 +198,7 @@ namespace CE::Decompiler::Optimization
 	static void RemoveSeqLinesWithNotUsedMemVarDecompiledGraph(DecompiledCodeGraph* decGraph) {
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto it = decBlock->getSeqLines().begin(); it != decBlock->getSeqLines().end(); it++) {
-				if (auto memSymbolLeaf = dynamic_cast<SymbolLeaf*>((*it)->getNode()->getDstNode())) {
+				if (auto memSymbolLeaf = dynamic_cast<SymbolLeaf*>((*it)->getDstNode())) {
 					if (auto memVariable = dynamic_cast<Symbol::MemoryVariable*>(memSymbolLeaf->m_symbol))
 					{
 						std::list<INodeAgregator*> parentNodes;
@@ -214,11 +221,11 @@ namespace CE::Decompiler::Optimization
 	static void OptimizeSeqLinesOrderInDecompiledGraph(DecompiledCodeGraph* decGraph) {
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto it1 = decBlock->getSeqLines().begin(); it1 != decBlock->getSeqLines().end(); it1 ++) {
-				if (auto memSymbolLeaf = dynamic_cast<SymbolLeaf*>((*it1)->getNode()->getDstNode())) {
+				if (auto memSymbolLeaf = dynamic_cast<SymbolLeaf*>((*it1)->getDstNode())) {
 					if (auto memVariable = dynamic_cast<Symbol::MemoryVariable*>(memSymbolLeaf->m_symbol))
 					{
 						std::list<INodeAgregator*> parentNodes;
-						std::list<SeqLine*> seqLinesWithMemVar;
+						std::list<Block::SeqLine*> seqLinesWithMemVar;
 						for (auto symbolLeaf : memVariable->m_symbolLeafs) {
 							if (symbolLeaf == memSymbolLeaf)
 								continue;
@@ -226,8 +233,8 @@ namespace CE::Decompiler::Optimization
 						}
 						
 						for (auto parentNode : parentNodes) {
-							if (auto seqLineWithMemVar = dynamic_cast<SeqLine*>(parentNode)) {
-								if (seqLineWithMemVar->m_block == decBlock && seqLineWithMemVar != (*it1)->getNode()) {
+							if (auto seqLineWithMemVar = dynamic_cast<Block::SeqLine*>(parentNode)) {
+								if (seqLineWithMemVar->m_block == decBlock && seqLineWithMemVar != *it1) {
 									seqLinesWithMemVar.push_back(seqLineWithMemVar);
 								}
 							}
@@ -237,14 +244,14 @@ namespace CE::Decompiler::Optimization
 						if (seqLinesWithMemVar.size() == parentNodes.size())
 						{
 							//store pushed out of the bound wall lines that are in conflict with *it1
-							std::list<std::pair<std::list<Block::SeqLineTopNode*>::iterator, std::list<Block::SeqLineTopNode*>>> pushedOutlines;
+							std::list<std::pair<std::list<Block::SeqLine*>::iterator, std::list<Block::SeqLine*>>> pushedOutlines;
 
 							bool isRemove = true;
 							auto curNextSeqLineIt = std::next(it1);
 							for (auto it2 = std::next(it1); it2 != decBlock->getSeqLines().end() && !seqLinesWithMemVar.empty(); it2++) {
 								bool isSuit = false;
 								for (auto seqLineIt = seqLinesWithMemVar.begin(); seqLineIt != seqLinesWithMemVar.end(); seqLineIt++) {
-									if ((*it2)->getNode() == *seqLineIt) {
+									if (*it2 == *seqLineIt) {
 										isSuit = true;
 										seqLinesWithMemVar.erase(seqLineIt);
 										break;
@@ -252,7 +259,7 @@ namespace CE::Decompiler::Optimization
 								}
 
 								if (isSuit) {
-									std::list<Block::SeqLineTopNode*> pushedOutLines_;
+									std::list<Block::SeqLine*> pushedOutLines_;
 									if (!DoesLineHavePathToOtherLine(*it1, curNextSeqLineIt, it2, pushedOutLines_)) {
 										isRemove = false;
 										break;
@@ -276,7 +283,7 @@ namespace CE::Decompiler::Optimization
 								for (auto symbolLeaf : memVariable->m_symbolLeafs) {
 									if (symbolLeaf == memSymbolLeaf)
 										continue;
-									symbolLeaf->replaceWith((*it1)->getNode()->getSrcNode());
+									symbolLeaf->replaceWith((*it1)->getSrcNode());
 								}
 								decBlock->getSeqLines().erase(it1);
 								delete* it1;
@@ -317,7 +324,7 @@ namespace CE::Decompiler::Optimization
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto it = decBlock->getSeqLines().begin(); it != decBlock->getSeqLines().end(); it++) {
 				auto seqLine = *it;
-				if (HasUndefinedRegister(seqLine->getNode()->getDstNode(), funcCallInfo) || HasUndefinedRegister(seqLine->getNode()->getSrcNode(), funcCallInfo)) {
+				if (HasUndefinedRegister(seqLine->getDstNode(), funcCallInfo) || HasUndefinedRegister(seqLine->getSrcNode(), funcCallInfo)) {
 					decBlock->getSeqLines().erase(it);
 					delete seqLine;
 				}
@@ -358,12 +365,12 @@ namespace CE::Decompiler::Optimization
 			if (decBlock->getNoJumpCondition()) {
 				std::map<ObjectHash::Hash, Symbol::LocalVariable*> localVars;
 				for (auto symbolAssignmentLine : decBlock->getSymbolAssignmentLines()) {
-					if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getNode()->getDstNode()->m_symbol)) {
+					if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbol()->m_symbol)) {
 						std::list<ExprTree::SymbolLeaf*> symbolLeafs;
-						GetSymbolLeafs(symbolAssignmentLine->getNode()->getSrcNode(), localVar, symbolLeafs);
+						GetSymbolLeafs(symbolAssignmentLine->getSrcNode(), localVar, symbolLeafs);
 						if (!symbolLeafs.empty()) {
-							CalculateHashes(symbolAssignmentLine->getNode()->getSrcNode());
-							localVars.insert(std::make_pair(symbolAssignmentLine->getNode()->getSrcNode()->getHash(), localVar));
+							CalculateHashes(symbolAssignmentLine->getSrcNode());
+							localVars.insert(std::make_pair(symbolAssignmentLine->getSrcNode()->getHash(), localVar));
 						}
 					}
 				}
@@ -375,22 +382,22 @@ namespace CE::Decompiler::Optimization
 
 	static void ExpandSymbolAssignmentLines(DecompiledCodeGraph* decGraph) {
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
-			std::list<Block::SeqLineTopNode*> newSeqLines;
+			std::list<Block::SymbolAssignmentLine*> newSeqLines;
 			for (auto symbolAssignmentLine : decBlock->getSymbolAssignmentLines()) {
-				newSeqLines.push_back(new Block::SeqLineTopNode(decBlock, new SeqLine(symbolAssignmentLine->getNode()->getDstNode(), symbolAssignmentLine->getNode()->getSrcNode(), decBlock)));
+				newSeqLines.push_back(new Block::SymbolAssignmentLine(decBlock, symbolAssignmentLine->getDstSymbol(), symbolAssignmentLine->getSrcNode()));
 				delete symbolAssignmentLine;
 			}
 			decBlock->getSymbolAssignmentLines().clear();
 
 			for (auto it = newSeqLines.begin(); it != newSeqLines.end(); it ++) {
 				auto seqLine = *it;
-				auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>(seqLine->getNode()->getDstNode());
+				auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>(seqLine->getDstNode());
 				
 				ExprTree::SymbolLeaf* tempVarSymbolLeaf = nullptr;
 				for (auto it2 = std::next(it); it2 != newSeqLines.end(); it2++) {
 					auto otherSeqLine = *it2;
 					std::list<ExprTree::SymbolLeaf*> symbolLeafs;
-					GetSymbolLeafs(otherSeqLine->getNode()->getSrcNode(), symbolLeaf->m_symbol, symbolLeafs);
+					GetSymbolLeafs(otherSeqLine->getSrcNode(), symbolLeaf->m_symbol, symbolLeafs);
 					if (!symbolLeafs.empty()) {
 						if (!tempVarSymbolLeaf) {
 							tempVarSymbolLeaf = new ExprTree::SymbolLeaf(new Symbol::LocalVariable(symbolLeaf->m_symbol->getSize()));

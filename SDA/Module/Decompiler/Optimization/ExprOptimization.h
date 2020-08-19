@@ -713,10 +713,12 @@ namespace CE::Decompiler::Optimization
 		CalculateHashes(node);
 	}
 
-	static void OptimizeCondition(ICondition*& cond) {
+	static void OptimizeCondition(Node*& cond) {
 		if (auto compCond = dynamic_cast<CompositeCondition*>(cond)) {
-			OptimizeCondition(compCond->m_leftCond);
-			OptimizeCondition(compCond->m_rightCond);
+			Node* leftNode = compCond->m_leftCond;
+			Node* rightNode = compCond->m_rightCond;
+			OptimizeCondition(leftNode);
+			OptimizeCondition(rightNode);
 
 			Node::UpdateDebugInfo(compCond);
 			InverseConditions(compCond);

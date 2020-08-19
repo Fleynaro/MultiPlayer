@@ -182,13 +182,15 @@ namespace CE::Decompiler::Symbolization
 		}
 	};
 
-	static Node* BuildSdaNodes(Node* node) {
+	static void BuildSdaNodes(Node* node) {
 		IterateChildNodes(node, BuildSdaNodes);
+
+		if (dynamic_cast<Block::JumpTopNode*>(node->getParentNode()))
+			return;
 
 		auto sdaNode = new SdaNode(node);
 		node->replaceWith(sdaNode);
 		node->addParentNode(sdaNode);
-		return sdaNode;
 	}
 
 	static DataTypePtr CalculateDataType(DataTypePtr type1, DataTypePtr type2) {
@@ -238,7 +240,7 @@ namespace CE::Decompiler::Symbolization
 	static void SymbolizeWithSDA(DecompiledCodeGraph* decGraph, UserSymbolDef& userSymbolDef) {
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto topNode : decBlock->getAllTopNodes()) {
-				auto sdaTopNode = BuildSdaNodes(topNode);
+				BuildSdaNodes(topNode->getNode());
 				//CalculateTypesAndBuildGoarForExpr(sdaTopNode, ctx);
 			}
 		}

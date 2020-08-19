@@ -100,15 +100,15 @@ namespace CE::Decompiler
 
 		struct VarnodeExpr {
 			PCode::Varnode* m_varnode;
-			TopNode<ExprTree::Node>* m_expr;
+			TopNode* m_expr;
 			bool m_changed;
 			
-			VarnodeExpr(PCode::Varnode* varnode, TopNode<ExprTree::Node>* expr, bool changed)
+			VarnodeExpr(PCode::Varnode* varnode, TopNode* expr, bool changed)
 				: m_varnode(varnode), m_expr(expr), m_changed(changed)
 			{}
 		};
 		std::list<VarnodeExpr> m_varnodes;
-		std::list<std::pair<PCode::Register, TopNode<ExprTree::Node>*>> m_cachedRegisters;
+		std::list<std::pair<PCode::Register, TopNode*>> m_cachedRegisters;
 		std::list<PCode::RegisterVarnode*> m_ownRegVarnodes;
 		std::list<ExternalSymbol*> m_externalSymbols;
 		std::set<PCode::RegisterVarnode*> m_resolvedExternalSymbols;

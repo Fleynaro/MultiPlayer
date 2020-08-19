@@ -127,7 +127,7 @@ namespace CE::Decompiler::LinearView
 		{
 			m_mainBranch = new BlockList(this);
 			m_elseBranch = new BlockList(this);
-			m_cond = decBlock->m_noJmpCond ? dynamic_cast<ExprTree::ICondition*>(decBlock->m_noJmpCond->clone()) : nullptr;
+			m_cond = decBlock->getNoJumpCondition() ? dynamic_cast<ExprTree::ICondition*>(decBlock->getNoJumpCondition()->clone()) : nullptr;
 		}
 
 		~Condition() {
@@ -161,7 +161,7 @@ namespace CE::Decompiler::LinearView
 				m_cond = new ExprTree::BooleanValue(true);
 			}
 			else {
-				m_cond = dynamic_cast<ExprTree::ICondition*>(decBlock->m_noJmpCond->clone());
+				m_cond = dynamic_cast<ExprTree::ICondition*>(decBlock->getNoJumpCondition()->clone());
 				if (isDoWhileCycle) {
 					m_cond->inverse();
 				}

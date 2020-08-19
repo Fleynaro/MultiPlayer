@@ -65,6 +65,12 @@ namespace CE::Decompiler::ExprTree
 			return m_parentNodes;
 		}
 
+		INodeAgregator* getParentNode() {
+			if(m_parentNodes.empty())
+				return nullptr;
+			return *m_parentNodes.begin();
+		}
+
 		virtual bool isLeaf() {
 			return false;
 		}

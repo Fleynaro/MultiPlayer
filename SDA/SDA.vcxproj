@@ -348,6 +348,7 @@
     <ClInclude Include="Module\Decompiler\DecTopNode.h" />
     <ClInclude Include="Module\Decompiler\DecTranslatorX86.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTree.h" />
+    <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeAssignmentNode.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeCondition.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeFuncCallContext.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeLeaf.h" />

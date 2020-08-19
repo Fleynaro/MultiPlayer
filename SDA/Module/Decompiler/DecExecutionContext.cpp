@@ -15,7 +15,7 @@ void ExecutionBlockContext::setVarnode(const PCode::Register& reg, ExprTree::Nod
 }
 
 void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* newExpr, bool rewrite) {
-	std::list<TopNode<ExprTree::Node>*> oldTopNodes;
+	std::list<TopNode*> oldTopNodes;
 	
 	//remove all old registers/symbols
 	if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
@@ -48,7 +48,7 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 
 	//set new register/symbol
 	if (newExpr) {
-		auto varnodeExpr = VarnodeExpr(varnode, new TopNode<ExprTree::Node>(newExpr), rewrite);
+		auto varnodeExpr = VarnodeExpr(varnode, new TopNode(newExpr), rewrite);
 		m_varnodes.push_back(varnodeExpr);
 	}
 	
@@ -131,7 +131,7 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 	}
 
-	m_cachedRegisters.push_back(std::make_pair(varnodeRegister->m_register, new TopNode<ExprTree::Node>(regExpr)));
+	m_cachedRegisters.push_back(std::make_pair(varnodeRegister->m_register, new TopNode(regExpr)));
 	return regExpr;
 }
 
