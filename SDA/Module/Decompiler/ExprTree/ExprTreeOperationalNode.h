@@ -172,8 +172,8 @@ namespace CE::Decompiler::ExprTree
 			return IsOperationFloatingPoint(m_operation);
 		}
 
-		Node* clone() override {
-			return new OperationalNode(m_leftNode->clone(), m_rightNode ? m_rightNode->clone() : nullptr, m_operation, m_mask, m_notChangedMask, m_instr);
+		Node* clone(NodeCloneContext* ctx) override {
+			return new OperationalNode(m_leftNode->clone(ctx), m_rightNode ? m_rightNode->clone(ctx) : nullptr, m_operation, m_mask, m_notChangedMask, m_instr);
 		}
 
 		ObjectHash::Hash getHash() override {
@@ -210,6 +210,8 @@ namespace CE::Decompiler::ExprTree
 	class ReadValueNode : public OperationalNode
 	{
 	public:
+		Symbol::MemoryVariable* m_memVar = nullptr;
+
 		ReadValueNode(Node* node, int size, PCode::Instruction* instr = nullptr)
 			: OperationalNode(node, nullptr, ReadValue), m_size(size)
 		{}
@@ -226,8 +228,13 @@ namespace CE::Decompiler::ExprTree
 			return m_size;
 		}
 
-		Node* clone() override {
-			return new ReadValueNode(m_leftNode->clone(), m_size);
+		Node* clone(NodeCloneContext* ctx) override {
+			auto memVar = m_memVar ? dynamic_cast<Symbol::MemoryVariable*>(m_memVar->clone(ctx)) : nullptr;
+			auto readValueNode = new ReadValueNode(m_leftNode->clone(ctx), m_size, m_instr);
+			readValueNode->m_memVar = memVar;
+			if(memVar)
+				memVar->m_loadValueExpr = readValueNode;
+			return readValueNode;
 		}
 
 		std::string printDebug() override {
@@ -255,8 +262,8 @@ namespace CE::Decompiler::ExprTree
 			return m_size;
 		}
 
-		Node* clone() override {
-			return new CastNode(m_leftNode->clone(), m_size, m_isSigned);
+		Node* clone(NodeCloneContext* ctx) override {
+			return new CastNode(m_leftNode->clone(ctx), m_size, m_isSigned);
 		}
 
 		std::string printDebug() override {
@@ -287,8 +294,8 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(1);
 		}
 
-		Node* clone() override {
-			return new FunctionalNode(m_leftNode->clone(), m_rightNode->clone(), m_funcId);
+		Node* clone(NodeCloneContext* ctx) override {
+			return new FunctionalNode(m_leftNode->clone(ctx), m_rightNode->clone(ctx), m_funcId, m_instr);
 		}
 
 		std::string printDebug() override {
@@ -329,8 +336,8 @@ namespace CE::Decompiler::ExprTree
 			return m_funcId != Id::TOINT;
 		}
 
-		Node* clone() override {
-			return new FloatFunctionalNode(m_leftNode->clone(), m_funcId, m_size);
+		Node* clone(NodeCloneContext* ctx) override {
+			return new FloatFunctionalNode(m_leftNode->clone(ctx), m_funcId, m_size, m_instr);
 		}
 
 		std::string printDebug() override {

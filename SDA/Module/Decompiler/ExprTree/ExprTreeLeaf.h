@@ -32,8 +32,8 @@ namespace CE::Decompiler::ExprTree
 			return m_symbol->getHash();
 		}
 
-		Node* clone() override {
-			return new SymbolLeaf(m_symbol);
+		Node* clone(NodeCloneContext* ctx) override {
+			return new SymbolLeaf(m_symbol->clone(ctx));
 		}
 
 		std::string printDebug() override {
@@ -71,7 +71,7 @@ namespace CE::Decompiler::ExprTree
 			return hash.getHash();
 		}
 
-		Node* clone() override {
+		Node* clone(NodeCloneContext* ctx) override {
 			return new NumberLeaf(m_value);
 		}
 
@@ -94,7 +94,7 @@ namespace CE::Decompiler::ExprTree
 			return true;
 		}
 
-		Node* clone() override {
+		Node* clone(NodeCloneContext* ctx) override {
 			return this;
 		}
 

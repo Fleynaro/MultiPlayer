@@ -72,8 +72,8 @@ namespace CE::Decompiler::ExprTree
 			return m_dstNode->getHash() * 31 + m_srcNode->getHash();
 		}
 
-		Node* clone() override {
-			return new AssignmentNode(m_dstNode->clone(), m_srcNode->clone());
+		Node* clone(NodeCloneContext* ctx) override {
+			return new AssignmentNode(m_dstNode->clone(ctx), m_srcNode->clone(ctx));
 		}
 
 		std::string printDebug() override {

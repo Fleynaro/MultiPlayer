@@ -184,15 +184,13 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 			info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
 		}
 
-		auto decCodeGraph = new DecompiledCodeGraph(info);
-		auto decompiler = new CE::Decompiler::Decompiler(&graph, decCodeGraph);
+		auto decCodeGraph = new DecompiledCodeGraph(&graph, info);
+		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph);
 		decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
 			auto absAddr = (std::intptr_t)data + offset;
 			return info;
 		};
 		decompiler->start();
-
-		auto asmBlocks = decompiler->getAsmBlocks();
 
 		//show code
 		printf("********************* BEFORE OPTIMIZATION: *********************\n\n");
@@ -200,26 +198,32 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 		converter.start();
 		auto blockList = converter.getBlockList();
 		OptimizeBlockList(blockList, false);
-		ShowCode(blockList, asmBlocks);
+		ShowCode(blockList, decCodeGraph->getAsmGraphBlocks());
 
 		printf("\n\n\n********************* AFTER OPTIMIZATION: *********************\n\n");
-		Optimization::OptimizeDecompiledGraph(decCodeGraph);
-		converter = LinearView::Converter(decCodeGraph);
+		auto clonedDecCodeGraph = decCodeGraph->clone();
+		Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
+		converter = LinearView::Converter(clonedDecCodeGraph);
 		converter.start();
 		blockList = converter.getBlockList();
 		OptimizeBlockList(blockList);
-		ShowCode(blockList, asmBlocks);
+		ShowCode(blockList, clonedDecCodeGraph->getAsmGraphBlocks());
 
 		auto it = userSymbolDefs.find(sample.first);
 		if (it != userSymbolDefs.end()) {
 			printf("\n\n\n********************* AFTER SYMBOLIZATION: *********************\n\n");
 			auto userSymbolDef = it->second;
-			Symbolization::SymbolizeWithSDA(decCodeGraph, userSymbolDef);
-			converter = LinearView::Converter(decCodeGraph);
+			Symbolization::SymbolizeWithSDA(clonedDecCodeGraph, userSymbolDef);
+			converter = LinearView::Converter(clonedDecCodeGraph);
 			converter.start();
 			blockList = converter.getBlockList();
 			OptimizeBlockList(blockList);
-			ShowCode(blockList, asmBlocks);
+
+			g_SHOW_ASM = false;
+			g_SHOW_PCODE = false;
+			g_SHOW_ALL_GOTO = false;
+			g_SHOW_LINEAR_LEVEL_EXT = false;
+			ShowCode(blockList, clonedDecCodeGraph->getAsmGraphBlocks());
 		}
 		printf("\n\n\n\n\n");
 	}

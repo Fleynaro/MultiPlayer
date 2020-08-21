@@ -2,6 +2,11 @@
 #include "../DecMask.h"
 #include "Utils/ObjectHash.h"
 
+namespace CE::Decompiler::Symbol
+{
+	class Symbol;
+};
+
 namespace CE::Decompiler::ExprTree
 {
 	class Node;
@@ -11,6 +16,11 @@ namespace CE::Decompiler::ExprTree
 		virtual void replaceNode(Node* node, Node* newNode) = 0;
 
 		virtual std::list<Node*> getNodesList() = 0;
+	};
+
+	struct NodeCloneContext {
+		bool m_cloneSymbols = false;
+		std::map<Symbol::Symbol*, Symbol::Symbol*> m_clonedSymbols;
 	};
 
 	class Node
@@ -91,7 +101,12 @@ namespace CE::Decompiler::ExprTree
 			return false;
 		}
 
-		virtual Node* clone() = 0;
+		Node* clone() {
+			NodeCloneContext ctx;
+			return clone(&ctx);
+		}
+
+		virtual Node* clone(NodeCloneContext* ctx) = 0;
 
 		virtual std::string printDebug() {
 			return "";

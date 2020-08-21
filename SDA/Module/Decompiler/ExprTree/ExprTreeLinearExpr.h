@@ -62,10 +62,10 @@ namespace CE::Decompiler::ExprTree
 			return IsOperationFloatingPoint(m_operation);
 		}
 
-		Node* clone() override {
+		Node* clone(NodeCloneContext* ctx) override {
 			auto newLinearExpr = new LinearExpr(m_constTerm, m_operation);
 			for (auto term : m_terms) {
-				newLinearExpr->addTerm(term->clone());
+				newLinearExpr->addTerm(term->clone(ctx));
 			}
 			return newLinearExpr;
 		}

@@ -52,8 +52,11 @@ namespace CE::Decompiler::ExprTree
 			return m_node->isFloatingPoint();
 		}
 
-		Node* clone() override {
-			return new SdaNode(m_node->clone());
+		Node* clone(NodeCloneContext* ctx) override {
+			auto sdaNode = new SdaNode(m_node->clone(ctx));
+			sdaNode->m_calcDataType = m_calcDataType;
+			sdaNode->m_explicitCast = m_explicitCast;
+			return sdaNode;
 		}
 
 		std::string printDebug() override {
@@ -68,8 +71,8 @@ namespace CE::Decompiler::ExprTree
 	class SdaSymbolLeaf : public AbstractSdaNode
 	{
 	public:
-		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol)
-			: m_sdaSymbol(sdaSymbol)
+		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, bool isGettingAddr)
+			: m_sdaSymbol(sdaSymbol), m_isGettingAddr(isGettingAddr)
 		{}
 
 		CE::Symbol::AbstractSymbol* getSdaSymbol() {
@@ -80,8 +83,8 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(m_sdaSymbol->getDataType()->getSize());
 		}
 
-		Node* clone() override {
-			return nullptr;
+		Node* clone(NodeCloneContext* ctx) override {
+			return new SdaSymbolLeaf(m_sdaSymbol, m_isGettingAddr);
 		}
 
 		bool isFloatingPoint() override {
@@ -102,8 +105,14 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			auto result = m_sdaSymbol->getName();
-			return m_updateDebugInfo = result;
+			auto str = printDebugGoar();
+			if (m_isGettingAddr)
+				str = "&" + str;
+			return m_updateDebugInfo = str;
+		}
+
+		std::string printDebugGoar() override {
+			return m_sdaSymbol->getName();
 		}
 	private:
 		bool m_isGettingAddr = false;
@@ -117,18 +126,31 @@ namespace CE::Decompiler::ExprTree
 		AbstractSdaNode* m_base;
 		int m_bitOffset; //offset + bitOffset?
 		Node* m_index;
-		int m_readSize = 0x0;
+		int m_readSize;
 		
-		GoarNode(DataTypePtr dataType, AbstractSdaNode* base, int bitOffset, Node* index)
-			: m_dataType(dataType), m_base(base), m_bitOffset(bitOffset), m_index(index)
+		GoarNode(DataTypePtr dataType, AbstractSdaNode* base, int bitOffset, Node* index, int readSize = 0x0)
+			: m_dataType(dataType), m_base(base), m_bitOffset(bitOffset), m_index(index), m_readSize(readSize)
 		{}
+
+		void replaceNode(Node* node, Node* newNode) override {
+			if (node == m_base) {
+				m_base = dynamic_cast<AbstractSdaNode*>(newNode);
+			}
+			else if (node == m_index) {
+				m_index = node;
+			}
+		}
+
+		std::list<ExprTree::Node*> getNodesList() override {
+			return { m_base, m_index };
+		}
 
 		BitMask64 getMask() override {
 			return BitMask64(m_dataType->getSize());
 		}
 
-		Node* clone() override {
-			return nullptr;
+		Node* clone(NodeCloneContext* ctx) override {
+			return new GoarNode(m_dataType, dynamic_cast<AbstractSdaNode*>(m_base->clone(ctx)), m_bitOffset, m_index->clone(ctx), m_readSize);
 		}
 
 		bool isFloatingPoint() override {
@@ -143,7 +165,7 @@ namespace CE::Decompiler::ExprTree
 			auto str = printDebugGoar();
 			if (m_readSize == 0x0)
 				str = "&" + str;
-			return str;
+			return m_updateDebugInfo = str;
 		}
 
 		std::string printDebugGoar() override {

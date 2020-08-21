@@ -39,7 +39,7 @@ namespace CE::Decompiler::ExprTree
 			m_value ^= true;
 		}
 
-		Node* clone() override {
+		Node* clone(NodeCloneContext* ctx) override {
 			return new BooleanValue(m_value);
 		}
 
@@ -110,8 +110,8 @@ namespace CE::Decompiler::ExprTree
 			return { m_leftNode, m_rightNode };
 		}
 
-		Node* clone() override {
-			return new Condition(m_leftNode->clone(), m_rightNode->clone(), m_cond);
+		Node* clone(NodeCloneContext* ctx) override {
+			return new Condition(m_leftNode->clone(ctx), m_rightNode->clone(ctx), m_cond);
 		}
 
 		ObjectHash::Hash getHash() override {
@@ -207,8 +207,8 @@ namespace CE::Decompiler::ExprTree
 			return { m_leftCond, m_rightCond };
 		}
 
-		Node* clone() override {
-			return new CompositeCondition(dynamic_cast<ICondition*>(m_leftCond->clone()), m_rightCond ? dynamic_cast<ICondition*>(m_rightCond->clone()) : nullptr, m_cond);
+		Node* clone(NodeCloneContext* ctx) override {
+			return new CompositeCondition(dynamic_cast<ICondition*>(m_leftCond->clone(ctx)), m_rightCond ? dynamic_cast<ICondition*>(m_rightCond->clone(ctx)) : nullptr, m_cond);
 		}
 
 		ObjectHash::Hash getHash() override {

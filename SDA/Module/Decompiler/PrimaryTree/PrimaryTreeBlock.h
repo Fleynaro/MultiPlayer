@@ -4,6 +4,13 @@
 
 namespace CE::Decompiler::PrimaryTree
 {
+	class Block;
+	struct BlockCloneContext {
+		DecompiledCodeGraph* m_graph;
+		std::map<Block*, Block*> m_clonedBlocks;
+		ExprTree::NodeCloneContext m_nodeCloneContext;
+	};
+
 	class Block
 	{
 	public:
@@ -44,8 +51,12 @@ namespace CE::Decompiler::PrimaryTree
 		class SeqLine : public BlockTopNode
 		{
 		public:
+			SeqLine(Block* block, ExprTree::AssignmentNode* assignmentNode)
+				: BlockTopNode(block, assignmentNode)
+			{}
+
 			SeqLine(Block* block, ExprTree::Node* dstNode, ExprTree::Node* srcNode, PCode::Instruction* instr)
-				: BlockTopNode(block, new ExprTree::AssignmentNode(dstNode, srcNode, instr))
+				: SeqLine(block, new ExprTree::AssignmentNode(dstNode, srcNode, instr))
 			{}
 
 			ExprTree::AssignmentNode* getAssignmentNode() {
@@ -59,11 +70,19 @@ namespace CE::Decompiler::PrimaryTree
 			ExprTree::Node* getSrcNode() {
 				return getAssignmentNode()->getSrcNode();
 			}
+
+			virtual SeqLine* clone(ExprTree::NodeCloneContext* ctx) {
+				return new SeqLine(m_block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
+			}
 		};
 
 		class SymbolAssignmentLine : public SeqLine
 		{
 		public:
+			SymbolAssignmentLine(Block* block, ExprTree::AssignmentNode* assignmentNode)
+				: SeqLine(block, assignmentNode)
+			{}
+
 			SymbolAssignmentLine(Block* block, ExprTree::SymbolLeaf* dstNode, ExprTree::Node* srcNode, PCode::Instruction* instr)
 				: SeqLine(block, dstNode, srcNode, instr)
 			{}
@@ -71,9 +90,18 @@ namespace CE::Decompiler::PrimaryTree
 			ExprTree::SymbolLeaf* getDstSymbol() {
 				return dynamic_cast<ExprTree::SymbolLeaf*>(getAssignmentNode()->getDstNode());
 			}
+
+			SeqLine* clone(ExprTree::NodeCloneContext* ctx) override {
+				return new SymbolAssignmentLine(m_block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
+			}
 		};
 
 	private:
+		std::list<Block*> m_blocksReferencedTo;
+		Block* m_nextNearBlock = nullptr;
+		Block* m_nextFarBlock = nullptr;
+		std::list<SeqLine*> m_seqLines;
+		std::list<SymbolAssignmentLine*> m_symbolAssignmentLines;
 		JumpTopNode* m_noJmpCond;
 	public:
 		std::string m_name;
@@ -229,6 +257,30 @@ namespace CE::Decompiler::PrimaryTree
 			return m_seqLines.empty() && m_symbolAssignmentLines.empty();
 		}
 
+		Block* clone(BlockCloneContext* ctx) {
+			auto it = ctx->m_clonedBlocks.find(this);
+			if (it != ctx->m_clonedBlocks.end())
+				return it->second;
+			auto newBlock = clone(ctx, m_level);
+			ctx->m_clonedBlocks.insert(std::make_pair(this, newBlock));
+			newBlock->m_maxHeight = m_maxHeight;
+			newBlock->m_name = m_name;
+			if(m_nextNearBlock)
+				newBlock->setNextNearBlock(m_nextNearBlock->clone(ctx));
+			if(m_nextFarBlock)
+				newBlock->setNextFarBlock(m_nextFarBlock->clone(ctx));
+			if(getNoJumpCondition())
+				newBlock->setNoJumpCondition(dynamic_cast<ExprTree::ICondition*>(getNoJumpCondition()->clone(&ctx->m_nodeCloneContext)));
+			for (auto line : m_seqLines) {
+				newBlock->m_seqLines.push_back(line->clone(&ctx->m_nodeCloneContext));
+			}
+			for (auto line : m_symbolAssignmentLines) {
+				auto newLine = dynamic_cast<SymbolAssignmentLine*>(line->clone(&ctx->m_nodeCloneContext));
+				newBlock->m_symbolAssignmentLines.push_back(newLine);
+			}
+			return newBlock;
+		}
+
 		void printDebug(bool cond = true, const std::string& tabStr = "") {
 			std::string result = "";
 			for (auto line : m_seqLines) {
@@ -244,12 +296,11 @@ namespace CE::Decompiler::PrimaryTree
 			}
 			printf("%s", result.c_str());
 		}
-	private:
-		std::list<Block*> m_blocksReferencedTo;
-		Block* m_nextNearBlock = nullptr;
-		Block* m_nextFarBlock = nullptr;
-		std::list<SeqLine*> m_seqLines;
-		std::list<SymbolAssignmentLine*> m_symbolAssignmentLines;
+
+		protected:
+			virtual Block* clone(BlockCloneContext* ctx, int level) {
+				return new Block(ctx->m_graph, level);
+			}
 	};
 
 	class EndBlock : public Block
@@ -283,6 +334,14 @@ namespace CE::Decompiler::PrimaryTree
 				m_returnNode->clear();
 			}
 			m_returnNode->setNode(returnNode);
+		}
+
+	protected:
+		Block* clone(BlockCloneContext* ctx, int level) override {
+			auto newBlock = new EndBlock(ctx->m_graph, level);
+			if (getReturnNode())
+				newBlock->setReturnNode(getReturnNode()->clone(&ctx->m_nodeCloneContext));
+			return newBlock;
 		}
 	};
 };

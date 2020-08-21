@@ -22,8 +22,9 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
 		auto readSize = m_instr->m_output->getSize();
-		auto loadValueExpr = new ExprTree::ReadValueNode(expr, readSize);
+		auto loadValueExpr = new ExprTree::ReadValueNode(expr, readSize, m_instr);
 		auto memVar = new Symbol::MemoryVariable(loadValueExpr, readSize);
+		loadValueExpr->m_memVar = memVar;
 		m_block->m_decompiledGraph->addSymbol(memVar);
 		auto memSymbolLeaf = new ExprTree::SymbolLeaf(memVar);
 		m_block->addSeqLine(memSymbolLeaf, loadValueExpr, m_instr);
@@ -35,7 +36,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto dstExpr = requestVarnode(m_instr->m_input0);
 		auto srcExpr = requestVarnode(m_instr->m_input1);
-		dstExpr = new ExprTree::ReadValueNode(dstExpr, m_instr->m_input1->getSize());
+		dstExpr = new ExprTree::ReadValueNode(dstExpr, m_instr->m_input1->getSize(), m_instr);
 		m_block->addSeqLine(dstExpr, srcExpr, m_instr);
 		break;
 	}
@@ -337,6 +338,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto& dstRegister = funcCallInfo.m_resultRegister.getGenericId() != 0 ? funcCallInfo.m_resultRegister : funcCallInfo.m_resultVectorRegister;
 		if (dstRegister.getGenericId() != 0) {
 			auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.m_valueRangeMask);
+			funcCallCtx->m_functionResultVar = funcResultVar;
 			m_block->m_decompiledGraph->addSymbol(funcResultVar);
 			dstExpr = new ExprTree::SymbolLeaf(funcResultVar);
 			m_ctx->setVarnode(dstRegister, dstExpr);

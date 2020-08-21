@@ -44,8 +44,8 @@ namespace CE::Decompiler::ExprTree
 			return m_node->isFloatingPoint();
 		}
 
-		Node* clone() override {
-			return new MirrorNode(m_node->clone(), m_instr);
+		Node* clone(NodeCloneContext* ctx) override {
+			return new MirrorNode(m_node->clone(ctx), m_instr);
 		}
 
 		ObjectHash::Hash getHash() override {

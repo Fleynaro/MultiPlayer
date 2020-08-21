@@ -42,28 +42,31 @@ namespace CE::Decompiler::Symbolization
 				//find symbol and offset
 				Symbol::Symbol* symbol = nullptr;
 				int64_t offset;
-				std::list<ExprTree::SymbolLeaf*> symbolLeafsToReplace;
+				ExprTree::SdaNode* sdaNodeToReplace = sdaNode;
+				bool isOneOfTerm = false;
 
 				if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(sdaNode->m_node)) {
 					symbol = symbolLeaf->m_symbol;
 					offset = 0x0;
-					symbolLeafsToReplace = symbol->m_symbolLeafs;
 				}
 				else if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
 					for (auto term : linearExpr->getTerms()) {
 						if (auto sdaTerm = dynamic_cast<SdaNode*>(term)) {
 							if (auto termSymbolLeaf = dynamic_cast<SymbolLeaf*>(sdaTerm->m_node)) {
-								if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
+								if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(termSymbolLeaf->m_symbol)) {
 									if (regSymbol->m_register.isPointer()) {
 										symbol = regSymbol;
-										offset = linearExpr->m_constTerm;
-										symbolLeafsToReplace.push_back(termSymbolLeaf);
+										if (linearExpr->getTerms().size() != 1) {
+											isOneOfTerm = true;
+											sdaNodeToReplace = sdaTerm;
+										}
 										break;
 									}
 								}
 							}
 						}
 					}
+					offset = linearExpr->m_constTerm;
 				}
 				if (!symbol)
 					return;
@@ -71,6 +74,8 @@ namespace CE::Decompiler::Symbolization
 				//calculate size
 				int size = 0x0;
 				bool transformToLocalOffset = false;
+				bool isStackOrGlobal = false;
+				bool isGettingAddr = true;
 				if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 					if (regSymbol->m_register.isPointer()) {
 						//handle later anyway
@@ -79,12 +84,19 @@ namespace CE::Decompiler::Symbolization
 						//if reading presence
 						if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaNode->getParentNode())) {
 							size = readValueNode->getSize();
+							if (!isOneOfTerm) {
+								if (auto sdaNode = dynamic_cast<SdaNode*>(readValueNode->getParentNode())) {
+									sdaNodeToReplace = sdaNode;
+									isGettingAddr = false;
+								}
+							}
 						}
 						//transform to global offset
 						if (regSymbol->m_register.getGenericId() == ZYDIS_REGISTER_RIP) {
 							offset = toGlobalOffset(offset);
 							transformToLocalOffset = true;
 						}
+						isStackOrGlobal = true;
 					}
 				}
 				if (size == 0x0) {
@@ -93,10 +105,16 @@ namespace CE::Decompiler::Symbolization
 
 				//find symbol or create it
 				auto sdaSymbol = findOrCreateSymbol(symbol, size, offset);
-				//replace all symbol leafs
-				for (auto symbolLeaf : symbolLeafsToReplace) {
-					symbolLeaf->replaceWith(new SdaSymbolLeaf(sdaSymbol));
-					delete symbolLeaf;
+				if (isStackOrGlobal) {
+					sdaNodeToReplace->replaceWith(new SdaSymbolLeaf(sdaSymbol, isGettingAddr));
+					delete sdaNodeToReplace;
+				}
+				else {
+					//replace all symbol leafs
+					for (auto symbolLeaf : symbol->m_symbolLeafs) {
+						symbolLeaf->replaceWith(new SdaSymbolLeaf(sdaSymbol, false));
+						delete symbolLeaf;
+					}
 				}
 
 				//change offset
@@ -208,7 +226,12 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			if (auto symbolWithId = dynamic_cast<Symbol::SymbolWithId*>(symbol)) {
-				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "localVar" + std::to_string(symbolWithId->getId()), 0, size, instrOffsets);
+				std::string suffix = "l";
+				if (dynamic_cast<Symbol::MemoryVariable*>(symbol))
+					suffix = "mL";
+				else if (dynamic_cast<Symbol::FunctionResultVar*>(symbol))
+					suffix = "fL";
+				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, suffix + "ocalVar" + std::to_string(symbolWithId->getId()), 0, size, instrOffsets);
 				storeSdaSymbol(sdaSymbol, symbol, offset);
 				return sdaSymbol;
 			}
@@ -226,6 +249,7 @@ namespace CE::Decompiler::Symbolization
 			}
 			auto sdaSymbol = createAutoSdaSymbol(type, name + "_0x" + Generic::String::NumberToHex((uint32_t)-offset), offset, size);
 			storeSdaSymbol(sdaSymbol, symbol, offset);
+			offset = (type == CE::Symbol::GLOBAL_VAR ? toGlobalOffset(0x0) : 0x0);
 			return sdaSymbol;
 		}
 

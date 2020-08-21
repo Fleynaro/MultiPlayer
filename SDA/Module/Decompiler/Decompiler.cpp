@@ -4,10 +4,9 @@ using namespace CE::Decompiler;
 
 void Decompiler::buildDecompiledGraph() {
 	for (auto& it : m_decompiledBlocks) {
-		m_decompiledGraph->getDecompiledBlocks().push_back(it.second.m_decBlock);
+		auto& info = it.second;
+		m_decompiledGraph->getDecompiledBlocks().push_back(info.m_decBlock);
+		m_decompiledGraph->getAsmGraphBlocks()[info.m_decBlock] = info.m_asmBlock;
 	}
-
-	m_decompiledGraph->getDecompiledBlocks().sort([](PrimaryTree::Block* a, PrimaryTree::Block* b) {
-		return a->m_level < b->m_level;
-		});
+	m_decompiledGraph->sortBlocksByLevel();
 }

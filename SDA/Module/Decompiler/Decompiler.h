@@ -1,5 +1,4 @@
 #pragma once
-#include "DecAsmGraph.h"
 #include "DecInstructionInterpreter.h"
 #include "DecCodeGraph.h"
 
@@ -22,8 +21,8 @@ namespace CE::Decompiler
 		DecompiledCodeGraph* m_decompiledGraph;
 		std::function<ExprTree::FunctionCallInfo(int, ExprTree::Node*)> m_funcCallInfoCallback;
 
-		Decompiler(AsmGraph* graph, DecompiledCodeGraph* decompiledGraph)
-			: m_asmGraph(graph), m_decompiledGraph(decompiledGraph)
+		Decompiler(DecompiledCodeGraph* decompiledGraph)
+			: m_decompiledGraph(decompiledGraph)
 		{
 			m_instructionInterpreter = new PCode::InstructionInterpreter;
 			m_funcCallInfoCallback = [](int offset, ExprTree::Node* dst) {
@@ -48,26 +47,17 @@ namespace CE::Decompiler
 			std::multiset<PrimaryTree::Block*> visitedBlocks;
 			resolveExternalSymbols(startBlock, visitedBlocks);
 			createSymbolAssignments();
+			m_decompiledGraph->generateSymbolIds();
 		}
 
 		void buildDecompiledGraph();
-
-		std::map<PrimaryTree::Block*, AsmGraphBlock*> getAsmBlocks() {
-			std::map<PrimaryTree::Block*, AsmGraphBlock*> result;
-			for (auto& it : m_decompiledBlocks) {
-				result[it.second.m_decBlock] = it.second.m_asmBlock;
-			}
-			return result;
-		}
 	private:
-		AsmGraph* m_asmGraph;
 		PCode::InstructionInterpreter* m_instructionInterpreter;
-
 		std::map<AsmGraphBlock*, PrimaryTree::Block*> m_asmToDecBlocks;
 		std::map<PrimaryTree::Block*, DecompiledBlockInfo> m_decompiledBlocks;
 		
 		void decompileAllBlocks() {
-			for (auto& it : m_asmGraph->m_blocks) {
+			for (auto& it : m_decompiledGraph->getAsmGraph()->m_blocks) {
 				auto asmBlock = &it.second;
 				DecompiledBlockInfo decompiledBlock;
 				decompiledBlock.m_asmBlock = asmBlock;

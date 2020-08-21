@@ -22,6 +22,7 @@ namespace CE::Decompiler::ExprTree
 		Node* m_destination;
 		std::list<std::pair<PCode::Register, Node*>> m_registerParams;
 		PCode::Instruction* m_instr;
+		Symbol::FunctionResultVar* m_functionResultVar = nullptr;
 		
 		FunctionCallContext(int destOffset, Node* destination, PCode::Instruction* instr)
 			: m_destOffset(destOffset), m_destination(destination), m_instr(instr)
@@ -73,10 +74,14 @@ namespace CE::Decompiler::ExprTree
 			return false;
 		}
 
-		Node* clone() override {
-			auto funcCallCtx = new FunctionCallContext(m_destOffset, m_destination->clone(), m_instr);
+		Node* clone(NodeCloneContext* ctx) override {
+			auto funcVar = m_functionResultVar ? dynamic_cast<Symbol::FunctionResultVar*>(m_functionResultVar->clone(ctx)) : nullptr;
+			auto funcCallCtx = new FunctionCallContext(m_destOffset, m_destination->clone(ctx), m_instr);
+			funcCallCtx->m_functionResultVar = funcVar;
+			if(funcVar)
+				funcVar->m_funcCallContext = funcCallCtx;
 			for (auto it : m_registerParams) {
-				funcCallCtx->addRegisterParam(it.first, it.second->clone());
+				funcCallCtx->addRegisterParam(it.first, it.second->clone(ctx));
 			}
 			return funcCallCtx;
 		}

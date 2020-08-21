@@ -43,19 +43,6 @@ namespace CE::Decompiler::Optimization
 		return removedBlock;
 	}
 
-	//todo: сделать клонирование графа, а не изменение его как сейчас
-	static void CloneExprInDecompiledGraph(DecompiledCodeGraph* decGraph) {
-		//clone expressions
-		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
-			for (auto topNode : decBlock->getAllTopNodes()) {
-				auto newNode = topNode->getNode()->clone();
-				newNode->addParentNode(topNode);
-				topNode->clear();
-				topNode->setNode(newNode);
-			}
-		}
-	}
-
 	static void OptimizeExprInDecompiledGraph(DecompiledCodeGraph* decGraph) {
 		//optimize expressions
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
@@ -75,6 +62,7 @@ namespace CE::Decompiler::Optimization
 
 	static void FindRelatedInstructionsForLocalVars(DecompiledCodeGraph* decGraph) {
 		for (auto symbol : decGraph->getSymbols()) {
+			//find related instructions for local vars
 			if (auto localVarSymbol = dynamic_cast<Symbol::LocalVariable*>(symbol)) {
 				for (auto symbolLeaf : localVarSymbol->m_symbolLeafs) {
 					if (auto assignmentNode = dynamic_cast<ExprTree::AssignmentNode*>(symbolLeaf->getParentNode())) {
@@ -424,8 +412,6 @@ namespace CE::Decompiler::Optimization
 
 	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph)
 	{
-		CloneExprInDecompiledGraph(decGraph);
-
 		//join conditions and remove useless blocks
 		for (auto it = decGraph->getDecompiledBlocks().rbegin(); it != decGraph->getDecompiledBlocks().rend(); it++) {
 			auto block = *it;

@@ -1,4 +1,5 @@
 #pragma once
+#include "DecAsmGraph.h"
 #include "PrimaryTree/PrimaryTreeBlock.h"
 
 namespace CE::Decompiler
@@ -6,9 +7,17 @@ namespace CE::Decompiler
 	class DecompiledCodeGraph
 	{
 	public:
-		DecompiledCodeGraph(ExprTree::FunctionCallInfo functionCallInfo = ExprTree::GetFunctionCallDefaultInfo())
-			: m_functionCallInfo(functionCallInfo)
+		DecompiledCodeGraph(AsmGraph* asmGraph, ExprTree::FunctionCallInfo functionCallInfo = ExprTree::GetFunctionCallDefaultInfo())
+			: m_asmGraph(asmGraph), m_functionCallInfo(functionCallInfo)
 		{}
+
+		AsmGraph* getAsmGraph() {
+			return m_asmGraph;
+		}
+
+		std::map<PrimaryTree::Block*, AsmGraphBlock*>& getAsmGraphBlocks() {
+			return m_asmGraphBlocks;
+		}
 
 		PrimaryTree::Block* getStartBlock() {
 			return *getDecompiledBlocks().begin();
@@ -41,6 +50,28 @@ namespace CE::Decompiler
 			m_symbols.remove(symbol);
 		}
 
+		DecompiledCodeGraph* clone() {
+			PrimaryTree::BlockCloneContext ctx;
+			ctx.m_graph = new DecompiledCodeGraph(m_asmGraph, m_functionCallInfo);
+			ctx.m_nodeCloneContext.m_cloneSymbols = true;
+			getStartBlock()->clone(&ctx);
+			for (auto pair : ctx.m_clonedBlocks) {
+				auto origBlock = pair.first;
+				auto clonedBlock = pair.second;
+				ctx.m_graph->m_decompiledBlocks.push_back(clonedBlock);
+				ctx.m_graph->m_asmGraphBlocks[clonedBlock] = m_asmGraphBlocks[origBlock];
+			}
+			for (auto block : m_removedDecompiledBlocks) {
+				ctx.m_graph->m_removedDecompiledBlocks.push_back(block->clone(&ctx));
+			}
+			for (auto pair : ctx.m_nodeCloneContext.m_clonedSymbols) {
+				auto clonedSymbol = pair.second;
+				ctx.m_graph->m_symbols.push_back(clonedSymbol);
+			}
+			ctx.m_graph->sortBlocksByLevel();
+			return ctx.m_graph;
+		}
+
 		void generateSymbolIds() {
 			int memVar_id = 1;
 			int localVar_id = 1;
@@ -54,6 +85,12 @@ namespace CE::Decompiler
 					var->setId(funcVar_id++);
 				}
 			}
+		}
+
+		void sortBlocksByLevel() {
+			m_decompiledBlocks.sort([](PrimaryTree::Block* a, PrimaryTree::Block* b) {
+				return a->m_level < b->m_level;
+				});
 		}
 
 		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
@@ -86,6 +123,8 @@ namespace CE::Decompiler
 			return block->m_maxHeight;
 		}
 	private:
+		AsmGraph* m_asmGraph;
+		std::map<PrimaryTree::Block*, AsmGraphBlock*> m_asmGraphBlocks;
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
 		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
 		ExprTree::FunctionCallInfo m_functionCallInfo;

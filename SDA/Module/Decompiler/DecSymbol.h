@@ -6,6 +6,7 @@
 namespace CE::Decompiler {
 	class DecompiledCodeGraph;
 	namespace ExprTree {
+		struct NodeCloneContext;
 		class ReadValueNode;
 		class FunctionCallContext;
 		class SymbolLeaf;
@@ -53,7 +54,12 @@ namespace CE::Decompiler::Symbol
 			m_decGraph = decGraph;
 		}
 
+		Symbol* clone(ExprTree::NodeCloneContext* ctx);
+
 		virtual std::string printDebug() = 0;
+
+	protected:
+		virtual Symbol* cloneSymbol() = 0;
 
 	private:
 		DecompiledCodeGraph* m_decGraph;
@@ -80,7 +86,7 @@ namespace CE::Decompiler::Symbol
 	class MemoryVariable : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
 	{
 	public:
-		ExprTree::ReadValueNode* m_loadValueExpr;
+		ExprTree::ReadValueNode* m_loadValueExpr = nullptr;
 		
 		MemoryVariable(ExprTree::ReadValueNode* loadValueExpr, int size)
 			: m_loadValueExpr(loadValueExpr), Variable(size)
@@ -90,6 +96,11 @@ namespace CE::Decompiler::Symbol
 
 		std::string printDebug() override {
 			return "[mem_" + Generic::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
+		}
+
+	protected:
+		Symbol* cloneSymbol() override {
+			return new MemoryVariable(m_loadValueExpr, getSize());
 		}
 	};
 
@@ -108,6 +119,13 @@ namespace CE::Decompiler::Symbol
 
 		std::string printDebug() override {
 			return "[var_" + Generic::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
+		}
+
+	protected:
+		Symbol* cloneSymbol() override {
+			auto localVar = new LocalVariable(getMask());
+			localVar->m_instructionsRelatedTo = m_instructionsRelatedTo;
+			return localVar;
 		}
 	};
 
@@ -130,12 +148,17 @@ namespace CE::Decompiler::Symbol
 		std::string printDebug() override {
 			return "[reg_" + m_register.printDebug() + "]";
 		}
+
+	protected:
+		Symbol* cloneSymbol() override {
+			return new RegisterVariable(m_register);
+		}
 	};
 
 	class FunctionResultVar : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
 	{
 	public:
-		ExprTree::FunctionCallContext* m_funcCallContext;
+		ExprTree::FunctionCallContext* m_funcCallContext = nullptr;
 
 		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext, ExtBitMask mask)
 			: m_funcCallContext(funcCallContext), Variable(mask)
@@ -144,5 +167,10 @@ namespace CE::Decompiler::Symbol
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;
 
 		std::string printDebug() override;
+
+	protected:
+		Symbol* cloneSymbol() override {
+			return new FunctionResultVar(m_funcCallContext, getMask());
+		}
 	};
 };
