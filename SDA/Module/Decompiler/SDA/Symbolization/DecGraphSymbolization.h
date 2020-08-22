@@ -226,12 +226,12 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			if (auto symbolWithId = dynamic_cast<Symbol::SymbolWithId*>(symbol)) {
-				std::string suffix = "l";
+				std::string suffix = "local";
 				if (dynamic_cast<Symbol::MemoryVariable*>(symbol))
-					suffix = "mL";
+					suffix = "mem";
 				else if (dynamic_cast<Symbol::FunctionResultVar*>(symbol))
-					suffix = "fL";
-				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, suffix + "ocalVar" + std::to_string(symbolWithId->getId()), 0, size, instrOffsets);
+					suffix = "func";
+				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, suffix + "Var" + std::to_string(symbolWithId->getId()), 0, size, instrOffsets);
 				storeSdaSymbol(sdaSymbol, symbol, offset);
 				return sdaSymbol;
 			}
