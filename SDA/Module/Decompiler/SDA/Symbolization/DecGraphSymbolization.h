@@ -1,7 +1,5 @@
 #pragma once
-#include "../AutoSdaSymbol.h"
-#include "../ExprTree/ExprTreeSda.h"
-#include "../../ExprTree/ExprTree.h"
+#include "../SdaCodeGraph.h"
 #include "../../Optimization/DecGraphOptimization.h"
 #include <Code/Symbol/MemoryArea/MemoryArea.h>
 #include <Code/Type/FunctionSignature.h>
@@ -29,9 +27,23 @@ namespace CE::Decompiler::Symbolization
 	class SdaSymbolBuilding
 	{
 	public:
-		SdaSymbolBuilding(UserSymbolDef* userSymbolDef)
-			: m_userSymbolDef(userSymbolDef)
+		SdaSymbolBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef)
+			: m_sdaCodeGraph(sdaCodeGraph), m_userSymbolDef(userSymbolDef)
 		{}
+
+		void start() {
+			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
+				for (auto topNode : decBlock->getAllTopNodes()) {
+					buildSdaSymbols(topNode->getNode());
+				}
+			}
+		}
+	private:
+		UserSymbolDef* m_userSymbolDef;
+		std::map<Symbol::Symbol*, CE::Symbol::AbstractSymbol*> m_symbolsToSymbols;
+		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
+		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
+		SdaCodeGraph* m_sdaCodeGraph;
 
 		void buildSdaSymbols(Node* node) {
 			IterateChildNodes(node, [&](Node* childNode) {
@@ -125,12 +137,6 @@ namespace CE::Decompiler::Symbolization
 				}
 			}
 		}
-
-	private:
-		UserSymbolDef* m_userSymbolDef;
-		std::map<Symbol::Symbol*, CE::Symbol::AbstractSymbol*> m_symbolsToSymbols;
-		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
-		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
 
 		CE::Symbol::AbstractSymbol* findOrCreateSymbol(Symbol::Symbol* symbol, int size, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
@@ -259,6 +265,7 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		void storeSdaSymbol(CE::Symbol::AbstractSymbol* sdaSymbol, Symbol::Symbol* symbol, int64_t offset) {
+			m_sdaCodeGraph->getSdaSymbols().push_back(sdaSymbol);
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
 				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
@@ -344,15 +351,14 @@ namespace CE::Decompiler::Symbolization
 		}
 	}*/
 
-	static void SymbolizeWithSDA(DecompiledCodeGraph* decGraph, UserSymbolDef& userSymbolDef) {
-		SdaSymbolBuilding sdaSymbolBuilding(&userSymbolDef);
-
-		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
+	static void SymbolizeWithSDA(SdaCodeGraph* sdaCodeGraph, UserSymbolDef& userSymbolDef) {
+		for (const auto decBlock : sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 			for (auto topNode : decBlock->getAllTopNodes()) {
 				BuildSdaNodes(topNode->getNode());
-				sdaSymbolBuilding.buildSdaSymbols(topNode->getNode());
-				//CalculateTypesAndBuildGoarForExpr(sdaTopNode, ctx);
 			}
 		}
+		
+		SdaSymbolBuilding sdaSymbolBuilding(sdaCodeGraph, &userSymbolDef);
+		sdaSymbolBuilding.start();
 	}
 };

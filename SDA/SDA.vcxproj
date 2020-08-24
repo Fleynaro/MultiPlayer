@@ -362,6 +362,11 @@
     <ClInclude Include="Module\Decompiler\PrimaryTree\PrimaryTreeBlock.h" />
     <ClInclude Include="Module\Decompiler\SDA\AutoSdaSymbol.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSda.h" />
+    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaFunction.h" />
+    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaGoar.h" />
+    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaNode.h" />
+    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaSymbolLeaf.h" />
+    <ClInclude Include="Module\Decompiler\SDA\SdaCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />
     <ClInclude Include="Module\Disassembler\DisasmDecoder.h" />

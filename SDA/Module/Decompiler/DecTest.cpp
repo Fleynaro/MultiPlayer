@@ -212,9 +212,10 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 		auto it = userSymbolDefs.find(sample.first);
 		if (it != userSymbolDefs.end()) {
 			printf("\n\n\n********************* AFTER SYMBOLIZATION: *********************\n\n");
+			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 			auto userSymbolDef = it->second;
-			Symbolization::SymbolizeWithSDA(clonedDecCodeGraph, userSymbolDef);
-			converter = LinearView::Converter(clonedDecCodeGraph);
+			Symbolization::SymbolizeWithSDA(sdaCodeGraph, userSymbolDef);
+			converter = LinearView::Converter(sdaCodeGraph->getDecGraph());
 			converter.start();
 			blockList = converter.getBlockList();
 			OptimizeBlockList(blockList);
@@ -223,7 +224,12 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 			g_SHOW_PCODE = false;
 			g_SHOW_ALL_GOTO = false;
 			g_SHOW_LINEAR_LEVEL_EXT = false;
-			ShowCode(blockList, clonedDecCodeGraph->getAsmGraphBlocks());
+			sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::AbstractSymbol* a, CE::Symbol::AbstractSymbol* b) { return a->getDataType()->getPriority() < b->getDataType()->getPriority(); });
+			for (auto var : sdaCodeGraph->getSdaSymbols()) {
+				printf("%s %s\n", var->getDataType()->getDisplayName().c_str(), var->getName().c_str());
+			}
+			printf("\n");
+			ShowCode(blockList, sdaCodeGraph->getDecGraph()->getAsmGraphBlocks());
 		}
 		printf("\n\n\n\n\n");
 	}
