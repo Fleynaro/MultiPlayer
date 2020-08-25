@@ -109,7 +109,7 @@ namespace CE::Decompiler::Optimization
 
 	static bool AreSeqLinesInterconnected(Block::SeqLine* line1, Block::SeqLine* line2) {
 		//case 1: function call
-		if (dynamic_cast<FunctionCallContext*>(line1->getSrcNode()) || dynamic_cast<FunctionCallContext*>(line2->getSrcNode())) {
+		if (dynamic_cast<FunctionCall*>(line1->getSrcNode()) || dynamic_cast<FunctionCall*>(line2->getSrcNode())) {
 			return true;
 		}
 		
@@ -288,7 +288,7 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	static bool HasUndefinedRegister(Node* node, ExprTree::FunctionCallInfo& funcCallInfo) {
+	static bool HasUndefinedRegister(Node* node, FunctionCallInfo& funcCallInfo) {
 		bool result = false;
 		IterateChildNodes(node, [&](Node* childNode) {
 			if(!result)
@@ -299,13 +299,14 @@ namespace CE::Decompiler::Optimization
 
 		if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
 			if (auto regVar = dynamic_cast<Symbol::RegisterVariable*>(symbolLeaf->m_symbol)) {
+				if (regVar->m_register.isPointer())
+					return false;
+
 				bool isFound = false;
-				for (auto list : { funcCallInfo.m_paramRegisters, funcCallInfo.m_knownRegisters }) {
-					for (auto paramReg : list) {
-						if (regVar->m_register.getGenericId() == paramReg.getGenericId()) {
-							isFound = true;
-							break;
-						}
+				for (auto paramInfo : funcCallInfo.getParamInfos()) {
+					if (regVar->m_register.getGenericId() == paramInfo.m_storage.getRegisterId()) {
+						isFound = true;
+						break;
 					}
 				}
 				if (!isFound) {

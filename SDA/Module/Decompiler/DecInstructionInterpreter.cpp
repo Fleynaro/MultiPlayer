@@ -327,39 +327,70 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		}
 
 		auto funcCallInfo = m_ctx->m_decompiler->m_funcCallInfoCallback(dstLocOffset, dstLocExpr);
-		auto funcCallCtx = new ExprTree::FunctionCallContext(dstLocOffset, dstLocExpr, m_instr);
+		auto funcCallCtx = new ExprTree::FunctionCall(dstLocExpr, m_instr);
 
-		for (auto paramReg : funcCallInfo.m_paramRegisters) {
-			auto reg = m_ctx->requestRegisterExpr(paramReg);
-			funcCallCtx->addRegisterParam(paramReg, reg);
+		for (int paramIdx = 1; paramIdx <= 100; paramIdx++) {
+			bool isFound = false;
+			for (auto paramInfo : funcCallInfo.getParamInfos()) {
+				if (paramIdx == paramInfo.m_storage.getIndex()) {
+					auto node = buildParameterInfoExpr(paramInfo);
+					funcCallCtx->addParamNode(node);
+					isFound = true;
+					break;
+				}
+			}
+			if (!isFound)
+				break;
 		}
 
-		ExprTree::Node* dstExpr = nullptr;
-		auto& dstRegister = funcCallInfo.m_resultRegister.getGenericId() != 0 ? funcCallInfo.m_resultRegister : funcCallInfo.m_resultVectorRegister;
+		PCode::Register dstRegister;
+		for (auto paramInfo : funcCallInfo.getParamInfos()) {
+			if (paramInfo.m_storage.getIndex() == 0) {
+				dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(paramInfo.m_storage.getRegisterId(), paramInfo.m_size, paramInfo.m_storage.getOffset());
+				break;
+			}
+		}
+
+		auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.m_valueRangeMask);
+		funcCallCtx->m_functionResultVar = funcResultVar;
+		m_block->m_decompiledGraph->addSymbol(funcResultVar);
+		auto symbolLeaf = new ExprTree::SymbolLeaf(funcResultVar);
+		m_block->addSeqLine(symbolLeaf, funcCallCtx);
 		if (dstRegister.getGenericId() != 0) {
-			auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.m_valueRangeMask);
-			funcCallCtx->m_functionResultVar = funcResultVar;
-			m_block->m_decompiledGraph->addSymbol(funcResultVar);
-			dstExpr = new ExprTree::SymbolLeaf(funcResultVar);
-			m_ctx->setVarnode(dstRegister, dstExpr);
+			m_ctx->setVarnode(dstRegister, symbolLeaf);
 		}
-
-		if (dstExpr == nullptr) {
-			dstExpr = new ExprTree::NumberLeaf((uint64_t)0x0);
-		}
-		m_block->addSeqLine(dstExpr, funcCallCtx);
 		break;
 	}
 
 	case InstructionId::RETURN:
 	{
 		if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(m_block)) {
-			auto& resultReg = m_ctx->m_decompiler->m_decompiledGraph->getFunctionCallInfo().m_resultRegister;
-			endBlock->setReturnNode(m_ctx->requestRegisterExpr(resultReg));
+			PCode::Register dstRegister;
+			for (auto paramInfo : m_ctx->m_decompiler->m_decompiledGraph->getFunctionCallInfo().getParamInfos()) {
+				if (paramInfo.m_storage.getIndex() == 0) {
+					dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(paramInfo.m_storage.getRegisterId(), paramInfo.m_size, paramInfo.m_storage.getOffset());
+					break;
+				}
+			}
+
+			endBlock->setReturnNode(m_ctx->requestRegisterExpr(dstRegister));
 		}
 		break;
 	}
 	}
+}
+
+ExprTree::Node* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& paramInfo) {
+	auto& storage = paramInfo.m_storage;
+	if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
+		auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), 0x8);
+		auto regSymbol = m_ctx->requestRegisterExpr(reg);
+		return new ExprTree::ReadValueNode(new ExprTree::OperationalNode(regSymbol, new ExprTree::NumberLeaf((uint64_t)storage.getOffset()), ExprTree::Add), paramInfo.m_size);
+	}
+
+	auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), paramInfo.m_size, storage.getOffset());
+	auto regSymbol = m_ctx->requestRegisterExpr(reg);
+	return regSymbol;
 }
 
 ExprTree::Node* InstructionInterpreter::requestVarnode(PCode::Varnode* varnode) {

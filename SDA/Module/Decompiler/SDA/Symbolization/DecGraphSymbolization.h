@@ -24,11 +24,28 @@ namespace CE::Decompiler::Symbolization
 		{}
 	};
 
+	class DataTypeFactory
+	{
+	public:
+		DataTypeFactory(UserSymbolDef* userSymbolDef)
+			: m_userSymbolDef(userSymbolDef)
+		{}
+
+		DataTypePtr getDefaultType(int size) {
+			std::string sizeStr = "64";
+			if (size != 0)
+				sizeStr = std::to_string(size * 0x8);
+			return DataType::GetUnit(m_userSymbolDef->m_programModule->getTypeManager()->getTypeByName("uint" + sizeStr + "_t"));
+		}
+	private:
+		UserSymbolDef* m_userSymbolDef;
+	};
+
 	class SdaSymbolBuilding
 	{
 	public:
-		SdaSymbolBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef)
-			: m_sdaCodeGraph(sdaCodeGraph), m_userSymbolDef(userSymbolDef)
+		SdaSymbolBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory)
+			: m_sdaCodeGraph(sdaCodeGraph), m_userSymbolDef(userSymbolDef), m_dataTypeFactory(dataTypeFactory)
 		{}
 
 		void start() {
@@ -39,11 +56,12 @@ namespace CE::Decompiler::Symbolization
 			}
 		}
 	private:
+		SdaCodeGraph* m_sdaCodeGraph;
 		UserSymbolDef* m_userSymbolDef;
+		DataTypeFactory* m_dataTypeFactory;
 		std::map<Symbol::Symbol*, CE::Symbol::AbstractSymbol*> m_symbolsToSymbols;
 		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
 		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
-		SdaCodeGraph* m_sdaCodeGraph;
 
 		void buildSdaSymbols(Node* node) {
 			IterateChildNodes(node, [&](Node* childNode) {
@@ -159,40 +177,19 @@ namespace CE::Decompiler::Symbolization
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				int paramIdx = 0;
 				auto& reg = regSymbol->m_register;
-				auto signature = m_userSymbolDef->m_signature;
-				if (signature->getCallingConvetion() == Signature::FASTCALL) {
-					if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
-						if (offset >= 0x8 && offset % 0x8 == 0) {
-							paramIdx = 4 + (int)offset / 0x8;
-						}
-					}
-					else {
-						static std::map<PCode::RegisterId, int> regToParams = {
-							std::pair(ZYDIS_REGISTER_RCX, 1),
-							std::pair(ZYDIS_REGISTER_RDX, 2),
-							std::pair(ZYDIS_REGISTER_R8, 3),
-							std::pair(ZYDIS_REGISTER_R9, 4)
-						};
-						auto it = regToParams.find(reg.getGenericId());
-						if (it != regToParams.end()) {
-							paramIdx = it->second;
-						}
-					}
-				}
-
-				if (paramIdx == 0) {
-					for (auto storage : signature->getCustomStorages()) {
-						if (storage->getType() == Storage::STORAGE_REGISTER && reg.getGenericId() == storage->getRegisterId() || (offset == storage->getOffset() &&
-								(storage->getType() == Storage::STORAGE_STACK && reg.getGenericId() == ZYDIS_REGISTER_RSP ||
-									storage->getType() == Storage::STORAGE_GLOBAL && reg.getGenericId() == ZYDIS_REGISTER_RIP)) ) {
-							paramIdx = storage->getIndex();
-							break;
-						}
+				auto paramInfos = m_sdaCodeGraph->getDecGraph()->getFunctionCallInfo().getParamInfos();
+				for (auto paramInfo : paramInfos) {
+					auto& storage = paramInfo.m_storage;
+					if (storage.getType() == Storage::STORAGE_REGISTER && reg.getGenericId() == storage.getRegisterId() || (offset == storage.getOffset() &&
+							(storage.getType() == Storage::STORAGE_STACK && reg.getGenericId() == ZYDIS_REGISTER_RSP ||
+								storage.getType() == Storage::STORAGE_GLOBAL && reg.getGenericId() == ZYDIS_REGISTER_RIP)) ) {
+						paramIdx = storage.getIndex();
+						break;
 					}
 				}
 
 				if (paramIdx != 0) {
-					auto& funcParams = signature->getParameters();
+					auto& funcParams = m_userSymbolDef->m_signature->getParameters();
 					if (paramIdx <= funcParams.size()) {
 						auto sdaSymbol = funcParams[paramIdx - 1];
 						storeSdaSymbol(sdaSymbol, symbol, offset);
@@ -260,7 +257,7 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		CE::Symbol::AutoSdaSymbol* createAutoSdaSymbol(CE::Symbol::Type type, const std::string& name, int64_t value, int size, std::list<int64_t> instrOffsets = {}) {
-			auto dataType = getDefaultType(size);
+			auto dataType = m_dataTypeFactory->getDefaultType(size);
 			return new CE::Symbol::AutoSdaSymbol(type, value, instrOffsets, m_userSymbolDef->m_programModule->getSymbolManager(), dataType, name);
 		}
 
@@ -280,19 +277,85 @@ namespace CE::Decompiler::Symbolization
 			m_symbolsToSymbols[symbol] = sdaSymbol;
 		}
 
-		DataTypePtr getDefaultType(int size) {
-			std::string sizeStr = "64";
-			if (size != 0)
-				sizeStr = std::to_string(size * 0x8);
-			return DataType::GetUnit(m_userSymbolDef->m_programModule->getTypeManager()->getTypeByName("uint" + sizeStr + "_t"));
-		}
-
 		int64_t toGlobalOffset(int64_t offset) {
 			return m_userSymbolDef->m_offset + offset;
 		}
 
 		int64_t toLocalOffset(int64_t offset) {
 			return offset - m_userSymbolDef->m_offset;
+		}
+	};
+
+	class SdaDataTypesCalculating
+	{
+	public:
+		SdaDataTypesCalculating(SdaCodeGraph* sdaCodeGraph, DataTypeFactory* dataTypeFactory)
+			: m_sdaCodeGraph(sdaCodeGraph), m_dataTypeFactory(dataTypeFactory)
+		{}
+
+		void start() {
+			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
+				for (auto topNode : decBlock->getAllTopNodes()) {
+					calculateDataTypes(topNode->getNode());
+				}
+			}
+		}
+	private:
+		SdaCodeGraph* m_sdaCodeGraph;
+		DataTypeFactory* m_dataTypeFactory;
+		
+		void calculateDataTypes(Node* node) {
+			IterateChildNodes(node, [&](Node* childNode) {
+				calculateDataTypes(childNode);
+				});
+
+			if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
+				auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode->m_node);
+				auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node);
+
+				if (sdaSymbolLeaf || linearExpr) {
+
+				}
+				else if (auto opNode = dynamic_cast<OperationalNode*>(sdaNode->m_node)) {
+					if (auto sdaLeftNode = dynamic_cast<AbstractSdaNode*>(opNode->m_leftNode)) {
+						if (auto sdaRightNode = dynamic_cast<AbstractSdaNode*>(opNode->m_rightNode)) {
+							sdaNode->m_calcDataType = CalculateDataType(sdaLeftNode->getDataType(), sdaRightNode->getDataType());
+						}
+					}
+				}
+				else if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaNode->m_node)) {
+					if (auto dstNode = dynamic_cast<AbstractSdaNode*>(assignmentNode->getDstNode())) {
+						sdaNode->m_calcDataType = dstNode->getDataType();
+					}
+				}
+				else if (auto funcCallCtx = dynamic_cast<FunctionCall*>(sdaNode->m_node)) {
+					if (auto dstNode = dynamic_cast<AbstractSdaNode*>(funcCallCtx->m_destination)) {
+						if (auto signature = dynamic_cast<DataType::Signature*>(dstNode->getDataType()->getType())) {
+							auto functionNode = new SdaFunctionNode(funcCallCtx, dstNode);
+
+						}
+					}
+				}
+
+				if (sdaNode->m_calcDataType == nullptr) {
+					sdaNode->m_calcDataType = m_dataTypeFactory->getDefaultType(sdaNode->m_node->getMask().getSize());
+				}
+				sdaNode->m_explicitCast = false;
+			}
+		}
+
+		static DataTypePtr CalculateDataType(DataTypePtr type1, DataTypePtr type2) {
+			if (type1->isPointer())
+				return type1;
+			if (type2->isPointer())
+				return type2;
+			if (type1->getSize() > type2->getSize())
+				return type1;
+			if (type1->getSize() < type2->getSize())
+				return type2;
+			if (type1->isSigned())
+				return type2;
+			return type1;
 		}
 	};
 
@@ -307,58 +370,19 @@ namespace CE::Decompiler::Symbolization
 		node->addParentNode(sdaNode);
 	}
 
-	static DataTypePtr CalculateDataType(DataTypePtr type1, DataTypePtr type2) {
-		if (type1->isPointer())
-			return type1;
-		if (type2->isPointer())
-			return type2;
-		if (type1->getSize() > type2->getSize())
-			return type1;
-		if (type1->getSize() < type2->getSize())
-			return type2;
-		if (type1->isSigned())
-			return type2;
-		return type1;
-	}
-
-	/*static void CalculateTypesAndBuildGoarForExpr(Node* node, CalcTypeContext& ctx) {
-		IterateChildNodes(node, [&](Node* childNode) {
-			CalculateTypesAndBuildGoarForExpr(childNode, ctx);
-			});
-
-		if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
-			auto symbolLeaf = dynamic_cast<SymbolLeaf*>(sdaNode->m_node);
-			auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node);
-			if (symbolLeaf || linearExpr) {
-
-			}
-
-			if (symbolLeaf) {
-				sdaNode->m_calcDataType = ctx.getSymbolType(symbolLeaf->m_symbol);
-			}
-			else if (auto opNode = dynamic_cast<OperationalNode*>(sdaNode->m_node)) {
-				if (auto sdaLeftNode = dynamic_cast<SdaNode*>(opNode->m_leftNode)) {
-					if (auto sdaRightNode = dynamic_cast<SdaNode*>(opNode->m_rightNode)) {
-						sdaNode->m_calcDataType = CalculateDataType(sdaLeftNode->getDataType(), sdaRightNode->getDataType());
-					}
-				}
-			}
-
-			if (sdaNode->m_calcDataType == nullptr) {
-				sdaNode->m_calcDataType = ctx.getDefaultType(sdaNode->m_node);
-			}
-			sdaNode->m_explicitCast = true;
-		}
-	}*/
-
 	static void SymbolizeWithSDA(SdaCodeGraph* sdaCodeGraph, UserSymbolDef& userSymbolDef) {
 		for (const auto decBlock : sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 			for (auto topNode : decBlock->getAllTopNodes()) {
 				BuildSdaNodes(topNode->getNode());
 			}
 		}
+
+		DataTypeFactory dataTypeFactory(&userSymbolDef);
 		
-		SdaSymbolBuilding sdaSymbolBuilding(sdaCodeGraph, &userSymbolDef);
+		SdaSymbolBuilding sdaSymbolBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 		sdaSymbolBuilding.start();
+
+		SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, &dataTypeFactory);
+		sdaDataTypesCalculating.start();
 	}
 };

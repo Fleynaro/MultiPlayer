@@ -1,5 +1,6 @@
 #pragma once
 #include "DecExecutionContext.h"
+#include "DecStorage.h"
 
 namespace CE::Decompiler::PCode
 {
@@ -7,6 +8,8 @@ namespace CE::Decompiler::PCode
 	{
 	public:
 		void execute(PrimaryTree::Block* block, ExecutionBlockContext* ctx, Instruction* instr);
+
+		ExprTree::Node* buildParameterInfoExpr(ParameterInfo& paramInfo);
 
 		ExprTree::Node* requestVarnode(PCode::Varnode* varnode);
 

@@ -2,7 +2,7 @@
 #include <Zycore/Format.h>
 #include <Zycore/LibC.h>
 #include <Zydis/Zydis.h>
-#include "DecPCode.h"
+#include "DecRegisterFactory.h"
 
 namespace CE::Decompiler::PCode
 {
@@ -11,8 +11,8 @@ namespace CE::Decompiler::PCode
 	public:
 		std::list<Instruction*> m_result;
 
-		TranslatorX86()
-
+		TranslatorX86(RegisterFactoryX86* registerFactoryX86)
+			: m_registerFactoryX86(registerFactoryX86)
 		{}
 
 		void start(void* addr, int size) {
@@ -42,6 +42,7 @@ namespace CE::Decompiler::PCode
 		}
 
 	private:
+		RegisterFactoryX86* m_registerFactoryX86;
 		ZydisDecodedInstruction* m_curInstr;
 		ZyanU64 m_curAddr = 0x0;
 		int m_curOffset = 0x0;
@@ -1499,60 +1500,14 @@ namespace CE::Decompiler::PCode
 			}
 			return result;
 		}
-		
-		static Register CreateRegister(ZydisRegister reg, int size, int offset = 0x0) {
-			auto mask = ExtBitMask(size, offset);
-			if(reg == ZYDIS_REGISTER_RIP)
-				return Register(reg, mask, Register::Type::InstructionPointer);
-			if (reg == ZYDIS_REGISTER_RSP)
-				return Register(reg, mask, Register::Type::StackPointer);
 
-			if (reg >= ZYDIS_REGISTER_AL && reg <= ZYDIS_REGISTER_BL) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AL, mask);
-			}
-			else if (reg >= ZYDIS_REGISTER_AH && reg <= ZYDIS_REGISTER_BH) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, mask);
-			}
-			else if (reg >= ZYDIS_REGISTER_SPL && reg <= ZYDIS_REGISTER_R15B) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AH, mask);
-			}
-			else if (reg >= ZYDIS_REGISTER_AX && reg <= ZYDIS_REGISTER_R15W) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_AX, mask);
-			}
-			else if (reg >= ZYDIS_REGISTER_EAX && reg <= ZYDIS_REGISTER_R15D) {
-				return Register(ZYDIS_REGISTER_RAX + reg - ZYDIS_REGISTER_EAX, mask);
-			}
-			else if (reg >= ZYDIS_REGISTER_RAX && reg <= ZYDIS_REGISTER_R15) {
-				return Register(reg, mask);
-			}
-			else if (reg >= ZYDIS_REGISTER_MM0 && reg <= ZYDIS_REGISTER_MM7) {
-				return Register(reg, mask, Register::Type::Vector);
-			}
-			else if (reg >= ZYDIS_REGISTER_XMM0 && reg <= ZYDIS_REGISTER_XMM31) {
-				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_XMM0, mask, Register::Type::Vector);
-			}
-			else if (reg >= ZYDIS_REGISTER_YMM0 && reg <= ZYDIS_REGISTER_YMM31) {
-				return Register(ZYDIS_REGISTER_ZMM0 + reg - ZYDIS_REGISTER_YMM0, mask, Register::Type::Vector);
-			}
-			else if (reg >= ZYDIS_REGISTER_ZMM0 && reg <= ZYDIS_REGISTER_ZMM31) {
-				return Register(reg, mask, Register::Type::Vector);
-			}
-
-			return Register();
-		}
-
-		static Register CreateFlagRegister(ZydisCPUFlag flag) {
-			BitMask64 mask = (uint64_t)1 << flag;
-			return Register(ZYDIS_REGISTER_RFLAGS, ExtBitMask(mask, uint8_t(0)), Register::Type::Flag);
-		}
-
-		static RegisterVarnode* CreateVarnode(ZydisRegister regId, int size, int offset = 0x0) {
-			auto reg = CreateRegister(regId, size, offset);
+		RegisterVarnode* CreateVarnode(ZydisRegister regId, int size, int offset = 0x0) {
+			auto reg = m_registerFactoryX86->createRegister(regId, size, offset);
 			return new RegisterVarnode(reg);
 		}
 
-		static RegisterVarnode* CreateVarnode(ZydisCPUFlag flag) {
-			return new RegisterVarnode(CreateFlagRegister(flag));
+		RegisterVarnode* CreateVarnode(ZydisCPUFlag flag) {
+			return new RegisterVarnode(m_registerFactoryX86->createFlagRegister(flag));
 		}
 	};
 };

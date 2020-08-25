@@ -1,45 +1,12 @@
 #pragma once
 #include "UserType.h"
 #include "../Symbol/FuncParameterSymbol.h"
+#include <Decompiler/DecStorage.h>
 
 namespace CE
 {
 	namespace DataType
 	{
-		class Storage {
-		public:
-			enum StorageType {
-				STORAGE_REGISTER,
-				STORAGE_STACK,
-				STORAGE_GLOBAL
-			};
-
-			Storage(int index, StorageType storageType, int registerId, int offset)
-				: m_index(index), m_storageType(storageType), m_registerId(registerId), m_offset(offset)
-			{}
-
-			int getIndex() {
-				return m_index;
-			}
-
-			StorageType getType() {
-				return m_storageType;
-			}
-
-			int getRegisterId() {
-				return m_registerId;
-			}
-
-			int getOffset() {
-				return m_offset;
-			}
-		private:
-			int m_index;
-			StorageType m_storageType;
-			int m_registerId;
-			int m_offset;
-		};
-
 		class Signature : public UserType
 		{
 		public:
@@ -57,7 +24,7 @@ namespace CE
 				return m_callingConvetion;
 			}
 
-			std::list<Storage*>& getCustomStorages() {
+			std::list<Decompiler::ParameterStorage>& getCustomStorages() {
 				return m_customStorages;
 			}
 
@@ -79,7 +46,7 @@ namespace CE
 
 		private:
 			CallingConvetion m_callingConvetion;
-			std::list<Storage*> m_customStorages;
+			std::list<Decompiler::ParameterStorage> m_customStorages;
 			std::vector<Symbol::FuncParameterSymbol*> m_parameters;
 			DataTypePtr m_returnType;
 		};

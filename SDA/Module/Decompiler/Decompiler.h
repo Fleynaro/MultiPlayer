@@ -1,6 +1,7 @@
 #pragma once
 #include "DecInstructionInterpreter.h"
 #include "DecCodeGraph.h"
+#include "DecRegisterFactory.h"
 
 namespace CE::Decompiler
 {
@@ -19,15 +20,12 @@ namespace CE::Decompiler
 		};
 	public:
 		DecompiledCodeGraph* m_decompiledGraph;
-		std::function<ExprTree::FunctionCallInfo(int, ExprTree::Node*)> m_funcCallInfoCallback;
+		std::function<FunctionCallInfo(int, ExprTree::Node*)> m_funcCallInfoCallback;
 
-		Decompiler(DecompiledCodeGraph* decompiledGraph)
-			: m_decompiledGraph(decompiledGraph)
+		Decompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, std::function<FunctionCallInfo(int, ExprTree::Node*)> funcCallInfoCallback)
+			: m_decompiledGraph(decompiledGraph), m_registerFactory(registerFactory), m_funcCallInfoCallback(funcCallInfoCallback)
 		{
 			m_instructionInterpreter = new PCode::InstructionInterpreter;
-			m_funcCallInfoCallback = [](int offset, ExprTree::Node* dst) {
-				return ExprTree::GetFunctionCallDefaultInfo();
-			};
 		}
 
 		~Decompiler() {
@@ -51,7 +49,12 @@ namespace CE::Decompiler
 		}
 
 		void buildDecompiledGraph();
+
+		AbstractRegisterFactory* getRegisterFactory() {
+			return m_registerFactory;
+		}
 	private:
+		AbstractRegisterFactory* m_registerFactory;
 		PCode::InstructionInterpreter* m_instructionInterpreter;
 		std::map<AsmGraphBlock*, PrimaryTree::Block*> m_asmToDecBlocks;
 		std::map<PrimaryTree::Block*, DecompiledBlockInfo> m_decompiledBlocks;

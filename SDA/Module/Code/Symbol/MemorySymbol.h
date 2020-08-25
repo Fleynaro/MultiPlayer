@@ -27,22 +27,6 @@ namespace CE::Symbol
 		MemoryArea* m_memoryArea = nullptr;
 	};
 
-	class FunctionSymbol : public MemorySymbol
-	{
-	public:
-		FunctionSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: MemorySymbol(manager, type, name, comment)
-		{}
-
-		Type getType() override {
-			return FUNCTION;
-		}
-
-		int getSize() override {
-			return 1;
-		}
-	};
-
 	class GlobalVarSymbol : public MemorySymbol
 	{
 	public:

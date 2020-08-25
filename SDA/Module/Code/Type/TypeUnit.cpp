@@ -18,6 +18,13 @@ bool Unit::isUserDefined() {
 	return m_type->isUserDefined();
 }
 
+bool Unit::isFloatingPoint() {
+	if (auto sysType = dynamic_cast<SystemType*>(getBaseType(true, false))) {
+		return sysType->getSet() == SystemType::Real;
+	}
+	return false;
+}
+
 int Unit::getPointerLvl() {
 	return (int)getPointerLevels().size();
 }

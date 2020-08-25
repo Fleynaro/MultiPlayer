@@ -8,7 +8,7 @@ namespace CE::Decompiler {
 	namespace ExprTree {
 		struct NodeCloneContext;
 		class ReadValueNode;
-		class FunctionCallContext;
+		class FunctionCall;
 		class SymbolLeaf;
 	};
 };
@@ -158,9 +158,9 @@ namespace CE::Decompiler::Symbol
 	class FunctionResultVar : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
 	{
 	public:
-		ExprTree::FunctionCallContext* m_funcCallContext = nullptr;
+		ExprTree::FunctionCall* m_funcCallContext = nullptr;
 
-		FunctionResultVar(ExprTree::FunctionCallContext* funcCallContext, ExtBitMask mask)
+		FunctionResultVar(ExprTree::FunctionCall* funcCallContext, ExtBitMask mask)
 			: m_funcCallContext(funcCallContext), Variable(mask)
 		{}
 

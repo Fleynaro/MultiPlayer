@@ -1,6 +1,7 @@
 #pragma once
-#include "FuncParameterSymbol.h"
 #include "MemorySymbol.h"
+#include "FuncParameterSymbol.h"
+#include "FunctionSymbol.h"
 
 namespace CE::Symbol
 {

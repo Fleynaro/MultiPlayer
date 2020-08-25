@@ -51,6 +51,10 @@ IDomainObject* FunctionMapper::doLoad(Database* db, SQLite::Statement& query) {
 			signature
 		);
 
+	if (symbol) {
+		symbol->setFunction(function);
+	}
+
 	if (stack_mem_area_id) {
 		auto stack_mem_area = getManager()->getProgramModule()->getMemoryAreaManager()->getMemoryAreaById(stack_mem_area_id);
 		if (stack_mem_area != nullptr) {

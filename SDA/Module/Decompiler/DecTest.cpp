@@ -1,6 +1,7 @@
 #include "DecTest.h"
 #include "Decompiler.h"
 #include "DecLinearView.h"
+#include "SDA/SdaHelper.h"
 #include "Optimization/DecGraphOptimization.h"
 #include "SDA/Symbolization/DecGraphSymbolization.h"
 #include "TestCodeToDecompile.h"
@@ -23,15 +24,7 @@ void ff() {
 	b = b * a;
 }
 
-ExprTree::FunctionCallInfo GetFunctionCallDefaultInfo() {
-	using namespace PCode;
-	ExprTree::FunctionCallInfo info;
-	info.m_knownRegisters = { Register(ZYDIS_REGISTER_RIP, -1), Register(ZYDIS_REGISTER_RSP, -1) };
-	info.m_paramRegisters = { Register(ZYDIS_REGISTER_RCX, -1), Register(ZYDIS_REGISTER_RDX, -1), Register(ZYDIS_REGISTER_R8, -1), Register(ZYDIS_REGISTER_R9, -1) };
-	info.m_resultRegister = Register(ZYDIS_REGISTER_RAX, -1);
-	info.m_resultVectorRegister = Register(ZYDIS_REGISTER_XMM0, 0xFF, Register::Type::Vector);
-	return info;
-}
+CE::ProgramModule* g_programModule;
 
 void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr = "", bool extraInfo = true, bool pcode = true) {
 	ZydisFormatter formatter;
@@ -141,13 +134,13 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 	}
 }
 
-void initUserSymbolDefsForSamples(CE::ProgramModule* programModule, std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs)
+void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs)
 {
-	userSymbolDefs[0] = Symbolization::UserSymbolDef(programModule);
-	userSymbolDefs[0].m_signature = new CE::DataType::Signature(programModule->getTypeManager(), "test");
-	userSymbolDefs[0].m_globalMemoryArea = programModule->getGlobalMemoryArea();
-	userSymbolDefs[0].m_stackMemoryArea = new CE::Symbol::MemoryArea(programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
-	userSymbolDefs[0].m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
+	userSymbolDefs[0] = Symbolization::UserSymbolDef(g_programModule);
+	userSymbolDefs[0].m_signature = new CE::DataType::Signature(g_programModule->getTypeManager(), "test");
+	userSymbolDefs[0].m_globalMemoryArea = g_programModule->getGlobalMemoryArea();
+	userSymbolDefs[0].m_stackMemoryArea = new CE::Symbol::MemoryArea(g_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
+	userSymbolDefs[0].m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(g_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
 }
 
 void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, const std::set<int>& samplesWithXMM, const std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs, bool showAsmBefore = true)
@@ -157,39 +150,42 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 		auto size = (int)sample.second->size();
 		printf("SAMPLE %i <----\n", sample.first);
 
-		PCode::TranslatorX86 translatorX86;
+		RegisterFactoryX86 registerFactoryX86;
+		PCode::TranslatorX86 translatorX86(&registerFactoryX86);
 		translatorX86.start(data, size);
 		AsmGraph graph(translatorX86.m_result);
 		graph.build();
 		if (showAsmBefore)
 			graph.printDebug(data);
 
-		auto info = GetFunctionCallDefaultInfo();
+		auto sig = new CE::DataType::Signature(g_programModule->getTypeManager(), "test");
 		if (samplesWithXMM.count(sample.first) == 0)
 		{
-			auto it = info.m_paramRegisters.begin();
-			*(it++) = PCode::Register(ZYDIS_REGISTER_RCX, ExtBitMask(4));
-			*(it++) = PCode::Register(ZYDIS_REGISTER_RDX, ExtBitMask(4));
-			*(it++) = PCode::Register(ZYDIS_REGISTER_R8, ExtBitMask(4));
-			*(it++) = PCode::Register(ZYDIS_REGISTER_R9, ExtBitMask(4));
-			info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_RAX, ExtBitMask(4));
+			sig->addParameter("param1", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
+			sig->addParameter("param2", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
+			sig->addParameter("param3", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
+			sig->addParameter("param4", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
+			sig->addParameter("param5", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
+			sig->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
 		}
 		else
 		{
-			auto it = info.m_paramRegisters.begin();
-			*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
-			*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM1, ExtBitMask(4), PCode::Register::Type::Vector);
-			*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM2, ExtBitMask(4), PCode::Register::Type::Vector);
-			*(it++) = PCode::Register(ZYDIS_REGISTER_ZMM3, ExtBitMask(4), PCode::Register::Type::Vector);
-			info.m_resultRegister = PCode::Register(ZYDIS_REGISTER_ZMM0, ExtBitMask(4), PCode::Register::Type::Vector);
+			sig->addParameter("param1", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
+			sig->addParameter("param2", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
+			sig->addParameter("param3", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
+			sig->addParameter("param4", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
+			sig->addParameter("param5", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
+			sig->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
 		}
 
-		auto decCodeGraph = new DecompiledCodeGraph(&graph, info);
-		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph);
-		decompiler->m_funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
+		auto info = CE::Decompiler::GetFunctionCallInfo(sig);
+		auto funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
 			auto absAddr = (std::intptr_t)data + offset;
 			return info;
 		};
+
+		auto decCodeGraph = new DecompiledCodeGraph(&graph, info);
+		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, funcCallInfoCallback);
 		decompiler->start();
 
 		//show code
@@ -238,7 +234,8 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 
 void CE::test(CE::ProgramModule* programModule) {
 	//TestFunctionToDecompile1();
-	programModule->getMemoryAreaManager()->createMainGlobalMemoryArea(0x1000000);
+	g_programModule = programModule;
+	g_programModule->getMemoryAreaManager()->createMainGlobalMemoryArea(0x1000000);
 
 	/*
 		(После масштабных изменений)
@@ -338,7 +335,7 @@ void CE::test(CE::ProgramModule* programModule) {
 
 	std::set<int> samplesWithXmm = { 206 };
 	std::map<int, Symbolization::UserSymbolDef> userSymbolDefs;
-	initUserSymbolDefsForSamples(programModule, userSymbolDefs);
+	initUserSymbolDefsForSamples(userSymbolDefs);
 
 	void* addr = &Test_Array;
 	auto size = calculateFunctionSize2((byte*)addr, 0);

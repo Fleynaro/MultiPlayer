@@ -1,7 +1,7 @@
 #pragma once
 #include "ExprTreeSdaNode.h"
 #include "../../DecTopNode.h"
-#include "../../ExprTree/ExprTreeFuncCallContext.h"
+#include "../../ExprTree/ExprTreeFunctionCall.h"
 
 namespace CE::Decompiler::ExprTree
 {
@@ -11,7 +11,7 @@ namespace CE::Decompiler::ExprTree
 		class DestinationTopNode : public TopNode
 		{
 		public:
-			DestinationTopNode(SdaNode* node)
+			DestinationTopNode(AbstractSdaNode* node)
 				: TopNode(node)
 			{}
 		};
@@ -39,7 +39,7 @@ namespace CE::Decompiler::ExprTree
 			}
 		};
 
-		SdaFunctionNode(FunctionCallContext* funcCallCtx, SdaNode* dest)
+		SdaFunctionNode(FunctionCall* funcCallCtx, AbstractSdaNode* dest)
 			: m_funcCallCtx(funcCallCtx)
 		{
 			m_destination = new DestinationTopNode(dest);
@@ -59,11 +59,15 @@ namespace CE::Decompiler::ExprTree
 		void replaceNode(Node* node, Node* newNode) override {}
 
 		std::list<ExprTree::Node*> getNodesList() override {
-			return { m_node };
+			std::list<ExprTree::Node*> result;
+			for (auto param : m_parameters) {
+				result.push_back(param->m_topNode->getNode());
+			}
+			return result;
 		}
 
 		DataTypePtr getDataType() override {
-			return m_calcDataType;
+			return m_returnType;
 		}
 
 		BitMask64 getMask() override {
@@ -75,16 +79,13 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone(NodeCloneContext* ctx) override {
-			auto sdaNode = new SdaNode(m_node->clone(ctx));
-			sdaNode->m_calcDataType = m_calcDataType;
-			sdaNode->m_explicitCast = m_explicitCast;
-			return sdaNode;
+			return nullptr;
 		}
 
 		std::string printDebug() override {
 			std::string str = "(" + m_destination->getNode()->printDebug() + ")(";
 			for (auto param : m_parameters) {
-				str += param->m_symbol->getName() + ", ";
+				str += param->m_topNode->getNode()->printDebug() + ", ";
 			}
 			if (!m_parameters.empty()) {
 				str.pop_back();
@@ -93,7 +94,8 @@ namespace CE::Decompiler::ExprTree
 			return (m_updateDebugInfo = (str + ")"));
 		}
 	private:
-		FunctionCallContext* m_funcCallCtx;
+		FunctionCall* m_funcCallCtx;
+		DataTypePtr m_returnType;
 		DestinationTopNode* m_destination;
 		std::list<Parameter*> m_parameters;
 	};

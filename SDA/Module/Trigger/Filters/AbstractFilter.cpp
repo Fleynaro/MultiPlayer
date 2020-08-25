@@ -20,18 +20,14 @@ void AbstractFilter::setAfterDefaultFilter(bool toggle) {
 
 uint64_t CE::Trigger::Function::GetArgumentValue(CE::DataTypePtr type, CE::Hook::DynHook* hook, int argIdx) {
 	using namespace CE::DataType;
-	if (auto sysType = dynamic_cast<SystemType*>(type->getBaseType(true, false))) {
-		if (argIdx <= 4 && sysType->getSet() == SystemType::Real)
-			return hook->getXmmArgumentValue(argIdx);
-	}
+	if (argIdx <= 4 && type->isFloatingPoint())
+		return hook->getXmmArgumentValue(argIdx);
 	return hook->getArgumentValue(argIdx);
 }
 
 uint64_t CE::Trigger::Function::GetReturnValue(CE::DataTypePtr type, CE::Hook::DynHook* hook) {
 	using namespace CE::DataType;
-	if (auto sysType = dynamic_cast<SystemType*>(type->getBaseType(true, false))) {
-		if (sysType->getSet() == SystemType::Real)
-			return hook->getXmmReturnValue();
-	}
+	if (type->isFloatingPoint())
+		return hook->getXmmReturnValue();
 	return hook->getReturnValue();
 }

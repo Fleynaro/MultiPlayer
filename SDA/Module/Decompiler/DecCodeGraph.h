@@ -1,5 +1,6 @@
 #pragma once
 #include "DecAsmGraph.h"
+#include "DecStorage.h"
 #include "PrimaryTree/PrimaryTreeBlock.h"
 
 namespace CE::Decompiler
@@ -7,7 +8,7 @@ namespace CE::Decompiler
 	class DecompiledCodeGraph
 	{
 	public:
-		DecompiledCodeGraph(AsmGraph* asmGraph, ExprTree::FunctionCallInfo functionCallInfo = ExprTree::GetFunctionCallDefaultInfo())
+		DecompiledCodeGraph(AsmGraph* asmGraph, FunctionCallInfo functionCallInfo)
 			: m_asmGraph(asmGraph), m_functionCallInfo(functionCallInfo)
 		{}
 
@@ -27,7 +28,7 @@ namespace CE::Decompiler
 			return m_decompiledBlocks;
 		}
 
-		ExprTree::FunctionCallInfo& getFunctionCallInfo() {
+		FunctionCallInfo& getFunctionCallInfo() {
 			return m_functionCallInfo;;
 		}
 
@@ -127,7 +128,7 @@ namespace CE::Decompiler
 		std::map<PrimaryTree::Block*, AsmGraphBlock*> m_asmGraphBlocks;
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
 		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
-		ExprTree::FunctionCallInfo m_functionCallInfo;
+		FunctionCallInfo m_functionCallInfo;
 		std::list<Symbol::Symbol*> m_symbols;
 	};
 };

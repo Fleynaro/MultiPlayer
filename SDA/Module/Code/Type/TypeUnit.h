@@ -14,6 +14,8 @@ namespace CE
 
 			bool isUserDefined() override;
 
+			bool isFloatingPoint();
+
 			int getPointerLvl();
 
 			bool isPointer();
