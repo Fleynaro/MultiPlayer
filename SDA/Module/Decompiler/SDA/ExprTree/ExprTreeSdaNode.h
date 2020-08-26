@@ -9,6 +9,14 @@ namespace CE::Decompiler::ExprTree
 	public:
 		virtual DataTypePtr getDataType() = 0;
 
+		virtual void setDataType(DataTypePtr dataType) = 0;
+
+		void setDataTypeWithPriority(DataTypePtr dataType) {
+			if (getDataType()->getPriority() >= dataType->getPriority())
+				return;
+			setDataType(dataType);
+		}
+
 		virtual std::string printDebugGoar() {
 			return "";
 		}
@@ -41,6 +49,10 @@ namespace CE::Decompiler::ExprTree
 
 		DataTypePtr getDataType() override {
 			return m_calcDataType;
+		}
+
+		void setDataType(DataTypePtr dataType) override {
+			m_calcDataType = dataType;
 		}
 
 		BitMask64 getMask() override {

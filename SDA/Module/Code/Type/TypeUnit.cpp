@@ -30,7 +30,10 @@ int Unit::getPointerLvl() {
 }
 
 bool Unit::isPointer() {
-	return getPointerLvl() > 0;
+	auto ptrLevels = getPointerLevels();
+	if (ptrLevels.empty())
+		return false;
+	return *ptrLevels.begin() == 1;
 }
 
 std::list<int> Unit::getPointerLevels() {
@@ -111,7 +114,16 @@ std::string Unit::getDisplayName() {
 }
 
 int Unit::getSize() {
-	return getPointerLvl() > 0 ? sizeof(std::uintptr_t) : m_type->getSize();
+	auto ptrLevels = getPointerLevels();
+	if(ptrLevels.empty())
+		return m_type->getSize();
+	auto mulDim = 1;
+	for (auto lvl : ptrLevels) {
+		if (lvl == 1)
+			return mulDim * 0x8;
+		mulDim *= lvl;
+	}
+	return mulDim * m_type->getSize();
 }
 
 std::string Unit::getViewValue(void* addr) {
@@ -199,5 +211,9 @@ std::string CE::DataType::GetPointerLevelStr(DataTypePtr type) {
 
 DataTypePtr CE::DataType::GetUnit(DataType::Type* type, const std::string& levels) {
 	auto levels_list = ParsePointerLevelsStr(levels);
+	return GetUnit(type, levels_list);
+}
+
+DataTypePtr CE::DataType::GetUnit(DataType::Type* type, const std::list<int>& levels_list) {
 	return std::make_shared<DataType::Unit>(type, levels_list);
 }

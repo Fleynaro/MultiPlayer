@@ -56,6 +56,12 @@ namespace CE::Decompiler::ExprTree
 			return m_signature ? m_signature->getReturnType() : m_typeContext->m_returnType;
 		}
 
+		void setDataType(DataTypePtr dataType) override {
+			if (m_signature)
+				return;
+			m_typeContext->m_returnType = dataType;
+		}
+
 		BitMask64 getMask() override {
 			return m_funcCall->getMask();
 		}

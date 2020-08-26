@@ -326,6 +326,122 @@ namespace CE::Decompiler::Symbolization
 	private:
 		SdaCodeGraph* m_sdaCodeGraph;
 		DataTypeFactory* m_dataTypeFactory;
+
+		bool buildGoar(AbstractSdaNode*& sdaNode, int64_t& bitOffset, std::list<AbstractSdaNode*>& terms) {
+			auto dataType = sdaNode->getDataType();
+			auto ptrLevels = dataType->getPointerLevels();
+			if (ptrLevels.empty())
+				return;
+			if (*ptrLevels.begin() != 1)
+				return;
+			ptrLevels.pop_front();
+
+			auto baseDataType = dataType->getBaseType();
+			if (ptrLevels.empty()) {
+				if (auto structure = dynamic_cast<DataType::Structure*>(baseDataType)) {
+					auto field = structure->getField(bitOffset);
+					auto dataType = DataType::CloneUnit(field->getDataType());
+					dataType->addPointerLevelInFront();
+					sdaNode = new GoarNode(dataType, sdaNode, field->getAbsBitOffset(), nullptr, 0x0);
+					bitOffset -= field->getAbsBitOffset();
+					return true;
+				}
+			}
+			
+			auto frontArrDim = *ptrLevels.begin();
+			if (frontArrDim != 1)
+				ptrLevels.pop_front();
+			auto arrItemDataType = DataType::GetUnit(baseDataType, ptrLevels);
+			auto arrItemSize = arrItemDataType->getSize();
+
+			AbstractSdaNode* indexNode = nullptr;
+			for (auto it = terms.begin(); it != terms.end(); it ++) {
+				int64_t defMultiplier = 1;
+				int64_t* multiplier = &defMultiplier;
+				if (auto sdaTermNode = dynamic_cast<SdaNode*>(*it)) {
+					if (auto opNode = dynamic_cast<OperationalNode*>(sdaTermNode->m_node)) {
+						if (auto numberLeaf = dynamic_cast<NumberLeaf*>(opNode->m_rightNode)) {
+							if (opNode->m_operation == Mul) {
+								multiplier = (int64_t*)&numberLeaf->m_value;
+							}
+						}
+					}
+				}
+				if (*multiplier % arrItemSize == 0x0) {
+					*multiplier /= arrItemSize;
+					if (indexNode) {
+						auto indexNodeDataType = indexNode->getDataType();
+						indexNode = new SdaNode(new OperationalNode(indexNode, *it, Add));
+						indexNode->setDataType(indexNodeDataType); //todo: linear expr, another type
+					}
+					else {
+						indexNode = *it;
+					}
+					terms.erase(it);
+				}
+			}
+
+			if (bitOffset % (arrItemSize * 0x8) == 0x0) {
+				bitOffset = 0x0;
+				auto constIndexNode = new SdaNode(new NumberLeaf(uint64_t(bitOffset / (arrItemSize * 0x8))));
+				constIndexNode->setDataType(m_dataTypeFactory->getDefaultType(0x4));
+				if (indexNode) {
+					auto indexNodeDataType = indexNode->getDataType();
+					indexNode = new SdaNode(new OperationalNode(indexNode, constIndexNode, Add));
+					indexNode->setDataType(indexNodeDataType);
+				}
+				else {
+					indexNode = constIndexNode;
+				}
+			}
+
+			if (indexNode) {
+				arrItemDataType->addPointerLevelInFront();
+				sdaNode = new GoarNode(arrItemDataType, sdaNode, 0x0, indexNode, 0x0);
+				return true;
+			}
+			return false;
+		}
+
+		void buildGoar(AbstractSdaNode* node) {
+			AbstractSdaNode* baseSdaNode = node;
+			int64_t bitOffset = 0x0;
+			std::list<AbstractSdaNode*> terms;
+			if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
+				if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
+					baseSdaNode = nullptr;
+					for (auto term : linearExpr->getTerms()) {
+						if (auto sdaTerm = dynamic_cast<AbstractSdaNode*>(term)) {
+							if (!baseSdaNode && sdaTerm->getDataType()->isPointer()) {
+								baseSdaNode = sdaTerm;
+							}
+							else {
+								terms.push_back(sdaTerm);
+							}
+						}
+					}
+					bitOffset = linearExpr->m_constTerm * 0x8;
+				}
+			}
+
+			if (baseSdaNode) {
+				auto resultGoarNode = baseSdaNode;
+				while (buildGoar(resultGoarNode, bitOffset, terms));
+				if (resultGoarNode != baseSdaNode) {
+					if (bitOffset != 0x0 || !terms.empty()) {
+						//remaining offset and terms
+						auto linearExpr = new LinearExpr(bitOffset / 0x8);
+						for (auto term : terms) {
+							linearExpr->addTerm(term);
+						}
+						resultGoarNode = new SdaNode(linearExpr);
+						resultGoarNode->setDataType(node->getDataType());
+					}
+					node->replaceWith(resultGoarNode);
+					delete node;
+				}
+			}
+		}
 		
 		void calculateDataTypes(Node* node) {
 			IterateChildNodes(node, [&](Node* childNode) {
@@ -337,6 +453,8 @@ namespace CE::Decompiler::Symbolization
 				auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node);
 
 				if (sdaSymbolLeaf || linearExpr) {
+					AbstractSdaNode* baseSdaNode = nullptr;
+					int bitOffset = 0x0;
 
 				}
 				else if (auto opNode = dynamic_cast<OperationalNode*>(sdaNode->m_node)) {
@@ -372,6 +490,10 @@ namespace CE::Decompiler::Symbolization
 						}
 					}
 				}
+			}
+
+			if (auto sdaNode = dynamic_cast<AbstractSdaNode*>(node)) {
+				buildGoar(sdaNode);
 			}
 		}
 

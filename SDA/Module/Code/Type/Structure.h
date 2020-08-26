@@ -18,6 +18,8 @@ namespace CE::DataType
 
 			int getBitSize();
 
+			int getAbsBitOffset();
+
 			int getBitOffset();
 
 			int getSize();

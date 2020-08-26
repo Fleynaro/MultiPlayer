@@ -42,7 +42,16 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		DataTypePtr getDataType() override {
+			/*if (m_readSize == 0x0) {
+				auto dataType = DataType::CloneUnit(m_dataType);
+				dataType->addPointerLevelInFront();
+				return dataType;
+			}*/
 			return m_dataType;
+		}
+
+		void setDataType(DataTypePtr dataType) override {
+			m_dataType = dataType;
 		}
 
 		std::string printDebug() override {

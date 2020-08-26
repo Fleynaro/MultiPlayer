@@ -65,6 +65,7 @@ namespace CE
 
 	namespace DataType
 	{
+		DataTypePtr GetUnit(DataType::Type* type, const std::list<int>& levels_list);
 		DataTypePtr GetUnit(DataType::Type* type, const std::string& levels = "");
 		std::string GetPointerLevelStr(DataTypePtr type);
 		std::list<int> ParsePointerLevelsStr(const std::string& str);

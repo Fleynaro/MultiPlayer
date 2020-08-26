@@ -14,6 +14,10 @@ int Structure::Field::getBitSize() {
 	return m_bitSize;
 }
 
+int Structure::Field::getAbsBitOffset() {
+	return m_absBitOffset;
+}
+
 int Structure::Field::getBitOffset() {
 	return m_absBitOffset - getOffset() * 0x8;
 }

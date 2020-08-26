@@ -42,6 +42,12 @@ namespace CE::Decompiler::ExprTree
 			return m_sdaSymbol->getDataType();
 		}
 
+		void setDataType(DataTypePtr dataType) override {
+			if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(m_sdaSymbol)) {
+				autoSdaSymbol->setDataType(dataType);
+			}
+		}
+
 		bool isGettingAddr() {
 			return m_isGettingAddr;
 		}
