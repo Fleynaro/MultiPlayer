@@ -19,6 +19,12 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(m_sdaSymbol->getDataType()->getSize());
 		}
 
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue((int64_t)m_sdaSymbol);
+			return hash.getHash();
+		}
+
 		Node* clone(NodeCloneContext* ctx) override {
 			return new SdaSymbolLeaf(m_sdaSymbol, m_isGettingAddr);
 		}

@@ -2,7 +2,6 @@
 #include "../SdaCodeGraph.h"
 #include "../../Optimization/DecGraphOptimization.h"
 #include <Code/Symbol/MemoryArea/MemoryArea.h>
-#include <Code/Type/FunctionSignature.h>
 #include <Manager/ProgramModule.h>
 #include <Manager/TypeManager.h>
 
@@ -62,6 +61,7 @@ namespace CE::Decompiler::Symbolization
 		std::map<Symbol::Symbol*, CE::Symbol::AbstractSymbol*> m_symbolsToSymbols;
 		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
 		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
+		std::map<ObjectHash::Hash, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts;
 
 		void buildSdaSymbols(Node* node) {
 			IterateChildNodes(node, [&](Node* childNode) {
@@ -69,6 +69,29 @@ namespace CE::Decompiler::Symbolization
 				});
 
 			if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
+				if (auto funcCall = dynamic_cast<FunctionCall*>(sdaNode->m_node)) {
+					std::shared_ptr<SdaFunctionNode::TypeContext> typeContext;
+					auto keyHash = funcCall->getDestination()->getHash();
+					auto it = m_funcTypeContexts.find(keyHash);
+					if (it == m_funcTypeContexts.end()) {
+						std::vector<DataTypePtr> paramTypes;
+						DataTypePtr returnType;
+						for (auto paramNode : funcCall->getParamNodes()) {
+							paramTypes.push_back(m_dataTypeFactory->getDefaultType(paramNode->getMask().getSize()));
+						}
+						returnType = m_dataTypeFactory->getDefaultType(funcCall->getMask().getSize());
+						m_funcTypeContexts[keyHash] = std::make_shared<SdaFunctionNode::TypeContext>(new SdaFunctionNode::TypeContext(paramTypes, returnType));
+					}
+					else {
+						typeContext = it->second;
+					}
+
+					auto functionNode = new SdaFunctionNode(funcCall, typeContext);
+					sdaNode->replaceWith(functionNode);
+					delete sdaNode;
+					return;
+				}
+
 				//find symbol and offset
 				Symbol::Symbol* symbol = nullptr;
 				int64_t offset;
@@ -328,19 +351,27 @@ namespace CE::Decompiler::Symbolization
 						sdaNode->m_calcDataType = dstNode->getDataType();
 					}
 				}
-				else if (auto funcCallCtx = dynamic_cast<FunctionCall*>(sdaNode->m_node)) {
-					if (auto dstNode = dynamic_cast<AbstractSdaNode*>(funcCallCtx->m_destination)) {
-						if (auto signature = dynamic_cast<DataType::Signature*>(dstNode->getDataType()->getType())) {
-							auto functionNode = new SdaFunctionNode(funcCallCtx, dstNode);
-
-						}
-					}
-				}
 
 				if (sdaNode->m_calcDataType == nullptr) {
 					sdaNode->m_calcDataType = m_dataTypeFactory->getDefaultType(sdaNode->m_node->getMask().getSize());
 				}
 				sdaNode->m_explicitCast = false;
+			}
+			else if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(sdaNode->m_node)) {
+				if (auto dstNode = dynamic_cast<AbstractSdaNode*>(sdaFunctionNode->getDestination())) {
+					if (auto signature = dynamic_cast<DataType::Signature*>(dstNode->getDataType()->getType())) {
+						if (!sdaFunctionNode->getSignature()) {
+							sdaFunctionNode->setSignature(signature);
+						}
+						int paramIdx = 1;
+						for (auto paramNode : sdaFunctionNode->getParamNodes()) {
+							if (auto sdaNode = dynamic_cast<AbstractSdaNode*>(paramNode)) {
+								sdaFunctionNode->getTypeContext()->setParamDataType(paramIdx, sdaNode->getDataType());
+							}
+							paramIdx++;
+						}
+					}
+				}
 			}
 		}
 

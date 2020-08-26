@@ -51,6 +51,10 @@ namespace CE::Decompiler::ExprTree
 			return m_node->isFloatingPoint();
 		}
 
+		ObjectHash::Hash getHash() override {
+			return m_node->getHash();
+		}
+
 		Node* clone(NodeCloneContext* ctx) override {
 			auto sdaNode = new SdaNode(m_node->clone(ctx));
 			sdaNode->m_calcDataType = m_calcDataType;
