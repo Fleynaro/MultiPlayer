@@ -17,7 +17,7 @@ namespace CE::Decompiler::ExprTree
 				: m_paramTypes(paramTypes), m_returnType(returnType)
 			{}
 
-			void setParamDataType(int paramIdx, DataTypePtr dataType) {
+			void setParamDataTypeWithPriority(int paramIdx, DataTypePtr dataType) {
 				if (m_paramTypes[paramIdx]->getPriority() >= dataType->getPriority())
 					return;
 				m_paramTypes[paramIdx] = dataType;
@@ -30,7 +30,9 @@ namespace CE::Decompiler::ExprTree
 			m_funcCall->addParentNode(this);
 		}
 
-		~SdaFunctionNode() {}
+		~SdaFunctionNode() {
+			m_funcCall->removeBy(this);
+		}
 
 		void replaceNode(Node* node, Node* newNode) override {
 			m_funcCall->replaceNode(node, newNode);

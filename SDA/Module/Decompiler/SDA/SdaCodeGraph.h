@@ -17,6 +17,14 @@ namespace CE::Decompiler
 			return m_decGraph;
 		}
 
+		/*CE::Symbol::AbstractSymbol* findSdaSymbolByName(std::string name) {
+			for (auto symbol : m_sdaSymbols) {
+				if (name == symbol->getName())
+					return symbol;
+			}
+			return nullptr;
+		}*/
+
 		std::list<CE::Symbol::AbstractSymbol*>& getSdaSymbols() {
 			return m_sdaSymbols;
 		}

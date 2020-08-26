@@ -12,9 +12,19 @@ namespace CE::Decompiler::ExprTree
 		Node* m_index;
 		int m_readSize;
 
-		GoarNode(DataTypePtr dataType, AbstractSdaNode* base, int bitOffset, Node* index, int readSize = 0x0)
+		GoarNode(DataTypePtr dataType, AbstractSdaNode* base, int bitOffset = 0x0, Node* index = nullptr, int readSize = 0x0)
 			: m_dataType(dataType), m_base(base), m_bitOffset(bitOffset), m_index(index), m_readSize(readSize)
-		{}
+		{
+			m_base->addParentNode(this);
+			if(m_index)
+				m_index->addParentNode(this);
+		}
+
+		~GoarNode() {
+			m_base->removeBy(this);
+			if (m_index)
+				m_index->removeBy(this);
+		}
 
 		void replaceNode(Node* node, Node* newNode) override {
 			if (node == m_base) {
@@ -42,11 +52,6 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		DataTypePtr getDataType() override {
-			/*if (m_readSize == 0x0) {
-				auto dataType = DataType::CloneUnit(m_dataType);
-				dataType->addPointerLevelInFront();
-				return dataType;
-			}*/
 			return m_dataType;
 		}
 
@@ -64,8 +69,8 @@ namespace CE::Decompiler::ExprTree
 		std::string printDebugGoar() override {
 			auto str = m_base->printDebugGoar();
 			if (m_bitOffset) {
-				if (auto Class = dynamic_cast<DataType::Class*>(m_base->getDataType()->getType())) {
-					str = str + (m_readSize == 0x0 ? "." : "->") + Class->getField(m_bitOffset)->getName();
+				if (auto structure = dynamic_cast<DataType::Structure*>(m_base->getDataType()->getType())) {
+					str = str + (m_readSize == 0x0 ? "." : "->") + structure->getField(m_bitOffset)->getName();
 				}
 				else {
 					str = "(" + str + " + " + std::to_string(m_bitOffset / 0x8) + ")[!some error!]";

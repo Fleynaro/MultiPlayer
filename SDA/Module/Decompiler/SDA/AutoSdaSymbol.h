@@ -14,6 +14,9 @@ namespace CE::Symbol
 			return m_type;
 		}
 
+		std::list<int64_t> getInstrOffsets() {
+			return m_instrOffsets;
+		}
 	private:
 		Type m_type;
 		int64_t m_value;

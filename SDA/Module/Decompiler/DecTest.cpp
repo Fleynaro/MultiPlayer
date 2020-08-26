@@ -134,13 +134,27 @@ void ShowCode(LinearView::BlockList* blockList, std::map<PrimaryTree::Block*, As
 	}
 }
 
+Symbolization::UserSymbolDef createUserSymbolDef()
+{
+	auto userSymbolDef = Symbolization::UserSymbolDef(g_programModule);
+	userSymbolDef.m_signature = new CE::DataType::Signature(g_programModule->getTypeManager(), "test");
+	userSymbolDef.m_globalMemoryArea = g_programModule->getGlobalMemoryArea();
+	userSymbolDef.m_stackMemoryArea = new CE::Symbol::MemoryArea(g_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
+	userSymbolDef.m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(g_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
+	return userSymbolDef;
+}
+
+template<typename T = CE::Symbol::AbstractSymbol>
+T* createSymbol(CE::Symbol::Type type, std::string name, std::string typeName, std::string typeLevel) {
+	using namespace CE::Symbol;
+	return dynamic_cast<T*>(g_programModule->getSymbolManager()->createSymbol(type, DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName(typeName), typeLevel), name));
+}
+
 void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs)
 {
-	userSymbolDefs[0] = Symbolization::UserSymbolDef(g_programModule);
-	userSymbolDefs[0].m_signature = new CE::DataType::Signature(g_programModule->getTypeManager(), "test");
-	userSymbolDefs[0].m_globalMemoryArea = g_programModule->getGlobalMemoryArea();
-	userSymbolDefs[0].m_stackMemoryArea = new CE::Symbol::MemoryArea(g_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
-	userSymbolDefs[0].m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(g_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
+	using namespace CE::Symbol;
+	userSymbolDefs[0] = createUserSymbolDef();
+	userSymbolDefs[0].m_stackMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_STACK_VAR, "stackArray", "int32_t", "[2][3][4]"), -0x68);
 }
 
 void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, const std::set<int>& samplesWithXMM, const std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs, bool showAsmBefore = true)
@@ -222,7 +236,18 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 			g_SHOW_LINEAR_LEVEL_EXT = false;
 			sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::AbstractSymbol* a, CE::Symbol::AbstractSymbol* b) { return a->getDataType()->getPriority() < b->getDataType()->getPriority(); });
 			for (auto var : sdaCodeGraph->getSdaSymbols()) {
-				printf("%s %s\n", var->getDataType()->getDisplayName().c_str(), var->getName().c_str());
+				std::string comment;
+				if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(var)) {
+					if (!autoSdaSymbol->getInstrOffsets().empty()) {
+						comment = "//offsets: ";
+						for (auto off : autoSdaSymbol->getInstrOffsets()) {
+							comment += std::to_string(off) + ", ";
+						}
+						comment.pop_back();
+						comment.pop_back();
+					}
+				}
+				printf("%s %s %s\n", var->getDataType()->getDisplayName().c_str(), var->getName().c_str(), comment.c_str());
 			}
 			printf("\n");
 			ShowCode(blockList, sdaCodeGraph->getDecGraph()->getAsmGraphBlocks());
