@@ -29,6 +29,13 @@ int Unit::getPointerLvl() {
 	return (int)getPointerLevels().size();
 }
 
+bool Unit::isArray() {
+	auto ptrLevels = getPointerLevels();
+	if (ptrLevels.empty())
+		return false;
+	return *ptrLevels.begin() >= 2;
+}
+
 bool Unit::isPointer() {
 	auto ptrLevels = getPointerLevels();
 	if (ptrLevels.empty())
@@ -49,8 +56,8 @@ void Unit::addPointerLevelInFront(int size) {
 	m_levels.push_front(size);
 }
 
-void Unit::addPointerLevelInBack(int size) {
-	m_levels.push_back(size);
+void Unit::removePointerLevelOutOfFront() {
+	m_levels.pop_front();
 }
 
 bool Unit::isString() {

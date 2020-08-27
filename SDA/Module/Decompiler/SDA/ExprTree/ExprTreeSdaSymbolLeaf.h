@@ -16,7 +16,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		BitMask64 getMask() override {
-			return BitMask64(m_sdaSymbol->getDataType()->getSize());
+			return BitMask64(getDataType()->getSize());
 		}
 
 		ObjectHash::Hash getHash() override {

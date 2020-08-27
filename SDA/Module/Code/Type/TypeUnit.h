@@ -18,13 +18,15 @@ namespace CE
 
 			int getPointerLvl();
 
+			bool isArray();
+
 			bool isPointer();
 
 			std::list<int> getPointerLevels();
 
 			void addPointerLevelInFront(int size = 1);
 
-			void addPointerLevelInBack(int size = 1);
+			void removePointerLevelOutOfFront();
 
 			bool isString();
 

@@ -234,12 +234,16 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 			g_SHOW_PCODE = false;
 			g_SHOW_ALL_GOTO = false;
 			g_SHOW_LINEAR_LEVEL_EXT = false;
-			sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::AbstractSymbol* a, CE::Symbol::AbstractSymbol* b) { return a->getDataType()->getPriority() < b->getDataType()->getPriority(); });
+			sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::AbstractSymbol* a, CE::Symbol::AbstractSymbol* b) { return a->getName() < b->getName(); });
 			for (auto var : sdaCodeGraph->getSdaSymbols()) {
-				std::string comment;
+				std::string comment = "//priority: " + std::to_string(var->getDataType()->getPriority());
+				//size
+				if(var->getDataType()->isArray())
+					comment += ", size: " + std::to_string(var->getDataType()->getSize());
+				//offsets
 				if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(var)) {
 					if (!autoSdaSymbol->getInstrOffsets().empty()) {
-						comment = "//offsets: ";
+						comment += ", offsets: ";
 						for (auto off : autoSdaSymbol->getInstrOffsets()) {
 							comment += std::to_string(off) + ", ";
 						}
@@ -247,7 +251,7 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 						comment.pop_back();
 					}
 				}
-				printf("%s %s %s\n", var->getDataType()->getDisplayName().c_str(), var->getName().c_str(), comment.c_str());
+				printf("%s %s; %s\n", var->getDataType()->getDisplayName().c_str(), var->getName().c_str(), comment.c_str());
 			}
 			printf("\n");
 			ShowCode(blockList, sdaCodeGraph->getDecGraph()->getAsmGraphBlocks());
