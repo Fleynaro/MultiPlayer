@@ -190,8 +190,10 @@ namespace CE::Decompiler::Symbolization
 				else {
 					//replace all symbol leafs
 					for (auto symbolLeaf : symbol->m_symbolLeafs) {
-						symbolLeaf->replaceWith(new SdaSymbolLeaf(sdaSymbol, false));
-						delete symbolLeaf;
+						if (auto sdaParentNode = dynamic_cast<SdaNode*>(symbolLeaf->getParentNode())) {
+							sdaParentNode->replaceWith(new SdaSymbolLeaf(sdaSymbol, false));
+							delete sdaParentNode;
+						}
 					}
 				}
 
