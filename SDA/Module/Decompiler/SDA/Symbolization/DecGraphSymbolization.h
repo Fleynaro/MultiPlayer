@@ -26,24 +26,33 @@ namespace CE::Decompiler::Symbolization
 	class DataTypeFactory
 	{
 	public:
-		DataTypeFactory(UserSymbolDef* userSymbolDef)
-			: m_userSymbolDef(userSymbolDef)
+		DataTypeFactory(CE::ProgramModule* programModule)
+			: m_programModule(programModule)
 		{}
 
-		DataTypePtr getDefaultType(int size) {
-			std::string sizeStr = "64";
-			if (size != 0)
-				sizeStr = std::to_string(size * 0x8);
-			return DataType::GetUnit(m_userSymbolDef->m_programModule->getTypeManager()->getTypeByName("uint" + sizeStr + "_t"));
+		DataTypePtr getType(DB::Id id) {
+			return DataType::GetUnit(m_programModule->getTypeManager()->getTypeById(id));
+		}
+
+		DataTypePtr getDefaultType(int size, bool sign = false) {
+			if (size == 0x1)
+				return getType(sign ? SystemType::Char : SystemType::Byte);
+			if (size == 0x2)
+				return getType(sign ? SystemType::Int16 : SystemType::UInt16);
+			if (size == 0x4)
+				return getType(sign ? SystemType::Int32 : SystemType::UInt32);
+			if (size == 0x8)
+				return getType(sign ? SystemType::Int64 : SystemType::UInt64);
+			return nullptr;
 		}
 	private:
-		UserSymbolDef* m_userSymbolDef;
+		CE::ProgramModule* m_programModule;
 	};
 
-	class SdaSymbolBuilding
+	class SdaBuilding
 	{
 	public:
-		SdaSymbolBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory)
+		SdaBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory)
 			: m_sdaCodeGraph(sdaCodeGraph), m_userSymbolDef(userSymbolDef), m_dataTypeFactory(dataTypeFactory)
 		{}
 
@@ -51,6 +60,7 @@ namespace CE::Decompiler::Symbolization
 			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 				for (auto topNode : decBlock->getAllTopNodes()) {
 					buildSdaNodes(topNode->getNode());
+					buildSdaCastNodes(topNode->getNode());
 				}
 			}
 
@@ -73,6 +83,18 @@ namespace CE::Decompiler::Symbolization
 
 			for (auto sdaSymbol : m_userDefinedSymbols) {
 				m_sdaCodeGraph->getSdaSymbols().push_back(sdaSymbol);
+			}
+		}
+
+		void buildSdaCastNodes(Node* node) {
+			IterateChildNodes(node, [&](Node* childNode) {
+				buildSdaNodes(childNode);
+				});
+
+			if (auto abstractSdaNode = dynamic_cast<AbstractSdaNode*>(node)) {
+				auto sdaCastNode = new SdaCastNode(abstractSdaNode);
+				abstractSdaNode->replaceWith(sdaCastNode);
+				abstractSdaNode->addParentNode(sdaCastNode);
 			}
 		}
 
@@ -102,106 +124,110 @@ namespace CE::Decompiler::Symbolization
 				buildSdaNodes(childNode);
 				});
 
-			if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
-				if (auto funcCall = dynamic_cast<FunctionCall*>(sdaNode->m_node)) {
-					auto functionNode = buildSdaFunctionNode(funcCall);
-					sdaNode->replaceWith(functionNode);
-					delete sdaNode;
-					return;
-				}
+			if (auto funcCall = dynamic_cast<FunctionCall*>(node)) {
+				auto functionNode = buildSdaFunctionNode(funcCall);
+				node->replaceWith(functionNode);
+				delete node;
+				return;
+			}
 
+			auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node);
+			auto linearExpr = dynamic_cast<LinearExpr*>(node);
+			if (symbolLeaf || linearExpr) {
 				//find symbol and offset
-				Symbol::Symbol* symbol = nullptr;
 				int64_t offset;
-				ExprTree::SdaNode* sdaNodeToReplace = sdaNode;
-				bool isArray = false;
+				ExprTree::SymbolLeaf* sdaSymbolLeafToReplace = nullptr;
 
-				if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(sdaNode->m_node)) {
-					symbol = symbolLeaf->m_symbol;
+				if (symbolLeaf) {
+					sdaSymbolLeafToReplace = symbolLeaf;
 					offset = 0x0;
 				}
-				else if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
+				else if (linearExpr) {
 					for (auto term : linearExpr->getTerms()) {
-						if (auto sdaTerm = dynamic_cast<SdaNode*>(term)) {
-							if (auto termSymbolLeaf = dynamic_cast<SymbolLeaf*>(sdaTerm->m_node)) {
-								if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(termSymbolLeaf->m_symbol)) {
-									if (regSymbol->m_register.isPointer()) {
-										symbol = regSymbol;
-										sdaNodeToReplace = sdaTerm;
-										break;
-									}
+						if (auto termSymbolLeaf = dynamic_cast<SymbolLeaf*>(term)) {
+							if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(termSymbolLeaf->m_symbol)) {
+								if (regSymbol->m_register.isPointer()) {
+									sdaSymbolLeafToReplace = termSymbolLeaf;
+									offset = linearExpr->m_constTerm;
+									break;
 								}
 							}
 						}
 					}
-					offset = linearExpr->m_constTerm;
-					isArray = (linearExpr->getTerms().size() >= 2);
-				}
-				if (!symbol)
-					return;
-
-				//calculate size
-				int size = 0x0;
-				bool transformToLocalOffset = false;
-				bool isStackOrGlobal = false;
-				if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
-					//if [rip] or [rsp] register
-					if (regSymbol->m_register.isPointer()) {
-						//transform to global offset
-						if (regSymbol->m_register.getGenericId() == ZYDIS_REGISTER_RIP) {
-							offset = toGlobalOffset(offset);
-							transformToLocalOffset = true;
-						}
-						isStackOrGlobal = true;
-					}
-				}
-				if (isStackOrGlobal) {
-					//handle later anyway
-					if (dynamic_cast<LinearExpr*>(sdaNode->getParentNode()))
-						return;
-					//if reading presence
-					if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaNode->getParentNode())) {
-						size = readValueNode->getSize();
-					}
-				}
-				if (size == 0x0) {
-					size = symbol->getSize();
 				}
 
-				//find symbol or create it
-				auto sdaSymbol = findOrCreateSymbol(symbol, size, offset);
-				if (transformToLocalOffset)
-					offset = toLocalOffset(offset);
-
-				if (isStackOrGlobal) {
-					bool isGettingAddr = true;
-					if (!isArray && offset == 0x0) {
-						//if reading presence
-						if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaNode->getParentNode())) {
-							if (auto sdaNode = dynamic_cast<SdaNode*>(readValueNode->getParentNode())) {
-								sdaNodeToReplace = sdaNode;
-								isGettingAddr = false;
+				if (sdaSymbolLeafToReplace)
+				{
+					//calculate size
+					int size = 0x0;
+					bool transformToLocalOffset = false;
+					bool isStackOrGlobal = false;
+					if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(sdaSymbolLeafToReplace->m_symbol)) {
+						//if [rip] or [rsp] register
+						if (regSymbol->m_register.isPointer()) {
+							//transform to global offset
+							if (regSymbol->m_register.getGenericId() == ZYDIS_REGISTER_RIP) {
+								offset = toGlobalOffset(offset);
+								transformToLocalOffset = true;
 							}
+							isStackOrGlobal = true;
 						}
 					}
-					sdaNodeToReplace->replaceWith(new SdaSymbolLeaf(sdaSymbol, isGettingAddr));
-					delete sdaNodeToReplace;
-				}
-				else {
-					//replace all symbol leafs
-					for (auto symbolLeaf : symbol->m_symbolLeafs) {
-						if (auto sdaParentNode = dynamic_cast<SdaNode*>(symbolLeaf->getParentNode())) {
-							sdaParentNode->replaceWith(new SdaSymbolLeaf(sdaSymbol, false));
-							delete sdaParentNode;
+					if (isStackOrGlobal) {
+						//handle later anyway
+						if (dynamic_cast<LinearExpr*>(node->getParentNode()))
+							return;
+						//if reading presence
+						if (auto readValueNode = dynamic_cast<ReadValueNode*>(node->getParentNode())) {
+							size = readValueNode->getSize();
 						}
 					}
-				}
+					if (size == 0x0) {
+						size = sdaSymbolLeafToReplace->m_symbol->getSize();
+					}
 
-				//change offset
-				if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node)) {
-					linearExpr->m_constTerm = offset;
+					//find symbol or create it
+					auto sdaSymbol = findOrCreateSymbol(sdaSymbolLeafToReplace->m_symbol, size, offset);
+					if (transformToLocalOffset)
+						offset = toLocalOffset(offset);
+
+					if (isStackOrGlobal) {
+						sdaSymbolLeafToReplace->replaceWith(new SdaSymbolLeaf(sdaSymbol, true));
+					}
+					else {
+						//replace all symbol leafs
+						for (auto symbolLeaf : sdaSymbolLeafToReplace->m_symbol->m_symbolLeafs) {
+							symbolLeaf->replaceWith(new SdaSymbolLeaf(sdaSymbol));
+							delete symbolLeaf;
+						}
+					}
+					delete sdaSymbolLeafToReplace;
+					if (symbolLeaf)
+						return;
+					if (linearExpr) {
+						//change offset
+						linearExpr->m_constTerm = offset;
+					}
 				}
 			}
+
+			if (auto readValueNode = dynamic_cast<ReadValueNode*>(node)) {
+				if (auto linearExpr = dynamic_cast<LinearExpr*>(readValueNode->getAddress())) {
+					if (linearExpr->m_constTerm == 0x0 && linearExpr->getTerms().size() == 1) {
+						if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(*linearExpr->getTerms().begin())) {
+							sdaSymbolLeaf->m_isGettingAddr = false;
+							readValueNode->replaceWith(sdaSymbolLeaf);
+							delete readValueNode;
+							return;
+						}
+					}
+				}
+			}
+
+			//otherwise create generic sda node
+			auto sdaNode = new SdaGenericNode(node, m_dataTypeFactory->getDefaultType(node->getMask().getSize()));
+			node->replaceWith(sdaNode);
+			node->addParentNode(sdaNode);
 		}
 
 		CE::Symbol::AbstractSymbol* findOrCreateSymbol(Symbol::Symbol* symbol, int size, int64_t& offset) {
@@ -389,7 +415,7 @@ namespace CE::Decompiler::Symbolization
 			
 			//try making an array
 			//important: array is like a structure with stored items can be linearly addressed
-			//if it is array not pointer (like a structure, array item like field)
+			//if it is array, not pointer (like a structure, an array item like a field)
 			if (*ptrLevels.begin() != 1)
 				ptrLevels.pop_front();
 			auto arrItemDataType = DataType::GetUnit(baseDataType, ptrLevels);
@@ -514,50 +540,107 @@ namespace CE::Decompiler::Symbolization
 				calculateDataTypes(childNode);
 				});
 
-			if (auto sdaNode = dynamic_cast<SdaNode*>(node)) {
-				auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode->m_node);
-				auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode->m_node);
-
-				if (sdaSymbolLeaf || linearExpr) {
-					AbstractSdaNode* baseSdaNode = nullptr;
-					int bitOffset = 0x0;
-
-				}
-				else if (auto opNode = dynamic_cast<OperationalNode*>(sdaNode->m_node)) {
-					if (auto sdaLeftNode = dynamic_cast<AbstractSdaNode*>(opNode->m_leftNode)) {
-						if (auto sdaRightNode = dynamic_cast<AbstractSdaNode*>(opNode->m_rightNode)) {
-							sdaNode->setDataType(CalculateDataType(sdaLeftNode->getDataType(), sdaRightNode->getDataType()));
+			auto sdaCastNode = dynamic_cast<SdaCastNode*>(node);
+			if (!sdaCastNode)
+				return;
+			sdaCastNode->setDataType(nullptr);
+			sdaCastNode->m_explicitCast = false;
+			
+			if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(sdaCastNode->getNode()))
+			{
+				if (auto castNode = dynamic_cast<CastNode*>(sdaGenNode->getNode())) {
+					if (auto srcCastNode = dynamic_cast<SdaCastNode*>(castNode->getNode())) {
+						auto srcDataType = srcCastNode->getNode()->getDataType();
+						auto srcBaseDataType = srcDataType->getBaseType();
+						if (srcDataType->isPointer() || castNode->isSigned() != srcBaseDataType->isSigned() || castNode->getSize() != srcBaseDataType->getSize()) {
+							auto castDataType = m_dataTypeFactory->getDefaultType(castNode->getSize(), castNode->isSigned());
+							srcCastNode->setDataType(castDataType);
+							srcCastNode->m_explicitCast = isExplicitCast(srcDataType, castDataType);
+							sdaGenNode->setDataType(castDataType);
 						}
 					}
 				}
-				else if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaNode->m_node)) {
-					if (auto dstNode = dynamic_cast<AbstractSdaNode*>(assignmentNode->getDstNode())) {
-						if (auto srcNode = dynamic_cast<AbstractSdaNode*>(assignmentNode->getSrcNode())) {
-							dstNode->setDataTypeWithPriority(srcNode->getDataType());
+				else if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaGenNode->getNode())) {
+					if (auto addrCastNode = dynamic_cast<SdaCastNode*>(readValueNode->getAddress())) {
+						auto addrDataType = addrCastNode->getNode()->getDataType();
+						if (!addrDataType->isPointer() || readValueNode->getSize() != addrDataType->getBaseType()->getSize()) {
+							auto defPtrDataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
+							defPtrDataType->addPointerLevelInFront();
+							addrCastNode->setDataType(defPtrDataType);
+							addrCastNode->m_explicitCast = isExplicitCast(addrDataType, defPtrDataType);
+							sdaGenNode->setDataType(defPtrDataType);
 						}
-						sdaNode->setDataType(dstNode->getDataType());
 					}
 				}
-
-				if (sdaNode->getDataType() == nullptr) {
-					sdaNode->setDataType(m_dataTypeFactory->getDefaultType(sdaNode->m_node->getMask().getSize()));
+				else if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenNode->getNode())) {
+					auto maskSize = opNode->getMask().getSize();
+					if (auto sdaLeftCastNode = dynamic_cast<SdaCastNode*>(opNode->m_leftNode)) {
+						if (auto sdaRightCastNode = dynamic_cast<SdaCastNode*>(opNode->m_rightNode)) {
+							DataTypePtr leftNodeDataType = sdaLeftCastNode->getNode()->getDataType();
+							DataTypePtr rightNodeDataType;
+							if (opNode->m_operation == Shr || opNode->m_operation == Shl) {
+								rightNodeDataType = leftNodeDataType;
+							}
+							else {
+								rightNodeDataType = sdaRightCastNode->getNode()->getDataType();
+							}
+							auto calcDataType = getDataTypeToCastTo(sdaLeftCastNode->getDataType(), sdaRightCastNode->getDataType());
+							if (maskSize != calcDataType->getSize())
+								calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
+							sdaGenNode->setDataType(calcDataType);
+							sdaLeftCastNode->setDataType(calcDataType);
+							sdaLeftCastNode->m_explicitCast = isExplicitCast(leftNodeDataType, calcDataType);
+							sdaRightCastNode->setDataType(calcDataType);
+							sdaRightCastNode->m_explicitCast = isExplicitCast(rightNodeDataType, calcDataType);
+							sdaGenNode->setDataType(calcDataType);
+						}
+					}
 				}
-				sdaNode->m_explicitCast = false;
+				else if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenNode->getNode())) {
+					if (auto dstCastNode = dynamic_cast<SdaCastNode*>(assignmentNode->getDstNode())) {
+						if (auto srcCastNode = dynamic_cast<SdaCastNode*>(assignmentNode->getSrcNode())) {
+							auto dstNodeDataType = dstCastNode->getNode()->getDataType();
+							auto srcNodeDataType = srcCastNode->getNode()->getDataType();
+							if (dstNodeDataType->getSize() == srcNodeDataType->getSize()
+								&& dstNodeDataType->getPriority() < srcNodeDataType->getPriority()) {
+								dstCastNode->setDataType(srcNodeDataType);
+								dstCastNode->m_explicitCast = isExplicitCast(dstNodeDataType, srcNodeDataType);
+								sdaGenNode->setDataType(srcNodeDataType);
+							}
+							else {
+								srcCastNode->setDataType(dstNodeDataType);
+								srcCastNode->m_explicitCast = isExplicitCast(srcNodeDataType, dstNodeDataType);
+								sdaGenNode->setDataType(dstNodeDataType);
+							}
+						}
+					}
+				}
+				else if (auto condNode = dynamic_cast<ICondition*>(sdaGenNode->getNode())) {
+					auto boolType = m_dataTypeFactory->getType(SystemType::Bool);
+					sdaGenNode->setDataType(boolType);
+				}
 			}
-			else if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(node)) {
-				if (auto dstNode = dynamic_cast<AbstractSdaNode*>(sdaFunctionNode->getDestination())) {
-					if (auto signature = dynamic_cast<DataType::Signature*>(dstNode->getDataType()->getType())) {
+			else if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(sdaCastNode->getNode())) {
+				if (auto dstCastNode = dynamic_cast<SdaCastNode*>(sdaFunctionNode->getDestination())) {
+					if (auto signature = dynamic_cast<DataType::Signature*>(dstCastNode->getNode()->getDataType()->getType())) {
 						if (!sdaFunctionNode->getSignature()) {
 							sdaFunctionNode->setSignature(signature);
 						}
-						int paramIdx = 1;
-						for (auto paramNode : sdaFunctionNode->getParamNodes()) {
-							if (auto sdaNode = dynamic_cast<AbstractSdaNode*>(paramNode)) {
-								sdaFunctionNode->getTypeContext()->setParamDataTypeWithPriority(paramIdx, sdaNode->getDataType());
-							}
-							paramIdx++;
-						}
 					}
+				}
+
+				int paramIdx = 1;
+				for (auto paramNode : sdaFunctionNode->getParamNodes()) {
+					if (auto paramCastNode = dynamic_cast<SdaCastNode*>(paramNode)) {
+						auto paramNodeDataType = paramCastNode->getNode()->getDataType();
+						if (sdaFunctionNode->getSignature()) {
+							auto paramNodeProperDataType = sdaFunctionNode->getParamDataType(paramIdx);
+							paramCastNode->setDataType(paramNodeProperDataType);
+							paramCastNode->m_explicitCast = isExplicitCast(paramNodeDataType, paramNodeProperDataType);
+						}
+						sdaFunctionNode->getTypeContext()->setParamDataTypeWithPriority(paramIdx, paramNodeDataType);
+					}
+					paramIdx++;
 				}
 			}
 
@@ -568,43 +651,42 @@ namespace CE::Decompiler::Symbolization
 			}
 		}
 
-		static DataTypePtr CalculateDataType(DataTypePtr type1, DataTypePtr type2) {
-			if (type1->isPointer())
-				return type1;
-			if (type2->isPointer())
-				return type2;
-			if (type1->getSize() > type2->getSize())
-				return type1;
-			if (type1->getSize() < type2->getSize())
-				return type2;
-			if (type1->isSigned())
+		bool isExplicitCast(DataTypePtr fromType, DataTypePtr toType) {
+			auto fromBaseType = fromType->getBaseType();
+			auto toBaseType = toType->getBaseType();
+			if (auto fromSysType = dynamic_cast<SystemType*>(fromBaseType)) {
+				if (auto toSysType = dynamic_cast<SystemType*>(toBaseType)) {
+					if (fromSysType->isSigned() != toSysType->isSigned())
+						return true;
+					if (fromBaseType->getSize() > toBaseType->getSize())
+						return true;
+				}
+			}
+			auto ptrList1 = fromType->getPointerLevels();
+			auto ptrList2 = toType->getPointerLevels();
+			if (!ptrList1.empty() && !ptrList2.empty())
+				return false;
+			if (fromBaseType != toBaseType)
+				return true;
+			return !Unit::EqualPointerLvls(ptrList1, ptrList2);
+		}
+
+		DataTypePtr getDataTypeToCastTo(DataTypePtr type1, DataTypePtr type2) {
+			auto priority1 = type1->getConversionPriority();
+			auto priority2 = type2->getConversionPriority();
+			if (priority1 == 0 && priority2 == 0)
+				return m_dataTypeFactory->getType(SystemType::Int32);
+			if (priority2 > priority1)
 				return type2;
 			return type1;
 		}
 	};
 
-	static void BuildSdaNodes(Node* node) {
-		IterateChildNodes(node, BuildSdaNodes);
-
-		if (dynamic_cast<Block::JumpTopNode*>(node->getParentNode()))
-			return;
-
-		auto sdaNode = new SdaNode(node);
-		node->replaceWith(sdaNode);
-		node->addParentNode(sdaNode);
-	}
-
 	static void SymbolizeWithSDA(SdaCodeGraph* sdaCodeGraph, UserSymbolDef& userSymbolDef) {
-		for (const auto decBlock : sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
-			for (auto topNode : decBlock->getAllTopNodes()) {
-				BuildSdaNodes(topNode->getNode());
-			}
-		}
-
-		DataTypeFactory dataTypeFactory(&userSymbolDef);
+		DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
 		
-		SdaSymbolBuilding sdaSymbolBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
-		sdaSymbolBuilding.start();
+		SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
+		sdaBuilding.start();
 
 		SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, &dataTypeFactory);
 		sdaDataTypesCalculating.start();

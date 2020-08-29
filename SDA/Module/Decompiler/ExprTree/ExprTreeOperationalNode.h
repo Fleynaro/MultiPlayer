@@ -258,8 +258,16 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(getSize());
 		}
 
+		Node* getNode() {
+			return m_leftNode;
+		}
+
 		int getSize() {
 			return m_size;
+		}
+
+		bool isSigned() {
+			return m_isSigned;
 		}
 
 		Node* clone(NodeCloneContext* ctx) override {

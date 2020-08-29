@@ -60,8 +60,12 @@ void shellcode_export_finder(BYTE* moduleBase);
 int main(int argc, char** argv)
 {
     //LPVOID pBuffer = AllocateBuffer(&getTestId);
-    
+    unsigned int aa = rand();
+    unsigned int bb = 100000000;
+    auto r = aa * bb;
 
+    r = 0;
+    return 0;
     int a = 5;
 
     char* func = (char*)&getTestId;

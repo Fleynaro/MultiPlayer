@@ -68,21 +68,16 @@ bool Unit::isString() {
 }
 
 bool Unit::equal(DataType::Unit* typeUnit) {
-	if (getBaseType() != typeUnit->getBaseType())
-		return false;
-	auto ptrList1 = getPointerLevels();
-	auto ptrList2 = typeUnit->getPointerLevels();
-	if (ptrList1.size() != ptrList2.size())
-		return false;
-	auto it1 = ptrList1.begin();
-	auto it2 = ptrList2.begin();
-	while (it1 != ptrList1.end()) {
-		if (*it1 != *it2)
-			return false;
-		it1++;
-		it2++;
+	auto baseType1 = getBaseType();
+	auto baseType2 = typeUnit->getBaseType();
+	auto sysType1 = dynamic_cast<SystemType*>(baseType1);
+	auto sysType2 = dynamic_cast<SystemType*>(baseType2);
+	if (sysType1 && sysType2) {
+		return sysType1->getSize() == sysType2->getSize() && sysType1->isSigned() == sysType2->isSigned();
 	}
-	return true;
+	if (baseType1 != baseType2)
+		return false;
+	return EqualPointerLvls(getPointerLevels(), typeUnit->getPointerLevels());
 }
 
 int Unit::getPriority() {
@@ -92,6 +87,27 @@ int Unit::getPriority() {
 	bool isSigned = baseType->isSigned();
 	bool isNotSimple = baseType->getGroup() != Simple;
 	return size | (hasPointerLvl << 3) | (isSigned << 4) | (isNotSimple << 5);
+}
+
+int Unit::getConversionPriority() {
+	if (isPointer())
+		return 10;
+	auto baseType = getBaseType();
+	if (auto systemType = dynamic_cast<SystemType*>(baseType)) {
+		static std::map<SystemType::Types, int> typesInOrder = {
+			std::pair(SystemType::Double, 5),
+			std::pair(SystemType::Float, 4),
+			std::pair(SystemType::UInt64, 3),
+			std::pair(SystemType::Int64, 2),
+			std::pair(SystemType::UInt32, 1)
+		};
+
+		auto it = typesInOrder.find(systemType->getTypeId());
+		if (it != typesInOrder.end())
+			return it->second;
+		return 0;
+	}
+	return -1;
 }
 
 const std::string Unit::getName() {
@@ -155,6 +171,20 @@ DB::IMapper* Unit::getMapper() {
 
 void Unit::setMapper(DB::IMapper* mapper) {
 	m_type->setMapper(mapper);
+}
+
+bool CE::DataType::Unit::EqualPointerLvls(const std::list<int>& ptrList1, const std::list<int>& ptrList2) {
+	if (ptrList1.size() != ptrList2.size())
+		return false;
+	auto it1 = ptrList1.begin();
+	auto it2 = ptrList2.begin();
+	while (it1 != ptrList1.end()) {
+		if (*it1 != *it2)
+			return false;
+		it1++;
+		it2++;
+	}
+	return true;
 }
 
 /*

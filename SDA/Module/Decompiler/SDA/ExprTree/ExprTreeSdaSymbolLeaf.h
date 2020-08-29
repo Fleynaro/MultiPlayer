@@ -7,7 +7,9 @@ namespace CE::Decompiler::ExprTree
 	class SdaSymbolLeaf : public AbstractSdaNode
 	{
 	public:
-		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, bool isGettingAddr)
+		bool m_isGettingAddr;
+
+		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, bool isGettingAddr = false)
 			: m_sdaSymbol(sdaSymbol), m_isGettingAddr(isGettingAddr)
 		{}
 
@@ -63,7 +65,6 @@ namespace CE::Decompiler::ExprTree
 			return m_sdaSymbol->getName();
 		}
 	private:
-		bool m_isGettingAddr = false;
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;
 	};
 };

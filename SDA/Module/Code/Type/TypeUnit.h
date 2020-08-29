@@ -34,6 +34,8 @@ namespace CE
 
 			int getPriority();
 
+			int getConversionPriority();
+
 			const std::string getName() override;
 
 			const std::string getComment() override;
@@ -57,6 +59,8 @@ namespace CE
 			DB::IMapper* getMapper() override;
 
 			void setMapper(DB::IMapper* mapper) override;
+
+			static bool EqualPointerLvls(const std::list<int>& ptrList1, const std::list<int>& ptrList2);
 		private:
 			DataType::Type* m_type;
 			std::list<int> m_levels;
