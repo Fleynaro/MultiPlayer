@@ -4,6 +4,8 @@
 
 namespace CE::Decompiler::ExprTree
 {
+	bool g_MARK_SDA_NODES = false;
+
 	class AbstractSdaNode : public Node
 	{
 	public:
@@ -92,6 +94,8 @@ namespace CE::Decompiler::ExprTree
 			if (m_castDataType != nullptr && m_explicitCast) {
 				result = "(" + m_castDataType->getDisplayName() + ")" + result + "";
 			}
+			if (g_MARK_SDA_NODES)
+				result = "@" + result;
 			return m_updateDebugInfo = result;
 		}
 	};
@@ -149,7 +153,12 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			return m_updateDebugInfo = m_node->printDebug();
+			auto result = m_node->printDebug();
+			if (auto readValueNode = dynamic_cast<ReadValueNode*>(m_node))
+				result = "*" + readValueNode->getAddress()->printDebug();
+			if (g_MARK_SDA_NODES)
+				result = "$" + result;
+			return m_updateDebugInfo = (result);
 		}
 	};
 };

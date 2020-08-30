@@ -56,7 +56,7 @@ namespace CE::Decompiler::Symbolization
 
 			for (int i = 0, size = 1; i < 8; i++) {
 				if ((mask & ~checkMaskList[i]).getValue() == 0) {
-					getDefaultType(size, (i % 2) != 0);
+					return getDefaultType(size, (i % 2) != 0);
 				}
 				if ((i % 2) != 0)
 					size *= 2;
@@ -107,7 +107,7 @@ namespace CE::Decompiler::Symbolization
 
 		void buildSdaCastNodes(Node* node) {
 			IterateChildNodes(node, [&](Node* childNode) {
-				buildSdaNodes(childNode);
+				buildSdaCastNodes(childNode);
 				});
 
 			if (auto abstractSdaNode = dynamic_cast<AbstractSdaNode*>(node)) {
@@ -154,7 +154,7 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
-				auto sdaNumberLeaf = new SdaNumberLeaf(numberLeaf->m_value, m_dataTypeFactory->getDataTypeByMask(numberLeaf->getMask()));
+				auto sdaNumberLeaf = new SdaNumberLeaf(numberLeaf->m_value, m_dataTypeFactory->getDataTypeByMask(numberLeaf->getMask() | uint64_t(0xFFFFFFFF)));
 				numberLeaf->replaceWith(sdaNumberLeaf);
 				delete numberLeaf;
 				return;
@@ -480,8 +480,8 @@ namespace CE::Decompiler::Symbolization
 						if (auto sdaGenTermNode = dynamic_cast<SdaGenericNode*>(castNode->getNode())) {
 							if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenTermNode->getNode())) {
 								if (auto leftCastNode = dynamic_cast<SdaCastNode*>(opNode->m_leftNode)) {
-									castNode->replaceWith(leftCastNode);
-									delete castNode;
+									sdaGenTermNode->replaceWith(leftCastNode->getNode());
+									delete sdaGenTermNode;
 								}
 							}
 						}
@@ -577,26 +577,40 @@ namespace CE::Decompiler::Symbolization
 			auto sdaCastNode = dynamic_cast<SdaCastNode*>(node);
 			if (!sdaCastNode)
 				return;
+			auto sdaNode = sdaCastNode->getNode();
 			sdaCastNode->clearCast();
-			
-			if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(sdaCastNode->getNode()))
+
+			if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(sdaNode))
 			{
 				if (auto castNode = dynamic_cast<CastNode*>(sdaGenNode->getNode())) {
 					if (auto srcCastNode = dynamic_cast<SdaCastNode*>(castNode->getNode())) {
 						auto srcDataType = srcCastNode->getNode()->getDataType();
 						auto srcBaseDataType = srcDataType->getBaseType();
+						auto castDataType = m_dataTypeFactory->getDefaultType(castNode->getSize(), castNode->isSigned());
+						sdaGenNode->setDataType(castDataType);
 						if (srcDataType->isPointer() || castNode->isSigned() != srcBaseDataType->isSigned() || castNode->getSize() != srcBaseDataType->getSize()) {
-							auto castDataType = m_dataTypeFactory->getDefaultType(castNode->getSize(), castNode->isSigned());
 							srcCastNode->setDataType(castDataType);
 							srcCastNode->m_explicitCast = isExplicitCast(srcDataType, castDataType);
-							sdaGenNode->setDataType(castDataType);
 						}
 					}
 				}
 				else if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaGenNode->getNode())) {
 					if (auto addrCastNode = dynamic_cast<SdaCastNode*>(readValueNode->getAddress())) {
 						auto addrDataType = addrCastNode->getNode()->getDataType();
-						if (!addrDataType->isPointer() || readValueNode->getSize() != addrDataType->getBaseType()->getSize()) {
+						if (addrDataType->isPointer() && readValueNode->getSize() == addrDataType->getBaseType()->getSize()) {
+							auto resultDataType = DataType::CloneUnit(addrDataType);
+							resultDataType->removePointerLevelOutOfFront();
+							if (auto addrGoarNode = dynamic_cast<GoarNode*>(addrCastNode->getNode())) {
+								addrGoarNode->m_isReading = true;
+								addrGoarNode->setDataType(resultDataType);
+								sdaGenNode->replaceWith(addrGoarNode);
+								delete sdaGenNode;
+								return;
+							}
+							else {
+								sdaGenNode->setDataType(resultDataType);
+							}
+						} else {
 							auto defPtrDataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
 							defPtrDataType->addPointerLevelInFront();
 							addrCastNode->setDataType(defPtrDataType);
@@ -634,13 +648,17 @@ namespace CE::Decompiler::Symbolization
 						if (auto srcCastNode = dynamic_cast<SdaCastNode*>(assignmentNode->getSrcNode())) {
 							auto dstNodeDataType = dstCastNode->getNode()->getDataType();
 							auto srcNodeDataType = srcCastNode->getNode()->getDataType();
-							if (dstNodeDataType->getSize() == srcNodeDataType->getSize()
-								&& dstNodeDataType->getPriority() < srcNodeDataType->getPriority()) {
-								dstCastNode->setDataType(srcNodeDataType);
-								dstCastNode->m_explicitCast = isExplicitCast(dstNodeDataType, srcNodeDataType);
-								sdaGenNode->setDataType(srcNodeDataType);
+							
+							bool autoSdaSymbolDataTypeChanged = false;
+							if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(dstCastNode->getNode())) {
+								if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(sdaSymbolLeaf->getSdaSymbol())) {
+									if (dstNodeDataType->getSize() == srcNodeDataType->getSize() && dstNodeDataType->getPriority() < srcNodeDataType->getPriority()) {
+										autoSdaSymbol->setDataType(srcNodeDataType);
+										autoSdaSymbolDataTypeChanged = true;
+									}
+								}
 							}
-							else {
+							if (!autoSdaSymbolDataTypeChanged) {
 								srcCastNode->setDataType(dstNodeDataType);
 								srcCastNode->m_explicitCast = isExplicitCast(srcNodeDataType, dstNodeDataType);
 								sdaGenNode->setDataType(dstNodeDataType);
@@ -653,7 +671,7 @@ namespace CE::Decompiler::Symbolization
 					sdaGenNode->setDataType(boolType);
 				}
 			}
-			else if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(sdaCastNode->getNode())) {
+			else if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(sdaNode)) {
 				if (auto dstCastNode = dynamic_cast<SdaCastNode*>(sdaFunctionNode->getDestination())) {
 					if (auto signature = dynamic_cast<DataType::Signature*>(dstCastNode->getNode()->getDataType()->getType())) {
 						if (!sdaFunctionNode->getSignature()) {
@@ -676,13 +694,13 @@ namespace CE::Decompiler::Symbolization
 					paramIdx++;
 				}
 			}
-			else if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(sdaCastNode->getNode())) {
+			else if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(sdaNode)) {
 				auto valueMask = sdaNumberLeaf->getMask();
-				sdaNumberLeaf->setDataType(m_dataTypeFactory->getDataTypeByMask(sdaNumberLeaf->getMask()));
+				sdaNumberLeaf->setDataType(m_dataTypeFactory->getDataTypeByMask(sdaNumberLeaf->getMask() | uint64_t(0xFFFFFFFF)));
 			}
 
 			if (!dynamic_cast<LinearExpr*>(sdaCastNode->getParentNode())) {
-				buildGoar(sdaCastNode->getNode());
+				buildGoar(sdaNode);
 			}
 		}
 
@@ -724,6 +742,6 @@ namespace CE::Decompiler::Symbolization
 		sdaBuilding.start();
 
 		SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, &dataTypeFactory);
-		//sdaDataTypesCalculating.start();
+		sdaDataTypesCalculating.start();
 	}
 };

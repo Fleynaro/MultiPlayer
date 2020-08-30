@@ -10,10 +10,10 @@ namespace CE::Decompiler::ExprTree
 		AbstractSdaNode* m_base;
 		int m_bitOffset; //offset + bitOffset?
 		Node* m_index;
-		int m_readSize;
+		bool m_isReading;
 
-		GoarNode(DataTypePtr dataType, AbstractSdaNode* base, int bitOffset = 0x0, Node* index = nullptr, int readSize = 0x0)
-			: m_dataType(dataType), m_base(base), m_bitOffset(bitOffset), m_index(index), m_readSize(readSize)
+		GoarNode(DataTypePtr dataType, AbstractSdaNode* base, int bitOffset = 0x0, Node* index = nullptr, bool isReading = false)
+			: m_dataType(dataType), m_base(base), m_bitOffset(bitOffset), m_index(index), m_isReading(isReading)
 		{
 			m_base->addParentNode(this);
 			if(m_index)
@@ -44,7 +44,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone(NodeCloneContext* ctx) override {
-			return new GoarNode(m_dataType, dynamic_cast<AbstractSdaNode*>(m_base->clone(ctx)), m_bitOffset, m_index->clone(ctx), m_readSize);
+			return new GoarNode(m_dataType, dynamic_cast<AbstractSdaNode*>(m_base->clone(ctx)), m_bitOffset, m_index->clone(ctx), m_isReading);
 		}
 
 		bool isFloatingPoint() override {
@@ -61,7 +61,7 @@ namespace CE::Decompiler::ExprTree
 
 		std::string printDebug() override {
 			auto str = printDebugGoar();
-			if (m_readSize == 0x0)
+			if (!m_isReading)
 				str = "&" + str;
 			return m_updateDebugInfo = str;
 		}
@@ -70,7 +70,7 @@ namespace CE::Decompiler::ExprTree
 			auto str = m_base->printDebugGoar();
 			if (m_bitOffset) {
 				if (auto structure = dynamic_cast<DataType::Structure*>(m_base->getDataType()->getType())) {
-					str = str + (m_readSize == 0x0 ? "." : "->") + structure->getField(m_bitOffset)->getName();
+					str = str + (m_isReading ? "->" : ".") + structure->getField(m_bitOffset)->getName();
 				}
 				else {
 					str = "(" + str + " + " + std::to_string(m_bitOffset / 0x8) + ")[!some error!]";

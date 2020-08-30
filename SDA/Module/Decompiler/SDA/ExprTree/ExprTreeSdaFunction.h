@@ -18,9 +18,9 @@ namespace CE::Decompiler::ExprTree
 			{}
 
 			void setParamDataTypeWithPriority(int paramIdx, DataTypePtr dataType) {
-				if (m_paramTypes[paramIdx]->getPriority() >= dataType->getPriority())
+				if (m_paramTypes[paramIdx - 1]->getPriority() >= dataType->getPriority())
 					return;
-				m_paramTypes[paramIdx] = dataType;
+				m_paramTypes[paramIdx - 1] = dataType;
 			}
 		};
 
