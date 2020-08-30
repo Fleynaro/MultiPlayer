@@ -1,5 +1,5 @@
 #pragma once
-#include "ExprTreeSdaNode.h"
+#include "ExprTreeSdaAbstractNode.h"
 #include <Code/Type/FunctionSignature.h>
 #include "../../ExprTree/ExprTreeFunctionCall.h"
 
@@ -52,7 +52,7 @@ namespace CE::Decompiler::ExprTree
 			return m_signature ? m_signature->getParameters()[paramIdx - 1]->getDataType() : m_typeContext->m_paramTypes[paramIdx - 1];
 		}
 
-		DataTypePtr getDataType() override {
+		DataTypePtr getSrcDataType() override {
 			return m_signature ? m_signature->getReturnType() : m_typeContext->m_returnType;
 		}
 
@@ -86,7 +86,7 @@ namespace CE::Decompiler::ExprTree
 			return m_typeContext;
 		}
 
-		std::string printDebug() override {
+		std::string printSdaDebug() override {
 			return m_funcCall->printDebug();
 		}
 	private:

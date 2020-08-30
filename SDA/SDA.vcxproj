@@ -367,8 +367,9 @@
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSda.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaFunction.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaGoar.h" />
-    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaNode.h" />
+    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaAbstractNode.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaLeaf.h" />
+    <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaGenericNode.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaHelper.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />

@@ -1,6 +1,6 @@
 #pragma once
 #include "../AutoSdaSymbol.h"
-#include "ExprTreeSdaNode.h"
+#include "ExprTreeSdaAbstractNode.h"
 #include <Code/Symbol/Symbol.h>
 
 namespace CE::Decompiler::ExprTree
@@ -40,7 +40,7 @@ namespace CE::Decompiler::ExprTree
 			return false;
 		}
 
-		DataTypePtr getDataType() override {
+		DataTypePtr getSrcDataType() override {
 			if (m_isGettingAddr) {
 				auto dataType = DataType::CloneUnit(m_sdaSymbol->getDataType());
 				dataType->addPointerLevelInFront();
@@ -59,7 +59,7 @@ namespace CE::Decompiler::ExprTree
 			return m_isGettingAddr;
 		}
 
-		std::string printDebug() override {
+		std::string printSdaDebug() override {
 			auto str = printDebugGoar();
 			if (m_isGettingAddr)
 				str = "&" + str;
@@ -83,7 +83,7 @@ namespace CE::Decompiler::ExprTree
 			: m_value(value), m_calcDataType(calcDataType)
 		{}
 
-		DataTypePtr getDataType() override {
+		DataTypePtr getSrcDataType() override {
 			return m_calcDataType;
 		}
 
@@ -109,7 +109,7 @@ namespace CE::Decompiler::ExprTree
 			return new SdaNumberLeaf(m_value, m_calcDataType);
 		}
 
-		std::string printDebug() override {
+		std::string printSdaDebug() override {
 			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value) + "{" + std::to_string((int)m_value) + "}");
 		}
 	};
