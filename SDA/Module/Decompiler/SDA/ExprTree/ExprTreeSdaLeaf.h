@@ -1,4 +1,5 @@
 #pragma once
+#include "../AutoSdaSymbol.h"
 #include "ExprTreeSdaNode.h"
 #include <Code/Symbol/Symbol.h>
 
@@ -19,6 +20,10 @@ namespace CE::Decompiler::ExprTree
 
 		BitMask64 getMask() override {
 			return BitMask64(getDataType()->getSize());
+		}
+
+		bool isLeaf() override {
+			return true;
 		}
 
 		ObjectHash::Hash getHash() override {
@@ -66,5 +71,46 @@ namespace CE::Decompiler::ExprTree
 		}
 	private:
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;
+	};
+
+	class SdaNumberLeaf : public AbstractSdaNode
+	{
+	public:
+		uint64_t m_value;
+		DataTypePtr m_calcDataType;
+
+		SdaNumberLeaf(uint64_t value, DataTypePtr calcDataType = nullptr)
+			: m_value(value), m_calcDataType(calcDataType)
+		{}
+
+		DataTypePtr getDataType() override {
+			return m_calcDataType;
+		}
+
+		void setDataType(DataTypePtr dataType) override {
+			m_calcDataType = dataType;
+		}
+
+		BitMask64 getMask() override {
+			return BitMask64(m_value);
+		}
+
+		bool isLeaf() override {
+			return true;
+		}
+
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue((int64_t&)m_value);
+			return hash.getHash();
+		}
+
+		Node* clone(NodeCloneContext* ctx) override {
+			return new SdaNumberLeaf(m_value, m_calcDataType);
+		}
+
+		std::string printDebug() override {
+			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value) + "{" + std::to_string((int)m_value) + "}");
+		}
 	};
 };

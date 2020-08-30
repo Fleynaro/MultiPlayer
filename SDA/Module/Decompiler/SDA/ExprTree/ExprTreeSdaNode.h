@@ -51,6 +51,11 @@ namespace CE::Decompiler::ExprTree
 			return m_node;
 		}
 
+		void clearCast() {
+			m_castDataType = nullptr;
+			m_explicitCast = false;
+		}
+
 		bool hasCast() {
 			return m_castDataType != nullptr;
 		}

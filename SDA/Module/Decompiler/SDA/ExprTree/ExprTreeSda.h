@@ -1,5 +1,5 @@
 #pragma once
 #include "ExprTreeSdaNode.h"
-#include "ExprTreeSdaSymbolLeaf.h"
+#include "ExprTreeSdaLeaf.h"
 #include "ExprTreeSdaGoar.h"
 #include "ExprTreeSdaFunction.h"

@@ -26,9 +26,7 @@ namespace CE::Decompiler::ExprTree
 
 		SdaFunctionNode(FunctionCall* funcCallCtx, std::shared_ptr<TypeContext> typeContext)
 			: m_funcCall(funcCallCtx), m_typeContext(typeContext)
-		{
-			m_funcCall->addParentNode(this);
-		}
+		{}
 
 		~SdaFunctionNode() {
 			m_funcCall->removeBy(this);
