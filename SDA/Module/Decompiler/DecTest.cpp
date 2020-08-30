@@ -154,7 +154,9 @@ void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& u
 {
 	using namespace CE::Symbol;
 	userSymbolDefs[0] = createUserSymbolDef();
+	userSymbolDefs[0].m_signature->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("int64_t")));
 	userSymbolDefs[0].m_stackMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_STACK_VAR, "stackArray", "int32_t", "[2][3][4]"), -0x68);
+	userSymbolDefs[0].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "idx", "int64_t", ""), 4608);
 }
 
 void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, const std::set<int>& samplesWithXMM, const std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs, bool showAsmBefore = true)

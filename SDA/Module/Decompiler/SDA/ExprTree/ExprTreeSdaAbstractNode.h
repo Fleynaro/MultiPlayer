@@ -15,6 +15,8 @@ namespace CE::Decompiler::ExprTree
 			return hasCast() ? m_castDataType : getSrcDataType();
 		}
 
+		virtual DataTypePtr getSrcDataType() = 0;
+
 		virtual void setDataType(DataTypePtr dataType) = 0;
 
 		bool hasCast() {
@@ -51,8 +53,5 @@ namespace CE::Decompiler::ExprTree
 		virtual std::string printDebugGoar() {
 			return printSdaDebug();
 		}
-
-	protected:
-		virtual DataTypePtr getSrcDataType() = 0;
 	};
 };

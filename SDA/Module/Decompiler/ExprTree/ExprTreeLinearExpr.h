@@ -51,7 +51,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		BitMask64 getMask() override {
-			BitMask64 mask;
+			BitMask64 mask = (uint64_t&)m_constTerm;
 			for (auto term : m_terms) {
 				mask = mask | term->getMask();
 			}
