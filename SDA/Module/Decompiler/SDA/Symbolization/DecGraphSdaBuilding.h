@@ -13,8 +13,11 @@ namespace CE::Decompiler::Symbolization
 		void start() {
 			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 				for (auto topNode : decBlock->getAllTopNodes()) {
-					Node::UpdateDebugInfo(topNode->getNode());
-					buildSdaNodes(topNode->getNode());
+					auto node = topNode->getNode();
+					Node::UpdateDebugInfo(node);
+					buildSdaNodes(node);
+					Node::UpdateDebugInfo(node);
+					node = nullptr;
 				}
 			}
 
@@ -24,6 +27,7 @@ namespace CE::Decompiler::Symbolization
 		SdaCodeGraph* m_sdaCodeGraph;
 		UserSymbolDef* m_userSymbolDef;
 		DataTypeFactory* m_dataTypeFactory;
+		std::map<Symbol::Symbol*, CE::Symbol::AbstractSymbol*> m_replacedSymbols;
 		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
 		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
 		std::set<CE::Symbol::AbstractSymbol*> m_autoSymbols;
@@ -110,21 +114,33 @@ namespace CE::Decompiler::Symbolization
 
 				if (sdaSymbolLeafToReplace)
 				{
-					//calculate size
-					int size = 0x0;
 					bool transformToLocalOffset = false;
 					bool isStackOrGlobal = false;
+					//check to see if it is [rsp] or [rip]
 					if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(sdaSymbolLeafToReplace->m_symbol)) {
 						//if [rip] or [rsp] register
 						if (regSymbol->m_register.isPointer()) {
 							//transform to global offset
 							if (regSymbol->m_register.getGenericId() == ZYDIS_REGISTER_RIP) {
-								offset = toGlobalOffset(offset);
 								transformToLocalOffset = true;
 							}
 							isStackOrGlobal = true;
 						}
 					}
+
+					//not to find repeatly
+					if (!isStackOrGlobal) {
+						auto it = m_replacedSymbols.find(sdaSymbolLeafToReplace->m_symbol);
+						if (it != m_replacedSymbols.end()) {
+							sdaSymbolLeafToReplace->replaceWith(new SdaSymbolLeaf(it->second));
+							delete sdaSymbolLeafToReplace;
+							return;
+						}
+					}
+
+					//default size
+					auto size = sdaSymbolLeafToReplace->m_symbol->getSize();
+					//calculate size
 					if (isStackOrGlobal) {
 						//handle later anyway
 						if (dynamic_cast<LinearExpr*>(node->getParentNode()))
@@ -134,26 +150,25 @@ namespace CE::Decompiler::Symbolization
 							size = readValueNode->getSize();
 						}
 					}
-					if (size == 0x0) {
-						size = sdaSymbolLeafToReplace->m_symbol->getSize();
-					}
+
+					//before findOrCreateSymbol
+					if (transformToLocalOffset)
+						offset = toGlobalOffset(offset);
 
 					//find symbol or create it
 					auto sdaSymbol = findOrCreateSymbol(sdaSymbolLeafToReplace->m_symbol, size, offset);
+					if (!isStackOrGlobal) {
+						m_replacedSymbols[sdaSymbolLeafToReplace->m_symbol] = sdaSymbol;
+					}
+
+					//after findOrCreateSymbol
 					if (transformToLocalOffset)
 						offset = toLocalOffset(offset);
 
-					if (isStackOrGlobal) {
-						sdaSymbolLeafToReplace->replaceWith(new SdaSymbolLeaf(sdaSymbol, true));
-						delete sdaSymbolLeafToReplace;
-					}
-					else {
-						//replace all symbol leafs including the current
-						for (auto symbolLeaf : sdaSymbolLeafToReplace->m_symbol->m_symbolLeafs) {
-							symbolLeaf->replaceWith(new SdaSymbolLeaf(sdaSymbol));
-							delete symbolLeaf;
-						}
-					}
+					//replace
+					sdaSymbolLeafToReplace->replaceWith(new SdaSymbolLeaf(sdaSymbol, isStackOrGlobal));
+					delete sdaSymbolLeafToReplace;
+
 					if (symbolLeaf)
 						return;
 					if (linearExpr) {

@@ -240,7 +240,7 @@ namespace CE::Decompiler::ExprTree
 		std::string printDebug() override {
 			if (!m_leftNode)
 				return "";
-			return m_updateDebugInfo = ("*(uint_" + std::to_string(8 * getSize()) + "t*)" + m_leftNode->printDebug());
+			return m_updateDebugInfo = ("*{uint_" + std::to_string(8 * getSize()) + "t*}" + m_leftNode->printDebug());
 		}
 	private:
 		int m_size;
@@ -277,7 +277,7 @@ namespace CE::Decompiler::ExprTree
 		std::string printDebug() override {
 			if (!m_leftNode)
 				return "";
-			return m_updateDebugInfo = ("("+ std::string(!m_isSigned ? "u" : "") +"int_" + std::to_string(8 * getSize()) + "t)" + m_leftNode->printDebug());
+			return m_updateDebugInfo = ("{"+ std::string(!m_isSigned ? "u" : "") +"int_" + std::to_string(8 * getSize()) + "t}" + m_leftNode->printDebug());
 		}
 	private:
 		int m_size;

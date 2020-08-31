@@ -214,10 +214,11 @@ namespace CE::Decompiler::Symbolization
 							}
 						}
 						else {
-							auto defPtrDataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
+							auto defDataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
+							auto defPtrDataType = DataType::CloneUnit(defDataType);
 							defPtrDataType->addPointerLevelInFront();
 							cast(addrSdaNode, defPtrDataType);
-							sdaGenNode->setDataType(defPtrDataType);
+							sdaGenNode->setDataType(defDataType);
 						}
 					}
 				}
@@ -244,7 +245,10 @@ namespace CE::Decompiler::Symbolization
 				}
 				else if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaGenNode->getNode())) {
 					auto maskSize = linearExpr->getMask().getSize();
-					DataTypePtr calcDataType = m_dataTypeFactory->getDataTypeByNumber((uint64_t)linearExpr->getConstTermValue());
+					auto sdaConstTerm = dynamic_cast<AbstractSdaNode*>(linearExpr->getConstTerm());
+
+					//calculate the data type
+					DataTypePtr calcDataType = sdaConstTerm->getDataType();
 					for (auto term : linearExpr->getTerms()) {
 						if (auto sdaTermNode = dynamic_cast<AbstractSdaNode*>(term)) {
 							calcDataType = getDataTypeToCastTo(calcDataType, sdaTermNode->getDataType());
@@ -253,6 +257,8 @@ namespace CE::Decompiler::Symbolization
 					if (maskSize != calcDataType->getSize())
 						calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
 
+					//cast to the data type
+					cast(sdaConstTerm, calcDataType);
 					for (auto term : linearExpr->getTerms()) {
 						if (auto sdaTermNode = dynamic_cast<AbstractSdaNode*>(term)) {
 							cast(sdaTermNode, calcDataType);

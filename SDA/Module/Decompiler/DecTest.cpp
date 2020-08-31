@@ -138,24 +138,40 @@ Symbolization::UserSymbolDef createUserSymbolDef()
 {
 	auto userSymbolDef = Symbolization::UserSymbolDef(g_programModule);
 	userSymbolDef.m_signature = new CE::DataType::Signature(g_programModule->getTypeManager(), "test");
+	userSymbolDef.m_signature->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("int64_t")));
 	userSymbolDef.m_globalMemoryArea = g_programModule->getGlobalMemoryArea();
 	userSymbolDef.m_stackMemoryArea = new CE::Symbol::MemoryArea(g_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
 	userSymbolDef.m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(g_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
 	return userSymbolDef;
 }
 
-template<typename T = CE::Symbol::AbstractSymbol>
-T* createSymbol(CE::Symbol::Type type, std::string name, std::string typeName, std::string typeLevel) {
-	using namespace CE::Symbol;
-	return dynamic_cast<T*>(g_programModule->getSymbolManager()->createSymbol(type, DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName(typeName), typeLevel), name));
+CE::DataTypePtr type(std::string typeName, std::string typeLevel) {
+	return DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName(typeName), typeLevel);
 }
+
+template<typename T = CE::Symbol::AbstractSymbol>
+T* createSymbol(CE::Symbol::Type dataType, std::string name, std::string typeName, std::string typeLevel) {
+	using namespace CE::Symbol;
+	return dynamic_cast<T*>(g_programModule->getSymbolManager()->createSymbol(dataType, type(typeName, typeLevel), name));
+}
+
+CE::DataType::Signature* g_defSignature;
+std::map<int, CE::DataType::Signature*> g_functions;
 
 void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs)
 {
 	using namespace CE::Symbol;
+	auto sig = new CE::DataType::Signature(g_programModule->getTypeManager(), "test");
+	sig->addParameter("param1", type("uint32_t"));
+	sig->addParameter("param2", type("uint32_t"));
+	sig->addParameter("param3", type("uint32_t"));
+	sig->addParameter("param4", type("uint32_t"));
+	sig->addParameter("param5", type("uint32_t"));
+	sig->setReturnType(type("uint32_t"));
+	g_defSignature = sig;
+
 	//Test_Array
 	userSymbolDefs[900] = createUserSymbolDef();
-	userSymbolDefs[900].m_signature->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("int64_t")));
 	userSymbolDefs[900].m_stackMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_STACK_VAR, "stackArray", "int32_t", "[2][3][4]"), -0x68);
 	userSymbolDefs[900].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "idx", "int64_t", ""), 4608);
 	userSymbolDefs[900].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "result", "uint32_t", ""), 19201);
@@ -163,9 +179,13 @@ void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& u
 	//Test_StructsAndArray
 	userSymbolDefs[901] = createUserSymbolDef();
 
+
+	userSymbolDefs[202] = createUserSymbolDef();
+	userSymbolDefs[202].m_signature->addParameter("param1", type("float"));
+
 }
 
-void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, const std::set<int>& samplesWithXMM, const std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs, bool showAsmBefore = true)
+void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, const std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs, bool showAsmBefore = true)
 {
 	for (auto sample : samples) {
 		auto data = sample.second->data();
@@ -180,29 +200,19 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 		if (showAsmBefore)
 			graph.printDebug(data);
 
-		auto sig = new CE::DataType::Signature(g_programModule->getTypeManager(), "test");
-		if (samplesWithXMM.count(sample.first) == 0)
-		{
-			sig->addParameter("param1", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
-			sig->addParameter("param2", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
-			sig->addParameter("param3", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
-			sig->addParameter("param4", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
-			sig->addParameter("param5", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
-			sig->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("uint32_t")));
-		}
-		else
-		{
-			sig->addParameter("param1", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
-			sig->addParameter("param2", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
-			sig->addParameter("param3", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
-			sig->addParameter("param4", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
-			sig->addParameter("param5", DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
-			sig->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("float")));
+		auto sig = g_defSignature;
+		auto it = userSymbolDefs.find(sample.first);
+		if (it != userSymbolDefs.end()) {
+			sig = it->second.m_signature;
 		}
 
 		auto info = CE::Decompiler::GetFunctionCallInfo(sig);
 		auto funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
-			auto absAddr = (std::intptr_t)data + offset;
+			if (offset != 0x0) {
+				auto it = g_functions.find(offset);
+				if(it != g_functions.end())
+					return CE::Decompiler::GetFunctionCallInfo(it->second);
+			}
 			return info;
 		};
 
@@ -227,7 +237,6 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 		OptimizeBlockList(blockList);
 		ShowCode(blockList, clonedDecCodeGraph->getAsmGraphBlocks());
 
-		auto it = userSymbolDefs.find(sample.first);
 		if (it != userSymbolDefs.end()) {
 			printf("\n\n\n********************* AFTER SYMBOLIZATION: *********************\n\n");
 			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
@@ -370,7 +379,6 @@ void CE::test(CE::ProgramModule* programModule) {
 	std::vector<byte> sample1003 = { 0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x4C, 0x8B, 0xCA, 0x48, 0x8B, 0xD9, 0x4C, 0x8B, 0xC1, 0x4C, 0x2B, 0xC9, 0xB9, 0x32, 0x00, 0x00, 0x00, 0x4C, 0x8B, 0xD2, 0x43, 0x8A, 0x04, 0x01, 0x41, 0x88, 0x00, 0x49, 0xFF, 0xC0, 0x48, 0xFF, 0xC9, 0x75, 0xF1, 0x48, 0x8D, 0x4B, 0x32, 0xBA, 0x64, 0x00, 0x00, 0x00, 0x42, 0x8A, 0x04, 0x09, 0x88, 0x01, 0x48, 0xFF, 0xC1, 0x48, 0xFF, 0xCA, 0x75, 0xF2, 0x41, 0x8A, 0x82, 0x96, 0x00, 0x00, 0x00, 0x48, 0x8D, 0x8B, 0x9C, 0x00, 0x00, 0x00, 0x88, 0x83, 0x96, 0x00, 0x00, 0x00, 0x41, 0x8B, 0x82, 0x98, 0x00, 0x00, 0x00, 0x89, 0x83, 0x98, 0x00, 0x00, 0x00, 0x45, 0x0F, 0xB7, 0x82, 0xA0, 0x00, 0x00, 0x00, 0x41, 0x8B, 0x92, 0x9C, 0x00, 0x00, 0x00, 0x45, 0x0F, 0xB6, 0xC8, 0x41, 0xC1, 0xE8, 0x08, 0x41, 0x83, 0xE0, 0x7F, 0xE8, 0xB3, 0x88, 0x3C, 0x01, 0x48, 0x8B, 0xC3, 0x48, 0x83, 0xC4, 0x20, 0x5B, 0xC3 };
 	//**** Other ****
 
-	std::set<int> samplesWithXmm = { 206 };
 	std::map<int, Symbolization::UserSymbolDef> userSymbolDefs;
 	initUserSymbolDefsForSamples(userSymbolDefs);
 
@@ -383,7 +391,7 @@ void CE::test(CE::ProgramModule* programModule) {
 	std::vector<byte> sample901((byte*)addr, (byte*)addr + size);
 
 	if (true) {
-		testSamples({ std::pair(901, &sample901) }, samplesWithXmm, userSymbolDefs, true);
+		testSamples({ std::pair(202, &sample202) }, userSymbolDefs, true);
 	}
 
 	if (false) {
@@ -404,6 +412,6 @@ void CE::test(CE::ProgramModule* programModule) {
 			std::pair(1001, &sample1001),
 			std::pair(1002, &sample1002),
 			std::pair(1003, &sample1003),
-			}, samplesWithXmm, userSymbolDefs, false);
+			}, userSymbolDefs, false);
 	}
 }

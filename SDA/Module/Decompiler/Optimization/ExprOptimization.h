@@ -384,6 +384,30 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
+	//[sym1] & 0xFFFF	=>	 (uint16_t)[sym1]	
+	static void CreateTruncateCasts(Node* node) {
+		IterateChildNodes(node, CreateTruncateCasts);
+		
+		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+			if (expr->m_operation == And) {
+				if (auto rightNumberLeaf = dynamic_cast<INumberLeaf*>(expr->m_rightNode)) {
+					auto truncateSize = 0x0;
+					if (rightNumberLeaf->getValue() == 0xFF)
+						truncateSize = 0x1;
+					else if (rightNumberLeaf->getValue() == 0xFFFF)
+						truncateSize = 0x2;
+					else if (rightNumberLeaf->getValue() == 0xFFFFFFFF)
+						truncateSize = 0x4;
+					if (truncateSize != 0x0) {
+						expr->replaceWith(new CastNode(expr->m_leftNode, truncateSize, false));
+						delete expr;
+						return;
+					}
+				}
+			}
+		}
+	}
+
 	//[var_2_32] * 0				=>		0
 	//[var_2_32] ^ [var_2_32]		=>		0
 	//[var_2_32] + 0				=>		[var_2_32]
@@ -453,6 +477,7 @@ namespace CE::Decompiler::Optimization
 				}
 			}
 
+			//5 + 2		=>		7
 			if (auto leftNumberLeaf = dynamic_cast<INumberLeaf*>(expr->m_leftNode)) {
 				if (auto rightNumberLeaf = dynamic_cast<INumberLeaf*>(expr->m_rightNode)) {
 					auto result = Calculate(leftNumberLeaf->getValue(), rightNumberLeaf->getValue(), expr->m_operation);
@@ -718,6 +743,8 @@ namespace CE::Decompiler::Optimization
 		CalculateMasksAndOptimize(node);
 		Node::UpdateDebugInfo(node);
 		OptimizeZeroInExpr(node);
+		Node::UpdateDebugInfo(node);
+		CreateTruncateCasts(node);
 		Node::UpdateDebugInfo(node);
 		CalculateHashes(node);
 	}
