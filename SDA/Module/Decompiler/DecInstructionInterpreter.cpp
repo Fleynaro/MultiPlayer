@@ -322,8 +322,8 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		int dstLocOffset = 0;
 		auto dstLocExpr = requestVarnode(m_instr->m_input0);
-		if (auto dstLocExprNum = dynamic_cast<ExprTree::NumberLeaf*>(dstLocExpr)) {
-			dstLocOffset = int(dstLocExprNum->m_value >> 8);
+		if (auto dstLocExprNum = dynamic_cast<ExprTree::INumberLeaf*>(dstLocExpr)) {
+			dstLocOffset = int(dstLocExprNum->getValue() >> 8);
 		}
 
 		auto funcCallInfo = m_ctx->m_decompiler->m_funcCallInfoCallback(dstLocOffset, dstLocExpr);

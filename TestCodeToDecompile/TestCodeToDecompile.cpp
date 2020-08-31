@@ -26,6 +26,7 @@ int Test_StructsAndArray(TestA* a) {
 	g_c.b->arr2[rand() *
 		2][rand() + 5].arr[rand()] = 1;
 	*a = obj;
+	return 1000;
 }
 
 int Test_Array() {

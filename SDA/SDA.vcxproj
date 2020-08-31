@@ -372,8 +372,11 @@
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaGenericNode.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaHelper.h" />
+    <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphDataTypeCalc.h" />
+    <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSdaBuilding.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />
+    <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecSdaMisc.h" />
     <ClInclude Include="Module\Disassembler\DisasmDecoder.h" />
     <ClInclude Include="Module\Disassembler\DisasmInstructions.h" />
     <ClInclude Include="Module\Disassembler\DisasmOperand.h" />

@@ -5,20 +5,29 @@ namespace CE::Decompiler::ExprTree
 {
 	class LinearExpr : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
+		std::list<Node*> m_terms;
+		INumberLeaf* m_constTerm;
 	public:
-		std::list<ExprTree::Node*> m_terms;
-		int64_t m_constTerm;
 		OperationType m_operation;
 		ObjectHash::Hash m_calcHash;
 
-		LinearExpr(int64_t constTerm = 0x0, OperationType operation = Add)
+		LinearExpr(INumberLeaf* constTerm, OperationType operation = Add)
 			: m_constTerm(constTerm), m_operation(operation)
 		{}
+
+		LinearExpr(int64_t constTerm = 0x0, OperationType operation = Add)
+			: m_operation(operation)
+		{
+			auto numberLeaf = new NumberLeaf((uint64_t)constTerm);
+			numberLeaf->addParentNode(this);
+			m_constTerm = numberLeaf;
+		}
 
 		~LinearExpr() {
 			for (auto term : m_terms) {
 				term->removeBy(this);
 			}
+			delete dynamic_cast<Node*>(m_constTerm);
 		}
 
 		void addTerm(ExprTree::Node* term) {
@@ -26,12 +35,20 @@ namespace CE::Decompiler::ExprTree
 			m_terms.push_back(term);
 		}
 
-		void setConstTerm(int64_t constTerm) {
-			m_constTerm = constTerm;
+		void setConstTermValue(int64_t constTerm) {
+			m_constTerm->setValue((uint64_t)constTerm);
+		}
+
+		int64_t getConstTermValue() {
+			return (int64_t)m_constTerm->getValue();
 		}
 
 		std::list<ExprTree::Node*>& getTerms() {
 			return m_terms;
+		}
+
+		INumberLeaf* getConstTerm() {
+			return m_constTerm;
 		}
 
 		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
@@ -40,10 +57,18 @@ namespace CE::Decompiler::ExprTree
 					*it = newNode;
 				}
 			}
+			if (auto constTermNode = dynamic_cast<INumberLeaf*>(node)) {
+				if (constTermNode == m_constTerm)
+					m_constTerm = dynamic_cast<INumberLeaf*>(newNode);
+			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
-			return m_terms;
+		std::list<Node*> getNodesList() override {
+			auto list = m_terms;
+			if (auto constTermNode = dynamic_cast<Node*>(m_constTerm)) {
+				list.push_back(constTermNode);
+			}
+			return list;
 		}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
@@ -51,7 +76,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		BitMask64 getMask() override {
-			BitMask64 mask = (uint64_t&)m_constTerm;
+			BitMask64 mask = getConstTerm()->getValue();
 			for (auto term : m_terms) {
 				mask = mask | term->getMask();
 			}
@@ -63,7 +88,8 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone(NodeCloneContext* ctx) override {
-			auto newLinearExpr = new LinearExpr(m_constTerm, m_operation);
+			auto clonedConstTerm = dynamic_cast<Node*>(m_constTerm)->clone();
+			auto newLinearExpr = new LinearExpr(dynamic_cast<INumberLeaf*>(clonedConstTerm), m_operation);
 			for (auto term : m_terms) {
 				newLinearExpr->addTerm(term->clone(ctx));
 			}
@@ -83,8 +109,8 @@ namespace CE::Decompiler::ExprTree
 				}
 			}
 
-			if (m_constTerm) {
-				result += NumberLeaf((uint64_t&)m_constTerm).printDebug();
+			if (m_constTerm->getValue()) {
+				result += dynamic_cast<Node*>(m_constTerm)->printDebug();
 			}
 
 			result += ")";

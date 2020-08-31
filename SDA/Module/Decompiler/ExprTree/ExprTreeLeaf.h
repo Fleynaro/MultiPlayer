@@ -41,11 +41,18 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class NumberLeaf : public Node
+	class INumberLeaf
 	{
 	public:
-		uint64_t m_value;
+		virtual uint64_t getValue() = 0;
 
+		virtual void setValue(uint64_t value) = 0;
+	};
+
+	class NumberLeaf : public Node, public INumberLeaf
+	{
+		uint64_t m_value;
+	public:
 		NumberLeaf(uint64_t value)
 			: m_value(value)
 		{}
@@ -55,6 +62,14 @@ namespace CE::Decompiler::ExprTree
 			if(size == 4)
 				(float&)m_value = (float)value;
 			else (double&)m_value = value;
+		}
+
+		uint64_t getValue() override {
+			return m_value;
+		}
+
+		void setValue(uint64_t value) override {
+			m_value = value;
 		}
 
 		BitMask64 getMask() override {

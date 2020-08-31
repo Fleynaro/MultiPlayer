@@ -185,7 +185,7 @@ namespace CE::Decompiler::ExprTree
 				return "";
 			std::string result = "";
 			if (m_operation == Xor) {
-				if (static_cast<NumberLeaf*>(m_rightNode)->m_value == -1) {
+				if (dynamic_cast<INumberLeaf*>(m_rightNode)->getValue() == -1) {
 					result = "~" + m_leftNode->printDebug();
 				}
 			}
@@ -213,7 +213,7 @@ namespace CE::Decompiler::ExprTree
 		Symbol::MemoryVariable* m_memVar = nullptr;
 
 		ReadValueNode(Node* node, int size, PCode::Instruction* instr = nullptr)
-			: OperationalNode(node, nullptr, ReadValue), m_size(size)
+			: OperationalNode(node, nullptr, ReadValue, instr), m_size(size)
 		{}
 
 		Node* getAddress() {
@@ -295,7 +295,7 @@ namespace CE::Decompiler::ExprTree
 		Id m_funcId;
 
 		FunctionalNode(Node* node1, Node* node2, Id id, PCode::Instruction* instr = nullptr)
-			: OperationalNode(node1, node2, Functional, 0b1, true), m_funcId(id)
+			: OperationalNode(node1, node2, Functional, 0b1, true, instr), m_funcId(id)
 		{}
 
 		BitMask64 getMask() override {
@@ -329,7 +329,7 @@ namespace CE::Decompiler::ExprTree
 		Id m_funcId;
 
 		FloatFunctionalNode(Node* node1, Id id, int size, PCode::Instruction* instr = nullptr)
-			: OperationalNode(node1, nullptr, fFunctional, BitMask64(size), true), m_funcId(id), m_size(size)
+			: OperationalNode(node1, nullptr, fFunctional, BitMask64(size), true, instr), m_funcId(id), m_size(size)
 		{}
 
 		int getSize() {

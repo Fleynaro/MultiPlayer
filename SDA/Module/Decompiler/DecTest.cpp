@@ -153,10 +153,16 @@ T* createSymbol(CE::Symbol::Type type, std::string name, std::string typeName, s
 void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs)
 {
 	using namespace CE::Symbol;
-	userSymbolDefs[0] = createUserSymbolDef();
-	userSymbolDefs[0].m_signature->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("int64_t")));
-	userSymbolDefs[0].m_stackMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_STACK_VAR, "stackArray", "int32_t", "[2][3][4]"), -0x68);
-	userSymbolDefs[0].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "idx", "int64_t", ""), 4608);
+	//Test_Array
+	userSymbolDefs[900] = createUserSymbolDef();
+	userSymbolDefs[900].m_signature->setReturnType(DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName("int64_t")));
+	userSymbolDefs[900].m_stackMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_STACK_VAR, "stackArray", "int32_t", "[2][3][4]"), -0x68);
+	userSymbolDefs[900].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "idx", "int64_t", ""), 4608);
+	userSymbolDefs[900].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "result", "uint32_t", ""), 19201);
+
+	//Test_StructsAndArray
+	userSymbolDefs[901] = createUserSymbolDef();
+
 }
 
 void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, const std::set<int>& samplesWithXMM, const std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs, bool showAsmBefore = true)
@@ -370,16 +376,21 @@ void CE::test(CE::ProgramModule* programModule) {
 
 	void* addr = &Test_Array;
 	auto size = calculateFunctionSize2((byte*)addr, 0);
-	std::vector<byte> sample0((byte*)addr, (byte*)addr + size);
+	std::vector<byte> sample900((byte*)addr, (byte*)addr + size);
+
+	addr = &Test_StructsAndArray;
+	size = calculateFunctionSize2((byte*)addr, 0);
+	std::vector<byte> sample901((byte*)addr, (byte*)addr + size);
 
 	if (true) {
-		testSamples({ std::pair(0, &sample0) }, samplesWithXmm, userSymbolDefs, true);
+		testSamples({ std::pair(901, &sample901) }, samplesWithXmm, userSymbolDefs, true);
 	}
 
 	if (false) {
 		printf("\n\n\n\nOTHER:\n\n");
 		testSamples({
-			std::pair(0, &sample0),
+			std::pair(900, &sample900),
+			std::pair(901, &sample901),
 			std::pair(7, &sample7),
 			std::pair(25, &sample25),
 			std::pair(100, &sample100),

@@ -73,15 +73,23 @@ namespace CE::Decompiler::ExprTree
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;
 	};
 
-	class SdaNumberLeaf : public AbstractSdaNode
+	class SdaNumberLeaf : public AbstractSdaNode, public INumberLeaf
 	{
+		DataTypePtr m_calcDataType;
 	public:
 		uint64_t m_value;
-		DataTypePtr m_calcDataType;
 
 		SdaNumberLeaf(uint64_t value, DataTypePtr calcDataType = nullptr)
 			: m_value(value), m_calcDataType(calcDataType)
 		{}
+
+		uint64_t getValue() override {
+			return m_value;
+		}
+
+		void setValue(uint64_t value) override {
+			m_value = value;
+		}
 
 		DataTypePtr getSrcDataType() override {
 			return m_calcDataType;
@@ -110,7 +118,12 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printSdaDebug() override {
-			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value) + "{" + std::to_string((int)m_value) + "}");
+			if (auto sysType = dynamic_cast<DataType::SystemType*>(getSrcDataType()->getBaseType())) {
+				if (sysType->isSigned()) {
+					return m_updateDebugInfo = std::to_string((int64_t)m_value);
+				}
+			}
+			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value));
 		}
 	};
 };
