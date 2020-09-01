@@ -1,7 +1,7 @@
 #pragma once
 #include <main.h>
 #include <inttypes.h>
-#include "DecMask.h"
+#include "../DecMask.h"
 #include <magic_enum.hpp>
 
 //for debug x86

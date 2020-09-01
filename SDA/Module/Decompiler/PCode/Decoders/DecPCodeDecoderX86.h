@@ -1,51 +1,12 @@
 #pragma once
+#include "../DecPCodeAbstractDecoder.h"
 #include <Zycore/Format.h>
 #include <Zycore/LibC.h>
 #include <Zydis/Zydis.h>
-#include "DecRegisterFactory.h"
 
 namespace CE::Decompiler::PCode
 {
-	class AbstractTranslator
-	{
-	public:
-		std::list<Instruction*> m_result;
-
-		virtual void start() = 0;
-
-		void addRegion(void* startAddr, int size) {
-			m_addrRegions.push_back(AddressRegion(startAddr, size));
-		}
-	protected:
-		struct AddressRegion {
-			void* m_startAddr;
-			int m_size;
-
-			AddressRegion(void* startAddr, int size)
-				: m_startAddr(startAddr), m_size(size)
-			{}
-		};
-
-		std::list<AddressRegion> m_addrRegions;
-
-		int64_t getMaxOffset() {
-			return (std::uintptr_t)(getLastRegion().m_startAddr) - (std::uintptr_t)getFirstRegion().m_startAddr + (std::uintptr_t)getLastRegion().m_size;
-		}
-
-		bool containAddress() {
-
-		}
-	private:
-		AddressRegion& getFirstRegion() {
-			return *m_addrRegions.begin();
-		}
-
-		AddressRegion& getLastRegion() {
-			return *m_addrRegions.rbegin();
-		}
-	};
-
-	class TranslatorX86 : public AbstractTranslator
+	class DecoderX86 : public AbstractDecoder
 	{
 		enum class FlagCond {
 			NONE,
@@ -78,42 +39,32 @@ namespace CE::Decompiler::PCode
 			int shuffOp2[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 		};
 	public:
-		TranslatorX86(RegisterFactoryX86* registerFactoryX86)
+		DecoderX86(RegisterFactoryX86* registerFactoryX86)
 			: m_registerFactoryX86(registerFactoryX86)
-		{}
+		{
+			ZydisDecoderInit(&m_decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
+		}
+	private:
+		ZydisDecoder m_decoder;
+		RegisterFactoryX86* m_registerFactoryX86;
+		ZydisDecodedInstruction* m_curInstr;
 
-		void start() override {
-			ZydisDecoder decoder;
-			ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
-
-			ZyanUSize curSize = (ZyanUSize)size;
-			m_curAddr = (ZyanU64)addr;
+		void tryDecode(void* addr, int offset) override {
 			ZydisDecodedInstruction curInstruction;
-			while (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, (void*)m_curAddr, curSize,
-				&curInstruction)))
-			{
+			if (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&m_decoder, addr, 0x10000,
+				&curInstruction))) {
 				ZydisFormatter formatter;
 				ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
 				char buffer[256];
 				ZydisFormatterFormatInstruction(&formatter, m_curInstr, buffer, sizeof(buffer),
-					m_curAddr);
+					(ZyanU64)addr);
 				printf("%s\n", buffer);
 
 				m_curInstr = &curInstruction;
+				m_instrLength = curInstruction.length;
 				translateCurInstruction();
-				curSize -= curInstruction.length;
-				m_curOffset += curInstruction.length;
-				m_curAddr += curInstruction.length;
-				m_curOrderId = 0;
 			}
 		}
-
-	private:
-		RegisterFactoryX86* m_registerFactoryX86;
-		ZydisDecodedInstruction* m_curInstr;
-		ZyanU64 m_curAddr = 0x0;
-		int m_curOffset = 0x0;
-		int m_curOrderId = 0;
 
 		void translateCurInstruction() {
 			auto mnemonic = m_curInstr->mnemonic;
@@ -1006,25 +957,17 @@ namespace CE::Decompiler::PCode
 			case ZYDIS_MNEMONIC_CALL:
 			{
 				auto& operand = m_curInstr->operands[0];
-				Varnode* varnodeInput0;
-				if (operand.type == ZYDIS_OPERAND_TYPE_IMMEDIATE) {
-					int64_t targetOffset = getJumpOffsetByOperand(m_curInstr->operands[0]);
-					varnodeInput0 = new ConstantVarnode((uint64_t&)targetOffset, 0x8);
-				}
-				else {
-					varnodeInput0 = requestOperandValue(operand, size);
-				}
-
+				Varnode* varnodeInput0 = requestOperandValue(operand, size);
 				if (mnemonic == ZYDIS_MNEMONIC_JMP) {
 					addMicroInstruction(InstructionId::BRANCH, varnodeInput0, nullptr);
 				}
 				else {
-					if (false) {
+					/*if (false) {
 						auto varnodeRsp = CreateVarnode(ZYDIS_REGISTER_RSP, 0x8);
 						addMicroInstruction(InstructionId::INT_SUB, varnodeRsp, new ConstantVarnode(0x8, 0x8), varnodeRsp);
 						auto offset = getNextInstrOffset();
 						addMicroInstruction(InstructionId::STORE, varnodeRsp, new ConstantVarnode((uint64_t&)offset, 0x8));
-					}
+					}*/
 					addMicroInstruction(InstructionId::CALL, varnodeInput0, nullptr);
 				}
 				break;
@@ -1103,9 +1046,12 @@ namespace CE::Decompiler::PCode
 				auto varnodeFlagCond = GetFlagCondition(flagCond);
 				auto varnodeNeg = new SymbolVarnode(1);
 				addMicroInstruction(InstructionId::BOOL_NEGATE, varnodeFlagCond, nullptr, varnodeNeg);
-				auto offset = getNextInstrOffset();
-				auto varnodeNextInstrOffset = new ConstantVarnode((uint64_t&)offset, 0x8);
-				addMicroInstruction(InstructionId::CBRANCH, varnodeNextInstrOffset, varnodeNeg);
+
+				auto varnodeRip = CreateVarnode(ZYDIS_REGISTER_RIP, 0x8);
+				auto varnodeJmpAddr = new SymbolVarnode(0x8);
+				addMicroInstruction(InstructionId::INT_ADD, varnodeRip, new ConstantVarnode(1, 0x8), varnodeJmpAddr);
+
+				addMicroInstruction(InstructionId::CBRANCH, varnodeJmpAddr, varnodeNeg);
 				auto operand = m_curInstr->operands[1];
 				auto varnode = requestOperandValue(operand, size, nullptr, operand.actions != 0);
 				addGenericOperation(InstructionId::COPY, varnode, nullptr);
@@ -1259,9 +1205,8 @@ namespace CE::Decompiler::PCode
 				}
 
 				auto varnodeFlagCond = GetFlagCondition(flagCond);
-				int64_t targetOffset = getJumpOffsetByOperand(m_curInstr->operands[0]);
-				auto varnodeNextInstrOffset = new ConstantVarnode((uint64_t&)targetOffset, 0x8);
-				addMicroInstruction(InstructionId::CBRANCH, varnodeNextInstrOffset, varnodeFlagCond);
+				Varnode* varnodeInput0 = requestOperandValue(m_curInstr->operands[0], size);
+				addMicroInstruction(InstructionId::CBRANCH, varnodeInput0, varnodeFlagCond);
 				break;
 			}
 
@@ -1308,19 +1253,6 @@ namespace CE::Decompiler::PCode
 				}
 		}
 
-		int64_t getJumpOffsetByOperand(const ZydisDecodedOperand& operand) {
-			int64_t offset = (int64_t)m_curInstr->length;
-			if (operand.imm.is_signed)
-				offset += (int64_t)m_curOffset + (int64_t)operand.imm.value.s;
-			else offset += (uint64_t)m_curOffset + (uint64_t)operand.imm.value.u;
-			return offset << 8;
-		}
-
-		int64_t getNextInstrOffset() {
-			auto offset = (int64_t)m_curOffset + m_curInstr->length;
-			return offset << 8;
-		}
-
 		Varnode* addGenericOperation(InstructionId instrId, Varnode* varnodeInput0, Varnode* varnodeInput1, Varnode* memLocVarnode = nullptr, bool isFictitious = false, int size = 0x0, int offset = 0x0) {
 			auto& operand = m_curInstr->operands[0];
 			if(size == 0x0)
@@ -1342,13 +1274,13 @@ namespace CE::Decompiler::PCode
 		}
 
 		void addMicroInstruction(InstructionId id, Varnode* input0, Varnode* input1 = nullptr, Varnode* output = nullptr, bool zext = true) {
-			auto instr = new Instruction(id, input0, input1, output, m_curOffset, m_curInstr->length, m_curOrderId++);
+			auto instr = new Instruction(id, input0, input1, output, m_curOffset, m_instrLength, m_curOrderId++);
 			if (m_curOrderId == 1) { //for debug info
 				ZydisFormatter formatter;
 				ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
 				char buffer[256];
 				ZydisFormatterFormatInstruction(&formatter, m_curInstr, buffer, sizeof(buffer),
-					m_curAddr);
+					(ZyanU64)m_curAddr);
 				instr->m_originalView = buffer;
 			}
 			m_result.push_back(instr);
@@ -1379,9 +1311,6 @@ namespace CE::Decompiler::PCode
 				
 				if (operand.mem.base != ZYDIS_REGISTER_NONE) {
 					baseRegVarnode = CreateVarnode(operand.mem.base, memLocExprSize);
-					if (operand.mem.base == ZYDIS_REGISTER_RIP) {
-						offset += m_curOffset + m_curInstr->length;
-					}
 				}
 
 				if (operand.mem.index != ZYDIS_REGISTER_NONE) {
@@ -1402,7 +1331,12 @@ namespace CE::Decompiler::PCode
 				}
 
 				if (operand.mem.disp.has_displacement) {
-					auto dispVarnode = new ConstantVarnode((uint64_t&)operand.mem.disp.value & resultVarnode->getMask().getBitMask64().getValue(), memLocExprSize);
+					auto constValue = (uint64_t&)operand.mem.disp.value & resultVarnode->getMask().getBitMask64().getValue();
+					if (operand.mem.base == ZYDIS_REGISTER_RIP) {
+						//for refering to pcode instructions
+						constValue <<= 8;
+					}
+					auto dispVarnode = new ConstantVarnode(constValue, memLocExprSize);
 					if (resultVarnode != nullptr) {
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);
 						addMicroInstruction(InstructionId::INT_ADD, resultVarnode, dispVarnode, symbolVarnode);

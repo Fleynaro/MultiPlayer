@@ -118,6 +118,10 @@ namespace CE::Decompiler
 			: ExtBitMask(BitMask64(byteMask).getBitsCount(), BitMask64(byteMask).getOffset())
 		{}
 
+		uint8_t getIndex() const {
+			return m_index;
+		}
+
 		BitMask64 getBitMask64() const {
 			return m_bitMask64;
 		}

@@ -5,7 +5,7 @@
 #include "Optimization/DecGraphOptimization.h"
 #include "SDA/Symbolization/DecGraphSymbolization.h"
 #include "TestCodeToDecompile.h"
-#include "DecTranslatorX86.h"
+#include "PCode/Decoders/DecPCodeDecoderX86.h"
 #include <Manager/Managers.h>
 
 using namespace CE;
