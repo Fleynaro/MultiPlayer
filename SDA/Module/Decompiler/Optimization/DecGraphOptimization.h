@@ -289,6 +289,9 @@ namespace CE::Decompiler::Optimization
 	}
 
 	static bool HasUndefinedRegister(Node* node, FunctionCallInfo& funcCallInfo) {
+		if (dynamic_cast<FunctionCall*>(node))
+			return false;
+		
 		bool result = false;
 		IterateChildNodes(node, [&](Node* childNode) {
 			if(!result)

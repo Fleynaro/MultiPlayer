@@ -6,16 +6,83 @@
 
 namespace CE::Decompiler::PCode
 {
-	class TranslatorX86
+	class AbstractTranslator
 	{
 	public:
 		std::list<Instruction*> m_result;
 
+		virtual void start() = 0;
+
+		void addRegion(void* startAddr, int size) {
+			m_addrRegions.push_back(AddressRegion(startAddr, size));
+		}
+	protected:
+		struct AddressRegion {
+			void* m_startAddr;
+			int m_size;
+
+			AddressRegion(void* startAddr, int size)
+				: m_startAddr(startAddr), m_size(size)
+			{}
+		};
+
+		std::list<AddressRegion> m_addrRegions;
+
+		int64_t getMaxOffset() {
+			return (std::uintptr_t)(getLastRegion().m_startAddr) - (std::uintptr_t)getFirstRegion().m_startAddr + (std::uintptr_t)getLastRegion().m_size;
+		}
+
+		bool containAddress() {
+
+		}
+	private:
+		AddressRegion& getFirstRegion() {
+			return *m_addrRegions.begin();
+		}
+
+		AddressRegion& getLastRegion() {
+			return *m_addrRegions.rbegin();
+		}
+	};
+
+	class TranslatorX86 : public AbstractTranslator
+	{
+		enum class FlagCond {
+			NONE,
+			Z,
+			NZ,
+			C,
+			NC,
+			S,
+			NS,
+			O,
+			NO,
+			P,
+			NP,
+			L,
+			LE,
+			NL,
+			NLE,
+			A,
+			NA
+		};
+
+		struct VectorOperationGeneratorInfo {
+			int size = 0x0;
+			int maxSize = 0x0;
+			InstructionId instrId1 = InstructionId::NONE;
+			InstructionId instrId2 = InstructionId::NONE;
+			bool isNegate = false;
+			bool isOperationWithSingleOperand = false;
+			int shuffOp1[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+			int shuffOp2[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+		};
+	public:
 		TranslatorX86(RegisterFactoryX86* registerFactoryX86)
 			: m_registerFactoryX86(registerFactoryX86)
 		{}
 
-		void start(void* addr, int size) {
+		void start() override {
 			ZydisDecoder decoder;
 			ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
 
@@ -47,37 +114,6 @@ namespace CE::Decompiler::PCode
 		ZyanU64 m_curAddr = 0x0;
 		int m_curOffset = 0x0;
 		int m_curOrderId = 0;
-
-		enum class FlagCond {
-			NONE,
-			Z,
-			NZ,
-			C,
-			NC,
-			S,
-			NS,
-			O,
-			NO,
-			P,
-			NP,
-			L,
-			LE,
-			NL,
-			NLE,
-			A,
-			NA
-		};
-
-		struct VectorOperationGeneratorInfo {
-			int size = 0x0;
-			int maxSize = 0x0;
-			InstructionId instrId1 = InstructionId::NONE;
-			InstructionId instrId2 = InstructionId::NONE;
-			bool isNegate = false;
-			bool isOperationWithSingleOperand = false;
-			int shuffOp1[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-			int shuffOp2[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1 };
-		};
 
 		void translateCurInstruction() {
 			auto mnemonic = m_curInstr->mnemonic;
@@ -1273,8 +1309,10 @@ namespace CE::Decompiler::PCode
 		}
 
 		int64_t getJumpOffsetByOperand(const ZydisDecodedOperand& operand) {
-			auto offset = (int64_t)m_curInstr->length +
-				(operand.imm.is_signed ? (m_curOffset + (int)operand.imm.value.s) : (m_curOffset + (unsigned int)operand.imm.value.u));
+			int64_t offset = (int64_t)m_curInstr->length;
+			if (operand.imm.is_signed)
+				offset += (int64_t)m_curOffset + (int64_t)operand.imm.value.s;
+			else offset += (uint64_t)m_curOffset + (uint64_t)operand.imm.value.u;
 			return offset << 8;
 		}
 

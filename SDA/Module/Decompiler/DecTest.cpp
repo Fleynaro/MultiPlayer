@@ -145,7 +145,7 @@ Symbolization::UserSymbolDef createUserSymbolDef()
 	return userSymbolDef;
 }
 
-CE::DataTypePtr type(std::string typeName, std::string typeLevel) {
+CE::DataTypePtr type(std::string typeName, std::string typeLevel = "") {
 	return DataType::GetUnit(g_programModule->getTypeManager()->getTypeByName(typeName), typeLevel);
 }
 
@@ -181,7 +181,7 @@ void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& u
 
 
 	userSymbolDefs[202] = createUserSymbolDef();
-	userSymbolDefs[202].m_signature->addParameter("param1", type("float"));
+	userSymbolDefs[202].m_signature->addParameter("myParam1", type("uint32_t"));
 
 }
 
@@ -213,7 +213,7 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 				if(it != g_functions.end())
 					return CE::Decompiler::GetFunctionCallInfo(it->second);
 			}
-			return info;
+			return CE::Decompiler::GetFunctionCallInfo(g_defSignature);
 		};
 
 		auto decCodeGraph = new DecompiledCodeGraph(&graph, info);
