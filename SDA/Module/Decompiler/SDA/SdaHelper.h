@@ -1,5 +1,5 @@
 #pragma once
-#include "../DecPCode.h"
+#include "../PCode/DecPCode.h"
 #include "../DecStorage.h"
 #include <Code/Type/FunctionSignature.h>
 

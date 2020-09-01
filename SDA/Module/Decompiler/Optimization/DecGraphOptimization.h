@@ -1,6 +1,6 @@
 #pragma once
 #include "ExprOptimization.h"
-#include "../DecCodeGraph.h"
+#include "../Graph/DecCodeGraph.h"
 
 namespace CE::Decompiler::Optimization
 {

@@ -1,5 +1,5 @@
-#include "DecExecutionContext.h"
-#include "Decompiler.h"
+#include "PCodeExecutionContext.h"
+#include "../../Decompiler.h"
 
 using namespace CE::Decompiler;
 

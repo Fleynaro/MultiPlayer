@@ -1,6 +1,6 @@
 #include "DecSymbol.h"
 #include "ExprTree/ExprTree.h"
-#include "DecCodeGraph.h"
+#include "Graph/DecCodeGraph.h"
 
 using namespace CE::Decompiler;
 using namespace CE::Decompiler::Symbol;

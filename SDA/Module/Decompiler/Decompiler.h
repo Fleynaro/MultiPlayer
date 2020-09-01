@@ -1,7 +1,7 @@
 #pragma once
-#include "DecInstructionInterpreter.h"
-#include "DecCodeGraph.h"
-#include "DecRegisterFactory.h"
+#include "Graph/DecCodeGraph.h"
+#include "PCode/Interpreter/PCodeInterpreter.h"
+#include "PCode/DecRegisterFactory.h"
 
 namespace CE::Decompiler
 {

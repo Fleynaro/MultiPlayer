@@ -55,6 +55,15 @@ namespace CE::Decompiler::PCode
 			}
 			return false;
 		}
+
+		void clear(Varnode* varnode) {
+			if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
+				m_registers.erase(varnodeRegister->m_register.getGenericId());
+			}
+			else if (auto varnodeSymbol = dynamic_cast<PCode::SymbolVarnode*>(varnode)) {
+				m_symbolVarnodes.erase(varnodeSymbol);
+			}
+		}
 	};
 
 	class VirtualMachine
@@ -90,9 +99,14 @@ namespace CE::Decompiler::PCode
 							break;
 						}
 						m_virtualMachineCtx->setConstantValue(instr->m_output, result);
+						return;
 					}
 				}
 				break;
+			}
+
+			if (instr->m_output) {
+				m_virtualMachineCtx->clear(instr->m_output);
 			}
 		}
 	};

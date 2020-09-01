@@ -1,5 +1,5 @@
 #pragma once
-#include "DecCodeGraph.h"
+#include "../Graph/DecCodeGraph.h"
 
 namespace CE::Decompiler::LinearView
 {

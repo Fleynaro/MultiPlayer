@@ -1,5 +1,5 @@
 #pragma once
-#include "DecPCode.h"
+#include "../PCode/DecPCode.h"
 
 namespace CE::Decompiler
 {

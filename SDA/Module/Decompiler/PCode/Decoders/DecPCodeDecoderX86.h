@@ -1,5 +1,5 @@
 #pragma once
-#include "../DecPCodeAbstractDecoder.h"
+#include "DecPCodeAbstractDecoder.h"
 #include <Zycore/Format.h>
 #include <Zycore/LibC.h>
 #include <Zydis/Zydis.h>
@@ -8,6 +8,17 @@ namespace CE::Decompiler::PCode
 {
 	class DecoderX86 : public AbstractDecoder
 	{
+	public:
+		DecoderX86(RegisterFactoryX86* registerFactoryX86)
+			: m_registerFactoryX86(registerFactoryX86)
+		{
+			ZydisDecoderInit(&m_decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
+		}
+	private:
+		ZydisDecoder m_decoder;
+		RegisterFactoryX86* m_registerFactoryX86;
+		ZydisDecodedInstruction* m_curInstr;
+
 		enum class FlagCond {
 			NONE,
 			Z,
@@ -38,16 +49,6 @@ namespace CE::Decompiler::PCode
 			int shuffOp1[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 			int shuffOp2[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 		};
-	public:
-		DecoderX86(RegisterFactoryX86* registerFactoryX86)
-			: m_registerFactoryX86(registerFactoryX86)
-		{
-			ZydisDecoderInit(&m_decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
-		}
-	private:
-		ZydisDecoder m_decoder;
-		RegisterFactoryX86* m_registerFactoryX86;
-		ZydisDecodedInstruction* m_curInstr;
 
 		void tryDecode(void* addr, int offset) override {
 			ZydisDecodedInstruction curInstruction;

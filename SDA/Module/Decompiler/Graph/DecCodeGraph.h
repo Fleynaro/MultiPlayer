@@ -1,7 +1,7 @@
 #pragma once
+#include "DecCodeGraphBlock.h"
 #include "DecAsmGraph.h"
-#include "DecStorage.h"
-#include "PrimaryTree/PrimaryTreeBlock.h"
+#include "../DecStorage.h"
 
 namespace CE::Decompiler
 {

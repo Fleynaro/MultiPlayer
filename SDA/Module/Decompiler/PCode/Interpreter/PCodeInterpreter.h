@@ -1,6 +1,6 @@
 #pragma once
-#include "DecExecutionContext.h"
-#include "DecStorage.h"
+#include "PCodeExecutionContext.h"
+#include "../../DecStorage.h"
 
 namespace CE::Decompiler::PCode
 {

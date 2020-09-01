@@ -1,6 +1,7 @@
 #pragma once
 #include "../DecMask.h"
 #include "Utils/ObjectHash.h"
+#include "../PCode/DecPCode.h"
 
 namespace CE::Decompiler::Symbol
 {
