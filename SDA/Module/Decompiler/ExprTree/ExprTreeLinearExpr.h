@@ -104,7 +104,7 @@ namespace CE::Decompiler::ExprTree
 			std::string result = "(";
 			for (auto it = m_terms.begin(); it != m_terms.end(); it ++) {
 				result += (*it)->printDebug();
-				if (it != std::prev(m_terms.end()) || m_constTerm) {
+				if (it != std::prev(m_terms.end()) || m_constTerm->getValue()) {
 					result += " " + ShowOperation(m_operation) + OperationalNode::getOpSize(getMask().getSize(), isFloatingPoint()) + " ";
 				}
 			}

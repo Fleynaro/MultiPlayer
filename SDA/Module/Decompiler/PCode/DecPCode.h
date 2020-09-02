@@ -304,4 +304,6 @@ namespace CE::Decompiler::PCode
 	public:
 		virtual std::list<PCode::Instruction*> getInstructionsRelatedTo() = 0;
 	};
+
+	using DataValue = uint64_t;
 };

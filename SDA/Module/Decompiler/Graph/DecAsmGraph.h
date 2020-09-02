@@ -3,8 +3,6 @@
 
 namespace CE::Decompiler
 {
-	using InstructionMapType = std::map<int, ZydisDecodedInstruction>;
-
 	class AsmGraph;
 	class AsmGraphBlock
 	{
@@ -64,13 +62,16 @@ namespace CE::Decompiler
 	class AsmGraph
 	{
 		friend class AsmGraphBlock;
-	public:
-		std::map<int64_t, AsmGraphBlock> m_blocks;
 		std::list<PCode::Instruction*> m_instructions;
-
-		AsmGraph(std::list<PCode::Instruction*> instructions)
-			: m_instructions(instructions)
-		{}
+		std::map<int64_t, AsmGraphBlock> m_blocks;
+		std::map<PCode::Instruction*, PCode::DataValue> m_constValues;
+		std::map<int64_t, int> m_emptyRegions;
+	public:
+		AsmGraph(std::list<PCode::Instruction*> instructions, std::map<PCode::Instruction*, PCode::DataValue> constValues)
+			: m_instructions(instructions), m_constValues(constValues)
+		{
+			fillEmptyRegions();
+		}
 
 		void build() {
 			enum Direction {
@@ -83,24 +84,33 @@ namespace CE::Decompiler
 
 			for (auto instr : m_instructions) {
 				if (PCode::Instruction::IsBranching(instr->m_id)) {
-					if (auto varnodeOffset = dynamic_cast<PCode::ConstantVarnode*>(instr->m_input0)) {
-						auto targetOffset = (int64_t&)varnodeOffset->m_value;
-						if (targetOffset >= 0 && targetOffset < getMaxOffset()) {
-							auto offset = instr->getOffset();
-							for (auto pair : { std::pair(offset, Direction::Out), std::pair(targetOffset, Direction::In) } ) {
-								auto dir = Direction::None;
-								auto it = split_offsets.find(pair.first);
-								if (it != split_offsets.end()) {
-									dir = it->second;
-									split_offsets.erase(it);
-								}
-								split_offsets.insert(std::make_pair(pair.first, Direction(dir | pair.second)));
-							}
+					int64_t targetOffset;
+					if (auto varnodeConst = dynamic_cast<PCode::ConstantVarnode*>(instr->m_input0)) {
+						targetOffset = varnodeConst->m_value;
+					}
+					else {
+						auto it = m_constValues.find(instr);
+						if (it == m_constValues.end())
+							continue;
+						targetOffset = it->second << 8;
+					}
 
-							jump_dirs.push_back(std::make_pair(offset, targetOffset));
+					if (!doesOffsetBelongToEmptyRegion(targetOffset)) {
+						auto offset = instr->getOffset();
+						for (auto pair : { std::pair(offset, Direction::Out), std::pair(targetOffset, Direction::In) } ) {
+							auto dir = Direction::None;
+							auto it = split_offsets.find(pair.first);
+							if (it != split_offsets.end()) {
+								dir = it->second;
+								split_offsets.erase(it);
+							}
+							split_offsets.insert(std::make_pair(pair.first, Direction(dir | pair.second)));
 						}
+
+						jump_dirs.push_back(std::make_pair(offset, targetOffset));
 					}
 				}
+				
 			}
 
 			int64_t offset = 0;
@@ -151,6 +161,10 @@ namespace CE::Decompiler
 			CalculateLevelsForAsmGrapBlocks(getStartBlock(), path);
 		}
 
+		std::map<int64_t, AsmGraphBlock>& getBlocks() {
+			return m_blocks;
+		}
+
 		AsmGraphBlock* getBlockAtOffset(int64_t offset) {
 			auto it = std::prev(m_blocks.upper_bound(offset));
 			if (it != m_blocks.end()) {
@@ -165,6 +179,10 @@ namespace CE::Decompiler
 			return &(m_blocks.begin()->second);
 		}
 
+		std::map<PCode::Instruction*, PCode::DataValue>& getConstValues() {
+			return m_constValues;
+		}
+
 		void printDebug(void* addr) {
 			for (auto block : m_blocks) {
 				block.second.printDebug(addr, "", true, true);
@@ -172,6 +190,25 @@ namespace CE::Decompiler
 			}
 		}
 	private:
+		void fillEmptyRegions() {
+			for (auto it = m_instructions.begin(); it != m_instructions.end(); it ++) {
+				auto instr = *it;
+				if (instr->m_id == PCode::InstructionId::NONE) {
+					m_emptyRegions[instr->getOriginalInstructionOffset()] = instr->getOriginalInstructionLength();
+					m_instructions.erase(it);
+				}
+			}
+		}
+
+		bool doesOffsetBelongToEmptyRegion(int64_t offset) {
+			if (offset < 0 || offset >= getMaxOffset())
+				return true;
+			auto it = std::prev(m_emptyRegions.upper_bound(offset));
+			if (it != m_emptyRegions.end())
+				return offset < it->first + it->second;
+			return false;
+		}
+
 		std::list<PCode::Instruction*>::iterator getInstructionByOffset(int64_t offset) {
 			for (auto it = m_instructions.begin(); it != m_instructions.end(); it ++) {
 				if ((*it)->getOffset() == offset) //todo: binary search

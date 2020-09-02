@@ -6,7 +6,7 @@
 #include "SDA/Symbolization/DecGraphSymbolization.h"
 #include "TestCodeToDecompile.h"
 #include "PCode/Decoders/DecPCodeDecoderX86.h"
-#include "PCode/DecPCodeVirtualMachine.h"
+#include "PCode/DecPCodeConstValueCalc.h"
 #include <Manager/Managers.h>
 
 using namespace CE;
@@ -197,28 +197,20 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 		RegisterFactoryX86 registerFactoryX86;
 		PCode::DecoderX86 decoder(&registerFactoryX86);
 		int offset = 0;
-		while (offset <= size) {
-			decoder.decode((void*)(data + offset), offset);
-			offset += decoder.getInstructionLength();
+		while (offset < size) {
+			decoder.decode((void*)(data + offset), offset, size);
+			if (decoder.getDecodedPCodeInstructions().empty())
+				break;
 			decodedInstructions.insert(decodedInstructions.end(), decoder.getDecodedPCodeInstructions().begin(), decoder.getDecodedPCodeInstructions().end());
+			offset += decoder.getInstructionLength();
 		}
 
+		std::map<PCode::Instruction*, DataValue> constValues;
 		PCode::VirtualMachineContext vmCtx;
-		PCode::VirtualMachine vm(&vmCtx);
-		auto rip = registerFactoryX86.createRegister(ZYDIS_REGISTER_RIP, 0x8);
-		for (auto instr : decodedInstructions) {
-			if (PCode::Instruction::IsBranching(instr->m_id)) {
-				PCode::DataValue targetOffset;
-				if (vmCtx.tryGetConstantValue(instr->m_input0, targetOffset)) {
-					targetOffset = 0;
-				}
-			}
+		PCode::ConstValueCalculating constValueCalculating(&decodedInstructions, &vmCtx, &registerFactoryX86);
+		constValueCalculating.start(constValues);
 
-			vmCtx.setConstantValue(rip, instr->getOffset());
-			vm.execute(instr);
-		}
-		
-		AsmGraph graph(decodedInstructions);
+		AsmGraph graph(decodedInstructions, constValues);
 		graph.build();
 		if (showAsmBefore)
 			graph.printDebug(data);

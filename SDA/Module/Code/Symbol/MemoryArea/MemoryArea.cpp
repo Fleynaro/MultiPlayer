@@ -36,7 +36,7 @@ std::map<int64_t, MemorySymbol*>::iterator MemoryArea::getSymbolIterator(int64_t
 	if (it != m_symbols.end()) {
 		auto symbolOffset = it->first;
 		auto symbol = it->second;
-		if (offset >= symbolOffset && offset < symbolOffset + symbol->getSize()) {
+		if (offset < symbolOffset + symbol->getSize()) {
 			return it;
 		}
 	}

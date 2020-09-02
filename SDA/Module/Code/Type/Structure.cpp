@@ -183,7 +183,7 @@ Structure::FieldMapType::iterator Structure::getFieldIterator(int bitOffset) {
 	auto it = std::prev(m_fields.upper_bound(bitOffset));
 	if (it != m_fields.end()) {
 		auto field = it->second;
-		if (bitOffset >= field->m_absBitOffset && bitOffset < field->m_absBitOffset + field->getBitSize()) {
+		if (bitOffset < field->m_absBitOffset + field->getBitSize()) {
 			return it;
 		}
 	}

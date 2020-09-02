@@ -11,6 +11,10 @@ namespace CE::Decompiler
 		virtual Register createRegister(int regId, int size, int offset = 0x0) = 0;
 
 		virtual Register createFlagRegister(int flag) = 0;
+
+		virtual Register createInstructionPointerRegister() = 0;
+
+		virtual Register createStackPointerRegister() = 0;
 	};
 
 	class RegisterFactoryX86 : public AbstractRegisterFactory
@@ -22,6 +26,14 @@ namespace CE::Decompiler
 
 		Register createFlagRegister(int flag) override {
 			return CreateFlagRegister(ZydisCPUFlag(flag));
+		}
+
+		Register createInstructionPointerRegister() override {
+			return createRegister(ZYDIS_REGISTER_RIP, 0x8);
+		}
+
+		Register createStackPointerRegister() override {
+			return createRegister(ZYDIS_REGISTER_RSP, 0x8);
 		}
 
 	private:

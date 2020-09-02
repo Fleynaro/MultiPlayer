@@ -3,8 +3,6 @@
 
 namespace CE::Decompiler::PCode
 {
-	using DataValue = uint64_t;
-
 	class VirtualMachineContext
 	{
 		struct RegisterStorage {

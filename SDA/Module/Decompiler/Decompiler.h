@@ -60,8 +60,8 @@ namespace CE::Decompiler
 		std::map<PrimaryTree::Block*, DecompiledBlockInfo> m_decompiledBlocks;
 		
 		void decompileAllBlocks() {
-			for (auto& it : m_decompiledGraph->getAsmGraph()->m_blocks) {
-				auto asmBlock = &it.second;
+			for (auto& pair : m_decompiledGraph->getAsmGraph()->getBlocks()) {
+				auto asmBlock = &pair.second;
 				DecompiledBlockInfo decompiledBlock;
 				decompiledBlock.m_asmBlock = asmBlock;
 				if (!asmBlock->getNextNearBlock() && !asmBlock->getNextFarBlock()) {
