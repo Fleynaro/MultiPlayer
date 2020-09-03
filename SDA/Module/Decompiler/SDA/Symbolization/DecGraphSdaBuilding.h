@@ -285,7 +285,12 @@ namespace CE::Decompiler::Symbolization
 				m_userDefinedSymbols.insert(sdaSymbol);
 				return sdaSymbol;
 			}
-			auto sdaSymbol = createAutoSdaSymbol(type, name + "_0x" + Generic::String::NumberToHex((uint32_t)-offset), offset, size);
+
+			uint64_t offsetView = offset;
+			if (memoryArea->getType() == CE::Symbol::MemoryArea::STACK_SPACE)
+				offsetView = (uint32_t)-offset;
+
+			auto sdaSymbol = createAutoSdaSymbol(type, name + "_0x" + Generic::String::NumberToHex(offsetView), offset, size);
 			storeMemSdaSymbol(sdaSymbol, symbol, offset);
 			return sdaSymbol;
 		}

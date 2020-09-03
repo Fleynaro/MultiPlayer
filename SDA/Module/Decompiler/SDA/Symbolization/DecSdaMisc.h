@@ -16,7 +16,7 @@ namespace CE::Decompiler::Symbolization
 		CE::Symbol::MemoryArea* m_globalMemoryArea = nullptr;
 		CE::Symbol::MemoryArea* m_stackMemoryArea = nullptr;
 		CE::Symbol::MemoryArea* m_funcBodyMemoryArea = nullptr;
-		int m_offset;
+		int64_t m_offset = 0x0;
 
 		UserSymbolDef(CE::ProgramModule* programModule = nullptr)
 			: m_programModule(programModule)

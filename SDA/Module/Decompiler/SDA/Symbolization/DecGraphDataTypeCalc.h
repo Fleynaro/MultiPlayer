@@ -51,20 +51,23 @@ namespace CE::Decompiler::Symbolization
 				//try making a field
 				if (auto structure = dynamic_cast<DataType::Structure*>(baseDataType)) {
 					auto field = structure->getField((int)bitOffset);
+					if (field->isDefault())
+						return false;
 					auto dataType = DataType::CloneUnit(field->getDataType());
 					dataType->addPointerLevelInFront();
 					sdaNode = new GoarNode(dataType, sdaNode, field->getAbsBitOffset(), nullptr, 0x0);
 					bitOffset -= field->getAbsBitOffset();
 					return true;
 				}
-				return false;
 			}
 
 			//try making an array
 			//important: array is like a structure with stored items can be linearly addressed
-			//if it is array, not pointer (like a structure, an array item like a field)
-			if (*ptrLevels.begin() != 1)
-				ptrLevels.pop_front();
+			if (!ptrLevels.empty()) {
+				//if it is array, not pointer (like a structure, an array item like a field)
+				if (*ptrLevels.begin() != 1)
+					ptrLevels.pop_front();
+			}
 			auto arrItemDataType = DataType::GetUnit(baseDataType, ptrLevels);
 			auto arrItemSize = arrItemDataType->getSize();
 
@@ -198,22 +201,26 @@ namespace CE::Decompiler::Symbolization
 				}
 				else if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaGenNode->getNode())) {
 					if (auto addrSdaNode = dynamic_cast<AbstractSdaNode*>(readValueNode->getAddress())) {
-						auto addrDataType = addrSdaNode->getDataType();
-						if (addrDataType->isPointer() && readValueNode->getSize() == addrDataType->getBaseType()->getSize()) {
-							auto resultDataType = DataType::CloneUnit(addrDataType);
-							resultDataType->removePointerLevelOutOfFront();
-							if (auto addrGoarNode = dynamic_cast<GoarNode*>(addrSdaNode)) {
-								addrGoarNode->m_isReading = true;
-								addrGoarNode->setDataType(resultDataType);
-								sdaGenNode->replaceWith(addrGoarNode);
-								delete sdaGenNode;
-								return;
-							}
-							else {
-								sdaGenNode->setDataType(resultDataType);
+						bool isDefault = true;
+						if (addrSdaNode->getDataType()->isPointer()) {
+							auto addrDataType = DataType::CloneUnit(addrSdaNode->getDataType());
+							addrDataType->removePointerLevelOutOfFront();
+							if (readValueNode->getSize() == addrDataType->getSize()) {
+								if (auto addrGoarNode = dynamic_cast<GoarNode*>(addrSdaNode)) {
+									addrGoarNode->m_isReading = true;
+									addrGoarNode->setDataType(addrDataType);
+									sdaGenNode->replaceWith(addrGoarNode);
+									delete sdaGenNode;
+									sdaNode = addrGoarNode;
+									isDefault = false;
+								}
+								else {
+									sdaGenNode->setDataType(addrDataType);
+									isDefault = false;
+								}
 							}
 						}
-						else {
+						if (isDefault) {
 							auto defDataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
 							auto defPtrDataType = DataType::CloneUnit(defDataType);
 							defPtrDataType->addPointerLevelInFront();

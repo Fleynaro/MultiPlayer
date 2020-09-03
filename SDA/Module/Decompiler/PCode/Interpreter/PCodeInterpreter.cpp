@@ -320,11 +320,13 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::CALL:
 	case InstructionId::CALLIND:
 	{
-		int dstLocOffset = 0;
 		auto dstLocExpr = requestVarnode(m_instr->m_input0);
-		if (auto dstLocExprNum = dynamic_cast<ExprTree::INumberLeaf*>(dstLocExpr)) {
-			dstLocOffset = int(dstLocExprNum->getValue() >> 8);
-		}
+
+		int dstLocOffset = 0;
+		auto& constValues = m_block->m_decompiledGraph->getAsmGraph()->getConstValues();
+		auto it = constValues.find(m_instr);
+		if (it != constValues.end())
+			dstLocOffset = (int)it->second;
 
 		auto funcCallInfo = m_ctx->m_decompiler->m_funcCallInfoCallback(dstLocOffset, dstLocExpr);
 		auto funcCallCtx = new ExprTree::FunctionCall(dstLocExpr, m_instr);

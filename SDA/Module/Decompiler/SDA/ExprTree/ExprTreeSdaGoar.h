@@ -68,17 +68,17 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebugGoar() override {
-			auto str = m_base->printDebugGoar();
+			auto str = m_base->printSdaDebug();
 			if (m_bitOffset) {
 				if (auto structure = dynamic_cast<DataType::Structure*>(m_base->getDataType()->getType())) {
-					str = str + (m_isReading ? "->" : ".") + structure->getField(m_bitOffset)->getName();
+					str = "(*" + str + ")" + "." + structure->getField(m_bitOffset)->getName();
 				}
 				else {
 					str = "(" + str + " + " + std::to_string(m_bitOffset / 0x8) + ")[!some error!]";
 				}
 			}
 			else if (m_indexNode) {
-				str = str + "[" + m_indexNode->printDebug() + "]";
+				str = "(*" + str + ")[" + m_indexNode->printDebug() + "]";
 			}
 			return str;
 		}

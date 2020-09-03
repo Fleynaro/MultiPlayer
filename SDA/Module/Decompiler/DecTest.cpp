@@ -151,20 +151,19 @@ CE::DataTypePtr type(std::string typeName, std::string typeLevel = "") {
 }
 
 template<typename T = CE::Symbol::AbstractSymbol>
-T* createSymbol(CE::Symbol::Type dataType, std::string name, std::string typeName, std::string typeLevel) {
+T* createSymbol(CE::Symbol::Type stype, std::string name, DataTypePtr dataType) {
 	using namespace CE::Symbol;
-	return dynamic_cast<T*>(g_programModule->getSymbolManager()->createSymbol(dataType, type(typeName, typeLevel), name));
+	return dynamic_cast<T*>(g_programModule->getSymbolManager()->createSymbol(stype, dataType, name));
 }
 
 CE::DataType::Signature* g_defSignature;
-std::map<int, CE::DataType::Signature*> g_functions;
+std::map<int64_t, CE::DataType::Signature*> g_functions;
 
 void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs)
 {
 	using namespace CE::Symbol;
-	auto sig = new CE::DataType::Signature(g_programModule->getTypeManager(), "test");
+	auto sig = g_programModule->getTypeManager()->createSignature("test");
 	sig->addParameter("param1", type("uint32_t"));
-	sig->addParameter("param2", type("uint32_t"));
 	sig->addParameter("param3", type("uint32_t"));
 	sig->addParameter("param4", type("uint32_t"));
 	sig->addParameter("param5", type("uint32_t"));
@@ -173,17 +172,25 @@ void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& u
 
 	//Test_Array
 	userSymbolDefs[900] = createUserSymbolDef();
-	userSymbolDefs[900].m_stackMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_STACK_VAR, "stackArray", "int32_t", "[2][3][4]"), -0x68);
-	userSymbolDefs[900].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "idx", "int64_t", ""), 4608);
-	userSymbolDefs[900].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "result", "uint32_t", ""), 19201);
+	userSymbolDefs[900].m_stackMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_STACK_VAR, "stackArray", type("int32_t", "[2][3][4]")), -0x68);
+	userSymbolDefs[900].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "idx", type("int64_t", "")), 4608);
+	userSymbolDefs[900].m_funcBodyMemoryArea->addSymbol(createSymbol<MemorySymbol>(LOCAL_INSTR_VAR, "result", type("uint32_t", "")), 19201);
 
 	//Test_StructsAndArray
 	userSymbolDefs[901] = createUserSymbolDef();
 
 
 	userSymbolDefs[202] = createUserSymbolDef();
-	userSymbolDefs[202].m_signature->addParameter("myParam1", type("uint32_t"));
+	userSymbolDefs[202].m_signature->addParameter("myParam1", type("uint32_t", "[1]"));
 
+	auto entity = g_programModule->getTypeManager()->createStructure("Entity", "");
+	entity->addField(0x70, "pos", type("uint32_t", "[4]"));
+
+	sig = g_functions[0xfffffffffffde098] = g_programModule->getTypeManager()->createSignature("getEntitySig");
+	sig->addParameter("param1", type("uint32_t"));
+	//sig->setReturnType(type("uint64_t"));
+	sig->setReturnType(DataType::GetUnit(entity, "[1]"));
+	userSymbolDefs[202].m_globalMemoryArea->addSymbol(createSymbol<MemorySymbol>(FUNCTION, "getEntity", DataType::GetUnit(sig)), 0xfffffffffffde098);
 }
 
 void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, const std::map<int, Symbolization::UserSymbolDef>& userSymbolDefs, bool showAsmBefore = true)

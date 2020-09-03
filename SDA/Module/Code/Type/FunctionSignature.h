@@ -20,6 +20,10 @@ namespace CE
 
 			int getSize() override;
 
+			std::string getDisplayName() override {
+				return getSigName();
+			}
+
 			CallingConvetion getCallingConvetion() {
 				return m_callingConvetion;
 			}
