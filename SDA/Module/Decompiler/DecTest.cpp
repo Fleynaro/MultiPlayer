@@ -183,8 +183,15 @@ void initUserSymbolDefsForSamples(std::map<int, Symbolization::UserSymbolDef>& u
 	userSymbolDefs[202] = createUserSymbolDef();
 	userSymbolDefs[202].m_signature->addParameter("myParam1", type("uint32_t", "[1]"));
 
+	auto vec3D = g_programModule->getTypeManager()->createStructure("vec3D", "");
+	vec3D->addField(0x0, "x", type("uint32_t", ""));
+	vec3D->addField(0x4, "y", type("uint32_t", ""));
+	vec3D->addField(0x8, "z", type("uint32_t", ""));
+	auto pos = g_programModule->getTypeManager()->createStructure("Pos", "");
+	pos->addField(0x0, "vec", DataType::GetUnit(vec3D));
+	pos->addField(0xC, "w", type("uint32_t", ""));
 	auto entity = g_programModule->getTypeManager()->createStructure("Entity", "");
-	entity->addField(0x70, "pos", type("uint32_t", "[4]"));
+	entity->addField(0x70, "pos", DataType::GetUnit(pos));
 
 	sig = g_functions[0xfffffffffffde098] = g_programModule->getTypeManager()->createSignature("getEntitySig");
 	sig->addParameter("param1", type("uint32_t"));

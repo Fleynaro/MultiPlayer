@@ -166,30 +166,21 @@ namespace CE::Decompiler::Symbolization
 						offset = toLocalOffset(offset);
 
 					//replace
-					sdaSymbolLeafToReplace->replaceWith(new SdaSymbolLeaf(sdaSymbol, isStackOrGlobal));
+					auto newSdaSymbolLeaf = new SdaSymbolLeaf(sdaSymbol, isStackOrGlobal);
+					sdaSymbolLeafToReplace->replaceWith(newSdaSymbolLeaf);
 					delete sdaSymbolLeafToReplace;
 
 					if (symbolLeaf)
 						return;
 					if (linearExpr) {
+						//if it is not array with offset is zero
+						if (offset == 0x0 && linearExpr->getTerms().size() == 1) {
+							linearExpr->replaceWith(newSdaSymbolLeaf);
+							delete linearExpr;
+							return;
+						}
 						//change offset
 						linearExpr->setConstTermValue(offset);
-					}
-				}
-			}
-
-			if (auto readValueNode = dynamic_cast<ReadValueNode*>(node)) {
-				if (auto addrGenNode = dynamic_cast<SdaGenericNode*>(readValueNode->getAddress())) {
-					if (auto linearExpr = dynamic_cast<LinearExpr*>(addrGenNode->getNode())) {
-						//if it is not array with offset is zero
-						if (linearExpr->getConstTermValue() == 0x0 && linearExpr->getTerms().size() == 1) {
-							if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(*linearExpr->getTerms().begin())) {
-								sdaSymbolLeaf->m_isGettingAddr = false;
-								readValueNode->replaceWith(sdaSymbolLeaf);
-								delete readValueNode;
-								return;
-							}
-						}
 					}
 				}
 			}

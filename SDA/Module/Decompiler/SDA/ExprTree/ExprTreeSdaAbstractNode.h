@@ -6,6 +6,14 @@ namespace CE::Decompiler::ExprTree
 {
 	bool g_MARK_SDA_NODES = false;
 
+	class IAddressGetting
+	{
+	public:
+		virtual bool isAddrGetting() = 0;
+
+		virtual void setAddrGetting(bool toggle) = 0;
+	};
+
 	class AbstractSdaNode : public Node
 	{
 		DataTypePtr m_castDataType;
@@ -41,6 +49,9 @@ namespace CE::Decompiler::ExprTree
 			if (m_castDataType != nullptr && m_explicitCast) {
 				result = "(" + m_castDataType->getDisplayName() + ")" + result + "";
 			}
+			if (auto addressGetting = dynamic_cast<IAddressGetting*>(this))
+				if(addressGetting->isAddrGetting())
+					result = "&" + result;
 			if (g_MARK_SDA_NODES)
 				result = "@" + result;
 			return m_updateDebugInfo = result;
@@ -48,10 +59,6 @@ namespace CE::Decompiler::ExprTree
 
 		virtual std::string printSdaDebug() {
 			return "";
-		}
-
-		virtual std::string printDebugGoar() {
-			return printSdaDebug();
 		}
 	};
 };

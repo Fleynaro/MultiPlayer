@@ -59,7 +59,7 @@ namespace CE::Decompiler::ExprTree
 			auto result = m_node->printDebug();
 			if (auto readValueNode = dynamic_cast<ReadValueNode*>(m_node))
 				result = "*" + readValueNode->getAddress()->printDebug();
-			return m_updateDebugInfo = (result);
+			return result;
 		}
 	};
 };

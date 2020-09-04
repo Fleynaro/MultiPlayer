@@ -5,13 +5,11 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class SdaSymbolLeaf : public AbstractSdaNode
+	class SdaSymbolLeaf : public AbstractSdaNode, public IAddressGetting
 	{
 	public:
-		bool m_isGettingAddr;
-
-		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, bool isGettingAddr = false)
-			: m_sdaSymbol(sdaSymbol), m_isGettingAddr(isGettingAddr)
+		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, bool isAddrGetting = false)
+			: m_sdaSymbol(sdaSymbol), m_isAddrGetting(isAddrGetting)
 		{}
 
 		CE::Symbol::AbstractSymbol* getSdaSymbol() {
@@ -33,7 +31,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		Node* clone(NodeCloneContext* ctx) override {
-			return new SdaSymbolLeaf(m_sdaSymbol, m_isGettingAddr);
+			return new SdaSymbolLeaf(m_sdaSymbol, m_isAddrGetting);
 		}
 
 		bool isFloatingPoint() override {
@@ -41,7 +39,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		DataTypePtr getSrcDataType() override {
-			if (m_isGettingAddr) {
+			if (m_isAddrGetting) {
 				auto dataType = DataType::CloneUnit(m_sdaSymbol->getDataType());
 				dataType->addPointerLevelInFront();
 				return dataType;
@@ -55,22 +53,20 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		bool isGettingAddr() {
-			return m_isGettingAddr;
+		bool isAddrGetting() override {
+			return m_isAddrGetting;
+		}
+
+		void setAddrGetting(bool toggle) override {
+			m_isAddrGetting = toggle;
 		}
 
 		std::string printSdaDebug() override {
-			auto str = printDebugGoar();
-			if (m_isGettingAddr)
-				str = "&" + str;
-			return m_updateDebugInfo = str;
-		}
-
-		std::string printDebugGoar() override {
 			return m_sdaSymbol->getName();
 		}
 	private:
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;
+		bool m_isAddrGetting;
 	};
 
 	class SdaNumberLeaf : public AbstractSdaNode, public INumberLeaf
@@ -123,7 +119,7 @@ namespace CE::Decompiler::ExprTree
 					return m_updateDebugInfo = std::to_string((int64_t)m_value);
 				}
 			}
-			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value));
+			return "0x" + Generic::String::NumberToHex(m_value);
 		}
 	};
 };
