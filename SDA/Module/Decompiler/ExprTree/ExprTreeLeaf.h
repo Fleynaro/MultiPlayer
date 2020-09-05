@@ -100,6 +100,10 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(8);
 		}
 
+		ObjectHash::Hash getHash() override {
+			return 0xF1F1F1F1;
+		}
+
 		INode* clone(NodeCloneContext* ctx) override {
 			return this;
 		}

@@ -27,30 +27,6 @@ void ff() {
 
 CE::ProgramModule* g_programModule;
 
-void AsmGraphBlock::printDebug(void* addr = nullptr, const std::string& tabStr = "", bool extraInfo = true, bool pcode = true) {
-	ZydisFormatter formatter;
-	ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
-
-	ZyanU64 runtime_address = (ZyanU64)addr;
-	for (auto instr : m_instructions) {
-		std::string prefix = tabStr + "0x" + Generic::String::NumberToHex(runtime_address + instr->getOriginalInstructionOffset());
-		if (!instr->m_originalView.empty())
-			printf("%s %s\n", prefix.c_str(), instr->m_originalView.c_str());
-		if (pcode) {
-			prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Generic::String::NumberToHex(instr->getOffset()).c_str() + ")";
-			printf("\t%s %s\n", prefix.c_str(), instr->printDebug().c_str());
-		}
-	}
-
-	if (extraInfo) {
-		printf("Level: %i\n", m_level);
-		if (m_nextNearBlock != nullptr)
-			printf("Next near: %s\n", Generic::String::NumberToHex(m_nextNearBlock->getMinOffset()).c_str());
-		if (m_nextFarBlock != nullptr)
-			printf("Next far: %s\n", Generic::String::NumberToHex(m_nextFarBlock->getMinOffset()).c_str());
-	}
-}
-
 
 bool g_SHOW_ASM = true;
 bool g_SHOW_PCODE = false;

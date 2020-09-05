@@ -228,7 +228,6 @@
     <ClCompile Include="Module\Decompiler\PCode\Interpreter\PCodeInterpreter.cpp" />
     <ClCompile Include="Module\Decompiler\LinearView\DecLinearView.cpp" />
     <ClCompile Include="Module\Decompiler\Decompiler.cpp" />
-    <ClCompile Include="Module\Decompiler\DecTest.cpp" />
     <ClCompile Include="Module\Decompiler\DecSymbol.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmDecoder.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmInstructions.cpp" />
@@ -289,7 +288,8 @@
     <ClCompile Include="Module\Trigger\FunctionTrigger.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTriggerHook.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTriggerTableLog.cpp" />
-    <ClCompile Include="tests\test.cpp" />
+    <ClCompile Include="tests\CommonTest.cpp" />
+    <ClCompile Include="tests\DecSampleTests.cpp" />
     <ClCompile Include="Utility\FileWrapper.cpp" />
     <ClCompile Include="Utility\Generic.cpp" />
     <ClCompile Include="Utils\BitStream.cpp" />
@@ -337,6 +337,7 @@
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\DecMask.h" />
+    <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
     <ClInclude Include="Module\Decompiler\PCode\Decoders\DecPCodeAbstractDecoder.h" />
     <ClInclude Include="Module\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecPCodeConstValueCalc.h" />
@@ -462,7 +463,9 @@
     <ClInclude Include="ProjectManager.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SpeedTest.h" />
-    <ClInclude Include="tests\test.h" />
+    <ClInclude Include="tests\AbstractTest.h" />
+    <ClInclude Include="tests\CommonTest.h" />
+    <ClInclude Include="tests\DecSampleTests.h" />
     <ClInclude Include="UserInterface.h" />
     <ClInclude Include="Utility\DebugView.h" />
     <ClInclude Include="Utility\FileWrapper.h" />

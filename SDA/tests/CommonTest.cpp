@@ -618,8 +618,6 @@ int sumArray(arrType arr[3][2], char* str)
     return sum;
 }
 
-#include <Decompiler/DecTest.h>
-
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
 
@@ -630,6 +628,6 @@ int main(int argc, char** argv) {
     SetConsoleOutputCP(1251);
     DebugOutput_Console = true;
 
-	//return RUN_ALL_TESTS();
-    CE::test((new ProgramModuleFixtureBase(true))->m_programModule); return 0;
+    ::testing::GTEST_FLAG(filter) = "Test_DecSamples";
+	return RUN_ALL_TESTS();
 }

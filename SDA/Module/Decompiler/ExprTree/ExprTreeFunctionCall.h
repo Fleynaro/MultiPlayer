@@ -67,6 +67,10 @@ namespace CE::Decompiler::ExprTree
 			return false;
 		}
 
+		ObjectHash::Hash getHash() override {
+			return m_functionResultVar ? m_functionResultVar->getHash() : m_destination->getHash();
+		}
+
 		INode* clone(NodeCloneContext* ctx) override {
 			auto funcVar = m_functionResultVar ? dynamic_cast<Symbol::FunctionResultVar*>(m_functionResultVar->clone(ctx)) : nullptr;
 			auto funcCallCtx = new FunctionCall(m_destination->clone(ctx), m_instr);

@@ -102,6 +102,17 @@ namespace CE::Decompiler
 			}
 		}
 
+		ObjectHash::Hash getHash() {
+			ObjectHash::Hash hash = 1;
+			for (const auto decBlock : getDecompiledBlocks()) {
+				for (auto topNode : decBlock->getAllTopNodes()) {
+					auto h = topNode->getNode()->getHash();
+					hash *= h;
+				}
+			}
+			return hash;
+		}
+
 		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
 			if (block == nullptr)
 				return;

@@ -70,6 +70,10 @@ namespace CE::Decompiler::ExprTree
 			return m_funcCall->isFloatingPoint();
 		}
 
+		ObjectHash::Hash getHash() override {
+			return m_funcCall->getHash();
+		}
+
 		INode* clone(NodeCloneContext* ctx) override {
 			return nullptr;
 		}

@@ -33,6 +33,10 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(getSrcDataType()->getSize());
 		}
 
+		ObjectHash::Hash getHash() override {
+			return m_base->getHash();
+		}
+
 		bool isFloatingPoint() override {
 			return false;
 		}
@@ -71,6 +75,10 @@ namespace CE::Decompiler::ExprTree
 
 		DataTypePtr getSrcDataType() override {
 			return m_outDataType;
+		}
+
+		ObjectHash::Hash getHash() override {
+			return GoarNode::getHash() * m_indexNode->getHash();
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
@@ -132,6 +140,10 @@ namespace CE::Decompiler::ExprTree
 				return dataType;
 			}
 			return m_base->getDataType();
+		}
+
+		ObjectHash::Hash getHash() override {
+			return GoarNode::getHash() * (m_isAddrGetting + 1);
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {

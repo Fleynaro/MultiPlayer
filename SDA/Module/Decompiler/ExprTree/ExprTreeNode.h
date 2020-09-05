@@ -127,12 +127,6 @@ namespace CE::Decompiler::ExprTree
 			return *m_parentNodes.begin();
 		}
 
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue((int64_t)this);
-			return hash.getHash();
-		}
-
 		bool isFloatingPoint() override {
 			return false;
 		}
