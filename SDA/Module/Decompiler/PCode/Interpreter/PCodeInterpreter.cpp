@@ -382,7 +382,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	}
 }
 
-ExprTree::Node* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& paramInfo) {
+ExprTree::INode* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& paramInfo) {
 	auto& storage = paramInfo.m_storage;
 	if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
 		auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), 0x8);
@@ -395,7 +395,7 @@ ExprTree::Node* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& pa
 	return regSymbol;
 }
 
-ExprTree::Node* InstructionInterpreter::requestVarnode(PCode::Varnode* varnode) {
+ExprTree::INode* InstructionInterpreter::requestVarnode(PCode::Varnode* varnode) {
 	if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
 		return m_ctx->requestRegisterExpr(varnodeRegister);
 	}
@@ -408,10 +408,10 @@ ExprTree::Node* InstructionInterpreter::requestVarnode(PCode::Varnode* varnode) 
 	return nullptr;
 }
 
-ExprTree::ICondition* InstructionInterpreter::toBoolean(ExprTree::Node* node) {
+ExprTree::AbstractCondition* InstructionInterpreter::toBoolean(ExprTree::INode* node) {
 	if (!node)
 		return nullptr;
-	if (auto cond = dynamic_cast<ExprTree::ICondition*>(node)) {
+	if (auto cond = dynamic_cast<ExprTree::AbstractCondition*>(node)) {
 		return cond;
 	}
 	return new ExprTree::Condition(node, new ExprTree::NumberLeaf((uint64_t)0x0), ExprTree::Condition::Ne);

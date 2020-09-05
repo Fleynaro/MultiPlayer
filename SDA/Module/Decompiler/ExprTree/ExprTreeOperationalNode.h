@@ -103,14 +103,14 @@ namespace CE::Decompiler::ExprTree
 	{
 		BitMask64 m_mask;
 	public:
-		Node* m_leftNode;
-		Node* m_rightNode;
+		INode* m_leftNode;
+		INode* m_rightNode;
 		OperationType m_operation;
 		bool m_notChangedMask;
 		ObjectHash::Hash m_calcHash;
 		PCode::Instruction* m_instr;
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, BitMask64 mask = BitMask64(0), bool notChangedMask = false, PCode::Instruction* instr = nullptr)
+		OperationalNode(INode* leftNode, INode* rightNode, OperationType operation, BitMask64 mask = BitMask64(0), bool notChangedMask = false, PCode::Instruction* instr = nullptr)
 			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask), m_instr(instr)
 		{
 			leftNode->addParentNode(this);
@@ -123,7 +123,7 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		OperationalNode(Node* leftNode, Node* rightNode, OperationType operation, PCode::Instruction* instr)
+		OperationalNode(INode* leftNode, INode* rightNode, OperationType operation, PCode::Instruction* instr)
 			: OperationalNode(leftNode, rightNode, operation, BitMask64(0), false, instr)
 		{}
 
@@ -135,7 +135,7 @@ namespace CE::Decompiler::ExprTree
 				m_rightNode->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
+		void replaceNode(INode* node, INode* newNode) override {
 			if (m_leftNode == node) {
 				m_leftNode = newNode;
 			}
@@ -144,7 +144,7 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_leftNode, m_rightNode };
 		}
 
@@ -171,7 +171,7 @@ namespace CE::Decompiler::ExprTree
 			return IsOperationFloatingPoint(m_operation);
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new OperationalNode(m_leftNode->clone(ctx), m_rightNode ? m_rightNode->clone(ctx) : nullptr, m_operation, m_mask, m_notChangedMask, m_instr);
 		}
 
@@ -211,11 +211,11 @@ namespace CE::Decompiler::ExprTree
 	public:
 		Symbol::MemoryVariable* m_memVar = nullptr;
 
-		ReadValueNode(Node* node, int size, PCode::Instruction* instr = nullptr)
+		ReadValueNode(INode* node, int size, PCode::Instruction* instr = nullptr)
 			: OperationalNode(node, nullptr, ReadValue, instr), m_size(size)
 		{}
 
-		Node* getAddress() {
+		INode* getAddress() {
 			return m_leftNode;
 		}
 
@@ -227,7 +227,7 @@ namespace CE::Decompiler::ExprTree
 			return m_size;
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			auto memVar = m_memVar ? dynamic_cast<Symbol::MemoryVariable*>(m_memVar->clone(ctx)) : nullptr;
 			auto readValueNode = new ReadValueNode(m_leftNode->clone(ctx), m_size, m_instr);
 			readValueNode->m_memVar = memVar;
@@ -249,7 +249,7 @@ namespace CE::Decompiler::ExprTree
 	class CastNode : public OperationalNode
 	{
 	public:
-		CastNode(Node* node, int size, bool isSigned)
+		CastNode(INode* node, int size, bool isSigned)
 			: OperationalNode(node, nullptr, Cast), m_size(size), m_isSigned(isSigned)
 		{}
 
@@ -257,7 +257,7 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(getSize());
 		}
 
-		Node* getNode() {
+		INode* getNode() {
 			return m_leftNode;
 		}
 
@@ -269,7 +269,7 @@ namespace CE::Decompiler::ExprTree
 			return m_isSigned;
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new CastNode(m_leftNode->clone(ctx), m_size, m_isSigned);
 		}
 
@@ -293,7 +293,7 @@ namespace CE::Decompiler::ExprTree
 		};
 		Id m_funcId;
 
-		FunctionalNode(Node* node1, Node* node2, Id id, PCode::Instruction* instr = nullptr)
+		FunctionalNode(INode* node1, INode* node2, Id id, PCode::Instruction* instr = nullptr)
 			: OperationalNode(node1, node2, Functional, 0b1, true, instr), m_funcId(id)
 		{}
 
@@ -301,7 +301,7 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(1);
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new FunctionalNode(m_leftNode->clone(ctx), m_rightNode->clone(ctx), m_funcId, m_instr);
 		}
 
@@ -327,7 +327,7 @@ namespace CE::Decompiler::ExprTree
 		};
 		Id m_funcId;
 
-		FloatFunctionalNode(Node* node1, Id id, int size, PCode::Instruction* instr = nullptr)
+		FloatFunctionalNode(INode* node1, Id id, int size, PCode::Instruction* instr = nullptr)
 			: OperationalNode(node1, nullptr, fFunctional, BitMask64(size), true, instr), m_funcId(id), m_size(size)
 		{}
 
@@ -343,7 +343,7 @@ namespace CE::Decompiler::ExprTree
 			return m_funcId != Id::TOINT;
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new FloatFunctionalNode(m_leftNode->clone(ctx), m_funcId, m_size, m_instr);
 		}
 

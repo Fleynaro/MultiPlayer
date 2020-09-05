@@ -1,14 +1,14 @@
 #pragma once
-#include "ExprTreeSdaAbstractNode.h"
+#include "ExprTreeSdaNode.h"
 
 namespace CE::Decompiler::ExprTree
 {
-	class SdaGenericNode : public AbstractSdaNode, public INodeAgregator
+	class SdaGenericNode : public SdaNode, public INodeAgregator
 	{
 		DataTypePtr m_calcDataType;
-		Node* m_node;
+		INode* m_node;
 	public:
-		SdaGenericNode(Node* node, DataTypePtr calcDataType)
+		SdaGenericNode(INode* node, DataTypePtr calcDataType)
 			: m_node(node), m_calcDataType(calcDataType)
 		{}
 
@@ -16,17 +16,17 @@ namespace CE::Decompiler::ExprTree
 			m_node->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
+		void replaceNode(INode* node, INode* newNode) override {
 			if (m_node == node) {
 				m_node = newNode;
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_node };
 		}
 
-		Node* getNode() {
+		INode* getNode() {
 			return m_node;
 		}
 
@@ -50,7 +50,7 @@ namespace CE::Decompiler::ExprTree
 			return m_node->getHash();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			auto sdaNode = new SdaGenericNode(m_node->clone(ctx), m_calcDataType);
 			return sdaNode;
 		}

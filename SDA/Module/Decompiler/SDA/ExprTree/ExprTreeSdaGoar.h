@@ -1,14 +1,14 @@
 #pragma once
-#include "ExprTreeSdaAbstractNode.h"
+#include "ExprTreeSdaNode.h"
 
 namespace CE::Decompiler::ExprTree
 {
-	class GoarNode : public AbstractSdaNode, public INodeAgregator
+	class GoarNode : public SdaNode, public INodeAgregator
 	{
 	public:
-		AbstractSdaNode* m_base;
+		ISdaNode* m_base;
 
-		GoarNode(AbstractSdaNode* base)
+		GoarNode(ISdaNode* base)
 			: m_base(base)
 		{
 			m_base->addParentNode(this);
@@ -18,14 +18,14 @@ namespace CE::Decompiler::ExprTree
 			m_base->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
-			auto newSdaNode = dynamic_cast<AbstractSdaNode*>(newNode);
+		void replaceNode(INode* node, INode* newNode) override {
+			auto newSdaNode = dynamic_cast<ISdaNode*>(newNode);
 			if (node == m_base) {
 				m_base = newSdaNode;
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_base };
 		}
 
@@ -44,10 +44,10 @@ namespace CE::Decompiler::ExprTree
 	class GoarArrayNode : public GoarNode
 	{
 	public:
-		AbstractSdaNode* m_indexNode;
+		ISdaNode* m_indexNode;
 		DataTypePtr m_outDataType;
 
-		GoarArrayNode(AbstractSdaNode* base, AbstractSdaNode* indexNode, DataTypePtr dataType)
+		GoarArrayNode(ISdaNode* base, ISdaNode* indexNode, DataTypePtr dataType)
 			: GoarNode(base), m_indexNode(indexNode), m_outDataType(dataType)
 		{
 			m_indexNode->addParentNode(this);
@@ -57,15 +57,15 @@ namespace CE::Decompiler::ExprTree
 			m_indexNode->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
+		void replaceNode(INode* node, INode* newNode) override {
 			GoarNode::replaceNode(node, newNode);
-			auto newSdaNode = dynamic_cast<AbstractSdaNode*>(newNode);
+			auto newSdaNode = dynamic_cast<ISdaNode*>(newNode);
 			if (node == m_indexNode) {
 				m_indexNode = newSdaNode;
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_base, m_indexNode };
 		}
 
@@ -73,8 +73,8 @@ namespace CE::Decompiler::ExprTree
 			return m_outDataType;
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
-			return new GoarArrayNode(dynamic_cast<AbstractSdaNode*>(m_base->clone()), dynamic_cast<AbstractSdaNode*>(m_indexNode->clone(ctx)), m_outDataType);
+		INode* clone(NodeCloneContext* ctx) override {
+			return new GoarArrayNode(dynamic_cast<ISdaNode*>(m_base->clone()), dynamic_cast<ISdaNode*>(m_indexNode->clone(ctx)), m_outDataType);
 		}
 
 		std::string printSdaDebug() override {
@@ -89,7 +89,7 @@ namespace CE::Decompiler::ExprTree
 	public:
 		DataType::Structure::Field* m_field;
 
-		GoarFieldNode(AbstractSdaNode* base, DataType::Structure::Field* field)
+		GoarFieldNode(ISdaNode* base, DataType::Structure::Field* field)
 			: GoarNode(base), m_field(field)
 		{}
 
@@ -97,8 +97,8 @@ namespace CE::Decompiler::ExprTree
 			return m_field->getDataType();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
-			return new GoarFieldNode(dynamic_cast<AbstractSdaNode*>(m_base->clone()), m_field);
+		INode* clone(NodeCloneContext* ctx) override {
+			return new GoarFieldNode(dynamic_cast<ISdaNode*>(m_base->clone()), m_field);
 		}
 
 		std::string printSdaDebug() override {
@@ -113,7 +113,7 @@ namespace CE::Decompiler::ExprTree
 	{
 		bool m_isAddrGetting;
 	public:
-		GoarTopNode(AbstractSdaNode* base, bool isAddrGetting)
+		GoarTopNode(ISdaNode* base, bool isAddrGetting)
 			: GoarNode(base), m_isAddrGetting(isAddrGetting)
 		{}
 
@@ -134,8 +134,8 @@ namespace CE::Decompiler::ExprTree
 			return m_base->getDataType();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
-			return new GoarTopNode(dynamic_cast<AbstractSdaNode*>(m_base->clone()), m_isAddrGetting);
+		INode* clone(NodeCloneContext* ctx) override {
+			return new GoarTopNode(dynamic_cast<ISdaNode*>(m_base->clone()), m_isAddrGetting);
 		}
 		
 		std::string printSdaDebug() override {

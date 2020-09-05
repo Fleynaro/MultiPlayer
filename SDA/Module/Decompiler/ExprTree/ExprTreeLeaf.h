@@ -5,7 +5,10 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class SymbolLeaf : public Node
+	class ILeaf : public virtual INode
+	{};
+
+	class SymbolLeaf : public Node, public ILeaf
 	{
 	public:
 		Symbol::Symbol* m_symbol;
@@ -24,15 +27,11 @@ namespace CE::Decompiler::ExprTree
 			return m_symbol->getMask().getBitMask64().withoutOffset();
 		}
 
-		bool isLeaf() override {
-			return true;
-		}
-
 		ObjectHash::Hash getHash() override {
 			return m_symbol->getHash();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new SymbolLeaf(m_symbol->clone(ctx));
 		}
 
@@ -41,7 +40,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class INumberLeaf
+	class INumberLeaf : public ILeaf
 	{
 	public:
 		virtual uint64_t getValue() = 0;
@@ -76,17 +75,13 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(m_value);
 		}
 
-		bool isLeaf() override {
-			return true;
-		}
-
 		ObjectHash::Hash getHash() override {
 			ObjectHash hash;
 			hash.addValue((int64_t&)m_value);
 			return hash.getHash();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new NumberLeaf(m_value);
 		}
 
@@ -105,11 +100,7 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(8);
 		}
 
-		bool isLeaf() override {
-			return true;
-		}
-
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return this;
 		}
 

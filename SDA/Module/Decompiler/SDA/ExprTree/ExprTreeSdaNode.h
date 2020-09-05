@@ -14,21 +14,15 @@ namespace CE::Decompiler::ExprTree
 		virtual void setAddrGetting(bool toggle) = 0;
 	};
 
-	class AbstractSdaNode : public Node
+	class DataTypeCast
 	{
 		DataTypePtr m_castDataType;
 		bool m_explicitCast = false;
 	public:
-		DataTypePtr getDataType() {
-			return hasCast() ? m_castDataType : getSrcDataType();
-		}
+		DataTypeCast() = default;
 
-		virtual DataTypePtr getSrcDataType() = 0;
-
-		virtual void setDataType(DataTypePtr dataType) = 0;
-
-		bool hasCast() {
-			return m_castDataType != nullptr;
+		DataTypePtr getCastDataType() {
+			return m_castDataType;
 		}
 
 		bool hasExplicitCast() {
@@ -43,11 +37,42 @@ namespace CE::Decompiler::ExprTree
 		void clearCast() {
 			setCastDataType(nullptr, false);
 		}
+	};
+
+	class ISdaNode : public virtual INode
+	{
+	public:
+		DataTypePtr getDataType() {
+			return hasCast() ? getCast()->getCastDataType() : getSrcDataType();
+		}
+
+		virtual DataTypePtr getSrcDataType() = 0;
+
+		virtual void setDataType(DataTypePtr dataType) = 0;
+
+		bool hasCast() {
+			return getCast()->getCastDataType() != nullptr;
+		}
+
+		virtual DataTypeCast* getCast() = 0;
+
+		virtual std::string printSdaDebug() {
+			return "";
+		}
+	};
+
+	class SdaNode : public Node, public ISdaNode
+	{
+		DataTypeCast m_dataTypeCast;
+	public:
+		DataTypeCast* getCast() override {
+			return &m_dataTypeCast;
+		}
 
 		std::string printDebug() override {
 			auto result = printSdaDebug();
-			if (m_castDataType != nullptr && m_explicitCast) {
-				result = "(" + m_castDataType->getDisplayName() + ")" + result + "";
+			if (hasCast() && getCast()->hasExplicitCast()) {
+				result = "(" + getCast()->getCastDataType()->getDisplayName() + ")" + result + "";
 			}
 			if (auto addressGetting = dynamic_cast<IAddressGetting*>(this))
 				if(addressGetting->isAddrGetting())
@@ -55,10 +80,6 @@ namespace CE::Decompiler::ExprTree
 			if (g_MARK_SDA_NODES)
 				result = "@" + result;
 			return m_updateDebugInfo = result;
-		}
-
-		virtual std::string printSdaDebug() {
-			return "";
 		}
 	};
 };

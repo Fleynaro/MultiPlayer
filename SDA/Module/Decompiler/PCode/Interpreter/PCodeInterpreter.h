@@ -9,11 +9,11 @@ namespace CE::Decompiler::PCode
 	public:
 		void execute(PrimaryTree::Block* block, ExecutionBlockContext* ctx, Instruction* instr);
 
-		ExprTree::Node* buildParameterInfoExpr(ParameterInfo& paramInfo);
+		ExprTree::INode* buildParameterInfoExpr(ParameterInfo& paramInfo);
 
-		ExprTree::Node* requestVarnode(PCode::Varnode* varnode);
+		ExprTree::INode* requestVarnode(PCode::Varnode* varnode);
 
-		ExprTree::ICondition* toBoolean(ExprTree::Node* node);
+		ExprTree::AbstractCondition* toBoolean(ExprTree::INode* node);
 	private:
 		PrimaryTree::Block* m_block;
 		ExecutionBlockContext* m_ctx;

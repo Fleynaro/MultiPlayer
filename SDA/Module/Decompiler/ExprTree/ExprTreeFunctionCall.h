@@ -6,12 +6,12 @@ namespace CE::Decompiler::ExprTree
 	class FunctionCall : public Node, public INodeAgregator
 	{
 	public:
-		Node* m_destination;
-		std::vector<Node*> m_paramNodes;
+		INode* m_destination;
+		std::vector<INode*> m_paramNodes;
 		PCode::Instruction* m_instr;
 		Symbol::FunctionResultVar* m_functionResultVar = nullptr;
 		
-		FunctionCall(Node* destination, PCode::Instruction* instr)
+		FunctionCall(INode* destination, PCode::Instruction* instr)
 			: m_destination(destination), m_instr(instr)
 		{
 			m_destination->addParentNode(this);
@@ -25,7 +25,7 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
+		void replaceNode(INode* node, INode* newNode) override {
 			if (m_destination == node) {
 				m_destination = newNode;
 			}
@@ -38,23 +38,23 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
-			std::list<ExprTree::Node*> list = { m_destination };
+		std::list<ExprTree::INode*> getNodesList() override {
+			std::list<ExprTree::INode*> list = { m_destination };
 			for (auto paramNode : m_paramNodes) {
 				list.push_back(paramNode);
 			}
 			return list;
 		}
 
-		Node* getDestination() {
+		INode* getDestination() {
 			return m_destination;
 		}
 
-		std::vector<Node*>& getParamNodes() {
+		std::vector<INode*>& getParamNodes() {
 			return m_paramNodes;
 		}
 
-		void addParamNode(Node* node) {
+		void addParamNode(INode* node) {
 			node->addParentNode(this);
 			m_paramNodes.push_back(node);
 		}
@@ -67,7 +67,7 @@ namespace CE::Decompiler::ExprTree
 			return false;
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			auto funcVar = m_functionResultVar ? dynamic_cast<Symbol::FunctionResultVar*>(m_functionResultVar->clone(ctx)) : nullptr;
 			auto funcCallCtx = new FunctionCall(m_destination->clone(ctx), m_instr);
 			funcCallCtx->m_functionResultVar = funcVar;

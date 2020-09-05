@@ -47,13 +47,13 @@ namespace CE::Decompiler::Optimization
 		//optimize expressions
 		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
 			for (auto topNode : decBlock->getAllTopNodes()) {
-				Node::UpdateDebugInfo(topNode->getNode());
+				INode::UpdateDebugInfo(topNode->getNode());
 				Optimization::Optimize(*topNode->getNodePtr());
 
 				if (auto jmpTopNode = dynamic_cast<Block::JumpTopNode*>(topNode)) {
-					Node::UpdateDebugInfo(jmpTopNode->getCond());
+					INode::UpdateDebugInfo(jmpTopNode->getCond());
 					Optimization::OptimizeConstCondition(jmpTopNode->getCond());
-					Node::UpdateDebugInfo(jmpTopNode->getCond());
+					INode::UpdateDebugInfo(jmpTopNode->getCond());
 					Optimization::OptimizeCondition(*jmpTopNode->getNodePtr());
 				}
 			}
@@ -89,8 +89,8 @@ namespace CE::Decompiler::Optimization
 		return !(delta >= memValueNode1->getSize() || -delta >= memValueNode2->getSize());
 	}
 	
-	static void GetReadValueNodes(Node* node, std::list<ReadValueNode*>& readValueNodes) {
-		IterateChildNodes(node, [&](Node* childNode) {
+	static void GetReadValueNodes(INode* node, std::list<ReadValueNode*>& readValueNodes) {
+		IterateChildNodes(node, [&](INode* childNode) {
 			GetReadValueNodes(childNode, readValueNodes);
 			});
 		if (auto readValueNode = dynamic_cast<ReadValueNode*>(node)) {
@@ -168,8 +168,8 @@ namespace CE::Decompiler::Optimization
 		std::list<Block::SeqLine*> lines;
 		lines.push_back(firstSeqLine);
 		for (auto it = lineIt1; it != std::next(lineIt2); it++) {
-			Node::UpdateDebugInfo((*it)->getDstNode());
-			Node::UpdateDebugInfo((*it)->getSrcNode());
+			INode::UpdateDebugInfo((*it)->getDstNode());
+			INode::UpdateDebugInfo((*it)->getSrcNode());
 			lines.push_back(*it);
 		}
 
@@ -177,9 +177,9 @@ namespace CE::Decompiler::Optimization
 		return result;
 	}
 
-	static void GetConstantParentsOfNode(Node* node, std::list<INodeAgregator*>& parentNodes) {
+	static void GetConstantParentsOfNode(INode* node, std::list<INodeAgregator*>& parentNodes) {
 		for (auto it : node->getParentNodes()) {
-			if (auto parentNode = dynamic_cast<Node*>(it)) {
+			if (auto parentNode = dynamic_cast<INode*>(it)) {
 				GetConstantParentsOfNode(parentNode, parentNodes);
 			}
 			if (dynamic_cast<Block::BlockTopNode*>(it)) {
@@ -288,12 +288,12 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	static bool HasUndefinedRegister(Node* node, FunctionCallInfo& funcCallInfo) {
+	static bool HasUndefinedRegister(INode* node, FunctionCallInfo& funcCallInfo) {
 		if (dynamic_cast<FunctionCall*>(node))
 			return false;
 		
 		bool result = false;
-		IterateChildNodes(node, [&](Node* childNode) {
+		IterateChildNodes(node, [&](INode* childNode) {
 			if(!result)
 				result = HasUndefinedRegister(childNode, funcCallInfo);
 			});
@@ -333,8 +333,8 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	static void GetSymbolLeafs(Node* node, Symbol::Symbol* symbol, std::list<ExprTree::SymbolLeaf*>& symbolLeafs) {
-		IterateChildNodes(node, [&](Node* childNode) {
+	static void GetSymbolLeafs(INode* node, Symbol::Symbol* symbol, std::list<ExprTree::SymbolLeaf*>& symbolLeafs) {
+		IterateChildNodes(node, [&](INode* childNode) {
 			GetSymbolLeafs(childNode, symbol, symbolLeafs);
 			});
 
@@ -345,7 +345,7 @@ namespace CE::Decompiler::Optimization
 		}
 	}
 
-	static bool FixSymbolAssignmentLineAndConditionOrder(Node* node, std::map<ObjectHash::Hash, Symbol::LocalVariable*>& localVars) {
+	static bool FixSymbolAssignmentLineAndConditionOrder(INode* node, std::map<ObjectHash::Hash, Symbol::LocalVariable*>& localVars) {
 		auto it = localVars.find(node->getHash());
 		if (it != localVars.end()) {
 			node->replaceWith(new SymbolLeaf(it->second));
@@ -354,7 +354,7 @@ namespace CE::Decompiler::Optimization
 		}
 
 		bool result = false;
-		IterateChildNodes(node, [&](Node* childNode) {
+		IterateChildNodes(node, [&](INode* childNode) {
 			if(!result)
 				result = FixSymbolAssignmentLineAndConditionOrder(childNode, localVars);
 			});

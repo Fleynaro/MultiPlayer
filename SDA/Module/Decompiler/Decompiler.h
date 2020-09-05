@@ -20,9 +20,9 @@ namespace CE::Decompiler
 		};
 	public:
 		DecompiledCodeGraph* m_decompiledGraph;
-		std::function<FunctionCallInfo(int, ExprTree::Node*)> m_funcCallInfoCallback;
+		std::function<FunctionCallInfo(int, ExprTree::INode*)> m_funcCallInfoCallback;
 
-		Decompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, std::function<FunctionCallInfo(int, ExprTree::Node*)> funcCallInfoCallback)
+		Decompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, std::function<FunctionCallInfo(int, ExprTree::INode*)> funcCallInfoCallback)
 			: m_decompiledGraph(decompiledGraph), m_registerFactory(registerFactory), m_funcCallInfoCallback(funcCallInfoCallback)
 		{
 			m_instructionInterpreter = new PCode::InstructionInterpreter;
@@ -192,7 +192,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		ExprTree::Node* createSymbolForRequest(const PCode::Register& reg, ExtBitMask needReadMask) {
+		ExprTree::INode* createSymbolForRequest(const PCode::Register& reg, ExtBitMask needReadMask) {
 			auto& regSymbol = *m_curRegSymbol;
 			std::set<int> prevSymbolIds;
 			for (auto& it : regSymbol.blocks) {

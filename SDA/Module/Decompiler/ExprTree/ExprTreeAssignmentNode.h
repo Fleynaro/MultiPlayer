@@ -5,12 +5,12 @@ namespace CE::Decompiler::ExprTree
 {
 	class AssignmentNode : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
-		Node* m_dstNode;
-		Node* m_srcNode;
+		INode* m_dstNode;
+		INode* m_srcNode;
 	public:
 		PCode::Instruction* m_instr;
 
-		AssignmentNode(Node* dstNode, Node* srcNode, PCode::Instruction* instr = nullptr)
+		AssignmentNode(INode* dstNode, INode* srcNode, PCode::Instruction* instr = nullptr)
 			: m_dstNode(dstNode), m_srcNode(srcNode), m_instr(instr)
 		{
 			m_dstNode->addParentNode(this);
@@ -24,7 +24,7 @@ namespace CE::Decompiler::ExprTree
 				m_srcNode->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
+		void replaceNode(INode* node, INode* newNode) override {
 			if (node == m_dstNode) {
 				m_dstNode = newNode;
 			}
@@ -33,7 +33,7 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<Node*> getNodesList() override {
+		std::list<INode*> getNodesList() override {
 			return { m_dstNode, m_srcNode };
 		}
 
@@ -47,19 +47,19 @@ namespace CE::Decompiler::ExprTree
 			return {};
 		}
 
-		Node* getDstNode() {
+		INode* getDstNode() {
 			return m_dstNode;
 		}
 
-		Node* getSrcNode() {
+		INode* getSrcNode() {
 			return m_srcNode;
 		}
 
-		Node** getDstNodePtr() {
+		INode** getDstNodePtr() {
 			return &m_dstNode;
 		}
 
-		Node** getSrcNodePtr() {
+		INode** getSrcNodePtr() {
 			return &m_srcNode;
 		}
 
@@ -71,7 +71,7 @@ namespace CE::Decompiler::ExprTree
 			return m_dstNode->getHash() * 31 + m_srcNode->getHash();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new AssignmentNode(m_dstNode->clone(ctx), m_srcNode->clone(ctx));
 		}
 

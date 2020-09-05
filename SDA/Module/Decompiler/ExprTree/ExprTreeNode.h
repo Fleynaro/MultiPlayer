@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning( disable : 4250)
 #include "../DecMask.h"
 #include "Utils/ObjectHash.h"
 #include "../PCode/DecPCode.h"
@@ -10,40 +11,75 @@ namespace CE::Decompiler::Symbol
 
 namespace CE::Decompiler::ExprTree
 {
-	class Node;
-	class INodeAgregator
-	{
-	public:
-		virtual void replaceNode(Node* node, Node* newNode) = 0;
-
-		virtual std::list<Node*> getNodesList() = 0;
-	};
-
 	struct NodeCloneContext {
 		bool m_cloneSymbols = false;
 		std::map<Symbol::Symbol*, Symbol::Symbol*> m_clonedSymbols;
 	};
 
-	class Node
+	class INodeAgregator;
+
+	class INode
 	{
 	public:
-		std::string m_updateDebugInfo;
-		void static UpdateDebugInfo(Node* node) {
+		virtual ~INode() {}
+
+		virtual void replaceWith(INode* newNode) = 0;
+
+		virtual void removeBy(INodeAgregator* node) = 0;
+
+		virtual void addParentNode(INodeAgregator* node) = 0;
+
+		virtual void removeParentNode(INodeAgregator* node) = 0;
+
+		virtual std::list<INodeAgregator*>& getParentNodes() = 0;
+
+		virtual INodeAgregator* getParentNode() = 0;
+
+		virtual ObjectHash::Hash getHash() = 0;
+
+		virtual BitMask64 getMask() = 0;
+
+		virtual bool isFloatingPoint() = 0;
+
+		INode* clone() {
+			NodeCloneContext ctx;
+			return clone(&ctx);
+		}
+
+		virtual INode* clone(NodeCloneContext* ctx) = 0;
+
+		virtual std::string printDebug() = 0;
+
+		void static UpdateDebugInfo(INode* node) {
 			if (!node) return;
 			node->printDebug();
 		}
+	};
+
+	class INodeAgregator
+	{
+	public:
+		virtual void replaceNode(INode* node, INode* newNode) = 0;
+
+		virtual std::list<INode*> getNodesList() = 0;
+	};
+
+	class Node : public virtual INode
+	{
+	public:
+		std::string m_updateDebugInfo;
 
 		Node()
 		{}
 
-		virtual ~Node() {
+		~Node() {
 			replaceWith(nullptr);
 		}
 
-		void replaceWith(Node* newNode) {
+		void replaceWith(INode* newNode) override {
 			for (auto it = m_parentNodes.begin(); it != m_parentNodes.end(); it ++) {
 				auto parentNode = *it;
-				if (newNode == dynamic_cast<Node*>(parentNode))
+				if (newNode == dynamic_cast<INode*>(parentNode))
 					continue;
 				parentNode->replaceNode(this, newNode);
 				if (newNode != nullptr) {
@@ -53,63 +89,46 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		void removeBy(INodeAgregator* node) {
+		void removeBy(INodeAgregator* node) override {
 			if (node != nullptr) {
 				node->replaceNode(this, nullptr);
 				removeParentNode(node);
 			}
-			if (getUserCount() == 0)
+			if (m_parentNodes.size() == 0)
 				delete this;
 		}
 
-		void addParentNode(INodeAgregator* node) {
-			if (this == dynamic_cast<Node*>(node))
+		void addParentNode(INodeAgregator* node) override {
+			if (this == dynamic_cast<INode*>(node))
 				return;
 			m_parentNodes.push_back(node);
 		}
 
-		void removeParentNode(INodeAgregator* node) {
+		void removeParentNode(INodeAgregator* node) override {
 			m_parentNodes.remove(node);
 		}
 
-		std::list<INodeAgregator*>& getParentNodes() {
+		std::list<INodeAgregator*>& getParentNodes() override {
 			return m_parentNodes;
 		}
 
-		INodeAgregator* getParentNode() {
+		INodeAgregator* getParentNode() override {
 			if(m_parentNodes.empty())
 				return nullptr;
 			return *m_parentNodes.begin();
 		}
 
-		virtual bool isLeaf() {
-			return false;
-		}
-
-		int getUserCount() {
-			return (int)m_parentNodes.size();
-		}
-
-		virtual ObjectHash::Hash getHash() {
+		ObjectHash::Hash getHash() override {
 			ObjectHash hash;
 			hash.addValue((int64_t)this);
 			return hash.getHash();
 		}
 
-		virtual BitMask64 getMask() = 0;
-
-		virtual bool isFloatingPoint() {
+		bool isFloatingPoint() override {
 			return false;
 		}
 
-		Node* clone() {
-			NodeCloneContext ctx;
-			return clone(&ctx);
-		}
-
-		virtual Node* clone(NodeCloneContext* ctx) = 0;
-
-		virtual std::string printDebug() {
+		std::string printDebug() override {
 			return "";
 		}
 

@@ -5,35 +5,37 @@ namespace CE::Decompiler
 {
 	class TopNode : public ExprTree::INodeAgregator
 	{
-		ExprTree::Node* m_node;
+		ExprTree::INode* m_node;
 	public:
-		TopNode(ExprTree::Node* node) {
-			setNode(node);
+		TopNode(ExprTree::INode* node) {
+			if (node) {
+				setNode(node);
+			}
 		}
 
 		~TopNode() {
 			clear();
 		}
 
-		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+		void replaceNode(ExprTree::INode* node, ExprTree::INode* newNode) override {
 			if (getNode() == node) {
-				setNode(newNode);
+				m_node = newNode;
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { getNode() };
 		}
 
-		ExprTree::Node* getNode() {
+		ExprTree::INode* getNode() {
 			return m_node;
 		}
 
-		ExprTree::Node** getNodePtr() {
+		ExprTree::INode** getNodePtr() {
 			return &m_node;
 		}
 
-		void setNode(ExprTree::Node* node) {
+		void setNode(ExprTree::INode* node) {
 			m_node = node;
 			node->addParentNode(this);
 		}

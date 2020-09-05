@@ -5,7 +5,7 @@ namespace CE::Decompiler::ExprTree
 {
 	class LinearExpr : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
-		std::list<Node*> m_terms;
+		std::list<INode*> m_terms;
 		INumberLeaf* m_constTerm;
 	public:
 		OperationType m_operation;
@@ -27,10 +27,10 @@ namespace CE::Decompiler::ExprTree
 			for (auto term : m_terms) {
 				term->removeBy(this);
 			}
-			delete dynamic_cast<Node*>(m_constTerm);
+			delete dynamic_cast<INode*>(m_constTerm);
 		}
 
-		void addTerm(ExprTree::Node* term) {
+		void addTerm(ExprTree::INode* term) {
 			term->addParentNode(this);
 			m_terms.push_back(term);
 		}
@@ -43,7 +43,7 @@ namespace CE::Decompiler::ExprTree
 			return (int64_t)m_constTerm->getValue();
 		}
 
-		std::list<ExprTree::Node*>& getTerms() {
+		std::list<ExprTree::INode*>& getTerms() {
 			return m_terms;
 		}
 
@@ -51,7 +51,7 @@ namespace CE::Decompiler::ExprTree
 			return m_constTerm;
 		}
 
-		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+		void replaceNode(ExprTree::INode* node, ExprTree::INode* newNode) override {
 			for (auto it = m_terms.begin(); it != m_terms.end(); it ++) {
 				if (node == *it) {
 					*it = newNode;
@@ -63,9 +63,9 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<Node*> getNodesList() override {
+		std::list<INode*> getNodesList() override {
 			auto list = m_terms;
-			if (auto constTermNode = dynamic_cast<Node*>(m_constTerm)) {
+			if (auto constTermNode = dynamic_cast<INode*>(m_constTerm)) {
 				list.push_back(constTermNode);
 			}
 			return list;
@@ -87,9 +87,9 @@ namespace CE::Decompiler::ExprTree
 			return IsOperationFloatingPoint(m_operation);
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
-			auto clonedConstTerm = dynamic_cast<Node*>(m_constTerm)->clone();
-			auto newLinearExpr = new LinearExpr(dynamic_cast<INumberLeaf*>(clonedConstTerm), m_operation);
+		INode* clone(NodeCloneContext* ctx) override {
+			auto clonedConstTerm = dynamic_cast<INumberLeaf*>(m_constTerm->clone());
+			auto newLinearExpr = new LinearExpr(clonedConstTerm, m_operation);
 			for (auto term : m_terms) {
 				newLinearExpr->addTerm(term->clone(ctx));
 			}
@@ -110,7 +110,7 @@ namespace CE::Decompiler::ExprTree
 			}
 
 			if (m_constTerm->getValue()) {
-				result += dynamic_cast<Node*>(m_constTerm)->printDebug();
+				result += m_constTerm->printDebug();
 			}
 
 			result += ")";

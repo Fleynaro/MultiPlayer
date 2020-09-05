@@ -120,14 +120,14 @@ namespace CE::Decompiler::LinearView
 	public:
 		BlockList* m_mainBranch;
 		BlockList* m_elseBranch;
-		ExprTree::ICondition* m_cond;
+		ExprTree::AbstractCondition* m_cond;
 
 		Condition(PrimaryTree::Block* decBlock)
 			: Block(decBlock)
 		{
 			m_mainBranch = new BlockList(this);
 			m_elseBranch = new BlockList(this);
-			m_cond = decBlock->getNoJumpCondition() ? dynamic_cast<ExprTree::ICondition*>(decBlock->getNoJumpCondition()->clone()) : nullptr;
+			m_cond = decBlock->getNoJumpCondition() ? dynamic_cast<ExprTree::AbstractCondition*>(decBlock->getNoJumpCondition()->clone()) : nullptr;
 		}
 
 		~Condition() {
@@ -149,7 +149,7 @@ namespace CE::Decompiler::LinearView
 	{
 	public:
 		BlockList* m_mainBranch;
-		ExprTree::ICondition* m_cond;
+		ExprTree::AbstractCondition* m_cond;
 		bool m_isDoWhileCycle;
 		bool m_isInfinite;
 
@@ -161,7 +161,7 @@ namespace CE::Decompiler::LinearView
 				m_cond = new ExprTree::BooleanValue(true);
 			}
 			else {
-				m_cond = dynamic_cast<ExprTree::ICondition*>(decBlock->getNoJumpCondition()->clone());
+				m_cond = dynamic_cast<ExprTree::AbstractCondition*>(decBlock->getNoJumpCondition()->clone());
 				if (isDoWhileCycle) {
 					m_cond->inverse();
 				}

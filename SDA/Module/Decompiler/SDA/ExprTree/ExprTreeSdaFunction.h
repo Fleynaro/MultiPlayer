@@ -1,11 +1,11 @@
 #pragma once
-#include "ExprTreeSdaAbstractNode.h"
+#include "ExprTreeSdaNode.h"
 #include <Code/Type/FunctionSignature.h>
 #include "../../ExprTree/ExprTreeFunctionCall.h"
 
 namespace CE::Decompiler::ExprTree
 {
-	class SdaFunctionNode : public AbstractSdaNode, public INodeAgregator
+	class SdaFunctionNode : public SdaNode, public INodeAgregator
 	{
 	public:
 		struct TypeContext
@@ -32,19 +32,19 @@ namespace CE::Decompiler::ExprTree
 			m_funcCall->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
+		void replaceNode(INode* node, INode* newNode) override {
 			m_funcCall->replaceNode(node, newNode);
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return m_funcCall->getNodesList();
 		}
 
-		Node* getDestination() {
+		INode* getDestination() {
 			return m_funcCall->getDestination();
 		}
 
-		std::vector<ExprTree::Node*>& getParamNodes() {
+		std::vector<ExprTree::INode*>& getParamNodes() {
 			return m_funcCall->getParamNodes();
 		}
 
@@ -70,7 +70,7 @@ namespace CE::Decompiler::ExprTree
 			return m_funcCall->isFloatingPoint();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return nullptr;
 		}
 

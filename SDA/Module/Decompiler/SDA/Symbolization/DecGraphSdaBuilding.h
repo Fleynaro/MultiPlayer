@@ -14,9 +14,10 @@ namespace CE::Decompiler::Symbolization
 			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 				for (auto topNode : decBlock->getAllTopNodes()) {
 					auto node = topNode->getNode();
-					Node::UpdateDebugInfo(node);
+					INode::UpdateDebugInfo(node);
 					buildSdaNodes(node);
-					Node::UpdateDebugInfo(node);
+					node = topNode->getNode();
+					INode::UpdateDebugInfo(node);
 					node = nullptr;
 				}
 			}
@@ -65,8 +66,14 @@ namespace CE::Decompiler::Symbolization
 			return new SdaFunctionNode(funcCall, typeContext);
 		}
 
-		void buildSdaNodes(Node* node) {
-			IterateChildNodes(node, [&](Node* childNode) {
+		SdaNumberLeaf* buildSdaNumberLeaf(NumberLeaf* numberLeaf) {
+			auto dataType = m_dataTypeFactory->getDataTypeByNumber(numberLeaf->getValue());
+			auto sdaNumberLeaf = new SdaNumberLeaf(numberLeaf->getValue(), dataType);
+			return sdaNumberLeaf;
+		}
+
+		void buildSdaNodes(INode* node) {
+			IterateChildNodes(node, [&](INode* childNode) {
 				buildSdaNodes(childNode);
 				});
 
@@ -81,7 +88,7 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			if (auto numberLeaf = dynamic_cast<NumberLeaf*>(node)) {
-				auto sdaNumberLeaf = new SdaNumberLeaf(numberLeaf->getValue(), m_dataTypeFactory->getDataTypeByNumber(numberLeaf->getValue()));
+				auto sdaNumberLeaf = buildSdaNumberLeaf(numberLeaf);
 				numberLeaf->replaceWith(sdaNumberLeaf);
 				delete numberLeaf;
 				return;

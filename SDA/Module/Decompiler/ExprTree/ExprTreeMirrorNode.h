@@ -6,10 +6,10 @@ namespace CE::Decompiler::ExprTree
 	class MirrorNode : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
 	public:
-		Node* m_node;
+		INode* m_node;
 		PCode::Instruction* m_instr;
 
-		MirrorNode(Node* node, PCode::Instruction* instr)
+		MirrorNode(INode* node, PCode::Instruction* instr)
 			: m_node(node), m_instr(instr)
 		{
 			m_node->addParentNode(this);
@@ -19,13 +19,13 @@ namespace CE::Decompiler::ExprTree
 			m_node->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
+		void replaceNode(INode* node, INode* newNode) override {
 			if (m_node == node) {
 				m_node = newNode;
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_node };
 		}
 
@@ -43,7 +43,7 @@ namespace CE::Decompiler::ExprTree
 			return m_node->isFloatingPoint();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new MirrorNode(m_node->clone(ctx), m_instr);
 		}
 

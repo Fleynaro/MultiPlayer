@@ -19,7 +19,7 @@ namespace CE::Decompiler::PrimaryTree
 		public:
 			Block* m_block;
 
-			BlockTopNode(Block* block, ExprTree::Node* node = nullptr)
+			BlockTopNode(Block* block, ExprTree::INode* node = nullptr)
 				: m_block(block), TopNode(node)
 			{}
 		};
@@ -31,11 +31,11 @@ namespace CE::Decompiler::PrimaryTree
 				: BlockTopNode(block)
 			{}
 
-			ExprTree::ICondition* getCond() {
-				return dynamic_cast<ExprTree::ICondition*>(getNode());
+			ExprTree::AbstractCondition* getCond() {
+				return dynamic_cast<ExprTree::AbstractCondition*>(getNode());
 			}
 
-			void setCond(ExprTree::ICondition* cond) {
+			void setCond(ExprTree::AbstractCondition* cond) {
 				setNode(cond);
 			}
 		};
@@ -55,7 +55,7 @@ namespace CE::Decompiler::PrimaryTree
 				: BlockTopNode(block, assignmentNode)
 			{}
 
-			SeqLine(Block* block, ExprTree::Node* dstNode, ExprTree::Node* srcNode, PCode::Instruction* instr)
+			SeqLine(Block* block, ExprTree::INode* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
 				: SeqLine(block, new ExprTree::AssignmentNode(dstNode, srcNode, instr))
 			{}
 
@@ -63,11 +63,11 @@ namespace CE::Decompiler::PrimaryTree
 				return dynamic_cast<ExprTree::AssignmentNode*>(getNode());
 			}
 
-			ExprTree::Node* getDstNode() {
+			ExprTree::INode* getDstNode() {
 				return getAssignmentNode()->getDstNode();
 			}
 
-			ExprTree::Node* getSrcNode() {
+			ExprTree::INode* getSrcNode() {
 				return getAssignmentNode()->getSrcNode();
 			}
 
@@ -83,7 +83,7 @@ namespace CE::Decompiler::PrimaryTree
 				: SeqLine(block, assignmentNode)
 			{}
 
-			SymbolAssignmentLine(Block* block, ExprTree::SymbolLeaf* dstNode, ExprTree::Node* srcNode, PCode::Instruction* instr)
+			SymbolAssignmentLine(Block* block, ExprTree::SymbolLeaf* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
 				: SeqLine(block, dstNode, srcNode, instr)
 			{}
 
@@ -226,18 +226,18 @@ namespace CE::Decompiler::PrimaryTree
 			return result;
 		}
 
-		ExprTree::ICondition* getNoJumpCondition() {
+		ExprTree::AbstractCondition* getNoJumpCondition() {
 			return m_noJmpCond->getCond();
 		}
 
-		void setNoJumpCondition(ExprTree::ICondition* noJmpCond) {
+		void setNoJumpCondition(ExprTree::AbstractCondition* noJmpCond) {
 			if (getNoJumpCondition()) {
 				m_noJmpCond->clear();
 			}
 			m_noJmpCond->setNode(noJmpCond);
 		}
 
-		void addSeqLine(ExprTree::Node* destAddr, ExprTree::Node* srcValue, PCode::Instruction* instr = nullptr) {
+		void addSeqLine(ExprTree::INode* destAddr, ExprTree::INode* srcValue, PCode::Instruction* instr = nullptr) {
 			m_seqLines.push_back(new SeqLine(this, destAddr, srcValue, instr));
 		}
 
@@ -245,7 +245,7 @@ namespace CE::Decompiler::PrimaryTree
 			return m_seqLines;
 		}
 
-		void addSymbolAssignmentLine(ExprTree::SymbolLeaf* symbolLeaf, ExprTree::Node* srcValue, PCode::Instruction* instr = nullptr) {
+		void addSymbolAssignmentLine(ExprTree::SymbolLeaf* symbolLeaf, ExprTree::INode* srcValue, PCode::Instruction* instr = nullptr) {
 			m_symbolAssignmentLines.push_back(new SymbolAssignmentLine(this, symbolLeaf, srcValue, instr));
 		}
 
@@ -270,7 +270,7 @@ namespace CE::Decompiler::PrimaryTree
 			if(m_nextFarBlock)
 				newBlock->setNextFarBlock(m_nextFarBlock->clone(ctx));
 			if(getNoJumpCondition())
-				newBlock->setNoJumpCondition(dynamic_cast<ExprTree::ICondition*>(getNoJumpCondition()->clone(&ctx->m_nodeCloneContext)));
+				newBlock->setNoJumpCondition(dynamic_cast<ExprTree::AbstractCondition*>(getNoJumpCondition()->clone(&ctx->m_nodeCloneContext)));
 			for (auto line : m_seqLines) {
 				newBlock->m_seqLines.push_back(line->clone(&ctx->m_nodeCloneContext));
 			}
@@ -325,11 +325,11 @@ namespace CE::Decompiler::PrimaryTree
 			return list;
 		}
 
-		ExprTree::Node* getReturnNode() {
+		ExprTree::INode* getReturnNode() {
 			return m_returnNode->getNode();
 		}
 
-		void setReturnNode(ExprTree::Node* returnNode) {
+		void setReturnNode(ExprTree::INode* returnNode) {
 			if (getReturnNode()) {
 				m_returnNode->clear();
 			}

@@ -6,9 +6,9 @@ namespace CE::Decompiler
 	struct RegisterPart : public ExprTree::INodeAgregator {
 		ExtBitMask m_regMask;
 		ExtBitMask m_maskToChange;
-		ExprTree::Node* m_expr = nullptr;
+		ExprTree::INode* m_expr = nullptr;
 
-		RegisterPart(ExtBitMask regMask, ExtBitMask maskToChange, ExprTree::Node* expr)
+		RegisterPart(ExtBitMask regMask, ExtBitMask maskToChange, ExprTree::INode* expr)
 			: m_regMask(regMask), m_maskToChange(maskToChange), m_expr(expr)
 		{
 			m_expr->addParentNode(this);
@@ -18,21 +18,21 @@ namespace CE::Decompiler
 			m_expr->removeBy(this);
 		}
 
-		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+		void replaceNode(ExprTree::INode* node, ExprTree::INode* newNode) override {
 			if (m_expr == node) {
 				m_expr = newNode;
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_expr };
 		}
 	};
 
 	using RegisterParts = std::list<RegisterPart*>;
 
-	static ExprTree::Node* CreateExprFromRegisterParts(RegisterParts regParts, ExtBitMask requestRegMask) {
-		ExprTree::Node* resultExpr = nullptr;
+	static ExprTree::INode* CreateExprFromRegisterParts(RegisterParts regParts, ExtBitMask requestRegMask) {
+		ExprTree::INode* resultExpr = nullptr;
 
 		regParts.sort([](const RegisterPart* a, const RegisterPart* b) {
 			return b->m_regMask < a->m_regMask;
@@ -82,11 +82,11 @@ namespace CE::Decompiler
 			m_symbol->removeBy(this);
 		}
 
-		void replaceNode(ExprTree::Node* node, ExprTree::Node* newNode) override {
+		void replaceNode(ExprTree::INode* node, ExprTree::INode* newNode) override {
 			
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_symbol };
 		}
 	};
@@ -113,16 +113,16 @@ namespace CE::Decompiler
 
 		ExecutionBlockContext(Decompiler* decompiler);
 
-		void setVarnode(const PCode::Register& reg, ExprTree::Node* expr, bool rewrite = true);
+		void setVarnode(const PCode::Register& reg, ExprTree::INode* expr, bool rewrite = true);
 
-		void setVarnode(PCode::Varnode* varnode, ExprTree::Node* expr, bool rewrite = true);
+		void setVarnode(PCode::Varnode* varnode, ExprTree::INode* expr, bool rewrite = true);
 
 		RegisterParts getRegisterParts(PCode::RegisterId registerId, ExtBitMask& mask, bool changedRegistersOnly = false);
 
-		ExprTree::Node* requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister);
+		ExprTree::INode* requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister);
 
-		ExprTree::Node* requestRegisterExpr(const PCode::Register& reg);
+		ExprTree::INode* requestRegisterExpr(const PCode::Register& reg);
 
-		ExprTree::Node* requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode);
+		ExprTree::INode* requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode);
 	};
 };

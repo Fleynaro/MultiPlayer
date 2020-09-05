@@ -1,11 +1,11 @@
 #pragma once
 #include "../AutoSdaSymbol.h"
-#include "ExprTreeSdaAbstractNode.h"
+#include "ExprTreeSdaNode.h"
 #include <Code/Symbol/Symbol.h>
 
 namespace CE::Decompiler::ExprTree
 {
-	class SdaSymbolLeaf : public AbstractSdaNode, public IAddressGetting
+	class SdaSymbolLeaf : public SdaNode, public ILeaf, public IAddressGetting
 	{
 	public:
 		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, bool isAddrGetting = false)
@@ -20,17 +20,13 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(getDataType()->getSize());
 		}
 
-		bool isLeaf() override {
-			return true;
-		}
-
 		ObjectHash::Hash getHash() override {
 			ObjectHash hash;
 			hash.addValue((int64_t)m_sdaSymbol);
 			return hash.getHash();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new SdaSymbolLeaf(m_sdaSymbol, m_isAddrGetting);
 		}
 
@@ -69,7 +65,7 @@ namespace CE::Decompiler::ExprTree
 		bool m_isAddrGetting;
 	};
 
-	class SdaNumberLeaf : public AbstractSdaNode, public INumberLeaf
+	class SdaNumberLeaf : public SdaNode, public INumberLeaf
 	{
 		DataTypePtr m_calcDataType;
 	public:
@@ -99,17 +95,13 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(m_value);
 		}
 
-		bool isLeaf() override {
-			return true;
-		}
-
 		ObjectHash::Hash getHash() override {
 			ObjectHash hash;
 			hash.addValue((int64_t&)m_value);
 			return hash.getHash();
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new SdaNumberLeaf(m_value, m_calcDataType);
 		}
 

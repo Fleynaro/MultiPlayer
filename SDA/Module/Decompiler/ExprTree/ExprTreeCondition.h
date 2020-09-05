@@ -3,10 +3,10 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class ICondition : public Node, public PCode::IRelatedToInstruction
+	class AbstractCondition : public Node, public PCode::IRelatedToInstruction
 	{
 	public:
-		ICondition(PCode::Instruction* instr = nullptr)
+		AbstractCondition(PCode::Instruction* instr = nullptr)
 			: m_instr(instr)
 		{}
 
@@ -26,20 +26,20 @@ namespace CE::Decompiler::ExprTree
 		PCode::Instruction* m_instr;
 	};
 
-	class BooleanValue : public ICondition
+	class BooleanValue : public AbstractCondition
 	{
 	public:
 		bool m_value;
 
 		BooleanValue(bool value, PCode::Instruction* instr = nullptr)
-			: m_value(value), ICondition(instr)
+			: m_value(value), AbstractCondition(instr)
 		{}
 
 		void inverse() override {
 			m_value ^= true;
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new BooleanValue(m_value);
 		}
 
@@ -52,7 +52,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class Condition : public ICondition, public INodeAgregator
+	class Condition : public AbstractCondition, public INodeAgregator
 	{
 	public:
 		enum ConditionType
@@ -79,12 +79,12 @@ namespace CE::Decompiler::ExprTree
 			return "_";
 		}
 
-		Node* m_leftNode;
-		Node* m_rightNode;
+		INode* m_leftNode;
+		INode* m_rightNode;
 		ConditionType m_cond;
 
-		Condition(Node* leftNode, Node* rightNode, ConditionType cond, PCode::Instruction* instr = nullptr)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond), ICondition(instr)
+		Condition(INode* leftNode, INode* rightNode, ConditionType cond, PCode::Instruction* instr = nullptr)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_cond(cond), AbstractCondition(instr)
 		{
 			leftNode->addParentNode(this);
 			rightNode->addParentNode(this);
@@ -97,7 +97,7 @@ namespace CE::Decompiler::ExprTree
 				m_rightNode->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
+		void replaceNode(INode* node, INode* newNode) override {
 			if (m_leftNode == node) {
 				m_leftNode = newNode;
 			}
@@ -106,11 +106,11 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_leftNode, m_rightNode };
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
+		INode* clone(NodeCloneContext* ctx) override {
 			return new Condition(m_leftNode->clone(ctx), m_rightNode->clone(ctx), m_cond);
 		}
 
@@ -152,7 +152,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class CompositeCondition : public ICondition, public INodeAgregator
+	class CompositeCondition : public AbstractCondition, public INodeAgregator
 	{
 	public:
 		enum CompositeConditionType
@@ -172,12 +172,12 @@ namespace CE::Decompiler::ExprTree
 			return "_";
 		}
 
-		ICondition* m_leftCond;
-		ICondition* m_rightCond;
+		AbstractCondition* m_leftCond;
+		AbstractCondition* m_rightCond;
 		CompositeConditionType m_cond;
 
-		CompositeCondition(ICondition* leftCond, ICondition* rightCond = nullptr, CompositeConditionType cond = None, PCode::Instruction* instr = nullptr)
-			: m_leftCond(leftCond), m_rightCond(rightCond), m_cond(cond), ICondition(instr)
+		CompositeCondition(AbstractCondition* leftCond, AbstractCondition* rightCond = nullptr, CompositeConditionType cond = None, PCode::Instruction* instr = nullptr)
+			: m_leftCond(leftCond), m_rightCond(rightCond), m_cond(cond), AbstractCondition(instr)
 		{
 			leftCond->addParentNode(this);
 			if (rightCond != nullptr) {
@@ -192,9 +192,9 @@ namespace CE::Decompiler::ExprTree
 				m_rightCond->removeBy(this);
 		}
 
-		void replaceNode(Node* node, Node* newNode) override {
-			if (auto cond = dynamic_cast<ICondition*>(node)) {
-				if (auto newCond = dynamic_cast<ICondition*>(newNode)) {
+		void replaceNode(INode* node, INode* newNode) override {
+			if (auto cond = dynamic_cast<AbstractCondition*>(node)) {
+				if (auto newCond = dynamic_cast<AbstractCondition*>(newNode)) {
 					if (m_leftCond == cond)
 						m_leftCond = newCond;
 					else if (m_rightCond == cond)
@@ -203,12 +203,12 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		std::list<ExprTree::Node*> getNodesList() override {
+		std::list<ExprTree::INode*> getNodesList() override {
 			return { m_leftCond, m_rightCond };
 		}
 
-		Node* clone(NodeCloneContext* ctx) override {
-			return new CompositeCondition(dynamic_cast<ICondition*>(m_leftCond->clone(ctx)), m_rightCond ? dynamic_cast<ICondition*>(m_rightCond->clone(ctx)) : nullptr, m_cond);
+		INode* clone(NodeCloneContext* ctx) override {
+			return new CompositeCondition(dynamic_cast<AbstractCondition*>(m_leftCond->clone(ctx)), m_rightCond ? dynamic_cast<AbstractCondition*>(m_rightCond->clone(ctx)) : nullptr, m_cond);
 		}
 
 		ObjectHash::Hash getHash() override {

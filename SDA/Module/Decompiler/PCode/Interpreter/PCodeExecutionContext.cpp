@@ -7,14 +7,14 @@ ExecutionBlockContext::ExecutionBlockContext(Decompiler* decompiler)
 	: m_decompiler(decompiler)
 {}
 
-void ExecutionBlockContext::setVarnode(const PCode::Register& reg, ExprTree::Node * expr, bool rewrite)
+void ExecutionBlockContext::setVarnode(const PCode::Register& reg, ExprTree::INode * expr, bool rewrite)
 {
 	auto varnode = new PCode::RegisterVarnode(reg);
 	m_ownRegVarnodes.push_back(varnode);
 	return setVarnode(varnode, expr, rewrite);
 }
 
-void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* newExpr, bool rewrite) {
+void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::INode* newExpr, bool rewrite) {
 	std::list<TopNode*> oldTopNodes;
 	
 	//remove all old registers/symbols
@@ -60,7 +60,7 @@ void ExecutionBlockContext::setVarnode(PCode::Varnode* varnode, ExprTree::Node* 
 
 RegisterParts ExecutionBlockContext::getRegisterParts(PCode::RegisterId registerId, ExtBitMask& needReadMask, bool changedRegistersOnly) {
 	RegisterParts regParts;
-	using SameRegInfo = std::pair<PCode::Register, ExprTree::Node*>;
+	using SameRegInfo = std::pair<PCode::Register, ExprTree::INode*>;
 	std::list<SameRegInfo> sameRegisters;
 	//select same registeres
 	for (auto it : m_varnodes) {
@@ -104,14 +104,14 @@ RegisterParts ExecutionBlockContext::getRegisterParts(PCode::RegisterId register
 	return regParts;
 }
 
-ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister) {
+ExprTree::INode* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister) {
 	for (auto it : m_cachedRegisters) {
 		if (it.first == varnodeRegister->m_register) {
 			return it.second->getNode();
 		}
 	}
 
-	ExprTree::Node* regExpr;
+	ExprTree::INode* regExpr;
 	auto& reg = varnodeRegister->m_register;
 	auto needReadMask = varnodeRegister->m_register.m_valueRangeMask;
 	auto regParts = getRegisterParts(reg.getGenericId(), needReadMask);
@@ -135,14 +135,14 @@ ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarnod
 	return regExpr;
 }
 
-ExprTree::Node* ExecutionBlockContext::requestRegisterExpr(const PCode::Register& reg)
+ExprTree::INode* ExecutionBlockContext::requestRegisterExpr(const PCode::Register& reg)
 {
 	auto varnode = new PCode::RegisterVarnode(reg);
 	m_ownRegVarnodes.push_back(varnode);
 	return requestRegisterExpr(varnode);
 }
 
-ExprTree::Node* ExecutionBlockContext::requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode)
+ExprTree::INode* ExecutionBlockContext::requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode)
 {
 	for (auto it = m_varnodes.begin(); it != m_varnodes.end(); it++) {
 		if (symbolVarnode == it->m_varnode) {

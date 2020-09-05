@@ -236,7 +236,7 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 		}
 
 		auto info = CE::Decompiler::GetFunctionCallInfo(sig);
-		auto funcCallInfoCallback = [&](int offset, ExprTree::Node* dst) {
+		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) {
 			if (offset != 0x0) {
 				auto it = g_functions.find(offset);
 				if(it != g_functions.end())
