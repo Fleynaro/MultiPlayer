@@ -16,7 +16,14 @@ namespace CE::Decompiler::ExprTree
 		std::map<Symbol::Symbol*, Symbol::Symbol*> m_clonedSymbols;
 	};
 
-	class INodeAgregator;
+	class INode;
+	class INodeAgregator
+	{
+	public:
+		virtual void replaceNode(INode* node, INode* newNode) = 0;
+
+		virtual std::list<INode*> getNodesList() = 0;
+	};
 
 	class INode
 	{
@@ -54,14 +61,15 @@ namespace CE::Decompiler::ExprTree
 			if (!node) return;
 			node->printDebug();
 		}
-	};
 
-	class INodeAgregator
-	{
-	public:
-		virtual void replaceNode(INode* node, INode* newNode) = 0;
-
-		virtual std::list<INode*> getNodesList() = 0;
+		void checkOnSingleParents() {
+			auto parentNode = getParentNode();
+			if (auto nodeAgregator = dynamic_cast<INodeAgregator*>(this)) {
+				for (auto childNode : nodeAgregator->getNodesList())
+					if(childNode)
+						childNode->checkOnSingleParents();
+			}
+		}
 	};
 
 	class Node : public virtual INode
@@ -113,8 +121,9 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		INodeAgregator* getParentNode() override {
-			if(m_parentNodes.empty())
-				return nullptr;
+			if (m_parentNodes.size() != 1) {
+				throw std::logic_error("it is ambigious because of multiple parents");
+			}
 			return *m_parentNodes.begin();
 		}
 

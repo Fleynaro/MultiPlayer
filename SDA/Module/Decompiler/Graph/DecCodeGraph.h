@@ -94,6 +94,14 @@ namespace CE::Decompiler
 				});
 		}
 
+		void checkOnSingleParents() {
+			for (const auto decBlock : getDecompiledBlocks()) {
+				for (auto topNode : decBlock->getAllTopNodes()) {
+					topNode->getNode()->checkOnSingleParents();
+				}
+			}
+		}
+
 		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
 			if (block == nullptr)
 				return;

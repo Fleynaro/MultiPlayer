@@ -1,13 +1,14 @@
 #pragma once
-//SDA
-#include <Program.h>
+#include "AbstractTest.h"
 #include <Trigger/FunctionTriggerTableLog.h>
 #include <Statistic/Function/Analysis/FunctionStatAnalyser.h>
 
-//gtest
-#define _DEBUG
-#undef NDEBUG
-#include "gtest/gtest.h"
+class ProgramModuleFixtureStart : public ProgramModuleFixture {
+public:
+	ProgramModuleFixtureStart()
+		: ProgramModuleFixture(true)
+	{}
+};
 
 int main(int argc, char** argv);
 void setPlayerPos();

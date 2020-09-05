@@ -4,7 +4,7 @@
 #include "SDA/SdaHelper.h"
 #include "Optimization/DecGraphOptimization.h"
 #include "SDA/Symbolization/DecGraphSymbolization.h"
-#include "TestCodeToDecompile.h"
+#include <TestCodeToDecompile.h>
 #include "PCode/Decoders/DecPCodeDecoderX86.h"
 #include "PCode/DecPCodeConstValueCalc.h"
 #include <Manager/Managers.h>
@@ -259,7 +259,9 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 
 		printf("\n\n\n********************* AFTER OPTIMIZATION: *********************\n\n");
 		auto clonedDecCodeGraph = decCodeGraph->clone();
+		clonedDecCodeGraph->checkOnSingleParents();
 		Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
+		clonedDecCodeGraph->checkOnSingleParents();
 		converter = LinearView::Converter(clonedDecCodeGraph);
 		converter.start();
 		blockList = converter.getBlockList();
@@ -271,6 +273,7 @@ void testSamples(const std::list<std::pair<int, std::vector<byte>*>>& samples, c
 			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 			auto userSymbolDef = it->second;
 			Symbolization::SymbolizeWithSDA(sdaCodeGraph, userSymbolDef);
+			clonedDecCodeGraph->checkOnSingleParents();
 			converter = LinearView::Converter(sdaCodeGraph->getDecGraph());
 			converter.start();
 			blockList = converter.getBlockList();
