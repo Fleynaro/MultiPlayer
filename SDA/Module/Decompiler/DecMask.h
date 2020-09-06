@@ -35,11 +35,13 @@ namespace CE::Decompiler
 		}
 
 		int getOffset() const {
-			int result = 0;
-			for (auto m = m_bitMask; bool(m & 0b1) == 0; m = m >> 1) {
-				result += 1;
+			int offset = 0;
+			auto mask = m_bitMask;
+			while (offset < sizeof(m_bitMask) && bool(mask & 0b1) == 0) {
+				offset += 1;
+				mask = mask >> 1;
 			}
-			return result;
+			return offset;
 		}
 
 		int getSize() const {

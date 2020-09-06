@@ -1,4 +1,5 @@
 #pragma once
+#include <main.h>
 
 namespace CE::Decompiler
 {
@@ -10,21 +11,13 @@ namespace CE::Decompiler
 			STORAGE_GLOBAL
 		};
 
-		Storage(StorageType storageType, int registerId, int offset)
-			: m_storageType(storageType), m_registerId(registerId), m_offset(offset)
-		{}
+		Storage(StorageType storageType, int registerId, int offset);
 
-		StorageType getType() {
-			return m_storageType;
-		}
+		StorageType getType();
 
-		int getRegisterId() {
-			return m_registerId;
-		}
+		int getRegisterId();
 
-		int getOffset() {
-			return m_offset;
-		}
+		int getOffset();
 	private:
 		StorageType m_storageType;
 		int m_registerId;
@@ -33,13 +26,9 @@ namespace CE::Decompiler
 
 	class ParameterStorage : public Storage {
 	public:
-		ParameterStorage(int index, StorageType storageType, int registerId, int offset)
-			: m_index(index), Storage(storageType, registerId, offset)
-		{}
+		ParameterStorage(int index, StorageType storageType, int registerId, int offset);
 
-		int getIndex() {
-			return m_index;
-		}
+		int getIndex();
 	private:
 		int m_index;
 	};
@@ -48,20 +37,16 @@ namespace CE::Decompiler
 		int m_size;
 		ParameterStorage m_storage;
 
-		ParameterInfo(int size, ParameterStorage storage)
-			: m_size(size), m_storage(storage)
-		{}
+		ParameterInfo(int size, ParameterStorage storage);
 	};
 
 	class FunctionCallInfo {
 		std::list<ParameterInfo> m_paramInfos;
 	public:
-		FunctionCallInfo(std::list<ParameterInfo> paramInfos)
-			: m_paramInfos(paramInfos)
-		{}
+		FunctionCallInfo(std::list<ParameterInfo> paramInfos);
 
-		std::list<ParameterInfo>& getParamInfos() {
-			return m_paramInfos;
-		}
+		std::list<ParameterInfo>& getParamInfos();
+
+		ParameterInfo& findParamInfoByIndex(int idx);
 	};
 };

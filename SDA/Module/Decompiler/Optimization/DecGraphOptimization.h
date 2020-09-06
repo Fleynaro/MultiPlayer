@@ -416,6 +416,8 @@ namespace CE::Decompiler::Optimization
 
 	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph)
 	{
+		decGraph->generateSymbolIds();
+
 		//join conditions and remove useless blocks
 		for (auto it = decGraph->getDecompiledBlocks().rbegin(); it != decGraph->getDecompiledBlocks().rend(); it++) {
 			auto block = *it;
@@ -439,8 +441,7 @@ namespace CE::Decompiler::Optimization
 		ExpandSymbolAssignmentLines(decGraph);
 		RemoveSeqLinesWithUndefinedRegisters(decGraph);
 		//RemoveSeqLinesWithNotUsedMemVarDecompiledGraph(decGraph);
-
-		decGraph->generateSymbolIds();
+		
 		DecompiledCodeGraph::CalculateHeightForDecBlocks(decGraph->getStartBlock());
 
 		//MemorySymbolization memorySymbolization(decGraph);

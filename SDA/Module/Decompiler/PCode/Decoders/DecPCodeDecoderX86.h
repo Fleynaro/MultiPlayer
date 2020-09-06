@@ -55,13 +55,6 @@ namespace CE::Decompiler::PCode
 			ZydisDecodedInstruction curInstruction;
 			if (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&m_decoder, addr, size,
 				&curInstruction))) {
-				ZydisFormatter formatter;
-				ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
-				char buffer[256];
-				ZydisFormatterFormatInstruction(&formatter, m_curInstr, buffer, sizeof(buffer),
-					(ZyanU64)addr);
-				printf("%s\n", buffer);
-
 				m_curInstr = &curInstruction;
 				m_curInstrLength = curInstruction.length;
 				translateCurInstruction();
@@ -1220,7 +1213,7 @@ namespace CE::Decompiler::PCode
 
 		Varnode* getJumpOffsetByOperand(const ZydisDecodedOperand& operand) {
 			if (operand.type != ZYDIS_OPERAND_TYPE_IMMEDIATE)
-				return requestOperandValue(operand, operand.size);
+				return requestOperandValue(operand, operand.size / 0x8);
 			auto jmpOffset = (int)operand.imm.value.s;
 			return new ConstantVarnode(getJumpOffset(jmpOffset), 0x8);
 		}

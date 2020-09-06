@@ -1,11 +1,11 @@
 #pragma once
+//SDA
+#include <Program.h>
+
 //gtest
 #define _DEBUG
 #undef NDEBUG
 #include "gtest/gtest.h"
-
-//SDA
-#include <Program.h>
 
 using namespace CE;
 

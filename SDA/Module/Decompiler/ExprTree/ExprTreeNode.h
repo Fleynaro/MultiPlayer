@@ -48,7 +48,7 @@ namespace CE::Decompiler::ExprTree
 
 		virtual bool isFloatingPoint() = 0;
 
-		INode* clone() {
+		virtual INode* clone() {
 			NodeCloneContext ctx;
 			return clone(&ctx);
 		}
@@ -62,7 +62,7 @@ namespace CE::Decompiler::ExprTree
 			node->printDebug();
 		}
 
-		void checkOnSingleParents() {
+		virtual void checkOnSingleParents() {
 			auto parentNode = getParentNode();
 			if (auto nodeAgregator = dynamic_cast<INodeAgregator*>(this)) {
 				for (auto childNode : nodeAgregator->getNodesList())

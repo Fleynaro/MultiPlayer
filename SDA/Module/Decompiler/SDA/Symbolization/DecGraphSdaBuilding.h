@@ -28,7 +28,7 @@ namespace CE::Decompiler::Symbolization
 		SdaCodeGraph* m_sdaCodeGraph;
 		UserSymbolDef* m_userSymbolDef;
 		DataTypeFactory* m_dataTypeFactory;
-		std::map<Symbol::Symbol*, CE::Symbol::AbstractSymbol*> m_replacedSymbols;
+		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols;
 		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_stackToSymbols;
 		std::map<int64_t, CE::Symbol::AbstractSymbol*> m_globalToSymbols;
 		std::set<CE::Symbol::AbstractSymbol*> m_autoSymbols;
@@ -139,7 +139,8 @@ namespace CE::Decompiler::Symbolization
 					if (!isStackOrGlobal) {
 						auto it = m_replacedSymbols.find(sdaSymbolLeafToReplace->m_symbol);
 						if (it != m_replacedSymbols.end()) {
-							sdaSymbolLeafToReplace->replaceWith(new SdaSymbolLeaf(it->second));
+							NodeCloneContext ctx;
+							sdaSymbolLeafToReplace->replaceWith(it->second->clone(&ctx));
 							delete sdaSymbolLeafToReplace;
 							return;
 						}
@@ -164,18 +165,19 @@ namespace CE::Decompiler::Symbolization
 
 					//find symbol or create it
 					auto sdaSymbol = findOrCreateSymbol(sdaSymbolLeafToReplace->m_symbol, size, offset);
-					if (!isStackOrGlobal) {
-						m_replacedSymbols[sdaSymbolLeafToReplace->m_symbol] = sdaSymbol;
-					}
 
 					//after findOrCreateSymbol
 					if (transformToLocalOffset)
 						offset = toLocalOffset(offset);
 
 					//replace
-					auto newSdaSymbolLeaf = new SdaSymbolLeaf(sdaSymbol, isStackOrGlobal);
+					auto newSdaSymbolLeaf = new SdaSymbolLeaf(sdaSymbol, sdaSymbolLeafToReplace->m_symbol, offset, isStackOrGlobal);
 					sdaSymbolLeafToReplace->replaceWith(newSdaSymbolLeaf);
 					delete sdaSymbolLeafToReplace;
+
+					if (!isStackOrGlobal) {
+						m_replacedSymbols[sdaSymbolLeafToReplace->m_symbol] = newSdaSymbolLeaf;
+					}
 
 					if (symbolLeaf)
 						return;

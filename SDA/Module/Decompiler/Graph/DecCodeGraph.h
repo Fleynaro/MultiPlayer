@@ -107,7 +107,7 @@ namespace CE::Decompiler
 			for (const auto decBlock : getDecompiledBlocks()) {
 				for (auto topNode : decBlock->getAllTopNodes()) {
 					auto h = topNode->getNode()->getHash();
-					hash *= h;
+					hash += 31 * h;
 				}
 			}
 			return hash;

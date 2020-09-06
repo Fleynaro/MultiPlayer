@@ -332,25 +332,22 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto funcCallCtx = new ExprTree::FunctionCall(dstLocExpr, m_instr);
 
 		for (int paramIdx = 1; paramIdx <= 100; paramIdx++) {
-			bool isFound = false;
-			for (auto paramInfo : funcCallInfo.getParamInfos()) {
-				if (paramIdx == paramInfo.m_storage.getIndex()) {
-					auto node = buildParameterInfoExpr(paramInfo);
-					funcCallCtx->addParamNode(node);
-					isFound = true;
-					break;
-				}
+			try {
+				auto paramInfo = funcCallInfo.findParamInfoByIndex(paramIdx);
+				auto node = buildParameterInfoExpr(paramInfo);
+				funcCallCtx->addParamNode(node);
 			}
-			if (!isFound)
+			catch (std::exception&) {
 				break;
+			}
 		}
 
 		PCode::Register dstRegister;
-		for (auto paramInfo : funcCallInfo.getParamInfos()) {
-			if (paramInfo.m_storage.getIndex() == 0) {
-				dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(paramInfo.m_storage.getRegisterId(), paramInfo.m_size, paramInfo.m_storage.getOffset());
-				break;
-			}
+		try {
+			auto paramInfo = funcCallInfo.findParamInfoByIndex(0);
+			dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(paramInfo.m_storage.getRegisterId(), paramInfo.m_size, paramInfo.m_storage.getOffset());
+		}
+		catch (std::exception&) {
 		}
 
 		auto funcResultVar = new Symbol::FunctionResultVar(funcCallCtx, dstRegister.m_valueRangeMask);
@@ -358,7 +355,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		m_block->m_decompiledGraph->addSymbol(funcResultVar);
 		auto symbolLeaf = new ExprTree::SymbolLeaf(funcResultVar);
 		m_block->addSeqLine(symbolLeaf, funcCallCtx);
-		if (dstRegister.getGenericId() != 0) {
+		if (dstRegister.isValid()) {
 			m_ctx->setVarnode(dstRegister, symbolLeaf);
 		}
 		break;
@@ -367,15 +364,14 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::RETURN:
 	{
 		if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(m_block)) {
-			PCode::Register dstRegister;
-			for (auto paramInfo : m_ctx->m_decompiler->m_decompiledGraph->getFunctionCallInfo().getParamInfos()) {
-				if (paramInfo.m_storage.getIndex() == 0) {
-					dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(paramInfo.m_storage.getRegisterId(), paramInfo.m_size, paramInfo.m_storage.getOffset());
-					break;
-				}
+			try {
+				auto& funcCallInfo = m_ctx->m_decompiler->m_decompiledGraph->getFunctionCallInfo();
+				auto paramInfo = funcCallInfo.findParamInfoByIndex(0);
+				auto dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(paramInfo.m_storage.getRegisterId(), paramInfo.m_size, paramInfo.m_storage.getOffset());
+				endBlock->setReturnNode(m_ctx->requestRegisterExpr(dstRegister));
 			}
-
-			endBlock->setReturnNode(m_ctx->requestRegisterExpr(dstRegister));
+			catch (std::exception&) {
+			}
 		}
 		break;
 	}

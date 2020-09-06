@@ -36,6 +36,10 @@ namespace CE::Decompiler::PCode
 			return m_genericId;
 		}
 
+		bool isValid() const {
+			return m_genericId != 0;
+		}
+
 		bool isPointer() const {
 			return m_type == Type::StackPointer || m_type == Type::InstructionPointer;
 		}

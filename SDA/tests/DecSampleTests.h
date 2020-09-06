@@ -26,16 +26,17 @@ public:
 		bool m_enabled = true;
 		bool m_symbolization = true;
 		bool m_showCode = false;
-		bool m_showAsm = false;
+		bool m_showAsmBefore = false;
 	};
 
 	std::list<SampleTest*> m_sampleTests;
 	std::map<int, ObjectHash::Hash> m_sampleTestHashes;
 	Signature* m_defSignature;
 	bool m_isOutput = true;
+	int m_doTestIdOnly = 0;
 
 	ProgramModuleFixtureDecSamples()
-		: ProgramModuleFixture(true)
+		: ProgramModuleFixture(false)
 	{
 		m_defSignature = createDefSig("defSignature");
 		initSampleTestHashes();
@@ -46,16 +47,7 @@ public:
 
 	void initSampleTest();
 
-	void checkHash(int type, std::list<std::pair<int, ObjectHash::Hash>>& sampleTestHashes, ObjectHash::Hash hash, SampleTest* sampleTest);
-
-	SampleTest* createSampleTest(int testId, std::vector<byte> content) {
-		auto test = new SampleTest;
-		test->m_testId = testId;
-		test->m_content = content;
-		test->m_userSymbolDef = createUserSymbolDef(testId);
-		m_sampleTests.push_back(test);
-		return test;
-	}
+	bool checkHash(int type, std::list<std::pair<int, ObjectHash::Hash>>& sampleTestHashes, ObjectHash::Hash hash, SampleTest* sampleTest);
 
 	CE::TypeManager* typeManager() {
 		return m_programModule->getTypeManager();
@@ -67,6 +59,15 @@ public:
 
 	CE::DataTypePtr findType(std::string typeName, std::string typeLevel = "") {
 		return DataType::GetUnit(typeManager()->getTypeByName(typeName), typeLevel);
+	}
+
+	SampleTest* createSampleTest(int testId, std::vector<byte> content) {
+		auto test = new SampleTest;
+		test->m_testId = testId;
+		test->m_content = content;
+		test->m_userSymbolDef = createUserSymbolDef(testId);
+		m_sampleTests.push_back(test);
+		return test;
 	}
 
 	Symbolization::UserSymbolDef createUserSymbolDef(int testId) {

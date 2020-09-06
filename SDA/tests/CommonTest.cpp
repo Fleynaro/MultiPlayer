@@ -11,7 +11,7 @@ TEST(DataType, Parsing)
     ASSERT_EQ(DataType::GetPointerLevelStr(DataType::GetUnit(new DataType::Float, "(**[10][5])*")), "[1][10][5][1][1]");
 }
 
-TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
+TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
 {
     EXPECT_GE(m_programModule->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 20);
     auto tr = m_programModule->getTransaction();
@@ -170,7 +170,7 @@ TEST_F(ProgramModuleFixtureStart, Test_DataBaseCreatedAndFilled)
     }
 }
 
-TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
+TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 {
     //for functions
     {
@@ -291,7 +291,7 @@ TEST_F(ProgramModuleFixture, Test_DataBaseLoaded)
     }
 }
 
-TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
+TEST_F(ProgramModuleFixture, Test_Common_FunctionTrigger)
 {
     auto typeManager = m_programModule->getTypeManager();
     auto statManager = m_programModule->getStatManager();
@@ -440,7 +440,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionTrigger)
 
 #include <Statistic/Function/Analysis/Providers/SignatureAnalysisProvider.h>
 #include <Statistic/Function/Analysis/Providers/StringSearchProvider.h>
-TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
+TEST_F(ProgramModuleFixture, Test_Common_FunctionStatAnalysis)
 {
     auto statManager = m_programModule->getStatManager();
     auto loader = new Stat::Function::BufferLoader(statManager->getCollector()->getBufferManager());
@@ -458,7 +458,7 @@ TEST_F(ProgramModuleFixture, Test_FunctionStatAnalysis)
 }
 
 #include <GhidraSync/GhidraSyncCommitment.h>
-TEST_F(ProgramModuleFixture, Test_GhidraSync)
+TEST_F(ProgramModuleFixture, Test_Common_GhidraSync)
 {
     if (!GHIDRA_TEST)
         return;
@@ -542,7 +542,7 @@ TEST_F(ProgramModuleFixture, Test_GhidraSync)
     }
 }
 
-TEST_F(ProgramModuleFixture, Test_RemoveDB)
+TEST_F(ProgramModuleFixture, Test_Common_RemoveDB)
 {
     //remove test database
     //clear();
@@ -628,6 +628,6 @@ int main(int argc, char** argv) {
     SetConsoleOutputCP(1251);
     DebugOutput_Console = true;
 
-    ::testing::GTEST_FLAG(filter) = "Test_DecSamples";
+    //::testing::GTEST_FLAG(filter) = "Test_Dec_*";
 	return RUN_ALL_TESTS();
 }

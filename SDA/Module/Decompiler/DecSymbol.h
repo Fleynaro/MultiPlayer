@@ -15,20 +15,6 @@ namespace CE::Decompiler {
 
 namespace CE::Decompiler::Symbol
 {
-	class SymbolWithId {
-	public:
-		int getId() {
-			return m_id;
-		}
-
-		void setId(int id) {
-			m_id = id;
-		}
-
-	private:
-		int m_id = 0x0;
-	};
-
 	class Symbol
 	{
 	public:
@@ -44,11 +30,7 @@ namespace CE::Decompiler::Symbol
 			return ExtBitMask(getSize());
 		}
 
-		virtual ObjectHash::Hash getHash() {
-			ObjectHash hash;
-			hash.addValue((int64_t)this);
-			return hash.getHash();
-		}
+		virtual ObjectHash::Hash getHash() = 0;
 
 		void setDecGraph(DecompiledCodeGraph* decGraph) {
 			m_decGraph = decGraph;
@@ -83,13 +65,64 @@ namespace CE::Decompiler::Symbol
 		ExtBitMask m_mask;
 	};
 
-	class MemoryVariable : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
+	class RegisterVariable : public Variable
 	{
 	public:
-		ExprTree::ReadValueNode* m_loadValueExpr = nullptr;
+		PCode::Register m_register;
+
+		RegisterVariable(PCode::Register reg)
+			: m_register(reg), Variable(reg.m_valueRangeMask)
+		{}
+
+		ObjectHash::Hash getHash() override {
+			ObjectHash hash;
+			hash.addValue(m_register.getGenericId());
+			hash.addValue((int64_t)m_register.m_valueRangeMask.getBitMask64().getValue());
+			return hash.getHash();
+		}
+
+		std::string printDebug() override {
+			return "[reg_" + m_register.printDebug() + "]";
+		}
+
+	protected:
+		Symbol* cloneSymbol() override {
+			return new RegisterVariable(m_register);
+		}
+	};
+
+	class SymbolWithId : public Variable, public PCode::IRelatedToInstruction {
+	public:
+		SymbolWithId(ExtBitMask mask)
+			: Variable(mask)
+		{}
+
+		ObjectHash::Hash getHash() override {
+			ObjectHash::Hash hash = 0;
+			for (auto instr : getInstructionsRelatedTo())
+				hash += 31 * instr->getOffset();
+			return hash;
+		}
+
+		int getId() {
+			return m_id;
+		}
+
+		void setId(int id) {
+			m_id = id;
+		}
+
+	private:
+		int m_id = 0x0;
+	};
+
+	class MemoryVariable : public SymbolWithId
+	{
+	public:
+		ExprTree::ReadValueNode* m_loadValueExpr;
 		
 		MemoryVariable(ExprTree::ReadValueNode* loadValueExpr, int size)
-			: m_loadValueExpr(loadValueExpr), Variable(size)
+			: m_loadValueExpr(loadValueExpr), SymbolWithId(size)
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;
@@ -104,13 +137,13 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
-	class LocalVariable : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
+	class LocalVariable : public SymbolWithId
 	{
 	public:
 		std::list<PCode::Instruction*> m_instructionsRelatedTo;
 
 		LocalVariable(ExtBitMask mask)
-			: Variable(mask)
+			: SymbolWithId(mask)
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
@@ -129,39 +162,13 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
-	class RegisterVariable : public Variable
+	class FunctionResultVar : public SymbolWithId
 	{
 	public:
-		PCode::Register m_register;
-
-		RegisterVariable(PCode::Register reg)
-			: m_register(reg), Variable(reg.m_valueRangeMask)
-		{}
-
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue(m_register.getGenericId());
-			hash.addValue((int64_t&)m_register.m_valueRangeMask);
-			return hash.getHash();
-		}
-
-		std::string printDebug() override {
-			return "[reg_" + m_register.printDebug() + "]";
-		}
-
-	protected:
-		Symbol* cloneSymbol() override {
-			return new RegisterVariable(m_register);
-		}
-	};
-
-	class FunctionResultVar : public Variable, public SymbolWithId, public PCode::IRelatedToInstruction
-	{
-	public:
-		ExprTree::FunctionCall* m_funcCallContext = nullptr;
+		ExprTree::FunctionCall* m_funcCallContext;
 
 		FunctionResultVar(ExprTree::FunctionCall* funcCallContext, ExtBitMask mask)
-			: m_funcCallContext(funcCallContext), Variable(mask)
+			: m_funcCallContext(funcCallContext), SymbolWithId(mask)
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;

@@ -34,6 +34,9 @@ namespace CE::Decompiler
 	static ExprTree::INode* CreateExprFromRegisterParts(RegisterParts regParts, ExtBitMask requestRegMask) {
 		ExprTree::INode* resultExpr = nullptr;
 
+		if (regParts.empty())
+			throw std::logic_error("no register parts passed in");
+
 		regParts.sort([](const RegisterPart* a, const RegisterPart* b) {
 			return b->m_regMask < a->m_regMask;
 			});

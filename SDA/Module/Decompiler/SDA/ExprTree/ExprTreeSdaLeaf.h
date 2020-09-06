@@ -8,8 +8,8 @@ namespace CE::Decompiler::ExprTree
 	class SdaSymbolLeaf : public SdaNode, public ILeaf, public IAddressGetting
 	{
 	public:
-		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, bool isAddrGetting = false)
-			: m_sdaSymbol(sdaSymbol), m_isAddrGetting(isAddrGetting)
+		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, Symbol::Symbol* decSymbol, int64_t memOffset = 0x0, bool isAddrGetting = false)
+			: m_sdaSymbol(sdaSymbol), m_decSymbol(decSymbol), m_memOffset(memOffset), m_isAddrGetting(isAddrGetting)
 		{}
 
 		CE::Symbol::AbstractSymbol* getSdaSymbol() {
@@ -21,13 +21,11 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue((int64_t)m_sdaSymbol);
-			return hash.getHash();
+			return m_decSymbol->getHash() + 31 * m_memOffset;
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return new SdaSymbolLeaf(m_sdaSymbol, m_isAddrGetting);
+			return new SdaSymbolLeaf(m_sdaSymbol, m_decSymbol, m_memOffset, m_isAddrGetting);
 		}
 
 		bool isFloatingPoint() override {
@@ -61,6 +59,8 @@ namespace CE::Decompiler::ExprTree
 			return m_sdaSymbol->getName();
 		}
 	private:
+		Symbol::Symbol* m_decSymbol;
+		int64_t m_memOffset;
 		CE::Symbol::AbstractSymbol* m_sdaSymbol;
 		bool m_isAddrGetting;
 	};
@@ -97,7 +97,7 @@ namespace CE::Decompiler::ExprTree
 
 		ObjectHash::Hash getHash() override {
 			ObjectHash hash;
-			hash.addValue((int64_t&)m_value);
+			hash.addValue((int64_t)m_value);
 			return hash.getHash();
 		}
 

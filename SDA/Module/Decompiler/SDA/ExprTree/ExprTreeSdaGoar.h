@@ -78,7 +78,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		ObjectHash::Hash getHash() override {
-			return GoarNode::getHash() * m_indexNode->getHash();
+			return GoarNode::getHash() + m_indexNode->getHash() * 31;
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
@@ -143,7 +143,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		ObjectHash::Hash getHash() override {
-			return GoarNode::getHash() * (m_isAddrGetting + 1);
+			return GoarNode::getHash() + m_isAddrGetting * 31;
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {

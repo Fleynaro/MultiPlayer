@@ -2,7 +2,7 @@
 
 void ProgramModuleFixtureDecSamples::initSampleTestHashes() {
 	m_sampleTestHashes = {
-
+		std::pair(200,0xe6febb00073690a3), std::pair(201,0x2644e3a278575b3d),
 	};
 }
 
@@ -10,12 +10,17 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 {
 	SampleTest* test;
 	Signature* sig;
+	
+	//ignore all tests except
+	m_doTestIdOnly = 1;
 
 	{
 		//multidimension stack array like stackArray[1][2][3]
 		test = createSampleTest(1, GetFuncBytes(&Test_Array));
-		test->m_enabled = false;
+		test->m_enabled = true;
+		test->m_showAsmBefore = test->m_showCode = true;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test1");
+		sig->setReturnType(findType("uint64_t"));
 
 		test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, findType("int32_t", "[2][3][4]"), "stackArray"), -0x68);
 		test->m_userSymbolDef.m_funcBodyMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_INSTR_VAR, findType("int64_t", ""), "idx"), 4608);
@@ -32,9 +37,10 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		//get entity and copy his coords to the first param
 		test = createSampleTest(100, { 0x40, 0x53, 0x48, 0x83, 0xEC, 0x50, 0x0F, 0x29, 0x74, 0x24, 0x40, 0xF3, 0x0F, 0x10, 0x35, 0x21, 0x46, 0xF7, 0x01, 0x48, 0x8B, 0xD9, 0x0F, 0x29, 0x7C, 0x24, 0x30, 0xF3, 0x0F, 0x10, 0x3D, 0x15, 0x46, 0xF7, 0x01, 0x8B, 0xCA, 0x44, 0x0F, 0x29, 0x44, 0x24, 0x20, 0xF3, 0x44, 0x0F, 0x10, 0x05, 0x08, 0x46, 0xF7, 0x01, 0xE8, 0x5F, 0xE0, 0xFD, 0xFF, 0x48, 0x85, 0xC0, 0x74, 0x14, 0x0F, 0x28, 0x70, 0x70, 0x0F, 0x28, 0xFE, 0x44, 0x0F, 0x28, 0xC6, 0x0F, 0xC6, 0xFE, 0x55, 0x44, 0x0F, 0xC6, 0xC6, 0xAA, 0xF3, 0x0F, 0x11, 0x33, 0x0F, 0x28, 0x74, 0x24, 0x40, 0xF3, 0x0F, 0x11, 0x7B, 0x08, 0x0F, 0x28, 0x7C, 0x24, 0x30, 0x48, 0x8B, 0xC3, 0xF3, 0x44, 0x0F, 0x11, 0x43, 0x10, 0x44, 0x0F, 0x28, 0x44, 0x24, 0x20, 0x48, 0x83, 0xC4, 0x50, 0x5B, 0xC3, 0x90, 0x48 });
 		test->m_enabled = true;
-		test->m_showAsm = test->m_showCode = true;
+		test->m_showAsmBefore = test->m_showCode = true;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test200");
 		sig->addParameter("myParam1", findType("uint32_t", "[1]"));
+		sig->setReturnType(findType("uint64_t"));
 
 		{
 			auto vec3D = typeManager()->createStructure("vec3D", "");
@@ -55,20 +61,28 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	}
 }
 
-void ProgramModuleFixtureDecSamples::checkHash(int type, std::list<std::pair<int, ObjectHash::Hash>>& sampleTestHashes, ObjectHash::Hash hash, SampleTest* sampleTest) {
+bool ProgramModuleFixtureDecSamples::checkHash(int type, std::list<std::pair<int, ObjectHash::Hash>>& sampleTestHashes, ObjectHash::Hash hash, SampleTest* sampleTest) {
 	auto ID = (sampleTest->m_testId << 1) | type;
+	sampleTestHashes.push_back(std::make_pair(ID, hash));
 	auto it = m_sampleTestHashes.find(ID);
 	if (it != m_sampleTestHashes.end()) {
-		ASSERT_EQ(hash, it->second);
+		return hash == it->second;
 	}
-	sampleTestHashes.push_back(std::make_pair(ID, hash));
+	return true;
 }
 
-TEST_F(ProgramModuleFixtureDecSamples, Test_DecSamples)
+TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 {
 	std::list<std::pair<int, ObjectHash::Hash>> sampleTestHashes;
+	bool testFail = false;
+
+	if (m_doTestIdOnly) {
+		printf("\n\n\n\nONLY ONE TEST ID %i IS ACTIVE\n\n\n", m_doTestIdOnly);
+	}
 
 	for (auto sampleTest : m_sampleTests) {
+		if (m_doTestIdOnly && m_doTestIdOnly != sampleTest->m_testId)
+			continue;
 		if (!sampleTest->m_enabled)
 			continue;
 		m_isOutput = sampleTest->m_showCode;
@@ -92,7 +106,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_DecSamples)
 
 		AsmGraph graph(decodedInstructions, constValues);
 		graph.build();
-		if (m_isOutput && sampleTest->m_showAsm)
+		if (m_isOutput && sampleTest->m_showAsmBefore)
 			graph.printDebug(sampleTest->m_content.data());
 
 		auto info = CE::Decompiler::GetFunctionCallInfo(sampleTest->m_userSymbolDef.m_signature);
@@ -110,7 +124,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_DecSamples)
 		decompiler->start();
 
 		//show code
-		out("********************* BEFORE OPTIMIZATION: *********************\n\n");
+		out("********************* BEFORE OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 		LinearView::Converter converter(decCodeGraph);
 		converter.start();
 		auto blockList = converter.getBlockList();
@@ -120,11 +134,16 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_DecSamples)
 			output.show();
 		}
 
-		out("\n\n\n********************* AFTER OPTIMIZATION: *********************\n\n");
 		auto clonedDecCodeGraph = decCodeGraph->clone();
 		clonedDecCodeGraph->checkOnSingleParents();
 		Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
 		clonedDecCodeGraph->checkOnSingleParents();
+		if (!checkHash(0, sampleTestHashes, clonedDecCodeGraph->getHash(), sampleTest)) {
+			printf("\n\nHERE IS THE TROUBLE:");
+			m_isOutput = true;
+			testFail = true;
+		}
+		out("\n\n\n********************* AFTER OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 		converter = LinearView::Converter(clonedDecCodeGraph);
 		converter.start();
 		blockList = converter.getBlockList();
@@ -134,13 +153,16 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_DecSamples)
 			output2.show();
 		}
 
-		checkHash(0, sampleTestHashes, clonedDecCodeGraph->getHash(), sampleTest);
-
 		if (sampleTest->m_symbolization) {
-			out("\n\n\n********************* AFTER SYMBOLIZATION: *********************\n\n");
 			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 			Symbolization::SymbolizeWithSDA(sdaCodeGraph, sampleTest->m_userSymbolDef);
 			clonedDecCodeGraph->checkOnSingleParents();
+			if (!checkHash(1, sampleTestHashes, sdaCodeGraph->getDecGraph()->getHash(), sampleTest)) {
+				printf("\n\nHERE IS THE TROUBLE:");
+				m_isOutput = true;
+				testFail = true;
+			}
+			out("\n\n\n********************* AFTER SYMBOLIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 			converter = LinearView::Converter(sdaCodeGraph->getDecGraph());
 			converter.start();
 			blockList = converter.getBlockList();
@@ -168,22 +190,24 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_DecSamples)
 			}
 			out("\n");
 			LinearViewSimpleConsoleOutput output3(blockList, sdaCodeGraph->getDecGraph());
-			output.setMinInfoToShow();
+			output3.setMinInfoToShow();
 			if (m_isOutput) {
 				output3.show();
 			}
-
-			checkHash(1, sampleTestHashes, sdaCodeGraph->getDecGraph()->getHash(), sampleTest);
 		}
 		out("\n\n\n\n\n");
 	}
 
-	out("{");
-	int i = 0;
+	printf("\nhashes\n{\n");
+	int i = 1;
 	for (auto pair : sampleTestHashes) {
-		out("std::pair(%i,0x%x),", pair.first, pair.second);
+		printf("std::pair(%i,0x%I64x),", pair.first, pair.second);
 		if (i % 10 == 0)
-			out("\n");
+			printf("\n");
+		else printf(" ");
 	}
-	out("}");
+	printf("\n}\n\n");
+
+	if (testFail)
+		FAIL();
 }
