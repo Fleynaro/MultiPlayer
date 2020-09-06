@@ -1207,6 +1207,9 @@ namespace CE::Decompiler::PCode
 				break;
 			}
 
+			default: {
+				addMicroInstruction(InstructionId::UNKNOWN, new ConstantVarnode(0x0, 0x8));
+			}
 			
 			}
 		}

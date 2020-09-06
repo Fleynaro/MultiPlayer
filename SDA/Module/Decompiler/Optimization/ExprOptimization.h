@@ -655,7 +655,6 @@ namespace CE::Decompiler::Optimization
 					}*/
 
 					expr->replaceWith(it.second);
-					*it.first = nullptr;
 					delete expr;
 					return;
 				}
@@ -697,7 +696,6 @@ namespace CE::Decompiler::Optimization
 								//[var_2_32] & 0xffffffff{-1}		=>		 [var_2_32]		
 								auto newExpr = expr->m_leftNode;
 								expr->replaceWith(newExpr);
-								expr->m_leftNode = nullptr;
 								delete expr;
 							}
 							else {

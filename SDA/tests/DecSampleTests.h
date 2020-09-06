@@ -25,7 +25,8 @@ public:
 		std::map<int64_t, Signature*> m_functions;
 		bool m_enabled = true;
 		bool m_symbolization = true;
-		bool m_showCode = false;
+		bool m_showAllCode = false;
+		bool m_showSymbCode = false;
 		bool m_showAsmBefore = false;
 	};
 

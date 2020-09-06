@@ -60,7 +60,10 @@ namespace CE::Decompiler
 					printf("%s %s\n", prefix.c_str(), instr->m_originalView.c_str());
 				if (pcode) {
 					prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Generic::String::NumberToHex(instr->getOffset()).c_str() + ")";
-					printf("\t%s %s\n", prefix.c_str(), instr->printDebug().c_str());
+					printf("\t%s %s", prefix.c_str(), instr->printDebug().c_str());
+					if(instr->m_id == PCode::InstructionId::UNKNOWN)
+						printf(" <------------------------------------------------ ");
+					printf("\n");
 				}
 			}
 

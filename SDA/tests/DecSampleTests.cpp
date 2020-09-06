@@ -2,7 +2,7 @@
 
 void ProgramModuleFixtureDecSamples::initSampleTestHashes() {
 	m_sampleTestHashes = {
-		std::pair(200,0xe6febb00073690a3), std::pair(201,0x2644e3a278575b3d),
+		std::pair(2,0x82adab5b54d9e52a), std::pair(3,0xdef3b0dc7a444a3b), std::pair(200,0xab7892859ce3979d), std::pair(201,0xeabebb280e046237),
 	};
 }
 
@@ -12,13 +12,13 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	Signature* sig;
 	
 	//ignore all tests except
-	m_doTestIdOnly = 1;
+	m_doTestIdOnly = 2;
 
 	{
 		//multidimension stack array like stackArray[1][2][3]
 		test = createSampleTest(1, GetFuncBytes(&Test_Array));
 		test->m_enabled = true;
-		test->m_showAsmBefore = test->m_showCode = true;
+		test->m_showSymbCode = false;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test1");
 		sig->setReturnType(findType("uint64_t"));
 
@@ -30,14 +30,17 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	{
 		//hard work with complex data structures
 		test = createSampleTest(2, GetFuncBytes(&Test_StructsAndArray));
-		test->m_enabled = false;
+		test->m_enabled = true;
+		test->m_showAsmBefore = true;
+		test->m_symbolization = false;
+		test->m_showAllCode = true;
 	}
 
 	{
 		//get entity and copy his coords to the first param
 		test = createSampleTest(100, { 0x40, 0x53, 0x48, 0x83, 0xEC, 0x50, 0x0F, 0x29, 0x74, 0x24, 0x40, 0xF3, 0x0F, 0x10, 0x35, 0x21, 0x46, 0xF7, 0x01, 0x48, 0x8B, 0xD9, 0x0F, 0x29, 0x7C, 0x24, 0x30, 0xF3, 0x0F, 0x10, 0x3D, 0x15, 0x46, 0xF7, 0x01, 0x8B, 0xCA, 0x44, 0x0F, 0x29, 0x44, 0x24, 0x20, 0xF3, 0x44, 0x0F, 0x10, 0x05, 0x08, 0x46, 0xF7, 0x01, 0xE8, 0x5F, 0xE0, 0xFD, 0xFF, 0x48, 0x85, 0xC0, 0x74, 0x14, 0x0F, 0x28, 0x70, 0x70, 0x0F, 0x28, 0xFE, 0x44, 0x0F, 0x28, 0xC6, 0x0F, 0xC6, 0xFE, 0x55, 0x44, 0x0F, 0xC6, 0xC6, 0xAA, 0xF3, 0x0F, 0x11, 0x33, 0x0F, 0x28, 0x74, 0x24, 0x40, 0xF3, 0x0F, 0x11, 0x7B, 0x08, 0x0F, 0x28, 0x7C, 0x24, 0x30, 0x48, 0x8B, 0xC3, 0xF3, 0x44, 0x0F, 0x11, 0x43, 0x10, 0x44, 0x0F, 0x28, 0x44, 0x24, 0x20, 0x48, 0x83, 0xC4, 0x50, 0x5B, 0xC3, 0x90, 0x48 });
 		test->m_enabled = true;
-		test->m_showAsmBefore = test->m_showCode = true;
+		test->m_showSymbCode = false;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test200");
 		sig->addParameter("myParam1", findType("uint32_t", "[1]"));
 		sig->setReturnType(findType("uint64_t"));
@@ -85,7 +88,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			continue;
 		if (!sampleTest->m_enabled)
 			continue;
-		m_isOutput = sampleTest->m_showCode;
+		m_isOutput = sampleTest->m_showAllCode;
 
 		std::list<Instruction*> decodedInstructions;
 		RegisterFactoryX86 registerFactoryX86;
@@ -93,7 +96,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 		int offset = 0;
 		while (offset < sampleTest->m_content.size()) {
 			decoder.decode(sampleTest->m_content.data() + offset, offset, (int)sampleTest->m_content.size());
-			if (decoder.getDecodedPCodeInstructions().empty())
+			if (decoder.getInstructionLength() == 0)
 				break;
 			decodedInstructions.insert(decodedInstructions.end(), decoder.getDecodedPCodeInstructions().begin(), decoder.getDecodedPCodeInstructions().end());
 			offset += decoder.getInstructionLength();
@@ -154,6 +157,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 		}
 
 		if (sampleTest->m_symbolization) {
+			m_isOutput |= sampleTest->m_showSymbCode;
 			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 			Symbolization::SymbolizeWithSDA(sdaCodeGraph, sampleTest->m_userSymbolDef);
 			clonedDecCodeGraph->checkOnSingleParents();
@@ -202,7 +206,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 	int i = 1;
 	for (auto pair : sampleTestHashes) {
 		printf("std::pair(%i,0x%I64x),", pair.first, pair.second);
-		if (i % 10 == 0)
+		if (i % 6 == 0)
 			printf("\n");
 		else printf(" ");
 	}

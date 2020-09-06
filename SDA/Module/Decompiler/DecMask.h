@@ -37,7 +37,7 @@ namespace CE::Decompiler
 		int getOffset() const {
 			int offset = 0;
 			auto mask = m_bitMask;
-			while (offset < sizeof(m_bitMask) && bool(mask & 0b1) == 0) {
+			while (offset < sizeof(m_bitMask) * 0x8 && bool(mask & 0b1) == 0) {
 				offset += 1;
 				mask = mask >> 1;
 			}

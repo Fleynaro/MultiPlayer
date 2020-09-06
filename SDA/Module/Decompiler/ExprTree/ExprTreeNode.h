@@ -60,6 +60,7 @@ namespace CE::Decompiler::ExprTree
 		void static UpdateDebugInfo(INode* node) {
 			if (!node) return;
 			node->printDebug();
+			node->checkOnSingleParents();
 		}
 
 		virtual void checkOnSingleParents() {

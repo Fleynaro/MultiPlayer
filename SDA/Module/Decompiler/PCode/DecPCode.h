@@ -174,6 +174,7 @@ namespace CE::Decompiler::PCode
 
 	enum class InstructionId {
 		NONE,
+		UNKNOWN,
 		//Data Moving
 		COPY,
 		LOAD,

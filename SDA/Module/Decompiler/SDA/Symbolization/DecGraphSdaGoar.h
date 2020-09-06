@@ -53,12 +53,18 @@ namespace CE::Decompiler::Symbolization
 					return true;
 				}
 
+				//if no a pointer or an array
 				if (ptrLevels.empty())
 					return false;
 			}
-
+			
 			//if is a pointer(int*) or an array(int[2]) that supported addressing with [index] then try making an array
 			//important: array is like a structure with stored items can be linearly addressed (an array item like a field)
+			if (ptrLevels.size() >= 2 && *ptrLevels.begin() == 1 && *std::next(ptrLevels.begin()) != 1) {
+				//in C++ no declaration statements like this: int*[2][3] pArr;	(pointer to an array)
+				//then remove pointer
+				ptrLevels.pop_front();
+			}
 			ptrLevels.pop_front();
 			auto arrItemDataType = DataType::GetUnit(baseDataType, ptrLevels);
 			auto arrItemSize = arrItemDataType->getSize();
