@@ -339,6 +339,7 @@
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\DecMask.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\DecGraphConcatOptimization.h" />
     <ClInclude Include="Module\Decompiler\PCode\Decoders\DecPCodeAbstractDecoder.h" />
     <ClInclude Include="Module\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecPCodeConstValueCalc.h" />

@@ -563,70 +563,86 @@ namespace CE::Decompiler::Optimization
 
 	//((rsp + 0x20) + (rax * 5)) + 0x10				=>		(rsp + 0x30) + (rax * 5)
 	//((((rsp & 0xF) + 0x9) + 0x2) + (-0x8))		=>		((rsp & 0xF) + 0x3)
-	static void MakeLeafPlaceDeeperAndCalculate(INode* node, OperationalNode* prevExpr) {
+	static void MakeLeafPlaceDeeperAndCalculate(INode* node, OperationalNode* prevExpr) { //TODO: prevExpr should be curExpr
 		INode::UpdateDebugInfo(node);
 		INode::UpdateDebugInfo(prevExpr);
 		bool isSameOperation = true;
 
-		if (auto expr = dynamic_cast<OperationalNode*>(node)) {
+		if (auto curExpr = dynamic_cast<OperationalNode*>(node)) {
 			if (prevExpr != nullptr) {
 				auto prevOperation = prevExpr->m_operation;
-				if (prevOperation != expr->m_operation) {
+				if (prevOperation != curExpr->m_operation) {
 					isSameOperation = false;
 				}
 			}
 
 			if (isSameOperation && prevExpr) {
-				if (IsOperationMoving(expr->m_operation)) {
-					if (IsSwap(prevExpr->m_rightNode, expr->m_rightNode)) {
+				if (IsOperationMoving(curExpr->m_operation)) {
+					if (IsSwap(prevExpr->m_rightNode, curExpr->m_rightNode)) {
 						OperationalNode* newExpr;
 						OperationalNode* newPrevExpr;
-						newExpr = new OperationalNode(expr->m_leftNode, prevExpr->m_rightNode, expr->m_operation, expr->m_instr);
-						newPrevExpr = new OperationalNode(newExpr, expr->m_rightNode, expr->m_operation, prevExpr->m_instr);
+						newExpr = new OperationalNode(curExpr->m_leftNode, prevExpr->m_rightNode, curExpr->m_operation, curExpr->m_instr);
+						newPrevExpr = new OperationalNode(newExpr, curExpr->m_rightNode, curExpr->m_operation, prevExpr->m_instr);
 
 						prevExpr->replaceWith(newPrevExpr);
 						delete prevExpr;
-						expr = newExpr;
+						curExpr = newExpr;
 						prevExpr = newPrevExpr;
-						INode::UpdateDebugInfo(expr);
+						INode::UpdateDebugInfo(curExpr);
 						INode::UpdateDebugInfo(prevExpr);
 					}
 				}
 
-				if (auto numberLeaf = dynamic_cast<INumberLeaf*>(expr->m_rightNode)) {
-					if (auto prevNumberLeaf = dynamic_cast<INumberLeaf*>(prevExpr->m_rightNode)) {
-						auto result = numberLeaf->getValue();
-						switch (expr->m_operation)
-						{
-						case Shr:
-						case Shl:
-							result += prevNumberLeaf->getValue();
-							break;
-						case Div:
-							result *= prevNumberLeaf->getValue();
-							break;
-						default:
-							result = Calculate(result, prevNumberLeaf->getValue(), expr->m_operation);
-						}
-
-						auto mask = expr->getMask() | prevExpr->getMask();
-						if (mask != 0)
-							result &= mask.getValue();
-
-						auto numberLeaf = new NumberLeaf(result);
-						expr = new OperationalNode(expr->m_leftNode, numberLeaf, expr->m_operation, expr->m_instr);
-						prevExpr->replaceWith(expr);
-						delete prevExpr;
+				auto curNumberLeaf = dynamic_cast<INumberLeaf*>(curExpr->m_rightNode);
+				auto prevNumberLeaf = dynamic_cast<INumberLeaf*>(prevExpr->m_rightNode);
+				INode* newNode = nullptr;
+				if (curNumberLeaf && prevNumberLeaf) {
+					auto result = curNumberLeaf->getValue();
+					switch (curExpr->m_operation)
+					{
+					case Shr:
+					case Shl:
+						result += prevNumberLeaf->getValue();
+						break;
+					case Div:
+						result *= prevNumberLeaf->getValue();
+						break;
+					default:
+						result = Calculate(result, prevNumberLeaf->getValue(), curExpr->m_operation);
 					}
+
+					auto mask = curExpr->getMask() | prevExpr->getMask();
+					if (mask != 0)
+						result &= mask.getValue();
+
+					newNode = new NumberLeaf(result);
+					
+				}
+				else {
+					if (auto curRightOpNode = dynamic_cast<OperationalNode*>(curExpr->m_rightNode)) {
+						if (curRightOpNode->m_operation == Shl) {
+							if (auto shlNumberLeaf = dynamic_cast<INumberLeaf*>(curRightOpNode->m_rightNode)) {
+								if (shlNumberLeaf->getValue() % 0x8 == 0) {
+									newNode = new OperationalNode(curRightOpNode->m_leftNode, prevExpr->m_rightNode, Concat);
+								}
+							}
+						}
+					}
+				}
+
+				if (newNode) {
+					curExpr = new OperationalNode(curExpr->m_leftNode, newNode, curExpr->m_operation, curExpr->m_instr);
+					prevExpr->replaceWith(curExpr);
+					delete prevExpr;
 				}
 			}
 
-			INode::UpdateDebugInfo(expr);
-			if (expr->m_rightNode) {
+			INode::UpdateDebugInfo(curExpr);
+			if (curExpr->m_rightNode) {
 				OperationalNode* prevExpr_ = nullptr;
-				MakeLeafPlaceDeeperAndCalculate(expr->m_rightNode, prevExpr_);
+				MakeLeafPlaceDeeperAndCalculate(curExpr->m_rightNode, prevExpr_);
 			}
-			MakeLeafPlaceDeeperAndCalculate(expr->m_leftNode, expr);
+			MakeLeafPlaceDeeperAndCalculate(curExpr->m_leftNode, curExpr);
 		}
 		else {
 			IterateChildNodes(node, [](INode* childNode) {
@@ -635,6 +651,42 @@ namespace CE::Decompiler::Optimization
 				});
 		}
 	}
+	
+
+	static std::pair<INode*, int> GetConcatOperand(INode* node) {
+		if (auto curExpr = dynamic_cast<OperationalNode*>(node)) {
+			if (curExpr->m_operation == Shl) {
+				if (auto shlNumberLeaf = dynamic_cast<INumberLeaf*>(curExpr->m_rightNode)) {
+					return std::make_pair(curExpr->m_leftNode, (int)shlNumberLeaf->getValue());
+				}
+			}
+		}
+		return std::make_pair(node, 0x0);
+	}
+
+	static void CreateConcatNodes(INode* node) {
+		IterateChildNodes(node, CreateConcatNodes);
+
+		if (auto curExpr = dynamic_cast<OperationalNode*>(node)) {
+			if (curExpr->m_operation == Or) {
+				auto pairOp1 = GetConcatOperand(curExpr->m_rightNode);
+				auto pairOp2 = GetConcatOperand(curExpr->m_leftNode);
+				if (pairOp1.second || pairOp2.second) {
+					if (pairOp2.second < pairOp1.second)
+						std::swap(pairOp1, pairOp2);
+					if ((pairOp2.second - pairOp1.second) % 0x8 == 0) {
+						auto newNode = new OperationalNode(pairOp2.first, pairOp1.first, Concat, BitMask64(curExpr->getMask().getSize() - pairOp1.second / 0x8));
+						if(pairOp1.second)
+							newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second), Shl, curExpr->getMask());
+						curExpr->replaceWith(newNode);
+						delete curExpr;
+					}
+				}
+			}
+		}
+	}
+
+
 
 	//([reg_rbx_64] & 0xffffffff00000000{0} | [var_2_32]) & 0x1f{31}	=>		[var_2_32] & 0x1f{31}
 	static void RemoveZeroMaskMulExpr(OperationalNode* expr, BitMask64 mask) {
@@ -743,6 +795,8 @@ namespace CE::Decompiler::Optimization
 		OptimizeZeroInExpr(node);
 		INode::UpdateDebugInfo(node);
 		CreateTruncateCasts(node);
+		INode::UpdateDebugInfo(node);
+		CreateConcatNodes(node);
 		INode::UpdateDebugInfo(node);
 		CalculateHashes(node);
 	}

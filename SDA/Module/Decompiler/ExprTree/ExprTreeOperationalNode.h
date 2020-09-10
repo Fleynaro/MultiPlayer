@@ -30,6 +30,8 @@ namespace CE::Decompiler::ExprTree
 		ReadValue,
 
 		//Other
+		Concat,
+		Subpiece,
 		Cast,
 		Functional
 	};
@@ -183,14 +185,18 @@ namespace CE::Decompiler::ExprTree
 			if (!m_leftNode || !m_rightNode)
 				return "";
 			std::string result = "";
+			auto opSizeStr = getOpSize(getMask().getSize(), isFloatingPoint());
 			if (m_operation == Xor) {
 				if (dynamic_cast<INumberLeaf*>(m_rightNode)->getValue() == -1) {
 					result = "~" + m_leftNode->printDebug();
 				}
 			}
+			if (m_operation == Concat) {
+				result = "CONCAT<"+ opSizeStr +">(" + m_leftNode->printDebug() + ", " + m_rightNode->printDebug() + "; " + std::to_string(m_rightNode->getMask().getSize() * 0x8) +")";
+			}
 			
 			if(result.empty())
-				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + ""+ getOpSize(getMask().getSize(), isFloatingPoint()) +" " + m_rightNode->printDebug() + ")";
+				result = "(" + m_leftNode->printDebug() + " " + ShowOperation(m_operation) + ""+ opSizeStr +" " + m_rightNode->printDebug() + ")";
 			return (m_updateDebugInfo = result);
 		}
 

@@ -37,31 +37,34 @@ namespace CE::Decompiler
 		if (regParts.empty())
 			throw std::logic_error("no register parts passed in");
 
+		//descending sort
 		regParts.sort([](const RegisterPart* a, const RegisterPart* b) {
 			return b->m_regMask < a->m_regMask;
 			});
 
+		//in most cases bitRightShift = 0
 		int bitRightShift = requestRegMask.getOffset();
 		for (auto it : regParts) {
 			auto& regPart = *it;
-			auto sameRegExpr = regPart.m_expr;
+			auto regExpr = regPart.m_expr;
 			int bitLeftShift = regPart.m_regMask.getOffset(); //e.g. if we requiest only AH,CH... registers.
 			auto bitShift = bitRightShift - bitLeftShift;
 
+			//regMask = 0xFFFFFFFF, maskToChange = 0xFFFF0000: expr(eax) | expr(ax) => (expr1 & 0xFFFF0000) | expr2
 			if ((regPart.m_regMask & regPart.m_maskToChange) != regPart.m_regMask) {
 				auto mask = (regPart.m_regMask & regPart.m_maskToChange) >> bitLeftShift;
-				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf(mask.getBitMask64().getValue()), ExprTree::And/*, requestRegMaskForOpNode, true*/);
+				regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf(mask.getBitMask64().getValue()), ExprTree::And/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (bitShift != 0) {
-				sameRegExpr = new ExprTree::OperationalNode(sameRegExpr, new ExprTree::NumberLeaf((uint64_t)abs(bitShift)), bitShift > 0 ? ExprTree::Shr : ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
+				regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf((uint64_t)abs(bitShift)), bitShift > 0 ? ExprTree::Shr : ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (resultExpr) {
-				resultExpr = new ExprTree::OperationalNode(resultExpr, sameRegExpr, ExprTree::Or);
+				resultExpr = new ExprTree::OperationalNode(resultExpr, regExpr, ExprTree::Or);
 			}
 			else {
-				resultExpr = sameRegExpr;
+				resultExpr = regExpr;
 			}
 		}
 		return resultExpr;
