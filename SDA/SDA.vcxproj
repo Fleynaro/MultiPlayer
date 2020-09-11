@@ -336,6 +336,7 @@
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecAsmGraph.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraph.h" />
+    <ClInclude Include="Module\Decompiler\Graph\DecCodeGraphBlockFlowIterator.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\DecMask.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />

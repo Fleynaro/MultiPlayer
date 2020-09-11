@@ -664,20 +664,35 @@ namespace CE::Decompiler::Optimization
 		return std::make_pair(node, 0x0);
 	}
 
+	//((([mem_1_16] <<.6 32) |.6 ([mem_2_16] <<.4 16)) |.8 [mem_3_16])		->		([mem_1_16] <<.6 32) |.8 CONCAT([mem_2_16], [mem_3_16])		->		CONCAT([mem_1_16], CONCAT([mem_2_16], [mem_3_16]))
 	static void CreateConcatNodes(INode* node) {
 		IterateChildNodes(node, CreateConcatNodes);
 
 		if (auto curExpr = dynamic_cast<OperationalNode*>(node)) {
 			if (curExpr->m_operation == Or) {
 				auto pairOp1 = GetConcatOperand(curExpr->m_rightNode);
-				auto pairOp2 = GetConcatOperand(curExpr->m_leftNode);
+				std::pair<INode*, int> pairOp2;
+				auto leftOpNode = dynamic_cast<OperationalNode*>(curExpr->m_leftNode);
+				INode* leftTail = nullptr;
+				if (leftOpNode && leftOpNode->m_operation == Or) {
+					pairOp2 = GetConcatOperand(leftOpNode->m_rightNode);
+					leftTail = leftOpNode->m_leftNode;
+				}
+				else {
+					pairOp2 = GetConcatOperand(curExpr->m_leftNode);
+				}
+
 				if (pairOp1.second || pairOp2.second) {
 					if (pairOp2.second < pairOp1.second)
 						std::swap(pairOp1, pairOp2);
-					if ((pairOp2.second - pairOp1.second) % 0x8 == 0) {
-						auto newNode = new OperationalNode(pairOp2.first, pairOp1.first, Concat, BitMask64(curExpr->getMask().getSize() - pairOp1.second / 0x8));
+					if (pairOp2.second - pairOp1.second == pairOp1.first->getMask().getSize() * 0x8) {
+						auto sumSize = pairOp1.first->getMask().getSize() + pairOp2.first->getMask().getSize();
+						auto newNode = new OperationalNode(pairOp2.first, pairOp1.first, Concat, BitMask64(sumSize));
 						if(pairOp1.second)
-							newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second), Shl, curExpr->getMask());
+							newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second), Shl, BitMask64(sumSize + pairOp1.second));
+						if (leftTail) {
+							newNode = new OperationalNode(leftTail, newNode, Or, curExpr->getMask());
+						}
 						curExpr->replaceWith(newNode);
 						delete curExpr;
 					}
@@ -685,7 +700,6 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 	}
-
 
 
 	//([reg_rbx_64] & 0xffffffff00000000{0} | [var_2_32]) & 0x1f{31}	=>		[var_2_32] & 0x1f{31}
