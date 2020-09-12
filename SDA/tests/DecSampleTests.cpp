@@ -32,7 +32,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		test = createSampleTest(2, GetFuncBytes(&Test_StructsAndArray));
 		test->m_enabled = true;
 		test->m_showAsmBefore = true;
-		test->m_symbolization = false;
+		test->m_symbolization = true;
 		test->m_showAllCode = true;
 	}
 
@@ -160,6 +160,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			m_isOutput |= sampleTest->m_showSymbCode;
 			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 			Symbolization::SymbolizeWithSDA(sdaCodeGraph, sampleTest->m_userSymbolDef);
+
 			clonedDecCodeGraph->checkOnSingleParents();
 			if (!checkHash(1, sampleTestHashes, sdaCodeGraph->getDecGraph()->getHash(), sampleTest)) {
 				printf("\n\nHERE IS THE TROUBLE:");
@@ -173,7 +174,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			OptimizeBlockList(blockList);
 
 			//show all symbols
-			sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::AbstractSymbol* a, CE::Symbol::AbstractSymbol* b) { return a->getName() < b->getName(); });
+			sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::ISymbol* a, CE::Symbol::ISymbol* b) { return a->getName() < b->getName(); });
 			for (auto var : sdaCodeGraph->getSdaSymbols()) {
 				std::string comment = "//priority: " + std::to_string(var->getDataType()->getPriority());
 				//size
@@ -197,6 +198,16 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			output3.setMinInfoToShow();
 			if (m_isOutput) {
 				output3.show();
+			}
+
+			out("\n\n\n********************* AFTER FINAL OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
+			Optimization::MemoryOptimization memoryOptimization(sdaCodeGraph);
+			memoryOptimization.start();
+			clonedDecCodeGraph->checkOnSingleParents();
+			LinearViewSimpleConsoleOutput output4(blockList, sdaCodeGraph->getDecGraph());
+			output4.setMinInfoToShow();
+			if (m_isOutput) {
+				output4.show();
 			}
 		}
 		out("\n\n\n\n\n");

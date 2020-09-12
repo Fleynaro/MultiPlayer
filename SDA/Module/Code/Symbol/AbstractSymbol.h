@@ -15,18 +15,26 @@ namespace CE
 			FUNC_PARAMETER
 		};
 
-		class AbstractSymbol : public DB::DomainObject, public Descrtiption
+		class ISymbol : virtual public IDescription
+		{
+		public:
+			virtual Type getType() = 0;
+
+			virtual DataTypePtr getDataType() = 0;
+
+			virtual void setDataType(DataTypePtr dataType) = 0;
+		};
+
+		class AbstractSymbol : virtual public ISymbol, public DB::DomainObject, public Descrtiption
 		{
 		public:
 			AbstractSymbol(SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "");
 
 			SymbolManager* getManager();
 
-			virtual Type getType() = 0;
+			DataTypePtr getDataType() override;
 
-			DataTypePtr getDataType();
-
-			void setDataType(DataTypePtr dataType);
+			void setDataType(DataTypePtr dataType) override;
 		private:
 			DataTypePtr m_dataType;
 			SymbolManager* m_manager;

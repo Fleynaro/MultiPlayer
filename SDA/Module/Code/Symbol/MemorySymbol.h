@@ -8,6 +8,9 @@ namespace CE::Symbol
 	class MemorySymbol : public AbstractSymbol
 	{
 	public:
+		MemoryArea* m_memoryArea = nullptr;
+		std::list<int64_t> m_offsets;
+
 		MemorySymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
 			: AbstractSymbol(manager, type, name, comment)
 		{}
@@ -19,20 +22,15 @@ namespace CE::Symbol
 		MemoryArea* getMemoryArea() {
 			return m_memoryArea;
 		}
-
-		void setMemoryArea(MemoryArea* memoryArea) {
-			m_memoryArea = memoryArea;
-		}
-	private:
-		MemoryArea* m_memoryArea = nullptr;
 	};
 
-	class IMemoryLocation {
+	class IMemorySymbol : virtual public ISymbol
+	{
 	public:
 		virtual int64_t getOffset() = 0;
 	};
 
-	class GlobalVarSymbol : public MemorySymbol
+	class GlobalVarSymbol : public MemorySymbol, public IMemorySymbol
 	{
 	public:
 		GlobalVarSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
@@ -42,9 +40,13 @@ namespace CE::Symbol
 		Type getType() override {
 			return GLOBAL_VAR;
 		}
+
+		int64_t getOffset() override {
+			return *m_offsets.begin();
+		}
 	};
 
-	class LocalStackVarSymbol : public MemorySymbol
+	class LocalStackVarSymbol : public MemorySymbol, public IMemorySymbol
 	{
 	public:
 		LocalStackVarSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
@@ -53,6 +55,10 @@ namespace CE::Symbol
 
 		Type getType() override {
 			return LOCAL_STACK_VAR;
+		}
+
+		int64_t getOffset() override {
+			return *m_offsets.begin();
 		}
 	};
 

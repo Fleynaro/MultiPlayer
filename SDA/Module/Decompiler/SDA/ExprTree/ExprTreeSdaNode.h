@@ -71,12 +71,12 @@ namespace CE::Decompiler::ExprTree
 
 		std::string printDebug() override {
 			auto result = printSdaDebug();
+			if (auto addressGetting = dynamic_cast<IAddressGetting*>(this))
+				if (addressGetting->isAddrGetting())
+					result = "&" + result;
 			if (hasCast() && getCast()->hasExplicitCast()) {
 				result = "(" + getCast()->getCastDataType()->getDisplayName() + ")" + result + "";
 			}
-			if (auto addressGetting = dynamic_cast<IAddressGetting*>(this))
-				if(addressGetting->isAddrGetting())
-					result = "&" + result;
 			if (g_MARK_SDA_NODES)
 				result = "@" + result;
 			return m_updateDebugInfo = result;

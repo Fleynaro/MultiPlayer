@@ -14,6 +14,8 @@ namespace CE::Decompiler::PCode
 		ExprTree::INode* requestVarnode(PCode::Varnode* varnode);
 
 		ExprTree::AbstractCondition* toBoolean(ExprTree::INode* node);
+
+		ExprTree::SymbolLeaf* createMemSymbol(ExprTree::ReadValueNode* readValueNode);
 	private:
 		PrimaryTree::Block* m_block;
 		ExecutionBlockContext* m_ctx;

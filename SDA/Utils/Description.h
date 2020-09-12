@@ -13,7 +13,7 @@ public:
 	virtual void setComment(const std::string& comment) = 0;
 };
 
-class Descrtiption : public IDescription
+class Descrtiption : virtual public IDescription
 {
 public:
 	Descrtiption(const std::string& name, const std::string& comment)

@@ -22,12 +22,8 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
 		auto readSize = m_instr->m_output->getSize();
-		auto loadValueExpr = new ExprTree::ReadValueNode(expr, readSize, m_instr);
-		auto memVar = new Symbol::MemoryVariable(loadValueExpr, readSize);
-		loadValueExpr->m_memVar = memVar;
-		m_block->m_decompiledGraph->addSymbol(memVar);
-		auto memSymbolLeaf = new ExprTree::SymbolLeaf(memVar);
-		m_block->addSeqLine(memSymbolLeaf, loadValueExpr, m_instr);
+		auto readValueNode = new ExprTree::ReadValueNode(expr, readSize, m_instr);
+		auto memSymbolLeaf = createMemSymbol(readValueNode);;
 		m_ctx->setVarnode(m_instr->m_output, memSymbolLeaf);
 		break;
 	}
@@ -383,7 +379,8 @@ ExprTree::INode* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& p
 	if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
 		auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), 0x8);
 		auto regSymbol = m_ctx->requestRegisterExpr(reg);
-		return new ExprTree::ReadValueNode(new ExprTree::OperationalNode(regSymbol, new ExprTree::NumberLeaf((uint64_t)storage.getOffset()), ExprTree::Add), paramInfo.m_size);
+		auto readValueNode = new ExprTree::ReadValueNode(new ExprTree::OperationalNode(regSymbol, new ExprTree::NumberLeaf((uint64_t)storage.getOffset()), ExprTree::Add), paramInfo.m_size, m_instr);
+		return createMemSymbol(readValueNode);
 	}
 
 	auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), paramInfo.m_size, storage.getOffset());
@@ -411,4 +408,13 @@ ExprTree::AbstractCondition* InstructionInterpreter::toBoolean(ExprTree::INode* 
 		return cond;
 	}
 	return new ExprTree::Condition(node, new ExprTree::NumberLeaf((uint64_t)0x0), ExprTree::Condition::Ne);
+}
+
+ExprTree::SymbolLeaf* PCode::InstructionInterpreter::createMemSymbol(ExprTree::ReadValueNode* readValueNode) {
+	auto memVar = new Symbol::MemoryVariable(readValueNode, readValueNode->getSize());
+	readValueNode->m_memVar = memVar;
+	m_block->m_decompiledGraph->addSymbol(memVar);
+	auto memSymbolLeaf = new ExprTree::SymbolLeaf(memVar);
+	m_block->addSeqLine(memSymbolLeaf, readValueNode, m_instr);
+	return memSymbolLeaf;
 }

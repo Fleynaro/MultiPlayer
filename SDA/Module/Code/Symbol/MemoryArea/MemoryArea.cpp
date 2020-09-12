@@ -20,7 +20,8 @@ int MemoryArea::getSize() {
 }
 
 void MemoryArea::addSymbol(MemorySymbol* memSymbol, int64_t offset) {
-	memSymbol->setMemoryArea(this);
+	memSymbol->m_memoryArea = this;
+	memSymbol->m_offsets.push_back(offset);
 	m_symbols.insert(std::make_pair(offset, memSymbol));
 }
 

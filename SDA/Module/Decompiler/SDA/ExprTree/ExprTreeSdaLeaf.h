@@ -8,11 +8,11 @@ namespace CE::Decompiler::ExprTree
 	class SdaSymbolLeaf : public SdaNode, public ILeaf, public IAddressGetting
 	{
 	public:
-		SdaSymbolLeaf(CE::Symbol::AbstractSymbol* sdaSymbol, Symbol::Symbol* decSymbol, int64_t memOffset = 0x0, bool isAddrGetting = false)
+		SdaSymbolLeaf(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* decSymbol, int64_t memOffset = 0x0, bool isAddrGetting = false)
 			: m_sdaSymbol(sdaSymbol), m_decSymbol(decSymbol), m_memOffset(memOffset), m_isAddrGetting(isAddrGetting)
 		{}
 
-		CE::Symbol::AbstractSymbol* getSdaSymbol() {
+		CE::Symbol::ISymbol* getSdaSymbol() {
 			return m_sdaSymbol;
 		}
 
@@ -61,7 +61,7 @@ namespace CE::Decompiler::ExprTree
 	private:
 		Symbol::Symbol* m_decSymbol;
 		int64_t m_memOffset;
-		CE::Symbol::AbstractSymbol* m_sdaSymbol;
+		CE::Symbol::ISymbol* m_sdaSymbol;
 		bool m_isAddrGetting;
 	};
 

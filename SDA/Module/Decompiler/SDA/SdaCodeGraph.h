@@ -25,12 +25,12 @@ namespace CE::Decompiler
 			return nullptr;
 		}*/
 
-		std::list<CE::Symbol::AbstractSymbol*>& getSdaSymbols() {
+		std::list<CE::Symbol::ISymbol*>& getSdaSymbols() {
 			return m_sdaSymbols;
 		}
 	private:
 		DecompiledCodeGraph* m_decGraph;
-		std::list<CE::Symbol::AbstractSymbol*> m_sdaSymbols;
+		std::list<CE::Symbol::ISymbol*> m_sdaSymbols;
 	};
 
 };
