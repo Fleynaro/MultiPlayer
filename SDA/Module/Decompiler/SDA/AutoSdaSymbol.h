@@ -22,4 +22,14 @@ namespace CE::Symbol
 		int64_t m_value;
 		std::list<int64_t> m_instrOffsets;
 	};
+
+	class AutoSdaMemSymbol : public AutoSdaSymbol
+	{
+	public:
+		AutoSdaMemSymbol(Type type, int64_t value, std::list<int64_t> instrOffsets, SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "")
+			: AutoSdaSymbol(type, value, instrOffsets, manager, dataType, name, comment)
+		{}
+
+		
+	};
 };

@@ -341,6 +341,7 @@
     <ClInclude Include="Module\Decompiler\DecMask.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
     <ClInclude Include="Module\Decompiler\Optimization\DecGraphConcatOptimization.h" />
+    <ClInclude Include="Module\Decompiler\SDA\Optimizaton\DecGraphMemoryOptimization.h" />
     <ClInclude Include="Module\Decompiler\PCode\Decoders\DecPCodeAbstractDecoder.h" />
     <ClInclude Include="Module\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecPCodeConstValueCalc.h" />
@@ -379,7 +380,7 @@
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSdaGoar.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />
-    <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecSdaMisc.h" />
+    <ClInclude Include="Module\Decompiler\SDA\DecSdaMisc.h" />
     <ClInclude Include="Module\Disassembler\DisasmDecoder.h" />
     <ClInclude Include="Module\Disassembler\DisasmInstructions.h" />
     <ClInclude Include="Module\Disassembler\DisasmOperand.h" />

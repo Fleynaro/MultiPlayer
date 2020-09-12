@@ -55,6 +55,17 @@ namespace CE::Decompiler::ExprTree
 
 		virtual INode* clone(NodeCloneContext* ctx) = 0;
 
+		void iterateChildNodes(std::function<void(INode*)> func) {
+			if (auto agregator = dynamic_cast<INodeAgregator*>(this)) {
+				auto list = agregator->getNodesList();
+				for (auto node : list) {
+					if (node) {
+						func(node);
+					}
+				}
+			}
+		}
+
 		virtual std::string printDebug() = 0;
 
 		void static UpdateDebugInfo(INode* node) {

@@ -1,5 +1,5 @@
 #pragma once
-#include "DecSdaMisc.h"
+#include "../DecSdaMisc.h"
 
 namespace CE::Decompiler::Symbolization
 {

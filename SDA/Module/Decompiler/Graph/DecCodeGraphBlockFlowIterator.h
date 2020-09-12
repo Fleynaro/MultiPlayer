@@ -24,9 +24,9 @@ namespace CE::Decompiler
 	private:
 		std::map<PrimaryTree::Block*, BlockInfo> blockInfos;
 		std::list<BlockInfo> m_blocksOnOneLevel;
+		int m_iterCount = 0;
 
 	public:
-		bool m_isStartBlock = true;
 		bool m_considerLoop = true;
 		ExtBitMask m_notNeedToReadMask;
 
@@ -35,16 +35,17 @@ namespace CE::Decompiler
 			addBlockInfo(startBlock, MaxPressure, ExtBitMask(0)); //set the start block
 		}
 
+		bool isStartBlock() {
+			return m_iterCount == 1;
+		}
+
 		bool hasNext() {
-			if (!m_isStartBlock) {
+			if (++m_iterCount != 1) {
 				auto& blockInfo = getCurrentBlockInfo();
 				distributePressure(blockInfo, m_notNeedToReadMask, m_considerLoop);
 				m_blocksOnOneLevel.pop_front();
 				m_considerLoop = true;
 				m_notNeedToReadMask = ExtBitMask();
-			}
-			else {
-				m_isStartBlock = false;
 			}
 
 			if (m_blocksOnOneLevel.empty()) {

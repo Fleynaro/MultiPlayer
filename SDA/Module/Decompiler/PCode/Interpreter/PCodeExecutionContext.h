@@ -76,16 +76,16 @@ namespace CE::Decompiler
 		PCode::RegisterVarnode* m_regVarnode;
 		RegisterParts m_regParts;
 		ExtBitMask m_needReadMask;
-		ExprTree::SymbolLeaf* m_symbol = nullptr;
+		ExprTree::SymbolLeaf* m_symbolLeaf = nullptr;
 
-		ExternalSymbol(PCode::RegisterVarnode* regVarnode, ExtBitMask needReadMask, ExprTree::SymbolLeaf* symbol, RegisterParts regParts)
-			: m_regVarnode(regVarnode), m_needReadMask(needReadMask), m_symbol(symbol), m_regParts(regParts)
+		ExternalSymbol(PCode::RegisterVarnode* regVarnode, ExtBitMask needReadMask, ExprTree::SymbolLeaf* symbolLeaf, RegisterParts regParts)
+			: m_regVarnode(regVarnode), m_needReadMask(needReadMask), m_symbolLeaf(symbolLeaf), m_regParts(regParts)
 		{
-			symbol->addParentNode(this);
+			m_symbolLeaf->addParentNode(this);
 		}
 
 		~ExternalSymbol() {
-			m_symbol->removeBy(this);
+			m_symbolLeaf->removeBy(this);
 		}
 
 		void replaceNode(ExprTree::INode* node, ExprTree::INode* newNode) override {
@@ -93,7 +93,7 @@ namespace CE::Decompiler
 		}
 
 		std::list<ExprTree::INode*> getNodesList() override {
-			return { m_symbol };
+			return { m_symbolLeaf };
 		}
 	};
 

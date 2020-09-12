@@ -1,6 +1,6 @@
 #pragma once
-#include "../SdaCodeGraph.h"
-#include "../../Optimization/DecGraphOptimization.h"
+#include "SdaCodeGraph.h"
+#include "../Optimization/DecGraphOptimization.h"
 #include <Code/Symbol/MemoryArea/MemoryArea.h>
 #include <Manager/ProgramModule.h>
 #include <Manager/TypeManager.h>

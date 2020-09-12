@@ -27,6 +27,11 @@ namespace CE::Symbol
 		MemoryArea* m_memoryArea = nullptr;
 	};
 
+	class IMemoryLocation {
+	public:
+		virtual int64_t getOffset() = 0;
+	};
+
 	class GlobalVarSymbol : public MemorySymbol
 	{
 	public:
@@ -39,18 +44,6 @@ namespace CE::Symbol
 		}
 	};
 
-	class LocalInstrVarSymbol : public MemorySymbol
-	{
-	public:
-		LocalInstrVarSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: MemorySymbol(manager, type, name, comment)
-		{}
-
-		Type getType() override {
-			return LOCAL_INSTR_VAR;
-		}
-	};
-
 	class LocalStackVarSymbol : public MemorySymbol
 	{
 	public:
@@ -60,6 +53,18 @@ namespace CE::Symbol
 
 		Type getType() override {
 			return LOCAL_STACK_VAR;
+		}
+	};
+
+	class LocalInstrVarSymbol : public MemorySymbol
+	{
+	public:
+		LocalInstrVarSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
+			: MemorySymbol(manager, type, name, comment)
+		{}
+
+		Type getType() override {
+			return LOCAL_INSTR_VAR;
 		}
 	};
 };

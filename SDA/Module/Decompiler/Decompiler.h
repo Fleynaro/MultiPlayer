@@ -144,9 +144,9 @@ namespace CE::Decompiler
 						requestRegisterParts(block, reg, remainToReadMask, regParts);
 						if (remainToReadMask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
 							auto expr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
-							externalSymbol.m_symbol->replaceWith(expr); //todo: remove this, make special node where another replacing method will be implemented. On this step no replaceWith uses!
-							delete externalSymbol.m_symbol->m_symbol;
-							delete externalSymbol.m_symbol;
+							externalSymbol.m_symbolLeaf->replaceWith(expr); //todo: remove this, make special node where another replacing method will be implemented. On this step no replaceWith uses!
+							delete externalSymbol.m_symbolLeaf->m_symbol;
+							delete externalSymbol.m_symbolLeaf;
 							ctx->m_externalSymbols.erase(it);
 							ctx->m_resolvedExternalSymbols.insert(externalSymbol.m_regVarnode);
 						}
@@ -175,7 +175,7 @@ namespace CE::Decompiler
 
 					if (handledBlocks.find(block) == handledBlocks.end()) { //if not handled yet
 						if (!enterFlowForkState) {
-							if (!blockFlowIterator.m_isStartBlock) {
+							if (!blockFlowIterator.isStartBlock()) {
 								gatherRegisterPartsInBlock(block, reg, mask, outRegParts);
 							}
 
