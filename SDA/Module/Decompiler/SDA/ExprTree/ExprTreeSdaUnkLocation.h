@@ -23,14 +23,17 @@ namespace CE::Decompiler::ExprTree
 			}
 		};
 
+		DataTypePtr m_outDataType;
 		ISdaNode* m_baseAddrNode;
 		SdaNumberLeaf* m_constTerm;
 		std::list<Term> m_terms;
 		bool m_isAddrGetting;
 
-		UnknownLocation(SdaNumberLeaf* constTerm)
-			: m_constTerm(constTerm)
-		{}
+		UnknownLocation(SdaNumberLeaf* constTerm, bool isAddrGetting)
+			: m_constTerm(constTerm), m_isAddrGetting(isAddrGetting)
+		{
+			m_constTerm->addParentNode(this);
+		}
 
 		~UnknownLocation() {
 			for (auto& term : m_terms) {
@@ -98,24 +101,23 @@ namespace CE::Decompiler::ExprTree
 
 		INode* clone(NodeCloneContext* ctx) override {
 			auto clonedConstTerm = dynamic_cast<SdaNumberLeaf*>(m_constTerm->clone(ctx));
-			auto newUnknownLocation = new UnknownLocation(clonedConstTerm);
+			auto newUnknownLocation = new UnknownLocation(clonedConstTerm, m_isAddrGetting);
 			for (auto& term : m_terms) {
-				newUnknownLocation->addTerm(dynamic_cast<ISdaNode*>(term.m_node->clone(ctx)));
+				auto clonedTerm = dynamic_cast<ISdaNode*>(term.m_node->clone(ctx));
+				newUnknownLocation->addTerm(clonedTerm);
 			}
 			return newUnknownLocation;
 		}
 
 		DataTypePtr getSrcDataType() override {
 			if (m_isAddrGetting) {
-				return MakePointer(m_baseAddrNode->getDataType());
+				return MakePointer(m_outDataType);
 			}
-			return m_baseAddrNode->getDataType();
+			return m_outDataType;
 		}
 
 		void setDataType(DataTypePtr dataType) override {
-			if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(m_baseAddrNode)) {
-				autoSdaSymbol->setDataType(dataType);
-			}
+			m_outDataType = dataType;
 		}
 
 		bool isAddrGetting() override {
@@ -127,7 +129,15 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		bool tryToGetLocation(Location& location) override {
-			
+			if (auto storedInMem = dynamic_cast<IStoredInMemory*>(m_baseAddrNode)) {
+				storedInMem->tryToGetLocation(location);
+			}
+			else {
+				location.m_type = Location::IMPLICIT;
+				location.m_baseAddrHash = m_baseAddrNode->getHash();
+			}
+			location.m_offset = getConstTermValue();
+			location.m_valueSize = m_outDataType->getSize();
 			return true;
 		}
 

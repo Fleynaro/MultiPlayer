@@ -7,7 +7,7 @@ namespace CE::Decompiler::Symbolization
 	{
 	public:
 		SdaDataTypesCalculating(SdaCodeGraph* sdaCodeGraph, Signature* signature, DataTypeFactory* dataTypeFactory)
-			: m_sdaCodeGraph(sdaCodeGraph), m_signature(signature), m_dataTypeFactory(dataTypeFactory), m_sdaGoarBuilding(dataTypeFactory)
+			: m_sdaCodeGraph(sdaCodeGraph), m_signature(signature), m_dataTypeFactory(dataTypeFactory)
 		{}
 
 		void start() {
@@ -22,7 +22,6 @@ namespace CE::Decompiler::Symbolization
 			} while (m_nextPassRequiared);
 		}
 	private:
-		SdaGoarBuilding m_sdaGoarBuilding;
 		SdaCodeGraph* m_sdaCodeGraph;
 		Signature* m_signature;
 		DataTypeFactory* m_dataTypeFactory;
@@ -122,8 +121,6 @@ namespace CE::Decompiler::Symbolization
 					auto maskSize = linearExpr->getMask().getSize();
 					auto sdaConstTerm = dynamic_cast<SdaNumberLeaf*>(linearExpr->getConstTerm());
 
-					//rec call...
-
 					//calculate the data type
 					DataTypePtr calcDataType = sdaConstTerm->getDataType();
 					ISdaNode* baseSdaNode = nullptr;
@@ -143,22 +140,26 @@ namespace CE::Decompiler::Symbolization
 						calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
 
 					if (baseSdaNode) {
-						//if it is a pointer, see to make sure it could'be transformed to an array or a class field
-						if (auto goarNode = m_sdaGoarBuilding.createGoar(baseSdaNode, sdaConstTerm->getValue() * 0x8, sdaTermsNodes)) {
-							sdaGenNode->replaceWith(goarNode);
-							delete sdaGenNode;
-							return;
+						auto unknownLocation = new UnknownLocation(sdaConstTerm);
+						for (auto termNode : sdaTermsNodes) {
+							unknownLocation->addTerm(termNode);
 						}
+
+						sdaGenNode->replaceWith(unknownLocation);
+						delete sdaGenNode;
+						sdaNode = unknownLocation;
+						sdaGenNode = nullptr;
+						cast(baseSdaNode, calcDataType);
+					}
+					else {
+						sdaGenNode->setDataType(calcDataType);
 					}
 
 					//cast to the data type
 					cast(sdaConstTerm, calcDataType);
-					for (auto term : linearExpr->getTerms()) {
-						if (auto sdaTermNode = dynamic_cast<ISdaNode*>(term)) {
-							cast(sdaTermNode, calcDataType);
-						}
+					for (auto termNode : sdaTermsNodes) {
+						cast(termNode, calcDataType);
 					}
-					sdaGenNode->setDataType(calcDataType);
 				}
 				else if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenNode->getNode())) {
 					if (auto dstSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getDstNode())) {
@@ -211,6 +212,14 @@ namespace CE::Decompiler::Symbolization
 			else if (auto goarNode = dynamic_cast<GoarNode*>(sdaNode)) {
 				//...
 				return;
+			}
+
+			if (auto unknownLocation = dynamic_cast<UnknownLocation*>(sdaNode)) {
+				//if it is a pointer, see to make sure it could'be transformed to an array or a class field
+				if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
+					sdaNode->replaceWith(goarNode);
+					delete sdaNode;
+				}
 			}
 		}
 

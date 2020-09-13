@@ -5,38 +5,50 @@ namespace CE::Decompiler::Symbolization
 {
 	class SdaGoarBuilding
 	{
+		DataTypeFactory* m_dataTypeFactory;
+		ISdaNode* m_baseSdaNode;
+		int64_t m_bitOffset;
+		std::list<ISdaNode*> m_sdaTerms;
 	public:
-		SdaGoarBuilding(DataTypeFactory* dataTypeFactory)
-			: m_dataTypeFactory(dataTypeFactory)
+		SdaGoarBuilding(DataTypeFactory* dataTypeFactory, ISdaNode* baseSdaNode, int64_t bitOffset = 0x0, std::list<ISdaNode*> sdaTerms = {})
+			: m_dataTypeFactory(dataTypeFactory), m_baseSdaNode(baseSdaNode), m_bitOffset(bitOffset), m_sdaTerms(sdaTerms)
 		{}
 
-		GoarTopNode* createGoar(ISdaNode* baseSdaNode, int64_t bitOffset = 0x0, std::list<ISdaNode*> sdaTerms = {}) {
-			auto resultSdaNode = baseSdaNode;
-			auto resultBitOffset = bitOffset;
-			while (buildSingleGoar(resultSdaNode, resultBitOffset, sdaTerms));
+		SdaGoarBuilding(DataTypeFactory* dataTypeFactory, UnknownLocation* unknownLocation)
+			: m_dataTypeFactory(dataTypeFactory), m_baseSdaNode(unknownLocation->m_baseAddrNode), m_bitOffset(unknownLocation->getConstTermValue() * 0x8)
+		{
+			for (auto term : unknownLocation->getTerms()) {
+				m_sdaTerms.push_back(term.m_node);
+			}
+		}
+
+		GoarTopNode* create() {
+			auto resultSdaNode = m_baseSdaNode;
+			auto resultBitOffset = m_bitOffset;
+			while (buildSingleGoar(resultSdaNode, resultBitOffset, m_sdaTerms));
+
 			if (dynamic_cast<GoarNode*>(resultSdaNode)) {
-				if (bitOffset != 0x0 || !sdaTerms.empty()) {
+				if (m_bitOffset != 0x0 || !m_sdaTerms.empty()) {
 					//remaining offset and terms (maybe only in case of node being as LinearExpr)
-					auto linearExpr = new LinearExpr(bitOffset / 0x8);
-					for (auto castTerm : sdaTerms) {
+					auto linearExpr = new LinearExpr(m_bitOffset / 0x8);
+					for (auto castTerm : m_sdaTerms) {
 						linearExpr->addTerm(castTerm);
 					}
 					resultSdaNode = new SdaGenericNode(linearExpr, resultSdaNode->getDataType());
 				}
 
-				bool isPointer = baseSdaNode->getDataType()->isPointer();
+				bool isPointer = m_baseSdaNode->getDataType()->isPointer();
 				if (isPointer) {
-					if (auto addrGetting = dynamic_cast<IStoredInMemory*>(baseSdaNode)) {
+					if (auto addrGetting = dynamic_cast<IStoredInMemory*>(m_baseSdaNode)) {
 						addrGetting->setAddrGetting(false);
 					}
 				}
-				return new GoarTopNode(resultSdaNode, baseSdaNode, bitOffset, isPointer);
+				return new GoarTopNode(resultSdaNode, m_baseSdaNode, m_bitOffset, isPointer);
 			}
 			return nullptr;
 		}
-	private:
-		DataTypeFactory* m_dataTypeFactory;
 
+	private:
 		bool buildSingleGoar(ISdaNode*& sdaNode, int64_t& bitOffset, std::list<ISdaNode*>& terms) {
 			auto dataType = sdaNode->getDataType();
 			auto ptrLevels = dataType->getPointerLevels();
@@ -76,18 +88,20 @@ namespace CE::Decompiler::Symbolization
 				auto sdaNode = *it;
 				int64_t defMultiplier = 1;
 				int64_t* multiplier = &defMultiplier;
+				bool hasMultiplier = false;
 				if (auto sdaGenTermNode = dynamic_cast<SdaGenericNode*>(sdaNode)) {
 					if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenTermNode->getNode())) {
 						if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(opNode->m_rightNode)) {
 							if (opNode->m_operation == Mul) {
 								multiplier = (int64_t*)&sdaNumberLeaf->m_value;
+								hasMultiplier = true;
 							}
 						}
 					}
 				}
 				if (*multiplier % arrItemSize == 0x0) {
 					*multiplier /= arrItemSize;
-					if (*multiplier == 1) {
+					if (*multiplier == 1 && hasMultiplier) {
 						//optimization: remove operational node (add)
 						if (auto sdaGenTermNode = dynamic_cast<SdaGenericNode*>(sdaNode)) {
 							if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenTermNode->getNode())) {
