@@ -13,7 +13,7 @@ namespace CE::Decompiler
 
 		struct ArrayDim {
 			int m_itemSize;
-			int m_itemsCount;
+			int m_itemsMaxCount = -1;
 		};
 
 		LOCATION_TYPE m_type;

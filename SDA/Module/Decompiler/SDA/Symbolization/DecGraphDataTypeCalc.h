@@ -47,7 +47,10 @@ namespace CE::Decompiler::Symbolization
 			IterateChildNodes(node, [&](INode* childNode) {
 				calculateDataTypes(childNode);
 				});
+			calculateDataType(node);
+		}
 
+		void calculateDataType(INode* node) {
 			auto sdaNode = dynamic_cast<ISdaNode*>(node);
 			if (!sdaNode)
 				return;
@@ -124,41 +127,35 @@ namespace CE::Decompiler::Symbolization
 					//calculate the data type
 					DataTypePtr calcDataType = sdaConstTerm->getDataType();
 					ISdaNode* baseSdaNode = nullptr;
-					std::list<ISdaNode*> sdaTermsNodes;
+					int baseNodeIdx = 0;
+					int idx = 0;
 					for (auto term : linearExpr->getTerms()) {
 						if (auto sdaTermNode = dynamic_cast<ISdaNode*>(term)) {
 							calcDataType = getDataTypeToCastTo(calcDataType, sdaTermNode->getDataType());
-							if (!baseSdaNode && sdaTermNode->getDataType()->isPointer()) {
+							if (sdaTermNode->getDataType()->isPointer()) {
 								baseSdaNode = sdaTermNode;
-							}
-							else {
-								sdaTermsNodes.push_back(sdaTermNode);
+								baseNodeIdx = idx;
+								break;
 							}
 						}
+						idx++;
 					}
 					if (maskSize != calcDataType->getSize())
 						calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
-
-					if (baseSdaNode) {
-						auto unknownLocation = new UnknownLocation(sdaConstTerm);
-						for (auto termNode : sdaTermsNodes) {
-							unknownLocation->addTerm(termNode);
-						}
-
-						sdaGenNode->replaceWith(unknownLocation);
-						delete sdaGenNode;
-						sdaNode = unknownLocation;
-						sdaGenNode = nullptr;
-						cast(baseSdaNode, calcDataType);
-					}
-					else {
-						sdaGenNode->setDataType(calcDataType);
-					}
-
 					//cast to the data type
 					cast(sdaConstTerm, calcDataType);
-					for (auto termNode : sdaTermsNodes) {
-						cast(termNode, calcDataType);
+					for (auto termNode : linearExpr->getTerms()) {
+						if (auto sdaTermNode = dynamic_cast<ISdaNode*>(termNode)) {
+							cast(sdaTermNode, calcDataType);
+						}
+					}
+					sdaGenNode->setDataType(calcDataType);
+
+					if (baseSdaNode) {
+						auto unknownLocation = new UnknownLocation(linearExpr, baseNodeIdx, true);
+						sdaGenNode->replaceWith(unknownLocation);
+						linearExpr->addParentNode(unknownLocation);
+						calculateDataType(unknownLocation);
 					}
 				}
 				else if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenNode->getNode())) {
@@ -213,8 +210,7 @@ namespace CE::Decompiler::Symbolization
 				//...
 				return;
 			}
-
-			if (auto unknownLocation = dynamic_cast<UnknownLocation*>(sdaNode)) {
+			else if (auto unknownLocation = dynamic_cast<UnknownLocation*>(sdaNode)) {
 				//if it is a pointer, see to make sure it could'be transformed to an array or a class field
 				if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
 					sdaNode->replaceWith(goarNode);

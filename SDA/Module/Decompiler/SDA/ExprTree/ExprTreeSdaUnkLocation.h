@@ -24,88 +24,79 @@ namespace CE::Decompiler::ExprTree
 		};
 
 		DataTypePtr m_outDataType;
-		ISdaNode* m_baseAddrNode;
-		SdaNumberLeaf* m_constTerm;
-		std::list<Term> m_terms;
+		LinearExpr* m_linearExpr;
+		int m_baseNodeIdx;
 		bool m_isAddrGetting;
 
-		UnknownLocation(SdaNumberLeaf* constTerm, bool isAddrGetting)
-			: m_constTerm(constTerm), m_isAddrGetting(isAddrGetting)
+		UnknownLocation(LinearExpr* linearExpr, int baseNodeIdx, bool isAddrGetting)
+			: m_linearExpr(linearExpr), m_baseNodeIdx(baseNodeIdx), m_isAddrGetting(isAddrGetting)
 		{
-			m_constTerm->addParentNode(this);
+			m_outDataType = CloneUnit(getBaseSdaNode()->getDataType());
+			m_outDataType->removePointerLevelOutOfFront();
 		}
 
 		~UnknownLocation() {
-			for (auto& term : m_terms) {
-				term.m_node->removeBy(this);
-			}
-			m_constTerm->removeBy(this);
+			m_linearExpr->removeBy(this);
 		}
 
-		void addTerm(ExprTree::ISdaNode* termNode) {
-			Term term;
-			term.m_node = termNode;
-			termNode->addParentNode(this);
-			m_terms.push_back(term);
+		ISdaNode* getBaseSdaNode() {
+			int idx = 0;
+			for (auto termNode : m_linearExpr->getTerms()) {
+				if (idx++ == m_baseNodeIdx)
+					return dynamic_cast<ISdaNode*>(termNode);
+			}
+			return nullptr;
+		}
+
+		LinearExpr* getLinearExpr() {
+			return m_linearExpr;
 		}
 
 		void setConstTermValue(int64_t constTerm) {
-			m_constTerm->setValue((uint64_t)constTerm);
+			m_linearExpr->setConstTermValue(constTerm);
 		}
 
 		int64_t getConstTermValue() {
-			return (int64_t)m_constTerm->getValue();
+			return m_linearExpr->getConstTermValue();
 		}
 
-		std::list<Term>& getTerms() {
-			return m_terms;
-		}
-
-		SdaNumberLeaf* getConstTerm() {
-			return m_constTerm;
+		std::list<Term> getArrTerms() {
+			std::list<Term> terms;
+			int idx = 0;
+			for (auto termNode : m_linearExpr->getTerms()) {
+				if (idx++ == m_baseNodeIdx)
+					continue;
+				Term term;
+				term.m_node = dynamic_cast<ISdaNode*>(termNode);
+				terms.push_back(term);
+			}
+			return terms;
 		}
 
 		void replaceNode(ExprTree::INode* node, ExprTree::INode* newNode) override {
-			for (auto it = m_terms.begin(); it != m_terms.end(); it++) {
-				if (node == it->m_node) {
-					it->m_node = dynamic_cast<ISdaNode*>(newNode);
-				}
-			}
-			if(node == m_baseAddrNode)
-				m_baseAddrNode = dynamic_cast<ISdaNode*>(newNode);
-			if (node == m_constTerm)
-				m_constTerm = dynamic_cast<SdaNumberLeaf*>(newNode);
+			if (node == m_linearExpr)
+				m_linearExpr = dynamic_cast<LinearExpr*>(newNode);
 		}
 
 		std::list<INode*> getNodesList() override {
-			std::list<INode*> list;
-			for (auto& term : m_terms) {
-				list.push_back(term.m_node);
-			}
-			list.push_back(m_baseAddrNode);
-			list.push_back(m_constTerm);
-			return list;
+			return m_linearExpr->getNodesList();
 		}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
-			return {};
+			return m_linearExpr->getInstructionsRelatedTo();
 		}
 
 		BitMask64 getMask() override {
-			return m_baseAddrNode->getMask();
+			return m_linearExpr->getMask();
 		}
 
 		ObjectHash::Hash getHash() override {
-			return m_baseAddrNode->getHash() + 31 * getConstTermValue(); //todo: + term hashes
+			return m_linearExpr->getHash(); //todo: + term hashes
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			auto clonedConstTerm = dynamic_cast<SdaNumberLeaf*>(m_constTerm->clone(ctx));
-			auto newUnknownLocation = new UnknownLocation(clonedConstTerm, m_isAddrGetting);
-			for (auto& term : m_terms) {
-				auto clonedTerm = dynamic_cast<ISdaNode*>(term.m_node->clone(ctx));
-				newUnknownLocation->addTerm(clonedTerm);
-			}
+			auto clonedLinearExpr = dynamic_cast<LinearExpr*>(m_linearExpr->clone(ctx));
+			auto newUnknownLocation = new UnknownLocation(clonedLinearExpr, m_baseNodeIdx, m_isAddrGetting);
 			return newUnknownLocation;
 		}
 
@@ -129,33 +120,26 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		bool tryToGetLocation(Location& location) override {
-			if (auto storedInMem = dynamic_cast<IStoredInMemory*>(m_baseAddrNode)) {
+			if (auto storedInMem = dynamic_cast<IStoredInMemory*>(getBaseSdaNode())) {
 				storedInMem->tryToGetLocation(location);
 			}
 			else {
 				location.m_type = Location::IMPLICIT;
-				location.m_baseAddrHash = m_baseAddrNode->getHash();
+				location.m_baseAddrHash = getBaseSdaNode()->getHash();
 			}
 			location.m_offset = getConstTermValue();
 			location.m_valueSize = m_outDataType->getSize();
+			for (auto term : getArrTerms()) {
+				auto multiplier = term.getMultiplier();
+				Location::ArrayDim arrDim;
+				arrDim.m_itemSize = multiplier ? (int)multiplier->getValue() : 1;
+				location.m_arrDims.push_back(arrDim);
+			}
 			return true;
 		}
 
 		std::string printSdaDebug() override {
-			std::string result = "(";
-			for (auto it = m_terms.begin(); it != m_terms.end(); it++) {
-				result += it->m_node->printDebug();
-				if (it != std::prev(m_terms.end()) || m_constTerm->getValue()) {
-					result += result += " +" + OperationalNode::getOpSize(getMask().getSize(), false) + " ";
-				}
-			}
-
-			if (m_constTerm->getValue()) {
-				result += m_constTerm->printDebug();
-			}
-
-			result += ")";
-			return (m_updateDebugInfo = result);
+			return m_linearExpr->printDebug();
 		}
 	};
 };

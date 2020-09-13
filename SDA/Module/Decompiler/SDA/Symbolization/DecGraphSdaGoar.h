@@ -15,35 +15,37 @@ namespace CE::Decompiler::Symbolization
 		{}
 
 		SdaGoarBuilding(DataTypeFactory* dataTypeFactory, UnknownLocation* unknownLocation)
-			: m_dataTypeFactory(dataTypeFactory), m_baseSdaNode(unknownLocation->m_baseAddrNode), m_bitOffset(unknownLocation->getConstTermValue() * 0x8)
+			: m_dataTypeFactory(dataTypeFactory), m_baseSdaNode(unknownLocation->getBaseSdaNode()), m_bitOffset(unknownLocation->getConstTermValue() * 0x8)
 		{
-			for (auto term : unknownLocation->getTerms()) {
+			for (auto term : unknownLocation->getArrTerms()) {
 				m_sdaTerms.push_back(term.m_node);
 			}
 		}
 
-		GoarTopNode* create() {
+		ISdaNode* create() {
 			auto resultSdaNode = m_baseSdaNode;
 			auto resultBitOffset = m_bitOffset;
 			while (buildSingleGoar(resultSdaNode, resultBitOffset, m_sdaTerms));
 
 			if (dynamic_cast<GoarNode*>(resultSdaNode)) {
-				if (m_bitOffset != 0x0 || !m_sdaTerms.empty()) {
-					//remaining offset and terms (maybe only in case of node being as LinearExpr)
-					auto linearExpr = new LinearExpr(m_bitOffset / 0x8);
-					for (auto castTerm : m_sdaTerms) {
-						linearExpr->addTerm(castTerm);
-					}
-					resultSdaNode = new SdaGenericNode(linearExpr, resultSdaNode->getDataType());
-				}
-
 				bool isPointer = m_baseSdaNode->getDataType()->isPointer();
 				if (isPointer) {
 					if (auto addrGetting = dynamic_cast<IStoredInMemory*>(m_baseSdaNode)) {
 						addrGetting->setAddrGetting(false);
 					}
 				}
-				return new GoarTopNode(resultSdaNode, m_baseSdaNode, m_bitOffset, isPointer);
+				resultSdaNode = new GoarTopNode(resultSdaNode, m_baseSdaNode, m_bitOffset, isPointer);
+
+				if (m_bitOffset != 0x0 || !m_sdaTerms.empty()) {
+					//remaining offset and terms (maybe only in case of node being as LinearExpr)
+					auto linearExpr = new LinearExpr(m_bitOffset / 0x8);
+					linearExpr->addTerm(resultSdaNode);
+					for (auto castTerm : m_sdaTerms) {
+						linearExpr->addTerm(castTerm);
+					}
+					resultSdaNode = new UnknownLocation(linearExpr, 0, true);
+				}
+				return resultSdaNode;
 			}
 			return nullptr;
 		}
@@ -78,6 +80,7 @@ namespace CE::Decompiler::Symbolization
 				//then remove pointer
 				ptrLevels.pop_front();
 			}
+			int arrItemsMaxCount = *ptrLevels.begin();
 			ptrLevels.pop_front();
 			auto arrItemDataType = DataType::GetUnit(baseDataType, ptrLevels);
 			auto arrItemSize = arrItemDataType->getSize();
@@ -142,7 +145,7 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			if (indexNode) {
-				sdaNode = new GoarArrayNode(sdaNode, indexNode, arrItemDataType);
+				sdaNode = new GoarArrayNode(sdaNode, indexNode, arrItemDataType, arrItemsMaxCount);
 				return true;
 			}
 			return false;

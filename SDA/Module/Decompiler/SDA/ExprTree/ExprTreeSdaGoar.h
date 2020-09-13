@@ -50,9 +50,10 @@ namespace CE::Decompiler::ExprTree
 	public:
 		ISdaNode* m_indexNode;
 		DataTypePtr m_outDataType;
+		int m_itemsMaxCount;
 
-		GoarArrayNode(ISdaNode* base, ISdaNode* indexNode, DataTypePtr dataType)
-			: GoarNode(base), m_indexNode(indexNode), m_outDataType(dataType)
+		GoarArrayNode(ISdaNode* base, ISdaNode* indexNode, DataTypePtr dataType, int itemsMaxCount)
+			: GoarNode(base), m_indexNode(indexNode), m_outDataType(dataType), m_itemsMaxCount(itemsMaxCount)
 		{
 			m_indexNode->addParentNode(this);
 		}
@@ -82,7 +83,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return new GoarArrayNode(dynamic_cast<ISdaNode*>(m_base->clone()), dynamic_cast<ISdaNode*>(m_indexNode->clone(ctx)), m_outDataType);
+			return new GoarArrayNode(dynamic_cast<ISdaNode*>(m_base->clone()), dynamic_cast<ISdaNode*>(m_indexNode->clone(ctx)), m_outDataType, m_itemsMaxCount);
 		}
 
 		std::string printSdaDebug() override {
@@ -145,6 +146,7 @@ namespace CE::Decompiler::ExprTree
 			}
 			location.m_offset = m_bitOffset / 0x8;
 			location.m_valueSize = m_base->getDataType()->getSize();
+			gatherArrDims(m_base, location);
 			return true;
 		}
 
@@ -168,15 +170,16 @@ namespace CE::Decompiler::ExprTree
 		}
 
 	private:
-		int calculateLocSize(INode* node) {
+		void gatherArrDims(INode* node, Location& location) {
 			if (auto goarNode = dynamic_cast<GoarNode*>(node)) {
-				if (auto locSize = calculateLocSize(goarNode->m_base) > 0)
-					return locSize;
+				gatherArrDims(goarNode->m_base, location);
 				if (auto goarArrayNode = dynamic_cast<GoarArrayNode*>(node)) {
-					return goarArrayNode->m_base->getDataType()->getSize();
+					Location::ArrayDim arrDim;
+					arrDim.m_itemSize = goarArrayNode->getDataType()->getSize();
+					arrDim.m_itemsMaxCount = (goarArrayNode->m_itemsMaxCount > 1 ? goarArrayNode->m_itemsMaxCount : -1);
+					location.m_arrDims.push_back(arrDim);
 				}
 			}
-			return 0;
 		}
 	};
 };
