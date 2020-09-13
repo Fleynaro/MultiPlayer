@@ -76,5 +76,6 @@ namespace CE
 		std::string GetPointerLevelStr(DataTypePtr type);
 		std::list<int> ParsePointerLevelsStr(const std::string& str);
 		DataTypePtr CloneUnit(DataTypePtr dataType);
+		DataTypePtr MakePointer(DataTypePtr dataType);
 	};
 };

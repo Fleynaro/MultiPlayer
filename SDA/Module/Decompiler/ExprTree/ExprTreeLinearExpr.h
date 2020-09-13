@@ -27,7 +27,7 @@ namespace CE::Decompiler::ExprTree
 			for (auto term : m_terms) {
 				term->removeBy(this);
 			}
-			delete dynamic_cast<INode*>(m_constTerm);
+			delete m_constTerm;
 		}
 
 		void addTerm(ExprTree::INode* term) {
@@ -57,17 +57,13 @@ namespace CE::Decompiler::ExprTree
 					*it = newNode;
 				}
 			}
-			if (auto constTermNode = dynamic_cast<INumberLeaf*>(node)) {
-				if (constTermNode == m_constTerm)
-					m_constTerm = dynamic_cast<INumberLeaf*>(newNode);
-			}
+			if (node == m_constTerm)
+				m_constTerm = dynamic_cast<INumberLeaf*>(newNode);
 		}
 
 		std::list<INode*> getNodesList() override {
 			auto list = m_terms;
-			if (auto constTermNode = dynamic_cast<INode*>(m_constTerm)) {
-				list.push_back(constTermNode);
-			}
+			list.push_back(m_constTerm);
 			return list;
 		}
 

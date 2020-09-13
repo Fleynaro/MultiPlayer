@@ -238,6 +238,12 @@ DataTypePtr CE::DataType::CloneUnit(DataTypePtr dataType) {
 	return GetUnit(dataType->getType(), GetPointerLevelStr(dataType));
 }
 
+DataTypePtr CE::DataType::MakePointer(DataTypePtr dataType) {
+	auto dataType = DataType::CloneUnit(dataType);
+	dataType->addPointerLevelInFront();
+	return dataType;
+}
+
 std::string CE::DataType::GetPointerLevelStr(DataTypePtr type) {
 	std::string result = "";
 	for (auto arrSize : type->getPointerLevels()) {

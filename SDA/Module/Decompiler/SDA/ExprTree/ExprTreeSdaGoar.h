@@ -117,12 +117,14 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class GoarTopNode : public GoarNode, public IAddressGetting
+	class GoarTopNode : public GoarNode, public IStoredInMemory
 	{
 		bool m_isAddrGetting;
+		ISdaNode* m_mainBase;
+		int64_t m_bitOffset;
 	public:
-		GoarTopNode(ISdaNode* base, bool isAddrGetting)
-			: GoarNode(base), m_isAddrGetting(isAddrGetting)
+		GoarTopNode(ISdaNode* base, ISdaNode* mainBase, int64_t bitOffset, bool isAddrGetting)
+			: GoarNode(base), m_mainBase(mainBase), m_bitOffset(bitOffset), m_isAddrGetting(isAddrGetting)
 		{}
 
 		bool isAddrGetting() override {
@@ -133,11 +135,22 @@ namespace CE::Decompiler::ExprTree
 			m_isAddrGetting = toggle;
 		}
 
+		bool tryToGetLocation(Location& location) override {
+			if (auto storedInMem = dynamic_cast<IStoredInMemory*>(m_mainBase)) {
+				storedInMem->tryToGetLocation(location);
+			}
+			else {
+				location.m_type = Location::IMPLICIT;
+				location.m_baseAddrHash = m_mainBase->getHash();
+			}
+			location.m_offset = m_bitOffset / 0x8;
+			location.m_valueSize = m_base->getDataType()->getSize();
+			return true;
+		}
+
 		DataTypePtr getSrcDataType() override {
 			if (m_isAddrGetting) {
-				auto dataType = DataType::CloneUnit(m_base->getDataType());
-				dataType->addPointerLevelInFront();
-				return dataType;
+				return MakePointer(m_base->getDataType());
 			}
 			return m_base->getDataType();
 		}
@@ -147,11 +160,23 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return new GoarTopNode(dynamic_cast<ISdaNode*>(m_base->clone()), m_isAddrGetting);
+			return new GoarTopNode(dynamic_cast<ISdaNode*>(m_base->clone()), m_mainBase, m_bitOffset, m_isAddrGetting);
 		}
 		
 		std::string printSdaDebug() override {
 			return m_base->printSdaDebug();
+		}
+
+	private:
+		int calculateLocSize(INode* node) {
+			if (auto goarNode = dynamic_cast<GoarNode*>(node)) {
+				if (auto locSize = calculateLocSize(goarNode->m_base) > 0)
+					return locSize;
+				if (auto goarArrayNode = dynamic_cast<GoarArrayNode*>(node)) {
+					return goarArrayNode->m_base->getDataType()->getSize();
+				}
+			}
+			return 0;
 		}
 	};
 };

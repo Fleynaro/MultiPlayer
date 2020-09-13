@@ -5,7 +5,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class SdaSymbolLeaf : public SdaNode, public ILeaf, public IAddressGetting
+	class SdaSymbolLeaf : public SdaNode, public ILeaf, public IStoredInMemory
 	{
 	public:
 		SdaSymbolLeaf(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* decSymbol, int64_t memOffset = 0x0, bool isAddrGetting = false)
@@ -34,9 +34,7 @@ namespace CE::Decompiler::ExprTree
 
 		DataTypePtr getSrcDataType() override {
 			if (m_isAddrGetting) {
-				auto dataType = DataType::CloneUnit(m_sdaSymbol->getDataType());
-				dataType->addPointerLevelInFront();
-				return dataType;
+				return MakePointer(m_sdaSymbol->getDataType());
 			}
 			return m_sdaSymbol->getDataType();
 		}
@@ -53,6 +51,16 @@ namespace CE::Decompiler::ExprTree
 
 		void setAddrGetting(bool toggle) override {
 			m_isAddrGetting = toggle;
+		}
+
+		bool tryToGetLocation(Location& location) override {
+			if (auto sdaMemSymbol = dynamic_cast<CE::Symbol::IMemorySymbol*>(getSdaSymbol())) {
+				location.m_type = (sdaMemSymbol->getType() == CE::Symbol::LOCAL_STACK_VAR ? Location::STACK : Location::GLOBAL);
+				location.m_offset = sdaMemSymbol->getOffset();
+				location.m_valueSize = m_sdaSymbol->getDataType()->getSize();
+				return true;
+			}
+			return false;
 		}
 
 		std::string printSdaDebug() override {

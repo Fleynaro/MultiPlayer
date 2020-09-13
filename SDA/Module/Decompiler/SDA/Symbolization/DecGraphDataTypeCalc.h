@@ -78,10 +78,10 @@ namespace CE::Decompiler::Symbolization
 							auto addrDataType = DataType::CloneUnit(addrSdaNode->getDataType());
 							addrDataType->removePointerLevelOutOfFront();
 							if (readValueNode->getSize() == addrDataType->getSize()) {
-								if (auto addrGettingNode = dynamic_cast<IAddressGetting*>(addrSdaNode)) {
+								if (auto addrGettingNode = dynamic_cast<IStoredInMemory*>(addrSdaNode)) {
 									if (addrGettingNode->isAddrGetting()) {
 										addrGettingNode->setAddrGetting(false);
-										sdaGenNode->replaceWith(dynamic_cast<ISdaNode*>(addrGettingNode));
+										sdaGenNode->replaceWith(addrGettingNode);
 										delete sdaGenNode;
 										return;
 									}
@@ -121,6 +121,8 @@ namespace CE::Decompiler::Symbolization
 				else if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaGenNode->getNode())) {
 					auto maskSize = linearExpr->getMask().getSize();
 					auto sdaConstTerm = dynamic_cast<SdaNumberLeaf*>(linearExpr->getConstTerm());
+
+					//rec call...
 
 					//calculate the data type
 					DataTypePtr calcDataType = sdaConstTerm->getDataType();

@@ -12,7 +12,8 @@ namespace CE::Decompiler::Symbolization
 
 		GoarTopNode* createGoar(ISdaNode* baseSdaNode, int64_t bitOffset = 0x0, std::list<ISdaNode*> sdaTerms = {}) {
 			auto resultSdaNode = baseSdaNode;
-			while (buildSingleGoar(resultSdaNode, bitOffset, sdaTerms));
+			auto resultBitOffset = bitOffset;
+			while (buildSingleGoar(resultSdaNode, resultBitOffset, sdaTerms));
 			if (dynamic_cast<GoarNode*>(resultSdaNode)) {
 				if (bitOffset != 0x0 || !sdaTerms.empty()) {
 					//remaining offset and terms (maybe only in case of node being as LinearExpr)
@@ -25,11 +26,11 @@ namespace CE::Decompiler::Symbolization
 
 				bool isPointer = baseSdaNode->getDataType()->isPointer();
 				if (isPointer) {
-					if (auto addrGetting = dynamic_cast<IAddressGetting*>(baseSdaNode)) {
+					if (auto addrGetting = dynamic_cast<IStoredInMemory*>(baseSdaNode)) {
 						addrGetting->setAddrGetting(false);
 					}
 				}
-				return new GoarTopNode(resultSdaNode, isPointer);
+				return new GoarTopNode(resultSdaNode, baseSdaNode, bitOffset, isPointer);
 			}
 			return nullptr;
 		}

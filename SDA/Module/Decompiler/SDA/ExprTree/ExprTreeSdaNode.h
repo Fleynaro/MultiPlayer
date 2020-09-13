@@ -1,18 +1,11 @@
 #pragma once
 #include <Code/Type/Type.h>
-#include "../../ExprTree/ExprTreeNode.h"
+#include "../../ExprTree/ExprTree.h"
+#include "../MemLocation.h"
 
 namespace CE::Decompiler::ExprTree
 {
 	bool g_MARK_SDA_NODES = false;
-
-	class IAddressGetting
-	{
-	public:
-		virtual bool isAddrGetting() = 0;
-
-		virtual void setAddrGetting(bool toggle) = 0;
-	};
 
 	class DataTypeCast
 	{
@@ -61,7 +54,17 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class SdaNode : public Node, public ISdaNode
+	class IStoredInMemory : public virtual ISdaNode
+	{
+	public:
+		virtual bool isAddrGetting() = 0;
+
+		virtual void setAddrGetting(bool toggle) = 0;
+
+		virtual bool tryToGetLocation(Location& location) = 0;
+	};
+
+	class SdaNode : public Node, public virtual ISdaNode
 	{
 		DataTypeCast m_dataTypeCast;
 	public:
@@ -71,7 +74,7 @@ namespace CE::Decompiler::ExprTree
 
 		std::string printDebug() override {
 			auto result = printSdaDebug();
-			if (auto addressGetting = dynamic_cast<IAddressGetting*>(this))
+			if (auto addressGetting = dynamic_cast<IStoredInMemory*>(this))
 				if (addressGetting->isAddrGetting())
 					result = "&" + result;
 			if (hasCast() && getCast()->hasExplicitCast()) {

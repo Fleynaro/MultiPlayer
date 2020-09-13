@@ -7,40 +7,6 @@ namespace CE::Decompiler::Optimization
 
 	class MemoryOptimization
 	{
-		struct Location {
-			enum LOCATION_TYPE {
-				STACK,
-				GLOBAL,
-				IMPLICIT
-			};
-			LOCATION_TYPE m_type;
-			ObjectHash::Hash m_baseAddrHash = 0x0;
-			int64_t m_offset = 0x0;
-			int m_locSize = 0x0;
-			int m_valueSize = 0x0;
-
-			Location() = default;
-
-			Location(LOCATION_TYPE type, ObjectHash::Hash baseAddrHash, int64_t offset, int locSize, int valueSize)
-				: m_type(type), m_baseAddrHash(baseAddrHash), m_offset(offset), m_locSize(locSize), m_valueSize(valueSize)
-			{}
-
-			bool intersect(const Location& location) {
-				if (m_type != location.m_type)
-					return false;
-				if (m_baseAddrHash != location.m_baseAddrHash)
-					return false;
-				return !(m_offset + m_locSize <= location.m_offset || location.m_offset + location.m_locSize <= m_offset);
-			}
-
-			bool equal(const Location& location) {
-				return m_type == location.m_type
-					&& m_baseAddrHash == location.m_baseAddrHash
-					&& m_offset == location.m_offset
-					&& m_locSize == location.m_locSize;
-			}
-		};
-
 		class MemoryContext
 		{
 			struct MemoryValue {
@@ -212,8 +178,17 @@ namespace CE::Decompiler::Optimization
 							}
 							if (baseSdaNode) {
 								if (TryToGetLocation(baseSdaNode, location)) {
-									location.m_locSize = -1;
+									//stack or global var
 									result = true;
+								}
+								if (!result) {
+									location.m_type = Location::IMPLICIT;
+									location.m_baseAddrHash = baseSdaNode->getHash();
+									location.m_offset = linearExpr->getConstTermValue();
+									result = true;
+								}
+								if (result) {
+									location.m_locSize = -1;
 								}
 							}
 						}
