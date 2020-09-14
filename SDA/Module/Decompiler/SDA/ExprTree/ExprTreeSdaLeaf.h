@@ -5,12 +5,16 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class SdaSymbolLeaf : public SdaNode, public ILeaf, public IStoredInMemory
+	class SdaSymbolLeaf : public SdaNode, public ILeaf
 	{
 	public:
-		SdaSymbolLeaf(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* decSymbol, int64_t memOffset = 0x0, bool isAddrGetting = false)
-			: m_sdaSymbol(sdaSymbol), m_decSymbol(decSymbol), m_memOffset(memOffset), m_isAddrGetting(isAddrGetting)
+		SdaSymbolLeaf(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* decSymbol)
+			: m_sdaSymbol(sdaSymbol), m_decSymbol(decSymbol)
 		{}
+
+		Symbol::Symbol* getDecSymbol() {
+			return m_decSymbol;
+		}
 
 		CE::Symbol::ISymbol* getSdaSymbol() {
 			return m_sdaSymbol;
@@ -21,11 +25,11 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		ObjectHash::Hash getHash() override {
-			return m_decSymbol->getHash() + 31 * m_memOffset;
+			return m_decSymbol->getHash();
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return new SdaSymbolLeaf(m_sdaSymbol, m_decSymbol, m_memOffset, m_isAddrGetting);
+			return new SdaSymbolLeaf(m_sdaSymbol, m_decSymbol);
 		}
 
 		bool isFloatingPoint() override {
@@ -33,9 +37,6 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		DataTypePtr getSrcDataType() override {
-			if (m_isAddrGetting) {
-				return MakePointer(m_sdaSymbol->getDataType());
-			}
 			return m_sdaSymbol->getDataType();
 		}
 
@@ -43,6 +44,40 @@ namespace CE::Decompiler::ExprTree
 			if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(m_sdaSymbol)) {
 				autoSdaSymbol->setDataType(dataType);
 			}
+		}
+
+		std::string printSdaDebug() override {
+			return m_sdaSymbol->getName();
+		}
+	protected:
+		Symbol::Symbol* m_decSymbol;
+		CE::Symbol::ISymbol* m_sdaSymbol;
+	};
+
+	class SdaMemSymbolLeaf : public SdaSymbolLeaf, public IMappedToMemory
+	{
+	public:
+		SdaMemSymbolLeaf(CE::Symbol::IMemorySymbol* sdaSymbol, Symbol::Symbol* decSymbol, bool isAddrGetting = false)
+			: SdaSymbolLeaf(sdaSymbol, decSymbol), m_isAddrGetting(isAddrGetting)
+		{}
+
+		CE::Symbol::IMemorySymbol* getSdaSymbol() {
+			return dynamic_cast<CE::Symbol::IMemorySymbol*>(m_sdaSymbol);
+		}
+
+		DataTypePtr getSrcDataType() override {
+			if (m_isAddrGetting) {
+				return MakePointer(SdaSymbolLeaf::getSrcDataType());
+			}
+			return SdaSymbolLeaf::getSrcDataType();
+		}
+
+		ObjectHash::Hash getHash() override {
+			return SdaSymbolLeaf::getHash() + 31 * getSdaSymbol()->getOffset();
+		}
+
+		INode* clone(NodeCloneContext* ctx) override {
+			return new SdaMemSymbolLeaf(getSdaSymbol(), m_decSymbol, m_isAddrGetting);
 		}
 
 		bool isAddrGetting() override {
@@ -53,23 +88,13 @@ namespace CE::Decompiler::ExprTree
 			m_isAddrGetting = toggle;
 		}
 
-		bool tryToGetLocation(Location& location) override {
-			if (auto sdaMemSymbol = dynamic_cast<CE::Symbol::IMemorySymbol*>(getSdaSymbol())) {
-				location.m_type = (sdaMemSymbol->getType() == CE::Symbol::LOCAL_STACK_VAR ? Location::STACK : Location::GLOBAL);
-				location.m_offset = sdaMemSymbol->getOffset();
-				location.m_valueSize = m_sdaSymbol->getDataType()->getSize();
-				return true;
-			}
-			return false;
-		}
-
-		std::string printSdaDebug() override {
-			return m_sdaSymbol->getName();
+		bool tryToGetLocation(MemLocation& location) override {
+			location.m_type = (getSdaSymbol()->getType() == CE::Symbol::LOCAL_STACK_VAR ? MemLocation::STACK : MemLocation::GLOBAL);
+			location.m_offset = getSdaSymbol()->getOffset();
+			location.m_valueSize = m_sdaSymbol->getDataType()->getSize();
+			return true;
 		}
 	private:
-		Symbol::Symbol* m_decSymbol;
-		int64_t m_memOffset;
-		CE::Symbol::ISymbol* m_sdaSymbol;
 		bool m_isAddrGetting;
 	};
 

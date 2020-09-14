@@ -72,6 +72,11 @@ namespace CE::Decompiler::Symbolization
 			return sdaNumberLeaf;
 		}
 
+		SdaReadValueNode* buildReadValueNode(ReadValueNode* readValueNode) {
+			auto dataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
+			return new SdaReadValueNode(readValueNode, dataType);
+		}
+
 		void buildSdaNodes(INode* node) {
 			IterateChildNodes(node, [&](INode* childNode) {
 				buildSdaNodes(childNode);
@@ -79,6 +84,13 @@ namespace CE::Decompiler::Symbolization
 
 			if (dynamic_cast<SdaSymbolLeaf*>(node))
 				return;
+
+			if (auto readValueNode = dynamic_cast<ReadValueNode*>(node)) {
+				auto sdaReadValueNode = buildReadValueNode(readValueNode);
+				readValueNode->replaceWith(sdaReadValueNode);
+				readValueNode->addParentNode(sdaReadValueNode);
+				return;
+			}
 
 			if (auto funcCall = dynamic_cast<FunctionCall*>(node)) {
 				auto functionNode = buildSdaFunctionNode(funcCall);
@@ -171,13 +183,16 @@ namespace CE::Decompiler::Symbolization
 						offset = toLocalOffset(offset);
 
 					//replace
-					auto newSdaSymbolLeaf = new SdaSymbolLeaf(sdaSymbol, sdaSymbolLeafToReplace->m_symbol, offset, isStackOrGlobal);
-					sdaSymbolLeafToReplace->replaceWith(newSdaSymbolLeaf);
-					delete sdaSymbolLeafToReplace;
-
-					if (!isStackOrGlobal) {
+					SdaSymbolLeaf* newSdaSymbolLeaf;
+					if (auto memSymbol = dynamic_cast<CE::Symbol::IMemorySymbol*>(sdaSymbol)) {
+						newSdaSymbolLeaf = new SdaMemSymbolLeaf(memSymbol, sdaSymbolLeafToReplace->m_symbol, true);
+					}
+					else {
+						newSdaSymbolLeaf = new SdaSymbolLeaf(sdaSymbol, sdaSymbolLeafToReplace->m_symbol);
 						m_replacedSymbols[sdaSymbolLeafToReplace->m_symbol] = newSdaSymbolLeaf;
 					}
+					sdaSymbolLeafToReplace->replaceWith(newSdaSymbolLeaf);
+					delete sdaSymbolLeafToReplace;
 
 					if (symbolLeaf)
 						return;

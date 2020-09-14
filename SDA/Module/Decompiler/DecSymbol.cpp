@@ -22,15 +22,3 @@ CE::Decompiler::Symbol::Symbol* CE::Decompiler::Symbol::Symbol::clone(ExprTree::
 	}
 	return newSymbol;
 }
-
-std::list<PCode::Instruction*> FunctionResultVar::getInstructionsRelatedTo() {
-	return { m_funcCallContext->m_instr };
-}
-
-std::string FunctionResultVar::printDebug() {
-	return "[funcVar_" + std::to_string(getId()) + "_" + std::to_string(getSize() * 8) + "]";
-}
-
-std::list<PCode::Instruction*> MemoryVariable::getInstructionsRelatedTo() {
-	return m_loadValueExpr->getInstructionsRelatedTo();
-}

@@ -5,7 +5,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class UnknownLocation : public SdaNode, public INodeAgregator, public PCode::IRelatedToInstruction, public IStoredInMemory
+	class UnknownLocation : public SdaNode, public INodeAgregator, public PCode::IRelatedToInstruction, public ILocatable
 	{
 	public:
 		struct Term {
@@ -23,17 +23,12 @@ namespace CE::Decompiler::ExprTree
 			}
 		};
 
-		DataTypePtr m_outDataType;
 		LinearExpr* m_linearExpr;
 		int m_baseNodeIdx;
-		bool m_isAddrGetting;
 
-		UnknownLocation(LinearExpr* linearExpr, int baseNodeIdx, bool isAddrGetting)
-			: m_linearExpr(linearExpr), m_baseNodeIdx(baseNodeIdx), m_isAddrGetting(isAddrGetting)
-		{
-			m_outDataType = CloneUnit(getBaseSdaNode()->getDataType());
-			m_outDataType->removePointerLevelOutOfFront();
-		}
+		UnknownLocation(LinearExpr* linearExpr, int baseNodeIdx)
+			: m_linearExpr(linearExpr), m_baseNodeIdx(baseNodeIdx)
+		{}
 
 		~UnknownLocation() {
 			m_linearExpr->removeBy(this);
@@ -96,46 +91,38 @@ namespace CE::Decompiler::ExprTree
 
 		INode* clone(NodeCloneContext* ctx) override {
 			auto clonedLinearExpr = dynamic_cast<LinearExpr*>(m_linearExpr->clone(ctx));
-			auto newUnknownLocation = new UnknownLocation(clonedLinearExpr, m_baseNodeIdx, m_isAddrGetting);
+			auto newUnknownLocation = new UnknownLocation(clonedLinearExpr, m_baseNodeIdx);
 			return newUnknownLocation;
 		}
 
 		DataTypePtr getSrcDataType() override {
-			if (m_isAddrGetting) {
-				return MakePointer(m_outDataType);
-			}
-			return m_outDataType;
+			return getBaseSdaNode()->getDataType();
 		}
 
 		void setDataType(DataTypePtr dataType) override {
-			m_outDataType = dataType;
+			getBaseSdaNode()->setDataType(dataType);
 		}
 
-		bool isAddrGetting() override {
-			return m_isAddrGetting;
-		}
+		void getLocation(MemLocation& location) override {
+			auto baseSdaNode = getBaseSdaNode();
+			auto valueDataType = CloneUnit(baseSdaNode->getDataType());
+			valueDataType->removePointerLevelOutOfFront();
 
-		void setAddrGetting(bool toggle) override {
-			m_isAddrGetting = toggle;
-		}
-
-		bool tryToGetLocation(Location& location) override {
-			if (auto storedInMem = dynamic_cast<IStoredInMemory*>(getBaseSdaNode())) {
-				storedInMem->tryToGetLocation(location);
+			if (auto locatableNode = dynamic_cast<ILocatable*>(baseSdaNode)) {
+				locatableNode->getLocation(location);
 			}
 			else {
-				location.m_type = Location::IMPLICIT;
-				location.m_baseAddrHash = getBaseSdaNode()->getHash();
+				location.m_type = MemLocation::IMPLICIT;
+				location.m_baseAddrHash = baseSdaNode->getHash();
 			}
 			location.m_offset = getConstTermValue();
-			location.m_valueSize = m_outDataType->getSize();
+			location.m_valueSize = valueDataType->getSize();
 			for (auto term : getArrTerms()) {
 				auto multiplier = term.getMultiplier();
-				Location::ArrayDim arrDim;
+				MemLocation::ArrayDim arrDim;
 				arrDim.m_itemSize = multiplier ? (int)multiplier->getValue() : 1;
 				location.m_arrDims.push_back(arrDim);
 			}
-			return true;
 		}
 
 		std::string printSdaDebug() override {

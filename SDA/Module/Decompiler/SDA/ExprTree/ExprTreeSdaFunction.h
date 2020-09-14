@@ -24,6 +24,12 @@ namespace CE::Decompiler::ExprTree
 			}
 		};
 
+	private:
+		FunctionCall* m_funcCall;
+		DataType::Signature* m_signature = nullptr;
+		std::shared_ptr<TypeContext> m_typeContext;
+
+	public:
 		SdaFunctionNode(FunctionCall* funcCallCtx, std::shared_ptr<TypeContext> typeContext)
 			: m_funcCall(funcCallCtx), m_typeContext(typeContext)
 		{}
@@ -75,7 +81,12 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return nullptr;
+			auto clonedFuncCall = dynamic_cast<FunctionCall*>(m_funcCall->clone(ctx));
+			auto sdaFunctionNode = new SdaFunctionNode(clonedFuncCall, m_typeContext);
+			if (m_signature) {
+				sdaFunctionNode->setSignature(m_signature);
+			}
+			return sdaFunctionNode;
 		}
 
 		DataType::Signature* getSignature() {
@@ -93,9 +104,5 @@ namespace CE::Decompiler::ExprTree
 		std::string printSdaDebug() override {
 			return m_funcCall->printDebug();
 		}
-	private:
-		FunctionCall* m_funcCall;
-		DataType::Signature* m_signature = nullptr;
-		std::shared_ptr<TypeContext> m_typeContext;
 	};
 };

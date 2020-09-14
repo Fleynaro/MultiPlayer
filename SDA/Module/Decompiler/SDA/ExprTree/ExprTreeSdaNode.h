@@ -54,14 +54,18 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class IStoredInMemory : public virtual ISdaNode
+	class ILocatable : public virtual ISdaNode
+	{
+	public:
+		virtual void getLocation(MemLocation& location) = 0;
+	};
+
+	class IMappedToMemory : public ILocatable
 	{
 	public:
 		virtual bool isAddrGetting() = 0;
 
 		virtual void setAddrGetting(bool toggle) = 0;
-
-		virtual bool tryToGetLocation(Location& location) = 0;
 	};
 
 	class SdaNode : public Node, public virtual ISdaNode
@@ -74,7 +78,7 @@ namespace CE::Decompiler::ExprTree
 
 		std::string printDebug() override {
 			auto result = printSdaDebug();
-			if (auto addressGetting = dynamic_cast<IStoredInMemory*>(this))
+			if (auto addressGetting = dynamic_cast<IMappedToMemory*>(this))
 				if (addressGetting->isAddrGetting())
 					result = "&" + result;
 			if (hasCast() && getCast()->hasExplicitCast()) {

@@ -116,27 +116,6 @@ namespace CE::Decompiler::Symbol
 		int m_id = 0x0;
 	};
 
-	class MemoryVariable : public SymbolWithId
-	{
-	public:
-		ExprTree::ReadValueNode* m_loadValueExpr;
-		
-		MemoryVariable(ExprTree::ReadValueNode* loadValueExpr, int size)
-			: m_loadValueExpr(loadValueExpr), SymbolWithId(size)
-		{}
-
-		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;
-
-		std::string printDebug() override {
-			return "[mem_" + Generic::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
-		}
-
-	protected:
-		Symbol* cloneSymbol() override {
-			return new MemoryVariable(m_loadValueExpr, getSize());
-		}
-	};
-
 	class LocalVariable : public SymbolWithId
 	{
 	public:
@@ -162,22 +141,49 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
-	class FunctionResultVar : public SymbolWithId
+	class MemoryVariable : public SymbolWithId
 	{
 	public:
-		ExprTree::FunctionCall* m_funcCallContext;
-
-		FunctionResultVar(ExprTree::FunctionCall* funcCallContext, ExtBitMask mask)
-			: m_funcCallContext(funcCallContext), SymbolWithId(mask)
+		PCode::Instruction* m_instr;
+		
+		MemoryVariable(PCode::Instruction* instr, int size)
+			: m_instr(instr), SymbolWithId(size)
 		{}
 
-		std::list<PCode::Instruction*> getInstructionsRelatedTo() override;
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			return { m_instr };
+		}
 
-		std::string printDebug() override;
+		std::string printDebug() override {
+			return "[mem_" + Generic::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
+		}
 
 	protected:
 		Symbol* cloneSymbol() override {
-			return new FunctionResultVar(m_funcCallContext, getMask());
+			return new MemoryVariable(m_instr, getSize());
+		}
+	};
+
+	class FunctionResultVar : public SymbolWithId
+	{
+	public:
+		PCode::Instruction* m_instr;
+
+		FunctionResultVar(PCode::Instruction* instr, ExtBitMask mask)
+			: m_instr(instr), SymbolWithId(mask)
+		{}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			return { m_instr };
+		}
+
+		std::string printDebug() override {
+			return "[funcVar_" + std::to_string(getId()) + "_" + std::to_string(getSize() * 8) + "]";
+		}
+
+	protected:
+		Symbol* cloneSymbol() override {
+			return new FunctionResultVar(m_instr, getMask());
 		}
 	};
 };

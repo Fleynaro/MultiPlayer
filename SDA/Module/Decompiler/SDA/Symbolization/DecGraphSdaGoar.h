@@ -30,7 +30,7 @@ namespace CE::Decompiler::Symbolization
 			if (dynamic_cast<GoarNode*>(resultSdaNode)) {
 				bool isPointer = m_baseSdaNode->getDataType()->isPointer();
 				if (isPointer) {
-					if (auto addrGetting = dynamic_cast<IStoredInMemory*>(m_baseSdaNode)) {
+					if (auto addrGetting = dynamic_cast<IMappedToMemory*>(m_baseSdaNode)) {
 						addrGetting->setAddrGetting(false);
 					}
 				}

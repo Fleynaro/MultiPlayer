@@ -74,31 +74,6 @@ namespace CE::Decompiler::Symbolization
 						}
 					}
 				}
-				else if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaGenNode->getNode())) {
-					if (auto addrSdaNode = dynamic_cast<ISdaNode*>(readValueNode->getAddress())) {
-						if (addrSdaNode->getDataType()->isPointer()) {
-							auto addrDataType = DataType::CloneUnit(addrSdaNode->getDataType());
-							addrDataType->removePointerLevelOutOfFront();
-							if (readValueNode->getSize() == addrDataType->getSize()) {
-								if (auto addrGettingNode = dynamic_cast<IStoredInMemory*>(addrSdaNode)) {
-									if (addrGettingNode->isAddrGetting()) {
-										addrGettingNode->setAddrGetting(false);
-										sdaGenNode->replaceWith(addrGettingNode);
-										delete sdaGenNode;
-										return;
-									}
-								}
-								sdaGenNode->setDataType(addrDataType);
-								return;
-							}
-						}
-						auto defDataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
-						auto defPtrDataType = DataType::CloneUnit(defDataType);
-						defPtrDataType->addPointerLevelInFront();
-						cast(addrSdaNode, defPtrDataType);
-						sdaGenNode->setDataType(defDataType);
-					}
-				}
 				else if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenNode->getNode())) {
 					auto maskSize = opNode->getMask().getSize();
 					if (auto sdaLeftSdaNode = dynamic_cast<ISdaNode*>(opNode->m_leftNode)) {
@@ -152,7 +127,7 @@ namespace CE::Decompiler::Symbolization
 					sdaGenNode->setDataType(calcDataType);
 
 					if (baseSdaNode) {
-						auto unknownLocation = new UnknownLocation(linearExpr, baseNodeIdx, true);
+						auto unknownLocation = new UnknownLocation(linearExpr, baseNodeIdx);
 						sdaGenNode->replaceWith(unknownLocation);
 						linearExpr->addParentNode(unknownLocation);
 						calculateDataType(unknownLocation);
@@ -179,6 +154,29 @@ namespace CE::Decompiler::Symbolization
 					auto boolType = m_dataTypeFactory->getType(SystemType::Bool);
 					sdaGenNode->setDataType(boolType);
 				}
+			}
+			else if (auto sdaReadValueNode = dynamic_cast<SdaReadValueNode*>(sdaNode)) {
+				auto addrSdaNode = sdaReadValueNode->getAddress();
+				if (addrSdaNode->getDataType()->isPointer()) {
+					auto addrDataType = DataType::CloneUnit(addrSdaNode->getDataType());
+					addrDataType->removePointerLevelOutOfFront();
+					if (sdaReadValueNode->getSize() == addrDataType->getSize()) {
+						if (auto addrGettingNode = dynamic_cast<IMappedToMemory*>(addrSdaNode)) {
+							if (addrGettingNode->isAddrGetting()) {
+								addrGettingNode->setAddrGetting(false);
+								sdaReadValueNode->replaceWith(addrGettingNode);
+								delete sdaReadValueNode;
+								return;
+							}
+						}
+						sdaReadValueNode->setDataType(addrDataType);
+						return;
+					}
+				}
+				auto defDataType = sdaReadValueNode->getDataType();
+				auto defPtrDataType = DataType::CloneUnit(defDataType);
+				defPtrDataType->addPointerLevelInFront();
+				cast(addrSdaNode, defPtrDataType);
 			}
 			else if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(sdaNode)) {
 				if (auto dstCastNode = dynamic_cast<ISdaNode*>(sdaFunctionNode->getDestination())) {

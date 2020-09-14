@@ -83,7 +83,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return new GoarArrayNode(dynamic_cast<ISdaNode*>(m_base->clone()), dynamic_cast<ISdaNode*>(m_indexNode->clone(ctx)), m_outDataType, m_itemsMaxCount);
+			return new GoarArrayNode(dynamic_cast<ISdaNode*>(m_base->clone()), dynamic_cast<ISdaNode*>(m_indexNode->clone(ctx)), CloneUnit(m_outDataType), m_itemsMaxCount);
 		}
 
 		std::string printSdaDebug() override {
@@ -118,7 +118,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
-	class GoarTopNode : public GoarNode, public IStoredInMemory
+	class GoarTopNode : public GoarNode, public IMappedToMemory
 	{
 		bool m_isAddrGetting;
 		ISdaNode* m_mainBase;
@@ -136,18 +136,17 @@ namespace CE::Decompiler::ExprTree
 			m_isAddrGetting = toggle;
 		}
 
-		bool tryToGetLocation(Location& location) override {
-			if (auto storedInMem = dynamic_cast<IStoredInMemory*>(m_mainBase)) {
-				storedInMem->tryToGetLocation(location);
+		void getLocation(MemLocation& location) override {
+			if (auto storedInMem = dynamic_cast<IMappedToMemory*>(m_mainBase)) {
+				storedInMem->getLocation(location);
 			}
 			else {
-				location.m_type = Location::IMPLICIT;
+				location.m_type = MemLocation::IMPLICIT;
 				location.m_baseAddrHash = m_mainBase->getHash();
 			}
 			location.m_offset = m_bitOffset / 0x8;
 			location.m_valueSize = m_base->getDataType()->getSize();
 			gatherArrDims(m_base, location);
-			return true;
 		}
 
 		DataTypePtr getSrcDataType() override {
@@ -170,11 +169,11 @@ namespace CE::Decompiler::ExprTree
 		}
 
 	private:
-		void gatherArrDims(INode* node, Location& location) {
+		void gatherArrDims(INode* node, MemLocation& location) {
 			if (auto goarNode = dynamic_cast<GoarNode*>(node)) {
 				gatherArrDims(goarNode->m_base, location);
 				if (auto goarArrayNode = dynamic_cast<GoarArrayNode*>(node)) {
-					Location::ArrayDim arrDim;
+					MemLocation::ArrayDim arrDim;
 					arrDim.m_itemSize = goarArrayNode->getDataType()->getSize();
 					arrDim.m_itemsMaxCount = (goarArrayNode->m_itemsMaxCount > 1 ? goarArrayNode->m_itemsMaxCount : -1);
 					location.m_arrDims.push_back(arrDim);

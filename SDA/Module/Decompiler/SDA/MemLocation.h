@@ -4,11 +4,12 @@
 
 namespace CE::Decompiler
 {
-	struct Location {
+	struct MemLocation {
 		enum LOCATION_TYPE {
 			STACK,
 			GLOBAL,
-			IMPLICIT
+			IMPLICIT,
+			ALL
 		};
 
 		struct ArrayDim {
@@ -22,19 +23,46 @@ namespace CE::Decompiler
 		std::list<ArrayDim> m_arrDims;
 		int m_valueSize = 0x0;
 
-		bool intersect(const Location& location) {
+		bool intersect(const MemLocation& location) const {
+			if (m_type == ALL || location.m_type == ALL)
+				return true;
 			if (m_type != location.m_type)
 				return false;
 			if (m_baseAddrHash != location.m_baseAddrHash)
 				return false;
-			return !(m_offset + m_locSize <= location.m_offset || location.m_offset + location.m_locSize <= m_offset);
+			auto Size1 = getLocSize();
+			auto Size2 = getLocSize();
+			auto C = (m_offset - location.m_offset) + Size1;
+			auto minBoundary = -C;
+			auto maxBoundary = minBoundary + (Size1 + Size2);
+			auto Delta = 0;
+			return Delta >= minBoundary && Delta <= maxBoundary;
 		}
 
-		bool equal(const Location& location) {
-			return m_type == location.m_type
+		bool equal(const MemLocation& location) const {
+			if (m_arrDims.empty() || location.m_arrDims.empty())
+				return false;
+			return (m_type == location.m_type && m_type != ALL)
 				&& m_baseAddrHash == location.m_baseAddrHash
 				&& m_offset == location.m_offset
-				&& m_locSize == location.m_locSize;
+				&& m_valueSize == location.m_valueSize;
+		}
+
+		static MemLocation ALL() {
+			MemLocation memLoc;
+			memLoc.m_type = ALL;
+			return memLoc;
+		}
+	private:
+		int getLocSize() const {
+			int result = m_valueSize;
+			for (auto arrDims : m_arrDims) {
+				if (arrDims.m_itemsMaxCount == -1) {
+					return 10000000;
+				}
+				result += arrDims.m_itemSize * arrDims.m_itemsMaxCount;
+			}
+			return result;
 		}
 	};
 };

@@ -10,34 +10,28 @@ namespace CE::Decompiler::Optimization
 		class MemoryContext
 		{
 			struct MemoryValue {
-				Location m_location;
+				MemLocation m_location;
 				ISdaNode* m_node;
 			};
 
-			struct ReadSnapshot {
-				Location m_location;
-				CE::Symbol::AutoSdaSymbol* m_memVar;
-			};
-
 			std::list<MemoryValue> m_memValues;
-			std::map<CE::Symbol::AutoSdaSymbol*, ReadSnapshot> m_memReadSnapshots;
+			std::list<MemLocation> m_usedMemLocations;
 		public:
+			std::map<Symbol::MemoryVariable*, MemLocation> m_memVarToMemLocation;
+
 			MemoryContext()
 			{}
 
-			ISdaNode* getMemValue(Location location) {
+			ISdaNode* getMemValue(const MemLocation& location) const {
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
 					if (it->m_location.equal(location)) {
-						if (it->m_location.m_valueSize == it->m_location.m_locSize) {
-							return it->m_node;
-						}
-						return nullptr;
+						return it->m_node;
 					}
 				}
 				return nullptr;
 			}
 
-			void addMemValue(Location location, ISdaNode* sdaNode) {
+			void addMemValue(const MemLocation& location, ISdaNode* sdaNode) {
 				clearLocation(location);
 				MemoryValue memoryValue;
 				memoryValue.m_location = location;
@@ -45,29 +39,11 @@ namespace CE::Decompiler::Optimization
 				m_memValues.push_back(memoryValue);
 			}
 
-			ReadSnapshot* getMemReadSnapshot(CE::Symbol::AutoSdaSymbol* memVar) {
-				auto it = m_memReadSnapshots.find(memVar);
-				if (it == m_memReadSnapshots.end())
-					return nullptr;
-				return &it->second;
-			}
-
-			void addMemReadSnapshot(CE::Symbol::AutoSdaSymbol* memVar, Location location) {
-				ReadSnapshot readSnapshot;
-				readSnapshot.m_location = location;
-				readSnapshot.m_memVar = memVar;
-				m_memReadSnapshots[memVar] = readSnapshot;
-			}
-
-			void clearLocation(Location location) {
+			void clearLocation(const MemLocation& location) {
+				m_usedMemLocations.push_back(location);
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it ++) {
 					if (it->m_location.intersect(location)) {
 						m_memValues.erase(it);
-					}
-				}
-				for (auto it = m_memReadSnapshots.begin(); it != m_memReadSnapshots.end(); it ++) {
-					if (it->second.m_location.intersect(location)) {
-						m_memReadSnapshots.erase(it);
 					}
 				}
 			}
@@ -119,22 +95,23 @@ namespace CE::Decompiler::Optimization
 
 				if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(node)) {
 					if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenNode->getNode())) {
-						if (auto dstSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getDstNode())) {
-							if (auto srcSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getSrcNode())) {
-								Location dstLocation;
-								if (TryToGetLocation(dstSdaNode, dstLocation)) {
-									m_memCtx->addMemValue(dstLocation, srcSdaNode);
-								}
-								else {
-									if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
-										if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(sdaSymbolLeaf->getSdaSymbol())) {
-											if (autoSdaSymbol->getType() == CE::Symbol::LOCAL_INSTR_VAR) {
-												Location srcLocation;
-												if (TryToGetLocation(srcSdaNode, srcLocation)) {
-													m_memCtx->addMemValue(srcLocation, srcSdaNode);
-													m_memCtx->addMemReadSnapshot(autoSdaSymbol, srcLocation);
-												}
-											}
+						auto dstSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getDstNode());
+						auto srcSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getSrcNode());
+
+						if (dstSdaNode && srcSdaNode) {
+							if (auto dstSdaLocNode = dynamic_cast<ILocatable*>(dstSdaNode)) {
+								MemLocation dstLocation;
+								dstSdaLocNode->getLocation(dstLocation);
+								m_memCtx->addMemValue(dstLocation, srcSdaNode);
+							}
+							else {
+								if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
+									if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
+										if (auto srcSdaLocNode = dynamic_cast<ILocatable*>(srcSdaNode)) {
+											MemLocation srcLocation;
+											srcSdaLocNode->getLocation(srcLocation);
+											m_memCtx->addMemValue(srcLocation, srcSdaNode);
+											m_memCtx->m_memVarToMemLocation[memVar] = srcLocation;
 										}
 									}
 								}
@@ -144,72 +121,22 @@ namespace CE::Decompiler::Optimization
 				}
 
 				if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(node)) {
-					if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(sdaSymbolLeaf->getSdaSymbol())) {
-						if (autoSdaSymbol->getType() == CE::Symbol::LOCAL_INSTR_VAR) {
-							auto readSnapshot = m_memCtx->getMemReadSnapshot(autoSdaSymbol);
-							if (readSnapshot) {
-								auto valueNode = m_memCtx->getMemValue(readSnapshot->m_location);
-								if (valueNode) {
-									sdaSymbolLeaf->replaceWith(valueNode->clone());
-									delete sdaSymbolLeaf;
-								}
+					if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
+						auto it = m_memCtx->m_memVarToMemLocation.find(memVar);
+						if (it != m_memCtx->m_memVarToMemLocation.end()) {
+							auto valueNode = m_memCtx->getMemValue(it->second);
+							if (valueNode) {
+								sdaSymbolLeaf->replaceWith(valueNode->clone());
+								delete sdaSymbolLeaf;
 							}
 						}
 					}
+				}
+
+				if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(node)) {
+					m_memCtx->clearLocation(MemLocation::ALL());
 				}
 			}
 		};
-
-		static bool TryToGetLocation(ISdaNode* sdaNode, Location& location) {
-			bool result = false;
-			if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(sdaNode)) {
-				if (auto readValueNode = dynamic_cast<ReadValueNode*>(sdaGenNode->getNode())) {
-					//*{uint32_t*}(&stack_0x30 + param1 * 0x4)
-					if (auto addrSdaGenNode = dynamic_cast<SdaGenericNode*>(readValueNode->getAddress())) {
-						if (auto linearExpr = dynamic_cast<LinearExpr*>(addrSdaGenNode->getNode())) {
-							ISdaNode* baseSdaNode = nullptr;
-							for (auto term : linearExpr->getTerms()) {
-								if (auto sdaTermNode = dynamic_cast<ISdaNode*>(term)) {
-									if (sdaTermNode->getDataType()->isPointer()) {
-										baseSdaNode = sdaTermNode;
-										break;
-									}
-								}
-							}
-							if (baseSdaNode) {
-								if (TryToGetLocation(baseSdaNode, location)) {
-									//stack or global var
-									result = true;
-								}
-								if (!result) {
-									location.m_type = Location::IMPLICIT;
-									location.m_baseAddrHash = baseSdaNode->getHash();
-									location.m_offset = linearExpr->getConstTermValue();
-									result = true;
-								}
-								if (result) {
-									location.m_locSize = -1;
-								}
-							}
-						}
-					}
-
-				}
-			}
-			else if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode)) {
-				if (auto sdaMemSymbol = dynamic_cast<CE::Symbol::IMemorySymbol*>(sdaSymbolLeaf->getSdaSymbol())) {
-					location.m_type = (sdaMemSymbol->getType() == CE::Symbol::LOCAL_STACK_VAR ? Location::STACK : Location::GLOBAL);
-					location.m_offset = sdaMemSymbol->getOffset();
-					result = true;
-				}
-			}
-
-			if (result) {
-				location.m_valueSize = sdaNode->getDataType()->getSize();
-				if (!location.m_locSize)
-					location.m_locSize = location.m_valueSize;
-			}
-			return result;
-		}
 	};
 };
