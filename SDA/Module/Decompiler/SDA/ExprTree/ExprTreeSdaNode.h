@@ -72,11 +72,17 @@ namespace CE::Decompiler::ExprTree
 	{
 		DataTypeCast m_dataTypeCast;
 	public:
-		DataTypeCast* getCast() override {
+		DataTypeCast* getCast() override sealed {
 			return &m_dataTypeCast;
 		}
 
-		std::string printDebug() override {
+		INode* clone(NodeCloneContext* ctx) override sealed {
+			auto clonedSdaNode = cloneSdaNode(ctx);
+			clonedSdaNode->getCast()->setCastDataType(getCast()->getCastDataType(), getCast()->hasExplicitCast());
+			return clonedSdaNode;
+		}
+
+		std::string printDebug() override sealed {
 			auto result = printSdaDebug();
 			if (auto addressGetting = dynamic_cast<IMappedToMemory*>(this))
 				if (addressGetting->isAddrGetting())
@@ -88,5 +94,8 @@ namespace CE::Decompiler::ExprTree
 				result = "@" + result;
 			return m_updateDebugInfo = result;
 		}
+
+	protected:
+		virtual ISdaNode* cloneSdaNode(NodeCloneContext* ctx) = 0;
 	};
 };

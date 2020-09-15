@@ -89,7 +89,7 @@ namespace CE::Decompiler::ExprTree
 			return m_linearExpr->getHash(); //todo: + term hashes
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			auto clonedLinearExpr = dynamic_cast<LinearExpr*>(m_linearExpr->clone(ctx));
 			auto newUnknownLocation = new UnknownLocation(clonedLinearExpr, m_baseNodeIdx);
 			return newUnknownLocation;

@@ -75,8 +75,6 @@ namespace CE::Decompiler::ExprTree
 			auto funcVar = m_functionResultVar ? dynamic_cast<Symbol::FunctionResultVar*>(m_functionResultVar->clone(ctx)) : nullptr;
 			auto funcCallCtx = new FunctionCall(m_destination->clone(ctx), m_instr);
 			funcCallCtx->m_functionResultVar = funcVar;
-			if(funcVar)
-				funcVar->m_funcCallContext = funcCallCtx;
 			for (auto paramNode : m_paramNodes) {
 				funcCallCtx->addParamNode(paramNode->clone(ctx));
 			}

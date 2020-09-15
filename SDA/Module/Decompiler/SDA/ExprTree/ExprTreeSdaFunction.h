@@ -80,7 +80,7 @@ namespace CE::Decompiler::ExprTree
 			return m_funcCall->getHash();
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			auto clonedFuncCall = dynamic_cast<FunctionCall*>(m_funcCall->clone(ctx));
 			auto sdaFunctionNode = new SdaFunctionNode(clonedFuncCall, m_typeContext);
 			if (m_signature) {

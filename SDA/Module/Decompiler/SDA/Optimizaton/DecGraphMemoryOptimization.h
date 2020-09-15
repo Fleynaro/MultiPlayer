@@ -1,62 +1,63 @@
 #pragma once
-#include "../DecSdaMisc.h"
+#include "../DecGraphModification.h"
 
 namespace CE::Decompiler::Optimization
 {
 	using namespace ExprTree;
 
-	class MemoryOptimization
+	class SdaGraphMemoryOptimization : public SdaGraphModification
 	{
 		class MemoryContext
 		{
 			struct MemoryValue {
-				MemLocation m_location;
+				MemLocation* m_location;
 				ISdaNode* m_node;
 			};
 
 			std::list<MemoryValue> m_memValues;
 			std::list<MemLocation> m_usedMemLocations;
 		public:
-			std::map<Symbol::MemoryVariable*, MemLocation> m_memVarToMemLocation;
+			std::map<Symbol::MemoryVariable*, MemLocation*> m_memVarToMemLocation;
 
 			MemoryContext()
 			{}
 
 			ISdaNode* getMemValue(const MemLocation& location) const {
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
-					if (it->m_location.equal(location)) {
+					if (it->m_location->equal(location)) {
 						return it->m_node;
 					}
 				}
 				return nullptr;
 			}
 
-			void addMemValue(const MemLocation& location, ISdaNode* sdaNode) {
-				clearLocation(location);
+			MemLocation* addMemValue(const MemLocation& location, ISdaNode* sdaNode) {
+				auto newLocation = createNewLocation(location);
 				MemoryValue memoryValue;
-				memoryValue.m_location = location;
+				memoryValue.m_location = newLocation;
 				memoryValue.m_node = sdaNode;
 				m_memValues.push_back(memoryValue);
+				return newLocation;
 			}
 
-			void clearLocation(const MemLocation& location) {
-				m_usedMemLocations.push_back(location);
+			MemLocation* createNewLocation(const MemLocation& location) {
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it ++) {
-					if (it->m_location.intersect(location)) {
+					if (it->m_location->intersect(location)) {
 						m_memValues.erase(it);
 					}
 				}
+				m_usedMemLocations.push_back(location);
+				return &(*m_usedMemLocations.rbegin());
 			}
 		};
-
-		SdaCodeGraph* m_sdaCodeGraph;
+		
 		std::map<PrimaryTree::Block*, MemoryContext> m_memoryContexts;
 	public:
-		MemoryOptimization(SdaCodeGraph* sdaCodeGraph)
-			: m_sdaCodeGraph(sdaCodeGraph)
+		SdaGraphMemoryOptimization(SdaCodeGraph* sdaCodeGraph)
+			: SdaGraphModification(sdaCodeGraph)
 		{}
 
-		void start() {
+		void start() override {
 			passAllBlocks();
 		}
 
@@ -100,18 +101,24 @@ namespace CE::Decompiler::Optimization
 
 						if (dstSdaNode && srcSdaNode) {
 							if (auto dstSdaLocNode = dynamic_cast<ILocatable*>(dstSdaNode)) {
-								MemLocation dstLocation;
-								dstSdaLocNode->getLocation(dstLocation);
-								m_memCtx->addMemValue(dstLocation, srcSdaNode);
+								try {
+									MemLocation dstLocation;
+									dstSdaLocNode->getLocation(dstLocation);
+									m_memCtx->addMemValue(dstLocation, srcSdaNode);
+								}
+								catch (std::exception&) {}
 							}
 							else {
 								if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
 									if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
 										if (auto srcSdaLocNode = dynamic_cast<ILocatable*>(srcSdaNode)) {
-											MemLocation srcLocation;
-											srcSdaLocNode->getLocation(srcLocation);
-											m_memCtx->addMemValue(srcLocation, srcSdaNode);
-											m_memCtx->m_memVarToMemLocation[memVar] = srcLocation;
+											try {
+												MemLocation srcLocation;
+												srcSdaLocNode->getLocation(srcLocation);
+												auto newLocation = m_memCtx->addMemValue(srcLocation, srcSdaNode);
+												m_memCtx->m_memVarToMemLocation[memVar] = newLocation;
+											}
+											catch (std::exception&) {}
 										}
 									}
 								}
@@ -124,7 +131,7 @@ namespace CE::Decompiler::Optimization
 					if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
 						auto it = m_memCtx->m_memVarToMemLocation.find(memVar);
 						if (it != m_memCtx->m_memVarToMemLocation.end()) {
-							auto valueNode = m_memCtx->getMemValue(it->second);
+							auto valueNode = m_memCtx->getMemValue(*it->second);
 							if (valueNode) {
 								sdaSymbolLeaf->replaceWith(valueNode->clone());
 								delete sdaSymbolLeaf;
@@ -134,7 +141,9 @@ namespace CE::Decompiler::Optimization
 				}
 
 				if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(node)) {
-					m_memCtx->clearLocation(MemLocation::ALL());
+					MemLocation memAllLoc;
+					memAllLoc.m_type = MemLocation::ALL;
+					m_memCtx->createNewLocation(memAllLoc);
 				}
 			}
 		};

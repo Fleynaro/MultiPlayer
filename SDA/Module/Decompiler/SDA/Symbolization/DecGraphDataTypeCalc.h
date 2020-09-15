@@ -1,16 +1,17 @@
 #pragma once
+#include "../DecGraphModification.h"
 #include "DecGraphSdaGoar.h"
 
 namespace CE::Decompiler::Symbolization
 {
-	class SdaDataTypesCalculating
+	class SdaDataTypesCalculating : public SdaGraphModification
 	{
 	public:
 		SdaDataTypesCalculating(SdaCodeGraph* sdaCodeGraph, Signature* signature, DataTypeFactory* dataTypeFactory)
-			: m_sdaCodeGraph(sdaCodeGraph), m_signature(signature), m_dataTypeFactory(dataTypeFactory)
+			: SdaGraphModification(sdaCodeGraph), m_signature(signature), m_dataTypeFactory(dataTypeFactory)
 		{}
 
-		void start() {
+		void start() override {
 			std::list<Block::BlockTopNode*> allTopNodes;
 			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 				auto list = decBlock->getAllTopNodes();
@@ -22,7 +23,6 @@ namespace CE::Decompiler::Symbolization
 			} while (m_nextPassRequiared);
 		}
 	private:
-		SdaCodeGraph* m_sdaCodeGraph;
 		Signature* m_signature;
 		DataTypeFactory* m_dataTypeFactory;
 		bool m_nextPassRequiared = false;
@@ -128,8 +128,9 @@ namespace CE::Decompiler::Symbolization
 
 					if (baseSdaNode) {
 						auto unknownLocation = new UnknownLocation(linearExpr, baseNodeIdx);
-						sdaGenNode->replaceWith(unknownLocation);
 						linearExpr->addParentNode(unknownLocation);
+						sdaGenNode->replaceWith(unknownLocation);
+						delete sdaGenNode;
 						calculateDataType(unknownLocation);
 					}
 				}
@@ -211,8 +212,8 @@ namespace CE::Decompiler::Symbolization
 			else if (auto unknownLocation = dynamic_cast<UnknownLocation*>(sdaNode)) {
 				//if it is a pointer, see to make sure it could'be transformed to an array or a class field
 				if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
-					sdaNode->replaceWith(goarNode);
-					delete sdaNode;
+					unknownLocation->replaceWith(goarNode);
+					delete unknownLocation;
 				}
 			}
 		}

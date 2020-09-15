@@ -5,7 +5,7 @@
 
 namespace CE::Decompiler {
 	class DecompiledCodeGraph;
-	namespace ExprTree {
+	namespace ExprTree { //todo: remove
 		struct NodeCloneContext;
 		class ReadValueNode;
 		class FunctionCall;
@@ -18,7 +18,7 @@ namespace CE::Decompiler::Symbol
 	class Symbol
 	{
 	public:
-		std::list<ExprTree::SymbolLeaf*> m_symbolLeafs;
+		std::list<ExprTree::SymbolLeaf*> m_symbolLeafs; //todo: remove
 
 		virtual ~Symbol();
 
@@ -151,6 +151,8 @@ namespace CE::Decompiler::Symbol
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			if(!m_instr)
+				return {};
 			return { m_instr };
 		}
 
@@ -174,6 +176,8 @@ namespace CE::Decompiler::Symbol
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			if (!m_instr)
+				return {};
 			return { m_instr };
 		}
 

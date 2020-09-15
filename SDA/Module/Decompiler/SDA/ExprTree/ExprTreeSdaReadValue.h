@@ -13,6 +13,10 @@ namespace CE::Decompiler::ExprTree
 			: m_readValueNode(readValueNode), m_outDataType(outDataType)
 		{}
 
+		~SdaReadValueNode() {
+			m_readValueNode->removeBy(this);
+		}
+
 		int getSize() {
 			return m_readValueNode->getSize();
 		}
@@ -42,7 +46,7 @@ namespace CE::Decompiler::ExprTree
 			return m_readValueNode->getHash(); //todo: + term hashes
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			auto clonedReadValueNode = dynamic_cast<ReadValueNode*>(m_readValueNode->clone(ctx));
 			return new SdaReadValueNode(clonedReadValueNode, CloneUnit(m_outDataType));
 		}
@@ -67,6 +71,31 @@ namespace CE::Decompiler::ExprTree
 				locatableAddrNode->getLocation(location);
 				location.m_valueSize = getSize();
 				return;
+			}
+			else {
+				ISdaNode* sdaAddrNode = nullptr;
+				int64_t offset = 0x0;
+				if (auto symbolLeaf = dynamic_cast<SdaSymbolLeaf*>(getAddress())) {
+					sdaAddrNode = symbolLeaf;
+				}
+				else if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(getAddress())) {
+					if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaGenNode->getNode())) {
+						if (linearExpr->getTerms().size() == 1) {
+							if(auto sdaAddrNode = dynamic_cast<ISdaNode*>(*linearExpr->getTerms().begin())) {
+								sdaAddrNode = sdaAddrNode;
+								offset = linearExpr->getConstTermValue();
+							}
+						}
+					}
+				}
+
+				if (sdaAddrNode && sdaAddrNode->getSrcDataType()->getSize() == 0x8) {
+					location.m_type = MemLocation::IMPLICIT;
+					location.m_baseAddrHash = sdaAddrNode->getHash();
+					location.m_offset = offset;
+					location.m_valueSize = getSize();
+					return;
+				}
 			}
 			throw std::exception("impossible to determine the location");
 		}

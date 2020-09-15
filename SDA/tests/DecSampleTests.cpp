@@ -1,5 +1,23 @@
 #include "DecSampleTests.h"
 
+TEST(Decompiler, Test_MemLocation)
+{
+	MemLocation loc1;
+	MemLocation loc2;
+	loc1.m_type = MemLocation::GLOBAL;
+	loc2.m_type = MemLocation::GLOBAL;
+
+	loc1.m_offset = 0x1000;
+	loc1.m_valueSize = 0x4;
+	loc2.m_offset = 0x1004;
+	loc2.m_valueSize = 0x4;
+	ASSERT_EQ(loc1.intersect(loc2), false);
+	loc1.m_offset = 0x1001;
+	ASSERT_EQ(loc1.intersect(loc2), true);
+	loc1.m_valueSize = 0x2;
+	ASSERT_EQ(loc1.intersect(loc2), false);
+}
+
 void ProgramModuleFixtureDecSamples::initSampleTestHashes() {
 	m_sampleTestHashes = {
 		std::pair(2,0x82adab5b54d9e52a), std::pair(3,0xdef3b0dc7a444a3b), std::pair(200,0xab7892859ce3979d), std::pair(201,0xeabebb280e046237),
@@ -34,6 +52,11 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		test->m_showAsmBefore = true;
 		test->m_symbolization = true;
 		test->m_showAllCode = true;
+		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test2");
+		sig->addParameter("myParam1", findType("uint32_t", "[1]"));
+		sig->setReturnType(findType("int32_t"));
+
+		test->m_userSymbolDef.m_funcBodyMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_INSTR_VAR, findType("uint32_t", "[1]"), "someObject"), 9985);
 	}
 
 	{
@@ -160,8 +183,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			m_isOutput |= sampleTest->m_showSymbCode;
 			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 			Symbolization::SymbolizeWithSDA(sdaCodeGraph, sampleTest->m_userSymbolDef);
-
-			clonedDecCodeGraph->checkOnSingleParents();
+			
 			if (!checkHash(1, sampleTestHashes, sdaCodeGraph->getDecGraph()->getHash(), sampleTest)) {
 				printf("\n\nHERE IS THE TROUBLE:");
 				m_isOutput = true;
@@ -199,10 +221,10 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			if (m_isOutput) {
 				output3.show();
 			}
+			clonedDecCodeGraph->checkOnSingleParents();
 
 			out("\n\n\n********************* AFTER FINAL OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-			Optimization::MemoryOptimization memoryOptimization(sdaCodeGraph);
-			memoryOptimization.start();
+			Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
 			clonedDecCodeGraph->checkOnSingleParents();
 			LinearViewSimpleConsoleOutput output4(blockList, sdaCodeGraph->getDecGraph());
 			output4.setMinInfoToShow();

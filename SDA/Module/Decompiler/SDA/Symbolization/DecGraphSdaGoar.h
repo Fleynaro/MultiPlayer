@@ -36,14 +36,14 @@ namespace CE::Decompiler::Symbolization
 				}
 				resultSdaNode = new GoarTopNode(resultSdaNode, m_baseSdaNode, m_bitOffset, isPointer);
 
-				if (m_bitOffset != 0x0 || !m_sdaTerms.empty()) {
+				if (resultBitOffset != 0x0 || !m_sdaTerms.empty()) {
 					//remaining offset and terms (maybe only in case of node being as LinearExpr)
-					auto linearExpr = new LinearExpr(m_bitOffset / 0x8);
+					auto linearExpr = new LinearExpr(resultBitOffset / 0x8);
 					linearExpr->addTerm(resultSdaNode);
 					for (auto castTerm : m_sdaTerms) {
 						linearExpr->addTerm(castTerm);
 					}
-					resultSdaNode = new UnknownLocation(linearExpr, 0, true);
+					resultSdaNode = new UnknownLocation(linearExpr, 0);
 				}
 				return resultSdaNode;
 			}

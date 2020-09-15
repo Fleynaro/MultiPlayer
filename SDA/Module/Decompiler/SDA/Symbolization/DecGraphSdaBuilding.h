@@ -1,31 +1,28 @@
 #pragma once
-#include "../DecSdaMisc.h"
+#include "../DecGraphModification.h"
 
 namespace CE::Decompiler::Symbolization
 {
-	class SdaBuilding
+	class SdaBuilding : public SdaGraphModification
 	{
 	public:
 		SdaBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory)
-			: m_sdaCodeGraph(sdaCodeGraph), m_userSymbolDef(userSymbolDef), m_dataTypeFactory(dataTypeFactory)
+			: SdaGraphModification(sdaCodeGraph), m_userSymbolDef(userSymbolDef), m_dataTypeFactory(dataTypeFactory)
 		{}
 
-		void start() {
-			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
-				for (auto topNode : decBlock->getAllTopNodes()) {
-					auto node = topNode->getNode();
-					INode::UpdateDebugInfo(node);
-					buildSdaNodes(node);
-					node = topNode->getNode();
-					INode::UpdateDebugInfo(node);
-					node = nullptr;
-				}
-			}
+		void start() override {
+			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
+				auto node = topNode->getNode();
+				INode::UpdateDebugInfo(node);
+				buildSdaNodes(node);
+				node = topNode->getNode();
+				INode::UpdateDebugInfo(node);
+				node = nullptr;
+				});
 
 			addSdaSymbols();
 		}
 	private:
-		SdaCodeGraph* m_sdaCodeGraph;
 		UserSymbolDef* m_userSymbolDef;
 		DataTypeFactory* m_dataTypeFactory;
 		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols;

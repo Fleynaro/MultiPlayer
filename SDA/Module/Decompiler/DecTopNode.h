@@ -13,7 +13,7 @@ namespace CE::Decompiler
 			}
 		}
 
-		~TopNode() {
+		virtual ~TopNode() {
 			clear();
 		}
 

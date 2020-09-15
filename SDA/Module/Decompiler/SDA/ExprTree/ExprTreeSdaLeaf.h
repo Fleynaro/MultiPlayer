@@ -28,7 +28,7 @@ namespace CE::Decompiler::ExprTree
 			return m_decSymbol->getHash();
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			return new SdaSymbolLeaf(m_sdaSymbol, m_decSymbol);
 		}
 
@@ -76,7 +76,7 @@ namespace CE::Decompiler::ExprTree
 			return SdaSymbolLeaf::getHash() + 31 * getSdaSymbol()->getOffset();
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			return new SdaMemSymbolLeaf(getSdaSymbol(), m_decSymbol, m_isAddrGetting);
 		}
 
@@ -88,11 +88,10 @@ namespace CE::Decompiler::ExprTree
 			m_isAddrGetting = toggle;
 		}
 
-		bool tryToGetLocation(MemLocation& location) override {
+		void getLocation(MemLocation& location) override {
 			location.m_type = (getSdaSymbol()->getType() == CE::Symbol::LOCAL_STACK_VAR ? MemLocation::STACK : MemLocation::GLOBAL);
 			location.m_offset = getSdaSymbol()->getOffset();
 			location.m_valueSize = m_sdaSymbol->getDataType()->getSize();
-			return true;
 		}
 	private:
 		bool m_isAddrGetting;
@@ -134,7 +133,7 @@ namespace CE::Decompiler::ExprTree
 			return hash.getHash();
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			return new SdaNumberLeaf(m_value, m_calcDataType);
 		}
 

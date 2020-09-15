@@ -50,7 +50,7 @@ namespace CE::Decompiler::ExprTree
 			return m_node->getHash();
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			auto sdaNode = new SdaGenericNode(m_node->clone(ctx), CloneUnit(m_calcDataType));
 			return sdaNode;
 		}

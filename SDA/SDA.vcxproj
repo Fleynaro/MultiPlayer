@@ -230,6 +230,7 @@
     <ClCompile Include="Module\Decompiler\LinearView\DecLinearView.cpp" />
     <ClCompile Include="Module\Decompiler\Decompiler.cpp" />
     <ClCompile Include="Module\Decompiler\DecSymbol.cpp" />
+    <ClCompile Include="Module\Decompiler\SDA\MemLocation.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmDecoder.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmInstructions.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmOperand.cpp" />
@@ -343,6 +344,8 @@
     <ClInclude Include="Module\Decompiler\Optimization\DecGraphConcatOptimization.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaReadValue.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaUnkLocation.h" />
+    <ClInclude Include="Module\Decompiler\SDA\DecGraphModification.h" />
+    <ClInclude Include="Module\Decompiler\SDA\Optimizaton\DecGraphFinalOptimization.h" />
     <ClInclude Include="Module\Decompiler\SDA\Optimizaton\DecGraphMemoryOptimization.h" />
     <ClInclude Include="Module\Decompiler\PCode\Decoders\DecPCodeAbstractDecoder.h" />
     <ClInclude Include="Module\Decompiler\Decompiler.h" />
@@ -375,6 +378,7 @@
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaNode.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaLeaf.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaGenericNode.h" />
+    <ClInclude Include="Module\Decompiler\SDA\Optimizaton\DecGraphUselessLineOptimization.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaHelper.h" />
     <ClInclude Include="Module\Decompiler\SDA\MemLocation.h" />

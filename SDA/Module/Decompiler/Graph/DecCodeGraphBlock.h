@@ -59,6 +59,10 @@ namespace CE::Decompiler::PrimaryTree
 				: SeqLine(block, new ExprTree::AssignmentNode(dstNode, srcNode, instr))
 			{}
 
+			~SeqLine() {
+				m_block->m_seqLines.remove(this);
+			}
+
 			ExprTree::AssignmentNode* getAssignmentNode() {
 				return dynamic_cast<ExprTree::AssignmentNode*>(getNode());
 			}
@@ -71,8 +75,8 @@ namespace CE::Decompiler::PrimaryTree
 				return getAssignmentNode()->getSrcNode();
 			}
 
-			virtual SeqLine* clone(ExprTree::NodeCloneContext* ctx) {
-				return new SeqLine(m_block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
+			virtual SeqLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
+				return new SeqLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
 			}
 		};
 
@@ -87,12 +91,16 @@ namespace CE::Decompiler::PrimaryTree
 				: SeqLine(block, dstNode, srcNode, instr)
 			{}
 
+			~SymbolAssignmentLine() {
+				m_block->m_symbolAssignmentLines.remove(this);
+			}
+
 			ExprTree::SymbolLeaf* getDstSymbol() {
 				return dynamic_cast<ExprTree::SymbolLeaf*>(getAssignmentNode()->getDstNode());
 			}
 
-			SeqLine* clone(ExprTree::NodeCloneContext* ctx) override {
-				return new SymbolAssignmentLine(m_block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
+			SeqLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) override {
+				return new SymbolAssignmentLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
 			}
 		};
 
@@ -272,10 +280,10 @@ namespace CE::Decompiler::PrimaryTree
 			if(getNoJumpCondition())
 				newBlock->setNoJumpCondition(dynamic_cast<ExprTree::AbstractCondition*>(getNoJumpCondition()->clone(&ctx->m_nodeCloneContext)));
 			for (auto line : m_seqLines) {
-				newBlock->m_seqLines.push_back(line->clone(&ctx->m_nodeCloneContext));
+				newBlock->m_seqLines.push_back(line->clone(newBlock, &ctx->m_nodeCloneContext));
 			}
 			for (auto line : m_symbolAssignmentLines) {
-				auto newLine = dynamic_cast<SymbolAssignmentLine*>(line->clone(&ctx->m_nodeCloneContext));
+				auto newLine = dynamic_cast<SymbolAssignmentLine*>(line->clone(newBlock, &ctx->m_nodeCloneContext));
 				newBlock->m_symbolAssignmentLines.push_back(newLine);
 			}
 			return newBlock;

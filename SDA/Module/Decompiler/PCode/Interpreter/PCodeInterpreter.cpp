@@ -410,7 +410,7 @@ ExprTree::AbstractCondition* InstructionInterpreter::toBoolean(ExprTree::INode* 
 	return new ExprTree::Condition(node, new ExprTree::NumberLeaf((uint64_t)0x0), ExprTree::Condition::Ne);
 }
 
-ExprTree::SymbolLeaf* PCode::InstructionInterpreter::createMemSymbol(ExprTree::ReadValueNode* readValueNode, PCode::Instruction* instr = nullptr) {
+ExprTree::SymbolLeaf* PCode::InstructionInterpreter::createMemSymbol(ExprTree::ReadValueNode* readValueNode, PCode::Instruction* instr) {
 	auto memVar = new Symbol::MemoryVariable(instr, readValueNode->getSize());
 	readValueNode->m_memVar = memVar;
 	m_block->m_decompiledGraph->addSymbol(memVar);

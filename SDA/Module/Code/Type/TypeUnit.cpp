@@ -239,9 +239,9 @@ DataTypePtr CE::DataType::CloneUnit(DataTypePtr dataType) {
 }
 
 DataTypePtr CE::DataType::MakePointer(DataTypePtr dataType) {
-	auto dataType = DataType::CloneUnit(dataType);
-	dataType->addPointerLevelInFront();
-	return dataType;
+	auto pointerDataType = DataType::CloneUnit(dataType);
+	pointerDataType->addPointerLevelInFront();
+	return pointerDataType;
 }
 
 std::string CE::DataType::GetPointerLevelStr(DataTypePtr type) {

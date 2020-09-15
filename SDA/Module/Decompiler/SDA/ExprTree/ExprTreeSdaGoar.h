@@ -82,7 +82,7 @@ namespace CE::Decompiler::ExprTree
 			return GoarNode::getHash() + m_indexNode->getHash() * 31;
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			return new GoarArrayNode(dynamic_cast<ISdaNode*>(m_base->clone()), dynamic_cast<ISdaNode*>(m_indexNode->clone(ctx)), CloneUnit(m_outDataType), m_itemsMaxCount);
 		}
 
@@ -106,7 +106,7 @@ namespace CE::Decompiler::ExprTree
 			return m_field->getDataType();
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			return new GoarFieldNode(dynamic_cast<ISdaNode*>(m_base->clone()), m_field);
 		}
 
@@ -160,7 +160,7 @@ namespace CE::Decompiler::ExprTree
 			return GoarNode::getHash() + m_isAddrGetting * 31;
 		}
 
-		INode* clone(NodeCloneContext* ctx) override {
+		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			return new GoarTopNode(dynamic_cast<ISdaNode*>(m_base->clone()), m_mainBase, m_bitOffset, m_isAddrGetting);
 		}
 		
@@ -173,6 +173,8 @@ namespace CE::Decompiler::ExprTree
 			if (auto goarNode = dynamic_cast<GoarNode*>(node)) {
 				gatherArrDims(goarNode->m_base, location);
 				if (auto goarArrayNode = dynamic_cast<GoarArrayNode*>(node)) {
+					if (dynamic_cast<INumberLeaf*>(goarArrayNode->m_indexNode))
+						return;
 					MemLocation::ArrayDim arrDim;
 					arrDim.m_itemSize = goarArrayNode->getDataType()->getSize();
 					arrDim.m_itemsMaxCount = (goarArrayNode->m_itemsMaxCount > 1 ? goarArrayNode->m_itemsMaxCount : -1);

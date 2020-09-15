@@ -15,7 +15,7 @@ namespace CE::Decompiler::PCode
 
 		ExprTree::AbstractCondition* toBoolean(ExprTree::INode* node);
 
-		ExprTree::SymbolLeaf* createMemSymbol(ExprTree::ReadValueNode* readValueNode, PCode::Instruction* instr);
+		ExprTree::SymbolLeaf* createMemSymbol(ExprTree::ReadValueNode* readValueNode, PCode::Instruction* instr = nullptr);
 	private:
 		PrimaryTree::Block* m_block;
 		ExecutionBlockContext* m_ctx;

@@ -326,7 +326,6 @@ namespace CE::Decompiler::Optimization
 			for (auto it = decBlock->getSeqLines().begin(); it != decBlock->getSeqLines().end(); it++) {
 				auto seqLine = *it;
 				if (HasUndefinedRegister(seqLine->getDstNode(), funcCallInfo) || HasUndefinedRegister(seqLine->getSrcNode(), funcCallInfo)) {
-					decBlock->getSeqLines().erase(it);
 					delete seqLine;
 				}
 			}

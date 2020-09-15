@@ -237,8 +237,6 @@ namespace CE::Decompiler::ExprTree
 			auto memVar = m_memVar ? dynamic_cast<Symbol::MemoryVariable*>(m_memVar->clone(ctx)) : nullptr;
 			auto readValueNode = new ReadValueNode(m_leftNode->clone(ctx), m_size, m_instr);
 			readValueNode->m_memVar = memVar;
-			if(memVar)
-				memVar->m_loadValueExpr = readValueNode;
 			return readValueNode;
 		}
 
