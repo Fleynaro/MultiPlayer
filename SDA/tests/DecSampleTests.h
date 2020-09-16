@@ -29,6 +29,14 @@ public:
 		bool m_showAllCode = false;
 		bool m_showSymbCode = false;
 		bool m_showAsmBefore = false;
+
+		void enableAllAndShowAll() {
+			m_enabled = true;
+			m_symbolization = true;
+			m_showAllCode = true;
+			m_showSymbCode = true;
+			m_showAsmBefore = true;
+		}
 	};
 
 	std::list<SampleTest*> m_sampleTests;

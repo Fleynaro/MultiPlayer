@@ -165,7 +165,7 @@ namespace CE::Decompiler
 				std::set<PrimaryTree::Block*> handledBlocks;
 				ExtBitMask needReadMask;
 				ExtBitMask hasReadMask;
-				bool enterFlowForkState = false;
+				bool isFlowForkState = false;
 				PrimaryTree::Block* blockBeforeEnteringFlowForkState = nullptr;
 
 				BlockFlowIterator blockFlowIterator(startBlock);
@@ -174,44 +174,48 @@ namespace CE::Decompiler
 					auto block = blockInfo.m_block;
 
 					if (handledBlocks.find(block) == handledBlocks.end()) { //if not handled yet
-						if (!enterFlowForkState) {
+						if (!isFlowForkState) {
 							if (!blockFlowIterator.isStartBlock()) {
 								gatherRegisterPartsInBlock(block, reg, mask, outRegParts);
+								handledBlocks.insert(block);
 							}
 
 							if (block->getRefBlocksCount() >= 2) {
-								enterFlowForkState = true;
+								isFlowForkState = true;
 								blockBeforeEnteringFlowForkState = block;
 								needReadMask = ExtBitMask();
 								hasReadMask = ExtBitMask();
 							}
 						}
 						else {
-							gatherRegisterPartsInBlock(block, reg, mask, needReadMask, hasReadMask, blockInfo.m_notNeedToReadMask, blockInfo.m_pressure);
+							gatherRegisterPartsInBlock(block, reg, mask, needReadMask, hasReadMask, blockInfo.m_notNeedToReadMask, blockInfo.hasMaxPressure());
 							if (blockInfo.hasMaxPressure()) {
 								if ((needReadMask & ~hasReadMask).isZero()) {
 									if (!needReadMask.isZero()) {
-										auto symbol = createSymbolForRequest(reg, needReadMask); //after gatherBlocksWithRegisters we need to create a new symbols for gathered blocks with incremented symbol's id
+										//"needReadMask" may be != "mask" that results in anything like: localVar32 | (100 << 32)
+										auto symbol = createSymbolForRequest(reg, needReadMask);
 										if ((mask & ~needReadMask) != mask) {
 											auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
 											outRegParts.push_back(regPart);
 											mask = mask & ~needReadMask;
 										}
 									}
-									enterFlowForkState = false;
+									//exit the state
+									isFlowForkState = false;
+									if (!mask.isZero()) {
+										//pass this block on another state
+										blockFlowIterator.passThisBlockRepeatly();
+										continue;
+									}
 								}
 							}
 
-							if (block == blockBeforeEnteringFlowForkState)
-								blockFlowIterator.m_considerLoop = false;
-
-							auto it = m_curRegSymbol->m_blocks.find(block);
-							if (it != m_curRegSymbol->m_blocks.end()) {
-								blockFlowIterator.m_notNeedToReadMask = it->second.m_canReadMask;
+							if (isFlowForkState) {
+								if (block == blockBeforeEnteringFlowForkState)
+									blockFlowIterator.m_considerLoop = false;
 							}
+							handledBlocks.insert(block);
 						}
-
-						handledBlocks.insert(block);
 					}
 					else {
 						blockFlowIterator.m_considerLoop = false;
@@ -231,12 +235,12 @@ namespace CE::Decompiler
 				}
 			}
 
-			void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, ExtBitMask requestMask, ExtBitMask& needReadMask, ExtBitMask& hasReadMask, ExtBitMask notNeedToReadMask, bool hasMaxPressure) {
+			void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, ExtBitMask requestMask, ExtBitMask& needReadMask, ExtBitMask& hasReadMask, ExtBitMask& notNeedToReadMask, bool hasMaxPressure) {
 				auto remainToReadMask = needReadMask & ~hasReadMask & ~notNeedToReadMask;
 				requestMask = requestMask & ~notNeedToReadMask;
 				int prevSymbolId = 0;
 
-				//if the block has been already handled
+				//if the block has been already passed
 				auto it = m_curRegSymbol->m_blocks.find(block);
 				if (it != m_curRegSymbol->m_blocks.end()) {
 					auto& blockRegSymbol = it->second;
@@ -253,7 +257,7 @@ namespace CE::Decompiler
 						return;
 					}
 					else {
-						//it means some parts of the registers have not been read
+						//it means there're some new parts of registers that have to be read
 						prevSymbolId = blockRegSymbol.m_symbolId;
 					}
 				}
@@ -296,6 +300,7 @@ namespace CE::Decompiler
 					blockRegSymbol.m_symbolId = m_curRegSymbol->m_requiestId;
 					blockRegSymbol.m_prevSymbolId = prevSymbolId;
 					m_curRegSymbol->m_blocks[block] = blockRegSymbol;
+					notNeedToReadMask = canReadMask;
 				}
 			}
 

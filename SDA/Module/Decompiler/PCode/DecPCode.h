@@ -24,13 +24,16 @@ namespace CE::Decompiler::PCode
 			Vector
 		};
 
+		std::string m_debugInfo;
 		RegisterId m_genericId;
 		Type m_type;
 		ExtBitMask m_valueRangeMask;
 
 		Register(RegisterId genericId = 0, ExtBitMask valueRangeMask = 0x0, Type type = Type::Generic)
 			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_type(type)
-		{}
+		{
+			m_debugInfo = printDebug();
+		}
 
 		RegisterId getGenericId() const {
 			return m_genericId;

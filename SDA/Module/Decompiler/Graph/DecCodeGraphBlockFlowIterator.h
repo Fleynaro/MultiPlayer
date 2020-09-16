@@ -40,31 +40,39 @@ namespace CE::Decompiler
 		}
 
 		bool hasNext() {
-			if (++m_iterCount != 1) {
-				auto& blockInfo = getCurrentBlockInfo();
-				distributePressure(blockInfo, m_notNeedToReadMask, m_considerLoop);
+			BlockInfo* curBlockInfo = nullptr;
+			//remove the first block from the current list
+			if (!m_blocksOnOneLevel.empty()) {
+				curBlockInfo = &(*m_blocksOnOneLevel.begin());
 				m_blocksOnOneLevel.pop_front();
-				m_considerLoop = true;
-				m_notNeedToReadMask = ExtBitMask();
 			}
 
+			//if the list is empty then fill it up with new blocks
 			if (m_blocksOnOneLevel.empty()) {
+				if (curBlockInfo) {
+					distributePressure(*curBlockInfo, m_notNeedToReadMask, m_considerLoop);
+				}
 				defineBlocksOnOneLevel();
 			}
+
+			//restore the default values
+			m_considerLoop = true;
+			m_notNeedToReadMask = ExtBitMask();
+			m_iterCount++;
 			return !m_blocksOnOneLevel.empty();
 		}
 
 		BlockInfo& next() {
-			return getCurrentBlockInfo();
+			return *m_blocksOnOneLevel.begin();
+		}
+
+		void passThisBlockRepeatly() {
+			m_blocksOnOneLevel.push_back(next());
 		}
 
 	private:
 		void addBlockInfo(PrimaryTree::Block* block, uint64_t pressure, ExtBitMask notNeedToReadMask) {
 			blockInfos[block] = BlockInfo(block, pressure, notNeedToReadMask);
-		}
-
-		BlockInfo& getCurrentBlockInfo() {
-			return *m_blocksOnOneLevel.begin();
 		}
 
 		void defineBlocksOnOneLevel() {
@@ -91,7 +99,7 @@ namespace CE::Decompiler
 
 		void distributePressure(BlockInfo& blockInfo, ExtBitMask notNeedToReadMask, bool considerLoop) {
 			auto block = blockInfo.m_block;
-			blockInfos[block].m_pressure = 0x0;
+			blockInfos.erase(block);
 			//if the start block is cycle then distribute the pressure for all referenced blocks. Next time don't it.
 			auto parentsCount = considerLoop ? block->getRefBlocksCount() : block->getRefHighBlocksCount();
 			if (parentsCount > 0) {
@@ -113,9 +121,6 @@ namespace CE::Decompiler
 					blockInfos[parentBlock].m_notNeedToReadMask = blockInfos[parentBlock].m_notNeedToReadMask & mask;
 					restAddPressure = 0;
 				}
-			}
-			if (blockInfos[block].m_pressure == 0x0) {
-				blockInfos.erase(block);
 			}
 		}
 	};

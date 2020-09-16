@@ -30,13 +30,15 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	Signature* sig;
 	
 	//ignore all tests except
-	m_doTestIdOnly = 2;
+	m_doTestIdOnly = 1;
 
 	{
 		//multidimension stack array like stackArray[1][2][3]
 		test = createSampleTest(1, GetFuncBytes(&Test_Array));
 		test->m_enabled = true;
 		test->m_showSymbCode = false;
+		test->enableAllAndShowAll();
+		test->m_symbolization = false;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test1");
 		sig->setReturnType(findType("uint64_t"));
 
@@ -49,9 +51,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		//hard work with complex data structures
 		test = createSampleTest(2, GetFuncBytes(&Test_StructsAndArray));
 		test->m_enabled = true;
-		test->m_showAsmBefore = true;
-		test->m_symbolization = true;
-		test->m_showAllCode = true;
+		test->m_showSymbCode = false;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test2");
 		sig->addParameter("myParam1", findType("uint32_t", "[1]"));
 		sig->setReturnType(findType("int32_t"));
