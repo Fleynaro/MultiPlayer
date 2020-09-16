@@ -4,7 +4,9 @@
 
 namespace CE::Decompiler
 {
+	//Means some place in the memory of the process
 	struct MemLocation {
+		//A location type often represented as stack, global space or pointer to some stuff(stack, global space, pile)
 		enum LOCATION_TYPE {
 			STACK,
 			GLOBAL,

@@ -144,7 +144,7 @@ namespace CE::Decompiler::ExprTree
 				location.m_type = MemLocation::IMPLICIT;
 				location.m_baseAddrHash = m_mainBase->getHash();
 			}
-			location.m_offset = m_bitOffset / 0x8;
+			location.m_offset += m_bitOffset / 0x8;
 			location.m_valueSize = m_base->getDataType()->getSize();
 			gatherArrDims(m_base, location);
 		}
