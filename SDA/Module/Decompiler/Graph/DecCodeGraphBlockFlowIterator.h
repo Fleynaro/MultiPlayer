@@ -10,7 +10,7 @@ namespace CE::Decompiler
 		struct BlockInfo {
 			PrimaryTree::Block* m_block;
 			uint64_t m_pressure = 0x0;
-			ExtBitMask m_notNeedToReadMask;
+			ExtBitMask m_notNeedToReadMask; //it may happens that dont need reading from the block because its child blocks have been already read
 			BlockInfo() = default;
 			BlockInfo(PrimaryTree::Block* block, uint64_t pressure, ExtBitMask notNeedToReadMask)
 				: m_block(block), m_pressure(pressure), m_notNeedToReadMask(notNeedToReadMask)

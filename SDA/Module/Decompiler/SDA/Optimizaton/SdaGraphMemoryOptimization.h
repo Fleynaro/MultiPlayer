@@ -1,5 +1,5 @@
 #pragma once
-#include "../DecGraphModification.h"
+#include "../SdaGraphModification.h"
 #include "../../Graph/DecCodeGraphBlockFlowIterator.h"
 
 namespace CE::Decompiler::Optimization
@@ -24,12 +24,11 @@ namespace CE::Decompiler::Optimization
 				int m_lastUsedMemLocIdx;
 			};
 
+			//the result of memory copy working
 			std::list<MemVarInfo> m_memVars;
+			//locations in memory that are affected within the block(this ctx reffers to) in one or another way
 			std::list<MemLocation> m_usedMemLocations;
 			std::map<Symbol::MemoryVariable*, MemLocation*> m_memVarToMemLocation;
-
-			MemoryContext()
-			{}
 
 			ISdaNode* getMemValue(const MemLocation& location) const {
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
@@ -50,6 +49,7 @@ namespace CE::Decompiler::Optimization
 			}
 
 			MemLocation* createNewLocation(const MemLocation& location) {
+				//clear all location that are intersecting this one
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it ++) {
 					if (it->m_location->intersect(location)) {
 						m_memValues.erase(it);
@@ -57,11 +57,11 @@ namespace CE::Decompiler::Optimization
 				}
 				//mark the input location as used within the current context
 				m_usedMemLocations.push_back(location);
-				return &(*m_usedMemLocations.rbegin());
+				return &(*m_usedMemLocations.rbegin()); //dangerous: important no to copy the mem ctx anywhere
 			}
 
 			bool hasUsed(const MemLocation& location, int lastUsedMemLocIdx = -1) {
-				for (auto& loc : m_usedMemLocations) {
+				for (const auto& loc : m_usedMemLocations) {
 					if (lastUsedMemLocIdx-- == -1)
 						break;
 					if (loc.intersect(location)) {
@@ -80,117 +80,31 @@ namespace CE::Decompiler::Optimization
 
 		void start() override {
 			initEveryMemCtxForEachBlocks();
-			optimizeAllBlocks();
+			optimizeAllBlocksUsingMemCtxs();
 		}
 
 	private:
+		//just fill every memory context up for each block
 		void initEveryMemCtxForEachBlocks() {
 			for (auto block : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
-				MemoryContext memCtx;
-				MemoryContextInitializer memoryContextInitializer(block, &memCtx);
+				m_memoryContexts[block] = MemoryContext();
+				MemoryContextInitializer memoryContextInitializer(block, &m_memoryContexts[block]);
 				memoryContextInitializer.start();
-				m_memoryContexts[block] = memCtx;
 			}
 		}
 
-		void optimizeAllBlocks() {
+		//optimize all blocks using filled up memory contexts on prev step
+		void optimizeAllBlocksUsingMemCtxs() {
 			for (auto block : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 				optimizeBlock(block, &m_memoryContexts[block]);
 			}
 		}
 
-		class MemoryContextInitializer
-		{
-			PrimaryTree::Block* m_block;
-			MemoryContext* m_memCtx;
-		public:
-			MemoryContextInitializer(PrimaryTree::Block* block, MemoryContext* memCtx)
-				: m_block(block), m_memCtx(memCtx)
-			{}
-
-			void start() {
-				for (auto topNode : m_block->getAllTopNodes()) {
-					auto node = topNode->getNode();
-					INode::UpdateDebugInfo(node);
-					passNode(node);
-				}
-			}
-
-		private:
-			void passNode(INode* node) {
-				node->iterateChildNodes([&](INode* childNode) {
-					passNode(childNode);
-					});
-				
-				if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(node)) {
-					if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenNode->getNode())) {
-						auto dstSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getDstNode());
-						auto srcSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getSrcNode());
-
-						if (dstSdaNode && srcSdaNode) {
-							//writing some stuff into memory
-							if (auto dstSdaLocNode = dynamic_cast<ILocatable*>(dstSdaNode)) {
-								try {
-									MemLocation dstLocation;
-									dstSdaLocNode->getLocation(dstLocation);
-									m_memCtx->addMemValue(dstLocation, srcSdaNode);
-								}
-								catch (std::exception&) {}
-							}
-							else {
-								if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
-									if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
-										//reading from memory into the symbol
-										if (auto srcSdaLocNode = dynamic_cast<ILocatable*>(srcSdaNode)) {
-											try {
-												MemLocation srcLocation;
-												srcSdaLocNode->getLocation(srcLocation);
-												auto newLocation = m_memCtx->addMemValue(srcLocation, srcSdaNode);
-												m_memCtx->m_memVarToMemLocation[memVar] = newLocation;
-											}
-											catch (std::exception&) {}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-
-				//replace the internal memVar with a node value stored on some location for this memVar
-				if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(node)) {
-					if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
-						MemoryContext::MemVarInfo memVarInfo;
-						memVarInfo.m_symbolLeaf = sdaSymbolLeaf;
-						memVarInfo.m_memVar = memVar;
-						memVarInfo.m_lastUsedMemLocIdx = m_memCtx->m_usedMemLocations.size() - 1;
-
-						//if the symbol not found within block then it means to be declared in the blocks above
-						auto it = m_memCtx->m_memVarToMemLocation.find(memVar);
-						if (it != m_memCtx->m_memVarToMemLocation.end()) {
-							//if find the location of the internal memVar then recieve a value
-							auto valueNode = m_memCtx->getMemValue(*it->second);
-							if (valueNode) {
-								memVarInfo.m_node = valueNode;
-							}
-						}
-						m_memCtx->m_memVars.push_back(memVarInfo);
-					}
-				}
-
-				//if the function call appeared then clear nearly all location as we dont know what memory this function affected
-				if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(node)) {
-					MemLocation memAllLoc;
-					memAllLoc.m_type = MemLocation::ALL;
-					m_memCtx->createNewLocation(memAllLoc);
-				}
-			}
-		};
-
 		void optimizeBlock(PrimaryTree::Block* block, MemoryContext* memCtx) {
 			for (auto& memVarInfo : memCtx->m_memVars) {
 				auto newNode = memVarInfo.m_node;
 				if (!newNode) {
+					//if it is an external memVar or we have a concrete value stored on the location, not dumb reading from it
 					auto memLocation = findLocationByMemVar(memVarInfo.m_memVar);
 					if (memLocation) {
 						if (!memCtx->hasUsed(*memLocation, memVarInfo.m_lastUsedMemLocIdx)) {
@@ -236,5 +150,93 @@ namespace CE::Decompiler::Optimization
 
 			return nullptr;
 		}
+
+		class MemoryContextInitializer
+		{
+			PrimaryTree::Block* m_block;
+			MemoryContext* m_memCtx;
+		public:
+			MemoryContextInitializer(PrimaryTree::Block* block, MemoryContext* memCtx)
+				: m_block(block), m_memCtx(memCtx)
+			{}
+
+			void start() {
+				for (auto topNode : m_block->getAllTopNodes()) {
+					auto node = topNode->getNode();
+					INode::UpdateDebugInfo(node);
+					passNode(node);
+				}
+			}
+
+		private:
+			void passNode(INode* node) {
+				node->iterateChildNodes([&](INode* childNode) {
+					passNode(childNode);
+					});
+
+				if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(node)) {
+					if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenNode->getNode())) {
+						auto dstSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getDstNode());
+						auto srcSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getSrcNode());
+
+						if (dstSdaNode && srcSdaNode) {
+							//when writing some stuff into memory
+							if (auto dstSdaLocNode = dynamic_cast<ILocatable*>(dstSdaNode)) {
+								try {
+									MemLocation dstLocation;
+									dstSdaLocNode->getLocation(dstLocation);
+									m_memCtx->addMemValue(dstLocation, srcSdaNode);
+								}
+								catch (std::exception&) {}
+							}
+							else {
+								if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
+									if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
+										//when reading from memory into the symbol
+										if (auto srcSdaLocNode = dynamic_cast<ILocatable*>(srcSdaNode)) {
+											try {
+												MemLocation srcLocation;
+												srcSdaLocNode->getLocation(srcLocation);
+												auto newLocation = m_memCtx->addMemValue(srcLocation, srcSdaNode);
+												m_memCtx->m_memVarToMemLocation[memVar] = newLocation;
+											}
+											catch (std::exception&) {}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				//replace the internal memVar with a node value stored on some location for this memVar
+				if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(node)) {
+					if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
+						MemoryContext::MemVarInfo memVarInfo;
+						memVarInfo.m_symbolLeaf = sdaSymbolLeaf;
+						memVarInfo.m_memVar = memVar;
+						memVarInfo.m_lastUsedMemLocIdx = m_memCtx->m_usedMemLocations.size() - 1;
+
+						//if the symbol not found within block then it means to be declared in the blocks above
+						auto it = m_memCtx->m_memVarToMemLocation.find(memVar);
+						if (it != m_memCtx->m_memVarToMemLocation.end()) {
+							//if find the location of the internal memVar then recieve a value
+							auto valueNode = m_memCtx->getMemValue(*it->second);
+							if (valueNode) {
+								memVarInfo.m_node = valueNode;
+							}
+						}
+						m_memCtx->m_memVars.push_back(memVarInfo);
+					}
+				}
+
+				//if the function call appeared then clear nearly all location as we dont know what memory this function affected
+				if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(node)) {
+					MemLocation memAllLoc;
+					memAllLoc.m_type = MemLocation::ALL;
+					m_memCtx->createNewLocation(memAllLoc);
+				}
+			}
+		};
 	};
 };

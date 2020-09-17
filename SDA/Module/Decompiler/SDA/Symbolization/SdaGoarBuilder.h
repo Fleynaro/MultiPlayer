@@ -3,6 +3,7 @@
 
 namespace CE::Decompiler::Symbolization
 {
+	//Creating complex memory data structures based on given location, that is linearly calculated, or raw bytes sized up to 8. Those are fields of class objects and array
 	class SdaGoarBuilding
 	{
 		DataTypeFactory* m_dataTypeFactory;
@@ -22,20 +23,24 @@ namespace CE::Decompiler::Symbolization
 			}
 		}
 
+		//try to create that structure
 		ISdaNode* create() {
 			auto resultSdaNode = m_baseSdaNode;
 			auto resultBitOffset = m_bitOffset;
+			//building GOAR as long as it possible
 			while (buildSingleGoar(resultSdaNode, resultBitOffset, m_sdaTerms));
 
 			if (dynamic_cast<GoarNode*>(resultSdaNode)) {
 				bool isPointer = m_baseSdaNode->getDataType()->isPointer();
 				if (isPointer) {
+					//if the base is a kind of pointer then remove & operation (and set it up later in the top of the built GOAR)
 					if (auto addrGetting = dynamic_cast<IMappedToMemory*>(m_baseSdaNode)) {
 						addrGetting->setAddrGetting(false);
 					}
 				}
 				resultSdaNode = new GoarTopNode(resultSdaNode, m_baseSdaNode, m_bitOffset, isPointer);
 
+				//if we have remaining either the offset or array index terms
 				if (resultBitOffset != 0x0 || !m_sdaTerms.empty()) {
 					//remaining offset and terms (maybe only in case of node being as LinearExpr)
 					auto linearExpr = new LinearExpr(resultBitOffset / 0x8);
@@ -127,6 +132,7 @@ namespace CE::Decompiler::Symbolization
 				}
 			}
 
+			//if we have some constant offset then try to insert it into the array indexer as index
 			if (bitOffset != 0x0) {
 				auto arrItemBitSize = arrItemSize * 0x8;
 				auto constIndex = bitOffset / arrItemBitSize;
@@ -145,6 +151,7 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			if (indexNode) {
+				//create the array addressing node appending the indexer [] to the end
 				sdaNode = new GoarArrayNode(sdaNode, indexNode, arrItemDataType, arrItemsMaxCount);
 				return true;
 			}

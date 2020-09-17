@@ -1,47 +1,11 @@
 #pragma once
 #include "ExprOptimization.h"
 #include "../Graph/DecCodeGraph.h"
+#include "Graph/DecGraphCondBlockOptimization.h"
 
 namespace CE::Decompiler::Optimization
 {
 	using namespace PrimaryTree;
-
-	static void OptimizeConditionDecBlock(Block* block) {
-		if (!block->isCondition())
-			return;
-		auto delta = block->getNextNearBlock()->m_level - block->m_level;
-		if (delta >= 1 && delta < block->getNextFarBlock()->m_level - block->m_level)
-			return;
-		block->swapNextBlocks();
-		block->getNoJumpCondition()->inverse();
-	}
-
-	static Block* JoinCondition(Block* block) {
-		if (!block->isCondition())
-			return nullptr;
-
-		auto removedBlock = block->getNextNearBlock();
-		auto mutualBlock = block->getNextFarBlock();
-		if (!removedBlock->hasNoCode() || !removedBlock->isCondition() || removedBlock->getRefBlocksCount() != 1)
-			return nullptr;
-
-		Block* targetBlock = nullptr;
-		auto removedBlockNoJmpCond = removedBlock->getNoJumpCondition();
-		if (removedBlock->getNextNearBlock() == mutualBlock) {
-			targetBlock = removedBlock->getNextFarBlock();
-			removedBlockNoJmpCond->inverse();
-		}
-		else if (removedBlock->getNextFarBlock() == mutualBlock) {
-			targetBlock = removedBlock->getNextNearBlock();
-		}
-		if (!targetBlock)
-			return nullptr;
-
-		block->setNoJumpCondition(new CompositeCondition(block->getNoJumpCondition(), removedBlockNoJmpCond, CompositeCondition::And));
-		block->setNextNearBlock(targetBlock);
-		removedBlock->removeRefBlock(block);
-		return removedBlock;
-	}
 
 	static void OptimizeExprInDecompiledGraph(DecompiledCodeGraph* decGraph) {
 		//optimize expressions
@@ -415,24 +379,8 @@ namespace CE::Decompiler::Optimization
 
 	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph)
 	{
-		decGraph->generateSymbolIds();
-
-		//join conditions and remove useless blocks
-		for (auto it = decGraph->getDecompiledBlocks().rbegin(); it != decGraph->getDecompiledBlocks().rend(); it++) {
-			auto block = *it;
-			while (auto removedBlock = JoinCondition(block)) {
-				OptimizeConditionDecBlock(block);
-				decGraph->removeDecompiledBlock(removedBlock);
-				it = decGraph->getDecompiledBlocks().rbegin();
-			}
-		}
-
-		//recalculate levels because some blocks can be removed
-		for (const auto decBlock : decGraph->getDecompiledBlocks()) {
-			decBlock->m_level = 0;
-		}
-		std::list<PrimaryTree::Block*> path;
-		DecompiledCodeGraph::CalculateLevelsForDecBlocks(decGraph->getStartBlock(), path);
+		GraphCondBlockOptimization graphCondBlockOptimization(decGraph);
+		graphCondBlockOptimization.start();
 
 		FixSymbolAssignmentLineAndConditionOrder(decGraph);
 		FindRelatedInstructionsForLocalVars(decGraph);
@@ -442,6 +390,7 @@ namespace CE::Decompiler::Optimization
 		//RemoveSeqLinesWithNotUsedMemVarDecompiledGraph(decGraph);
 		
 		DecompiledCodeGraph::CalculateHeightForDecBlocks(decGraph->getStartBlock());
+		decGraph->generateSymbolIds();
 
 		//MemorySymbolization memorySymbolization(decGraph);
 		//memorySymbolization.start();

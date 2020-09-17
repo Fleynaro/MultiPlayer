@@ -1,24 +1,24 @@
 #pragma once
-#include "DecSdaMisc.h"
+#include "../../Graph/DecCodeGraph.h"
 
 namespace CE::Decompiler
 {
 	using namespace ExprTree;
 
-	class SdaGraphModification
+	class GraphModification
 	{
 	public:
-		SdaGraphModification(SdaCodeGraph* sdaCodeGraph)
-			: m_sdaCodeGraph(sdaCodeGraph)
+		GraphModification(DecompiledCodeGraph* decGraph)
+			: m_decGraph(decGraph)
 		{}
 
 		virtual void start() = 0;
 
 	protected:
-		SdaCodeGraph* m_sdaCodeGraph;
+		DecompiledCodeGraph* m_decGraph;
 
 		void passAllTopNodes(std::function<void(PrimaryTree::Block::BlockTopNode*)> func) {
-			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
+			for (const auto decBlock : m_decGraph->getDecompiledBlocks()) {
 				for (auto topNode : decBlock->getAllTopNodes()) {
 					func(topNode);
 				}

@@ -72,9 +72,9 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 
 		{
 			auto vec3D = typeManager()->createStructure("vec3D", "");
-			vec3D->addField(0x0, "x", findType("uint32_t", ""));
-			vec3D->addField(0x4, "y", findType("uint32_t", ""));
-			vec3D->addField(0x8, "z", findType("uint32_t", ""));
+			vec3D->addField(0x0, "x", findType("float", ""));
+			vec3D->addField(0x4, "y", findType("float", ""));
+			vec3D->addField(0x8, "z", findType("float", ""));
 			auto pos = typeManager()->createStructure("Pos", "");
 			pos->addField(0x0, "vec", GetUnit(vec3D));
 			pos->addField(0xC, "w", findType("uint32_t", ""));

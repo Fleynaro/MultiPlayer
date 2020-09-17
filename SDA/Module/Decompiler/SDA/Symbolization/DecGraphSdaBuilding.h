@@ -1,8 +1,9 @@
 #pragma once
-#include "../DecGraphModification.h"
+#include "../SdaGraphModification.h"
 
 namespace CE::Decompiler::Symbolization
 {
+	//Transformation from untyped raw graph to typed one
 	class SdaBuilding : public SdaGraphModification
 	{
 	public:

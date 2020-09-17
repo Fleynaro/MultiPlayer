@@ -1,9 +1,10 @@
 #pragma once
-#include "../DecGraphModification.h"
-#include "DecGraphSdaGoar.h"
+#include "../SdaGraphModification.h"
+#include "SdaGoarBuilder.h"
 
 namespace CE::Decompiler::Symbolization
 {
+	//Calculating data types for all nodes and building GOAR structures
 	class SdaDataTypesCalculating : public SdaGraphModification
 	{
 	public:
@@ -13,18 +14,22 @@ namespace CE::Decompiler::Symbolization
 
 		void start() override {
 			std::list<Block::BlockTopNode*> allTopNodes;
+			//gather all top nodes within the entire graph
 			for (const auto decBlock : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 				auto list = decBlock->getAllTopNodes();
 				allTopNodes.insert(allTopNodes.end(), list.begin(), list.end());
 			}
+
 			do {
 				m_nextPassRequiared = false;
+				//make a pass through all top nodes
 				pass(allTopNodes);
 			} while (m_nextPassRequiared);
 		}
 	private:
 		Signature* m_signature;
 		DataTypeFactory* m_dataTypeFactory;
+		//used to proceed passing
 		bool m_nextPassRequiared = false;
 
 		void pass(const std::list<Block::BlockTopNode*>& allTopNodes) {
@@ -126,6 +131,7 @@ namespace CE::Decompiler::Symbolization
 					}
 					sdaGenNode->setDataType(calcDataType);
 
+					//if we figure out a pointer then we ensure it is some unk location
 					if (baseSdaNode) {
 						auto unknownLocation = new UnknownLocation(linearExpr, baseNodeIdx);
 						linearExpr->addParentNode(unknownLocation);

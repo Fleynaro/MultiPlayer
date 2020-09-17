@@ -113,22 +113,13 @@ namespace CE::Decompiler
 			return hash;
 		}
 
-		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
-			if (block == nullptr)
-				return;
-
-			//if that is a loop
-			for (auto it = path.rbegin(); it != path.rend(); it++) {
-				if (block == *it) {
-					return;
-				}
+		void recalculateLevelsForBlocks() {
+			//recalculate levels because some blocks can be removed
+			for (const auto decBlock : getDecompiledBlocks()) {
+				decBlock->m_level = 0;
 			}
-
-			path.push_back(block);
-			block->m_level = max(block->m_level, (int)path.size());
-			CalculateLevelsForDecBlocks(block->getNextNearBlock(), path);
-			CalculateLevelsForDecBlocks(block->getNextFarBlock(), path);
-			path.pop_back();
+			std::list<PrimaryTree::Block*> path;
+			DecompiledCodeGraph::CalculateLevelsForDecBlocks(getStartBlock(), path);
 		}
 
 		static int CalculateHeightForDecBlocks(PrimaryTree::Block* block) {
@@ -149,5 +140,23 @@ namespace CE::Decompiler
 		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
 		FunctionCallInfo m_functionCallInfo;
 		std::list<Symbol::Symbol*> m_symbols;
+
+		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
+			if (block == nullptr)
+				return;
+
+			//if that is a loop
+			for (auto it = path.rbegin(); it != path.rend(); it++) {
+				if (block == *it) {
+					return;
+				}
+			}
+
+			path.push_back(block);
+			block->m_level = max(block->m_level, (int)path.size());
+			CalculateLevelsForDecBlocks(block->getNextNearBlock(), path);
+			CalculateLevelsForDecBlocks(block->getNextFarBlock(), path);
+			path.pop_back();
+		}
 	};
 };
