@@ -1,5 +1,4 @@
 #include "DecSymbol.h"
-#include "ExprTree/ExprTree.h"
 #include "Graph/DecCodeGraph.h"
 
 using namespace CE::Decompiler;
@@ -17,8 +16,8 @@ CE::Decompiler::Symbol::Symbol* CE::Decompiler::Symbol::Symbol::clone(ExprTree::
 		return it->second;
 	auto newSymbol = cloneSymbol();
 	ctx->m_clonedSymbols.insert(std::make_pair(this, newSymbol));
-	if (auto symbolWithId = dynamic_cast<SymbolWithId*>(this)) {
-		dynamic_cast<SymbolWithId*>(newSymbol)->setId(symbolWithId->getId());
+	if (auto symbolWithId = dynamic_cast<AbstractVariable*>(this)) {
+		dynamic_cast<AbstractVariable*>(newSymbol)->setId(symbolWithId->getId());
 	}
 	return newSymbol;
 }

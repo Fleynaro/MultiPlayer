@@ -215,7 +215,7 @@ namespace CE::Decompiler::Optimization
 						MemoryContext::MemVarInfo memVarInfo;
 						memVarInfo.m_symbolLeaf = sdaSymbolLeaf;
 						memVarInfo.m_memVar = memVar;
-						memVarInfo.m_lastUsedMemLocIdx = m_memCtx->m_usedMemLocations.size() - 1;
+						memVarInfo.m_lastUsedMemLocIdx = (int)m_memCtx->m_usedMemLocations.size() - 1;
 
 						//if the symbol not found within block then it means to be declared in the blocks above
 						auto it = m_memCtx->m_memVarToMemLocation.find(memVar);

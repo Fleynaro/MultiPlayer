@@ -187,7 +187,8 @@ namespace CE::Decompiler::ExprTree
 			std::string result = "";
 			auto opSizeStr = getOpSize(getMask().getSize(), isFloatingPoint());
 			if (m_operation == Xor) {
-				if (dynamic_cast<INumberLeaf*>(m_rightNode)->getValue() == -1) {
+				auto numLeaf = dynamic_cast<INumberLeaf*>(m_rightNode);
+				if (numLeaf && numLeaf->getValue() == -1) {
 					result = "~" + m_leftNode->printDebug();
 				}
 			}

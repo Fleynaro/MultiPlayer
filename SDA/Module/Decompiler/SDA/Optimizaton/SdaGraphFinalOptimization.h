@@ -1,6 +1,6 @@
 #pragma once
-#include "DecGraphMemoryOptimization.h"
-#include "DecGraphUselessLineOptimization.h"
+#include "SdaGraphMemoryOptimization.h"
+#include "SdaGraphUselessLineOptimization.h"
 
 namespace CE::Decompiler::Optimization
 {

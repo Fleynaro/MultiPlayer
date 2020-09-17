@@ -353,14 +353,14 @@ namespace CE::Decompiler
 								auto symbolLeaf = symbol.second;
 								auto regParts = blockRegSymbol.m_regParts;
 
-								auto symbolMask = dynamic_cast<Symbol::Variable*>(symbolLeaf->m_symbol)->getMask();
-								auto maskToChange = symbolMask & ~blockRegSymbol.m_canReadMask;
+								auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolLeaf->m_symbol);
+								auto maskToChange = localVar->getMask() & ~blockRegSymbol.m_canReadMask;
 
 								if (maskToChange != 0) {
-									regParts.push_back(new RegisterPart(symbolMask, maskToChange, symbolLeaf));
+									regParts.push_back(new RegisterPart(localVar->getMask(), maskToChange, symbolLeaf));
 								}
 
-								auto expr = CreateExprFromRegisterParts(regParts, symbolMask);
+								auto expr = CreateExprFromRegisterParts(regParts, localVar->getMask());
 								decBlock->addSymbolAssignmentLine(symbolLeaf, expr);
 							}
 						}

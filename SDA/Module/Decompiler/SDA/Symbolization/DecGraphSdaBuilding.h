@@ -278,7 +278,7 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			//otherwise create auto sda symbol
-			if (auto symbolWithId = dynamic_cast<Symbol::SymbolWithId*>(symbol)) {
+			if (auto symbolWithId = dynamic_cast<Symbol::AbstractVariable*>(symbol)) {
 				std::string suffix = "local";
 				if (dynamic_cast<Symbol::MemoryVariable*>(symbol))
 					suffix = "mem";

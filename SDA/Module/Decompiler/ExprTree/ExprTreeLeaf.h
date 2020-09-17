@@ -15,14 +15,8 @@ namespace CE::Decompiler::ExprTree
 
 		SymbolLeaf(Symbol::Symbol* symbol)
 			: m_symbol(symbol)
-		{
-			m_symbol->m_symbolLeafs.push_back(this);
-		}
-
-		~SymbolLeaf() {
-			m_symbol->m_symbolLeafs.remove(this);
-		}
-
+		{}
+		
 		BitMask64 getMask() override {
 			return m_symbol->getMask().getBitMask64().withoutOffset();
 		}
@@ -105,7 +99,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return this;
+			return new FloatNanLeaf();
 		}
 
 		bool isFloatingPoint() override {

@@ -3,6 +3,8 @@
 
 namespace CE::Decompiler::Optimization
 {
+	using namespace PrimaryTree;
+
 	//Transforming sequance of simple blocks to one complex block with complex condition to jump
 	class GraphCondBlockOptimization : public GraphModification
 	{
@@ -12,13 +14,13 @@ namespace CE::Decompiler::Optimization
 		{}
 
 		void start() override {
-			processBlockJoining();
+			doBlockJoining();
 
 			//recalculate levels because some blocks can be removed
 			m_decGraph->recalculateLevelsForBlocks();
 		}
 	private:
-		void processBlockJoining() {
+		void doBlockJoining() {
 			//join conditions and remove useless blocks
 			for (auto it = m_decGraph->getDecompiledBlocks().rbegin(); it != m_decGraph->getDecompiledBlocks().rend(); it++) {
 				auto block = *it;

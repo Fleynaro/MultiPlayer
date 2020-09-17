@@ -24,5 +24,23 @@ namespace CE::Decompiler
 				}
 			}
 		}
+
+		void gatherSymbolLeafsFromNode(INode* node, Symbol::Symbol* symbol, std::list<ExprTree::SymbolLeaf*>& symbolLeafs) {
+			node->iterateChildNodes([&](INode* childNode) {
+				gatherSymbolLeafsFromNode(childNode, symbol, symbolLeafs);
+				});
+
+			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
+				if (symbolLeaf->m_symbol == symbol) {
+					symbolLeafs.push_back(symbolLeaf);
+				}
+			}
+		}
+
+		bool doesNodeHaveSymbol(INode* node, Symbol::Symbol* symbol) {
+			std::list<ExprTree::SymbolLeaf*> symbolLeafs;
+			gatherSymbolLeafsFromNode(node, symbol, symbolLeafs);
+			return !symbolLeafs.empty();
+		}
 	};
 };

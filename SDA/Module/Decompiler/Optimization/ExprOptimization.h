@@ -817,6 +817,7 @@ namespace CE::Decompiler::Optimization
 
 	static void OptimizeCondition(INode*& cond) {
 		if (auto compCond = dynamic_cast<CompositeCondition*>(cond)) {
+			//HERE IS TROUBLE
 			INode* leftNode = compCond->m_leftCond;
 			INode* rightNode = compCond->m_rightCond;
 			OptimizeCondition(leftNode);

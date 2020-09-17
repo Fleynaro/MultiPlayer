@@ -6,7 +6,7 @@
 #include <Decompiler/SDA/SdaHelper.h>
 #include <Decompiler/Optimization/DecGraphOptimization.h>
 #include <Decompiler/SDA/Symbolization/DecGraphSymbolization.h>
-#include <Decompiler/SDA/Optimizaton/DecGraphFinalOptimization.h>
+#include <Decompiler/SDA/Optimizaton/SdaGraphFinalOptimization.h>
 #include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>
 #include <Decompiler/PCode/DecPCodeConstValueCalc.h>
 #include <Manager/Managers.h>

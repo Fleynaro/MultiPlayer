@@ -5,11 +5,8 @@
 
 namespace CE::Decompiler {
 	class DecompiledCodeGraph;
-	namespace ExprTree { //todo: remove
+	namespace ExprTree {
 		struct NodeCloneContext;
-		class ReadValueNode;
-		class FunctionCall;
-		class SymbolLeaf;
 	};
 };
 
@@ -17,17 +14,21 @@ namespace CE::Decompiler::Symbol
 {
 	class Symbol
 	{
+		ExtBitMask m_mask;
+		DecompiledCodeGraph* m_decGraph;
 	public:
-		std::list<ExprTree::SymbolLeaf*> m_symbolLeafs; //todo: remove
+		Symbol(ExtBitMask mask)
+			: m_mask(mask)
+		{}
 
 		virtual ~Symbol();
 
-		virtual int getSize() {
-			return 8;
+		int getSize() {
+			return m_mask.getSize();
 		}
 
-		virtual ExtBitMask getMask() {
-			return ExtBitMask(getSize());
+		ExtBitMask getMask() {
+			return m_mask;
 		}
 
 		virtual ObjectHash::Hash getHash() = 0;
@@ -42,36 +43,15 @@ namespace CE::Decompiler::Symbol
 
 	protected:
 		virtual Symbol* cloneSymbol() = 0;
-
-	private:
-		DecompiledCodeGraph* m_decGraph;
 	};
-
-	class Variable : public Symbol
-	{
-	public:
-		Variable(ExtBitMask mask)
-			: m_mask(mask)
-		{}
-
-		int getSize() override {
-			return m_mask.getSize();
-		}
-
-		ExtBitMask getMask() override {
-			return m_mask;
-		}
-	private:
-		ExtBitMask m_mask;
-	};
-
-	class RegisterVariable : public Variable
+	
+	class RegisterVariable : public Symbol
 	{
 	public:
 		PCode::Register m_register;
 
 		RegisterVariable(PCode::Register reg)
-			: m_register(reg), Variable(reg.m_valueRangeMask)
+			: m_register(reg), Symbol(reg.m_valueRangeMask)
 		{}
 
 		ObjectHash::Hash getHash() override {
@@ -91,10 +71,10 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
-	class SymbolWithId : public Variable, public PCode::IRelatedToInstruction {
+	class AbstractVariable : public Symbol, public PCode::IRelatedToInstruction {
 	public:
-		SymbolWithId(ExtBitMask mask)
-			: Variable(mask)
+		AbstractVariable(ExtBitMask mask)
+			: Symbol(mask)
 		{}
 
 		ObjectHash::Hash getHash() override {
@@ -116,13 +96,13 @@ namespace CE::Decompiler::Symbol
 		int m_id = 0x0;
 	};
 
-	class LocalVariable : public SymbolWithId
+	class LocalVariable : public AbstractVariable
 	{
 	public:
 		std::list<PCode::Instruction*> m_instructionsRelatedTo;
 
 		LocalVariable(ExtBitMask mask)
-			: SymbolWithId(mask)
+			: AbstractVariable(mask)
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
@@ -141,13 +121,13 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
-	class MemoryVariable : public SymbolWithId
+	class MemoryVariable : public AbstractVariable
 	{
 	public:
 		PCode::Instruction* m_instr;
 		
 		MemoryVariable(PCode::Instruction* instr, int size)
-			: m_instr(instr), SymbolWithId(size)
+			: m_instr(instr), AbstractVariable(size)
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
@@ -166,13 +146,13 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
-	class FunctionResultVar : public SymbolWithId
+	class FunctionResultVar : public AbstractVariable
 	{
 	public:
 		PCode::Instruction* m_instr;
 
 		FunctionResultVar(PCode::Instruction* instr, ExtBitMask mask)
-			: m_instr(instr), SymbolWithId(mask)
+			: m_instr(instr), AbstractVariable(mask)
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {

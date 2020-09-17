@@ -391,7 +391,7 @@
     <ClInclude Include="Module\Decompiler\SDA\MemLocation.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\SdaGraphDataTypeCalc.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSdaBuilding.h" />
-    <ClInclude Include="Module\Decompiler\SDA\Symbolization\SdaGraphGoarBuilder.h" />
+    <ClInclude Include="Module\Decompiler\SDA\Symbolization\SdaGoarBuilder.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />
     <ClInclude Include="Module\Decompiler\SDA\DecSdaMisc.h" />

@@ -95,7 +95,7 @@ namespace CE::Decompiler::PrimaryTree
 				m_block->m_symbolAssignmentLines.remove(this);
 			}
 
-			ExprTree::SymbolLeaf* getDstSymbol() {
+			ExprTree::SymbolLeaf* getDstSymbolLeaf() {
 				return dynamic_cast<ExprTree::SymbolLeaf*>(getAssignmentNode()->getDstNode());
 			}
 
