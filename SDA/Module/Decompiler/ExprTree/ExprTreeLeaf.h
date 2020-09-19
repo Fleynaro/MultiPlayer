@@ -1,14 +1,13 @@
 #pragma once
 #include "ExprTreeNode.h"
 #include "../DecSymbol.h"
-#include <Utility/Generic.h>
 
 namespace CE::Decompiler::ExprTree
 {
 	class ILeaf : public virtual INode
 	{};
 
-	class SymbolLeaf : public Node, public ILeaf
+	class SymbolLeaf : public Node, public ILeaf, public PCode::IRelatedToInstruction
 	{
 	public:
 		Symbol::Symbol* m_symbol;
@@ -23,6 +22,12 @@ namespace CE::Decompiler::ExprTree
 
 		HS getHash() override {
 			return m_symbol->getHash();
+		}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			if (auto symbolRelToInstr = dynamic_cast<PCode::IRelatedToInstruction*>(m_symbol))
+				return symbolRelToInstr->getInstructionsRelatedTo();
+			return {};
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {

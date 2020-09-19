@@ -49,7 +49,7 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		void calculateDataTypes(INode* node) {
-			IterateChildNodes(node, [&](INode* childNode) {
+			node->iterateChildNodes([&](INode* childNode) {
 				calculateDataTypes(childNode);
 				});
 			calculateDataType(node);
@@ -80,23 +80,26 @@ namespace CE::Decompiler::Symbolization
 					}
 				}
 				else if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenNode->getNode())) {
-					auto maskSize = opNode->getMask().getSize();
-					if (auto sdaLeftSdaNode = dynamic_cast<ISdaNode*>(opNode->m_leftNode)) {
-						if (auto sdaRightSdaNode = dynamic_cast<ISdaNode*>(opNode->m_rightNode)) {
-							DataTypePtr leftNodeDataType = sdaLeftSdaNode->getDataType();
-							DataTypePtr rightNodeDataType;
-							if (opNode->m_operation == Shr || opNode->m_operation == Shl) {
-								rightNodeDataType = leftNodeDataType;
+					if (!IsOperationUnsupportedToCalculate(opNode->m_operation)
+						&& opNode->m_operation != Concat && opNode->m_operation != Subpiece) {
+						auto maskSize = opNode->getMask().getSize();
+						if (auto sdaLeftSdaNode = dynamic_cast<ISdaNode*>(opNode->m_leftNode)) {
+							if (auto sdaRightSdaNode = dynamic_cast<ISdaNode*>(opNode->m_rightNode)) {
+								DataTypePtr leftNodeDataType = sdaLeftSdaNode->getDataType();
+								DataTypePtr rightNodeDataType;
+								if (opNode->m_operation == Shr || opNode->m_operation == Shl) {
+									rightNodeDataType = leftNodeDataType;
+								}
+								else {
+									rightNodeDataType = sdaRightSdaNode->getDataType();
+								}
+								auto calcDataType = getDataTypeToCastTo(sdaLeftSdaNode->getDataType(), sdaRightSdaNode->getDataType());
+								if (maskSize != calcDataType->getSize())
+									calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
+								cast(sdaLeftSdaNode, calcDataType);
+								cast(sdaRightSdaNode, calcDataType);
+								sdaGenNode->setDataType(calcDataType);
 							}
-							else {
-								rightNodeDataType = sdaRightSdaNode->getDataType();
-							}
-							auto calcDataType = getDataTypeToCastTo(sdaLeftSdaNode->getDataType(), sdaRightSdaNode->getDataType());
-							if (maskSize != calcDataType->getSize())
-								calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
-							cast(sdaLeftSdaNode, calcDataType);
-							cast(sdaRightSdaNode, calcDataType);
-							sdaGenNode->setDataType(calcDataType);
 						}
 					}
 				}

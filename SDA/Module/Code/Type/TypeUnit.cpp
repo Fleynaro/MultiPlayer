@@ -86,7 +86,10 @@ int Unit::getPriority() {
 	bool hasPointerLvl = getPointerLvl() != 0;
 	bool isSigned = baseType->isSigned();
 	bool isNotSimple = baseType->getGroup() != Simple;
-	return size | (hasPointerLvl << 3) | (isSigned << 4) | (isNotSimple << 5);
+	bool isFloatingPoint = false;
+	if (auto sysType = dynamic_cast<SystemType*>(baseType))
+		isFloatingPoint = (sysType->getSet() == SystemType::Real);
+	return size | (hasPointerLvl << 3) | (isSigned << 4) | (isNotSimple << 5) | (isFloatingPoint << 6);
 }
 
 int Unit::getConversionPriority() {

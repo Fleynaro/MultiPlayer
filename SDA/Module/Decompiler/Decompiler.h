@@ -204,7 +204,7 @@ namespace CE::Decompiler
 									isFlowForkState = false;
 									if (!mask.isZero()) {
 										//pass this block on another state
-										blockFlowIterator.passThisBlockRepeatly();
+										blockFlowIterator.passThisBlockAgain();
 										continue;
 									}
 								}
@@ -300,7 +300,7 @@ namespace CE::Decompiler
 					blockRegSymbol.m_symbolId = m_curRegSymbol->m_requiestId;
 					blockRegSymbol.m_prevSymbolId = prevSymbolId;
 					m_curRegSymbol->m_blocks[block] = blockRegSymbol;
-					notNeedToReadMask = canReadMask;
+					notNeedToReadMask = notNeedToReadMask | canReadMask;
 				}
 			}
 

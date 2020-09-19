@@ -6,6 +6,8 @@ namespace CE::Decompiler::ExprTree
 	class AbstractCondition : public Node, public PCode::IRelatedToInstruction
 	{
 	public:
+		PCode::Instruction* m_instr;
+
 		AbstractCondition(PCode::Instruction* instr = nullptr)
 			: m_instr(instr)
 		{}
@@ -21,9 +23,6 @@ namespace CE::Decompiler::ExprTree
 				return { m_instr };
 			return {};
 		}
-
-	private:
-		PCode::Instruction* m_instr;
 	};
 
 	class BooleanValue : public AbstractCondition

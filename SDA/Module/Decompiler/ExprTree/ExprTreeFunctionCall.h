@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	class FunctionCall : public Node, public INodeAgregator
+	class FunctionCall : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
 	public:
 		INode* m_destination;
@@ -69,6 +69,12 @@ namespace CE::Decompiler::ExprTree
 
 		HS getHash() override {
 			return m_functionResultVar ? m_functionResultVar->getHash() : m_destination->getHash();
+		}
+
+		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
+			if (m_instr)
+				return { m_instr };
+			return {};
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {

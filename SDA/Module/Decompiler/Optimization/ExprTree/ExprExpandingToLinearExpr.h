@@ -4,10 +4,12 @@
 namespace CE::Decompiler::Optimization
 {
 	////((y + 3x) + x) * 2 + 5 => (y + 8x) + 5
+	//([reg_rbx_64] & 0xffffffff00000000{0} | [var_2_32]) & 0x1f{31} =>	[var_2_32] & 0x1f{31}
 	class ExprExpandingToLinearExpr : public ExprModification
 	{
 		std::map<HS::Value, std::pair<INode*, int64_t>> m_terms;
 		int64_t m_constTerm;
+		//arithmetical and logical
 	public:
 		ExprExpandingToLinearExpr(INode* node)
 			: ExprModification(node)

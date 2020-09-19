@@ -40,7 +40,7 @@ public:
 	};
 
 	std::list<SampleTest*> m_sampleTests;
-	std::map<int, ObjectHash::Hash> m_sampleTestHashes;
+	std::map<int, HS::Value> m_sampleTestHashes;
 	Signature* m_defSignature;
 	bool m_isOutput = true;
 	int m_doTestIdOnly = 0;
@@ -57,7 +57,7 @@ public:
 
 	void initSampleTest();
 
-	bool checkHash(int type, std::list<std::pair<int, ObjectHash::Hash>>& sampleTestHashes, ObjectHash::Hash hash, SampleTest* sampleTest);
+	bool checkHash(int type, std::list<std::pair<int, HS::Value>>& sampleTestHashes, HS::Value hash, SampleTest* sampleTest);
 
 	CE::TypeManager* typeManager() {
 		return m_programModule->getTypeManager();
@@ -98,6 +98,14 @@ public:
 		defSignature->addParameter("param5", findType("uint32_t"));
 		defSignature->setReturnType(findType("uint32_t"));
 		return defSignature;
+	}
+
+	LinearView::BlockList* buildBlockList(DecompiledCodeGraph* graph) {
+		auto converter = LinearView::Converter(graph);
+		converter.start();
+		auto blockList = converter.getBlockList();
+		OptimizeBlockList(blockList);
+		return blockList;
 	}
 
 	void out(const char* fmt, ...) {

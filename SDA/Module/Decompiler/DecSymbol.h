@@ -1,7 +1,7 @@
 #pragma once
 #include "PCode/DecPCode.h"
 #include <Utility/Generic.h>
-#include "Utils/ObjectHash.h"
+#include <Utils/HashSerialization.h>
 
 namespace CE::Decompiler {
 	class DecompiledCodeGraph;
@@ -79,7 +79,7 @@ namespace CE::Decompiler::Symbol
 		HS getHash() override {
 			HS hs;
 			for (auto instr : getInstructionsRelatedTo())
-				hs = hs << instr->getOffset();
+				hs = hs + (HS() << instr->getOffset());
 			return hs;
 		}
 

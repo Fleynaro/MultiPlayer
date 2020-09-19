@@ -52,7 +52,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		test = createSampleTest(2, GetFuncBytes(&Test_StructsAndArray));
 		test->m_enabled = true;
 		test->m_showSymbCode = false;
-		//test->enableAllAndShowAll();
+		test->enableAllAndShowAll();
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test2");
 		sig->addParameter("myParam1", findType("uint32_t", "[1]"));
 		sig->setReturnType(findType("int32_t"));
@@ -103,7 +103,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	}
 }
 
-bool ProgramModuleFixtureDecSamples::checkHash(int type, std::list<std::pair<int, ObjectHash::Hash>>& sampleTestHashes, ObjectHash::Hash hash, SampleTest* sampleTest) {
+bool ProgramModuleFixtureDecSamples::checkHash(int type, std::list<std::pair<int, HS::Value>>& sampleTestHashes, HS::Value hash, SampleTest* sampleTest) {
 	auto ID = (sampleTest->m_testId << 1) | type;
 	sampleTestHashes.push_back(std::make_pair(ID, hash));
 	auto it = m_sampleTestHashes.find(ID);
@@ -115,7 +115,7 @@ bool ProgramModuleFixtureDecSamples::checkHash(int type, std::list<std::pair<int
 
 TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 {
-	std::list<std::pair<int, ObjectHash::Hash>> sampleTestHashes;
+	std::list<std::pair<int, HS::Value>> sampleTestHashes;
 	bool testFail = false;
 
 	if (m_doTestIdOnly) {
@@ -167,10 +167,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 		//show code
 		out("********************* BEFORE OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-		LinearView::Converter converter(decCodeGraph);
-		converter.start();
-		auto blockList = converter.getBlockList();
-		OptimizeBlockList(blockList, false);
+		auto blockList = buildBlockList(decCodeGraph);
 		LinearViewSimpleConsoleOutput output(blockList, decCodeGraph);
 		if (m_isOutput) {
 			output.show();
@@ -180,16 +177,13 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 		clonedDecCodeGraph->checkOnSingleParents();
 		Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
 		clonedDecCodeGraph->checkOnSingleParents();
-		if (!checkHash(0, sampleTestHashes, clonedDecCodeGraph->getHash(), sampleTest)) {
+		if (!checkHash(0, sampleTestHashes, clonedDecCodeGraph->getHash().getHashValue(), sampleTest)) {
 			printf("\n\nHERE IS THE TROUBLE:");
 			m_isOutput = true;
 			testFail = true;
 		}
 		out("\n\n\n********************* AFTER OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-		converter = LinearView::Converter(clonedDecCodeGraph);
-		converter.start();
-		blockList = converter.getBlockList();
-		OptimizeBlockList(blockList);
+		blockList = buildBlockList(clonedDecCodeGraph);
 		LinearViewSimpleConsoleOutput output2(blockList, clonedDecCodeGraph);
 		if (m_isOutput) {
 			output2.show();
@@ -200,16 +194,13 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 			Symbolization::SymbolizeWithSDA(sdaCodeGraph, sampleTest->m_userSymbolDef);
 			
-			if (!checkHash(1, sampleTestHashes, sdaCodeGraph->getDecGraph()->getHash(), sampleTest)) {
+			if (!checkHash(1, sampleTestHashes, sdaCodeGraph->getDecGraph()->getHash().getHashValue(), sampleTest)) {
 				printf("\n\nHERE IS THE TROUBLE:");
 				m_isOutput = true;
 				testFail = true;
 			}
 			out("\n\n\n********************* AFTER SYMBOLIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-			converter = LinearView::Converter(sdaCodeGraph->getDecGraph());
-			converter.start();
-			blockList = converter.getBlockList();
-			OptimizeBlockList(blockList);
+			blockList = buildBlockList(sdaCodeGraph->getDecGraph());
 
 			//show all symbols
 			sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::ISymbol* a, CE::Symbol::ISymbol* b) { return a->getName() < b->getName(); });
@@ -241,6 +232,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 			out("\n\n\n********************* AFTER FINAL OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 			Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
+			blockList = buildBlockList(sdaCodeGraph->getDecGraph());
 			clonedDecCodeGraph->checkOnSingleParents();
 			LinearViewSimpleConsoleOutput output4(blockList, sdaCodeGraph->getDecGraph());
 			output4.setMinInfoToShow();

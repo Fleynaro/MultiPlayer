@@ -22,28 +22,26 @@ namespace CE::Decompiler::Optimization
 		}
 	private:
 		void processBlock(Block* block) {
-			std::map<ObjectHash::Hash, Symbol::LocalVariable*> localVars;
+			std::map<HS::Value, Symbol::LocalVariable*> localVars;
 			gatherLocalVarsDependedOnItselfFromBlock(block, localVars);
 			doSingleFix(block->getNoJumpCondition(), localVars);
 		}
 
 		//gather localVars located in something like this: localVar = localVar + 1
-		void gatherLocalVarsDependedOnItselfFromBlock(Block* block, std::map<ObjectHash::Hash, Symbol::LocalVariable*>& localVars) {
+		void gatherLocalVarsDependedOnItselfFromBlock(Block* block, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
 			for (auto symbolAssignmentLine : block->getSymbolAssignmentLines()) {
 				if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbolLeaf()->m_symbol)) {
-					//if localVar expressed through itself (e.g. localVar = localVar + 1)
-					if (doesNodeHaveSymbol(symbolAssignmentLine->getSrcNode(), localVar)) {
-						CalculateHashes(symbolAssignmentLine->getSrcNode());
-						localVars.insert(std::make_pair(symbolAssignmentLine->getSrcNode()->getHash(), localVar));
+					//if localVar expressed through itself (e.g. localVar = localVar + 1). updated: not necessary
+					if (true || doesNodeHaveSymbol(symbolAssignmentLine->getSrcNode(), localVar)) {
+						localVars.insert(std::make_pair(symbolAssignmentLine->getSrcNode()->getHash().getHashValue(), localVar));
 					}
 				}
 			}
-			CalculateHashes(block->getNoJumpCondition());
 		}
 
 		//replace: <localVar = localVar + 1>	=>	 localVar
-		bool doSingleFix(INode* node, std::map<ObjectHash::Hash, Symbol::LocalVariable*>& localVars) {
-			auto it = localVars.find(node->getHash());
+		bool doSingleFix(INode* node, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
+			auto it = localVars.find(node->getHash().getHashValue());
 			if (it != localVars.end()) {
 				node->replaceWith(new SymbolLeaf(it->second));
 				delete node;

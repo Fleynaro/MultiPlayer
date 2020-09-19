@@ -31,7 +31,7 @@ namespace CE::Decompiler::Symbolization
 		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols;
 		std::set<CE::Symbol::ISymbol*> m_autoSymbols;
 		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols;
-		std::map<ObjectHash::Hash, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts;
+		std::map<HS::Value, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts;
 
 		void addSdaSymbols() {
 			for (auto sdaSymbol : m_autoSymbols) {
@@ -45,7 +45,7 @@ namespace CE::Decompiler::Symbolization
 
 		SdaFunctionNode* buildSdaFunctionNode(FunctionCall* funcCall) {
 			std::shared_ptr<SdaFunctionNode::TypeContext> typeContext;
-			auto keyHash = funcCall->getDestination()->getHash();
+			auto keyHash = funcCall->getDestination()->getHash().getHashValue();
 			auto it = m_funcTypeContexts.find(keyHash);
 			if (it == m_funcTypeContexts.end()) {
 				std::vector<DataTypePtr> paramTypes;
@@ -76,7 +76,7 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		void buildSdaNodes(INode* node) {
-			IterateChildNodes(node, [&](INode* childNode) {
+			node->iterateChildNodes([&](INode* childNode) {
 				buildSdaNodes(childNode);
 				});
 
@@ -211,7 +211,7 @@ namespace CE::Decompiler::Symbolization
 				return;
 
 			//otherwise create generic sda node
-			auto sdaNode = new SdaGenericNode(node, m_dataTypeFactory->getDefaultType(node->getMask().getSize()));
+			auto sdaNode = new SdaGenericNode(node, m_dataTypeFactory->getDefaultType(node->getMask().getSize(), false, node->isFloatingPoint()));
 			node->replaceWith(sdaNode);
 			node->addParentNode(sdaNode);
 		}

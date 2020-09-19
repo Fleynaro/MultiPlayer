@@ -133,6 +133,7 @@ namespace CE::Decompiler::LinearView
 		~Condition() {
 			delete m_mainBranch;
 			delete m_elseBranch;
+			delete m_cond;
 		}
 
 		std::list<BlockList*> getBlockLists() override {
@@ -170,6 +171,7 @@ namespace CE::Decompiler::LinearView
 
 		~WhileCycle() {
 			delete m_mainBranch;
+			delete m_cond;
 		}
 
 		Block* getFirstBlock() {

@@ -34,7 +34,13 @@ namespace CE::Decompiler::Symbolization
 			return DataType::GetUnit(m_programModule->getTypeManager()->getTypeById(id));
 		}
 
-		DataTypePtr getDefaultType(int size, bool sign = false) {
+		DataTypePtr getDefaultType(int size, bool sign = false, bool floating = false) {
+			if (floating) {
+				if (size == 0x4)
+					return getType(SystemType::Float);
+				if (size == 0x8)
+					return getType(SystemType::Double);
+			}
 			if (size == 0x1)
 				return getType(sign ? SystemType::Char : SystemType::Byte);
 			if (size == 0x2)

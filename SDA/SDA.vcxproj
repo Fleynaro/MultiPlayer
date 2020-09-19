@@ -341,10 +341,13 @@
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\DecMask.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprCompositeCondOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConcatAndSubpieceBuilding.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConstCalculating.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConstCondCalculating.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprExpandingToLinearExpr.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprModification.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprSimpleCondOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprUnification.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphConcatOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphCondBlockOptimization.h" />

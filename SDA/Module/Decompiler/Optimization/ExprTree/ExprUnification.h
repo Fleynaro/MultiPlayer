@@ -3,6 +3,7 @@
 
 namespace CE::Decompiler::Optimization
 {
+	//the very beigining optimization
 	class ExprUnification : public ExprModification
 	{
 	public:
@@ -18,6 +19,13 @@ namespace CE::Decompiler::Optimization
 			if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
 				processOpNode(opNode);
 			}
+			else if (auto mirrorNode = dynamic_cast<MirrorNode*>(node)) {
+				processMirrorNodes(mirrorNode);
+			}
+		}
+
+		void processMirrorNodes(MirrorNode* mirrorNode) {
+			replace(mirrorNode->m_node);
 		}
 
 		void processOpNode(OperationalNode* opNode) {

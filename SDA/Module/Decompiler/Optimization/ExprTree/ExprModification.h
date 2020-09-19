@@ -11,7 +11,9 @@ namespace CE::Decompiler
 	public:
 		ExprModification(INode* node)
 			: m_node(node)
-		{}
+		{
+			INode::UpdateDebugInfo(m_node);
+		}
 
 		virtual void start() = 0;
 
@@ -26,6 +28,7 @@ namespace CE::Decompiler
 				delete m_node;
 			}
 			m_node = newNode;
+			INode::UpdateDebugInfo(m_node);
 		}
 	};
 };

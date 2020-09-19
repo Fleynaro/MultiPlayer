@@ -21,14 +21,8 @@ namespace CE::Decompiler::Optimization
 	private:
 		void optimize(PrimaryTree::Block::BlockTopNode* topNode) {
 			INode::UpdateDebugInfo(topNode->getNode());
-			Optimize(*topNode->getNodePtr());
-
-			if (auto jmpTopNode = dynamic_cast<Block::JumpTopNode*>(topNode)) {
-				INode::UpdateDebugInfo(jmpTopNode->getCond());
-				OptimizeConstCondition(jmpTopNode->getCond());
-				INode::UpdateDebugInfo(jmpTopNode->getCond());
-				OptimizeCondition(*jmpTopNode->getNodePtr());
-			}
+			ExprOptimization exprOptimization(topNode);
+			exprOptimization.start();
 		}
 	};
 };

@@ -17,7 +17,7 @@ namespace CE::Decompiler::Optimization
 	private:
 		void dispatch(INode* node) {
 			if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
-				if (opNode->m_operation == Shl) {
+				if (opNode->m_operation == Or) {
 					processOpNode(opNode);
 				}
 			}
@@ -41,12 +41,13 @@ namespace CE::Decompiler::Optimization
 					std::swap(pairOp1, pairOp2);
 				if (pairOp2.second - pairOp1.second == pairOp1.first->getMask().getSize() * 0x8) {
 					auto sumSize = pairOp1.first->getMask().getSize() + pairOp2.first->getMask().getSize();
-					auto newNode = new OperationalNode(pairOp2.first, pairOp1.first, Concat, BitMask64(sumSize));
+					auto newNode = new OperationalNode(pairOp2.first, pairOp1.first, Concat);
 					if (pairOp1.second)
-						newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second), Shl, BitMask64(sumSize + pairOp1.second));
+						newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second), Shl);
 					if (leftTail) {
-						newNode = new OperationalNode(leftTail, newNode, Or, opNode->getMask());
+						newNode = new OperationalNode(leftTail, newNode, Or);
 					}
+					newNode->m_instr = opNode->m_instr;
 					replace(newNode);
 				}
 			}

@@ -70,7 +70,7 @@ namespace CE::Decompiler::ExprTree
 	}
 
 	static bool IsOperationMoving(OperationType opType) {
-		return !(opType == fDiv || opType == Div || opType == Shr || opType == Shl) && !IsOperationUnsupportedToCalculate(opType);
+		return !(opType == fDiv || opType == Div || opType == Shr || opType == Shl || opType == Concat || opType == Subpiece) && !IsOperationUnsupportedToCalculate(opType);
 	}
 
 	static bool IsOperationSigned(OperationType opType) {
@@ -103,7 +103,6 @@ namespace CE::Decompiler::ExprTree
 
 	class OperationalNode : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
-		BitMask64 m_mask;
 	public:
 		INode* m_leftNode;
 		INode* m_rightNode;
@@ -111,8 +110,8 @@ namespace CE::Decompiler::ExprTree
 		bool m_notChangedMask;
 		PCode::Instruction* m_instr;
 
-		OperationalNode(INode* leftNode, INode* rightNode, OperationType operation, BitMask64 mask = BitMask64(0), bool notChangedMask = false, PCode::Instruction* instr = nullptr)
-			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_mask(mask), m_notChangedMask(notChangedMask), m_instr(instr)
+		OperationalNode(INode* leftNode, INode* rightNode, OperationType operation, PCode::Instruction* instr = nullptr)
+			: m_leftNode(leftNode), m_rightNode(rightNode), m_operation(operation), m_instr(instr)
 		{
 			leftNode->addParentNode(this);
 			if (rightNode != nullptr) {
@@ -123,10 +122,6 @@ namespace CE::Decompiler::ExprTree
 					throw std::logic_error("The second operand is empty in the binary operation.");
 			}
 		}
-
-		OperationalNode(INode* leftNode, INode* rightNode, OperationType operation, PCode::Instruction* instr)
-			: OperationalNode(leftNode, rightNode, operation, BitMask64(0), false, instr)
-		{}
 
 		~OperationalNode() {
 			auto leftNode = m_leftNode;
@@ -155,31 +150,10 @@ namespace CE::Decompiler::ExprTree
 			return {};
 		}
 
-		void setMask(BitMask64 mask) {
-			if (m_notChangedMask)
-				return;
-			m_mask = mask;
-		}
-
-		BitMask64 getMask() override {
-			if (m_instr) {
-				return m_instr->m_output->getMask().getBitMask64().withoutOffset();
-			}
-			return m_mask;
-		}
-
-		bool isFloatingPoint() override {
-			return IsOperationFloatingPoint(m_operation);
-		}
-
-		INode* clone(NodeCloneContext* ctx) override {
-			return new OperationalNode(m_leftNode->clone(ctx), m_rightNode ? m_rightNode->clone(ctx) : nullptr, m_operation, m_mask, m_notChangedMask, m_instr);
-		}
-
 		HS getHash() override {
 			auto hs = HS()
 				<< (int)m_operation
-				<< m_mask.getValue()
+				<< getMask().getValue()
 				<< isFloatingPoint();
 
 			auto leftNodeHash = m_leftNode->getHash();
@@ -191,6 +165,34 @@ namespace CE::Decompiler::ExprTree
 				hs = hs << (leftNodeHash << rightNodeHash);
 			}
 			return hs;
+		}
+
+		BitMask64 getMask() override {
+			if (m_instr) {
+				return m_instr->m_output->getMask().getBitMask64().withoutOffset();
+			}
+			if (!m_rightNode || m_operation == Shr)
+				return m_leftNode->getMask();
+			if(m_operation == And)
+				return m_leftNode->getMask() & m_rightNode->getMask();
+			if (m_operation == Shl) {
+				if (auto numberLeaf = dynamic_cast<INumberLeaf*>(m_rightNode)) {
+					return m_leftNode->getMask() << (int)numberLeaf->getValue();
+				}
+				return m_leftNode->getMask();
+			}
+			if (m_operation == Concat) {
+				return BitMask64(m_leftNode->getMask().getSize() + m_rightNode->getMask().getSize());
+			}
+			return m_leftNode->getMask() | m_rightNode->getMask();
+		}
+
+		bool isFloatingPoint() override {
+			return IsOperationFloatingPoint(m_operation);
+		}
+
+		INode* clone(NodeCloneContext* ctx) override {
+			return new OperationalNode(m_leftNode->clone(ctx), m_rightNode ? m_rightNode->clone(ctx) : nullptr, m_operation, m_instr);
 		}
 
 		std::string printDebug() override {
@@ -315,7 +317,7 @@ namespace CE::Decompiler::ExprTree
 		Id m_funcId;
 
 		FunctionalNode(INode* node1, INode* node2, Id id, PCode::Instruction* instr = nullptr)
-			: OperationalNode(node1, node2, Functional, 0b1, true, instr), m_funcId(id)
+			: OperationalNode(node1, node2, Functional, instr), m_funcId(id)
 		{}
 
 		BitMask64 getMask() override {
@@ -353,7 +355,7 @@ namespace CE::Decompiler::ExprTree
 		Id m_funcId;
 
 		FloatFunctionalNode(INode* node1, Id id, int size, PCode::Instruction* instr = nullptr)
-			: OperationalNode(node1, nullptr, fFunctional, BitMask64(size), true, instr), m_funcId(id), m_size(size)
+			: OperationalNode(node1, nullptr, fFunctional, instr), m_funcId(id), m_size(size)
 		{}
 
 		int getSize() {

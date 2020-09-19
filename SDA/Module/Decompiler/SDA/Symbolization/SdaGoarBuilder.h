@@ -123,7 +123,7 @@ namespace CE::Decompiler::Symbolization
 
 					if (indexNode) {
 						auto indexNodeDataType = indexNode->getDataType();
-						indexNode = new SdaGenericNode(new OperationalNode(indexNode, sdaNode, Add, BitMask64(indexSize)), indexNodeDataType); //todo: linear expr, another type
+						indexNode = new SdaGenericNode(new OperationalNode(indexNode, sdaNode, Add), indexNodeDataType); //todo: linear expr, another type
 					}
 					else {
 						indexNode = sdaNode;
@@ -142,7 +142,7 @@ namespace CE::Decompiler::Symbolization
 					constIndexNode->setDataType(m_dataTypeFactory->getDefaultType(indexSize)); //need?
 					if (indexNode) {
 						auto indexNodeDataType = indexNode->getDataType();
-						indexNode = new SdaGenericNode(new OperationalNode(indexNode, constIndexNode, Add, BitMask64(indexSize)), indexNodeDataType);
+						indexNode = new SdaGenericNode(new OperationalNode(indexNode, constIndexNode, Add), indexNodeDataType);
 					}
 					else {
 						indexNode = constIndexNode;

@@ -40,10 +40,6 @@ namespace CE::Decompiler::ExprTree
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
 			if (m_instr)
 				return { m_instr };
-			if (auto nodeRelToInstr = dynamic_cast<PCode::IRelatedToInstruction*>(m_dstNode))
-				return nodeRelToInstr->getInstructionsRelatedTo();
-			if (auto nodeRelToInstr = dynamic_cast<PCode::IRelatedToInstruction*>(m_srcNode))
-				return nodeRelToInstr->getInstructionsRelatedTo();
 			return {};
 		}
 
