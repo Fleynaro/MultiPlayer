@@ -47,7 +47,7 @@ namespace CE::Decompiler::ExprTree
 			return new MirrorNode(m_node->clone(ctx), m_instr);
 		}
 
-		ObjectHash::Hash getHash() override {
+		HS getHash() override {
 			return m_node->getHash();
 		}
 

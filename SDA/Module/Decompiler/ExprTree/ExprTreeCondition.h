@@ -43,8 +43,8 @@ namespace CE::Decompiler::ExprTree
 			return new BooleanValue(m_value);
 		}
 
-		ObjectHash::Hash getHash() override {
-			return m_value ? 0x111 : 0x222;
+		HS getHash() override {
+			return HS() << m_value;
 		}
 
 		std::string printDebug() override {
@@ -114,11 +114,10 @@ namespace CE::Decompiler::ExprTree
 			return new Condition(m_leftNode->clone(ctx), m_rightNode->clone(ctx), m_cond);
 		}
 
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue(m_leftNode->getHash() + m_rightNode->getHash());
-			hash.addValue((int)m_cond);
-			return hash.getHash();
+		HS getHash() override {
+			return HS()
+				<< (m_leftNode->getHash() + m_rightNode->getHash())
+				<< (int)m_cond;
 		}
 
 		void inverse() override {
@@ -211,11 +210,10 @@ namespace CE::Decompiler::ExprTree
 			return new CompositeCondition(dynamic_cast<AbstractCondition*>(m_leftCond->clone(ctx)), m_rightCond ? dynamic_cast<AbstractCondition*>(m_rightCond->clone(ctx)) : nullptr, m_cond);
 		}
 
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue(m_leftCond->getHash() + (m_rightCond ? m_rightCond->getHash() : 0x0));
-			hash.addValue((int)m_cond);
-			return hash.getHash();
+		HS getHash() override {
+			return HS()
+				<< (m_leftCond->getHash() + (m_rightCond ? m_rightCond->getHash() : 0x0))
+				<< (int)m_cond;
 		}
 
 		void inverse() override {

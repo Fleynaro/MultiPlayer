@@ -67,8 +67,8 @@ namespace CE::Decompiler::ExprTree
 			return m_srcNode->getMask();
 		}
 
-		ObjectHash::Hash getHash() override {
-			return m_dstNode->getHash() * 31 + m_srcNode->getHash();
+		HS getHash() override {
+			return m_dstNode->getHash() << m_srcNode->getHash();
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {

@@ -33,7 +33,7 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(getSrcDataType()->getSize());
 		}
 
-		ObjectHash::Hash getHash() override {
+		HS getHash() override {
 			return m_base->getHash();
 		}
 
@@ -78,8 +78,8 @@ namespace CE::Decompiler::ExprTree
 			return m_outDataType;
 		}
 
-		ObjectHash::Hash getHash() override {
-			return GoarNode::getHash() + m_indexNode->getHash() * 31;
+		HS getHash() override {
+			return GoarNode::getHash() << m_indexNode->getHash();
 		}
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
@@ -156,8 +156,8 @@ namespace CE::Decompiler::ExprTree
 			return m_base->getDataType();
 		}
 
-		ObjectHash::Hash getHash() override {
-			return GoarNode::getHash() + m_isAddrGetting * 31;
+		HS getHash() override {
+			return GoarNode::getHash() << m_isAddrGetting;
 		}
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {

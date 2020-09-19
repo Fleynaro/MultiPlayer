@@ -24,7 +24,7 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(getDataType()->getSize());
 		}
 
-		ObjectHash::Hash getHash() override {
+		HS getHash() override {
 			return m_decSymbol->getHash();
 		}
 
@@ -72,8 +72,8 @@ namespace CE::Decompiler::ExprTree
 			return SdaSymbolLeaf::getSrcDataType();
 		}
 
-		ObjectHash::Hash getHash() override {
-			return SdaSymbolLeaf::getHash() + 31 * getSdaSymbol()->getOffset();
+		HS getHash() override {
+			return SdaSymbolLeaf::getHash() << getSdaSymbol()->getOffset();
 		}
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
@@ -121,16 +121,6 @@ namespace CE::Decompiler::ExprTree
 
 		void setDataType(DataTypePtr dataType) override {
 			m_calcDataType = dataType;
-		}
-
-		BitMask64 getMask() override {
-			return BitMask64(m_value);
-		}
-
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue((int64_t)m_value);
-			return hash.getHash();
 		}
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {

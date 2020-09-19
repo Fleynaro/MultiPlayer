@@ -31,7 +31,7 @@ namespace CE::Decompiler::Symbol
 			return m_mask;
 		}
 
-		virtual ObjectHash::Hash getHash() = 0;
+		virtual HS getHash() = 0;
 
 		void setDecGraph(DecompiledCodeGraph* decGraph) {
 			m_decGraph = decGraph;
@@ -54,11 +54,10 @@ namespace CE::Decompiler::Symbol
 			: m_register(reg), Symbol(reg.m_valueRangeMask)
 		{}
 
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue(m_register.getGenericId());
-			hash.addValue((int64_t)m_register.m_valueRangeMask.getBitMask64().getValue());
-			return hash.getHash();
+		HS getHash() override {
+			return HS()
+				<< m_register.getGenericId()
+				<< m_register.m_valueRangeMask.getBitMask64().getValue();
 		}
 
 		std::string printDebug() override {
@@ -77,11 +76,11 @@ namespace CE::Decompiler::Symbol
 			: Symbol(mask)
 		{}
 
-		ObjectHash::Hash getHash() override {
-			ObjectHash::Hash hash = 0;
+		HS getHash() override {
+			HS hs;
 			for (auto instr : getInstructionsRelatedTo())
-				hash += 31 * instr->getOffset();
-			return hash;
+				hs = hs << instr->getOffset();
+			return hs;
 		}
 
 		int getId() {

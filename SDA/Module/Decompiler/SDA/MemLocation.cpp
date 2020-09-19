@@ -7,7 +7,7 @@ bool MemLocation::intersect(const MemLocation& location) const {
 		return true;
 	if (m_type != location.m_type)
 		return false;
-	if (m_baseAddrHash != location.m_baseAddrHash)
+	if (m_baseAddrHash.getHashValue() != location.m_baseAddrHash.getHashValue())
 		return false;
 	auto Size1 = getLocSize();
 	auto Size2 = location.getLocSize();
@@ -22,7 +22,7 @@ bool MemLocation::equal(const MemLocation& location) const {
 	if (!m_arrDims.empty() || !location.m_arrDims.empty())
 		return false;
 	return (m_type == location.m_type && m_type != ALL)
-		&& m_baseAddrHash == location.m_baseAddrHash
+		&& m_baseAddrHash.getHashValue() == location.m_baseAddrHash.getHashValue()
 		&& m_offset == location.m_offset
 		&& m_valueSize == location.m_valueSize;
 }

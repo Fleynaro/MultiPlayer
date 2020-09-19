@@ -341,6 +341,11 @@
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\DecMask.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConcatAndSubpieceBuilding.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConstCalculating.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprExpandingToLinearExpr.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprModification.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprUnification.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphConcatOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphCondBlockOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphExprOptimization.h" />
@@ -494,6 +499,7 @@
     <ClInclude Include="Utils\BufferStreamRecorder.h" />
     <ClInclude Include="Utils\Description.h" />
     <ClInclude Include="Utils\enum.h" />
+    <ClInclude Include="Utils\HashSerialization.h" />
     <ClInclude Include="Utils\ITaskMonitor.h" />
     <ClInclude Include="Utils\Iterator.h" />
     <ClInclude Include="Utils\MultipleAction.h" />

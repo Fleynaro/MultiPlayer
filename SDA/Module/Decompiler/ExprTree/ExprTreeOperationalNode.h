@@ -109,7 +109,6 @@ namespace CE::Decompiler::ExprTree
 		INode* m_rightNode;
 		OperationType m_operation;
 		bool m_notChangedMask;
-		ObjectHash::Hash m_calcHash;
 		PCode::Instruction* m_instr;
 
 		OperationalNode(INode* leftNode, INode* rightNode, OperationType operation, BitMask64 mask = BitMask64(0), bool notChangedMask = false, PCode::Instruction* instr = nullptr)
@@ -177,8 +176,21 @@ namespace CE::Decompiler::ExprTree
 			return new OperationalNode(m_leftNode->clone(ctx), m_rightNode ? m_rightNode->clone(ctx) : nullptr, m_operation, m_mask, m_notChangedMask, m_instr);
 		}
 
-		ObjectHash::Hash getHash() override {
-			return m_calcHash;
+		HS getHash() override {
+			auto hs = HS()
+				<< (int)m_operation
+				<< m_mask.getValue()
+				<< isFloatingPoint();
+
+			auto leftNodeHash = m_leftNode->getHash();
+			auto rightNodeHash = m_rightNode ? m_rightNode->getHash() : 0x0;
+			if (IsOperationMoving(m_operation)) {
+				hs = hs << (leftNodeHash + rightNodeHash);
+			}
+			else {
+				hs = hs << (leftNodeHash << rightNodeHash);
+			}
+			return hs;
 		}
 
 		std::string printDebug() override {
@@ -262,6 +274,10 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(getSize());
 		}
 
+		HS getHash() override {
+			return OperationalNode::getHash() << m_size << m_isSigned;
+		}
+
 		INode* getNode() {
 			return m_leftNode;
 		}
@@ -306,6 +322,10 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(1);
 		}
 
+		HS getHash() override {
+			return OperationalNode::getHash() << (int)m_funcId;
+		}
+
 		INode* clone(NodeCloneContext* ctx) override {
 			return new FunctionalNode(m_leftNode->clone(ctx), m_rightNode->clone(ctx), m_funcId, m_instr);
 		}
@@ -342,6 +362,10 @@ namespace CE::Decompiler::ExprTree
 
 		BitMask64 getMask() override {
 			return BitMask64(m_size);
+		}
+
+		HS getHash() override {
+			return OperationalNode::getHash() << (int)m_funcId;
 		}
 
 		bool isFloatingPoint() override {

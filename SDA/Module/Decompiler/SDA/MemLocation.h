@@ -1,6 +1,6 @@
 #pragma once
 #include <main.h>
-#include <Utils/ObjectHash.h>
+#include <Utils/HashSerialization.h>
 
 namespace CE::Decompiler
 {
@@ -20,7 +20,7 @@ namespace CE::Decompiler
 		};
 
 		LOCATION_TYPE m_type;
-		ObjectHash::Hash m_baseAddrHash = 0x0;
+		HS m_baseAddrHash = 0x0;
 		int64_t m_offset = 0x0;
 		std::list<ArrayDim> m_arrDims;
 		int m_valueSize = 0x0;

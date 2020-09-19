@@ -9,8 +9,7 @@ namespace CE::Decompiler::ExprTree
 		INumberLeaf* m_constTerm;
 	public:
 		OperationType m_operation;
-		ObjectHash::Hash m_calcHash;
-
+		
 		LinearExpr(INumberLeaf* constTerm, OperationType operation = Add)
 			: m_constTerm(constTerm), m_operation(operation)
 		{}
@@ -92,8 +91,21 @@ namespace CE::Decompiler::ExprTree
 			return newLinearExpr;
 		}
 
-		ObjectHash::Hash getHash() override {
-			return m_calcHash;
+		HS getHash() override {
+			HS hs;
+			if (IsOperationMoving(m_operation)) {
+				for (auto term : m_terms) {
+					hs = hs + term->getHash();
+				}
+			}
+			else {
+				for (auto term : m_terms) {
+					hs = hs << term->getHash();
+				}
+			}
+			return hs
+				<< m_constTerm->getHash()
+				<< (int)m_operation;
 		}
 
 		std::string printDebug() override {

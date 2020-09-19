@@ -102,15 +102,14 @@ namespace CE::Decompiler
 			}
 		}
 
-		ObjectHash::Hash getHash() {
-			ObjectHash::Hash hash = 1;
+		HS getHash() {
+			HS hs;
 			for (const auto decBlock : getDecompiledBlocks()) {
 				for (auto topNode : decBlock->getAllTopNodes()) {
-					auto h = topNode->getNode()->getHash();
-					hash += 31 * h;
+					hs = hs << topNode->getNode()->getHash();
 				}
 			}
-			return hash;
+			return hs;
 		}
 
 		void recalculateLevelsForBlocks() {

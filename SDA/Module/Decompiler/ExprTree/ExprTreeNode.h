@@ -1,8 +1,8 @@
 #pragma once
 #pragma warning( disable : 4250)
 #include "../DecMask.h"
-#include "Utils/ObjectHash.h"
 #include "../PCode/DecPCode.h"
+#include <Utils/HashSerialization.h>
 
 namespace CE::Decompiler::Symbol
 {
@@ -42,7 +42,7 @@ namespace CE::Decompiler::ExprTree
 
 		virtual INodeAgregator* getParentNode() = 0;
 
-		virtual ObjectHash::Hash getHash() = 0;
+		virtual HS getHash() = 0;
 
 		virtual BitMask64 getMask() = 0;
 

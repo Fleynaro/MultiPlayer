@@ -21,7 +21,7 @@ namespace CE::Decompiler::ExprTree
 			return m_symbol->getMask().getBitMask64().withoutOffset();
 		}
 
-		ObjectHash::Hash getHash() override {
+		HS getHash() override {
 			return m_symbol->getHash();
 		}
 
@@ -40,6 +40,14 @@ namespace CE::Decompiler::ExprTree
 		virtual uint64_t getValue() = 0;
 
 		virtual void setValue(uint64_t value) = 0;
+
+		HS getHash() override {
+			return HS() << getValue();
+		}
+
+		BitMask64 getMask() override {
+			return BitMask64(getValue());
+		}
 	};
 
 	class NumberLeaf : public Node, public INumberLeaf
@@ -65,16 +73,6 @@ namespace CE::Decompiler::ExprTree
 			m_value = value;
 		}
 
-		BitMask64 getMask() override {
-			return BitMask64(m_value);
-		}
-
-		ObjectHash::Hash getHash() override {
-			ObjectHash hash;
-			hash.addValue((int64_t&)m_value);
-			return hash.getHash();
-		}
-
 		INode* clone(NodeCloneContext* ctx) override {
 			return new NumberLeaf(m_value);
 		}
@@ -94,8 +92,8 @@ namespace CE::Decompiler::ExprTree
 			return BitMask64(8);
 		}
 
-		ObjectHash::Hash getHash() override {
-			return 0xF1F1F1F1;
+		HS getHash() override {
+			return HS();
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {

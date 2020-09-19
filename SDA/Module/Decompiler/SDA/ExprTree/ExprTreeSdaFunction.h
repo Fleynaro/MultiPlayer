@@ -76,7 +76,7 @@ namespace CE::Decompiler::ExprTree
 			return m_funcCall->isFloatingPoint();
 		}
 
-		ObjectHash::Hash getHash() override {
+		HS getHash() override {
 			return m_funcCall->getHash();
 		}
 

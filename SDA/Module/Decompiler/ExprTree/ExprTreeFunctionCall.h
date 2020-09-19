@@ -67,7 +67,7 @@ namespace CE::Decompiler::ExprTree
 			return false;
 		}
 
-		ObjectHash::Hash getHash() override {
+		HS getHash() override {
 			return m_functionResultVar ? m_functionResultVar->getHash() : m_destination->getHash();
 		}
 

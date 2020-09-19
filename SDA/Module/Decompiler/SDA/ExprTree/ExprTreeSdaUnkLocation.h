@@ -85,7 +85,7 @@ namespace CE::Decompiler::ExprTree
 			return m_linearExpr->getMask();
 		}
 
-		ObjectHash::Hash getHash() override {
+		HS getHash() override {
 			return m_linearExpr->getHash(); //todo: + term hashes
 		}
 

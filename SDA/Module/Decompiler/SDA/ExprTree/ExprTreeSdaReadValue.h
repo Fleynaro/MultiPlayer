@@ -42,7 +42,7 @@ namespace CE::Decompiler::ExprTree
 			return m_readValueNode->getMask();
 		}
 
-		ObjectHash::Hash getHash() override {
+		HS getHash() override {
 			return m_readValueNode->getHash(); //todo: + term hashes
 		}
 
