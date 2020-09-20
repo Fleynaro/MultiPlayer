@@ -96,8 +96,9 @@ namespace CE::Decompiler
 			return highestLevel;
 		}
 
-		void distributePressure(BlockInfo& blockInfo, bool considerLoop) {
+		void distributePressure(BlockInfo blockInfo, bool considerLoop) {
 			auto block = blockInfo.m_block;
+			m_blockInfos.erase(block);
 			//if the start block is cycle then distribute the pressure for all referenced blocks. Next time don't it.
 			auto parentsCount = considerLoop ? block->getRefBlocksCount() : block->getRefHighBlocksCount();
 			if (parentsCount > 0) {
@@ -120,7 +121,6 @@ namespace CE::Decompiler
 					restAddPressure = 0;
 				}
 			}
-			m_blockInfos.erase(block);
 		}
 	};
 };

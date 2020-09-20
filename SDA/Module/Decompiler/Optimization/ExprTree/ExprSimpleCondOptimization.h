@@ -14,10 +14,7 @@ namespace CE::Decompiler::Optimization
 		void start() override {
 			processSBORROW(getCondition());
 			while (moveTermToRightPartOfCondition(getCondition())) {
-				if (auto rightOpNode = dynamic_cast<OperationalNode*>(getCondition()->m_rightNode)) {
-					ExprConstCalculating exprConstCalculating(rightOpNode);
-					exprConstCalculating.start();
-				}
+				OptimizeNode(getCondition()->m_rightNode);
 			}
 		}
 
@@ -73,6 +70,14 @@ namespace CE::Decompiler::Optimization
 				}
 			}
 			return false;
+		}
+
+		static void OptimizeNode(INode* node) {
+			node->iterateChildNodes(OptimizeNode);
+			if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
+				ExprConstCalculating exprConstCalculating(opNode);
+				exprConstCalculating.start();
+			}
 		}
 
 		//check negative of expr node

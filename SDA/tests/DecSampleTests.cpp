@@ -20,7 +20,7 @@ TEST(Decompiler, Test_MemLocation)
 
 void ProgramModuleFixtureDecSamples::initSampleTestHashes() {
 	m_sampleTestHashes = {
-		std::pair(2,0x82adab5b54d9e52a), std::pair(3,0xdef3b0dc7a444a3b), std::pair(200,0xab7892859ce3979d), std::pair(201,0xeabebb280e046237),
+		
 	};
 }
 
@@ -30,14 +30,14 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	Signature* sig;
 	
 	//ignore all tests except
-	m_doTestIdOnly = 1;
+	//m_doTestIdOnly = 1;
 
 	{
 		//multidimension stack array like stackArray[1][2][3]
 		test = createSampleTest(1, GetFuncBytes(&Test_Array));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
-		test->enableAllAndShowAll();
+		//test->enableAllAndShowAll();
 		test->m_symbolization = true;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test1");
 		sig->setReturnType(findType("uint64_t"));
@@ -230,8 +230,8 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			}
 			clonedDecCodeGraph->checkOnSingleParents();
 
-			out("\n\n\n********************* AFTER FINAL OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 			m_isOutput |= sampleTest->m_showFinalResult;
+			out("\n\n\n********************* AFTER FINAL OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 			Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
 			blockList = buildBlockList(sdaCodeGraph->getDecGraph());
 			clonedDecCodeGraph->checkOnSingleParents();

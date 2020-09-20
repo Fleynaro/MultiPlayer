@@ -12,12 +12,12 @@ namespace CE::Decompiler::Optimization
 	{
 		GraphCondBlockOptimization graphCondBlockOptimization(decGraph);
 		graphCondBlockOptimization.start();
-		GraphExprOptimization graphExprOptimization(decGraph);
-		graphExprOptimization.start();
 		GraphLastLineAndConditionOrderFixing graphLastLineAndConditionOrderFixing(decGraph);
 		graphLastLineAndConditionOrderFixing.start();
 		GraphInstructionsForLocalVarsSearch graphInstructionsForLocalVarsSearch(decGraph);
 		graphInstructionsForLocalVarsSearch.start();
+		GraphExprOptimization graphExprOptimization(decGraph);
+		graphExprOptimization.start();
 		GraphLinesExpanding graphLinesExpanding(decGraph);
 		graphLinesExpanding.start();
 		GraphUselessLineDeleting GraphUselessLineDeleting(decGraph);
