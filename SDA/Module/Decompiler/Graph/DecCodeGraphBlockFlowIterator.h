@@ -28,6 +28,7 @@ namespace CE::Decompiler
 
 	public:
 		bool m_considerLoop = true;
+		bool m_distributePressure = true;
 
 		BlockFlowIterator(PrimaryTree::Block* startBlock)
 		{
@@ -41,7 +42,9 @@ namespace CE::Decompiler
 		bool hasNext() {
 			//remove the first block from the current list
 			if (!m_blocksOnOneLevel.empty()) {
-				distributePressure(*m_blocksOnOneLevel.begin(), m_considerLoop);
+				if (m_distributePressure) {
+					distributePressure(*m_blocksOnOneLevel.begin(), m_considerLoop);
+				}
 				m_blocksOnOneLevel.pop_front();
 			}
 
@@ -52,6 +55,7 @@ namespace CE::Decompiler
 
 			//restore the default values
 			m_considerLoop = true;
+			m_distributePressure = true;
 			m_iterCount++;
 			return !m_blocksOnOneLevel.empty();
 		}
@@ -62,6 +66,7 @@ namespace CE::Decompiler
 
 		void passThisBlockAgain() {
 			m_blocksOnOneLevel.push_back(next());
+			m_distributePressure = false;
 		}
 
 	private:
@@ -93,7 +98,6 @@ namespace CE::Decompiler
 
 		void distributePressure(BlockInfo& blockInfo, bool considerLoop) {
 			auto block = blockInfo.m_block;
-			m_blockInfos.erase(block);
 			//if the start block is cycle then distribute the pressure for all referenced blocks. Next time don't it.
 			auto parentsCount = considerLoop ? block->getRefBlocksCount() : block->getRefHighBlocksCount();
 			if (parentsCount > 0) {
@@ -116,6 +120,7 @@ namespace CE::Decompiler
 					restAddPressure = 0;
 				}
 			}
+			m_blockInfos.erase(block);
 		}
 	};
 };

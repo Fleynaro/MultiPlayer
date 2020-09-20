@@ -29,6 +29,7 @@ public:
 		bool m_showAllCode = false;
 		bool m_showSymbCode = false;
 		bool m_showAsmBefore = false;
+		bool m_showFinalResult = false;
 
 		void enableAllAndShowAll() {
 			m_enabled = true;
@@ -36,6 +37,7 @@ public:
 			m_showAllCode = true;
 			m_showSymbCode = true;
 			m_showAsmBefore = true;
+			m_showFinalResult = true;
 		}
 	};
 

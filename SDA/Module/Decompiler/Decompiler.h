@@ -190,9 +190,11 @@ namespace CE::Decompiler
 						else {
 							gatherRegisterPartsInBlock(block, reg, mask, needReadMask, hasReadMask, blockInfo.m_notNeedToReadMask, blockInfo.hasMaxPressure());
 							if (blockInfo.hasMaxPressure()) {
+								hasReadMask = hasReadMask | blockInfo.m_notNeedToReadMask;
+								//if we fully read the ambiguous part(=needReadMask) of the register requested or such part is absence(needReadMask=0) then exit the state
 								if ((needReadMask & ~hasReadMask).isZero()) {
 									if (!needReadMask.isZero()) {
-										//"needReadMask" may be != "mask" that results in anything like: localVar32 | (100 << 32)
+										//(*) "needReadMask" may be != "mask" that results in anything like: localVar32 | (100 << 32)
 										auto symbol = createSymbolForRequest(reg, needReadMask);
 										if ((mask & ~needReadMask) != mask) {
 											auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
@@ -203,7 +205,7 @@ namespace CE::Decompiler
 									//exit the state
 									isFlowForkState = false;
 									if (!mask.isZero()) {
-										//pass this block on another state
+										//(*) pass this block on another state
 										blockFlowIterator.passThisBlockAgain();
 										continue;
 									}
