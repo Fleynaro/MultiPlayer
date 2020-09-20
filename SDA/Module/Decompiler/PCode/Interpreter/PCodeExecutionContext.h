@@ -53,11 +53,11 @@ namespace CE::Decompiler
 			//regMask = 0xFFFFFFFF, maskToChange = 0xFFFF0000: expr(eax) | expr(ax) => (expr1 & 0xFFFF0000) | expr2
 			if ((regPart.m_regMask & regPart.m_maskToChange) != regPart.m_regMask) {
 				auto mask = (regPart.m_regMask & regPart.m_maskToChange) >> bitLeftShift;
-				regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf(mask.getBitMask64().getValue()), ExprTree::And/*, requestRegMaskForOpNode, true*/);
+				regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf(mask.getBitMask64().getValue(), regExpr->getMask()), ExprTree::And/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (bitShift != 0) {
-				regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf((uint64_t)abs(bitShift)), bitShift > 0 ? ExprTree::Shr : ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
+				regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf((uint64_t)abs(bitShift), regExpr->getMask()), bitShift > 0 ? ExprTree::Shr : ExprTree::Shl/*, requestRegMaskForOpNode, true*/);
 			}
 
 			if (resultExpr) {

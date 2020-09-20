@@ -115,6 +115,10 @@ namespace CE::Decompiler::ExprTree
 			m_value = value;
 		}
 
+		BitMask64 getMask() override {
+			return BitMask64(m_calcDataType->getSize());
+		}
+
 		DataTypePtr getSrcDataType() override {
 			return m_calcDataType;
 		}
@@ -130,7 +134,11 @@ namespace CE::Decompiler::ExprTree
 		std::string printSdaDebug() override {
 			if (auto sysType = dynamic_cast<DataType::SystemType*>(getSrcDataType()->getBaseType())) {
 				if (sysType->isSigned()) {
-					return m_updateDebugInfo = std::to_string((int64_t)m_value);
+					auto size = getSrcDataType()->getSize();
+					if (size <= 4)
+						return m_updateDebugInfo = std::to_string((int32_t)m_value);
+					else
+						return m_updateDebugInfo = std::to_string((int64_t)m_value);
 				}
 			}
 			return "0x" + Generic::String::NumberToHex(m_value);

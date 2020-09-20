@@ -242,7 +242,9 @@ namespace CE::Decompiler::PrimaryTree
 			if (getNoJumpCondition()) {
 				m_noJmpCond->clear();
 			}
-			m_noJmpCond->setNode(noJmpCond);
+			if (noJmpCond) {
+				m_noJmpCond->setNode(noJmpCond);
+			}
 		}
 
 		void addSeqLine(ExprTree::INode* destAddr, ExprTree::INode* srcValue, PCode::Instruction* instr = nullptr) {

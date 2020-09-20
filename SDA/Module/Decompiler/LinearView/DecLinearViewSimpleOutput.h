@@ -12,6 +12,7 @@ namespace CE::Decompiler
 		bool m_SHOW_PCODE = false;
 		bool m_SHOW_ALL_GOTO = true;
 		bool m_SHOW_LINEAR_LEVEL_EXT = true;
+		bool m_SHOW_BLOCK_HEADER = true;
 
 		LinearViewSimpleConsoleOutput(LinearView::BlockList* blockList, DecompiledCodeGraph* decGraph)
 			: m_blockList(blockList), m_decGraph(decGraph)
@@ -89,7 +90,12 @@ namespace CE::Decompiler
 						typeName = "[break]";
 					else if (gotoType == LinearView::GotoType::Continue)
 						typeName = "[continue]";
-					printf("%s//goto to block %s (%s) %s\n", tabStr.c_str(), Generic::String::NumberToHex(m_decGraph->getAsmGraphBlocks()[blockList->m_goto->m_decBlock]->ID).c_str(), levelInfo.c_str(), typeName.c_str());
+					if (m_SHOW_ALL_GOTO) {
+						printf("%s//goto to block %s (%s) %s\n", tabStr.c_str(), Generic::String::NumberToHex(m_decGraph->getAsmGraphBlocks()[blockList->m_goto->m_decBlock]->ID).c_str(), levelInfo.c_str(), typeName.c_str());
+					}
+					else {
+						printf("%s%s\n", tabStr.c_str(), typeName.c_str());
+					}
 				}
 			}
 			else if (m_SHOW_ALL_GOTO) {
@@ -98,7 +104,9 @@ namespace CE::Decompiler
 		}
 
 		void showBlockCode(AsmGraphBlock* asmBlock, LinearView::Block* block, std::string tabStr) {
-			printf("%s//block %s (level: %i, maxHeight: %i, backOrderId: %i, linearLevel: %i, refCount: %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), block->m_decBlock->m_level, block->m_decBlock->m_maxHeight, block->getBackOrderId(), block->getLinearLevel(), block->m_decBlock->getRefBlocksCount());
+			if (m_SHOW_BLOCK_HEADER) {
+				printf("%s//block %s (level: %i, maxHeight: %i, backOrderId: %i, linearLevel: %i, refCount: %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), block->m_decBlock->m_level, block->m_decBlock->m_maxHeight, block->getBackOrderId(), block->getLinearLevel(), block->m_decBlock->getRefBlocksCount());
+			}
 			if (m_SHOW_ASM) {
 				asmBlock->printDebug(nullptr, tabStr, false, m_SHOW_PCODE);
 				printf("%s------------\n", tabStr.c_str());

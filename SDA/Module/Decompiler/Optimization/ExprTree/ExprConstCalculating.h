@@ -33,10 +33,7 @@ namespace CE::Decompiler::Optimization
 			if (auto leftNumberLeaf = dynamic_cast<INumberLeaf*>(opNode->m_leftNode)) {
 				if (auto rightNumberLeaf = dynamic_cast<INumberLeaf*>(opNode->m_rightNode)) {
 					auto result = Calculate(leftNumberLeaf->getValue(), rightNumberLeaf->getValue(), opNode->m_operation);
-					auto opNodeMask = opNode->getMask();
-					if (opNodeMask != 0)
-						result &= opNodeMask.getValue();
-					replace(new NumberLeaf(result));
+					replace(new NumberLeaf(result, opNode->getMask()));
 					return true;
 				}
 			}
@@ -54,13 +51,13 @@ namespace CE::Decompiler::Optimization
 				if (opNode->m_operation != Div && opNode->m_operation != Mod) {
 					auto opNodeMask = opNode->getMask();
 					if (opNodeMask == 0x0) {
-						replace(new NumberLeaf((uint64_t)0));
+						replace(new NumberLeaf((uint64_t)0, opNodeMask));
 						return true;
 					}
 
 					if (rightNumberLeaf->getValue() == 0) {
 						if (opNode->m_operation == Mul || opNode->m_operation == And) {
-							replace(new NumberLeaf((uint64_t)0));
+							replace(new NumberLeaf((uint64_t)0, opNodeMask));
 							return true;
 						}
 						else {
@@ -102,7 +99,7 @@ namespace CE::Decompiler::Optimization
 			if (opNode->m_operation == Xor || opNode->m_operation == And || opNode->m_operation == Or) {
 				if (opNode->m_leftNode->getHash().getHashValue() == opNode->m_rightNode->getHash().getHashValue()) {
 					if (opNode->m_operation == Xor) {
-						replace(new NumberLeaf((uint64_t)0));
+						replace(new NumberLeaf((uint64_t)0, opNode->getMask()));
 						return true;
 					}
 					else {

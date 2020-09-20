@@ -31,33 +31,29 @@ namespace CE::Decompiler::Optimization
 		void gatherLocalVarsDependedOnItselfFromBlock(Block* block, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
 			for (auto symbolAssignmentLine : block->getSymbolAssignmentLines()) {
 				if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbolLeaf()->m_symbol)) {
-					if (!filter(symbolAssignmentLine->getSrcNode())) {
+					//if localVar expressed through itself (e.g. localVar = localVar + 1)
+					if (doesNodeHaveSymbol(symbolAssignmentLine->getSrcNode(), localVar)) {
 						localVars.insert(std::make_pair(symbolAssignmentLine->getSrcNode()->getHash().getHashValue(), localVar));
 					}
 				}
 			}
 		}
 
-		//replace: <localVar + 1> =>	localVar
-		//replace: <X*X+Y*Y> =>	dist
-		void doSingleFix(INode* node, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
-			if (!filter(node)) {
-				auto it = localVars.find(node->getHash().getHashValue());
-				if (it != localVars.end()) {
-					node->replaceWith(new SymbolLeaf(it->second));
-					delete node;
-				}
+		//replace: <localVar = localVar + 1>	=>	 localVar
+		bool doSingleFix(INode* node, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
+			auto it = localVars.find(node->getHash().getHashValue());
+			if (it != localVars.end()) {
+				node->replaceWith(new SymbolLeaf(it->second));
+				delete node;
+				return true;
 			}
 
+			bool result = false;
 			node->iterateChildNodes([&](INode* childNode) {
-				doSingleFix(childNode, localVars);
+				if (!result)
+					result = doSingleFix(childNode, localVars);
 				});
-		}
-
-		bool filter(INode* node) {
-			if (dynamic_cast<ILeaf*>(node))
-				return true;
-			return false;
+			return result;
 		}
 	};
 };

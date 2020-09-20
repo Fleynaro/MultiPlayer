@@ -66,6 +66,7 @@ namespace CE::Decompiler::Optimization
 			block->setNoJumpCondition(new CompositeCondition(block->getNoJumpCondition(), removedBlockNoJmpCond, CompositeCondition::And));
 			block->setNextNearBlock(targetBlock);
 			removedBlock->removeRefBlock(block);
+			removedBlock->setNoJumpCondition(nullptr);
 			return removedBlock;
 		}
 	};

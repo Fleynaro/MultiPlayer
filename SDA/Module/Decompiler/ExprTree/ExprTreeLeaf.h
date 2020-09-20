@@ -49,23 +49,22 @@ namespace CE::Decompiler::ExprTree
 		HS getHash() override {
 			return HS() << getValue();
 		}
-
-		BitMask64 getMask() override {
-			return BitMask64(getValue());
-		}
 	};
 
 	class NumberLeaf : public Node, public INumberLeaf
 	{
 		uint64_t m_value;
+		BitMask64 m_mask;
 	public:
-		NumberLeaf(uint64_t value)
-			: m_value(value)
+
+		NumberLeaf(uint64_t value, BitMask64 mask)
+			: m_value(value & mask.getValue()), m_mask(mask)
 		{}
 
-		NumberLeaf(double value, int size = 4)
+		NumberLeaf(double value, BitMask64 mask)
+			: m_mask(mask)
 		{
-			if(size == 4)
+			if(m_mask.getSize() == 4)
 				(float&)m_value = (float)value;
 			else (double&)m_value = value;
 		}
@@ -78,8 +77,12 @@ namespace CE::Decompiler::ExprTree
 			m_value = value;
 		}
 
+		BitMask64 getMask() override {
+			return m_mask;
+		}
+
 		INode* clone(NodeCloneContext* ctx) override {
-			return new NumberLeaf(m_value);
+			return new NumberLeaf(m_value, m_mask);
 		}
 
 		std::string printDebug() override {

@@ -357,6 +357,7 @@
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphLinesExpanding.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphModification.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphUselessLineOptimization.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphViewOptimization.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaReadValue.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaUnkLocation.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaGraphModification.h" />

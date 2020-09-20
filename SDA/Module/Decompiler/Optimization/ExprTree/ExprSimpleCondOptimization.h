@@ -32,7 +32,7 @@ namespace CE::Decompiler::Optimization
 							auto newCondType = Condition::Ge;
 							if (cond->m_cond == Condition::Ne)
 								newCondType = Condition::Lt;
-							auto newCond = new Condition(func->m_leftNode, func->m_rightNode, newCondType);
+							auto newCond = new Condition(func->m_leftNode, func->m_rightNode, newCondType, cond->m_instr);
 							replace(newCond);
 							return true;
 						}
@@ -51,7 +51,7 @@ namespace CE::Decompiler::Optimization
 					auto leftNode = addOpNode->m_leftNode;
 					auto rightNode = addOpNode->m_rightNode;
 					bool isTermMoving = false;
-					if (dynamic_cast<NumberLeaf*>(addOpNode->m_rightNode) || IsNegative(addOpNode->m_rightNode, mask)) {
+					if (dynamic_cast<INumberLeaf*>(addOpNode->m_rightNode) || IsNegative(addOpNode->m_rightNode, mask)) {
 						isTermMoving = true;
 					}
 					else if (IsNegative(addOpNode->m_leftNode, mask)) {
@@ -61,7 +61,7 @@ namespace CE::Decompiler::Optimization
 
 					if (isTermMoving) {
 						//move expr from left node of the condition to the right node being multiplied -1
-						auto newPartOfRightExpr = new OperationalNode(rightNode, new NumberLeaf(uint64_t(-1) & mask.getValue()), Mul);
+						auto newPartOfRightExpr = new OperationalNode(rightNode, new NumberLeaf((uint64_t)(int64_t)-1, mask), Mul);
 						auto newRightExpr = new OperationalNode(cond->m_rightNode, newPartOfRightExpr, Add);
 						auto newCond = new Condition(leftNode, newRightExpr, cond->m_cond, cond->m_instr);
 						replace(newCond);

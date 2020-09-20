@@ -17,20 +17,28 @@ namespace CE::Decompiler::Optimization
 
 		void start() override {
 			defineTerms(getNode());
-			if (m_terms.size() >= 1 && m_constTerm != 0x0) {
-				process(getNode());
+			if (m_terms.size() >= 1) {
+				if (m_terms.size() == 1 && m_constTerm == 0x0) {
+					auto baseTerm = m_terms.begin()->second.first;
+					if (baseTerm != getNode())
+						replace(baseTerm);
+				}
+				else {
+					auto linearExpr = buildLinearExpr();
+					replace(linearExpr);
+				}
 			}
 		}
 	private:
-		void process(INode* node) {
+		LinearExpr* buildLinearExpr() {
 			auto linearExpr = new LinearExpr();
 			for (auto termInfo : m_terms) {
 				auto multiplier = (uint64_t&)termInfo.second.second;
-				auto term = (multiplier == 1 ? termInfo.second.first : new OperationalNode(termInfo.second.first, new NumberLeaf(multiplier), Mul));
+				auto term = (multiplier == 1 ? termInfo.second.first : new OperationalNode(termInfo.second.first, new NumberLeaf(multiplier, termInfo.second.first->getMask()), Mul));
 				linearExpr->addTerm(term);
 			}
 			linearExpr->setConstTermValue(m_constTerm);
-			replace(linearExpr);
+			return linearExpr;
 		}
 
 		//(5x - 10y) * 2 + 5 =>	{x: 10, y: -20, constTerm: 5}

@@ -5,6 +5,7 @@
 #include "Graph/DecGraphLinesExpanding.h"
 #include "Graph/DecGraphUselessLineOptimization.h"
 #include "Graph/DecGraphLastLineAndConditionOrderFixing.h"
+#include "Graph/DecGraphViewOptimization.h"
 
 namespace CE::Decompiler::Optimization
 {
@@ -12,12 +13,17 @@ namespace CE::Decompiler::Optimization
 	{
 		GraphCondBlockOptimization graphCondBlockOptimization(decGraph);
 		graphCondBlockOptimization.start();
+		decGraph->checkOnSingleParents();
 		GraphLastLineAndConditionOrderFixing graphLastLineAndConditionOrderFixing(decGraph);
 		graphLastLineAndConditionOrderFixing.start();
 		GraphInstructionsForLocalVarsSearch graphInstructionsForLocalVarsSearch(decGraph);
 		graphInstructionsForLocalVarsSearch.start();
+		decGraph->checkOnSingleParents();
 		GraphExprOptimization graphExprOptimization(decGraph);
 		graphExprOptimization.start();
+		decGraph->checkOnSingleParents();
+		GraphViewOptimization graphViewOptimization(decGraph);
+		graphViewOptimization.start();
 		GraphLinesExpanding graphLinesExpanding(decGraph);
 		graphLinesExpanding.start();
 		GraphUselessLineDeleting GraphUselessLineDeleting(decGraph);

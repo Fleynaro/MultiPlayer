@@ -17,7 +17,7 @@ namespace CE::Decompiler::ExprTree
 		LinearExpr(int64_t constTerm = 0x0, OperationType operation = Add)
 			: m_operation(operation)
 		{
-			auto numberLeaf = new NumberLeaf((uint64_t)constTerm);
+			auto numberLeaf = new NumberLeaf((uint64_t)constTerm, BitMask64(8));
 			numberLeaf->addParentNode(this);
 			m_constTerm = numberLeaf;
 		}

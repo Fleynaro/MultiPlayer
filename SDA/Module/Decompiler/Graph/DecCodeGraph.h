@@ -97,6 +97,7 @@ namespace CE::Decompiler
 		void checkOnSingleParents() {
 			for (const auto decBlock : getDecompiledBlocks()) {
 				for (auto topNode : decBlock->getAllTopNodes()) {
+					ExprTree::INode::UpdateDebugInfo(topNode->getNode());
 					topNode->getNode()->checkOnSingleParents();
 				}
 			}

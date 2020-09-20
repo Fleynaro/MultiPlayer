@@ -43,7 +43,7 @@ namespace CE::Decompiler::Optimization
 					auto sumSize = pairOp1.first->getMask().getSize() + pairOp2.first->getMask().getSize();
 					auto newNode = new OperationalNode(pairOp2.first, pairOp1.first, Concat);
 					if (pairOp1.second)
-						newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second), Shl);
+						newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second, BitMask64(4)), Shl);
 					if (leftTail) {
 						newNode = new OperationalNode(leftTail, newNode, Or);
 					}

@@ -66,7 +66,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 			opType = ExprTree::Add;
 			if (m_instr->m_id == InstructionId::INT_SUB) {
 				auto maskValue = m_instr->m_input1->getMask().getBitMask64().getValue();
-				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1 & maskValue), ExprTree::Mul);
+				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf((uint64_t)(int64_t)-1, maskValue), ExprTree::Mul);
 			}
 			break;
 		case InstructionId::INT_MULT:
@@ -100,7 +100,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		case InstructionId::FLOAT_SUB:
 			opType = ExprTree::fAdd;
 			if (m_instr->m_id == InstructionId::FLOAT_SUB) {
-				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1.0, m_instr->m_input1->getSize()), ExprTree::fMul);
+				op2 = new ExprTree::OperationalNode(op2, new ExprTree::NumberLeaf(-1.0, m_instr->m_input1->getMask().getBitMask64()), ExprTree::fMul);
 			}
 			break;
 		case InstructionId::FLOAT_MULT:
@@ -120,7 +120,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::INT_2COMP:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		auto nodeMask = new ExprTree::NumberLeaf(-1 & m_instr->m_input0->getMask().getBitMask64().getValue());
+		auto nodeMask = new ExprTree::NumberLeaf((uint64_t)(int64_t)-1, m_instr->m_input0->getMask().getBitMask64());
 		auto opType = (m_instr->m_id == InstructionId::INT_2COMP) ? ExprTree::Mul : ExprTree::Xor;
 		m_ctx->setVarnode(m_instr->m_output, new ExprTree::OperationalNode(expr, nodeMask, opType, m_instr));
 		break;
@@ -141,9 +141,9 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
 		auto shiftExpr = requestVarnode(m_instr->m_input1);
-		shiftExpr = new ExprTree::OperationalNode(shiftExpr, new ExprTree::NumberLeaf((uint64_t)0x8), ExprTree::Mul);
+		shiftExpr = new ExprTree::OperationalNode(shiftExpr, new ExprTree::NumberLeaf((uint64_t)0x8, shiftExpr->getMask()), ExprTree::Mul);
 		expr = new ExprTree::OperationalNode(expr, shiftExpr, ExprTree::Shr);
-		auto numberLeaf = new ExprTree::NumberLeaf(m_instr->m_output->getMask().getBitMask64().getValue());
+		auto numberLeaf = new ExprTree::NumberLeaf((uint64_t)-1, m_instr->m_output->getMask().getBitMask64());
 		expr = new ExprTree::OperationalNode(expr, numberLeaf, ExprTree::And, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, expr);
 		break;
@@ -152,7 +152,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::FLOAT_NEG:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		auto result = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(-1.0, m_instr->m_input0->getSize()), ExprTree::fMul, m_instr);
+		auto result = new ExprTree::OperationalNode(expr, new ExprTree::NumberLeaf(-1.0, m_instr->m_input0->getMask().getBitMask64()), ExprTree::fMul, m_instr);
 		m_ctx->setVarnode(m_instr->m_output, result);
 		break;
 	}
@@ -210,8 +210,10 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::FLOAT_LESS:
 	case InstructionId::FLOAT_LESSEQUAL:
 	{
+		//notice: the size(mask) of the left and the right part of a condition must be equal: if([sym]{4 bytes} == 0x0{4 bytes too})
 		auto op1 = requestVarnode(m_instr->m_input0);
 		auto op2 = requestVarnode(m_instr->m_input1);
+
 		auto condType = ExprTree::Condition::None;
 		switch (m_instr->m_id)
 		{
@@ -380,7 +382,7 @@ ExprTree::INode* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& p
 	if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
 		auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), 0x8);
 		auto regSymbol = m_ctx->requestRegisterExpr(reg);
-		auto readValueNode = new ExprTree::ReadValueNode(new ExprTree::OperationalNode(regSymbol, new ExprTree::NumberLeaf((uint64_t)storage.getOffset()), ExprTree::Add), paramInfo.m_size);
+		auto readValueNode = new ExprTree::ReadValueNode(new ExprTree::OperationalNode(regSymbol, new ExprTree::NumberLeaf((uint64_t)storage.getOffset(), regSymbol->getMask()), ExprTree::Add), paramInfo.m_size);
 		return createMemSymbol(readValueNode);
 	}
 
@@ -397,7 +399,7 @@ ExprTree::INode* InstructionInterpreter::requestVarnode(PCode::Varnode* varnode)
 		return m_ctx->requestSymbolExpr(varnodeSymbol);
 	}
 	if (auto varnodeConstant = dynamic_cast<PCode::ConstantVarnode*>(varnode)) {
-		return new ExprTree::NumberLeaf(varnodeConstant->m_value);
+		return new ExprTree::NumberLeaf(varnodeConstant->m_value, varnodeConstant->getMask().getBitMask64());
 	}
 	return nullptr;
 }
@@ -408,7 +410,7 @@ ExprTree::AbstractCondition* InstructionInterpreter::toBoolean(ExprTree::INode* 
 	if (auto cond = dynamic_cast<ExprTree::AbstractCondition*>(node)) {
 		return cond;
 	}
-	return new ExprTree::Condition(node, new ExprTree::NumberLeaf((uint64_t)0x0), ExprTree::Condition::Ne);
+	return new ExprTree::Condition(node, new ExprTree::NumberLeaf((uint64_t)0x0, BitMask64(1)), ExprTree::Condition::Ne);
 }
 
 ExprTree::SymbolLeaf* PCode::InstructionInterpreter::createMemSymbol(ExprTree::ReadValueNode* readValueNode, PCode::Instruction* instr) {
