@@ -121,11 +121,10 @@ namespace CE::Decompiler::ExprTree
 	class GoarTopNode : public GoarNode, public IMappedToMemory
 	{
 		bool m_isAddrGetting;
-		ISdaNode* m_mainBase;
 		int64_t m_bitOffset;
 	public:
-		GoarTopNode(ISdaNode* base, ISdaNode* mainBase, int64_t bitOffset, bool isAddrGetting)
-			: GoarNode(base), m_mainBase(mainBase), m_bitOffset(bitOffset), m_isAddrGetting(isAddrGetting)
+		GoarTopNode(ISdaNode* base, int64_t bitOffset, bool isAddrGetting)
+			: GoarNode(base), m_bitOffset(bitOffset), m_isAddrGetting(isAddrGetting)
 		{}
 
 		bool isAddrGetting() override {
@@ -137,12 +136,13 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		void getLocation(MemLocation& location) override {
-			if (auto storedInMem = dynamic_cast<IMappedToMemory*>(m_mainBase)) {
+			auto mainBase = getMainBase(this);
+			if (auto storedInMem = dynamic_cast<IMappedToMemory*>(mainBase)) {
 				storedInMem->getLocation(location);
 			}
 			else {
 				location.m_type = MemLocation::IMPLICIT;
-				location.m_baseAddrHash = m_mainBase->getHash();
+				location.m_baseAddrHash = mainBase->getHash();
 			}
 			location.m_offset += m_bitOffset / 0x8;
 			location.m_valueSize = m_base->getDataType()->getSize();
@@ -161,7 +161,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
-			return new GoarTopNode(dynamic_cast<ISdaNode*>(m_base->clone()), m_mainBase, m_bitOffset, m_isAddrGetting);
+			return new GoarTopNode(dynamic_cast<ISdaNode*>(m_base->clone()), m_bitOffset, m_isAddrGetting);
 		}
 		
 		std::string printSdaDebug() override {
@@ -169,7 +169,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 	private:
-		void gatherArrDims(INode* node, MemLocation& location) {
+		void gatherArrDims(ISdaNode* node, MemLocation& location) {
 			if (auto goarNode = dynamic_cast<GoarNode*>(node)) {
 				gatherArrDims(goarNode->m_base, location);
 				if (auto goarArrayNode = dynamic_cast<GoarArrayNode*>(node)) {
@@ -181,6 +181,13 @@ namespace CE::Decompiler::ExprTree
 					location.m_arrDims.push_back(arrDim);
 				}
 			}
+		}
+
+		ISdaNode* getMainBase(ISdaNode* node) {
+			if (auto goarNode = dynamic_cast<GoarNode*>(node)) {
+				return getMainBase(goarNode->m_base);
+			}
+			return node;
 		}
 	};
 };

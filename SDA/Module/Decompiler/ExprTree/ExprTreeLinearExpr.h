@@ -12,7 +12,9 @@ namespace CE::Decompiler::ExprTree
 		
 		LinearExpr(INumberLeaf* constTerm, OperationType operation = Add)
 			: m_constTerm(constTerm), m_operation(operation)
-		{}
+		{
+			m_constTerm->addParentNode(this);
+		}
 
 		LinearExpr(int64_t constTerm = 0x0, OperationType operation = Add)
 			: m_operation(operation)

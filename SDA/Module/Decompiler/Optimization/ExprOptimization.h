@@ -62,9 +62,11 @@ namespace CE::Decompiler::Optimization
 		}
 
 		void expandingToLinearExpr(INode* node) {
-			ExprExpandingToLinearExpr exprExpandingToLinearExpr(node);
-			exprExpandingToLinearExpr.start();
-			node = exprExpandingToLinearExpr.getNode();
+			if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
+				ExprExpandingToLinearExpr exprExpandingToLinearExpr(opNode);
+				exprExpandingToLinearExpr.start();
+				node = exprExpandingToLinearExpr.getNode();
+			}
 
 			node->iterateChildNodes([&](INode* childNode) {
 				expandingToLinearExpr(childNode);

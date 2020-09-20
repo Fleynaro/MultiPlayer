@@ -51,7 +51,9 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
-			auto sdaNode = new SdaGenericNode(m_node->clone(ctx), CloneUnit(m_calcDataType));
+			auto clonedNode = m_node->clone(ctx);
+			auto sdaNode = new SdaGenericNode(clonedNode, CloneUnit(m_calcDataType));
+			clonedNode->addParentNode(sdaNode);
 			return sdaNode;
 		}
 

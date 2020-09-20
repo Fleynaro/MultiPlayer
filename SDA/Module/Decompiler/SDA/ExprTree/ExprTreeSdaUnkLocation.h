@@ -92,6 +92,7 @@ namespace CE::Decompiler::ExprTree
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			auto clonedLinearExpr = dynamic_cast<LinearExpr*>(m_linearExpr->clone(ctx));
 			auto newUnknownLocation = new UnknownLocation(clonedLinearExpr, m_baseNodeIdx);
+			clonedLinearExpr->addParentNode(newUnknownLocation);
 			return newUnknownLocation;
 		}
 

@@ -38,7 +38,7 @@ namespace CE::Decompiler::Symbolization
 						addrGetting->setAddrGetting(false);
 					}
 				}
-				resultSdaNode = new GoarTopNode(resultSdaNode, m_baseSdaNode, m_bitOffset, isPointer);
+				resultSdaNode = new GoarTopNode(resultSdaNode, m_bitOffset, isPointer);
 
 				//if we have remaining either the offset or array index terms
 				if (resultBitOffset != 0x0 || !m_sdaTerms.empty()) {

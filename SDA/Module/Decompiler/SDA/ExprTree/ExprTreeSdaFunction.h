@@ -83,6 +83,7 @@ namespace CE::Decompiler::ExprTree
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			auto clonedFuncCall = dynamic_cast<FunctionCall*>(m_funcCall->clone(ctx));
 			auto sdaFunctionNode = new SdaFunctionNode(clonedFuncCall, m_typeContext);
+			clonedFuncCall->addParentNode(sdaFunctionNode);
 			if (m_signature) {
 				sdaFunctionNode->setSignature(m_signature);
 			}

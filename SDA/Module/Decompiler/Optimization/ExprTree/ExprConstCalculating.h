@@ -10,6 +10,61 @@ namespace CE::Decompiler::Optimization
 			: ExprModification(opNode)
 		{}
 
+		static uint64_t Calculate(uint64_t op1, uint64_t op2, OperationType operation, int size = 0x8) {
+			switch (operation)
+			{
+			case fAdd:
+				if (size == 0x4)
+				{
+					auto result = (float&)op1 + (float&)op2;
+					return (uint32_t&)result;
+				}
+				else {
+					auto result = (double&)op1 + (double&)op2;
+					return (uint64_t&)result;
+				}
+			case fMul:
+				if (size == 0x4)
+				{
+					auto result = (float&)op1 * (float&)op2;
+					return (uint32_t&)result;
+				}
+				else {
+					auto result = (double&)op1 * (double&)op2;
+					return (uint64_t&)result;
+				}
+			case fDiv:
+				if (size == 0x4)
+				{
+					auto result = (float&)op1 / (float&)op2;
+					return (uint32_t&)result;
+				}
+				else {
+					auto result = (double&)op1 / (double&)op2;
+					return (uint64_t&)result;
+				}
+			case Add:
+				return op1 + op2;
+			case Mul:
+				return op1 * op2;
+			case Div:
+				return op1 / op2;
+			case Mod:
+				return op1 % op2;
+			case And:
+				return op1 & op2;
+			case Or:
+				return op1 | op2;
+			case Xor:
+				return op1 ^ op2;
+			case Shr:
+				return op1 >> op2;
+			case Shl:
+				return op1 << op2;
+			}
+			return 0;
+		}
+
 		void start() override {
 			dispatch(getOpNode());
 		}
@@ -75,7 +130,8 @@ namespace CE::Decompiler::Optimization
 						} else if (opNode->m_operation == And) {
 							auto leftNodeMask = opNode->m_leftNode->getMask();
 							if ((leftNodeMask.getValue() & rightNumberLeaf->getValue()) == leftNodeMask.getValue()) {
-								replace(rightNumberLeaf);
+								auto newExpr = opNode->m_leftNode;
+								replace(newExpr);
 								return true;
 							}
 						}
@@ -125,31 +181,6 @@ namespace CE::Decompiler::Optimization
 				}
 			}
 			return false;
-		}
-
-		static uint64_t Calculate(uint64_t op1, uint64_t op2, OperationType operation, bool isSigned = false) {
-			switch (operation)
-			{
-			case Add:
-				return op1 + op2;
-			case Mul:
-				return op1 * op2;
-			case Div:
-				return op1 / op2;
-			case Mod:
-				return op1 % op2;
-			case And:
-				return op1 & op2;
-			case Or:
-				return op1 | op2;
-			case Xor:
-				return op1 ^ op2;
-			case Shr:
-				return op1 >> op2;
-			case Shl:
-				return op1 << op2;
-			}
-			return 0;
 		}
 	};
 };

@@ -48,7 +48,9 @@ namespace CE::Decompiler::ExprTree
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
 			auto clonedReadValueNode = dynamic_cast<ReadValueNode*>(m_readValueNode->clone(ctx));
-			return new SdaReadValueNode(clonedReadValueNode, CloneUnit(m_outDataType));
+			auto sdaReadValueNode = new SdaReadValueNode(clonedReadValueNode, CloneUnit(m_outDataType));
+			clonedReadValueNode->addParentNode(sdaReadValueNode);
+			return sdaReadValueNode;
 		}
 
 		DataTypePtr getSrcDataType() override {
@@ -81,8 +83,7 @@ namespace CE::Decompiler::ExprTree
 				else if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(getAddress())) {
 					if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaGenNode->getNode())) {
 						if (linearExpr->getTerms().size() == 1) {
-							if(auto sdaAddrNode = dynamic_cast<ISdaNode*>(*linearExpr->getTerms().begin())) {
-								sdaAddrNode = sdaAddrNode;
+							if(sdaAddrNode = dynamic_cast<ISdaNode*>(*linearExpr->getTerms().begin())) {
 								offset = linearExpr->getConstTermValue();
 							}
 						}

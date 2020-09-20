@@ -14,21 +14,26 @@ namespace CE::Decompiler::Optimization
 				MemLocation* m_location;
 				ISdaNode* m_node;
 			};
-
 			std::list<MemoryValue> m_memValues;
 		public:
 			struct MemVarInfo {
 				SdaSymbolLeaf* m_symbolLeaf;
 				Symbol::MemoryVariable* m_memVar;
-				ISdaNode* m_node = nullptr;
+				ISdaNode* m_locatableNode = nullptr;
 				int m_lastUsedMemLocIdx;
+			};
+
+			struct MemSnapshot {
+				MemLocation* m_location;
+				ILocatable* m_locatableNode;
+				ISdaNode* m_snapshotValue;
 			};
 
 			//the result of memory copy working
 			std::list<MemVarInfo> m_memVars;
 			//locations in memory that are affected within the block(this ctx reffers to) in one or another way
 			std::list<MemLocation> m_usedMemLocations;
-			std::map<Symbol::MemoryVariable*, MemLocation*> m_memVarToMemLocation;
+			std::map<Symbol::MemoryVariable*, MemSnapshot> m_memVarSnapshots;
 
 			ISdaNode* getMemValue(const MemLocation& location) const {
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
@@ -102,31 +107,34 @@ namespace CE::Decompiler::Optimization
 
 		void optimizeBlock(PrimaryTree::Block* block, MemoryContext* memCtx) {
 			for (auto& memVarInfo : memCtx->m_memVars) {
-				auto newNode = memVarInfo.m_node;
-				if (!newNode) {
-					//if it is an external memVar or we have a concrete value stored on the location, not dumb reading from it
-					auto memLocation = findLocationByMemVar(memVarInfo.m_memVar);
-					if (memLocation) {
-						if (!memCtx->hasUsed(*memLocation, memVarInfo.m_lastUsedMemLocIdx)) {
-							newNode = findValueNodeInBlocksAbove(block, memLocation);
+				auto newNode = memVarInfo.m_locatableNode;
+				auto memSnapshot = findMemSnapshotByMemVar(memVarInfo.m_memVar);
+				if (memSnapshot) {
+					if (memSnapshot->m_snapshotValue) {
+						newNode = memSnapshot->m_snapshotValue;
+					}
+					else if (!memCtx->hasUsed(*memSnapshot->m_location, memVarInfo.m_lastUsedMemLocIdx)) {
+						if (auto foundNode = findValueNodeInBlocksAbove(block, memSnapshot->m_location)) {
+							newNode = foundNode;
 						}
 					}
 				}
 
 				if (newNode) {
 					//replace the symbol with the concrete value (e.g. reading some memory location)
-					memVarInfo.m_symbolLeaf->replaceWith(newNode->clone());
+					auto newClonedNode = newNode->clone();
+					memVarInfo.m_symbolLeaf->replaceWith(newClonedNode);
 					delete memVarInfo.m_symbolLeaf;
 				}
 			}
 		}
 
-		MemLocation* findLocationByMemVar(Symbol::MemoryVariable* memVar) {
+		MemoryContext::MemSnapshot* findMemSnapshotByMemVar(Symbol::MemoryVariable* memVar) {
 			for (auto block : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
-				auto& memVarToMemLocation = m_memoryContexts[block].m_memVarToMemLocation;
+				auto& memVarToMemLocation = m_memoryContexts[block].m_memVarSnapshots;
 				auto it = memVarToMemLocation.find(memVar);
 				if (it != memVarToMemLocation.end()) {
-					return it->second;
+					return &it->second;
 				}
 			}
 			return nullptr;
@@ -170,6 +178,12 @@ namespace CE::Decompiler::Optimization
 
 		private:
 			void passNode(INode* node) {
+				if (auto assignmentNode = dynamic_cast<AssignmentNode*>(node)) {
+					if (dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
+						passNode(assignmentNode->getSrcNode());
+						return;
+					}
+				}
 				node->iterateChildNodes([&](INode* childNode) {
 					passNode(childNode);
 					});
@@ -197,8 +211,11 @@ namespace CE::Decompiler::Optimization
 											try {
 												MemLocation srcLocation;
 												srcSdaLocNode->getLocation(srcLocation);
-												auto newLocation = m_memCtx->addMemValue(srcLocation, srcSdaNode);
-												m_memCtx->m_memVarToMemLocation[memVar] = newLocation;
+												MemoryContext::MemSnapshot memSnapshot;
+												memSnapshot.m_snapshotValue = m_memCtx->getMemValue(srcLocation);
+												memSnapshot.m_location = m_memCtx->addMemValue(srcLocation, srcSdaNode);
+												memSnapshot.m_locatableNode = srcSdaLocNode;
+												m_memCtx->m_memVarSnapshots[memVar] = memSnapshot;
 											}
 											catch (std::exception&) {}
 										}
@@ -218,12 +235,11 @@ namespace CE::Decompiler::Optimization
 						memVarInfo.m_lastUsedMemLocIdx = (int)m_memCtx->m_usedMemLocations.size() - 1;
 
 						//if the symbol not found within block then it means to be declared in the blocks above
-						auto it = m_memCtx->m_memVarToMemLocation.find(memVar);
-						if (it != m_memCtx->m_memVarToMemLocation.end()) {
-							//if find the location of the internal memVar then recieve a value
-							auto valueNode = m_memCtx->getMemValue(*it->second);
-							if (valueNode) {
-								memVarInfo.m_node = valueNode;
+						auto it = m_memCtx->m_memVarSnapshots.find(memVar);
+						if (it != m_memCtx->m_memVarSnapshots.end()) {
+							auto& memSnapshot = it->second;
+							if (memSnapshot.m_locatableNode == m_memCtx->getMemValue(*it->second.m_location)) {
+								memVarInfo.m_locatableNode = memSnapshot.m_locatableNode;
 							}
 						}
 						m_memCtx->m_memVars.push_back(memVarInfo);
