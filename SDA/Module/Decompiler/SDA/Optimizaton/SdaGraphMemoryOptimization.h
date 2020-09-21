@@ -86,6 +86,7 @@ namespace CE::Decompiler::Optimization
 		};
 		
 		std::map<PrimaryTree::Block*, MemoryContext> m_memoryContexts;
+		std::list<SdaSymbolLeaf*> m_removedSymbolLeafs;
 	public:
 		SdaGraphMemoryOptimization(SdaCodeGraph* sdaCodeGraph)
 			: SdaGraphModification(sdaCodeGraph)
@@ -94,6 +95,10 @@ namespace CE::Decompiler::Optimization
 		void start() override {
 			initEveryMemCtxForEachBlocks();
 			optimizeAllBlocksUsingMemCtxs();
+
+			for (auto symbolLeaf : m_removedSymbolLeafs) {
+				delete symbolLeaf;
+			}
 		}
 
 	private:
@@ -132,7 +137,7 @@ namespace CE::Decompiler::Optimization
 					//replace the symbol with the concrete value (e.g. reading some memory location)
 					auto newClonedNode = newNode->clone();
 					memVarInfo.m_symbolLeaf->replaceWith(newClonedNode);
-					delete memVarInfo.m_symbolLeaf;
+					m_removedSymbolLeafs.push_back(memVarInfo.m_symbolLeaf);
 				}
 			}
 		}

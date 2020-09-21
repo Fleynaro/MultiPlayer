@@ -171,10 +171,10 @@ namespace CE::Decompiler::Symbolization
 					auto addrDataType = DataType::CloneUnit(addrSdaNode->getDataType());
 					addrDataType->removePointerLevelOutOfFront();
 					if (sdaReadValueNode->getSize() == addrDataType->getSize()) {
-						if (auto addrGettingNode = dynamic_cast<IMappedToMemory*>(addrSdaNode)) {
-							if (addrGettingNode->isAddrGetting()) {
-								addrGettingNode->setAddrGetting(false);
-								sdaReadValueNode->replaceWith(addrGettingNode);
+						if (auto mappedToMemory = dynamic_cast<IMappedToMemory*>(addrSdaNode)) {
+							if (mappedToMemory->isAddrGetting()) {
+								mappedToMemory->setAddrGetting(false);
+								sdaReadValueNode->replaceWith(mappedToMemory);
 								delete sdaReadValueNode;
 								return;
 							}

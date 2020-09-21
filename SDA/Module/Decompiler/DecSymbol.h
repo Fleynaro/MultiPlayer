@@ -84,15 +84,8 @@ namespace CE::Decompiler::Symbol
 		}
 
 		int getId() {
-			return m_id;
+			return getHash().getHashValue() % 10000;
 		}
-
-		void setId(int id) {
-			m_id = id;
-		}
-
-	private:
-		int m_id = 0x0;
 	};
 
 	class LocalVariable : public AbstractVariable

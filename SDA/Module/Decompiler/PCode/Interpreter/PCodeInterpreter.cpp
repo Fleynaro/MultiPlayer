@@ -382,7 +382,9 @@ ExprTree::INode* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& p
 	if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
 		auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), 0x8);
 		auto regSymbol = m_ctx->requestRegisterExpr(reg);
-		auto readValueNode = new ExprTree::ReadValueNode(new ExprTree::OperationalNode(regSymbol, new ExprTree::NumberLeaf((uint64_t)storage.getOffset(), regSymbol->getMask()), ExprTree::Add), paramInfo.m_size);
+		auto offsetNumber = new ExprTree::NumberLeaf((uint64_t)storage.getOffset() + 0x18, regSymbol->getMask());
+		auto opAddNode = new ExprTree::OperationalNode(regSymbol, offsetNumber, ExprTree::Add);
+		auto readValueNode = new ExprTree::ReadValueNode(opAddNode, paramInfo.m_size);
 		return createMemSymbol(readValueNode);
 	}
 

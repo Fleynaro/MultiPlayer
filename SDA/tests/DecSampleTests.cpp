@@ -179,8 +179,29 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		test->enableAllAndShowAll();
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test107");
 		sig->addParameter("param1", findType("int32_t", ""));
-		sig->addParameter("param2", findType("int32_t", ""));
-		sig->setReturnType(findType("int32_t"));
+		
+		{
+			auto valueUI = typeManager()->createStructure("ValueUI107", "");
+			valueUI->addField(0x0, "m_value", findType("uint64_t", ""));
+			valueUI->addField(0x8, "m_type", findType("uint32_t", ""));
+			valueUI->addField(0xC, "m_unk", findType("uint32_t", ""));
+			valueUI->addField(0x10, "m_formatText", findType("uint64_t", ""));
+			//todo: test this sample without these definitions
+			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value1"), -0xA8);
+			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value2"), -0x88);
+			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value3"), -0x68);
+			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value4"), -0x48);
+			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value5"), -0x28);
+
+			auto uiDrawSig = test->m_functions[0xfffffffffffedf50] = typeManager()->createSignature("UI_Draw107");
+			uiDrawSig->addParameter("param1", findType("uint64_t", ""));
+			uiDrawSig->addParameter("param2", findType("uint64_t", ""));
+			uiDrawSig->addParameter("param3", GetUnit(valueUI, "[1]"));
+			uiDrawSig->addParameter("param4", GetUnit(valueUI, "[1]"));
+			uiDrawSig->addParameter("param5", GetUnit(valueUI, "[1]"));
+			uiDrawSig->addParameter("param6", GetUnit(valueUI, "[1]"));
+			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(uiDrawSig), "UI_Draw"), 0xfffffffffffedf50);
+		}
 	}
 }
 

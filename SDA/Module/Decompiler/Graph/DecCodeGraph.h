@@ -73,21 +73,6 @@ namespace CE::Decompiler
 			return ctx.m_graph;
 		}
 
-		void generateSymbolIds() {
-			int memVar_id = 1;
-			int localVar_id = 1;
-			int funcVar_id = 1;
-			for (auto symbol : m_symbols) {
-				if (auto var = dynamic_cast<Symbol::MemoryVariable*>(symbol)) {
-					var->setId(memVar_id++);
-				} else if (auto var = dynamic_cast<Symbol::LocalVariable*>(symbol)) {
-					var->setId(localVar_id++);
-				} else if (auto var = dynamic_cast<Symbol::FunctionResultVar*>(symbol)) {
-					var->setId(funcVar_id++);
-				}
-			}
-		}
-
 		void sortBlocksByLevel() {
 			m_decompiledBlocks.sort([](PrimaryTree::Block* a, PrimaryTree::Block* b) {
 				return a->m_level < b->m_level;

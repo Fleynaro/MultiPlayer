@@ -44,7 +44,6 @@ namespace CE::Decompiler
 
 			GraphBlockLinker graphBlockLinker(this);
 			graphBlockLinker.start();
-			m_decompiledGraph->generateSymbolIds();
 		}
 
 		void buildDecompiledGraph();

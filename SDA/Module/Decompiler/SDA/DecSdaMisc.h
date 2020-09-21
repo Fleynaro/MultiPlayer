@@ -41,6 +41,8 @@ namespace CE::Decompiler::Symbolization
 				if (size == 0x8)
 					return getType(SystemType::Double);
 			}
+			if (size == 0x0)
+				return getType(SystemType::Void);
 			if (size == 0x1)
 				return getType(sign ? SystemType::Char : SystemType::Byte);
 			if (size == 0x2)

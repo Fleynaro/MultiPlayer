@@ -30,6 +30,5 @@ namespace CE::Decompiler::Optimization
 		GraphUselessLineDeleting.start();
 		
 		DecompiledCodeGraph::CalculateHeightForDecBlocks(decGraph->getStartBlock());
-		decGraph->generateSymbolIds();
 	}
 };

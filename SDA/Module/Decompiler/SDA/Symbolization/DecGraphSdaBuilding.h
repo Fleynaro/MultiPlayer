@@ -284,7 +284,7 @@ namespace CE::Decompiler::Symbolization
 					suffix = "mem";
 				else if (dynamic_cast<Symbol::FunctionResultVar*>(symbol))
 					suffix = "func";
-				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, suffix + "Var" + std::to_string(symbolWithId->getId()), 0, size, instrOffsets);
+				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, suffix + "Var" + Generic::String::NumberToHex(symbolWithId->getId()), 0, size, instrOffsets);
 				return sdaSymbol;
 			}
 			return nullptr;
