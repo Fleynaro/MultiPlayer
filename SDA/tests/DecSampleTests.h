@@ -51,6 +51,7 @@ public:
 		: ProgramModuleFixture(false)
 	{
 		m_defSignature = createDefSig("defSignature");
+		createTestDataTypes();
 		initSampleTestHashes();
 		initSampleTest();
 	}
@@ -58,6 +59,34 @@ public:
 	void initSampleTestHashes();
 
 	void initSampleTest();
+
+	CE::DataType::Structure* m_vec3D = nullptr;
+	CE::DataType::Structure* m_vecExt3D = nullptr;
+	CE::DataType::Structure* m_vec4D = nullptr;
+	CE::DataType::Structure* m_matrix4x4 = nullptr;
+	void createTestDataTypes() {
+		m_vec3D = typeManager()->createStructure("testVector3D", "");
+		m_vec3D->addField(0x4 * 0, "x", findType("float", ""));
+		m_vec3D->addField(0x4 * 1, "y", findType("float", ""));
+		m_vec3D->addField(0x4 * 2, "z", findType("float", ""));
+
+		m_vecExt3D = typeManager()->createStructure("testVectorExt3D", "");
+		m_vecExt3D->addField(0x8 * 0, "x", findType("float", ""));
+		m_vecExt3D->addField(0x8 * 1, "y", findType("float", ""));
+		m_vecExt3D->addField(0x8 * 2, "z", findType("float", ""));
+		
+		m_vec4D = typeManager()->createStructure("testVector4D", "");
+		m_vec4D->addField(0x4 * 0, "x", findType("float", ""));
+		m_vec4D->addField(0x4 * 1, "y", findType("float", ""));
+		m_vec4D->addField(0x4 * 2, "z", findType("float", ""));
+		m_vec4D->addField(0x4 * 3, "w", findType("float", ""));
+
+		m_matrix4x4 = typeManager()->createStructure("testMatrix4x4", "");
+		m_matrix4x4->addField(m_vec4D->getSize() * 0, "vec1", GetUnit(m_vec4D));
+		m_matrix4x4->addField(m_vec4D->getSize() * 1, "vec2", GetUnit(m_vec4D));
+		m_matrix4x4->addField(m_vec4D->getSize() * 2, "vec3", GetUnit(m_vec4D));
+		m_matrix4x4->addField(m_vec4D->getSize() * 3, "vec4", GetUnit(m_vec4D));
+	}
 
 	bool checkHash(int type, std::list<std::pair<int, HS::Value>>& sampleTestHashes, HS::Value hash, SampleTest* sampleTest);
 

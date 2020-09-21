@@ -19,6 +19,8 @@ bool Unit::isUserDefined() {
 }
 
 bool Unit::isFloatingPoint() {
+	if (isPointer())
+		return false;
 	if (auto sysType = dynamic_cast<SystemType*>(getBaseType(true, false))) {
 		return sysType->getSet() == SystemType::Real;
 	}

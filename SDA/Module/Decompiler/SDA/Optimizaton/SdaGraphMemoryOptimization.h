@@ -24,7 +24,7 @@ namespace CE::Decompiler::Optimization
 			};
 
 			struct MemSnapshot {
-				MemLocation* m_location;
+				MemLocation m_location;
 				ILocatable* m_locatableNode;
 				ISdaNode* m_snapshotValue;
 			};
@@ -44,22 +44,30 @@ namespace CE::Decompiler::Optimization
 				return nullptr;
 			}
 
-			MemLocation* addMemValue(const MemLocation& location, ISdaNode* sdaNode) {
+			void addMemValue(const MemLocation& location, ISdaNode* sdaNode) {
 				auto newLocation = createNewLocation(location);
 				MemoryValue memoryValue;
 				memoryValue.m_location = newLocation;
 				memoryValue.m_node = sdaNode;
 				m_memValues.push_back(memoryValue);
-				return newLocation;
 			}
 
 			MemLocation* createNewLocation(const MemLocation& location) {
 				//clear all location that are intersecting this one
-				for (auto it = m_memValues.begin(); it != m_memValues.end(); it ++) {
+				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
 					if (it->m_location->intersect(location)) {
 						m_memValues.erase(it);
 					}
 				}
+				for (auto& pair : m_memVarSnapshots) {
+					auto& snapshot = pair.second;
+					if (snapshot.m_locatableNode) {
+						if (snapshot.m_location.intersect(location)) {
+							snapshot.m_locatableNode = nullptr;
+						}
+					}
+				}
+
 				//mark the input location as used within the current context
 				m_usedMemLocations.push_back(location);
 				return &(*m_usedMemLocations.rbegin()); //dangerous: important no to copy the mem ctx anywhere
@@ -113,8 +121,8 @@ namespace CE::Decompiler::Optimization
 					if (memSnapshot->m_snapshotValue) {
 						newNode = memSnapshot->m_snapshotValue;
 					}
-					else if (!memCtx->hasUsed(*memSnapshot->m_location, memVarInfo.m_lastUsedMemLocIdx)) {
-						if (auto foundNode = findValueNodeInBlocksAbove(block, memSnapshot->m_location)) {
+					else if (!memCtx->hasUsed(memSnapshot->m_location, memVarInfo.m_lastUsedMemLocIdx)) {
+						if (auto foundNode = findValueNodeInBlocksAbove(block, &memSnapshot->m_location)) {
 							newNode = foundNode;
 						}
 					}
@@ -212,8 +220,8 @@ namespace CE::Decompiler::Optimization
 												MemLocation srcLocation;
 												srcSdaLocNode->getLocation(srcLocation);
 												MemoryContext::MemSnapshot memSnapshot;
+												memSnapshot.m_location = srcLocation;
 												memSnapshot.m_snapshotValue = m_memCtx->getMemValue(srcLocation);
-												memSnapshot.m_location = m_memCtx->addMemValue(srcLocation, srcSdaNode);
 												memSnapshot.m_locatableNode = srcSdaLocNode;
 												m_memCtx->m_memVarSnapshots[memVar] = memSnapshot;
 											}
@@ -238,9 +246,7 @@ namespace CE::Decompiler::Optimization
 						auto it = m_memCtx->m_memVarSnapshots.find(memVar);
 						if (it != m_memCtx->m_memVarSnapshots.end()) {
 							auto& memSnapshot = it->second;
-							if (memSnapshot.m_locatableNode == m_memCtx->getMemValue(*it->second.m_location)) {
-								memVarInfo.m_locatableNode = memSnapshot.m_locatableNode;
-							}
+							memVarInfo.m_locatableNode = memSnapshot.m_locatableNode;
 						}
 						m_memCtx->m_memVars.push_back(memVarInfo);
 					}
