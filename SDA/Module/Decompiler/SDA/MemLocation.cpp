@@ -2,6 +2,13 @@
 
 using namespace CE::Decompiler;
 
+void MemLocation::addArrayDim(int itemSize, int itemsMaxCount) {
+	ArrayDim arrayDim;
+	arrayDim.m_itemSize = itemSize;
+	arrayDim.m_itemsMaxCount = itemsMaxCount;
+	m_arrDims.push_back(arrayDim);
+}
+
 bool MemLocation::intersect(const MemLocation& location) const {
 	if (m_type == ALL || location.m_type == ALL)
 		return true;
@@ -15,7 +22,7 @@ bool MemLocation::intersect(const MemLocation& location) const {
 	auto minBoundary = -C;
 	auto maxBoundary = minBoundary + (Size1 + Size2);
 	auto Delta = 0;
-	return Delta >= minBoundary && Delta < maxBoundary;
+	return Delta > minBoundary && Delta < maxBoundary;
 }
 
 bool MemLocation::equal(const MemLocation& location) const {

@@ -41,7 +41,7 @@ namespace CE::Decompiler
 					}
 				}
 				else {
-					auto storage = ParameterStorage(paramIdx, ParameterStorage::STORAGE_STACK, ZYDIS_REGISTER_RSP, (paramIdx - 4) * 0x8);
+					auto storage = ParameterStorage(paramIdx, ParameterStorage::STORAGE_STACK, ZYDIS_REGISTER_RSP, paramIdx * 0x8);
 					result.push_back(ParameterInfo(paramType->getSize(), storage));
 				}
 

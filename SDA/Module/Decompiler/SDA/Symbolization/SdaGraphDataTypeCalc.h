@@ -31,7 +31,7 @@ namespace CE::Decompiler::Symbolization
 		DataTypeFactory* m_dataTypeFactory;
 		//used to proceed passing
 		bool m_nextPassRequiared = false;
-
+		
 		void pass(const std::list<Block::BlockTopNode*>& allTopNodes) {
 			for (auto topNode : allTopNodes) {
 				auto node = topNode->getNode();
@@ -220,9 +220,11 @@ namespace CE::Decompiler::Symbolization
 			}
 			else if (auto unknownLocation = dynamic_cast<UnknownLocation*>(sdaNode)) {
 				//if it is a pointer, see to make sure it could'be transformed to an array or a class field
-				if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
-					unknownLocation->replaceWith(goarNode);
-					delete unknownLocation;
+				if (!dynamic_cast<GoarTopNode*>(unknownLocation->getBaseSdaNode())) {
+					if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
+						unknownLocation->replaceWith(goarNode);
+						delete unknownLocation;
+					}
 				}
 			}
 		}

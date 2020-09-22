@@ -116,13 +116,12 @@ namespace CE::Decompiler::ExprTree
 				location.m_type = MemLocation::IMPLICIT;
 				location.m_baseAddrHash = baseSdaNode->getHash();
 			}
-			location.m_offset = getConstTermValue();
+			location.m_offset += getConstTermValue();
 			location.m_valueSize = valueDataType->getSize();
 			for (auto term : getArrTerms()) {
 				auto multiplier = term.getMultiplier();
-				MemLocation::ArrayDim arrDim;
-				arrDim.m_itemSize = multiplier ? (int)multiplier->getValue() : 1;
-				location.m_arrDims.push_back(arrDim);
+				auto itemSize = multiplier ? (int)multiplier->getValue() : 1;
+				location.addArrayDim(itemSize);
 			}
 		}
 

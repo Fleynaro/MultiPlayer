@@ -1,0 +1,182 @@
+
+
+CREATE OR REPLACE FUNCTION myTriggerFunc() RETURNS TRIGGER AS $$
+    DECLARE
+        _columns refcursor;
+        _column_name varchar;
+        _columns_list varchar;
+        _modification_type char;
+        _source_table varchar;
+        _destination_table varchar;
+    BEGIN
+        OPEN _columns FOR SELECT column_name FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = tg_table_name ORDER BY ordinal_position;
+        FETCH _columns INTO _column_name;
+        _columns_list = quote_ident(_column_name);
+        LOOP
+            FETCH _columns INTO _column_name;
+            IF NOT FOUND THEN EXIT; END IF;
+            _columns_list = _columns_list || ',' || quote_ident(_column_name);
+        END LOOP;
+        CLOSE _columns;
+        _columns_list = _columns_list || ',modification_date,modification_user,modification_type';
+
+        RAISE NOTICE '_columns_list = %', _columns_list;
+
+        _destination_table = tg_argv[0];
+        if TG_OP = 'DELETE' THEN
+            _source_table = 'old_table';
+            _modification_type = 'D';
+        ELSE
+            _source_table = 'new_table';
+            if TG_OP = 'UPDATE' THEN
+                _modification_type = 'U';
+            ELSE
+                _modification_type = 'I';
+            END IF;
+        END IF;
+
+        EXECUTE format('INSERT INTO %s (%s) SELECT n.*, now(), user, ''%s'' FROM %s n',
+            _destination_table, _columns_list, _modification_type, _source_table);
+        RETURN NULL;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION makeCloneForTable(_table_name varchar)
+    RETURNS boolean AS
+$$
+    DECLARE
+        _trigger_prefix varchar;
+        _clone_table_name varchar;
+    BEGIN
+        _clone_table_name = 'cl_' || _table_name;
+        _trigger_prefix = _table_name;
+        _table_name = quote_ident(_table_name);
+        _clone_table_name = quote_ident(_clone_table_name);
+
+        EXECUTE format('CREATE TABLE %s (like %s including defaults)', _clone_table_name, _table_name);
+        EXECUTE format('ALTER TABLE %s
+            ADD COLUMN modification_date timestamp without time zone', _clone_table_name);
+        EXECUTE format('ALTER TABLE %s
+            ADD COLUMN modification_user character varying(50)', _clone_table_name);
+        EXECUTE format('ALTER TABLE %s
+            ADD COLUMN modification_type character', _clone_table_name);
+
+        EXECUTE format(
+            'CREATE TRIGGER %s AFTER INSERT ON %s REFERENCING NEW TABLE AS new_table FOR EACH STATEMENT EXECUTE PROCEDURE myTriggerFunc(%L)',
+            quote_ident(_trigger_prefix || '_ins'), _table_name, _clone_table_name);
+        EXECUTE format(
+            'CREATE TRIGGER %s AFTER UPDATE ON %s REFERENCING OLD TABLE AS old_table NEW TABLE AS new_table FOR EACH STATEMENT EXECUTE PROCEDURE myTriggerFunc(%L)',
+            quote_ident(_trigger_prefix || '_upd'), _table_name, _clone_table_name);
+        EXECUTE format(
+            'CREATE TRIGGER %s AFTER DELETE ON %s REFERENCING OLD TABLE AS old_table FOR EACH STATEMENT EXECUTE PROCEDURE myTriggerFunc(%L)',
+           quote_ident(_trigger_prefix || '_del'), _table_name, _clone_table_name);
+        RETURN true;
+    END;
+$$ LANGUAGE plpgsql
+    RETURNS NULL ON NULL INPUT;
+
+CREATE OR REPLACE FUNCTION makeClonesForAllTables()
+    RETURNS boolean AS
+$$
+    DECLARE
+        _tables refcursor;
+        _table_name varchar;
+    BEGIN
+        OPEN _tables FOR SELECT table_name FROM information_schema.tables
+           WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+        LOOP
+            FETCH _tables INTO _table_name;
+            IF NOT FOUND THEN EXIT; END IF;
+            PERFORM makeCloneForTable(_table_name);
+        END LOOP;
+        CLOSE _tables;
+        RETURN true;
+    END;
+$$ LANGUAGE plpgsql
+    RETURNS NULL ON NULL INPUT;
+
+CREATE OR REPLACE FUNCTION clearAllClones()
+    RETURNS boolean AS
+$$
+    DECLARE
+        _tables refcursor;
+        _table_name varchar;
+    BEGIN
+        OPEN _tables FOR SELECT table_name FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name LIKE 'cl_%';
+        LOOP
+            FETCH _tables INTO _table_name;
+            IF NOT FOUND THEN EXIT; END IF;
+            EXECUTE format('DROP TABLE %s', quote_ident(_table_name));
+        END LOOP;
+        CLOSE _tables;
+        RETURN true;
+    END;
+$$ LANGUAGE plpgsql
+    RETURNS NULL ON NULL INPUT;
+
+
+
+--создадим тестовую таблицу, с которой будем работать
+CREATE TABLE test
+(
+    column_int integer,
+    column_str varchar
+);
+
+--создадим ещё пару таблиц для проверки на SQL инъекции
+CREATE TABLE "test;DROP TABLE test;"
+(
+    c1 integer
+);
+CREATE TABLE "test"";DROP TABLE test;SELECT * FROM """
+(
+    c1 integer
+);
+
+--создадим клона для всех таблиц в схеме и для этой в частности
+SELECT makeClonesForAllTables();
+
+--добавим 2 записи в таблицу test
+INSERT INTO test VALUES (100, 'value1'), (102, 'value2');
+--посмотрим результат
+SELECT * FROM cl_test;
+
+--обновим все записи
+UPDATE test SET column_int=200 WHERE column_int > 0;
+--посмотрим результат
+SELECT * FROM cl_test;
+
+--удалим все записи
+DELETE FROM test WHERE column_int = 200;
+--посмотрим результат
+SELECT * FROM cl_test;
+
+
+--поменяем местами колонку column_int
+ALTER TABLE test DROP COLUMN column_int;
+ALTER TABLE test ADD COLUMN column_int integer;
+
+--добавим снова 2 записи в таблицу test
+INSERT INTO test VALUES ('value3', 1001), ('value4', 1002);
+--посмотрим результат
+SELECT * FROM cl_test;
+
+--удалим все записи
+DELETE FROM test WHERE column_int > 0;
+--посмотрим результат
+SELECT * FROM cl_test;
+
+
+--как сработает триггер на таких таблицах
+INSERT INTO "test;DROP TABLE test;" VALUES (100);
+INSERT INTO "test"";DROP TABLE test;SELECT * FROM """ VALUES (100);
+
+
+SELECT clearAllClones();
+DROP FUNCTION myTriggerFunc() CASCADE;
+DROP FUNCTION makeClonesForAllTables();
+DROP FUNCTION clearAllClones();
+DROP TABLE "test;DROP TABLE test;", "test"";DROP TABLE test;SELECT * FROM """;
+DROP TABLE test;

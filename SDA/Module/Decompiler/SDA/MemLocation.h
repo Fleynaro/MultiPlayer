@@ -5,7 +5,13 @@
 namespace CE::Decompiler
 {
 	//Means some place in the memory of the process
-	struct MemLocation {
+	class MemLocation
+	{
+		struct ArrayDim {
+			int m_itemSize;
+			int m_itemsMaxCount;
+		};
+	public:
 		//A location type often represented as stack, global space or pointer to some stuff(stack, global space, pile)
 		enum LOCATION_TYPE {
 			STACK,
@@ -14,16 +20,13 @@ namespace CE::Decompiler
 			ALL
 		};
 
-		struct ArrayDim {
-			int m_itemSize = 0;
-			int m_itemsMaxCount = -1;
-		};
-
 		LOCATION_TYPE m_type;
 		HS m_baseAddrHash = 0x0;
 		int64_t m_offset = 0x0;
 		std::list<ArrayDim> m_arrDims;
 		int m_valueSize = 0x0;
+
+		void addArrayDim(int itemSize, int itemsMaxCount = -1);
 
 		bool intersect(const MemLocation& location) const;
 

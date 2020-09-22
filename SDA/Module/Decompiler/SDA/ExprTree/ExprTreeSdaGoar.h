@@ -175,10 +175,9 @@ namespace CE::Decompiler::ExprTree
 				if (auto goarArrayNode = dynamic_cast<GoarArrayNode*>(node)) {
 					if (dynamic_cast<INumberLeaf*>(goarArrayNode->m_indexNode))
 						return;
-					MemLocation::ArrayDim arrDim;
-					arrDim.m_itemSize = goarArrayNode->getDataType()->getSize();
-					arrDim.m_itemsMaxCount = (goarArrayNode->m_itemsMaxCount > 1 ? goarArrayNode->m_itemsMaxCount : -1);
-					location.m_arrDims.push_back(arrDim);
+					auto itemSize = goarArrayNode->getDataType()->getSize();
+					auto itemsMaxCount = (goarArrayNode->m_itemsMaxCount > 1 ? goarArrayNode->m_itemsMaxCount : -1);
+					location.addArrayDim(itemSize, itemsMaxCount);
 				}
 			}
 		}
