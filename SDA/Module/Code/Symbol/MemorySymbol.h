@@ -1,5 +1,6 @@
 #pragma once
 #include "AbstractSymbol.h"
+#include "IMemorySymbol.h"
 
 namespace CE::Symbol
 {
@@ -24,12 +25,6 @@ namespace CE::Symbol
 		}
 	};
 
-	class IMemorySymbol : virtual public ISymbol
-	{
-	public:
-		virtual int64_t getOffset() = 0;
-	};
-
 	class GlobalVarSymbol : public MemorySymbol, public IMemorySymbol
 	{
 	public:
@@ -41,8 +36,8 @@ namespace CE::Symbol
 			return GLOBAL_VAR;
 		}
 
-		int64_t getOffset() override {
-			return *m_offsets.begin();
+		std::list<Decompiler::Storage> getStorages() override {
+			return { Decompiler::Storage(Decompiler::Storage::STORAGE_GLOBAL, 0, *m_offsets.begin()) };
 		}
 	};
 
@@ -57,8 +52,8 @@ namespace CE::Symbol
 			return LOCAL_STACK_VAR;
 		}
 
-		int64_t getOffset() override {
-			return *m_offsets.begin();
+		std::list<Decompiler::Storage> getStorages() override {
+			return { Decompiler::Storage(Decompiler::Storage::STORAGE_STACK, 0, *m_offsets.begin()) };
 		}
 	};
 

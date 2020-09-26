@@ -181,11 +181,17 @@ namespace CE::Decompiler::Symbolization
 						offset = toLocalOffset(offset);
 
 					//replace
-					SdaSymbolLeaf* newSdaSymbolLeaf;
+					SdaSymbolLeaf* newSdaSymbolLeaf = nullptr;
 					if (auto memSymbol = dynamic_cast<CE::Symbol::IMemorySymbol*>(sdaSymbol)) {
-						newSdaSymbolLeaf = new SdaMemSymbolLeaf(memSymbol, sdaSymbolLeafToReplace->m_symbol, true);
+						for (auto& storage : memSymbol->getStorages()) {
+							if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
+								newSdaSymbolLeaf = new SdaMemSymbolLeaf(memSymbol, sdaSymbolLeafToReplace->m_symbol, storage.getOffset(), true);
+								break;
+							}
+						}
 					}
-					else {
+
+					if(!newSdaSymbolLeaf) {
 						newSdaSymbolLeaf = new SdaSymbolLeaf(sdaSymbol, sdaSymbolLeafToReplace->m_symbol);
 						m_replacedSymbols[sdaSymbolLeafToReplace->m_symbol] = newSdaSymbolLeaf;
 					}

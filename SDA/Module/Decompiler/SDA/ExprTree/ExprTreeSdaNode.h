@@ -98,4 +98,16 @@ namespace CE::Decompiler::ExprTree
 	protected:
 		virtual ISdaNode* cloneSdaNode(NodeCloneContext* ctx) = 0;
 	};
+
+	class SdaTopNode : public TopNode
+	{
+	public:
+		SdaTopNode(ISdaNode* node)
+			: TopNode(node)
+		{}
+
+		ISdaNode* getSdaNode() {
+			return dynamic_cast<ISdaNode*>(getNode());
+		}
+	};
 };

@@ -210,6 +210,10 @@ namespace CE::Decompiler::Symbolization
 					paramIdx++;
 				}
 			}
+			else if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode)) {
+				//sdaSymbolLeaf->getSdaSymbol()->g
+				//create UnknownLocation...
+			}
 			else if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(sdaNode)) {
 				auto valueMask = sdaNumberLeaf->getMask();
 				sdaNumberLeaf->setDataType(m_dataTypeFactory->getDataTypeByNumber(sdaNumberLeaf->m_value));

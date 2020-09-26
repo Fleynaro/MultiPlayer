@@ -56,9 +56,11 @@ namespace CE::Decompiler::ExprTree
 
 	class SdaMemSymbolLeaf : public SdaSymbolLeaf, public IMappedToMemory
 	{
+		bool m_isAddrGetting;
+		int64_t m_offset;
 	public:
-		SdaMemSymbolLeaf(CE::Symbol::IMemorySymbol* sdaSymbol, Symbol::Symbol* decSymbol, bool isAddrGetting = false)
-			: SdaSymbolLeaf(sdaSymbol, decSymbol), m_isAddrGetting(isAddrGetting)
+		SdaMemSymbolLeaf(CE::Symbol::IMemorySymbol* sdaSymbol, Symbol::Symbol* decSymbol, int64_t offset, bool isAddrGetting = false)
+			: SdaSymbolLeaf(sdaSymbol, decSymbol), m_offset(offset), m_isAddrGetting(isAddrGetting)
 		{}
 
 		CE::Symbol::IMemorySymbol* getSdaSymbol() {
@@ -73,7 +75,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		HS getHash() override {
-			return SdaSymbolLeaf::getHash() << getSdaSymbol()->getOffset();
+			return SdaSymbolLeaf::getHash() << m_offset;
 		}
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
@@ -90,11 +92,9 @@ namespace CE::Decompiler::ExprTree
 
 		void getLocation(MemLocation& location) override {
 			location.m_type = (getSdaSymbol()->getType() == CE::Symbol::LOCAL_STACK_VAR ? MemLocation::STACK : MemLocation::GLOBAL);
-			location.m_offset = getSdaSymbol()->getOffset();
+			location.m_offset = m_offset;
 			location.m_valueSize = m_sdaSymbol->getDataType()->getSize();
 		}
-	private:
-		bool m_isAddrGetting;
 	};
 
 	class SdaNumberLeaf : public SdaNode, public INumberLeaf

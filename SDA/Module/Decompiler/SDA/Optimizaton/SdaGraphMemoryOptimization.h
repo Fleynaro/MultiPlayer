@@ -12,7 +12,7 @@ namespace CE::Decompiler::Optimization
 		{
 			struct MemoryValue {
 				MemLocation* m_location;
-				ISdaNode* m_node;
+				SdaTopNode* m_topNode;
 			};
 			std::list<MemoryValue> m_memValues;
 		public:
@@ -26,7 +26,7 @@ namespace CE::Decompiler::Optimization
 			struct MemSnapshot {
 				MemLocation m_location;
 				ILocatable* m_locatableNode;
-				ISdaNode* m_snapshotValue;
+				SdaTopNode* m_snapshotValue;
 			};
 
 			//the result of memory copy working
@@ -35,10 +35,16 @@ namespace CE::Decompiler::Optimization
 			std::list<MemLocation> m_usedMemLocations;
 			std::map<Symbol::MemoryVariable*, MemSnapshot> m_memVarSnapshots;
 
-			ISdaNode* getMemValue(const MemLocation& location) const {
+			void clear() {
+				for (auto& memValue : m_memValues) {
+					delete memValue.m_topNode;
+				}
+			}
+
+			SdaTopNode* getMemValue(const MemLocation& location) const {
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
 					if (it->m_location->equal(location)) {
-						return it->m_node;
+						return it->m_topNode;
 					}
 				}
 				return nullptr;
@@ -48,7 +54,7 @@ namespace CE::Decompiler::Optimization
 				auto newLocation = createNewLocation(location);
 				MemoryValue memoryValue;
 				memoryValue.m_location = newLocation;
-				memoryValue.m_node = sdaNode;
+				memoryValue.m_topNode = new SdaTopNode(sdaNode);
 				m_memValues.push_back(memoryValue);
 			}
 
@@ -99,6 +105,11 @@ namespace CE::Decompiler::Optimization
 			for (auto symbolLeaf : m_removedSymbolLeafs) {
 				delete symbolLeaf;
 			}
+
+			for (auto& pair : m_memoryContexts) {
+				auto& memCtx = pair.second;
+				memCtx.clear();
+			}
 		}
 
 	private:
@@ -124,7 +135,7 @@ namespace CE::Decompiler::Optimization
 				auto memSnapshot = findMemSnapshotByMemVar(memVarInfo.m_memVar);
 				if (memSnapshot) {
 					if (memSnapshot->m_snapshotValue) {
-						newNode = memSnapshot->m_snapshotValue;
+						newNode = memSnapshot->m_snapshotValue->getSdaNode();
 					}
 					else if (!memCtx->hasUsed(memSnapshot->m_location, memVarInfo.m_lastUsedMemLocIdx)) {
 						if (auto foundNode = findValueNodeInBlocksAbove(block, &memSnapshot->m_location)) {
@@ -162,8 +173,8 @@ namespace CE::Decompiler::Optimization
 				auto& blockInfo = blockFlowIterator.next();
 				auto memCtx = &m_memoryContexts[blockInfo.m_block];
 				if (blockInfo.hasMaxPressure()) {
-					if (auto valueNode = memCtx->getMemValue(*memLoc))
-						return valueNode;
+					if (auto valueTopNode = memCtx->getMemValue(*memLoc))
+						return valueTopNode->getSdaNode();
 				}
 				if (memCtx->hasUsed(*memLoc))
 					break;

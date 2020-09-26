@@ -3,7 +3,6 @@
 #include <Decompiler/Decompiler.h>
 #include <Decompiler/LinearView/DecLinearView.h>
 #include <Decompiler/LinearView/DecLinearViewSimpleOutput.h>
-#include <Decompiler/SDA/SdaHelper.h>
 #include <Decompiler/Optimization/DecGraphOptimization.h>
 #include <Decompiler/SDA/Symbolization/DecGraphSymbolization.h>
 #include <Decompiler/SDA/Optimizaton/SdaGraphFinalOptimization.h>

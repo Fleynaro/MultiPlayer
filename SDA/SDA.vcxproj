@@ -195,6 +195,7 @@
     <ClCompile Include="Module\Address\AddressRange.cpp" />
     <ClCompile Include="Module\Code\Function\Function.cpp" />
     <ClCompile Include="Module\Code\Symbol\AbstractSymbol.cpp" />
+    <ClCompile Include="Module\Code\Symbol\FuncParameterSymbol.cpp" />
     <ClCompile Include="Module\Code\Symbol\MemoryArea\MemoryArea.cpp" />
     <ClCompile Include="Module\Code\Type\FunctionSignature.cpp" />
     <ClCompile Include="Module\Code\Type\AbstractType.cpp" />
@@ -312,6 +313,7 @@
     <ClInclude Include="Module\Code\Function\Function.h" />
     <ClInclude Include="Module\Code\Symbol\FuncParameterSymbol.h" />
     <ClInclude Include="Module\Code\Symbol\FunctionSymbol.h" />
+    <ClInclude Include="Module\Code\Symbol\IMemorySymbol.h" />
     <ClInclude Include="Module\Code\Symbol\MemoryArea\MemoryArea.h" />
     <ClInclude Include="Module\Code\Symbol\MemorySymbol.h" />
     <ClInclude Include="Module\Code\Symbol\AbstractSymbol.h" />
@@ -396,7 +398,6 @@
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaGenericNode.h" />
     <ClInclude Include="Module\Decompiler\SDA\Optimizaton\SdaGraphUselessLineOptimization.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaCodeGraph.h" />
-    <ClInclude Include="Module\Decompiler\SDA\SdaHelper.h" />
     <ClInclude Include="Module\Decompiler\SDA\MemLocation.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\SdaGraphDataTypeCalc.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSdaBuilding.h" />

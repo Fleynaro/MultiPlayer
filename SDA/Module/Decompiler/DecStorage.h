@@ -11,22 +11,22 @@ namespace CE::Decompiler
 			STORAGE_GLOBAL
 		};
 
-		Storage(StorageType storageType, int registerId, int offset);
+		Storage(StorageType storageType, int registerId, int64_t offset);
 
 		StorageType getType();
 
 		int getRegisterId();
 
-		int getOffset();
+		int64_t getOffset();
 	private:
 		StorageType m_storageType;
 		int m_registerId;
-		int m_offset;
+		int64_t m_offset;
 	};
 
 	class ParameterStorage : public Storage {
 	public:
-		ParameterStorage(int index, StorageType storageType, int registerId, int offset);
+		ParameterStorage(int index, StorageType storageType, int registerId, int64_t offset);
 
 		int getIndex();
 	private:

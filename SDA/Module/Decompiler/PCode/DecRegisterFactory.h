@@ -8,7 +8,7 @@ namespace CE::Decompiler
 	class AbstractRegisterFactory
 	{
 	public:
-		virtual Register createRegister(int regId, int size, int offset = 0x0) = 0;
+		virtual Register createRegister(int regId, int size, int64_t offset = 0x0) = 0;
 
 		virtual Register createFlagRegister(int flag) = 0;
 
@@ -20,7 +20,7 @@ namespace CE::Decompiler
 	class RegisterFactoryX86 : public AbstractRegisterFactory
 	{
 	public:
-		Register createRegister(int regId, int size, int offset = 0x0) override {
+		Register createRegister(int regId, int size, int64_t offset = 0x0) override {
 			return CreateRegister(ZydisRegister(regId), size, offset);
 		}
 
@@ -37,8 +37,8 @@ namespace CE::Decompiler
 		}
 
 	private:
-		static Register CreateRegister(ZydisRegister reg, int size, int offset = 0x0) {
-			auto mask = ExtBitMask(size, offset);
+		static Register CreateRegister(ZydisRegister reg, int size, int64_t offset = 0x0) {
+			auto mask = ExtBitMask(size, (int)offset);
 			if (reg == ZYDIS_REGISTER_RIP)
 				return Register(reg, mask, Register::Type::InstructionPointer);
 			if (reg == ZYDIS_REGISTER_RSP)

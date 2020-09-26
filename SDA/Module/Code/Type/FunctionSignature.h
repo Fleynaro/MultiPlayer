@@ -48,11 +48,24 @@ namespace CE
 
 			void deleteAllParameters();
 
+			std::list<Decompiler::ParameterInfo>& getParameterInfos() {
+				if (m_hasParametersUpdated) {
+					m_paramInfos.clear();
+					updateParameterStorages();
+					m_hasParametersUpdated = false;
+				}
+				return m_paramInfos;
+			}
+
 		private:
 			CallingConvetion m_callingConvetion;
+			std::list<Decompiler::ParameterInfo> m_paramInfos;
+			bool m_hasParametersUpdated = false;
 			std::list<Decompiler::ParameterStorage> m_customStorages;
 			std::vector<Symbol::FuncParameterSymbol*> m_parameters;
 			DataTypePtr m_returnType;
+
+			void updateParameterStorages();
 		};
 	};
 };

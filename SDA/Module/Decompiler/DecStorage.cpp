@@ -24,7 +24,7 @@ ParameterInfo::ParameterInfo(int size, ParameterStorage storage)
 	: m_size(size), m_storage(storage)
 {}
 
-ParameterStorage::ParameterStorage(int index, StorageType storageType, int registerId, int offset)
+ParameterStorage::ParameterStorage(int index, StorageType storageType, int registerId, int64_t offset)
 	: m_index(index), Storage(storageType, registerId, offset)
 {}
 
@@ -32,7 +32,7 @@ int ParameterStorage::getIndex() {
 	return m_index;
 }
 
-Storage::Storage(StorageType storageType, int registerId, int offset)
+Storage::Storage(StorageType storageType, int registerId, int64_t offset)
 	: m_storageType(storageType), m_registerId(registerId), m_offset(offset)
 {}
 
@@ -44,6 +44,6 @@ int Storage::getRegisterId() {
 	return m_registerId;
 }
 
-int Storage::getOffset() {
+int64_t Storage::getOffset() {
 	return m_offset;
 }
