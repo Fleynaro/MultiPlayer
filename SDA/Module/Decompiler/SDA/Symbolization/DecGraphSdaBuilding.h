@@ -45,9 +45,15 @@ namespace CE::Decompiler::Symbolization
 
 		SdaFunctionNode* buildSdaFunctionNode(FunctionCall* funcCall) {
 			std::shared_ptr<SdaFunctionNode::TypeContext> typeContext;
+			/*
+				TODO:
+				1. Унаследовать от IMemorySymbol от FunctionSymbol(он должен содержать функцию) => будет создаваться SdaMemSymbolLeaf => будет учитываться offset
+				2. Для виртуальных вызовов вычислять обычный хеш(или не вычислять вообще!)
+				То есть лучше не по хешу, а по оффсету
+			*/
 			auto keyHash = funcCall->getDestination()->getHash().getHashValue();
 			auto it = m_funcTypeContexts.find(keyHash);
-			if (it == m_funcTypeContexts.end()) {
+			if (true || it == m_funcTypeContexts.end()) {
 				std::vector<DataTypePtr> paramTypes;
 				DataTypePtr returnType;
 				for (auto paramNode : funcCall->getParamNodes()) {

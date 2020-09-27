@@ -104,6 +104,9 @@ namespace CE::Decompiler::PrimaryTree
 			}
 		};
 
+	public:
+		std::string m_name;
+		int m_level = 0;
 	private:
 		std::list<Block*> m_blocksReferencedTo;
 		Block* m_nextNearBlock = nullptr;
@@ -112,8 +115,6 @@ namespace CE::Decompiler::PrimaryTree
 		std::list<SymbolAssignmentLine*> m_symbolAssignmentLines;
 		JumpTopNode* m_noJmpCond;
 	public:
-		std::string m_name;
-		int m_level = 0;
 		int m_maxHeight = 0;
 		DecompiledCodeGraph* m_decompiledGraph;
 
