@@ -62,6 +62,7 @@ namespace CE::Decompiler::Optimization
 				//clear all location that are intersecting this one
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
 					if (it->m_location->intersect(location)) {
+						delete it->m_topNode;
 						m_memValues.erase(it);
 					}
 				}

@@ -211,8 +211,16 @@ namespace CE::Decompiler::Symbolization
 				}
 			}
 			else if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode)) {
-				//sdaSymbolLeaf->getSdaSymbol()->g
-				//create UnknownLocation...
+				if (sdaSymbolLeaf->getDataType()->isPointer()) {
+					if (!dynamic_cast<SdaMemSymbolLeaf*>(sdaSymbolLeaf) && dynamic_cast<ReadValueNode*>(sdaSymbolLeaf->getParentNode())) {
+						auto linearExpr = new LinearExpr(int64_t(0));
+						auto unknownLocation = new UnknownLocation(linearExpr, 0);
+						linearExpr->addParentNode(unknownLocation);
+						sdaSymbolLeaf->replaceWith(unknownLocation);
+						linearExpr->addTerm(sdaSymbolLeaf);
+						calculateDataType(unknownLocation);
+					}
+				}
 			}
 			else if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(sdaNode)) {
 				auto valueMask = sdaNumberLeaf->getMask();
