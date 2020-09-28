@@ -15,6 +15,7 @@ namespace CE::Decompiler::Optimization
 		void start() override {
 			//gather all used symbols
 			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
+				m_curSeqLine = dynamic_cast<PrimaryTree::Block::SeqLine*>(topNode);
 				defineUsedSdaSymbols(topNode->getNode());
 				});
 
@@ -30,6 +31,7 @@ namespace CE::Decompiler::Optimization
 	private:
 		//set of the symbols that are used appearing in various places
 		std::set<CE::Symbol::ISymbol*> m_usedSdaSymbols;
+		PrimaryTree::Block::SeqLine* m_curSeqLine = nullptr;
 
 		void defineUsedSdaSymbols(INode* node) {
 			node->iterateChildNodes([&](INode* childNode) {
@@ -43,9 +45,13 @@ namespace CE::Decompiler::Optimization
 			//memVar or localVar
 			if (sdaSymbolLeaf->getSdaSymbol()->getType() != CE::Symbol::LOCAL_INSTR_VAR)
 				return;
-			if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaSymbolLeaf->getParentNode()))
-				if(assignmentNode->getDstNode() == sdaSymbolLeaf)
-					return;
+			if (m_curSeqLine) {
+				if (auto sdaGenericNode = dynamic_cast<SdaGenericNode*>(m_curSeqLine->getNode()))
+					if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenericNode->getNode()))
+						if(auto sdaDstSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode()))
+							if (sdaDstSymbolLeaf->getSdaSymbol() == sdaSymbolLeaf->getSdaSymbol())
+								return;
+			}
 			m_usedSdaSymbols.insert(sdaSymbolLeaf->getSdaSymbol());
 		}
 

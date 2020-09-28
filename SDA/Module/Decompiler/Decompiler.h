@@ -141,7 +141,7 @@ namespace CE::Decompiler
 						auto regParts = externalSymbol.m_regParts;
 						auto remainToReadMask = externalSymbol.m_needReadMask;
 						requestRegisterParts(block, reg, remainToReadMask, regParts);
-						if (remainToReadMask != externalSymbol.m_needReadMask || !regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
+						if (!regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
 							auto expr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 							externalSymbol.m_symbolLeaf->replaceWith(expr); //todo: remove this, make special node where another replacing method will be implemented. On this step no replaceWith uses!
 							delete externalSymbol.m_symbolLeaf->m_symbol;
@@ -196,8 +196,8 @@ namespace CE::Decompiler
 										//(*) "needReadMask" may be != "mask" that results in anything like: localVar32 | (100 << 32)
 										auto symbol = createSymbolForRequest(reg, needReadMask);
 										if ((mask & ~needReadMask) != mask) {
-											auto regPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
-											outRegParts.push_back(regPart);
+											auto regSymbolPart = new RegisterPart(needReadMask, mask & needReadMask, symbol);
+											outRegParts.push_back(regSymbolPart);
 											mask = mask & ~needReadMask;
 										}
 									}
@@ -237,15 +237,18 @@ namespace CE::Decompiler
 			}
 
 			void gatherRegisterPartsInBlock(PrimaryTree::Block* block, const PCode::Register& reg, ExtBitMask requestMask, ExtBitMask& needReadMask, ExtBitMask& hasReadMask, ExtBitMask& notNeedToReadMask, bool hasMaxPressure) {
+				int prevSymbolId = 0;
 				auto remainToReadMask = needReadMask & ~hasReadMask & ~notNeedToReadMask;
 				requestMask = requestMask & ~notNeedToReadMask;
-				int prevSymbolId = 0;
+				auto mask = hasMaxPressure ? remainToReadMask : requestMask;
+				if (mask.isZero())
+					return;
 
 				//if the block has been already passed
 				auto it = m_curRegSymbol->m_blocks.find(block);
 				if (it != m_curRegSymbol->m_blocks.end()) {
 					auto& blockRegSymbol = it->second;
-					if ((requestMask & blockRegSymbol.m_canReadMask).isZero()) {
+					if ((mask & blockRegSymbol.m_canReadMask).isZero()) {
 						//just change mask
 						blockRegSymbol.m_prevSymbolId = blockRegSymbol.m_symbolId;
 						blockRegSymbol.m_symbolId = m_curRegSymbol->m_requiestId;
@@ -265,7 +268,6 @@ namespace CE::Decompiler
 
 				//handle the block first time
 				auto ctx = m_decompiler->m_decompiledBlocks[block].m_execBlockCtx;
-				auto mask = hasMaxPressure ? remainToReadMask : requestMask;
 				auto regParts = ctx->getRegisterParts(reg.getGenericId(), mask, !hasMaxPressure);
 
 				//think about that more ???
@@ -312,12 +314,12 @@ namespace CE::Decompiler
 					if (it.second.m_prevSymbolId) {
 						if (prevSymbolIds.find(it.second.m_prevSymbolId) == prevSymbolIds.end()) {
 							for (auto& it2 : regSymbol.m_blocks) { //if sets intersect
-								if (it2.second.m_symbolId == it.second.m_prevSymbolId) {
+								if (it.second.m_prevSymbolId == it2.second.m_symbolId) { //create method or flag
 									it2.second.m_symbolId = it.second.m_symbolId;
 								}
 							}
+							prevSymbolIds.insert(it.second.m_prevSymbolId);
 						}
-						prevSymbolIds.insert(it.second.m_prevSymbolId);
 						it.second.m_prevSymbolId = 0;
 					}
 				}
@@ -332,7 +334,7 @@ namespace CE::Decompiler
 						auto prevSymbolId = it->first;
 						auto prevSymbolLeaf = it->second;
 						if (prevSymbolIds.find(prevSymbolId) != prevSymbolIds.end()) {
-							it->second->replaceWith(symbolLeaf);
+							prevSymbolLeaf->replaceWith(symbolLeaf);
 							delete prevSymbolLeaf->m_symbol;
 							delete prevSymbolLeaf;
 							regSymbol.m_symbols.erase(it);
@@ -358,6 +360,7 @@ namespace CE::Decompiler
 								auto maskToChange = localVar->getMask() & ~blockRegSymbol.m_canReadMask;
 
 								if (maskToChange != 0) {
+									//localVar1 = (localVar1 & 0xFF00) | 1
 									regParts.push_back(new RegisterPart(localVar->getMask(), maskToChange, symbolLeaf));
 								}
 
