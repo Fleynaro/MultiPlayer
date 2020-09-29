@@ -25,8 +25,8 @@ namespace CE::Decompiler::Optimization
 
 			struct MemSnapshot {
 				MemLocation m_location;
-				ILocatable* m_locatableNode;
-				SdaTopNode* m_snapshotValue;
+				ILocatable* m_locatableNode = nullptr;
+				SdaTopNode* m_snapshotValue = nullptr;
 			};
 
 			//the result of memory copy working
@@ -38,6 +38,11 @@ namespace CE::Decompiler::Optimization
 			void clear() {
 				for (auto& memValue : m_memValues) {
 					delete memValue.m_topNode;
+				}
+
+				for (auto& pair : m_memVarSnapshots) {
+					auto& memSnapshot = pair.second;
+					delete memSnapshot.m_snapshotValue;
 				}
 			}
 
@@ -60,10 +65,14 @@ namespace CE::Decompiler::Optimization
 
 			MemLocation* createNewLocation(const MemLocation& location) {
 				//clear all location that are intersecting this one
-				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
+				auto it = m_memValues.begin();
+				while(it != m_memValues.end()) {
 					if (it->m_location->intersect(location)) {
 						delete it->m_topNode;
-						m_memValues.erase(it);
+						it = m_memValues.erase(it);
+					}
+					else {
+						it++;
 					}
 				}
 				for (auto& pair : m_memVarSnapshots) {
@@ -71,6 +80,19 @@ namespace CE::Decompiler::Optimization
 					if (snapshot.m_locatableNode) {
 						if (snapshot.m_location.intersect(location)) {
 							snapshot.m_locatableNode = nullptr;
+						}
+					}
+					if (snapshot.m_snapshotValue) {
+						if (auto locSnapshotValue = dynamic_cast<ILocatable*>(snapshot.m_snapshotValue->getNode())) {
+							try {
+								MemLocation snapshotValueLocation;
+								locSnapshotValue->getLocation(snapshotValueLocation);
+								if (snapshotValueLocation.intersect(location)) {
+									delete snapshot.m_snapshotValue;
+									snapshot.m_snapshotValue = nullptr;
+								}
+							}
+							catch (std::exception&) {}
 						}
 					}
 				}
@@ -238,8 +260,11 @@ namespace CE::Decompiler::Optimization
 												srcSdaLocNode->getLocation(srcLocation);
 												MemoryContext::MemSnapshot memSnapshot;
 												memSnapshot.m_location = srcLocation;
-												memSnapshot.m_snapshotValue = m_memCtx->getMemValue(srcLocation);
 												memSnapshot.m_locatableNode = srcSdaLocNode;
+												auto snapshotValueTopNode = m_memCtx->getMemValue(srcLocation);
+												if (snapshotValueTopNode) {
+													memSnapshot.m_snapshotValue = new SdaTopNode(snapshotValueTopNode->getSdaNode());
+												}
 												m_memCtx->m_memVarSnapshots[memVar] = memSnapshot;
 											}
 											catch (std::exception&) {}

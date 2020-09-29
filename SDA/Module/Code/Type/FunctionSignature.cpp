@@ -37,6 +37,7 @@ std::string Signature::getSigName() {
 
 void Signature::setReturnType(DataTypePtr returnType) {
 	m_returnType = returnType;
+	m_hasSignatureUpdated = true;
 }
 
 DataTypePtr Signature::getReturnType() {
@@ -50,7 +51,7 @@ std::vector<Symbol::FuncParameterSymbol*>& Signature::getParameters() {
 void Signature::addParameter(Symbol::FuncParameterSymbol* symbol) {
 	m_parameters.push_back(symbol);
 	symbol->setFuncSignature(this);
-	m_hasParametersUpdated = true;
+	m_hasSignatureUpdated = true;
 }
 
 void Signature::addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment) {
@@ -60,12 +61,12 @@ void Signature::addParameter(const std::string& name, DataTypePtr dataType, cons
 
 void Signature::removeLastParameter() {
 	m_parameters.pop_back();
-	m_hasParametersUpdated = true;
+	m_hasSignatureUpdated = true;
 }
 
 void Signature::deleteAllParameters() {
 	m_parameters.clear();
-	m_hasParametersUpdated = true;
+	m_hasSignatureUpdated = true;
 }
 
 void Signature::updateParameterStorages() {
