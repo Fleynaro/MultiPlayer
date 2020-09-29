@@ -79,7 +79,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		ISdaNode* cloneSdaNode(NodeCloneContext* ctx) override {
-			return new SdaMemSymbolLeaf(getSdaSymbol(), m_decSymbol, m_isAddrGetting);
+			return new SdaMemSymbolLeaf(getSdaSymbol(), m_decSymbol, m_offset, m_isAddrGetting);
 		}
 
 		bool isAddrGetting() override {

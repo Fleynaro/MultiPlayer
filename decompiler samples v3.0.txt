@@ -1,0 +1,365 @@
+********************* AFTER FINAL OPTIMIZATION(test id 1): *********************
+
+idx = 120
+do {
+        funcVar1e87 = (global_0x1193d8)(in_rcx:4, in_rdx:4, in_r8:4, in_r9:4, *(uint32_t*)&stackArray)
+        funcVarbe7 = (global_0x1193d8)(in_rcx:4, in_rdx:4, in_r8:4, in_r9:4, *(uint32_t*)&stackArray)
+        funcVar827 = (global_0x1193d8)(in_rcx:4, in_rdx:4, in_r8:4, in_r9:4, *(uint32_t*)&stackArray)
+        stackArray[funcVar1e87][funcVarbe7][funcVar827] = 300
+        idx = (idx +.8 -1)
+} while((idx != 0));
+return (uint32_t)stackArray[0x1][0x2][0x3]
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 2): *********************
+
+memVarba9 = *(uint64_t*)(CONCAT<.8>(global_0x2248a4, global_0x2248a0; 32) +.8 0x8)
+someObject = (Func1_2)((uint64_t)&stack_0x30, *(uint64_t*)(CONCAT<.8>(global_0x2248a4, global_0x2248a0; 32) +.8 0x8))
+stack_0x50 = *(someObject)
+stack_0x4c = someObject[1]
+stack_0x48 = someObject[2]
+stack_0x44 = someObject[3]
+stack_0x40 = someObject[4]
+stack_0x3c = someObject[5]
+stack_0x38 = someObject[6]
+stack_0x34 = someObject[7]
+stack_0x58 = (uint32_t*)*(uint64_t*)&someObject[8]
+funcVar1a17 = (global_0x119de0)(((uint32_t)&stack_0x30 &.4 0xffffffff), ((uint32_t)memVarba9 &.4 0xffffffff), in_r8:4, in_r9:4, *(uint32_t*)&stack_0x58)
+funcVar637 = (global_0x119de0)(funcVar1a17, ((uint32_t)memVarba9 &.4 0xffffffff), in_r8:4, in_r9:4, *(uint32_t*)&stack_0x58)
+funcVar947 = (global_0x119de0)(funcVar1a17, ((uint32_t)memVarba9 &.4 0xffffffff), in_r8:4, in_r9:4, *(uint32_t*)&stack_0x58)
+*(uint64_t*)((funcVar1a17 *.4 0xa0) +.8 (funcVar637 *.4 0x28) +.8 (funcVar947 *.4 0x8) +.8 *(uint64_t*)&global_0x2248a8 +.8 0xe8) = 0x1
+*(myParam1) = stack_0x50
+myParam1[1] = stack_0x4c
+myParam1[2] = stack_0x48
+myParam1[3] = stack_0x44
+myParam1[4] = stack_0x40
+myParam1[5] = stack_0x3c
+myParam1[6] = stack_0x38
+myParam1[7] = stack_0x34
+*(uint64_t*)&myParam1[8] = stack_0x58
+return 1000
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 100): *********************
+
+memVar9f8 = global_0x1f74634
+memVar2538 = global_0x1f74638
+memVar1968 = global_0x1f7463c
+funcVar1ed9 = (getEntity)(in_rdx:4)
+localVar1c6a = memVar9f8
+localVar5cc = memVar2538
+localVarcc = memVar1968
+if((funcVar1ed9 != 0)) {
+        localVar1c6a = funcVar1ed9->pos.vec.x
+        localVar5cc = funcVar1ed9->pos.vec.y
+        localVarcc = funcVar1ed9->pos.vec.z
+}
+*(myParam1) = (uint32_t)localVar1c6a
+myParam1[2] = (uint32_t)localVar5cc
+myParam1[4] = (uint32_t)localVarcc
+return (uint64_t)myParam1
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 101): *********************
+
+if((((X1 *.4f X1) +.4f (Y1 *.4f Y1)) > 0)) {
+        localVar19df = FSQRT(((X1 *.4f X1) +.4f (Y1 *.4f Y1)))
+} else {
+        localVar19df = 0
+}
+localVar2351 = 0
+if((((X2 *.4f X2) +.4f (Y2 *.4f Y2)) > 0)) {
+        localVar1aff = FSQRT(((X2 *.4f X2) +.4f (Y2 *.4f Y2)))
+} else {
+        localVar1aff = 0
+}
+localVar984 = (((X1 *.4f X2) +.4f (Y1 *.4f Y2)) /.4f (localVar1aff *.4f localVar19df))
+if((localVar984 < global_0xdfbfbc)) {
+        localVar984 = global_0xdfbfbc
+}
+if((localVar984 > global_0xebb650)) {
+        localVar984 = global_0xebb650
+}
+if((localVar984 > global_0xdfbfbc)) {
+        if((localVar984 < global_0xebb650)) {
+                funcVar1069 = (&global_0xcc4fa4)(in_rcx:4, in_rdx:4, in_r8:4, in_r9:4, stack_0x18)
+                localVar2351 = localVar984
+        }
+} else {
+        localVar2351 = global_0xe0198c
+}
+return (localVar2351 *.4f global_0xdfbf98)
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 102): *********************
+
+localVar573 = a
+if((a < 0)) {
+        localVar573 = (a *.4 -1)
+}
+localVar1ef1 = b
+if((b < 0)) {
+        localVar1ef1 = (b *.4 -1)
+}
+do {
+        if((localVar573 < localVar1ef1)) {
+                localVara25 = localVar573
+                localVar573 = localVar1ef1
+                localVar1ef1 = localVara25
+        }
+        if((localVar1ef1 == 0)) {
+                [break]
+        }
+        localVar573 = ((localVar1ef1 *.4 -1) +.4 localVar573)
+} while(true);
+stack_0x0 = localVar573
+stack_0x0 = localVar1ef1
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 103): *********************
+
+localVar460 = (uint64_t)param2
+if((param2 > 10)) {
+        if((param2 <= 24)) {
+                localVar460 = (uint64_t)(param2 +.4 25)
+        } else {
+                localVar460 = (uint64_t)(param2 +.4 -14)
+        }
+}
+funcVar14f9 = (&global_0xfffffffffffeca68)(param1, param2, in_r8:4, in_r9:4, stack_0x8)
+if((((((0x343ffffffffff >>.8 (localVar460 &.8 0x3f)) &.8 0x1) == 0) || (localVar460 > 49)) || (funcVar14f9 == 0))) {
+        return 0
+}
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 104): *********************
+
+funcVar1b39 = (int32_t)(&global_0xfffffffffffeb224)(param1, param2, in_r8:4, in_r9:4, stack_0x8)
+localVar1f5c = funcVar1b39
+if((funcVar1b39 != 0)) {
+        memVar18b9 = *(uint64_t*)(funcVar1b39 +.4 32)
+        localVar1f5c = (*(byte*)(memVar18b9 +.8 0x518) &.4 31)
+}
+return localVar1f5c
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 105): *********************
+
+stack_0xffffffe8 = 65535
+stack_0xfffffff0 = ((stack_0xfffffff0 &.4 0xfffffff) |.4 0xfffffff)
+funcVarba9 = (&global_0x8b8f78)(param1, ((uint32_t)&stack_0xffffffe8 &.4 0xffffffff), in_r8:4, in_r9:4, stack_0x8)
+*(uint16_t*)&stack_0xfffffff0 = *(uint16_t*)&stack_0xffffffe8
+localVar105b = 0
+if(((((stack_0xfffffff0 &.4 0xffff)) != 65535) && (funcVarba9 != 0))) {
+        memVar1f69 = *(byte*)(funcVarba9 +.4 0x518)
+        localVar105b = ((int32_t)memVar1f69 &.4 31)
+}
+stack_0x0 = (uint64_t)&stack_0x0
+return localVar105b
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 106): *********************
+
+memVarf88 = global_0x1f735d0
+memVar23f8 = global_0x1f735d4
+memVar15a8 = global_0x1f735cc
+entity = (Entity106*)(&global_0xfffffffffffdd064)(param2, param2, param3, in_r9:4, stack_0x48)
+localVar210f = memVarf88
+localVarbef = memVar23f8
+localVar13e0 = memVar15a8
+if((entity != 0)) {
+        memVar71a = entity->vtable
+        pos2 = (testVector3D*)((uint64_t)entity->vtable->getPos)(entity, (entity->vtable &.4 0xffffffff), param3, in_r9:4, stack_0x48)
+        localVar210f = pos2->y
+        localVarbef = pos2->z
+        localVar13e0 = pos2->x
+        if((param3 != 0)) {
+                pos3 = (testVector3D*)((uint64_t)entity->vtable->getPos)(entity, ((uint32_t)memVar71a &.4 0xffffffff), param3, in_r9:4, stack_0x48)
+                localVar210f = (((entity->matrix.vec2.y *.4f pos3->y) +.4f (entity->matrix.vec2.x *.4f pos3->x)) +.4f (entity->matrix.vec2.z *.4f pos3->z))
+                localVarbef = (((entity->matrix.vec3.y *.4f pos3->y) +.4f (entity->matrix.vec3.x *.4f pos3->x)) +.4f (entity->matrix.vec3.z *.4f pos3->z))
+                localVar13e0 = (((entity->matrix.vec1.y *.4f pos3->y) +.4f (entity->matrix.vec1.x *.4f pos3->x)) +.4f (entity->matrix.vec1.z *.4f pos3->z))
+        }
+}
+param1->x = localVar13e0
+param1->y = localVar210f
+param1->z = localVarbef
+return param1
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 107): *********************
+
+value1.m_type = 0x0
+value4.m_formatText = value1.m_formatText
+stack_0xb0 = &value4
+value2.m_formatText = value1.m_formatText
+value1.m_type = 0x0
+stack_0xb8 = &value2
+*(uint32_t*)&value4 = *(uint32_t*)&value1
+*(uint32_t*)(&value4.m_value +.8 0x4{4}) = *(uint32_t*)(&value1.m_value +.8 0x4{4})
+value4.m_type = 0x0
+value4.m_unk = value1.m_unk
+value3.m_formatText = value1.m_formatText
+value1.m_type = 0x0
+*(uint32_t*)&value2 = *(uint32_t*)&value1
+*(uint32_t*)(&value2.m_value +.8 0x4{4}) = *(uint32_t*)(&value1.m_value +.8 0x4{4})
+value2.m_type = 0x0
+value2.m_unk = value1.m_unk
+value1.m_type = 0x1
+value5.m_formatText = value1.m_formatText
+*(uint32_t*)&value3 = *(uint32_t*)&value1
+*(uint32_t*)(&value3.m_value +.8 0x4{4}) = *(uint32_t*)(&value1.m_value +.8 0x4{4})
+value3.m_type = 0x0
+value3.m_unk = value1.m_unk
+*(uint64_t*)&value1 = (uint64_t)TOFLOAT(param1)
+*(uint32_t*)&value5 = *(uint32_t*)&value1
+*(uint32_t*)(&value5.m_value +.8 0x4{4}) = *(uint32_t*)(&value1.m_value +.8 0x4{4})
+value5.m_type = 0x1
+value5.m_unk = value1.m_unk
+funcVarb69 = (UI_Draw)((uint64_t)&global_0x1e2f558, (uint64_t)&global_0x16cc5ac, &value5, &value3, &value2, &value4)
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 108): *********************
+
+stack_0xb8 = leftVec1->x
+stack_0xb4 = leftVec1->y
+stack_0xb0 = leftVec1->z
+stack_0xac = leftVec1->w
+pOutMatrix->vec1.x = (((upVec1->x *.4f leftVec2->y) +.4f (leftVec1->x *.4f leftVec2->x)) +.4f (forwardVec1->x *.4f leftVec2->z))
+pOutMatrix->vec1.y = (((upVec1->y *.4f leftVec2->y) +.4f (leftVec1->y *.4f leftVec2->x)) +.4f (forwardVec1->y *.4f leftVec2->z))
+pOutMatrix->vec1.z = (((upVec1->z *.4f leftVec2->y) +.4f (leftVec1->z *.4f leftVec2->x)) +.4f (forwardVec1->z *.4f leftVec2->z))
+pOutMatrix->vec1.w = (((upVec1->w *.4f leftVec2->y) +.4f (leftVec1->w *.4f leftVec2->x)) +.4f (forwardVec1->w *.4f leftVec2->z))
+pOutMatrix->vec2.x = (((upVec1->x *.4f upVec2->y) +.4f (leftVec1->x *.4f upVec2->x)) +.4f (forwardVec1->x *.4f upVec2->z))
+pOutMatrix->vec2.y = (((upVec1->y *.4f upVec2->y) +.4f (leftVec1->y *.4f upVec2->x)) +.4f (forwardVec1->y *.4f upVec2->z))
+pOutMatrix->vec2.z = (((upVec1->z *.4f upVec2->y) +.4f (leftVec1->z *.4f upVec2->x)) +.4f (forwardVec1->z *.4f upVec2->z))
+pOutMatrix->vec2.w = (((upVec1->w *.4f upVec2->y) +.4f (leftVec1->w *.4f upVec2->x)) +.4f (forwardVec1->w *.4f upVec2->z))
+pOutMatrix->vec4.x = ((((leftVec1->x *.4f translationVec2->x) +.4f translationVec1->x) +.4f (upVec1->x *.4f translationVec2->y)) +.4f (forwardVec1->x *.4f translationVec2->z))
+pOutMatrix->vec4.y = ((((leftVec1->y *.4f translationVec2->x) +.4f translationVec1->y) +.4f (upVec1->y *.4f translationVec2->y)) +.4f (forwardVec1->y *.4f translationVec2->z))
+pOutMatrix->vec4.z = ((((leftVec1->z *.4f translationVec2->x) +.4f translationVec1->z) +.4f (upVec1->z *.4f translationVec2->y)) +.4f (forwardVec1->z *.4f translationVec2->z))
+pOutMatrix->vec4.w = ((((leftVec1->w *.4f translationVec2->x) +.4f translationVec1->w) +.4f (upVec1->w *.4f translationVec2->y)) +.4f (forwardVec1->w *.4f translationVec2->z))
+pOutMatrix->vec3.x = (((upVec1->x *.4f forwardVec2->y) +.4f (leftVec1->x *.4f forwardVec2->x)) +.4f (forwardVec1->x *.4f forwardVec2->z))
+pOutMatrix->vec3.y = (((upVec1->y *.4f forwardVec2->y) +.4f (leftVec1->y *.4f forwardVec2->x)) +.4f (forwardVec1->y *.4f forwardVec2->z))
+pOutMatrix->vec3.z = (((upVec1->z *.4f forwardVec2->y) +.4f (leftVec1->z *.4f forwardVec2->x)) +.4f (forwardVec1->z *.4f forwardVec2->z))
+pOutMatrix->vec3.w = (((upVec1->w *.4f forwardVec2->y) +.4f (leftVec1->w *.4f forwardVec2->x)) +.4f (forwardVec1->w *.4f forwardVec2->z))
+return leftVec2
+
+
+
+
+
+
+
+
+********************* AFTER FINAL OPTIMIZATION(test id 109): *********************
+
+funcVarff9 = (Func3_109)((uint32_t)p1_Entity, p2_AnimDict, p2_AnimName)
+if((funcVarff9 != 0)) {
+        if((*(uint64_t*)(funcVarff9 +.8 0x10) != 0)) {
+                localVar1cbb = ((*(byte*)(*(uint64_t*)(funcVarff9 +.8 0x10) +.8 0x214) >>.1 (byte)6) &.1 (byte)1)
+        } else {
+                localVar1cbb = (byte)0
+        }
+        if((localVar1cbb == 0)) {
+                if((((global_0x13c0c2c &.4 0x1)) == 0)) {
+                        global_0x13c0c2c = (global_0x13c0c2c |.4 0x1)
+                        global_0x13c0c28 = 2120794248
+                        localVar1b3c = 2120794248
+                } else {
+                        localVar1b3c = global_0x13c0c28
+                }
+                stack_0x28 = localVar1b3c
+                funcVar859 = (Func2_109)(funcVarff9, (uint64_t)&stack_0x28, (uint64_t)p2_AnimName, funcVarff9)
+                [!!!Normal!!!]
+        }
+}
+funcVara29 = (Func4_109)((uint32_t)p1_Entity, (bool)1, (bool)1, 0x7)
+localVar16bf = funcVara29
+if((funcVara29 != 0)) {
+        funcVar1549 = (int32_t)(Func5_109)(0x0, (uint64_t)p2_AnimName, (bool)1, 0x7)
+        stack_0x28 = funcVar1549
+        funcVar21a9 = (Func5_109)(0x0, (uint64_t)p2_AnimDict, (bool)1, 0x7)
+        stack_0x24 = funcVar21a9
+        stack_0x38 = (uint32_t*)&stack_0x20
+        funcVara09 = (Func1_109)(funcVara29, (uint64_t)&stack_0x24, (uint64_t)&stack_0x28, (uint64_t)&stack_0x1c)
+        localVar176d = &stack_0x24
+        if((funcVara09 != 0)) {
+                localVarb2b = (int32_t)*(uint32_t*)&stack_0x1c
+                localVar249b = *(byte*)&stack_0x20
+        }
+}
+funcVar1979 = (Func4_109)((uint32_t)p1_Entity, (bool)1, (bool)0, 0x7)
+localVar16bf = funcVar1979
+if((funcVar1979 != 0)) {
+        funcVar2499 = (Func5_109)(0x0, (uint64_t)p2_AnimName, (bool)0, 0x7)
+        *(uint32_t*)&stack_0x1c = funcVar2499
+        funcVar9e9 = (Func5_109)(0x0, (uint64_t)p2_AnimDict, (bool)0, 0x7)
+        *(uint32_t*)&stack_0x20 = funcVar9e9
+        stack_0x38 = &stack_0x24
+        funcVar1959 = (Func1_109)(funcVar1979, (uint64_t)&stack_0x20, (uint64_t)&stack_0x1c, (uint64_t)&stack_0x28)
+        localVar176d = (uint32_t*)&stack_0x20
+        if((funcVar1959 == 0)) {
+                [!!!Normal!!!]
+        }
+        localVarb2b = stack_0x28
+        localVar249b = *(byte*)&stack_0x24
+        funcVar2339 = (Func6_109)(localVar16bf, (uint64_t)localVar176d, (uint32_t)localVarb2b, localVar249b)
+}

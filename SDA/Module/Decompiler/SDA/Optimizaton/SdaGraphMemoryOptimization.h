@@ -16,17 +16,18 @@ namespace CE::Decompiler::Optimization
 			};
 			std::list<MemoryValue> m_memValues;
 		public:
-			struct MemVarInfo {
-				SdaSymbolLeaf* m_symbolLeaf;
-				Symbol::MemoryVariable* m_memVar;
-				ISdaNode* m_locatableNode = nullptr;
-				int m_lastUsedMemLocIdx;
-			};
-
 			struct MemSnapshot {
 				MemLocation m_location;
 				ILocatable* m_locatableNode = nullptr;
 				SdaTopNode* m_snapshotValue = nullptr;
+				int m_lastUsedMemLocIdx;
+			};
+
+			struct MemVarInfo {
+				SdaSymbolLeaf* m_symbolLeaf;
+				Symbol::MemoryVariable* m_memVar;
+				MemSnapshot* m_memSnapshot = nullptr;
+				int m_lastUsedMemLocIdx;
 			};
 
 			//the result of memory copy working
@@ -67,7 +68,24 @@ namespace CE::Decompiler::Optimization
 				//clear all location that are intersecting this one
 				auto it = m_memValues.begin();
 				while(it != m_memValues.end()) {
-					if (it->m_location->intersect(location)) {
+					bool isIntersecting = it->m_location->intersect(location);
+					if (!isIntersecting) {
+						//stack_0x30 = stack_0x100 (location of stack_0x100 can be changed)
+						if (auto locSnapshotValue = dynamic_cast<IMappedToMemory*>(it->m_topNode->getSdaNode())) {
+							if (!locSnapshotValue->isAddrGetting()) {
+								try {
+									MemLocation snapshotValueLocation;
+									locSnapshotValue->getLocation(snapshotValueLocation);
+									if (snapshotValueLocation.intersect(location)) {
+										isIntersecting = true;
+									}
+								}
+								catch (std::exception&) {}
+							}
+						}
+					}
+
+					if (isIntersecting) {
 						delete it->m_topNode;
 						it = m_memValues.erase(it);
 					}
@@ -75,37 +93,24 @@ namespace CE::Decompiler::Optimization
 						it++;
 					}
 				}
-				for (auto& pair : m_memVarSnapshots) {
-					auto& snapshot = pair.second;
-					if (snapshot.m_locatableNode) {
-						if (snapshot.m_location.intersect(location)) {
-							snapshot.m_locatableNode = nullptr;
-						}
-					}
-					if (snapshot.m_snapshotValue) {
-						if (auto locSnapshotValue = dynamic_cast<ILocatable*>(snapshot.m_snapshotValue->getNode())) {
-							try {
-								MemLocation snapshotValueLocation;
-								locSnapshotValue->getLocation(snapshotValueLocation);
-								if (snapshotValueLocation.intersect(location)) {
-									delete snapshot.m_snapshotValue;
-									snapshot.m_snapshotValue = nullptr;
-								}
-							}
-							catch (std::exception&) {}
-						}
-					}
-				}
-
+				
 				//mark the input location as used within the current context
 				m_usedMemLocations.push_back(location);
 				return &(*m_usedMemLocations.rbegin()); //dangerous: important no to copy the mem ctx anywhere
 			}
 
-			bool hasUsed(const MemLocation& location, int lastUsedMemLocIdx = -1) {
+			int getLastUsedMemLocIdx() {
+				return (int)m_usedMemLocations.size() - 1;
+			}
+
+			bool hasUsed(const MemLocation& location, int firstUsedMemLocIdx = -1, int lastUsedMemLocIdx = -1) {
 				for (const auto& loc : m_usedMemLocations) {
 					if (lastUsedMemLocIdx-- == -1)
 						break;
+					if (firstUsedMemLocIdx >= 0) {
+						firstUsedMemLocIdx--;
+						continue;
+					}
 					if (loc.intersect(location)) {
 						return true;
 					}
@@ -154,15 +159,40 @@ namespace CE::Decompiler::Optimization
 
 		void optimizeBlock(PrimaryTree::Block* block, MemoryContext* memCtx) {
 			for (auto& memVarInfo : memCtx->m_memVars) {
-				auto newNode = memVarInfo.m_locatableNode;
-				auto memSnapshot = findMemSnapshotByMemVar(memVarInfo.m_memVar);
+				ISdaNode* newNode = nullptr;
+				auto memSnapshot = memVarInfo.m_memSnapshot;
+				//if memSnapshot is in the current block
 				if (memSnapshot) {
-					if (memSnapshot->m_snapshotValue) {
-						newNode = memSnapshot->m_snapshotValue->getSdaNode();
+					newNode = getSnapshotValue(block, memCtx, memSnapshot, memVarInfo.m_lastUsedMemLocIdx);
+					if (!newNode) {
+						newNode = getLocatableNode(memCtx, memSnapshot, memVarInfo.m_lastUsedMemLocIdx);
 					}
-					else if (!memCtx->hasUsed(memSnapshot->m_location, memVarInfo.m_lastUsedMemLocIdx)) {
-						if (auto foundNode = findValueNodeInBlocksAbove(block, &memSnapshot->m_location)) {
-							newNode = foundNode;
+				}
+				else {
+					//find memSnapshot in blocks above
+					auto pair = findBlockAndMemSnapshotByMemVar(memVarInfo.m_memVar);
+					auto blockAbove = pair.first;
+					auto memSnapshot = pair.second;
+					if (blockAbove) {
+						auto memCtx = &m_memoryContexts[blockAbove];
+						auto lastUsedMemLocIdx = memCtx->getLastUsedMemLocIdx();
+						auto newPossibleNode = getSnapshotValue(blockAbove, memCtx, memSnapshot, lastUsedMemLocIdx);
+						if (auto locNewPossibleNode = dynamic_cast<ILocatable*>(newPossibleNode)) {
+							try {
+								MemLocation newPossibleNodeLocation;
+								locNewPossibleNode->getLocation(newPossibleNodeLocation);
+								if (canBlockBeReachedThroughLocation(block, blockAbove, &newPossibleNodeLocation)) {
+									newNode = newPossibleNode;
+								}
+							}
+							catch (std::exception&) {}
+						}
+
+						if (!newNode) {
+							newPossibleNode = getLocatableNode(memCtx, memSnapshot, lastUsedMemLocIdx);
+							if (canBlockBeReachedThroughLocation(block, blockAbove, &memSnapshot->m_location)) {
+								newNode = newPossibleNode;
+							}
 						}
 					}
 				}
@@ -176,15 +206,65 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		MemoryContext::MemSnapshot* findMemSnapshotByMemVar(Symbol::MemoryVariable* memVar) {
+		ISdaNode* getSnapshotValue(PrimaryTree::Block* block, MemoryContext* memCtx, MemoryContext::MemSnapshot* memSnapshot, int lastUsedMemLocIdx) {
+			if (memSnapshot->m_snapshotValue) {
+				if (auto locSnapshotValue = dynamic_cast<ILocatable*>(memSnapshot->m_snapshotValue->getNode())) {
+					try {
+						MemLocation snapshotValueLocation;
+						locSnapshotValue->getLocation(snapshotValueLocation);
+						if (memCtx->hasUsed(snapshotValueLocation, memSnapshot->m_lastUsedMemLocIdx, lastUsedMemLocIdx)) {
+							return nullptr;
+						}
+					}
+					catch (std::exception&) {}
+				}
+				return memSnapshot->m_snapshotValue->getSdaNode();
+			}
+			else {
+				if (auto foundNode = findValueNodeInBlocksAbove(block, &memSnapshot->m_location)) {
+					return foundNode;
+				}
+			}
+			return nullptr;
+		}
+
+		ISdaNode* getLocatableNode(MemoryContext* memCtx, MemoryContext::MemSnapshot* memSnapshot, int lastUsedMemLocIdx) {
+			if (memSnapshot->m_locatableNode) {
+				if (!memCtx->hasUsed(memSnapshot->m_location, memSnapshot->m_lastUsedMemLocIdx, lastUsedMemLocIdx)) {
+					return memSnapshot->m_locatableNode;
+				}
+			}
+			return nullptr;
+		}
+
+		std::pair<PrimaryTree::Block*, MemoryContext::MemSnapshot*> findBlockAndMemSnapshotByMemVar(Symbol::MemoryVariable* memVar) {
 			for (auto block : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 				auto& memVarToMemLocation = m_memoryContexts[block].m_memVarSnapshots;
 				auto it = memVarToMemLocation.find(memVar);
 				if (it != memVarToMemLocation.end()) {
-					return &it->second;
+					return std::pair(block, &it->second);
 				}
 			}
-			return nullptr;
+			return std::pair(nullptr, nullptr);
+		}
+
+		//finalBlock can be reached if go to it over path(from startBlock) that doesn't contain changes of the memory location
+		bool canBlockBeReachedThroughLocation(PrimaryTree::Block* startBlock, PrimaryTree::Block* finalBlock, MemLocation* memLoc) {
+			BlockFlowIterator blockFlowIterator(startBlock);
+			while (blockFlowIterator.hasNext()) {
+				blockFlowIterator.m_considerLoop = false;
+				if (blockFlowIterator.isStartBlock())
+					continue;
+				auto& blockInfo = blockFlowIterator.next();
+				if (blockInfo.m_block == finalBlock) {
+					return blockInfo.hasMaxPressure();
+				}
+				auto memCtx = &m_memoryContexts[blockInfo.m_block];
+				if (memCtx->hasUsed(*memLoc))
+					break;
+			}
+
+			return false;
 		}
 
 		ISdaNode* findValueNodeInBlocksAbove(PrimaryTree::Block* startBlock, MemLocation* memLoc) {
@@ -261,6 +341,7 @@ namespace CE::Decompiler::Optimization
 												MemoryContext::MemSnapshot memSnapshot;
 												memSnapshot.m_location = srcLocation;
 												memSnapshot.m_locatableNode = srcSdaLocNode;
+												memSnapshot.m_lastUsedMemLocIdx = m_memCtx->getLastUsedMemLocIdx();
 												auto snapshotValueTopNode = m_memCtx->getMemValue(srcLocation);
 												if (snapshotValueTopNode) {
 													memSnapshot.m_snapshotValue = new SdaTopNode(snapshotValueTopNode->getSdaNode());
@@ -282,13 +363,13 @@ namespace CE::Decompiler::Optimization
 						MemoryContext::MemVarInfo memVarInfo;
 						memVarInfo.m_symbolLeaf = sdaSymbolLeaf;
 						memVarInfo.m_memVar = memVar;
-						memVarInfo.m_lastUsedMemLocIdx = (int)m_memCtx->m_usedMemLocations.size() - 1;
+						memVarInfo.m_lastUsedMemLocIdx = m_memCtx->getLastUsedMemLocIdx();
 
 						//if the symbol not found within block then it means to be declared in the blocks above
 						auto it = m_memCtx->m_memVarSnapshots.find(memVar);
 						if (it != m_memCtx->m_memVarSnapshots.end()) {
-							auto& memSnapshot = it->second;
-							memVarInfo.m_locatableNode = memSnapshot.m_locatableNode;
+							auto memSnapshot = &it->second;
+							memVarInfo.m_memSnapshot = memSnapshot;
 						}
 						m_memCtx->m_memVars.push_back(memVarInfo);
 					}
