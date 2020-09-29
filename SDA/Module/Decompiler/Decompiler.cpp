@@ -1,6 +1,16 @@
 #include "Decompiler.h"
+#include "DecGraphBlockLinker.h"
 
 using namespace CE::Decompiler;
+
+void Decompiler::start() {
+	decompileAllBlocks();
+	setAllBlocksLinks();
+	buildDecompiledGraph();
+
+	GraphBlockLinker graphBlockLinker(m_decompiledGraph, this);
+	graphBlockLinker.start();
+}
 
 void Decompiler::buildDecompiledGraph() {
 	for (auto& it : m_decompiledBlocks) {

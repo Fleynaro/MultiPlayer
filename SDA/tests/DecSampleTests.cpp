@@ -42,7 +42,7 @@ TEST(Decompiler, Test_MemLocation)
 
 void ProgramModuleFixtureDecSamples::initSampleTestHashes() {
 	m_sampleTestHashes = {
-
+		//std::pair(2,0xfca38c5a9a788b9f), std::pair(3,0xbae15d35b166fd57), std::pair(4,0xe6d8ead2524614b), std::pair(5,0x404336cd30597017), std::pair(200,0x2aeebec5a9174a9f), std::pair(201,0x2bd0067104ae1951), std::pair(202,0x89fec5e403906591), std::pair(203,0x801ca3e750c8603b), std::pair(204,0x30d1aba2f2e3b1ed), std::pair(205,0x12c9a420f2b2d5e9), std::pair(206,0xab6d6c780445dfc4), std::pair(207,0x4a74f8192c5513a4), std::pair(208,0xd8c4e8c8df66dfae), std::pair(209,0xd6cc7469ea14af70), std::pair(210,0xacc229f90d6782dd), std::pair(211,0xe9c4c559b552878f), std::pair(212,0xe2b4c3ba6cef5a0b), std::pair(213,0x7c6464398da34687), std::pair(214,0x599a1ccf69d13300), std::pair(215,0x910e4ce3900fd4d1), std::pair(216,0xc48c00f7c3196841), std::pair(217,0xdf80cb704bfab4df), std::pair(218,0x57b02dcbee99fd9d), std::pair(219,0xbd417ce9ff6ad57d),
 	};
 }
 
