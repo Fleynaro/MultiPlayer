@@ -343,6 +343,8 @@
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraphBlockFlowIterator.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\DecMask.h" />
+    <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewBlocks.h" />
+    <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewOptimization.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprCompositeCondOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConcatAndSubpieceBuilding.h" />

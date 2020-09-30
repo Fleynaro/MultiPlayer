@@ -29,6 +29,8 @@ namespace CE::Decompiler
 			showCode(m_blockList);
 		}
 	private:
+		std::set<LinearView::Block*> m_blocksToGoTo;
+
 		void showCode(LinearView::BlockList* blockList, int level = 0) {
 			std::string tabStr = "";
 			for (int i = 0; i < level; i++)
@@ -81,17 +83,20 @@ namespace CE::Decompiler
 			if (blockList->m_goto != nullptr) {
 				auto gotoType = blockList->getGotoType();
 				if (m_SHOW_ALL_GOTO || gotoType != LinearView::GotoType::None) {
+					auto blockName = Generic::String::NumberToHex(m_decGraph->getAsmGraphBlocks()[blockList->m_goto->m_decBlock]->ID);
 					std::string typeName = "";
 					if (gotoType == LinearView::GotoType::None)
 						typeName = "[None]";
-					else if (gotoType == LinearView::GotoType::Normal)
-						typeName = "[!!!Normal!!!]";
+					else if (gotoType == LinearView::GotoType::Normal) {
+						typeName = "[Goto to label_" + blockName + "]";
+						m_blocksToGoTo.insert(blockList->m_goto);
+					}
 					else if (gotoType == LinearView::GotoType::Break)
 						typeName = "[break]";
 					else if (gotoType == LinearView::GotoType::Continue)
 						typeName = "[continue]";
 					if (m_SHOW_ALL_GOTO) {
-						printf("%s//goto to block %s (%s) %s\n", tabStr.c_str(), Generic::String::NumberToHex(m_decGraph->getAsmGraphBlocks()[blockList->m_goto->m_decBlock]->ID).c_str(), levelInfo.c_str(), typeName.c_str());
+						printf("%s//goto to block %s (%s) %s\n", tabStr.c_str(), blockName.c_str(), levelInfo.c_str(), typeName.c_str());
 					}
 					else {
 						printf("%s%s\n", tabStr.c_str(), typeName.c_str());
@@ -104,8 +109,12 @@ namespace CE::Decompiler
 		}
 
 		void showBlockCode(AsmGraphBlock* asmBlock, LinearView::Block* block, std::string tabStr) {
+			auto blockName = Generic::String::NumberToHex(asmBlock->ID);
 			if (m_SHOW_BLOCK_HEADER) {
-				printf("%s//block %s (level: %i, maxHeight: %i, backOrderId: %i, linearLevel: %i, refCount: %i)\n", tabStr.c_str(), Generic::String::NumberToHex(asmBlock->ID).c_str(), block->m_decBlock->m_level, block->m_decBlock->m_maxHeight, block->getBackOrderId(), block->getLinearLevel(), block->m_decBlock->getRefBlocksCount());
+				printf("%s//block %s (level: %i, maxHeight: %i, backOrderId: %i, linearLevel: %i, refCount: %i)\n", tabStr.c_str(), blockName.c_str(), block->m_decBlock->m_level, block->m_decBlock->m_maxHeight, block->getBackOrderId(), block->getLinearLevel(), block->m_decBlock->getRefBlocksCount());
+			}
+			if (m_blocksToGoTo.find(block) != m_blocksToGoTo.end()) {
+				printf("%slabel_%s:\n", tabStr.c_str(), blockName.c_str());
 			}
 			if (m_SHOW_ASM) {
 				asmBlock->printDebug(nullptr, tabStr, false, m_SHOW_PCODE);

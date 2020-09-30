@@ -463,7 +463,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			clonedDecCodeGraph->checkOnSingleParents();
 			LinearViewSimpleConsoleOutput output4(blockList, sdaCodeGraph->getDecGraph());
 			output4.setMinInfoToShow();
-			output4.m_SHOW_BLOCK_HEADER = false;
+			output4.m_SHOW_BLOCK_HEADER = true;
 			if (m_isOutput) {
 				output4.show();
 			}
