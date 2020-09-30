@@ -30,9 +30,9 @@ namespace CE::Decompiler
 		bool m_considerLoop = true;
 		bool m_distributePressure = true;
 
-		BlockFlowIterator(PrimaryTree::Block* startBlock)
+		BlockFlowIterator(PrimaryTree::Block* startBlock, ExtBitMask notNeedToReadMask = ExtBitMask(0))
 		{
-			addBlockInfo(startBlock, MaxPressure, ExtBitMask(0)); //set the start block
+			addBlockInfo(startBlock, MaxPressure, notNeedToReadMask); //set the start block
 		}
 
 		bool isStartBlock() {

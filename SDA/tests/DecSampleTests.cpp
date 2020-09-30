@@ -52,7 +52,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	Signature* sig;
 	
 	//ignore all tests except
-	//m_doTestIdOnly = 107;
+	//m_doTestIdOnly = 109;
 
 	{
 		//multidimension stack array like stackArray[1][2][3]
@@ -86,6 +86,15 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		sig->addParameter("param2", findType("uint64_t", ""));
 		sig->setReturnType(findType("uint32_t", "[1]"));
 		test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func1_2"), 0xffffffffffffff90);
+	}
+
+	{
+		//xmm registers in incomplete blocks
+		test = createSampleTest(50, { 0x48, 0xC7, 0xC0, 0x01, 0x00, 0x00, 0x00, 0x48, 0x83, 0xF8, 0x02, 0x0F, 0x10, 0x44, 0x24, 0x20, 0x75, 0x05, 0x0F, 0x10, 0x44, 0x24, 0x10, 0x0F, 0x11, 0x44, 0x24, 0x10 });
+		test->m_enabled = true;
+		test->m_showFinalResult = true;
+		//test->enableAllAndShowAll();
+		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test10");
 	}
 
 	{

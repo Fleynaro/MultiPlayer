@@ -16,6 +16,10 @@ namespace CE::Decompiler
 			: BitMask64(GetBitMask64BySize(size) << uint64_t((offset % 8) * 8))
 		{}
 
+		bool isZero() {
+			return m_bitMask == 0x0;
+		}
+
 		uint64_t getValue() const {
 			return m_bitMask;
 		}

@@ -14,10 +14,17 @@ namespace CE::Decompiler::Optimization
 
 		void start() override {
 			//gather all used symbols
-			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
-				m_curSeqLine = dynamic_cast<PrimaryTree::Block::SeqLine*>(topNode);
-				defineUsedSdaSymbols(topNode->getNode());
-				});
+			while (m_isFirstPass || m_usedSdaSymbols.size() != m_prevUsedSdaSymbols.size()) {
+				if (!m_isFirstPass) {
+					m_prevUsedSdaSymbols = m_usedSdaSymbols;
+					m_usedSdaSymbols.clear();
+				}
+				passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
+					m_curSeqLine = dynamic_cast<PrimaryTree::Block::SeqLine*>(topNode);
+					defineUsedSdaSymbols(topNode->getNode());
+					});
+				m_isFirstPass = false;
+			}
 
 			//try deleting all lines that contains unused symbol as destination
 			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
@@ -31,6 +38,8 @@ namespace CE::Decompiler::Optimization
 	private:
 		//set of the symbols that are used appearing in various places
 		std::set<CE::Symbol::ISymbol*> m_usedSdaSymbols;
+		std::set<CE::Symbol::ISymbol*> m_prevUsedSdaSymbols;
+		bool m_isFirstPass = true;
 		PrimaryTree::Block::SeqLine* m_curSeqLine = nullptr;
 
 		void defineUsedSdaSymbols(INode* node) {
@@ -42,34 +51,44 @@ namespace CE::Decompiler::Optimization
 			auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(node);
 			if (!sdaSymbolLeaf)
 				return;
-			//memVar or localVar
+			//memVar, funcVar, localVar
 			if (sdaSymbolLeaf->getSdaSymbol()->getType() != CE::Symbol::LOCAL_INSTR_VAR)
 				return;
 			if (m_curSeqLine) {
-				if (auto sdaGenericNode = dynamic_cast<SdaGenericNode*>(m_curSeqLine->getNode()))
-					if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenericNode->getNode()))
-						if(auto sdaDstSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode()))
-							if (sdaDstSymbolLeaf->getSdaSymbol() == sdaSymbolLeaf->getSdaSymbol())
-								return;
+				SdaSymbolLeaf* sdaDstSymbolLeaf;
+				if (isSeqLineSuit(m_curSeqLine, sdaDstSymbolLeaf)) {
+					if (sdaDstSymbolLeaf->getSdaSymbol() == sdaSymbolLeaf->getSdaSymbol())
+						return;
+					if (!m_isFirstPass)
+						if (m_prevUsedSdaSymbols.find(sdaDstSymbolLeaf->getSdaSymbol()) == m_prevUsedSdaSymbols.end())
+							return;
+				}
 			}
 			m_usedSdaSymbols.insert(sdaSymbolLeaf->getSdaSymbol());
 		}
 
 		bool isSeqLineUseless(PrimaryTree::Block::SeqLine* seqLine) {
-			auto assignmentNode = dynamic_cast<AssignmentNode*>(dynamic_cast<SdaGenericNode*>(seqLine->getNode())->getNode());
-			//we dont touch function call
-			if (dynamic_cast<SdaFunctionNode*>(assignmentNode->getSrcNode()))
-				return false;
-			if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
-				//memVar or localVar
-				if (sdaSymbolLeaf->getSdaSymbol()->getType() == CE::Symbol::LOCAL_INSTR_VAR) {
-					//if it is unused anywhere
-					if (m_usedSdaSymbols.find(sdaSymbolLeaf->getSdaSymbol()) == m_usedSdaSymbols.end()) {
-						return true;
+			SdaSymbolLeaf* sdaDstSymbolLeaf;
+			if (isSeqLineSuit(seqLine, sdaDstSymbolLeaf)) {
+				//if it is unused anywhere
+				if (m_usedSdaSymbols.find(sdaDstSymbolLeaf->getSdaSymbol()) == m_usedSdaSymbols.end()) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		bool isSeqLineSuit(PrimaryTree::Block::SeqLine* seqLine, SdaSymbolLeaf*& sdaDstSymbolLeaf) {
+			if (auto sdaGenericNode = dynamic_cast<SdaGenericNode*>(seqLine->getNode())) {
+				if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenericNode->getNode())) {
+					if (sdaDstSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
+						if (!dynamic_cast<SdaFunctionNode*>(assignmentNode->getSrcNode()) && //we dont touch function call
+							sdaDstSymbolLeaf->getSdaSymbol()->getType() == CE::Symbol::LOCAL_INSTR_VAR) { //memVar, funcVar, localVar
+							return true;
+						}
 					}
 				}
 			}
-
 			return false;
 		}
 	};
