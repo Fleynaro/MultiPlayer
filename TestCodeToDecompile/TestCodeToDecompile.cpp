@@ -19,6 +19,13 @@ TestA g_a;
 TestB g_b;
 TestC g_c;
 
+int Test_SimpleFunc(int a, int b) {
+	if (a < 0.5) {
+		a += 3;
+	}
+	return a + b;
+}
+
 int Test_StructsAndArray(TestA* a) {
 	auto c = g_c;
 	auto obj = fff(*c.b->a);

@@ -5,7 +5,7 @@ namespace CE::Decompiler::Optimization
 {
 	using namespace PrimaryTree;
 
-	//Transforming sequance of simple blocks to one complex block with complex condition to jump
+	//Transforming sequance of simple blocks to single complex block with complex condition(&&, ||) for jump
 	class GraphCondBlockOptimization : public GraphModification
 	{
 	public:

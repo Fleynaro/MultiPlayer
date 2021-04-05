@@ -16,6 +16,7 @@ namespace CE::Decompiler::ExprTree
 	};
 
 	class INode;
+	// something that can contain expr. node
 	class INodeAgregator
 	{
 	public:
@@ -95,6 +96,7 @@ namespace CE::Decompiler::ExprTree
 			replaceWith(nullptr);
 		}
 
+		// replace this node with another, remove all associations and make this node independent from expression tree
 		void replaceWith(INode* newNode) override {
 			for (auto it = m_parentNodes.begin(); it != m_parentNodes.end(); it ++) {
 				auto parentNode = *it;
@@ -131,6 +133,7 @@ namespace CE::Decompiler::ExprTree
 			return m_parentNodes;
 		}
 
+		// get single parent (exception thrown because of multiple parents)
 		INodeAgregator* getParentNode() override {
 			if (m_parentNodes.size() != 1) {
 				throw std::logic_error("it is ambigious because of multiple parents");
@@ -138,6 +141,7 @@ namespace CE::Decompiler::ExprTree
 			return *m_parentNodes.begin();
 		}
 
+		// not integer type
 		bool isFloatingPoint() override {
 			return false;
 		}

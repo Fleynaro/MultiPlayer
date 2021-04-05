@@ -3,6 +3,7 @@
 
 namespace CE::Decompiler
 {
+	// 64-bit mask (max length for all kind of operations)
 	class BitMask64 {
 		uint64_t m_bitMask = 0x0;
 	public:
@@ -20,6 +21,7 @@ namespace CE::Decompiler
 			return m_bitMask == 0x0;
 		}
 
+		// get mask as integer value
 		uint64_t getValue() const {
 			return m_bitMask;
 		}
@@ -28,6 +30,7 @@ namespace CE::Decompiler
 			return m_bitMask >> getOffset();
 		}
 
+		// calculate count of 1 bits
 		int getBitsCount() const {
 			int bitCount = 0;
 			for (auto m = m_bitMask; m != 0; m = m >> 1) {
@@ -38,6 +41,7 @@ namespace CE::Decompiler
 			return bitCount;
 		}
 
+		// calculate offset from begin to mask
 		int getOffset() const {
 			int offset = 0;
 			auto mask = m_bitMask;
@@ -48,11 +52,13 @@ namespace CE::Decompiler
 			return offset;
 		}
 
+		// get size of mask (in bytes)
 		int getSize() const {
 			auto bitsCount = getBitsCount();
 			return (bitsCount / 8) + ((bitsCount % 8) ? 1 : 0);
 		}
 
+		// get bytemask where 1 bit = 8 bits in bitmask
 		uint8_t getByteMask8() const {
 			uint8_t byteMask8 = 0x0;
 			int i = 0;
@@ -106,6 +112,7 @@ namespace CE::Decompiler
 		}
 	};
 
+	// Extended bit mask as if it stores more 64 bits (e.g. for both EAX and XMM registers)
 	class ExtBitMask {
 		BitMask64 m_bitMask64;
 		uint8_t m_index = 0x0;

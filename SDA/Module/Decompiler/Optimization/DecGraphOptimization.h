@@ -9,6 +9,7 @@
 
 namespace CE::Decompiler::Optimization
 {
+	// make full optimization of decompiled graph
 	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph)
 	{
 		GraphCondBlockOptimization graphCondBlockOptimization(decGraph);

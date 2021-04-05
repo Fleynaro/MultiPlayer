@@ -27,6 +27,8 @@ public:
 	TestC() = default;
 };
 
+int Test_SimpleFunc(int a, int b);
+
 int Test_StructsAndArray(TestA* a);
 
 int Test_Array();

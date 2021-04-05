@@ -6,6 +6,7 @@ namespace CE::Decompiler::Optimization
 {
 	using namespace PrimaryTree;
 
+	// Replace in conditions: {localVar + 1} = > {localVar} (localVar used in last assignments as increment: localVar = {localVar + 1})
 	class GraphLastLineAndConditionOrderFixing : public GraphModification
 	{
 	public:
@@ -31,15 +32,16 @@ namespace CE::Decompiler::Optimization
 		void gatherLocalVarsDependedOnItselfFromBlock(Block* block, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
 			for (auto symbolAssignmentLine : block->getSymbolAssignmentLines()) {
 				if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbolLeaf()->m_symbol)) {
-					//if localVar expressed through itself (e.g. localVar = localVar + 1)
+					//if localVar expressed through itself (e.g. localVar = {localVar + 1})
 					if (doesNodeHaveSymbol(symbolAssignmentLine->getSrcNode(), localVar)) {
+						// grab right node (e.g. {localVar + 1})
 						localVars.insert(std::make_pair(symbolAssignmentLine->getSrcNode()->getHash().getHashValue(), localVar));
 					}
 				}
 			}
 		}
 
-		//replace: <localVar = localVar + 1>	=>	 localVar
+		//replace in condition: {localVar + 1}	=>	 {localVar}
 		bool doSingleFix(INode* node, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
 			auto it = localVars.find(node->getHash().getHashValue());
 			if (it != localVars.end()) {

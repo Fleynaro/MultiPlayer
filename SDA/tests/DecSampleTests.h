@@ -18,10 +18,11 @@ using namespace CE::DataType;
 
 class ProgramModuleFixtureDecSamples : public ProgramModuleFixture {
 public:
+	// test unit for some instruction list (asm code) presented as array of bytes
 	struct SampleTest
 	{
 		int m_testId;
-		std::vector<byte> m_content;
+		std::vector<byte> m_content; // list of instructions
 		Symbolization::UserSymbolDef m_userSymbolDef;
 		std::map<int64_t, Signature*> m_functions;
 		bool m_enabled = true;
@@ -45,6 +46,8 @@ public:
 	std::map<int, HS::Value> m_sampleTestHashes;
 	Signature* m_defSignature;
 	bool m_isOutput = true;
+
+	//ignore all tests except
 	int m_doTestIdOnly = 0;
 
 	ProgramModuleFixtureDecSamples()
@@ -139,6 +142,7 @@ public:
 		return blockList;
 	}
 
+	// print message
 	void out(const char* fmt, ...) {
 		if (!m_isOutput)
 			return;
@@ -148,11 +152,13 @@ public:
 		va_end(args);
 	}
 
+	// returns array of bytes on specified address of some function (seeing RET instruction)
 	static std::vector<byte> GetFuncBytes(void* addr) {
 		auto size = CalculateFuncSize((byte*)addr, 0);
 		return std::vector<byte>((byte*)addr, (byte*)addr + size);
 	}
 
+	// calculates the function size, seeing RET instruction
 	static int CalculateFuncSize(byte* addr, bool endByRet = false) {
 		int size = 0;
 		while (!(addr[size] == 0xC3 && addr[size + 1] == 0xCC))

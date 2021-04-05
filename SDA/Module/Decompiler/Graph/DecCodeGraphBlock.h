@@ -11,9 +11,13 @@ namespace CE::Decompiler::PrimaryTree
 		ExprTree::NodeCloneContext m_nodeCloneContext;
 	};
 
+	// Decompiled block which contains the abstract tree
 	class Block
 	{
 	public:
+		// here are top nodes which are roots of expression trees
+
+		// top node for a decompiled block
 		class BlockTopNode : public TopNode
 		{
 		public:
@@ -24,6 +28,7 @@ namespace CE::Decompiler::PrimaryTree
 			{}
 		};
 
+		// condition for jumping to another block
 		class JumpTopNode : public BlockTopNode
 		{
 		public:
@@ -40,6 +45,7 @@ namespace CE::Decompiler::PrimaryTree
 			}
 		};
 
+		// operator "return" which contains expr. tree that is the result of a function
 		class ReturnTopNode : public BlockTopNode
 		{
 		public:
@@ -48,6 +54,7 @@ namespace CE::Decompiler::PrimaryTree
 			{}
 		};
 
+		// line in high-level present (like code lines in C++), it may be function call or assignment
 		class SeqLine : public BlockTopNode
 		{
 		public:
@@ -61,18 +68,6 @@ namespace CE::Decompiler::PrimaryTree
 
 			~SeqLine() {
 				m_block->m_seqLines.remove(this);
-			}
-
-			ExprTree::AssignmentNode* getAssignmentNode() {
-				return dynamic_cast<ExprTree::AssignmentNode*>(getNode());
-			}
-
-			ExprTree::INode* getDstNode() {
-				return getAssignmentNode()->getDstNode();
-			}
-
-			ExprTree::INode* getSrcNode() {
-				return getAssignmentNode()->getSrcNode();
 			}
 
 			virtual SeqLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
@@ -95,8 +90,22 @@ namespace CE::Decompiler::PrimaryTree
 				m_block->m_symbolAssignmentLines.remove(this);
 			}
 
+			ExprTree::AssignmentNode* getAssignmentNode() {
+				return dynamic_cast<ExprTree::AssignmentNode*>(getNode());
+			}
+
+			// left node from =
+			ExprTree::INode* getDstNode() {
+				return getAssignmentNode()->getDstNode();
+			}
+
+			// right node from =
+			ExprTree::INode* getSrcNode() {
+				return getAssignmentNode()->getSrcNode();
+			}
+
 			ExprTree::SymbolLeaf* getDstSymbolLeaf() {
-				return dynamic_cast<ExprTree::SymbolLeaf*>(getAssignmentNode()->getDstNode());
+				return dynamic_cast<ExprTree::SymbolLeaf*>(getDstNode());
 			}
 
 			SeqLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) override {
@@ -136,6 +145,7 @@ namespace CE::Decompiler::PrimaryTree
 			disconnect();
 		}
 
+		// make the block independent from the decompiled graph
 		void disconnect() {
 			for (auto nextBlock : getNextBlocks()) {
 				nextBlock->removeRefBlock(this);
@@ -208,10 +218,12 @@ namespace CE::Decompiler::PrimaryTree
 			return (int)m_blocksReferencedTo.size() != getRefHighBlocksCount();
 		}
 
+		// get count of blocks which reference to this block
 		int getRefBlocksCount() {
 			return (int)m_blocksReferencedTo.size();
 		}
 
+		// get count of blocks which reference to this block and located higher
 		int getRefHighBlocksCount() {
 			int count = 0;
 			for (auto refBlock : m_blocksReferencedTo) {
@@ -221,6 +233,7 @@ namespace CE::Decompiler::PrimaryTree
 			return count;
 		}
 
+		// get all top nodes for this block (assignments, function calls, return) / get all expressions
 		virtual std::list<BlockTopNode*> getAllTopNodes() {
 			std::list<BlockTopNode*> result;
 			for (auto line : getSeqLines()) {
@@ -235,6 +248,7 @@ namespace CE::Decompiler::PrimaryTree
 			return result;
 		}
 
+		// condition top node which contains boolean expression to jump to another block
 		ExprTree::AbstractCondition* getNoJumpCondition() {
 			return m_noJmpCond->getCond();
 		}
@@ -264,6 +278,7 @@ namespace CE::Decompiler::PrimaryTree
 			return m_symbolAssignmentLines;
 		}
 
+		// check if this block is empty
 		bool hasNoCode() {
 			return m_seqLines.empty() && m_symbolAssignmentLines.empty();
 		}
@@ -314,9 +329,10 @@ namespace CE::Decompiler::PrimaryTree
 			}
 	};
 
+	// Block in which the control flow end (the last instruction of these blocks is RET).
 	class EndBlock : public Block
 	{
-		ReturnTopNode* m_returnNode = nullptr;
+		ReturnTopNode* m_returnNode = nullptr; // operator return where the result is
 	public:
 		EndBlock(DecompiledCodeGraph* decompiledGraph, int level)
 			: Block(decompiledGraph, level)

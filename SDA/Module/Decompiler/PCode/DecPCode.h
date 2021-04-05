@@ -13,6 +13,7 @@ namespace CE::Decompiler::PCode
 {
 	using RegisterId = int;
 
+	// PCode register of some type (e.g. RAX:4, ZMM0:8)
 	class Register
 	{
 	public:
@@ -27,7 +28,7 @@ namespace CE::Decompiler::PCode
 		std::string m_debugInfo;
 		RegisterId m_genericId;
 		Type m_type;
-		ExtBitMask m_valueRangeMask;
+		ExtBitMask m_valueRangeMask; // range of possible values
 
 		Register(RegisterId genericId = 0, ExtBitMask valueRangeMask = 0x0, Type type = Type::Generic)
 			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_type(type)
@@ -51,10 +52,12 @@ namespace CE::Decompiler::PCode
 			return m_type == Type::Vector;
 		}
 
+		// get size (in bytes) of values range
 		int getSize() const {
 			return m_valueRangeMask.getSize();
 		}
 
+		// check if memory area of two registers intersected
 		bool intersect(const Register& reg) const {
 			//if the masks intersected
 			return m_genericId == reg.m_genericId && !(m_valueRangeMask & reg.m_valueRangeMask).isZero();
@@ -96,12 +99,14 @@ namespace CE::Decompiler::PCode
 		}
 	};
 
+	// that is the feature of x86: setting value to EAX cleans fully RAX
 	static ExtBitMask GetValueRangeMaskWithException(const PCode::Register& reg) {
 		if (reg.m_type == Register::Type::Generic && reg.m_valueRangeMask == ExtBitMask(4))
 			return ExtBitMask(8);
 		return reg.m_valueRangeMask;
 	}
 
+	// Register, variable(symbol) or constant (used as input or output for pCode instructions)
 	class Varnode
 	{
 	public:
@@ -175,6 +180,7 @@ namespace CE::Decompiler::PCode
 		}
 	};
 
+	// PCode instruction id
 	enum class InstructionId {
 		NONE,
 		UNKNOWN,
@@ -253,22 +259,19 @@ namespace CE::Decompiler::PCode
 		NEW
 	};
 
+	// PCode instruction (e.g. result = SUM op1, op2)
 	class Instruction
 	{
 	public:
 		InstructionId m_id;
-		Varnode* m_input0;
-		Varnode* m_input1;
-		Varnode* m_output;
+		Varnode* m_input0; // the first operand
+		Varnode* m_input1; // the second operand 
+		Varnode* m_output; // the result
 		std::string m_originalView;
 		
 		Instruction(InstructionId id, Varnode* input0, Varnode* input1, Varnode* output, int originalInstructionOffset, int originalInstructionLength, int orderId)
 			: m_id(id), m_input0(input0), m_input1(input1), m_output(output), m_originalInstructionOffset(originalInstructionOffset), m_originalInstructionLength(originalInstructionLength), m_orderId(orderId)
 		{}
-
-		static bool IsBranching(InstructionId id) {
-			return id >= InstructionId::BRANCH && id <= InstructionId::RETURN;
-		}
 
 		int getOriginalInstructionOffset() {
 			return m_originalInstructionOffset;
@@ -282,10 +285,12 @@ namespace CE::Decompiler::PCode
 			return m_orderId;
 		}
 
+		// get long offset which consist of original offset and pCode instruction order number: origOffset{24} | order{8}
 		int64_t getOffset() {
 			return (m_originalInstructionOffset << 8) | m_orderId;
 		}
 
+		// get long offset of the next instruction following this
 		int64_t getFirstInstrOffsetInNextOrigInstr() {
 			return (m_originalInstructionOffset + m_originalInstructionLength) << 8;
 		}
@@ -300,6 +305,11 @@ namespace CE::Decompiler::PCode
 			if (m_input1)
 				result += ", " + m_input1->printDebug();
 			return result;
+		}
+
+		// check if the instruction is some kind of jump
+		static bool IsBranching(InstructionId id) {
+			return id >= InstructionId::BRANCH && id <= InstructionId::RETURN;
 		}
 	private:
 		int m_originalInstructionOffset;

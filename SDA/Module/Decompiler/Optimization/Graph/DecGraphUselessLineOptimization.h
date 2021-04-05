@@ -19,7 +19,7 @@ namespace CE::Decompiler::Optimization
 		}
 	private:
 		void processBlock(Block* block) {
-			for (auto seqLine : block->getSeqLines()) {
+			for (auto seqLine : block->getSymbolAssignmentLines()) {
 				if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(seqLine->getDstNode()))
 					if (dynamic_cast<Symbol::AbstractVariable*>(symbolLeaf->m_symbol))
 						continue;

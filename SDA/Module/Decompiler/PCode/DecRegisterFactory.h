@@ -5,15 +5,20 @@ namespace CE::Decompiler
 {
 	using namespace PCode;
 
+	// register factory which have to be defined for each architecture
 	class AbstractRegisterFactory
 	{
 	public:
+		// normal registers
 		virtual Register createRegister(int regId, int size, int64_t offset = 0x0) = 0;
 
+		// flag registers (need for condition)
 		virtual Register createFlagRegister(int flag) = 0;
 
+		// IP
 		virtual Register createInstructionPointerRegister() = 0;
 
+		// SP
 		virtual Register createStackPointerRegister() = 0;
 	};
 

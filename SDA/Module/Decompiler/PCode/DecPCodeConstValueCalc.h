@@ -4,6 +4,7 @@
 
 namespace CE::Decompiler::PCode
 {
+	// Allow to calculate constant expression (e.g. for function addresses)
 	class ConstValueCalculating
 	{
 		std::list<Instruction*>* m_pInstructions;
@@ -16,6 +17,7 @@ namespace CE::Decompiler::PCode
 
 		void start(std::map<PCode::Instruction*, DataValue>& constValues) {
 			PCode::VirtualMachine vm(m_vmCtx);
+			//SP, IP registers to zero
 			m_vmCtx->setConstantValue(m_registerFactory->createInstructionPointerRegister(), 0);
 			m_vmCtx->setConstantValue(m_registerFactory->createStackPointerRegister(), 0);
 			for (auto instr : *m_pInstructions) {

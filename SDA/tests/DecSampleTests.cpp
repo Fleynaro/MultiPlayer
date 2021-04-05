@@ -50,16 +50,31 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 {
 	SampleTest* test;
 	Signature* sig;
+
+	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	
 	//ignore all tests except
-	//m_doTestIdOnly = 109;
+	m_doTestIdOnly = -1;
+
+	{
+		//simple function
+		test = createSampleTest(-1, GetFuncBytes(&Test_SimpleFunc));
+		test->m_enabled = true;
+		test->m_showFinalResult = true;
+		test->enableAllAndShowAll();
+		test->m_symbolization = true;
+		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test0");
+		sig->addParameter("a", findType("int32_t", ""));
+		sig->addParameter("b", findType("int32_t", ""));
+		sig->setReturnType(findType("int32_t"));
+	}
 
 	{
 		//multidimension stack array like stackArray[1][2][3]
 		test = createSampleTest(1, GetFuncBytes(&Test_Array));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
-		//test->enableAllAndShowAll();
+		test->enableAllAndShowAll();
 		test->m_symbolization = true;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test1");
 		sig->setReturnType(findType("uint64_t"));
@@ -349,13 +364,14 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 	}
 
 	for (auto sampleTest : m_sampleTests) {
-		if (m_doTestIdOnly && m_doTestIdOnly != sampleTest->m_testId)
+		if (m_doTestIdOnly && m_doTestIdOnly != sampleTest->m_testId) // select only chosen test
 			continue;
 		if (!sampleTest->m_enabled)
 			continue;
 		m_isOutput = sampleTest->m_showAllCode;
 
-		std::list<Instruction*> decodedInstructions;
+		// 1) INSTRUCTION DECODNING (from bytes to pCode)
+		std::list<Instruction*> decodedInstructions; // the result of the step
 		RegisterFactoryX86 registerFactoryX86;
 		PCode::DecoderX86 decoder(&registerFactoryX86);
 		int offset = 0;
@@ -367,16 +383,19 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			offset += decoder.getInstructionLength();
 		}
 
+		// 2) PCODE VIRTUAL MACHINE (execute pCode and calculate constant expression)
 		std::map<PCode::Instruction*, DataValue> constValues;
 		PCode::VirtualMachineContext vmCtx;
 		PCode::ConstValueCalculating constValueCalculating(&decodedInstructions, &vmCtx, &registerFactoryX86);
 		constValueCalculating.start(constValues);
 
+		// 3) TRANSFORMATION TO GRAPH (transform the list of decoded instructions to asm graph)
 		AsmGraph graph(decodedInstructions, constValues);
 		graph.build();
 		if (m_isOutput && sampleTest->m_showAsmBefore)
 			graph.printDebug(sampleTest->m_content.data());
 
+		// 4) DECOMPILING (transform the asm graph to decompiled code graph)
 		auto info = CE::Decompiler::FunctionCallInfo(sampleTest->m_userSymbolDef.m_signature->getParameterInfos());
 		auto decCodeGraph = new DecompiledCodeGraph(&graph, info);
 		
@@ -399,6 +418,8 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			output.show();
 		}
 
+
+		// 5) OPTIMIZATION (optimize the decompiled code graph)
 		auto clonedDecCodeGraph = decCodeGraph->clone();
 		clonedDecCodeGraph->checkOnSingleParents();
 		Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
@@ -408,6 +429,8 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			m_isOutput = true;
 			testFail = true;
 		}
+
+		//show code
 		out("\n\n\n********************* AFTER OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 		blockList = buildBlockList(clonedDecCodeGraph);
 		LinearViewSimpleConsoleOutput output2(blockList, clonedDecCodeGraph);
@@ -415,6 +438,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			output2.show();
 		}
 
+		// 6) SYMBOLIZATION
 		if (sampleTest->m_symbolization) {
 			m_isOutput |= sampleTest->m_showSymbCode;
 			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
@@ -456,6 +480,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			}
 			clonedDecCodeGraph->checkOnSingleParents();
 
+			// 7) FINAL OPTIMIZATION
 			m_isOutput |= sampleTest->m_showFinalResult;
 			out("\n\n\n********************* AFTER FINAL OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 			Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
@@ -471,6 +496,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 		out("\n\n\n\n\n");
 	}
 
+	//show hashes
 	printf("\nhashes\n{\n");
 	int i = 1;
 	for (auto pair : sampleTestHashes) {
