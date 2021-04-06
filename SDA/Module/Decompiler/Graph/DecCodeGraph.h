@@ -107,6 +107,7 @@ namespace CE::Decompiler
 			DecompiledCodeGraph::CalculateLevelsForDecBlocks(getStartBlock(), path);
 		}
 
+		// calculate count of lines(height) for each block beginining from lower blocks (need as some score for linearization)
 		static int CalculateHeightForDecBlocks(PrimaryTree::Block* block) {
 			int height = 0;
 			for (auto nextBlock : block->getNextBlocks()) {
@@ -115,7 +116,7 @@ namespace CE::Decompiler
 					height = max(height, h);
 				}
 			}
-			block->m_maxHeight = height + (int)block->getSeqLines().size();
+			block->m_maxHeight = height + (int)block->getSeqAssignmentLines().size();
 			return block->m_maxHeight;
 		}
 	private:

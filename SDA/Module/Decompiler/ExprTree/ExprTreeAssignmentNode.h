@@ -40,7 +40,15 @@ namespace CE::Decompiler::ExprTree
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
 			if (m_instr)
 				return { m_instr };
-			return {};
+			//return {};
+
+			// upd: this code down is placed from the class GraphLocalVarsRelToInstructions
+			std::list<PCode::Instruction*> list;
+			if (auto nodeRelToInstr = dynamic_cast<PCode::IRelatedToInstruction*>(getSrcNode())) {
+				auto list2 = nodeRelToInstr->getInstructionsRelatedTo();
+				list.insert(list.end(), list2.begin(), list2.end());
+			}
+			return list;
 		}
 
 		INode* getDstNode() {

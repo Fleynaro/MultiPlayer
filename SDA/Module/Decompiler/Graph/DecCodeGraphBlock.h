@@ -54,40 +54,20 @@ namespace CE::Decompiler::PrimaryTree
 			{}
 		};
 
-		// line in high-level present (like code lines in C++), it may be function call or assignment
-		class SeqLine : public BlockTopNode
+		// line in high-level present (like code lines in C++), it may be function call(this is always assignment!) or normal assignment(e.g. localVar = 5)
+		class SeqAssignmentLine : public BlockTopNode // consequent
 		{
 		public:
-			SeqLine(Block* block, ExprTree::AssignmentNode* assignmentNode)
+			SeqAssignmentLine(Block* block, ExprTree::AssignmentNode* assignmentNode)
 				: BlockTopNode(block, assignmentNode)
 			{}
 
-			SeqLine(Block* block, ExprTree::INode* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
-				: SeqLine(block, new ExprTree::AssignmentNode(dstNode, srcNode, instr))
+			SeqAssignmentLine(Block* block, ExprTree::INode* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
+				: SeqAssignmentLine(block, new ExprTree::AssignmentNode(dstNode, srcNode, instr))
 			{}
 
-			~SeqLine() {
+			~SeqAssignmentLine() {
 				m_block->m_seqLines.remove(this);
-			}
-
-			virtual SeqLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
-				return new SeqLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
-			}
-		};
-
-		class SymbolAssignmentLine : public SeqLine
-		{
-		public:
-			SymbolAssignmentLine(Block* block, ExprTree::AssignmentNode* assignmentNode)
-				: SeqLine(block, assignmentNode)
-			{}
-
-			SymbolAssignmentLine(Block* block, ExprTree::SymbolLeaf* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
-				: SeqLine(block, dstNode, srcNode, instr)
-			{}
-
-			~SymbolAssignmentLine() {
-				m_block->m_symbolAssignmentLines.remove(this);
 			}
 
 			ExprTree::AssignmentNode* getAssignmentNode() {
@@ -104,12 +84,33 @@ namespace CE::Decompiler::PrimaryTree
 				return getAssignmentNode()->getSrcNode();
 			}
 
+			virtual SeqAssignmentLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
+				return new SeqAssignmentLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
+			}
+		};
+
+		// temp line because it will be removed during graph optimization (lines expanding when parallel -> sequance)
+		class SymbolParallelAssignmentLine : public SeqAssignmentLine // parallel
+		{
+		public:
+			SymbolParallelAssignmentLine(Block* block, ExprTree::AssignmentNode* assignmentNode)
+				: SeqAssignmentLine(block, assignmentNode)
+			{}
+
+			SymbolParallelAssignmentLine(Block* block, ExprTree::SymbolLeaf* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
+				: SeqAssignmentLine(block, dstNode, srcNode, instr)
+			{}
+
+			~SymbolParallelAssignmentLine() {
+				m_block->m_symbolParallelAssignmentLines.remove(this);
+			}
+
 			ExprTree::SymbolLeaf* getDstSymbolLeaf() {
 				return dynamic_cast<ExprTree::SymbolLeaf*>(getDstNode());
 			}
 
-			SeqLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) override {
-				return new SymbolAssignmentLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
+			SeqAssignmentLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) override {
+				return new SymbolParallelAssignmentLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
 			}
 		};
 
@@ -120,8 +121,8 @@ namespace CE::Decompiler::PrimaryTree
 		std::list<Block*> m_blocksReferencedTo;
 		Block* m_nextNearBlock = nullptr;
 		Block* m_nextFarBlock = nullptr;
-		std::list<SeqLine*> m_seqLines;
-		std::list<SymbolAssignmentLine*> m_symbolAssignmentLines;
+		std::list<SeqAssignmentLine*> m_seqLines;
+		std::list<SymbolParallelAssignmentLine*> m_symbolParallelAssignmentLines; // temporary list, empty in the end of graph optimization
 		JumpTopNode* m_noJmpCond;
 	public:
 		int m_maxHeight = 0;
@@ -236,10 +237,10 @@ namespace CE::Decompiler::PrimaryTree
 		// get all top nodes for this block (assignments, function calls, return) / get all expressions
 		virtual std::list<BlockTopNode*> getAllTopNodes() {
 			std::list<BlockTopNode*> result;
-			for (auto line : getSeqLines()) {
+			for (auto line : getSeqAssignmentLines()) {
 				result.push_back(line);
 			}
-			for (auto line : getSymbolAssignmentLines()) {
+			for (auto line : getSymbolParallelAssignmentLines()) {
 				result.push_back(line);
 			}
 
@@ -263,24 +264,24 @@ namespace CE::Decompiler::PrimaryTree
 		}
 
 		void addSeqLine(ExprTree::INode* destAddr, ExprTree::INode* srcValue, PCode::Instruction* instr = nullptr) {
-			m_seqLines.push_back(new SeqLine(this, destAddr, srcValue, instr));
+			m_seqLines.push_back(new SeqAssignmentLine(this, destAddr, srcValue, instr));
 		}
 
-		std::list<SeqLine*>& getSeqLines() {
+		std::list<SeqAssignmentLine*>& getSeqAssignmentLines() {
 			return m_seqLines;
 		}
 
 		void addSymbolAssignmentLine(ExprTree::SymbolLeaf* symbolLeaf, ExprTree::INode* srcValue, PCode::Instruction* instr = nullptr) {
-			m_symbolAssignmentLines.push_back(new SymbolAssignmentLine(this, symbolLeaf, srcValue, instr));
+			m_symbolParallelAssignmentLines.push_back(new SymbolParallelAssignmentLine(this, symbolLeaf, srcValue, instr));
 		}
-
-		std::list<SymbolAssignmentLine*>& getSymbolAssignmentLines() {
-			return m_symbolAssignmentLines;
+		
+		std::list<SymbolParallelAssignmentLine*>& getSymbolParallelAssignmentLines() {
+			return m_symbolParallelAssignmentLines;
 		}
 
 		// check if this block is empty
 		bool hasNoCode() {
-			return m_seqLines.empty() && m_symbolAssignmentLines.empty();
+			return m_seqLines.empty() && m_symbolParallelAssignmentLines.empty();
 		}
 
 		Block* clone(BlockCloneContext* ctx) {
@@ -300,9 +301,9 @@ namespace CE::Decompiler::PrimaryTree
 			for (auto line : m_seqLines) {
 				newBlock->m_seqLines.push_back(line->clone(newBlock, &ctx->m_nodeCloneContext));
 			}
-			for (auto line : m_symbolAssignmentLines) {
-				auto newLine = dynamic_cast<SymbolAssignmentLine*>(line->clone(newBlock, &ctx->m_nodeCloneContext));
-				newBlock->m_symbolAssignmentLines.push_back(newLine);
+			for (auto line : m_symbolParallelAssignmentLines) {
+				auto newLine = dynamic_cast<SymbolParallelAssignmentLine*>(line->clone(newBlock, &ctx->m_nodeCloneContext));
+				newBlock->m_symbolParallelAssignmentLines.push_back(newLine);
 			}
 			return newBlock;
 		}
@@ -312,9 +313,9 @@ namespace CE::Decompiler::PrimaryTree
 			for (auto line : m_seqLines) {
 				result += tabStr + line->getNode()->printDebug();
 			}
-			if(!m_symbolAssignmentLines.empty())
+			if(!m_symbolParallelAssignmentLines.empty())
 				result += tabStr + "<Symbol assignments>:\n";
-			for (auto line : m_symbolAssignmentLines) {
+			for (auto line : m_symbolParallelAssignmentLines) {
 				result += tabStr + "- " + line->getNode()->printDebug();
 			}
 			if (cond && getNoJumpCondition() != nullptr) {

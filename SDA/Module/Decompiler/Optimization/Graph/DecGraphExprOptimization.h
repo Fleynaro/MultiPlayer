@@ -19,6 +19,7 @@ namespace CE::Decompiler::Optimization
 				});
 		}
 	private:
+		// optimize expression on the specified {topNode}
 		void optimize(PrimaryTree::Block::BlockTopNode* topNode) {
 			INode::UpdateDebugInfo(topNode->getNode());
 			ExprOptimization exprOptimization(topNode);

@@ -20,7 +20,7 @@ namespace CE::Decompiler::Optimization
 					m_usedSdaSymbols.clear();
 				}
 				passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
-					m_curSeqLine = dynamic_cast<PrimaryTree::Block::SeqLine*>(topNode);
+					m_curSeqLine = dynamic_cast<PrimaryTree::Block::SeqAssignmentLine*>(topNode);
 					defineUsedSdaSymbols(topNode->getNode());
 					});
 				m_isFirstPass = false;
@@ -28,7 +28,7 @@ namespace CE::Decompiler::Optimization
 
 			//try deleting all lines that contains unused symbol as destination
 			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
-				if (auto seqLine = dynamic_cast<PrimaryTree::Block::SeqLine*>(topNode)) {
+				if (auto seqLine = dynamic_cast<PrimaryTree::Block::SeqAssignmentLine*>(topNode)) {
 					if (isSeqLineUseless(seqLine))
 						delete seqLine;
 				}
@@ -40,7 +40,7 @@ namespace CE::Decompiler::Optimization
 		std::set<CE::Symbol::ISymbol*> m_usedSdaSymbols;
 		std::set<CE::Symbol::ISymbol*> m_prevUsedSdaSymbols;
 		bool m_isFirstPass = true;
-		PrimaryTree::Block::SeqLine* m_curSeqLine = nullptr;
+		PrimaryTree::Block::SeqAssignmentLine* m_curSeqLine = nullptr;
 
 		void defineUsedSdaSymbols(INode* node) {
 			node->iterateChildNodes([&](INode* childNode) {
@@ -67,7 +67,7 @@ namespace CE::Decompiler::Optimization
 			m_usedSdaSymbols.insert(sdaSymbolLeaf->getSdaSymbol());
 		}
 
-		bool isSeqLineUseless(PrimaryTree::Block::SeqLine* seqLine) {
+		bool isSeqLineUseless(PrimaryTree::Block::SeqAssignmentLine* seqLine) {
 			SdaSymbolLeaf* sdaDstSymbolLeaf;
 			if (isSeqLineSuit(seqLine, sdaDstSymbolLeaf)) {
 				//if it is unused anywhere
@@ -78,7 +78,7 @@ namespace CE::Decompiler::Optimization
 			return false;
 		}
 
-		bool isSeqLineSuit(PrimaryTree::Block::SeqLine* seqLine, SdaSymbolLeaf*& sdaDstSymbolLeaf) {
+		bool isSeqLineSuit(PrimaryTree::Block::SeqAssignmentLine* seqLine, SdaSymbolLeaf*& sdaDstSymbolLeaf) {
 			if (auto sdaGenericNode = dynamic_cast<SdaGenericNode*>(seqLine->getNode())) {
 				if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenericNode->getNode())) {
 					if (sdaDstSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {

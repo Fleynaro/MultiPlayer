@@ -1,6 +1,7 @@
 #pragma once
 #include <main.h>
 
+// Hash (with encapsulated operations <<, +)
 class HS
 {
 public:
@@ -55,6 +56,7 @@ public:
 		return *this << hs.m_hashValue;
 	}
 	
+	// get hash as integer value
 	Value getHashValue() const {
 		return m_hashValue;
 	}

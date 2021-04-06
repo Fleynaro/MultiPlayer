@@ -30,7 +30,7 @@ namespace CE::Decompiler::Optimization
 
 		//gather localVars located in something like this: localVar = localVar + 1
 		void gatherLocalVarsDependedOnItselfFromBlock(Block* block, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
-			for (auto symbolAssignmentLine : block->getSymbolAssignmentLines()) {
+			for (auto symbolAssignmentLine : block->getSymbolParallelAssignmentLines()) {
 				if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbolLeaf()->m_symbol)) {
 					//if localVar expressed through itself (e.g. localVar = {localVar + 1})
 					if (doesNodeHaveSymbol(symbolAssignmentLine->getSrcNode(), localVar)) {

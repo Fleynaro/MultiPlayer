@@ -5,23 +5,24 @@ namespace CE::Decompiler::Optimization
 {
 	using namespace PrimaryTree;
 
-	class GraphInstructionsForLocalVarsSearch : public GraphModification
+	// iterate over all local vars in dec. graph and find pCode instructions for them (upd: disabled)
+	class GraphLocalVarsRelToInstructions : public GraphModification
 	{
 	public:
-		GraphInstructionsForLocalVarsSearch(DecompiledCodeGraph* decGraph)
+		GraphLocalVarsRelToInstructions(DecompiledCodeGraph* decGraph)
 			: GraphModification(decGraph)
 		{}
 
 		void start() override {
 			for (const auto decBlock : m_decGraph->getDecompiledBlocks()) {
 				//traversing over all local vars
-				for (auto symbolAssignmentLine : decBlock->getSymbolAssignmentLines()) {
+				for (auto symbolAssignmentLine : decBlock->getSymbolParallelAssignmentLines()) {
 					processSymbolAssignmentLine(symbolAssignmentLine);
 				}
 			}
 		}
 	private:
-		void processSymbolAssignmentLine(Block::SymbolAssignmentLine* symbolAssignmentLine) {
+		void processSymbolAssignmentLine(Block::SymbolParallelAssignmentLine* symbolAssignmentLine) {
 			auto localVarSymbol = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbolLeaf()->m_symbol);
 			if (!localVarSymbol)
 				return;
@@ -30,6 +31,7 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
+		// get all pCode instructions from src
 		std::list<PCode::Instruction*> getInstructionsRelatedTo(ExprTree::AssignmentNode* assignmentNode) {
 			if (!assignmentNode->getInstructionsRelatedTo().empty())
 				return assignmentNode->getInstructionsRelatedTo();
