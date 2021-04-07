@@ -4,6 +4,7 @@
 
 namespace CE::Decompiler::Optimization
 {
+	// Simplify simple condition: SBORROW, rax + -0x2 < 0 -> rax < -0x2 * -1
 	class ExprSimpleConditionOptimization : public ExprModification
 	{
 	public:
@@ -42,7 +43,7 @@ namespace CE::Decompiler::Optimization
 			return false;
 		}
 
-		//rax + -0x2 < 0 => rax < -0x2 * -1
+		//rax + -0x2 < 0 -> rax < -0x2 * -1
 		//if(((((([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}) *.4 0xffffffff{-1}) +.4 [mem_3_32]) == 0x0{0})) -> if(([mem_3_32] == ((([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}) *.4 0x1{1})))
 		bool moveTermToRightPartOfCondition(Condition* cond) {
 			if (auto addOpNode = dynamic_cast<OperationalNode*>(cond->m_leftNode)) {
@@ -80,15 +81,15 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		//check negative of expr node
-		static bool IsNegative(INode* node, BitMask64& mask) {
+		//check negative arithmetic sign of expr node
+		static bool IsNegative(INode* node, BitMask64& rangeValueMask) {
 			if (auto numberLeaf = dynamic_cast<INumberLeaf*>(node)) {
-				if ((numberLeaf->getValue() >> (mask.getBitsCount() - 1)) & 0b1)
+				if ((numberLeaf->getValue() >> (rangeValueMask.getBitsCount() - 1)) & 0b1)
 					return true;
 			}
 			else if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
 				if (opNode->m_operation == Mul)
-					return IsNegative(opNode->m_rightNode, mask);
+					return IsNegative(opNode->m_rightNode, rangeValueMask);
 			}
 			return false;
 		}

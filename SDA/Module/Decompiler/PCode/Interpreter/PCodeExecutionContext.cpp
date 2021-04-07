@@ -114,8 +114,12 @@ ExprTree::INode* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarno
 	ExprTree::INode* regExpr;
 	auto& reg = varnodeRegister->m_register;
 	auto needReadMask = varnodeRegister->m_register.m_valueRangeMask;
+
+	// try to get expr. value from register varnode within this exec. block context
 	auto regParts = getRegisterParts(reg.getGenericId(), needReadMask);
+
 	if (!needReadMask.isZero()) {
+		// if not all register parts are got then it requires external symbol (need to address other exec. block contexts)
 		auto symbol = new Symbol::RegisterVariable(reg);
 		m_decompiler->m_decompiledGraph->addSymbol(symbol);
 		auto symbolLeaf = new ExprTree::SymbolLeaf(symbol);
@@ -128,6 +132,7 @@ ExprTree::INode* ExecutionBlockContext::requestRegisterExpr(PCode::RegisterVarno
 		regExpr = symbolLeaf;
 	}
 	else {
+		// if all register parts are got then combine them into one expr. value
 		regExpr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 	}
 

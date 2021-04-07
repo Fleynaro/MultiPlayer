@@ -5,6 +5,7 @@ namespace CE::Decompiler
 {
 	using namespace ExprTree;
 
+	// abstract class for some expr modification/simplification
 	class ExprModification
 	{
 		INode* m_node;
@@ -22,6 +23,7 @@ namespace CE::Decompiler
 		}
 
 	protected:
+		// replace this node with another
 		void replace(INode* newNode, bool destroy = true) {
 			m_node->replaceWith(newNode);
 			if (destroy) {

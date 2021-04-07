@@ -8,11 +8,16 @@ namespace CE::Decompiler::Optimization
 	//(x * 2) * 3 => x * 6
 	class ExprExpandingToLinearExpr : public ExprModification
 	{
+		// operation state (set by method defineOperationState)
 		OperationType m_operationAdd = None;
 		OperationType m_operationMul = None;
 		uint64_t m_invisibleMultiplier;
+
+		// terms
 		std::map<HS::Value, std::pair<INode*, int64_t>> m_terms;
 		int64_t m_constTerm;
+
+		// is there a sense to build LinearExpr? (yes for {(5x + 2) * 2}, but no for {5x + 2})
 		bool m_doBuilding = false;
 	public:
 		ExprExpandingToLinearExpr(OperationalNode* node)
@@ -20,8 +25,9 @@ namespace CE::Decompiler::Optimization
 		{}
 
 		void start() override {
-			if (!defineOperation(getOpNode()->m_operation))
+			if (!defineOperationState(getOpNode()->m_operation))
 				return;
+			// find all terms and know if m_doBuilding is true
 			defineTerms(getOpNode(), m_invisibleMultiplier);
 			if (m_doBuilding) {
 				auto linearExpr = buildLinearExpr();
@@ -38,14 +44,16 @@ namespace CE::Decompiler::Optimization
 			return dynamic_cast<OperationalNode*>(getNode());
 		}
 	private:
+		// using terms (including constant term) build linear expression
 		LinearExpr* buildLinearExpr() {
 			auto linearExpr = new LinearExpr(m_constTerm, m_operationAdd);
+			// iterate over all terms
 			for (auto termInfo : m_terms) {
 				auto node = termInfo.second.first;
 				auto mask = node->getMask();
 				auto multiplier = (uint64_t&)termInfo.second.second;
+				
 				INode* term;
-
 				if ((multiplier & mask.getValue()) == (m_invisibleMultiplier & mask.getValue())) {
 					term = termInfo.second.first;
 				}
@@ -58,9 +66,11 @@ namespace CE::Decompiler::Optimization
 			return linearExpr;
 		}
 
-		//(5x - 10y) * 2 + 5 =>	{x: 10, y: -20, constTerm: 5}
+		//(5x - 10y) * 2 + 5 ->	{x: 10, y: -20, constTerm: 5}
 		void defineTerms(INode* node, int64_t k, int level = 0) {
 			auto size = node->getMask().getSize();
+
+			// called for add operation (e.g. x + 5)
 			if (auto numberLeaf = dynamic_cast<INumberLeaf*>(node)) {
 				auto constTerm = ExprConstCalculating::Calculate(
 					numberLeaf->getValue(),
@@ -78,11 +88,12 @@ namespace CE::Decompiler::Optimization
 				return;
 			}
 
-			//(x * 2) * 3 => x * 6
+			// if the source expression is enough long, in other words, can be presented as linear expr.
 			if (level == 2) {
 				m_doBuilding = true;
 			}
 
+			//(x * 2) * 3 => x * 6
 			if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
 				if (opNode->m_operation == m_operationAdd) {
 					defineTerms(opNode->m_leftNode, k, level + 1);
@@ -91,7 +102,7 @@ namespace CE::Decompiler::Optimization
 				}
 				else if (opNode->m_operation == m_operationMul) {
 					if (auto rightNumberLeaf = dynamic_cast<INumberLeaf*>(opNode->m_rightNode)) {
-						auto newK = ExprConstCalculating::Calculate(
+						auto newK = ExprConstCalculating::Calculate( // e.g. 5x * 5 -> 25x
 							rightNumberLeaf->getValue(),
 							k,
 							m_operationMul,
@@ -103,6 +114,7 @@ namespace CE::Decompiler::Optimization
 				}
 			}
 
+			// if {node} is not OperationalNode then it is a term
 			auto hashVal = node->getHash().getHashValue();
 			if (m_terms.find(hashVal) == m_terms.end()) {
 				m_terms[hashVal] = std::make_pair(node, 0);
@@ -116,7 +128,8 @@ namespace CE::Decompiler::Optimization
 			m_terms[hashVal] = std::make_pair(node, newK);
 		}
 
-		bool defineOperation(OperationType op) {
+		// arithmetic/logic/floating operation state
+		bool defineOperationState(OperationType op) {
 			if (op == Add || op == Mul) {
 				m_operationAdd = Add;
 				m_operationMul = Mul;
@@ -129,10 +142,12 @@ namespace CE::Decompiler::Optimization
 				m_invisibleMultiplier = (int64_t)-1;
 				return true;
 			}
+
+			//TODO: for float and double
 			//if (op == fAdd || op == fMul) {
 			//	m_operationAdd = fAdd;
 			//	m_operationMul = fMul;
-			//	m_invisibleMultiplier = 0; //todo: for float and double
+			//	m_invisibleMultiplier = 0;
 			//	return true;
 			//}
 			return false;

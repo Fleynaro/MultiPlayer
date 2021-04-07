@@ -43,6 +43,7 @@ namespace CE::Decompiler::ExprTree
 		Memory
 	};
 
+	// groups: Arithmetic, Logic, Memory
 	static OperationGroup GetOperationGroup(OperationType opType) {
 		if (opType >= Add && opType <= Mod)
 			return OperationGroup::Arithmetic;
@@ -53,6 +54,7 @@ namespace CE::Decompiler::ExprTree
 		return OperationGroup::None;
 	}
 
+	// unsupported to calculate: ReadValue, Cast, ...
 	static bool IsOperationUnsupportedToCalculate(OperationType operation) {
 		return operation == ReadValue || operation == Cast || operation == Functional || operation == fFunctional;
 	}
@@ -61,26 +63,32 @@ namespace CE::Decompiler::ExprTree
 		return operation >= fAdd && operation <= fFunctional;
 	}
 
+	// e.g. ReadValue, Cast, ...
 	static bool IsOperationWithSingleOperand(OperationType operation) {
 		return operation == ReadValue || operation == Cast || operation == fFunctional;
 	}
 
+	// Add, Mul, Shl
 	static bool IsOperationOverflow(OperationType opType) {
 		return (opType == Add || opType == Mul || opType == Shl) && !IsOperationUnsupportedToCalculate(opType);
 	}
 
+	// in these operations their operands can be swaped (Add, Mul, ...)
 	static bool IsOperationMoving(OperationType opType) {
 		return !(opType == fDiv || opType == Div || opType == Shr || opType == Shl || opType == Concat || opType == Subpiece) && !IsOperationUnsupportedToCalculate(opType);
 	}
 
+	// Add, Mul, ...
 	static bool IsOperationSigned(OperationType opType) {
 		return (GetOperationGroup(opType) == OperationGroup::Arithmetic && opType != Mod) && !IsOperationUnsupportedToCalculate(opType);
 	}
 
+	// in these operations bits of operands can be viewed separately: And, Or, Xor
 	static bool IsOperationManipulatedWithBitVector(OperationType opType) {
 		return (opType == And || opType == Or || opType == Xor) && !IsOperationUnsupportedToCalculate(opType);
 	}
 
+	// print operation sign
 	static std::string ShowOperation(OperationType opType) {
 		switch (opType)
 		{
@@ -101,6 +109,7 @@ namespace CE::Decompiler::ExprTree
 		return "_";
 	}
 
+	// Arithmetic, logic, floating or other operation
 	class OperationalNode : public Node, public INodeAgregator, public PCode::IRelatedToInstruction
 	{
 	public:
@@ -227,6 +236,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
+	// Reads value of some size(in bytes) from the specified memory location
 	class ReadValueNode : public OperationalNode
 	{
 	public:
@@ -264,7 +274,7 @@ namespace CE::Decompiler::ExprTree
 		int m_size;
 	};
 
-	//for movsx, imul, idiv, ...
+	// Casting between signed and unsgined value of different size (for movsx, imul, idiv, ...)
 	class CastNode : public OperationalNode
 	{
 	public:
@@ -306,6 +316,7 @@ namespace CE::Decompiler::ExprTree
 		bool m_isSigned;
 	};
 
+	// Gets two arguments (float) and returns boolean value: CARRY, SCARRY, SBORROW
 	class FunctionalNode : public OperationalNode
 	{
 	public:
@@ -339,6 +350,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
+	// Gets one argument (float or int) and returns float value: FABS, FSQRT, FLOOR, TOFLOAT, ...
 	class FloatFunctionalNode : public OperationalNode
 	{
 	public:

@@ -3,6 +3,7 @@
 
 namespace CE::Decompiler::Optimization
 {
+	// Simplify composite condition: !(x == 2) -> (x != 2),	x > 2 && x == 3 -> x == 3 && x > 2,		(x < 2 || x == 2) -> (x <= 2)
 	class ExprCompositeConditionOptimization : public ExprModification
 	{
 	public:
@@ -12,7 +13,7 @@ namespace CE::Decompiler::Optimization
 
 		void start() override {
 			inverseConditions(getCompCondition());
-			if (getCompCondition()) {
+			if (getCompCondition()) { // check if this node continue being comp. condition during replacing
 				makeOrderInCompositeCondition(getCompCondition());
 			}
 			if (getCompCondition()) {

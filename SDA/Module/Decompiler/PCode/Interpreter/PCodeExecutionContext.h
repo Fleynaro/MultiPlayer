@@ -4,8 +4,8 @@
 namespace CE::Decompiler
 {
 	struct RegisterPart : public ExprTree::INodeAgregator {
-		ExtBitMask m_regMask;
-		ExtBitMask m_maskToChange;
+		ExtBitMask m_regMask; // register range value mask
+		ExtBitMask m_maskToChange; // that part of m_regMask where m_expr located
 		ExprTree::INode* m_expr = nullptr;
 
 		RegisterPart(ExtBitMask regMask, ExtBitMask maskToChange, ExprTree::INode* expr)
@@ -70,7 +70,7 @@ namespace CE::Decompiler
 		return resultExpr;
 	}
 
-	class Decompiler; //make interface later
+	class Decompiler; //todo: make interface later
 
 	struct ExternalSymbol : public ExprTree::INodeAgregator {
 		PCode::RegisterVarnode* m_regVarnode;
@@ -97,13 +97,14 @@ namespace CE::Decompiler
 		}
 	};
 
+	// execution interpreter context
 	class ExecutionBlockContext
 	{
 	public:
 		Decompiler* m_decompiler;
 
 		struct VarnodeExpr {
-			PCode::Varnode* m_varnode;
+			PCode::Varnode* m_varnode; // register/symbol varnode
 			TopNode* m_expr;
 			bool m_changed;
 			
@@ -112,23 +113,29 @@ namespace CE::Decompiler
 			{}
 		};
 		std::list<VarnodeExpr> m_varnodes;
-		std::list<std::pair<PCode::Register, TopNode*>> m_cachedRegisters;
+		std::list<std::pair<PCode::Register, TopNode*>> m_cachedRegisters; // use of cache for optimization of addressing
 		std::list<PCode::RegisterVarnode*> m_ownRegVarnodes;
 		std::list<ExternalSymbol*> m_externalSymbols;
 		std::set<PCode::RegisterVarnode*> m_resolvedExternalSymbols;
 
 		ExecutionBlockContext(Decompiler* decompiler);
 
+		// set expr. value to register
 		void setVarnode(const PCode::Register& reg, ExprTree::INode* expr, bool rewrite = true);
 
+		// set expr. value to varnode (register/symbol)
 		void setVarnode(PCode::Varnode* varnode, ExprTree::INode* expr, bool rewrite = true);
 
-		RegisterParts getRegisterParts(PCode::RegisterId registerId, ExtBitMask& mask, bool changedRegistersOnly = false);
+		// try to get expr. values from register by {needReadMask} within this exec. block context (otherwise external symbol used)
+		RegisterParts getRegisterParts(PCode::RegisterId registerId, ExtBitMask& needReadMask, bool changedRegistersOnly = false);
 
+		// get expr. value from register varnode (this method uses getRegisterParts)
 		ExprTree::INode* requestRegisterExpr(PCode::RegisterVarnode* varnodeRegister);
 
+		// get expr. value from register (based on requestRegisterExpr for varnode)
 		ExprTree::INode* requestRegisterExpr(const PCode::Register& reg);
 
+		// get expr. value from symbol varnode
 		ExprTree::INode* requestSymbolExpr(PCode::SymbolVarnode* symbolVarnode);
 	};
 };

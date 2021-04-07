@@ -4,6 +4,7 @@
 
 namespace CE::Decompiler::Optimization
 {
+	// x == NaN -> false, (x >= 0) == 0 -> x < 0, x	|| true	-> true
 	class ExprConstConditionCalculating : public ExprModification
 	{
 	public:

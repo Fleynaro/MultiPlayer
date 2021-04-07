@@ -121,6 +121,7 @@ namespace CE::Decompiler::PCode
 		virtual std::string printDebug() = 0;
 	};
 
+	// e.g. EAX, ZMM0, ...
 	class RegisterVarnode : public Varnode
 	{
 	public:
@@ -143,6 +144,7 @@ namespace CE::Decompiler::PCode
 		}
 	};
 
+	// e.g. 100
 	class ConstantVarnode : public Varnode
 	{
 	public:
@@ -162,6 +164,7 @@ namespace CE::Decompiler::PCode
 		}
 	};
 
+	// e.g. $U9680
 	class SymbolVarnode : public Varnode
 	{
 	public:

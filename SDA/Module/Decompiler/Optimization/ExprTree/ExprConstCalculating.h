@@ -3,6 +3,7 @@
 
 namespace CE::Decompiler::Optimization
 {
+	// Make arithmetic/logic simplification: 5 + 2 => 7, x * 0 -> 0, x & x => x
 	class ExprConstCalculating : public ExprModification
 	{
 	public:
@@ -10,6 +11,7 @@ namespace CE::Decompiler::Optimization
 			: ExprModification(opNode)
 		{}
 
+		// make calculation of two constant operands ({size} need for float/double operations)
 		static uint64_t Calculate(uint64_t op1, uint64_t op2, OperationType operation, int size = 0x8) {
 			switch (operation)
 			{
@@ -66,23 +68,21 @@ namespace CE::Decompiler::Optimization
 		}
 
 		void start() override {
-			dispatch(getOpNode());
+			auto opNode = getOpNode();
+			if (IsOperationUnsupportedToCalculate(opNode->m_operation))
+				return;
+			// try to apply different kinds of operations
+			if (!processConstOperands(opNode))
+				if (!processConstRightOperand(opNode))
+					if (!processEqualOperands(opNode))
+						if (!processShl(opNode))
+						{}
 		}
 
 		OperationalNode* getOpNode() {
 			return dynamic_cast<OperationalNode*>(getNode());
 		}
 	private:
-		void dispatch(OperationalNode* opNode) {
-			if (IsOperationUnsupportedToCalculate(opNode->m_operation))
-				return;
-			if(!processConstOperands(opNode))
-				if (!processConstRightOperand(opNode))
-					if (!processEqualOperands(opNode))
-						if (!processShl(opNode))
-						{ }
-		}
-
 		//5 + 2 => 7
 		bool processConstOperands(OperationalNode* opNode) {
 			if (auto leftNumberLeaf = dynamic_cast<INumberLeaf*>(opNode->m_leftNode)) {
