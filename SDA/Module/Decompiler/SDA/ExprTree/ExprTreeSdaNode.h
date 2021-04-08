@@ -7,6 +7,7 @@ namespace CE::Decompiler::ExprTree
 {
 	bool g_MARK_SDA_NODES = false;
 
+	// used for all sda nodes to cast them from their types to another in some cases
 	class DataTypeCast
 	{
 		DataTypePtr m_castDataType;
@@ -54,20 +55,25 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
+	// means that the class addresses some memory location (not give a value!)
 	class ILocatable : public virtual ISdaNode
 	{
 	public:
 		virtual void getLocation(MemLocation& location) = 0;
 	};
 
+	// means that the class can give a value(or not) associated with some memory location
 	class IMappedToMemory : public ILocatable
 	{
 	public:
+		// check if does it give NAMED address, not value on this address: &globalVar
 		virtual bool isAddrGetting() = 0;
 
+		// globalVar -> &globalVar
 		virtual void setAddrGetting(bool toggle) = 0;
 	};
 
+	// base class for most sda nodes
 	class SdaNode : public Node, public virtual ISdaNode
 	{
 		DataTypeCast m_dataTypeCast;
@@ -99,6 +105,7 @@ namespace CE::Decompiler::ExprTree
 		virtual ISdaNode* cloneSdaNode(NodeCloneContext* ctx) = 0;
 	};
 
+	// for sda graph
 	class SdaTopNode : public TopNode
 	{
 	public:

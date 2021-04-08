@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler::Symbolization
 {
-	//Transformation from untyped raw graph to typed one
+	// Transformation from untyped raw graph to typed one (creating sda nodes)
 	class SdaBuilding : public SdaGraphModification
 	{
 	public:
@@ -15,7 +15,7 @@ namespace CE::Decompiler::Symbolization
 			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
 				auto node = topNode->getNode();
 				INode::UpdateDebugInfo(node);
-				buildSdaNodes(node);
+				buildSdaNodesAndReplace(node);
 				node = topNode->getNode();
 				INode::UpdateDebugInfo(node);
 				node = nullptr;
@@ -26,13 +26,14 @@ namespace CE::Decompiler::Symbolization
 	private:
 		UserSymbolDef* m_userSymbolDef;
 		DataTypeFactory* m_dataTypeFactory;
-		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols;
-		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols;
-		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols;
-		std::set<CE::Symbol::ISymbol*> m_autoSymbols;
-		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols;
-		std::map<HS::Value, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts;
+		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols; //for cache purposes
+		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols; //stackVar1
+		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
+		std::set<CE::Symbol::ISymbol*> m_autoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
+		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols; // defined by user (e.g. playerObj)
+		std::map<HS::Value, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts; //for cache purposes
 
+		// join auto symbols and user symbols together
 		void addSdaSymbols() {
 			for (auto sdaSymbol : m_autoSymbols) {
 				m_sdaCodeGraph->getSdaSymbols().push_back(sdaSymbol);
@@ -43,6 +44,7 @@ namespace CE::Decompiler::Symbolization
 			}
 		}
 
+		// build high-level sda analog of low-level function node
 		SdaFunctionNode* buildSdaFunctionNode(FunctionCall* funcCall) {
 			std::shared_ptr<SdaFunctionNode::TypeContext> typeContext;
 			/*
@@ -70,20 +72,24 @@ namespace CE::Decompiler::Symbolization
 			return new SdaFunctionNode(funcCall, typeContext);
 		}
 
+		// build high-level sda analog of low-level number leaf
 		SdaNumberLeaf* buildSdaNumberLeaf(NumberLeaf* numberLeaf) {
 			auto dataType = m_dataTypeFactory->getDataTypeByNumber(numberLeaf->getValue());
 			auto sdaNumberLeaf = new SdaNumberLeaf(numberLeaf->getValue(), dataType);
 			return sdaNumberLeaf;
 		}
 
+		// build high-level sda analog of low-level read value node
 		SdaReadValueNode* buildReadValueNode(ReadValueNode* readValueNode) {
 			auto dataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
 			return new SdaReadValueNode(readValueNode, dataType);
 		}
 
-		void buildSdaNodes(INode* node) {
+		// replace {node} and its childs with high-level sda analog
+		void buildSdaNodesAndReplace(INode* node) {
+			// first process all childs
 			node->iterateChildNodes([&](INode* childNode) {
-				buildSdaNodes(childNode);
+				buildSdaNodesAndReplace(childNode);
 				});
 
 			if (dynamic_cast<SdaSymbolLeaf*>(node))
@@ -110,6 +116,7 @@ namespace CE::Decompiler::Symbolization
 				return;
 			}
 
+			// linear expr. or some symbol leaf
 			auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node);
 			auto linearExpr = dynamic_cast<LinearExpr*>(node);
 			if (symbolLeaf || linearExpr) {
@@ -118,11 +125,11 @@ namespace CE::Decompiler::Symbolization
 				ExprTree::SymbolLeaf* sdaSymbolLeafToReplace = nullptr;
 
 				if (symbolLeaf) {
-					sdaSymbolLeafToReplace = symbolLeaf;
+					sdaSymbolLeafToReplace = symbolLeaf; // symbol found!
 					offset = 0x0;
 				}
 				else if (linearExpr) {
-					for (auto term : linearExpr->getTerms()) {
+					for (auto term : linearExpr->getTerms()) { // finding symbol among terms
 						if (auto termSymbolLeaf = dynamic_cast<SymbolLeaf*>(term)) {
 							if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(termSymbolLeaf->m_symbol)) {
 								if (regSymbol->m_register.isPointer()) {
@@ -135,17 +142,18 @@ namespace CE::Decompiler::Symbolization
 					}
 				}
 
+				// if symbol has been found
 				if (sdaSymbolLeafToReplace)
 				{
-					bool transformToLocalOffset = false;
+					bool transformToGlobalOffset = false;
 					bool isStackOrGlobal = false;
-					//check to see if it is [rsp] or [rip]
+					//check to see if this symbol is register
 					if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(sdaSymbolLeafToReplace->m_symbol)) {
 						//if [rip] or [rsp] register
 						if (regSymbol->m_register.isPointer()) {
 							//transform to global offset
-							if (regSymbol->m_register.getGenericId() == ZYDIS_REGISTER_RIP) {
-								transformToLocalOffset = true;
+							if (regSymbol->m_register.m_type == Register::Type::InstructionPointer) {
+								transformToGlobalOffset = true;
 							}
 							isStackOrGlobal = true;
 						}
@@ -169,28 +177,29 @@ namespace CE::Decompiler::Symbolization
 						//handle later anyway
 						if (dynamic_cast<LinearExpr*>(node->getParentNode()))
 							return;
-						//if reading presence
+						//if reading presence (*(float)*{[rsp] + 0x10} -> localStackVar with size of 4 bytes, not 8)
 						if (auto readValueNode = dynamic_cast<ReadValueNode*>(node->getParentNode())) {
 							size = readValueNode->getSize();
 						}
 					}
 
 					//before findOrCreateSymbol
-					if (transformToLocalOffset)
+					if (transformToGlobalOffset)
 						offset = toGlobalOffset(offset);
 
 					//find symbol or create it
 					auto sdaSymbol = findOrCreateSymbol(sdaSymbolLeafToReplace->m_symbol, size, offset);
 
 					//after findOrCreateSymbol
-					if (transformToLocalOffset)
+					if (transformToGlobalOffset)
 						offset = toLocalOffset(offset);
 
-					//replace
+					// creating sda symbol leaf (memory or normal)
 					SdaSymbolLeaf* newSdaSymbolLeaf = nullptr;
 					if (auto memSymbol = dynamic_cast<CE::Symbol::IMemorySymbol*>(sdaSymbol)) {
 						for (auto& storage : memSymbol->getStorages()) {
 							if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
+								// stackVar or globalVar
 								newSdaSymbolLeaf = new SdaMemSymbolLeaf(memSymbol, sdaSymbolLeafToReplace->m_symbol, storage.getOffset(), true);
 								break;
 							}
@@ -198,9 +207,12 @@ namespace CE::Decompiler::Symbolization
 					}
 
 					if(!newSdaSymbolLeaf) {
+						// localVar
 						newSdaSymbolLeaf = new SdaSymbolLeaf(sdaSymbol, sdaSymbolLeafToReplace->m_symbol);
 						m_replacedSymbols[sdaSymbolLeafToReplace->m_symbol] = newSdaSymbolLeaf;
 					}
+
+					//replace
 					sdaSymbolLeafToReplace->replaceWith(newSdaSymbolLeaf);
 					delete sdaSymbolLeafToReplace;
 
@@ -232,15 +244,18 @@ namespace CE::Decompiler::Symbolization
 			if (auto sdaSymbol = loadMemSdaSymbol(symbol, offset))
 				return sdaSymbol;
 
+			//try to find corresponding function parameter if {symbol} is register (RCX -> param1, RDX -> param2)
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				int paramIdx = 0;
 				auto& reg = regSymbol->m_register;
 				auto paramInfos = m_sdaCodeGraph->getDecGraph()->getFunctionCallInfo().getParamInfos();
+
+				// finding function parameter
 				for (auto paramInfo : paramInfos) {
 					auto& storage = paramInfo.m_storage;
 					if (storage.getType() == Storage::STORAGE_REGISTER && reg.getGenericId() == storage.getRegisterId() || (offset == storage.getOffset() &&
-						(storage.getType() == Storage::STORAGE_STACK && reg.getGenericId() == ZYDIS_REGISTER_RSP ||
-							storage.getType() == Storage::STORAGE_GLOBAL && reg.getGenericId() == ZYDIS_REGISTER_RIP))) {
+						(storage.getType() == Storage::STORAGE_STACK && reg.m_type == Register::Type::StackPointer ||
+							storage.getType() == Storage::STORAGE_GLOBAL && reg.m_type == Register::Type::InstructionPointer))) {
 						paramIdx = storage.getIndex();
 						break;
 					}
@@ -249,29 +264,31 @@ namespace CE::Decompiler::Symbolization
 				if (paramIdx != 0) {
 					auto& funcParams = m_userSymbolDef->m_signature->getParameters();
 					if (paramIdx <= funcParams.size()) {
+						//USER-DEFINED func. parameter
 						auto sdaSymbol = funcParams[paramIdx - 1];
 						storeMemSdaSymbol(sdaSymbol, symbol, offset);
 						m_userDefinedSymbols.insert(sdaSymbol);
 						return sdaSymbol;
 					}
+					//auto func. parameter
 					auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::FUNC_PARAMETER, "param" + std::to_string(paramIdx), paramIdx, size);
 					storeMemSdaSymbol(sdaSymbol, symbol, offset);
 					return sdaSymbol;
 				}
 
-				//memory symbol with offset possibly to be changed
-				if (reg.getGenericId() == ZYDIS_REGISTER_RSP)
+				//MEMORY symbol with offset (e.g. globalVar1)
+				if (reg.m_type == Register::Type::StackPointer)
 					return createMemorySymbol(m_userSymbolDef->m_stackMemoryArea, CE::Symbol::LOCAL_STACK_VAR, "stack", symbol, offset, size);
-				else if (reg.getGenericId() == ZYDIS_REGISTER_RIP)
+				else if (reg.m_type == Register::Type::InstructionPointer)
 					return createMemorySymbol(m_userSymbolDef->m_globalMemoryArea, CE::Symbol::GLOBAL_VAR, "global", symbol, offset, size);
 
-				//not memory symbol (unknown registers)
+				//NOT-MEMORY symbol (unknown registers)
 				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "in_" + reg.printDebug(), 0, size);
 				return sdaSymbol;
 			}
 
-			//try find user defined symbol associated with some instruction
-			std::list<int64_t> instrOffsets;
+			//try to find USER-DEFINED symbol associated with some instruction
+			std::list<int64_t> instrOffsets; //instruction offsets helps to identify user-defined symbols
 			if (auto symbolRelToInstr = dynamic_cast<PCode::IRelatedToInstruction*>(symbol)) {
 				for (auto instr : symbolRelToInstr->getInstructionsRelatedTo()) {
 					instrOffsets.push_back(instr->getOffset());
@@ -289,7 +306,7 @@ namespace CE::Decompiler::Symbolization
 				}
 			}
 
-			//otherwise create auto sda symbol
+			//otherwise create AUTO sda not-memory symbol (e.g. funcVar1)
 			if (auto symbolWithId = dynamic_cast<Symbol::AbstractVariable*>(symbol)) {
 				std::string suffix = "local";
 				if (dynamic_cast<Symbol::MemoryVariable*>(symbol))
@@ -303,6 +320,7 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		CE::Symbol::ISymbol* createMemorySymbol(CE::Symbol::MemoryArea* memoryArea, CE::Symbol::Type type, const std::string& name, Symbol::Symbol* symbol, int64_t& offset, int size) {
+			//try to find USER-DEFINED symbol in mem. area
 			auto symbolPair = memoryArea->getSymbolAt(offset);
 			if (symbolPair.second != nullptr) {
 				offset -= symbolPair.first;
@@ -337,7 +355,7 @@ namespace CE::Decompiler::Symbolization
 		CE::Symbol::ISymbol* loadMemSdaSymbol(Symbol::Symbol* symbol, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
-				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
+				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) { // todo: remove zydis constant
 					auto it = m_stackToSymbols.find(offset);
 					if (it != m_stackToSymbols.end()) {
 						offset = 0x0;
@@ -358,7 +376,7 @@ namespace CE::Decompiler::Symbolization
 		void storeMemSdaSymbol(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* symbol, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
-				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) {
+				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) { // todo: remove zydis constant
 					m_stackToSymbols[offset] = sdaSymbol;
 					offset = 0x0;
 					return;

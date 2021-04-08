@@ -3,6 +3,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
+	// *(float*)&globalVar (where *(float*) is reader from the specified mem. location and &globalVar is named address)
 	class SdaReadValueNode : public SdaNode, public INodeAgregator, public PCode::IRelatedToInstruction, public IMappedToMemory
 	{
 	public:

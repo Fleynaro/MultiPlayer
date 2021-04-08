@@ -5,6 +5,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
+	// means some UNNAMED memory location(not value!) presented as linear expr. value: [base] + [term1] + ... + [termN] + constant
 	class UnknownLocation : public SdaNode, public INodeAgregator, public PCode::IRelatedToInstruction, public ILocatable
 	{
 	public:

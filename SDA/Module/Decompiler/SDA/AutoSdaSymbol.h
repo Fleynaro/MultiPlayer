@@ -3,6 +3,7 @@
 
 namespace CE::Symbol
 {
+	// high-level not-memory symbol created by decompiler automatically (e.g. localVar1, funcVar1, ...)
 	class AutoSdaSymbol : public AbstractSymbol
 	{
 		Type m_type;
@@ -22,6 +23,7 @@ namespace CE::Symbol
 		}
 	};
 
+	// high-level memory symbol created by decompiler automatically (stackVar or globalVar)
 	class AutoSdaMemSymbol : public AutoSdaSymbol, public IMemorySymbol
 	{
 		int64_t m_offset;

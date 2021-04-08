@@ -379,8 +379,10 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 
 ExprTree::INode* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& paramInfo) {
 	auto& storage = paramInfo.m_storage;
+
+	// memory
 	if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
-		auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), 0x8);
+		auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), 0x8); // RIP or RSP (8 bytes = size of pointer)
 		auto regSymbol = m_ctx->requestRegisterExpr(reg);
 		auto offsetNumber = new ExprTree::NumberLeaf((uint64_t)storage.getOffset() - 0x8, regSymbol->getMask());
 		auto opAddNode = new ExprTree::OperationalNode(regSymbol, offsetNumber, ExprTree::Add);
@@ -388,6 +390,7 @@ ExprTree::INode* InstructionInterpreter::buildParameterInfoExpr(ParameterInfo& p
 		return createMemSymbol(readValueNode);
 	}
 
+	// register
 	auto reg = m_ctx->m_decompiler->getRegisterFactory()->createRegister(storage.getRegisterId(), paramInfo.m_size, storage.getOffset());
 	auto regSymbol = m_ctx->requestRegisterExpr(reg);
 	return regSymbol;
@@ -409,9 +412,10 @@ ExprTree::INode* InstructionInterpreter::requestVarnode(PCode::Varnode* varnode)
 ExprTree::AbstractCondition* InstructionInterpreter::toBoolean(ExprTree::INode* node) {
 	if (!node)
 		return nullptr;
-	if (auto cond = dynamic_cast<ExprTree::AbstractCondition*>(node)) {
+	if (auto cond = dynamic_cast<ExprTree::AbstractCondition*>(node)) { // condition always returns boolean value
 		return cond;
 	}
+	// otherwise make condition yourself: x != 0
 	return new ExprTree::Condition(node, new ExprTree::NumberLeaf((uint64_t)0x0, BitMask64(1)), ExprTree::Condition::Ne);
 }
 

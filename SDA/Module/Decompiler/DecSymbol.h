@@ -12,6 +12,7 @@ namespace CE::Decompiler {
 
 namespace CE::Decompiler::Symbol
 {
+	// symbol of decompiler level that has some concrete value (low-level, before symbolization)
 	class Symbol
 	{
 		ExtBitMask m_mask;
@@ -45,6 +46,7 @@ namespace CE::Decompiler::Symbol
 		virtual Symbol* cloneSymbol() = 0;
 	};
 	
+	// variable that is associated with the register and dont contain direct expr. value
 	class RegisterVariable : public Symbol
 	{
 	public:
@@ -70,6 +72,7 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
+	// variable on high-level
 	class AbstractVariable : public Symbol, public PCode::IRelatedToInstruction {
 	public:
 		AbstractVariable(ExtBitMask mask)
@@ -88,6 +91,7 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
+	// variable that is used because impossible to use expr. value directly from register (there are if/else/for)
 	class LocalVariable : public AbstractVariable
 	{
 	public:
@@ -113,6 +117,7 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
+	// variable that contains value from some memory location
 	class MemoryVariable : public AbstractVariable
 	{
 	public:
@@ -138,6 +143,7 @@ namespace CE::Decompiler::Symbol
 		}
 	};
 
+	// variable that has a result of some function call
 	class FunctionResultVar : public AbstractVariable
 	{
 	public:

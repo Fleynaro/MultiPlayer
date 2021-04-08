@@ -6,6 +6,7 @@
 
 namespace CE::Decompiler
 {
+	// Based on decompiled graph with high-level sda symbols
 	class SdaCodeGraph
 	{
 	public:

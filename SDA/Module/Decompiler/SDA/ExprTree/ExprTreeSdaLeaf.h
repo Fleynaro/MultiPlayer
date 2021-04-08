@@ -5,6 +5,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
+	// symbol that DONT related to memory: localVar1, param1, ...
 	class SdaSymbolLeaf : public SdaNode, public ILeaf
 	{
 	public:
@@ -54,6 +55,7 @@ namespace CE::Decompiler::ExprTree
 		CE::Symbol::ISymbol* m_sdaSymbol;
 	};
 
+	// symbol that related to memory: stackVar1 or globalVar1
 	class SdaMemSymbolLeaf : public SdaSymbolLeaf, public IMappedToMemory
 	{
 		bool m_isAddrGetting;
@@ -97,6 +99,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
+	// 0x1000, -12, ...
 	class SdaNumberLeaf : public SdaNode, public INumberLeaf
 	{
 		DataTypePtr m_calcDataType;
