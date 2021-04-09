@@ -8,6 +8,7 @@ namespace CE::Decompiler::ExprTree
 	class SdaFunctionNode : public SdaNode, public INodeAgregator
 	{
 	public:
+		// during symbolization data types can be changed within the context
 		struct TypeContext
 		{
 			std::vector<DataTypePtr> m_paramTypes;
@@ -17,6 +18,7 @@ namespace CE::Decompiler::ExprTree
 				: m_paramTypes(paramTypes), m_returnType(returnType)
 			{}
 
+			// set data type for the specified parameter if the type has higher priority than the existing
 			void setParamDataTypeWithPriority(int paramIdx, DataTypePtr dataType) {
 				if (m_paramTypes[paramIdx - 1]->getPriority() >= dataType->getPriority())
 					return;
@@ -46,6 +48,7 @@ namespace CE::Decompiler::ExprTree
 			return m_funcCall->getNodesList();
 		}
 
+		// means the address of the function that can be any expr. value, not only an offset or a symbol
 		INode* getDestination() {
 			return m_funcCall->getDestination();
 		}

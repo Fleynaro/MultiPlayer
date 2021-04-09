@@ -54,7 +54,7 @@ namespace CE::Decompiler::Symbolization
 			return nullptr;
 		}
 
-		DataTypePtr getDataTypeByNumber(uint64_t value) {
+		DataTypePtr calcDataTypeForNumber(uint64_t value) {
 			uint64_t valueMask = value | uint64_t(0xFFFFFFFF);
 			if ((valueMask & ~0xFFFFFFFF) == 0x0)
 				return  getType(SystemType::Int32);

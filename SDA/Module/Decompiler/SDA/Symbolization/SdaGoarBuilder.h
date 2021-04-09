@@ -3,7 +3,8 @@
 
 namespace CE::Decompiler::Symbolization
 {
-	//Creating complex memory data structures based on given location, that is linearly calculated, or raw bytes sized up to 8. Those are fields of class objects and array
+	//Creating complex memory data structures based on given location that is linearly calculated, or based on raw bytes(when class fields packed in a register) sized up to 8.
+	//Fields of class objects or Array
 	class SdaGoarBuilding
 	{
 		DataTypeFactory* m_dataTypeFactory;
@@ -11,10 +12,6 @@ namespace CE::Decompiler::Symbolization
 		int64_t m_bitOffset;
 		std::list<ISdaNode*> m_sdaTerms;
 	public:
-		SdaGoarBuilding(DataTypeFactory* dataTypeFactory, ISdaNode* baseSdaNode, int64_t bitOffset = 0x0, std::list<ISdaNode*> sdaTerms = {})
-			: m_dataTypeFactory(dataTypeFactory), m_baseSdaNode(baseSdaNode), m_bitOffset(bitOffset), m_sdaTerms(sdaTerms)
-		{}
-
 		SdaGoarBuilding(DataTypeFactory* dataTypeFactory, UnknownLocation* unknownLocation)
 			: m_dataTypeFactory(dataTypeFactory), m_baseSdaNode(unknownLocation->getBaseSdaNode()), m_bitOffset(unknownLocation->getConstTermValue() * 0x8)
 		{
@@ -23,7 +20,7 @@ namespace CE::Decompiler::Symbolization
 			}
 		}
 
-		//try to create that structure
+		//try to create a structure
 		ISdaNode* create() {
 			auto resultSdaNode = m_baseSdaNode;
 			auto resultBitOffset = m_bitOffset;
@@ -35,7 +32,7 @@ namespace CE::Decompiler::Symbolization
 				if (isPointer) {
 					//if the base is a kind of pointer then remove & operation (and set it up later in the top of the built GOAR)
 					if (auto addrGetting = dynamic_cast<IMappedToMemory*>(m_baseSdaNode)) {
-						addrGetting->setAddrGetting(false);
+						addrGetting->setAddrGetting(false); // (&player) + 0x10 -> &(player.pos.x)
 					}
 				}
 				auto usedOffset = m_bitOffset - resultBitOffset;
@@ -62,7 +59,7 @@ namespace CE::Decompiler::Symbolization
 			auto ptrLevels = dataType->getPointerLevels();
 			auto baseDataType = dataType->getBaseType();
 
-			//if is a structure and not a pointer or one-level pointer
+			//if it is a structure(Player, ...) or one-level pointer(Player*, float*, ...)
 			if (ptrLevels.empty() || ptrLevels.size() == 1 && *ptrLevels.begin() == 1) {
 				//try making a field
 				if (auto structure = dynamic_cast<DataType::Structure*>(baseDataType)) {
@@ -74,7 +71,7 @@ namespace CE::Decompiler::Symbolization
 					return true;
 				}
 
-				//if no a pointer or an array
+				//if no a pointer, a structure, an array(e.g. uint32_t) then END
 				if (ptrLevels.empty())
 					return false;
 			}

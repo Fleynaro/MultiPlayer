@@ -51,7 +51,7 @@ namespace CE::Decompiler::Symbolization
 				TODO:
 				1. Унаследовать от IMemorySymbol от FunctionSymbol(он должен содержать функцию) => будет создаваться SdaMemSymbolLeaf => будет учитываться offset
 				2. Для виртуальных вызовов вычислять обычный хеш(или не вычислять вообще!)
-				То есть лучше не по хешу, а по оффсету
+				То есть лучше не по хешу, а по оффсету (но в общем случае dst - выражение, а не число)
 			*/
 			auto keyHash = funcCall->getDestination()->getHash().getHashValue();
 			auto it = m_funcTypeContexts.find(keyHash);
@@ -74,7 +74,7 @@ namespace CE::Decompiler::Symbolization
 
 		// build high-level sda analog of low-level number leaf
 		SdaNumberLeaf* buildSdaNumberLeaf(NumberLeaf* numberLeaf) {
-			auto dataType = m_dataTypeFactory->getDataTypeByNumber(numberLeaf->getValue());
+			auto dataType = m_dataTypeFactory->calcDataTypeForNumber(numberLeaf->getValue());
 			auto sdaNumberLeaf = new SdaNumberLeaf(numberLeaf->getValue(), dataType);
 			return sdaNumberLeaf;
 		}
