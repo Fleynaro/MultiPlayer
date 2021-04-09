@@ -10,7 +10,7 @@ namespace CE::Decompiler::Symbolization
 		DataTypeFactory* m_dataTypeFactory;
 		ISdaNode* m_baseSdaNode;
 		int64_t m_bitOffset;
-		std::list<ISdaNode*> m_sdaTerms;
+		std::list<ISdaNode*> m_sdaTerms; // the array index terms: players + {idx * 0x1000} + {idx2 * 0x2000}
 	public:
 		SdaGoarBuilding(DataTypeFactory* dataTypeFactory, UnknownLocation* unknownLocation)
 			: m_dataTypeFactory(dataTypeFactory), m_baseSdaNode(unknownLocation->getBaseSdaNode()), m_bitOffset(unknownLocation->getConstTermValue() * 0x8)
@@ -19,8 +19,7 @@ namespace CE::Decompiler::Symbolization
 				m_sdaTerms.push_back(term.m_node);
 			}
 		}
-
-		//try to create a structure
+		
 		ISdaNode* create() {
 			auto resultSdaNode = m_baseSdaNode;
 			auto resultBitOffset = m_bitOffset;
@@ -38,7 +37,7 @@ namespace CE::Decompiler::Symbolization
 				auto usedOffset = m_bitOffset - resultBitOffset;
 				resultSdaNode = new GoarTopNode(resultSdaNode, usedOffset, isPointer);
 
-				//if we have remaining either the offset or array index terms
+				//if we have remaining either the offset or the array index terms
 				if (resultBitOffset != 0x0 || !m_sdaTerms.empty()) {
 					//remaining offset and terms (maybe only in case of node being as LinearExpr)
 					auto linearExpr = new LinearExpr(resultBitOffset / 0x8);
@@ -79,8 +78,7 @@ namespace CE::Decompiler::Symbolization
 			//if is a pointer(int*) or an array(int[2]) that supported addressing with [index] then try making an array
 			//important: array is like a structure with stored items can be linearly addressed (an array item like a field)
 			if (ptrLevels.size() >= 2 && *ptrLevels.begin() == 1 && *std::next(ptrLevels.begin()) != 1) {
-				//in C++ no declaration statements like this: int*[2][3] pArr;	(pointer to an array)
-				//then remove pointer
+				//in C++ NO declaration statements like this: int*[2][3] pArr;	(pointer to an array)
 				ptrLevels.pop_front();
 			}
 			int arrItemsMaxCount = *ptrLevels.begin();
@@ -88,6 +86,7 @@ namespace CE::Decompiler::Symbolization
 			auto arrItemDataType = DataType::GetUnit(baseDataType, ptrLevels);
 			auto arrItemSize = arrItemDataType->getSize();
 
+			// iterate over all {terms}
 			ISdaNode* indexNode = nullptr;
 			int indexSize = 0x4; //todo: long long(8 bytes) index?
 			for (auto it = terms.begin(); it != terms.end(); it++) {
@@ -95,6 +94,8 @@ namespace CE::Decompiler::Symbolization
 				int64_t defMultiplier = 1;
 				int64_t* multiplier = &defMultiplier;
 				bool hasMultiplier = false;
+
+				// try to get a multiplier 0x1000: players + idx * 0x1000 (arrItemSize = 0x1000)
 				if (auto sdaGenTermNode = dynamic_cast<SdaGenericNode*>(sdaNode)) {
 					if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenTermNode->getNode())) {
 						if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(opNode->m_rightNode)) {
@@ -105,10 +106,12 @@ namespace CE::Decompiler::Symbolization
 						}
 					}
 				}
+
 				if (*multiplier % arrItemSize == 0x0) {
 					*multiplier /= arrItemSize;
+
+					//optimization: remove operational node (add) (e.g. idx * 0x1 -> idx)
 					if (*multiplier == 1 && hasMultiplier) {
-						//optimization: remove operational node (add)
 						if (auto sdaGenTermNode = dynamic_cast<SdaGenericNode*>(sdaNode)) {
 							if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenTermNode->getNode())) {
 								if (auto leftSdaNode = dynamic_cast<ISdaNode*>(opNode->m_leftNode)) {
@@ -119,6 +122,7 @@ namespace CE::Decompiler::Symbolization
 						}
 					}
 
+					//players + idx * 0x1000 + idx2 * 0x2000 -> players[idx + idx2 * 2]
 					if (indexNode) {
 						auto indexNodeDataType = indexNode->getDataType();
 						indexNode = new SdaGenericNode(new OperationalNode(indexNode, sdaNode, Add), indexNodeDataType); //todo: linear expr, another type
@@ -126,6 +130,8 @@ namespace CE::Decompiler::Symbolization
 					else {
 						indexNode = sdaNode;
 					}
+
+					//remove the term because it in the index node
 					terms.erase(it);
 				}
 			}
@@ -138,6 +144,8 @@ namespace CE::Decompiler::Symbolization
 					bitOffset = bitOffset % arrItemBitSize;
 					auto constIndexNode = new SdaNumberLeaf(uint64_t(constIndex));
 					constIndexNode->setDataType(m_dataTypeFactory->getDefaultType(indexSize)); //need?
+
+					//players[idx + idx2 * 2] -> players[idx + idx2 * 2 + 0x1000]
 					if (indexNode) {
 						auto indexNodeDataType = indexNode->getDataType();
 						indexNode = new SdaGenericNode(new OperationalNode(indexNode, constIndexNode, Add), indexNodeDataType);
@@ -148,8 +156,8 @@ namespace CE::Decompiler::Symbolization
 				}
 			}
 
+			// create an array node with the result index {idx + idx2 * 2 + 0x1000}
 			if (indexNode) {
-				//create the array addressing node appending the indexer [] to the end
 				sdaNode = new GoarArrayNode(sdaNode, indexNode, arrItemDataType, arrItemsMaxCount);
 				return true;
 			}

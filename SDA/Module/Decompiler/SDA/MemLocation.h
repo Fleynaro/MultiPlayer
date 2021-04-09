@@ -16,7 +16,7 @@ namespace CE::Decompiler
 		enum LOCATION_TYPE {
 			STACK,
 			GLOBAL,
-			IMPLICIT,
+			IMPLICIT, // when it's not clear what location does it mean, therefore let it be a pile 
 			ALL
 		};
 
@@ -26,6 +26,7 @@ namespace CE::Decompiler
 		std::list<ArrayDim> m_arrDims;
 		int m_valueSize = 0x0;
 
+		// -1 is an infinite size (method getLocSize() will return a very big value)
 		void addArrayDim(int itemSize, int itemsMaxCount = -1);
 
 		bool intersect(const MemLocation& location) const;

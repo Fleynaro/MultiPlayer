@@ -64,16 +64,17 @@ namespace CE::Decompiler
 		}
 
 		void processBlock(PrimaryTree::Block* block, ExecutionBlockContext* ctx) {
+			// iterate over all external symbols to create requests (to begin search of register parts in parent blocks)
 			auto it = ctx->m_externalSymbols.begin();
 			while (it != ctx->m_externalSymbols.end()) {
 				auto& externalSymbol = **it;
 				auto& reg = externalSymbol.m_regVarnode->m_register;
-				initRequestByRegister(reg);
+				initRequestByRegister(reg); // a new request
 
 				auto regParts = externalSymbol.m_regParts;
 				auto remainToReadMask = externalSymbol.m_needReadMask;
 				findRegisterParts(block, reg, remainToReadMask, regParts);
-				if (!regParts.empty()) { //mask should be 0 to continue(because requiared register has built well) but special cases could be [1], that's why we check change
+				if (!regParts.empty()) { //mask should be 0 to continue(because required register has built well) but special cases could be [1], that's why we check change
 					auto expr = CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 					externalSymbol.m_symbolLeaf->replaceWith(expr); //todo: remove this, make special node where another replacing method will be implemented. On this step no replaceWith uses!
 					delete externalSymbol.m_symbolLeaf->m_symbol;
@@ -87,6 +88,7 @@ namespace CE::Decompiler
 			}
 		}
 
+		// create a new request
 		void initRequestByRegister(PCode::Register& reg) {
 			m_currentRequest = nullptr;
 			for (auto& request : m_requests) {
@@ -316,7 +318,7 @@ namespace CE::Decompiler
 			}
 
 			auto expr = CreateExprFromRegisterParts(regParts, localVarMask);
-			block->addSymbolAssignmentLine(localVarLeaf, expr);
+			block->addSymbolParallelAssignmentLine(localVarLeaf, expr);
 		}
 	};
 };

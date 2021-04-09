@@ -3,6 +3,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
+	// Base class for GoarArrayNode, GoarFieldNode, GoarTopNode
 	class GoarNode : public SdaNode, public INodeAgregator
 	{
 	public:
@@ -45,6 +46,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
+	// Array: players[playersCount - 3]
 	class GoarArrayNode : public GoarNode
 	{
 	public:
@@ -93,6 +95,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
+	// Field of a class: player.pos.x
 	class GoarFieldNode : public GoarNode
 	{
 	public:
@@ -118,6 +121,7 @@ namespace CE::Decompiler::ExprTree
 		}
 	};
 
+	// Top node for any goar structure that need to define operator &: &player.pos.x
 	class GoarTopNode : public GoarNode, public IMappedToMemory
 	{
 		bool m_isAddrGetting;
@@ -136,7 +140,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		void getLocation(MemLocation& location) override {
-			auto mainBase = getMainBase(this);
+			auto mainBase = getBaseNode(this);
 			if (auto storedInMem = dynamic_cast<IMappedToMemory*>(mainBase)) {
 				storedInMem->getLocation(location);
 			}
@@ -169,6 +173,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 	private:
+		// players[2][10] -> dims: 10, 2
 		void gatherArrDims(ISdaNode* node, MemLocation& location) {
 			if (auto goarNode = dynamic_cast<GoarNode*>(node)) {
 				gatherArrDims(goarNode->m_base, location);
@@ -182,9 +187,10 @@ namespace CE::Decompiler::ExprTree
 			}
 		}
 
-		ISdaNode* getMainBase(ISdaNode* node) {
+		// for players[0].pos.x the base is "players" array
+		ISdaNode* getBaseNode(ISdaNode* node) {
 			if (auto goarNode = dynamic_cast<GoarNode*>(node)) {
-				return getMainBase(goarNode->m_base);
+				return getBaseNode(goarNode->m_base);
 			}
 			return node;
 		}

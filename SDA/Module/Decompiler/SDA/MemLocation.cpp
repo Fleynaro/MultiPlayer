@@ -38,7 +38,7 @@ int MemLocation::getLocSize() const {
 	int result = m_valueSize;
 	for (auto arrDims : m_arrDims) {
 		if (arrDims.m_itemsMaxCount == -1) {
-			return 10000000;
+			return 10000000; // infinite size
 		}
 		result += arrDims.m_itemSize * arrDims.m_itemsMaxCount;
 	}
