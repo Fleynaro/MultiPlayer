@@ -98,6 +98,9 @@ namespace CE::Decompiler::Symbolization
 								}
 
 								auto calcDataType = calcDataTypeForOperands(sdaLeftSdaNode->getDataType(), sdaRightSdaNode->getDataType());
+								if (opNode->isFloatingPoint()) { // floating operation used?
+									calcDataType = calcDataTypeForOperands(calcDataType, m_dataTypeFactory->getDefaultType(maskSize, true, true));
+								}
 								if (maskSize != calcDataType->getSize()) {
 									// todo: print warning
 									calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
@@ -200,7 +203,7 @@ namespace CE::Decompiler::Symbolization
 					}
 				}
 
-				// cast &globalVar to default type uint32_t* (because reading of 4 bytes)
+				// cast &globalVar/stackVar/0x1000 to default type uint32_t* (because reading of 4 bytes)
 				auto defDataType = sdaReadValueNode->getDataType(); // any sda node have already had a default type
 				auto defPtrDataType = DataType::CloneUnit(defDataType);
 				defPtrDataType->addPointerLevelInFront();
@@ -234,15 +237,18 @@ namespace CE::Decompiler::Symbolization
 			else if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode)) {
 				// example: *(float*)(param1) where <param1> is <float*>
 				if (sdaSymbolLeaf->getDataType()->isPointer()) {
-					if (!dynamic_cast<SdaMemSymbolLeaf*>(sdaSymbolLeaf) && dynamic_cast<ReadValueNode*>(sdaSymbolLeaf->getParentNode())) {
-						// just add offset: *(float*)(param1) -> *(float*)(param1 + 0x0)
-						auto linearExpr = new LinearExpr(int64_t(0));
-						auto unknownLocation = new UnknownLocation(linearExpr, 0);
-						linearExpr->addParentNode(unknownLocation);
-						sdaSymbolLeaf->replaceWith(unknownLocation);
-						linearExpr->addTerm(sdaSymbolLeaf);
-						// recalculate but for unknownLocation
-						calculateDataType(unknownLocation);
+					auto g = sdaSymbolLeaf->getDataType()->getGroup();
+					if (g == Type::Group::Structure || g == Type::Group::Class) {
+						if (dynamic_cast<ReadValueNode*>(sdaSymbolLeaf->getParentNode())) {
+							// just add offset: *(float*)(param1) -> *(float*)(param1 + 0x0)
+							auto linearExpr = new LinearExpr(int64_t(0));
+							auto unknownLocation = new UnknownLocation(linearExpr, 0);
+							linearExpr->addParentNode(unknownLocation);
+							sdaSymbolLeaf->replaceWith(unknownLocation);
+							linearExpr->addTerm(sdaSymbolLeaf);
+							// recalculate but for unknownLocation
+							calculateDataType(unknownLocation);
+						}
 					}
 				}
 			}

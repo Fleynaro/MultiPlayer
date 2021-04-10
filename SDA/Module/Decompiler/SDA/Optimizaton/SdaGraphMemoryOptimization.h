@@ -20,14 +20,14 @@ namespace CE::Decompiler::Optimization
 				MemLocation m_location;
 				ILocatable* m_locatableNode = nullptr;
 				SdaTopNode* m_snapshotValue = nullptr;
-				int m_lastUsedMemLocIdx;
+				int m_lastUsedMemLocIdx; // saved memory state index
 			};
 
 			struct MemVarInfo {
 				SdaSymbolLeaf* m_symbolLeaf;
 				Symbol::MemoryVariable* m_memVar;
 				MemSnapshot* m_memSnapshot = nullptr;
-				int m_lastUsedMemLocIdx;
+				int m_lastUsedMemLocIdx; // saved memory state index
 			};
 
 			//the result of memory copy working
@@ -49,7 +49,7 @@ namespace CE::Decompiler::Optimization
 
 			SdaTopNode* getMemValue(const MemLocation& location) const {
 				for (auto it = m_memValues.begin(); it != m_memValues.end(); it++) {
-					if (it->m_location->equal(location)) {
+					if (it->m_location->equal(location)) { // todo: intersect better with <<, >> operation
 						return it->m_topNode;
 					}
 				}
@@ -103,6 +103,7 @@ namespace CE::Decompiler::Optimization
 				return (int)m_usedMemLocations.size() - 1;
 			}
 
+			// check intersecting {location} with locations created from {firstUsedMemLocIdx} to {lastUsedMemLocIdx} state indexes
 			bool hasUsed(const MemLocation& location, int firstUsedMemLocIdx = -1, int lastUsedMemLocIdx = -1) {
 				for (const auto& loc : m_usedMemLocations) {
 					if (lastUsedMemLocIdx-- == -1)
@@ -210,13 +211,19 @@ namespace CE::Decompiler::Optimization
 			if (memSnapshot->m_snapshotValue) {
 				if (auto locSnapshotValue = dynamic_cast<ILocatable*>(memSnapshot->m_snapshotValue->getNode())) {
 					try {
+						/*
+							entity1.vec.x = entity1.vec.z
+							memVar1488 = entity1.vec.x (m_snapshotValue = entity1.vec.z)
+							entity1.vec.z = 1 (changed!)
+							return memVar1488; (m_snapshotValue != entity1.vec.z)
+						*/
 						MemLocation snapshotValueLocation;
 						locSnapshotValue->getLocation(snapshotValueLocation);
 						if (memCtx->hasUsed(snapshotValueLocation, memSnapshot->m_lastUsedMemLocIdx, lastUsedMemLocIdx)) {
 							return nullptr;
 						}
 					}
-					catch (std::exception&) {}
+					catch (std::exception&) {} // todo: dangerous, need to remove
 				}
 				return memSnapshot->m_snapshotValue->getSdaNode();
 			}
@@ -286,16 +293,18 @@ namespace CE::Decompiler::Optimization
 			return nullptr;
 		}
 
+		// for the specified block it fill the memory context by some values during simulation of execution
 		class MemoryContextInitializer
 		{
 			PrimaryTree::Block* m_block;
-			MemoryContext* m_memCtx;
+			MemoryContext* m_memCtx; // it has to be filled
 		public:
 			MemoryContextInitializer(PrimaryTree::Block* block, MemoryContext* memCtx)
 				: m_block(block), m_memCtx(memCtx)
 			{}
 
 			void start() {
+				// iterate over all lines of the code as if executing it
 				for (auto topNode : m_block->getAllTopNodes()) {
 					auto node = topNode->getNode();
 					INode::UpdateDebugInfo(node);
@@ -321,7 +330,7 @@ namespace CE::Decompiler::Optimization
 						auto srcSdaNode = dynamic_cast<ISdaNode*>(assignmentNode->getSrcNode());
 
 						if (dstSdaNode && srcSdaNode) {
-							//when writing some stuff into memory
+							//when writing some stuff into a memory location (entity2.vec.x = memVar1488 + 0.5)
 							if (auto dstSdaLocNode = dynamic_cast<ILocatable*>(dstSdaNode)) {
 								try {
 									MemLocation dstLocation;
@@ -333,7 +342,7 @@ namespace CE::Decompiler::Optimization
 							else {
 								if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(assignmentNode->getDstNode())) {
 									if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
-										//when reading from memory into the symbol
+										//when reading from a memory location into the memory symbol (memVar1488 = entity1.vec.x)
 										if (auto srcSdaLocNode = dynamic_cast<ILocatable*>(srcSdaNode)) {
 											try {
 												MemLocation srcLocation;
@@ -344,6 +353,7 @@ namespace CE::Decompiler::Optimization
 												memSnapshot.m_lastUsedMemLocIdx = m_memCtx->getLastUsedMemLocIdx();
 												auto snapshotValueTopNode = m_memCtx->getMemValue(srcLocation);
 												if (snapshotValueTopNode) {
+													// create snapshot of a value stored on the memory location {srcLocation}
 													memSnapshot.m_snapshotValue = new SdaTopNode(snapshotValueTopNode->getSdaNode());
 												}
 												m_memCtx->m_memVarSnapshots[memVar] = memSnapshot;
@@ -357,7 +367,7 @@ namespace CE::Decompiler::Optimization
 					}
 				}
 
-				//replace the internal memVar with a node value stored on some location for this memVar
+				//replace the internal memVar with a node value stored on some location for this memVar (return memVar1488; -> return entity1.vec.x;)
 				if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(node)) {
 					if (auto memVar = dynamic_cast<Symbol::MemoryVariable*>(sdaSymbolLeaf->getDecSymbol())) {
 						MemoryContext::MemVarInfo memVarInfo;
@@ -378,7 +388,7 @@ namespace CE::Decompiler::Optimization
 				//if the function call appeared then clear nearly all location as we dont know what memory this function affected
 				if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(node)) {
 					MemLocation memAllLoc;
-					memAllLoc.m_type = MemLocation::ALL;
+					memAllLoc.m_type = MemLocation::ALL; // clear all
 					m_memCtx->createNewLocation(memAllLoc);
 				}
 			}

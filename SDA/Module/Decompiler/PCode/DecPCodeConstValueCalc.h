@@ -31,7 +31,7 @@ namespace CE::Decompiler::PCode
 					}
 				}
 				else if (instr->m_id == InstructionId::LOAD) {
-					if (m_vmCtx->tryGetConstantValue(instr->m_output, value)) {
+					if (m_vmCtx->tryGetConstantValue(instr->m_input0, value)) {
 						constValues[instr] = value;
 					}
 				}

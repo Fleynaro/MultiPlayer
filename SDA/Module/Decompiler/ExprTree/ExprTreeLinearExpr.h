@@ -28,7 +28,7 @@ namespace CE::Decompiler::ExprTree
 			for (auto term : m_terms) {
 				term->removeBy(this);
 			}
-			delete m_constTerm;
+			m_constTerm->removeBy(this);
 		}
 
 		void addTerm(ExprTree::INode* term) {

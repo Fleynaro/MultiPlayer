@@ -1,5 +1,6 @@
 #include "DecSampleTests.h"
 
+// MEMORY LOCATION
 TEST(Decompiler, Test_MemLocation)
 {
 	MemLocation loc1;
@@ -40,6 +41,138 @@ TEST(Decompiler, Test_MemLocation)
 	ASSERT_EQ(loc1.intersect(loc2), true);
 }
 
+// 1) DECODERS
+TEST_F(ProgramModuleFixtureDecComponent, Test_Decoder)
+{
+	if (false) {
+		auto instructions = decode({ 0x48, 0xC7, 0xC0, 0x01, 0x00, 0x00, 0x00, 0x48, 0x83, 0xF8, 0x02, 0x0F, 0x10, 0x44, 0x24, 0x20, 0x75, 0x05, 0x0F, 0x10, 0x44, 0x24, 0x10, 0x0F, 0x11, 0x44, 0x24, 0x10 });
+		showInstructions(instructions);
+	}
+}
+
+// 2) VIRTUAL MACHINE
+TEST_F(ProgramModuleFixtureDecComponent, Test_VM)
+{
+	auto var1 = new SymbolVarnode(4);
+	std::list<Instruction*> instructions = {
+		new Instruction(InstructionId::INT_ADD, new ConstantVarnode(7, 4), new ConstantVarnode(5, 4), var1, 0, 0, 0), // 7 + 5 = 12
+		new Instruction(InstructionId::INT_MULT, new ConstantVarnode(5, 4), var1, var1, 0, 0, 0), // 5 * 12 = 60
+		new Instruction(InstructionId::CALL, var1, nullptr, new SymbolVarnode(4), 0, 0, 0)
+	};
+	auto constValues = executeAndCalcConstValue(instructions);
+	ASSERT_EQ((*constValues.begin()).second, 60);
+
+	//showInstructions(instructions);
+	//showConstValues(constValues);
+}
+
+// 3) EXPR. OPTIMIZATION
+TEST_F(ProgramModuleFixtureDecComponent, Test_ExprOptim)
+{
+	NodeCloneContext exprCloneCtx;
+	auto rcx = new CE::Decompiler::Symbol::RegisterVariable(m_registerFactoryX86.createRegister(ZYDIS_REGISTER_RCX, 8));
+	auto rdx = new CE::Decompiler::Symbol::RegisterVariable(m_registerFactoryX86.createRegister(ZYDIS_REGISTER_RDX, 8));
+	auto expr1 = new OperationalNode(new NumberLeaf((uint64_t)2, BitMask64(8)), new NumberLeaf((uint64_t)0x10, BitMask64(8)), Mul); // 2 * 0x10 = 0x20
+	auto expr2 = new OperationalNode(new SymbolLeaf(rcx), expr1, Add); // rcx + 0x20
+	auto expr3 = new OperationalNode(new SymbolLeaf(rdx), expr2, Add); // rcx + 0x20 + rdx
+	auto expr4 = new OperationalNode(expr3, expr1, Add); // (rcx + 0x20 + rdx) + 0x20
+	auto result = new OperationalNode(expr4, new NumberLeaf((uint64_t)0xFFFF, BitMask64(8)), And);
+	
+	printf("before: %s\n", result->printDebug().c_str());
+
+	auto clone1 = new TopNode(result->clone(&exprCloneCtx));
+	optimize(clone1);
+	printf("after: %s\n", clone1->getNode()->printDebug().c_str());
+
+	replaceSymbolWithExpr(clone1->getNode(), rcx, new NumberLeaf((uint64_t)0x5, BitMask64(8))); // rcx -> 0x5
+	replaceSymbolWithExpr(clone1->getNode(), rdx, new NumberLeaf((uint64_t)0x5, BitMask64(8))); // rdx -> 0x5
+	auto clone2 = new TopNode(clone1->getNode()->clone(&exprCloneCtx));
+	optimize(clone2);
+	ASSERT_EQ(dynamic_cast<NumberLeaf*>(clone2->getNode())->getValue(), 0x40 + 0x5 + 0x5);
+}
+
+// 4) SYMBOLIZATION
+TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
+{
+	SymbolVarnode* playerPos[] = { new SymbolVarnode(4), new SymbolVarnode(4), new SymbolVarnode(4) };
+	SymbolVarnode* playerId = new SymbolVarnode(4);
+	SymbolVarnode* addr = new SymbolVarnode(8);
+	auto rip = new CE::Decompiler::PCode::RegisterVarnode(m_registerFactoryX86.createInstructionPointerRegister());
+	auto offset = 0.5f;
+	std::list<Instruction*> instructions = {
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr, 20, 1, 1),
+		new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr, 20, 1, 2),
+
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr, 50, 1, 1),
+		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[0], 50, 1, 2),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr, 50, 1, 3),
+		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[1], 50, 1, 4),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x8, 8), addr, 50, 1, 5),
+		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[2], 50, 1, 6),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0xC, 8), addr, 50, 1, 7),
+		new Instruction(InstructionId::LOAD, addr, nullptr, playerId, 50, 1, 8),
+
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr, 70, 1, 1),
+		new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr, 70, 1, 2),
+
+		new Instruction(InstructionId::FLOAT_ADD, playerPos[0], new ConstantVarnode((uint32_t&)offset, 4), playerPos[0], 100, 1, 0),
+		new Instruction(InstructionId::FLOAT_ADD, playerPos[1], new ConstantVarnode((uint32_t&)offset, 4), playerPos[1], 100, 1, 1),
+		new Instruction(InstructionId::FLOAT_ADD, playerPos[2], new ConstantVarnode((uint32_t&)offset, 4), playerPos[2], 100, 1, 2),
+
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x1000, 8), addr, 150, 1, 1),
+		//new Instruction(InstructionId::CALL, addr, nullptr, nullptr, 15, 1, 2),
+
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x0, 8), addr, 200, 1, 1),
+		new Instruction(InstructionId::STORE, addr, playerPos[0], nullptr, 200, 1, 2),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x4, 8), addr, 200, 1,3),
+		new Instruction(InstructionId::STORE, addr, playerPos[1], nullptr, 200, 1, 4),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x8, 8), addr, 200, 1, 5),
+		new Instruction(InstructionId::STORE, addr, playerPos[2], nullptr, 200, 1, 6),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0xC, 8), addr, 200, 1, 7),
+		new Instruction(InstructionId::STORE, addr, playerId, nullptr, 200, 1, 8),
+	};
+	auto asmGraph = new AsmGraph(instructions, {});
+	asmGraph->build();
+
+	auto decCodeGraph = new DecompiledCodeGraph(asmGraph, m_defSignature->getParameterInfos());
+
+	auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getParameterInfos(); };
+	auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, funcCallInfoCallback);
+	decompiler->start();
+	showDecGraph(decCodeGraph);
+
+	auto clonedDecCodeGraph = decCodeGraph->clone();
+	//clonedDecCodeGraph->checkOnSingleParents();
+	Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
+	clonedDecCodeGraph->checkOnSingleParents();
+	//showDecGraph(clonedDecCodeGraph);
+
+	auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+	auto userSymbolDef = createUserSymbolDef();
+	{
+		auto entity = typeManager()->createStructure("EntityTest", "");
+		entity->addField(0x0, "vec", GetUnit(m_vec3D));
+		entity->addField(0xC, "id", findType("uint32_t", ""));
+		userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(GLOBAL_VAR, GetUnit(entity), "entity1"), 0x100);
+		userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(GLOBAL_VAR, GetUnit(entity), "entity2"), 0x200);
+	}
+
+	Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
+	Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
+	sdaBuilding.start();
+	showAllSymbols(sdaCodeGraph);
+	showDecGraph(sdaCodeGraph->getDecGraph());
+
+	Symbolization::SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
+	sdaDataTypesCalculating.start();
+	showAllSymbols(sdaCodeGraph);
+	showDecGraph(sdaCodeGraph->getDecGraph());
+
+	Optimization::SdaGraphMemoryOptimization memoryOptimization(sdaCodeGraph);
+	memoryOptimization.start();
+	showDecGraph(sdaCodeGraph->getDecGraph());
+}
+
 void ProgramModuleFixtureDecSamples::initSampleTestHashes() {
 	m_sampleTestHashes = {
 		//std::pair(2,0xfca38c5a9a788b9f), std::pair(3,0xbae15d35b166fd57), std::pair(4,0xe6d8ead2524614b), std::pair(5,0x404336cd30597017), std::pair(200,0x2aeebec5a9174a9f), std::pair(201,0x2bd0067104ae1951), std::pair(202,0x89fec5e403906591), std::pair(203,0x801ca3e750c8603b), std::pair(204,0x30d1aba2f2e3b1ed), std::pair(205,0x12c9a420f2b2d5e9), std::pair(206,0xab6d6c780445dfc4), std::pair(207,0x4a74f8192c5513a4), std::pair(208,0xd8c4e8c8df66dfae), std::pair(209,0xd6cc7469ea14af70), std::pair(210,0xacc229f90d6782dd), std::pair(211,0xe9c4c559b552878f), std::pair(212,0xe2b4c3ba6cef5a0b), std::pair(213,0x7c6464398da34687), std::pair(214,0x599a1ccf69d13300), std::pair(215,0x910e4ce3900fd4d1), std::pair(216,0xc48c00f7c3196841), std::pair(217,0xdf80cb704bfab4df), std::pair(218,0x57b02dcbee99fd9d), std::pair(219,0xbd417ce9ff6ad57d),
@@ -54,11 +187,11 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	
 	//ignore all tests except
-	m_doTestIdOnly = -1;
+	m_doTestIdOnly = 1;
 
 	{
 		//simple function
-		test = createSampleTest(-1, GetFuncBytes(&Test_SimpleFunc));
+		test = createSampleTest(1, GetFuncBytes(&Test_SimpleFunc));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
 		test->enableAllAndShowAll();
@@ -71,7 +204,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 
 	{
 		//multidimension stack array like stackArray[1][2][3]
-		test = createSampleTest(1, GetFuncBytes(&Test_Array));
+		test = createSampleTest(2, GetFuncBytes(&Test_Array));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
 		test->enableAllAndShowAll();
@@ -86,7 +219,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 
 	{
 		//hard work with complex data structures
-		test = createSampleTest(2, GetFuncBytes(&Test_StructsAndArray));
+		test = createSampleTest(3, GetFuncBytes(&Test_StructsAndArray));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
 		//test->enableAllAndShowAll();
@@ -452,27 +585,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			out("\n\n\n********************* AFTER SYMBOLIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 			blockList = buildBlockList(sdaCodeGraph->getDecGraph());
 
-			//show all symbols
-			sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::ISymbol* a, CE::Symbol::ISymbol* b) { return a->getName() < b->getName(); });
-			for (auto var : sdaCodeGraph->getSdaSymbols()) {
-				std::string comment = "//priority: " + std::to_string(var->getDataType()->getPriority());
-				//size
-				if (var->getDataType()->isArray())
-					comment += ", size: " + std::to_string(var->getDataType()->getSize());
-				//offsets
-				if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(var)) {
-					if (!autoSdaSymbol->getInstrOffsets().empty()) {
-						comment += ", offsets: ";
-						for (auto off : autoSdaSymbol->getInstrOffsets()) {
-							comment += std::to_string(off) + ", ";
-						}
-						comment.pop_back();
-						comment.pop_back();
-					}
-				}
-				out("%s %s; %s\n", var->getDataType()->getDisplayName().c_str(), var->getName().c_str(), comment.c_str());
-			}
-			out("\n");
+			showAllSymbols(sdaCodeGraph);
 			LinearViewSimpleConsoleOutput output3(blockList, sdaCodeGraph->getDecGraph());
 			output3.setMinInfoToShow();
 			if (m_isOutput) {

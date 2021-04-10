@@ -16,52 +16,15 @@ using namespace CE::Decompiler;
 using namespace CE::Symbol;
 using namespace CE::DataType;
 
-class ProgramModuleFixtureDecSamples : public ProgramModuleFixture {
+class ProgramModuleFixtureDecBase : public ProgramModuleFixture {
 public:
-	// test unit for some instruction list (asm code) presented as array of bytes
-	struct SampleTest
-	{
-		int m_testId;
-		std::vector<byte> m_content; // list of instructions
-		Symbolization::UserSymbolDef m_userSymbolDef;
-		std::map<int64_t, Signature*> m_functions;
-		bool m_enabled = true;
-		bool m_symbolization = true;
-		bool m_showAllCode = false;
-		bool m_showSymbCode = false;
-		bool m_showAsmBefore = false;
-		bool m_showFinalResult = false;
-
-		void enableAllAndShowAll() {
-			m_enabled = true;
-			m_symbolization = true;
-			m_showAllCode = true;
-			m_showSymbCode = true;
-			m_showAsmBefore = true;
-			m_showFinalResult = true;
-		}
-	};
-
-	std::list<SampleTest*> m_sampleTests;
-	std::map<int, HS::Value> m_sampleTestHashes;
 	Signature* m_defSignature;
 	bool m_isOutput = true;
 
-	//ignore all tests except
-	int m_doTestIdOnly = 0;
-
-	ProgramModuleFixtureDecSamples()
-		: ProgramModuleFixture(false)
-	{
+	ProgramModuleFixtureDecBase() {
 		m_defSignature = createDefSig("defSignature");
 		createTestDataTypes();
-		initSampleTestHashes();
-		initSampleTest();
 	}
-
-	void initSampleTestHashes();
-
-	void initSampleTest();
 
 	CE::DataType::Structure* m_vec3D = nullptr;
 	CE::DataType::Structure* m_vecExt3D = nullptr;
@@ -77,7 +40,7 @@ public:
 		m_vecExt3D->addField(0x8 * 0, "x", findType("float", ""));
 		m_vecExt3D->addField(0x8 * 1, "y", findType("float", ""));
 		m_vecExt3D->addField(0x8 * 2, "z", findType("float", ""));
-		
+
 		m_vec4D = typeManager()->createStructure("testVector4D", "");
 		m_vec4D->addField(0x4 * 0, "x", findType("float", ""));
 		m_vec4D->addField(0x4 * 1, "y", findType("float", ""));
@@ -91,8 +54,6 @@ public:
 		m_matrix4x4->addField(m_vec4D->getSize() * 3, "vec4", GetUnit(m_vec4D));
 	}
 
-	bool checkHash(int type, std::list<std::pair<int, HS::Value>>& sampleTestHashes, HS::Value hash, SampleTest* sampleTest);
-
 	CE::TypeManager* typeManager() {
 		return m_programModule->getTypeManager();
 	}
@@ -105,16 +66,7 @@ public:
 		return DataType::GetUnit(typeManager()->getTypeByName(typeName), typeLevel);
 	}
 
-	SampleTest* createSampleTest(int testId, std::vector<byte> content) {
-		auto test = new SampleTest;
-		test->m_testId = testId;
-		test->m_content = content;
-		test->m_userSymbolDef = createUserSymbolDef(testId);
-		m_sampleTests.push_back(test);
-		return test;
-	}
-
-	Symbolization::UserSymbolDef createUserSymbolDef(int testId) {
+	Symbolization::UserSymbolDef createUserSymbolDef() {
 		auto userSymbolDef = Symbolization::UserSymbolDef(m_programModule);
 		userSymbolDef.m_signature = m_defSignature;
 		userSymbolDef.m_globalMemoryArea = m_programModule->getGlobalMemoryArea();
@@ -142,6 +94,38 @@ public:
 		return blockList;
 	}
 
+	void showDecGraph(DecompiledCodeGraph* decGraph) {
+		LinearViewSimpleConsoleOutput output(buildBlockList(decGraph), decGraph);
+		if (m_isOutput) {
+			output.show();
+			out("******************\n\n");
+		}
+	}
+
+	//show all symbols
+	void showAllSymbols(SdaCodeGraph* sdaCodeGraph) {
+		sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::ISymbol* a, CE::Symbol::ISymbol* b) { return a->getName() < b->getName(); });
+		for (auto var : sdaCodeGraph->getSdaSymbols()) {
+			std::string comment = "//priority: " + std::to_string(var->getDataType()->getPriority());
+			//size
+			if (var->getDataType()->isArray())
+				comment += ", size: " + std::to_string(var->getDataType()->getSize());
+			//offsets
+			if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(var)) {
+				if (!autoSdaSymbol->getInstrOffsets().empty()) {
+					comment += ", offsets: ";
+					for (auto off : autoSdaSymbol->getInstrOffsets()) {
+						comment += std::to_string(off) + ", ";
+					}
+					comment.pop_back();
+					comment.pop_back();
+				}
+			}
+			out("%s %s; %s\n", var->getDataType()->getDisplayName().c_str(), var->getName().c_str(), comment.c_str());
+		}
+		out("\n");
+	}
+
 	// print message
 	void out(const char* fmt, ...) {
 		if (!m_isOutput)
@@ -164,5 +148,125 @@ public:
 		while (!(addr[size] == 0xC3 && addr[size + 1] == 0xCC))
 			size++;
 		return size + 1;
+	}
+};
+
+class ProgramModuleFixtureDecComponent : public ProgramModuleFixtureDecBase {
+public:
+	RegisterFactoryX86 m_registerFactoryX86;
+	PCode::VirtualMachineContext m_vmCtx;
+
+	ProgramModuleFixtureDecComponent() {
+
+	}
+
+	// decode {bytes} into pcode instructions
+	std::list<Instruction*> decode(std::vector<byte> bytes) {
+		std::list<Instruction*> decodedInstructions;
+		PCode::DecoderX86 decoder(&m_registerFactoryX86);
+		int offset = 0;
+		while (offset < bytes.size()) {
+			decoder.decode(bytes.data() + offset, offset, (int)bytes.size());
+			if (decoder.getInstructionLength() == 0)
+				break;
+			decodedInstructions.insert(decodedInstructions.end(), decoder.getDecodedPCodeInstructions().begin(), decoder.getDecodedPCodeInstructions().end());
+			offset += decoder.getInstructionLength();
+		}
+		return decodedInstructions;
+	}
+
+	// show all pcode instructions with original asm instructions
+	void showInstructions(const std::list<Instruction*>& instructions) {
+		AsmGraphBlock asmGraphBlock(nullptr, 0, 0);
+		asmGraphBlock.getInstructions() = instructions;
+		asmGraphBlock.printDebug(nullptr, "", false, true);
+	}
+
+	// execute pcode on the virtual machine
+	std::map<PCode::Instruction*, DataValue> executeAndCalcConstValue(std::list<Instruction*> decodedInstructions) {
+		std::map<PCode::Instruction*, DataValue> constValues;
+		PCode::ConstValueCalculating constValueCalculating(&decodedInstructions, &m_vmCtx, &m_registerFactoryX86);
+		constValueCalculating.start(constValues);
+		return constValues;
+	}
+
+	// show const values calculated by the virtual machine
+	void showConstValues(std::map<PCode::Instruction*, DataValue> constValues) {
+		for (auto pair : constValues) {
+			printf("%s -> %i", pair.first->printDebug().c_str(), pair.second);
+		}
+	}
+
+	// need to optimize some expr. to one constant value
+	void replaceSymbolWithExpr(INode* node, CE::Decompiler::Symbol::Symbol* symbol, INode* newNode) {
+		node->iterateChildNodes([&](INode* childNode) {
+			replaceSymbolWithExpr(childNode, symbol, newNode);
+			});
+		if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
+			if (symbolLeaf->m_symbol == symbol) {
+				node->replaceWith(newNode);
+				delete node;
+			}
+		}
+	}
+
+	// optimize expr.
+	void optimize(TopNode* topNode) {
+		Optimization::ExprOptimization exprOptimization(topNode);
+		exprOptimization.start();
+	}
+};
+
+class ProgramModuleFixtureDecSamples : public ProgramModuleFixtureDecBase {
+public:
+	// test unit for some instruction list (asm code) presented as array of bytes
+	struct SampleTest
+	{
+		int m_testId;
+		std::vector<byte> m_content; // list of instructions
+		Symbolization::UserSymbolDef m_userSymbolDef;
+		std::map<int64_t, Signature*> m_functions;
+		bool m_enabled = true;
+		bool m_symbolization = true;
+		bool m_showAllCode = false;
+		bool m_showSymbCode = false;
+		bool m_showAsmBefore = false;
+		bool m_showFinalResult = false;
+
+		void enableAllAndShowAll() {
+			m_enabled = true;
+			m_symbolization = true;
+			m_showAllCode = true;
+			m_showSymbCode = true;
+			m_showAsmBefore = true;
+			m_showFinalResult = true;
+		}
+	};
+
+	std::list<SampleTest*> m_sampleTests;
+	std::map<int, HS::Value> m_sampleTestHashes;
+
+	//ignore all tests except
+	int m_doTestIdOnly = 0;
+
+	ProgramModuleFixtureDecSamples()
+	{
+		initSampleTestHashes();
+		initSampleTest();
+	}
+
+	void initSampleTestHashes();
+
+	void initSampleTest();
+
+	bool checkHash(int type, std::list<std::pair<int, HS::Value>>& sampleTestHashes, HS::Value hash, SampleTest* sampleTest);
+
+	SampleTest* createSampleTest(int testId, std::vector<byte> content) {
+		auto test = new SampleTest;
+		test->m_testId = testId;
+		test->m_content = content;
+		test->m_userSymbolDef = createUserSymbolDef();
+		m_sampleTests.push_back(test);
+		return test;
 	}
 };

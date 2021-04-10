@@ -135,6 +135,11 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printSdaDebug() override {
+			if (getSrcDataType()->isFloatingPoint()) {
+				if(getSrcDataType()->getSize() == 4)
+					return m_updateDebugInfo = std::to_string((float&)m_value);
+				else return m_updateDebugInfo = std::to_string((double&)m_value);
+			}
 			if (auto sysType = dynamic_cast<DataType::SystemType*>(getSrcDataType()->getBaseType())) {
 				if (sysType->isSigned()) {
 					auto size = getSrcDataType()->getSize();

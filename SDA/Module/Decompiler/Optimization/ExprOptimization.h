@@ -19,8 +19,9 @@ namespace CE::Decompiler::Optimization
 		{}
 
 		void start() {
+			linearExprToOpNodes(m_topNode->getNode()); // remove linear expressions
 			optimizeGenerally(m_topNode->getNode());
-			expandingToLinearExpr(m_topNode->getNode());
+			opNodesToLinearExpr(m_topNode->getNode()); // create linear expressions
 		}
 
 	private:
@@ -61,7 +62,22 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		void expandingToLinearExpr(INode* node) {
+		void linearExprToOpNodes(INode* node) {
+			node->iterateChildNodes([&](INode* childNode) {
+				linearExprToOpNodes(childNode);
+				});
+
+			if (auto linearExpr = dynamic_cast<LinearExpr*>(node)) {
+				node = linearExpr->getConstTerm();
+				for (auto term : linearExpr->getTerms()) {
+					node = new OperationalNode(node, term, linearExpr->m_operation);
+				}
+				linearExpr->replaceWith(node);
+				delete linearExpr;
+			}
+		}
+
+		void opNodesToLinearExpr(INode* node) {
 			if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
 				ExprExpandingToLinearExpr exprExpandingToLinearExpr(opNode);
 				exprExpandingToLinearExpr.start();
@@ -69,7 +85,7 @@ namespace CE::Decompiler::Optimization
 			}
 
 			node->iterateChildNodes([&](INode* childNode) {
-				expandingToLinearExpr(childNode);
+				opNodesToLinearExpr(childNode);
 				});
 		}
 	};
