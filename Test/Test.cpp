@@ -31,7 +31,7 @@ char* read_exe(const char* path) {
 
 DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
 {
-	// the file offset is different than the in memory offset because of section alignment.
+	// the file offset is different than the in memory offset because of section alignment (т.е. нужна эта функция из-за выравнивания)
 	size_t i = 0;
 	PIMAGE_SECTION_HEADER pSeh;
 	if (rva == 0)
@@ -53,7 +53,8 @@ DWORD Rva2Offset(DWORD rva, PIMAGE_SECTION_HEADER psh, PIMAGE_NT_HEADERS pnt)
 
 int main()
 {
-	auto f = read_exe("R:\\Rockstar Games\\Grand Theft Auto V\\GTA5.exe");
+	//
+	auto f = read_exe("R:\\Rockstar Games\\Grand Theft Auto V\\GTA5_dump.exe"); // ScriptHookV.dll, GTA5_dump.exe, GTA5.exe
 	
 	auto& dos_header = *(IMAGE_DOS_HEADER*)f;
 
@@ -80,11 +81,34 @@ int main()
 	auto& code_section = section_headers[0];
 	auto& data_section = section_headers[4];
 
+	// точка входа в программу (функция main)
+	printf("AddressOfEntryPoint = %p (first cmd = %x)\n\n", optional_header.AddressOfEntryPoint, *(uint64_t*)(f + Rva2Offset(optional_header.AddressOfEntryPoint, section_headers, &nt_headers)));
+
+	// импорт
 	auto& import_dir = optional_header.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 	auto import_descs = (IMAGE_IMPORT_DESCRIPTOR*)(f + Rva2Offset(import_dir.VirtualAddress, section_headers, &nt_headers));
 	
-	auto& dll1 = import_descs[0];
-	auto val = dll1.OriginalFirstThunk;
+	int i = 0;
+	while (import_descs[i].Name != NULL) { // проход по всем библиотекам DLL
+		auto& dll = import_descs[i];
+		auto dll_name = string(f + Rva2Offset(dll.Name, section_headers, &nt_headers));
+		printf("DLL: %s\n", dll_name.c_str());
+
+		auto orig_thunk_arr = (IMAGE_THUNK_DATA64*)(f + Rva2Offset(dll.OriginalFirstThunk, section_headers, &nt_headers));
+		auto thunk_arr = (IMAGE_THUNK_DATA64*)(f + Rva2Offset(dll.FirstThunk, section_headers, &nt_headers));
+
+		int j = 0;
+		while (orig_thunk_arr[j].u1.AddressOfData && !(orig_thunk_arr[j].u1.AddressOfData >> 31)) { // проход по всем функциям каждой DLL (если последний бит 1, то это номер импортируемого символа)
+			auto& dll_func = *(IMAGE_IMPORT_BY_NAME*)(f + Rva2Offset(orig_thunk_arr[j].u1.AddressOfData, section_headers, &nt_headers));
+			auto dll_func_name = string(&dll_func.Name[0]);
+			printf("-----> %s (hint=%i, addr=0x%p)\n", dll_func_name.c_str(), dll_func.Hint, thunk_arr[j].u1.Function);
+
+			j++;
+		}
+
+		printf("\n\n");
+		i++;
+	}
 
 	system("pause");
 }
