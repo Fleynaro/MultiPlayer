@@ -310,8 +310,13 @@ namespace CE::Decompiler::PCode
 			return result;
 		}
 
-		// check if the instruction is some kind of jump
+		// BRANCH, CBRANCH, BRANCHIND
 		static bool IsBranching(InstructionId id) {
+			return id >= InstructionId::BRANCH && id <= InstructionId::BRANCHIND;
+		}
+
+		// check if the instruction is some kind of jump (BRANCH/CALL/RETURN)
+		static bool IsAnyJmup(InstructionId id) {
 			return id >= InstructionId::BRANCH && id <= InstructionId::RETURN;
 		}
 	private:

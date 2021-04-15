@@ -7,13 +7,17 @@ namespace CE::Decompiler::PCode
 	{
 	public:
 		void decode(void* addr, int offset, int maxSize = 0x0) {
-			m_result.clear();
 			m_curAddr = addr;
 			m_curOffset = offset;
 			m_curOrderId = 0x0;
 			m_curInstrLength = 0x0;
 			m_maxSize = maxSize;
+			clear();
 			tryDecode(addr, offset);
+		}
+
+		void clear() {
+			m_result.clear();
 		}
 
 		std::list<Instruction*>& getDecodedPCodeInstructions() {

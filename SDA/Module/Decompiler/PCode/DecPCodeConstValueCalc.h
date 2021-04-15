@@ -7,12 +7,12 @@ namespace CE::Decompiler::PCode
 	// Allow to calculate constant expression (e.g. for function addresses)
 	class ConstValueCalculating
 	{
-		std::list<Instruction*>* m_pInstructions;
+		std::list<Instruction*> m_instructions;
 		PCode::VirtualMachineContext* m_vmCtx;
 		AbstractRegisterFactory* m_registerFactory;
 	public:
-		ConstValueCalculating(std::list<Instruction*>* pInstructions, PCode::VirtualMachineContext* vmCtx, AbstractRegisterFactory* registerFactory)
-			: m_pInstructions(pInstructions), m_vmCtx(vmCtx), m_registerFactory(registerFactory)
+		ConstValueCalculating(const std::list<Instruction*>& instructions, PCode::VirtualMachineContext* vmCtx, AbstractRegisterFactory* registerFactory)
+			: m_instructions(instructions), m_vmCtx(vmCtx), m_registerFactory(registerFactory)
 		{}
 
 		void start(std::map<PCode::Instruction*, DataValue>& constValues) {
@@ -20,10 +20,10 @@ namespace CE::Decompiler::PCode
 			//SP, IP registers to zero
 			m_vmCtx->setConstantValue(m_registerFactory->createInstructionPointerRegister(), 0);
 			m_vmCtx->setConstantValue(m_registerFactory->createStackPointerRegister(), 0);
-			for (auto instr : *m_pInstructions) {
+			for (auto instr : m_instructions) {
 				vm.execute(instr);
 				DataValue value;
-				if (Instruction::IsBranching(instr->m_id)) {
+				if (Instruction::IsAnyJmup(instr->m_id)) {
 					if (!dynamic_cast<ConstantVarnode*>(instr->m_input0)) {
 						if (m_vmCtx->tryGetConstantValue(instr->m_input0, value)) {
 							constValues[instr] = value;

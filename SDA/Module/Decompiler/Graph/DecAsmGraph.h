@@ -111,7 +111,7 @@ namespace CE::Decompiler
 
 			// 1) Find all jumps and set labels (in/out) for creating asm blocks
 			for (auto instr : m_instructions) {
-				if (PCode::Instruction::IsBranching(instr->m_id)) {
+				if (PCode::Instruction::IsAnyJmup(instr->m_id)) {
 					int64_t targetOffset;
 					if (auto varnodeConst = dynamic_cast<PCode::ConstantVarnode*>(instr->m_input0)) {
 						// if this input contains hardcoded constant
