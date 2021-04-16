@@ -9,6 +9,8 @@
 #include <Decompiler/SDA/Optimizaton/SdaGraphFinalOptimization.h>
 #include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>
 #include <Decompiler/PCode/DecPCodeConstValueCalc.h>
+#include <Decompiler/PCode/ImageAnalyzer/DecImageAnalyzer.h>
+#include <Module/Image/SimpleBufferImage.h>
 #include <Manager/Managers.h>
 #include <TestCodeToDecompile.h>
 
@@ -177,15 +179,15 @@ public:
 
 	// show all pcode instructions with original asm instructions
 	void showInstructions(const std::list<Instruction*>& instructions) {
-		AsmGraphBlock asmGraphBlock(nullptr, 0, 0);
-		asmGraphBlock.getInstructions() = instructions;
-		asmGraphBlock.printDebug(nullptr, "", false, true);
+		PCodeBlock pcodeBlock(nullptr, 0, 0);
+		pcodeBlock.getInstructions() = instructions;
+		pcodeBlock.printDebug(nullptr, "", false, true);
 	}
 
 	// execute pcode on the virtual machine
 	std::map<PCode::Instruction*, DataValue> executeAndCalcConstValue(std::list<Instruction*> decodedInstructions) {
 		std::map<PCode::Instruction*, DataValue> constValues;
-		PCode::ConstValueCalculating constValueCalculating(&decodedInstructions, &m_vmCtx, &m_registerFactoryX86);
+		PCode::ConstValueCalculating constValueCalculating(decodedInstructions, &m_vmCtx, &m_registerFactoryX86);
 		constValueCalculating.start(constValues);
 		return constValues;
 	}

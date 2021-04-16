@@ -265,6 +265,9 @@ namespace CE::Decompiler::PCode
 	// PCode instruction (e.g. result = SUM op1, op2)
 	class Instruction
 	{
+		int m_originalInstructionOffset;
+		int m_originalInstructionLength;
+		int m_orderId;
 	public:
 		InstructionId m_id;
 		Varnode* m_input0; // the first operand
@@ -272,9 +275,15 @@ namespace CE::Decompiler::PCode
 		Varnode* m_output; // the result
 		std::string m_originalView;
 		
-		Instruction(InstructionId id, Varnode* input0, Varnode* input1, Varnode* output, int originalInstructionOffset, int originalInstructionLength, int orderId)
+		Instruction(InstructionId id, Varnode* input0, Varnode* input1, Varnode* output, int originalInstructionOffset=0, int originalInstructionLength=0, int orderId=0)
 			: m_id(id), m_input0(input0), m_input1(input1), m_output(output), m_originalInstructionOffset(originalInstructionOffset), m_originalInstructionLength(originalInstructionLength), m_orderId(orderId)
 		{}
+
+		void setInfo(int originalInstructionOffset, int originalInstructionLength, int orderId) {
+			m_originalInstructionOffset = originalInstructionOffset;
+			m_originalInstructionLength = originalInstructionLength;
+			m_orderId = orderId;
+		}
 
 		int getOriginalInstructionOffset() {
 			return m_originalInstructionOffset;
@@ -290,12 +299,12 @@ namespace CE::Decompiler::PCode
 
 		// get long offset which consist of original offset and pCode instruction order number: origOffset{24} | order{8}
 		int64_t getOffset() {
-			return (m_originalInstructionOffset << 8) | m_orderId;
+			return ((int64_t)m_originalInstructionOffset << 8) | m_orderId;
 		}
 
 		// get long offset of the next instruction following this
 		int64_t getFirstInstrOffsetInNextOrigInstr() {
-			return (m_originalInstructionOffset + m_originalInstructionLength) << 8;
+			return ((int64_t)m_originalInstructionOffset + m_originalInstructionLength) << 8;
 		}
 
 		std::string printDebug() {
@@ -319,10 +328,6 @@ namespace CE::Decompiler::PCode
 		static bool IsAnyJmup(InstructionId id) {
 			return id >= InstructionId::BRANCH && id <= InstructionId::RETURN;
 		}
-	private:
-		int m_originalInstructionOffset;
-		int m_originalInstructionLength;
-		int m_orderId;
 	};
 
 	class IRelatedToInstruction

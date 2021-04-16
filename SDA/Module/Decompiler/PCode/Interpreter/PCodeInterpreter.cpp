@@ -322,7 +322,7 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto dstLocExpr = requestVarnode(m_instr->m_input0);
 
 		int dstLocOffset = 0;
-		auto& constValues = m_block->m_decompiledGraph->getAsmGraph()->getConstValues();
+		auto& constValues = m_block->m_decompiledGraph->getFuncGraph()->getConstValues();
 		auto it = constValues.find(m_instr);
 		if (it != constValues.end())
 			dstLocOffset = (int)it->second;

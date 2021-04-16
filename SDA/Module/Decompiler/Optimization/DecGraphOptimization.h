@@ -17,8 +17,8 @@ namespace CE::Decompiler::Optimization
 		decGraph->checkOnSingleParents();
 		GraphLastLineAndConditionOrderFixing graphLastLineAndConditionOrderFixing(decGraph);
 		graphLastLineAndConditionOrderFixing.start();
-		//GraphLocalVarsRelToInstructions graphInstructionsForLocalVarsSearch(decGraph);
-		//graphInstructionsForLocalVarsSearch.start();
+		GraphLocalVarsRelToInstructions graphLocalVarsRelToInstructions(decGraph);
+		graphLocalVarsRelToInstructions.start();
 		decGraph->checkOnSingleParents();
 		GraphExprOptimization graphExprOptimization(decGraph);
 		graphExprOptimization.start();

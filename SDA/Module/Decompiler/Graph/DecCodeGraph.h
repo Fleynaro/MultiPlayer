@@ -1,6 +1,6 @@
 #pragma once
 #include "DecCodeGraphBlock.h"
-#include "DecAsmGraph.h"
+#include "DecPCodeGraph.h"
 #include "../DecStorage.h"
 
 namespace CE::Decompiler
@@ -8,16 +8,16 @@ namespace CE::Decompiler
 	class DecompiledCodeGraph
 	{
 	public:
-		DecompiledCodeGraph(AsmGraph* asmGraph, FunctionCallInfo functionCallInfo)
-			: m_asmGraph(asmGraph), m_functionCallInfo(functionCallInfo)
+		DecompiledCodeGraph(FunctionPCodeGraph* asmGraph, FunctionCallInfo functionCallInfo)
+			: m_funcGraph(asmGraph), m_functionCallInfo(functionCallInfo)
 		{}
 
-		AsmGraph* getAsmGraph() {
-			return m_asmGraph;
+		FunctionPCodeGraph* getFuncGraph() {
+			return m_funcGraph;
 		}
 
-		std::map<PrimaryTree::Block*, AsmGraphBlock*>& getAsmGraphBlocks() {
-			return m_decBlockToAsmBlock;
+		std::map<PrimaryTree::Block*, PCodeBlock*>& getAsmGraphBlocks() {
+			return m_decBlockToBlock;
 		}
 
 		PrimaryTree::Block* getStartBlock() {
@@ -53,14 +53,14 @@ namespace CE::Decompiler
 
 		DecompiledCodeGraph* clone() {
 			PrimaryTree::BlockCloneContext ctx;
-			ctx.m_graph = new DecompiledCodeGraph(m_asmGraph, m_functionCallInfo);
+			ctx.m_graph = new DecompiledCodeGraph(m_funcGraph, m_functionCallInfo);
 			ctx.m_nodeCloneContext.m_cloneSymbols = true;
 			getStartBlock()->clone(&ctx);
 			for (auto pair : ctx.m_clonedBlocks) {
 				auto origBlock = pair.first;
 				auto clonedBlock = pair.second;
 				ctx.m_graph->m_decompiledBlocks.push_back(clonedBlock);
-				ctx.m_graph->m_decBlockToAsmBlock[clonedBlock] = m_decBlockToAsmBlock[origBlock];
+				ctx.m_graph->m_decBlockToBlock[clonedBlock] = m_decBlockToBlock[origBlock];
 			}
 			for (auto block : m_removedDecompiledBlocks) {
 				ctx.m_graph->m_removedDecompiledBlocks.push_back(block->clone(&ctx));
@@ -120,8 +120,8 @@ namespace CE::Decompiler
 			return block->m_maxHeight;
 		}
 	private:
-		AsmGraph* m_asmGraph;
-		std::map<PrimaryTree::Block*, AsmGraphBlock*> m_decBlockToAsmBlock;
+		FunctionPCodeGraph* m_funcGraph;
+		std::map<PrimaryTree::Block*, PCodeBlock*> m_decBlockToBlock;
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
 		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
 		FunctionCallInfo m_functionCallInfo;

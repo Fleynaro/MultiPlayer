@@ -338,9 +338,9 @@
     <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\Decompiler\DecGraphBlockLinker.h" />
-    <ClInclude Include="Module\Decompiler\Graph\DecAsmGraph.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraphBlockFlowIterator.h" />
+    <ClInclude Include="Module\Decompiler\Graph\DecPCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearView.h" />
     <ClInclude Include="Module\Decompiler\DecMask.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewBlocks.h" />
@@ -363,7 +363,9 @@
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphModification.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphUselessLineOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphViewOptimization.h" />
-    <ClInclude Include="Module\Decompiler\PEImage.h" />
+    <ClInclude Include="Module\Decompiler\PCode\ImageAnalyzer\DecImageAnalyzer.h" />
+    <ClInclude Include="Module\Image\IImage.h" />
+    <ClInclude Include="Module\Image\PEImage.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaReadValue.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaUnkLocation.h" />
     <ClInclude Include="Module\Decompiler\SDA\SdaGraphModification.h" />
@@ -453,6 +455,7 @@
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraSignatureTypeMapper.h" />
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraStructureTypeMapper.h" />
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraTypedefTypeMapper.h" />
+    <ClInclude Include="Module\Image\SimpleBufferImage.h" />
     <ClInclude Include="Module\Manager\AbstractManager.h" />
     <ClInclude Include="Module\Manager\FunctionManager.h" />
     <ClInclude Include="Module\Manager\FunctionTagManager.h" />

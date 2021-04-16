@@ -9,7 +9,7 @@ namespace CE::Decompiler
 	{
 	public:
 		struct DecompiledBlockInfo {
-			AsmGraphBlock* m_asmBlock = nullptr;
+			PCodeBlock* m_pcodeBlock = nullptr;
 			PrimaryTree::Block* m_decBlock = nullptr;
 			ExecutionBlockContext* m_execBlockCtx = nullptr;
 
@@ -48,28 +48,28 @@ namespace CE::Decompiler
 	private:
 		AbstractRegisterFactory* m_registerFactory;
 		PCode::InstructionInterpreter* m_instructionInterpreter;
-		std::map<AsmGraphBlock*, PrimaryTree::Block*> m_asmToDecBlocks;
+		std::map<PCodeBlock*, PrimaryTree::Block*> m_pcodeToDecBlocks;
 		
 		void decompileAllBlocks() {
-			for (auto& pair : m_decompiledGraph->getAsmGraph()->getBlocks()) {
-				auto asmBlock = &pair.second;
+			for (auto& pair : m_decompiledGraph->getFuncGraph()->getBlocks()) {
+				auto pcodeBlock = pair.second;
 				DecompiledBlockInfo decompiledBlock;
-				decompiledBlock.m_asmBlock = asmBlock;
-				if (!asmBlock->getNextNearBlock() && !asmBlock->getNextFarBlock()) {
-					decompiledBlock.m_decBlock = new PrimaryTree::EndBlock(m_decompiledGraph, asmBlock->m_level);
+				decompiledBlock.m_pcodeBlock = pcodeBlock;
+				if (!pcodeBlock->getNextNearBlock() && !pcodeBlock->getNextFarBlock()) {
+					decompiledBlock.m_decBlock = new PrimaryTree::EndBlock(m_decompiledGraph, pcodeBlock->m_level);
 				}
 				else {
-					decompiledBlock.m_decBlock = new PrimaryTree::Block(m_decompiledGraph, asmBlock->m_level);
+					decompiledBlock.m_decBlock = new PrimaryTree::Block(m_decompiledGraph, pcodeBlock->m_level);
 				}
 				decompiledBlock.m_execBlockCtx = new ExecutionBlockContext(this);
-				decompiledBlock.m_decBlock->m_name = Generic::String::NumberToHex(asmBlock->ID);
+				decompiledBlock.m_decBlock->m_name = Generic::String::NumberToHex(pcodeBlock->ID);
 
 				//execute the instructions and then change the execution context
-				for (auto instr : asmBlock->getInstructions()) {
+				for (auto instr : pcodeBlock->getInstructions()) {
 					m_instructionInterpreter->execute(decompiledBlock.m_decBlock, decompiledBlock.m_execBlockCtx, instr);
 				}
 
-				m_asmToDecBlocks[asmBlock] = decompiledBlock.m_decBlock;
+				m_pcodeToDecBlocks[pcodeBlock] = decompiledBlock.m_decBlock;
 				m_decompiledBlocks[decompiledBlock.m_decBlock] = decompiledBlock;
 			}
 		}
@@ -77,11 +77,11 @@ namespace CE::Decompiler
 		void setAllBlocksLinks() {
 			for (const auto& it : m_decompiledBlocks) {
 				auto& decBlockInfo = it.second;
-				if (auto nextAsmBlock = decBlockInfo.m_asmBlock->getNextNearBlock()) {
-					decBlockInfo.m_decBlock->setNextNearBlock(m_asmToDecBlocks[nextAsmBlock]);
+				if (auto nextAsmBlock = decBlockInfo.m_pcodeBlock->getNextNearBlock()) {
+					decBlockInfo.m_decBlock->setNextNearBlock(m_pcodeToDecBlocks[nextAsmBlock]);
 				}
-				if (auto nextAsmBlock = decBlockInfo.m_asmBlock->getNextFarBlock()) {
-					decBlockInfo.m_decBlock->setNextFarBlock(m_asmToDecBlocks[nextAsmBlock]);
+				if (auto nextAsmBlock = decBlockInfo.m_pcodeBlock->getNextFarBlock()) {
+					decBlockInfo.m_decBlock->setNextFarBlock(m_pcodeToDecBlocks[nextAsmBlock]);
 				}
 			}
 		}

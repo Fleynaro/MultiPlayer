@@ -41,6 +41,55 @@ TEST(Decompiler, Test_MemLocation)
 	ASSERT_EQ(loc1.intersect(loc2), true);
 }
 
+// IMAGE
+TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
+{
+	// R:\\Rockstar Games\\Grand Theft Auto V\\GTA5_dump.exe
+	char* buffer;
+	int size;
+	PEImage::LoadPEImage("R:\\Rockstar Games\\Grand Theft Auto V\\GTA5_dump.exe", &buffer, &size);
+	
+	auto image = new PEImage((byte*)buffer, size);
+	auto imageGraph = new ImagePCodeGraph;
+	ImageAnalyzerX86 imageAnalyzer(image, imageGraph);
+	imageAnalyzer.startFrom(0xA290A8);
+
+	auto graph = *imageGraph->getFunctionGraphList().begin();
+	auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
+
+	auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getParameterInfos(); };
+	auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, funcCallInfoCallback);
+	decompiler->start();
+	showDecGraph(decCodeGraph);
+
+	auto clonedDecCodeGraph = decCodeGraph->clone();
+	//clonedDecCodeGraph->checkOnSingleParents();
+	Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
+	clonedDecCodeGraph->checkOnSingleParents();
+	//showDecGraph(clonedDecCodeGraph);
+
+	auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+	auto userSymbolDef = createUserSymbolDef();
+	{
+		
+	}
+
+	Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
+	Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
+	sdaBuilding.start();
+	showAllSymbols(sdaCodeGraph);
+	showDecGraph(sdaCodeGraph->getDecGraph());
+
+	Symbolization::SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
+	sdaDataTypesCalculating.start();
+	showAllSymbols(sdaCodeGraph);
+	showDecGraph(sdaCodeGraph->getDecGraph());
+
+	Optimization::SdaGraphMemoryOptimization memoryOptimization(sdaCodeGraph);
+	memoryOptimization.start();
+	showDecGraph(sdaCodeGraph->getDecGraph());
+}
+
 // 1) DECODERS
 TEST_F(ProgramModuleFixtureDecComponent, Test_Decoder)
 {
@@ -100,41 +149,51 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	auto rip = new CE::Decompiler::PCode::RegisterVarnode(m_registerFactoryX86.createInstructionPointerRegister());
 	auto offset = 0.5f;
 	std::list<Instruction*> instructions = {
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr, 20, 1, 1),
-		new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr, 20, 1, 2),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr),
+		new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr),
 
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr, 50, 1, 1),
-		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[0], 50, 1, 2),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr, 50, 1, 3),
-		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[1], 50, 1, 4),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x8, 8), addr, 50, 1, 5),
-		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[2], 50, 1, 6),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0xC, 8), addr, 50, 1, 7),
-		new Instruction(InstructionId::LOAD, addr, nullptr, playerId, 50, 1, 8),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr),
+		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[0]),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr),
+		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[1]),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x8, 8), addr),
+		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[2]),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0xC, 8), addr),
+		new Instruction(InstructionId::LOAD, addr, nullptr, playerId),
 
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr, 70, 1, 1),
-		new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr, 70, 1, 2),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr),
+		new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr),
 
-		new Instruction(InstructionId::FLOAT_ADD, playerPos[0], new ConstantVarnode((uint32_t&)offset, 4), playerPos[0], 100, 1, 0),
-		new Instruction(InstructionId::FLOAT_ADD, playerPos[1], new ConstantVarnode((uint32_t&)offset, 4), playerPos[1], 100, 1, 1),
-		new Instruction(InstructionId::FLOAT_ADD, playerPos[2], new ConstantVarnode((uint32_t&)offset, 4), playerPos[2], 100, 1, 2),
+		new Instruction(InstructionId::FLOAT_ADD, playerPos[0], new ConstantVarnode((uint32_t&)offset, 4), playerPos[0]),
+		new Instruction(InstructionId::FLOAT_ADD, playerPos[1], new ConstantVarnode((uint32_t&)offset, 4), playerPos[1]),
+		new Instruction(InstructionId::FLOAT_ADD, playerPos[2], new ConstantVarnode((uint32_t&)offset, 4), playerPos[2]),
 
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x1000, 8), addr, 150, 1, 1),
-		//new Instruction(InstructionId::CALL, addr, nullptr, nullptr, 15, 1, 2),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x1000, 8), addr),
+		//new Instruction(InstructionId::CALL, addr, nullptr, nullptr, 15, 1, 1),
 
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x0, 8), addr, 200, 1, 1),
-		new Instruction(InstructionId::STORE, addr, playerPos[0], nullptr, 200, 1, 2),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x4, 8), addr, 200, 1,3),
-		new Instruction(InstructionId::STORE, addr, playerPos[1], nullptr, 200, 1, 4),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x8, 8), addr, 200, 1, 5),
-		new Instruction(InstructionId::STORE, addr, playerPos[2], nullptr, 200, 1, 6),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0xC, 8), addr, 200, 1, 7),
-		new Instruction(InstructionId::STORE, addr, playerId, nullptr, 200, 1, 8),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x0, 8), addr),
+		new Instruction(InstructionId::STORE, addr, playerPos[0], nullptr),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x4, 8), addr),
+		new Instruction(InstructionId::STORE, addr, playerPos[1], nullptr),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x8, 8), addr),
+		new Instruction(InstructionId::STORE, addr, playerPos[2], nullptr),
+		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0xC, 8), addr),
+		new Instruction(InstructionId::STORE, addr, playerId, nullptr),
 	};
-	auto asmGraph = new AsmGraph(instructions, {});
-	asmGraph->build();
 
-	auto decCodeGraph = new DecompiledCodeGraph(asmGraph, m_defSignature->getParameterInfos());
+	auto imageGraph = new ImagePCodeGraph;
+	ImageAnalyzerX86 imageAnalyzer(new SimpelBufferImage(nullptr, 0), imageGraph);
+
+	std::map<int64_t, PCode::Instruction*> offsetToInstruction;
+	int i = 0;
+	for (auto instr : instructions) {
+		instr->setInfo(i++, 1, 0);
+		offsetToInstruction[instr->getOffset()] = instr;
+	}
+	imageAnalyzer.start(offsetToInstruction);
+
+	auto graph = *imageGraph->getFunctionGraphList().begin();
+	auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
 
 	auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getParameterInfos(); };
 	auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, funcCallInfoCallback);
@@ -187,14 +246,14 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	
 	//ignore all tests except
-	m_doTestIdOnly = 1;
+	m_doTestIdOnly = 102;
 
 	{
 		//simple function
 		test = createSampleTest(1, GetFuncBytes(&Test_SimpleFunc));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
-		test->enableAllAndShowAll();
+		//test->enableAllAndShowAll();
 		test->m_symbolization = true;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test0");
 		sig->addParameter("a", findType("int32_t", ""));
@@ -207,7 +266,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		test = createSampleTest(2, GetFuncBytes(&Test_Array));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
-		test->enableAllAndShowAll();
+		//test->enableAllAndShowAll();
 		test->m_symbolization = true;
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test1");
 		sig->setReturnType(findType("uint64_t"));
@@ -300,7 +359,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		test = createSampleTest(103, { 0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x8B, 0xDA, 0x83, 0xFA, 0x0A, 0x7E, 0x10, 0x8D, 0x42, 0xF5, 0x83, 0xF8, 0x0D, 0x77, 0x05, 0x83, 0xC3, 0x19, 0xEB, 0x03, 0x83, 0xEB, 0x0E, 0xE8, 0x46, 0xCA, 0xFE, 0xFF, 0x48, 0x85, 0xC0, 0x74, 0x2C, 0x83, 0xFB, 0x31, 0x77, 0x27, 0x48, 0xBA, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x43, 0x03, 0x00, 0x48, 0x0F, 0xA3, 0xDA, 0x73, 0x17, 0x48, 0x8B, 0x48, 0x48, 0x4C, 0x8B, 0xC0, 0x8B, 0xD3, 0x48, 0x83, 0xC1, 0x40, 0x48, 0x83, 0xC4, 0x20, 0x5B, 0xE9, 0x0D, 0x10, 0x91, 0xFF, 0x33, 0xC0, 0x48, 0x83, 0xC4, 0x20, 0x5B, 0xC3, 0xCC });
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
-		//test->enableAllAndShowAll();
+		test->enableAllAndShowAll();
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test103");
 		sig->addParameter("param1", findType("int32_t", ""));
 		sig->addParameter("param2", findType("int32_t", ""));
@@ -503,34 +562,19 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			continue;
 		m_isOutput = sampleTest->m_showAllCode;
 
-		// 1) INSTRUCTION DECODNING (from bytes to pCode)
-		std::list<Instruction*> decodedInstructions; // the result of the step
-		RegisterFactoryX86 registerFactoryX86;
-		PCode::DecoderX86 decoder(&registerFactoryX86);
-		int offset = 0;
-		while (offset < sampleTest->m_content.size()) {
-			decoder.decode(sampleTest->m_content.data() + offset, offset, (int)sampleTest->m_content.size());
-			if (decoder.getInstructionLength() == 0)
-				break;
-			decodedInstructions.insert(decodedInstructions.end(), decoder.getDecodedPCodeInstructions().begin(), decoder.getDecodedPCodeInstructions().end());
-			offset += decoder.getInstructionLength();
-		}
+		// 1) INSTRUCTION DECODNING (from bytes to pCode graph)
+		auto imageGraph = new ImagePCodeGraph;
+		auto image = new SimpelBufferImage(sampleTest->m_content.data(), (int)sampleTest->m_content.size());
+		ImageAnalyzerX86 imageAnalyzer(image, imageGraph);
+		imageAnalyzer.start();
+		auto graph = *imageGraph->getFunctionGraphList().begin();
 
-		// 2) PCODE VIRTUAL MACHINE (execute pCode and calculate constant expression)
-		std::map<PCode::Instruction*, DataValue> constValues;
-		PCode::VirtualMachineContext vmCtx;
-		PCode::ConstValueCalculating constValueCalculating(&decodedInstructions, &vmCtx, &registerFactoryX86);
-		constValueCalculating.start(constValues);
-
-		// 3) TRANSFORMATION TO GRAPH (transform the list of decoded instructions to asm graph)
-		AsmGraph graph(decodedInstructions, constValues);
-		graph.build();
 		if (m_isOutput && sampleTest->m_showAsmBefore)
-			graph.printDebug(sampleTest->m_content.data());
+			graph->printDebug(sampleTest->m_content.data());
 
 		// 4) DECOMPILING (transform the asm graph to decompiled code graph)
 		auto info = CE::Decompiler::FunctionCallInfo(sampleTest->m_userSymbolDef.m_signature->getParameterInfos());
-		auto decCodeGraph = new DecompiledCodeGraph(&graph, info);
+		auto decCodeGraph = new DecompiledCodeGraph(graph, info);
 		
 		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) {
 			if (offset != 0x0) {
@@ -540,6 +584,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			}
 			return CE::Decompiler::FunctionCallInfo(m_defSignature->getParameterInfos());
 		};
+		RegisterFactoryX86 registerFactoryX86;
 		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, funcCallInfoCallback);
 		decompiler->start();
 

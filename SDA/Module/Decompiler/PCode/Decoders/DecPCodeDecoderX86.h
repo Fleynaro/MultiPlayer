@@ -50,10 +50,10 @@ namespace CE::Decompiler::PCode
 			int shuffOp2[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 		};
 
-		void tryDecode(void* addr, int offset) override {
+		void tryDecode(void* baseAddr, int offset) override {
 			auto size = m_maxSize > 0 ? (m_maxSize - offset) : 0x1000;
 			ZydisDecodedInstruction curInstruction;
-			if (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&m_decoder, addr, size,
+			if (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&m_decoder, (char*)baseAddr + offset, size,
 				&curInstruction))) {
 				m_curInstr = &curInstruction;
 				m_curInstrLength = curInstruction.length;
@@ -1292,7 +1292,7 @@ namespace CE::Decompiler::PCode
 				ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
 				char buffer[256];
 				ZydisFormatterFormatInstruction(&formatter, m_curInstr, buffer, sizeof(buffer),
-					(ZyanU64)m_curAddr);
+					(ZyanU64)m_baseAddr);
 				instr->m_originalView = buffer;
 			}
 			m_result.push_back(instr);

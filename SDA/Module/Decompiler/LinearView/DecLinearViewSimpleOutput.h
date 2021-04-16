@@ -108,8 +108,8 @@ namespace CE::Decompiler
 			}
 		}
 
-		void showBlockCode(AsmGraphBlock* asmBlock, LinearView::Block* block, std::string tabStr) {
-			auto blockName = Generic::String::NumberToHex(asmBlock->ID);
+		void showBlockCode(PCodeBlock* pcodeBlock, LinearView::Block* block, std::string tabStr) {
+			auto blockName = Generic::String::NumberToHex(pcodeBlock->ID);
 			if (m_SHOW_BLOCK_HEADER) {
 				printf("%s//block %s (level: %i, maxHeight: %i, backOrderId: %i, linearLevel: %i, refCount: %i)\n", tabStr.c_str(), blockName.c_str(), block->m_decBlock->m_level, block->m_decBlock->m_maxHeight, block->getBackOrderId(), block->getLinearLevel(), block->m_decBlock->getRefBlocksCount());
 			}
@@ -117,7 +117,7 @@ namespace CE::Decompiler
 				printf("%slabel_%s:\n", tabStr.c_str(), blockName.c_str());
 			}
 			if (m_SHOW_ASM) {
-				asmBlock->printDebug(nullptr, tabStr, false, m_SHOW_PCODE);
+				pcodeBlock->printDebug(nullptr, tabStr, false, m_SHOW_PCODE);
 				printf("%s------------\n", tabStr.c_str());
 			}
 			block->m_decBlock->printDebug(false, tabStr);
