@@ -2,32 +2,111 @@
 #include <Module/Image/PEImage.h>
 #include "../../Graph/DecPCodeGraph.h"
 #include "../Decoders/DecPCodeDecoderX86.h"
+#include <Code/Symbol/MemoryArea/MemoryArea.h>
+#include <Manager/TypeManager.h>
 
 namespace CE::Decompiler
 {
+	class PCodeGraphReferenceSearch
+	{
+		CE::ProgramModule* m_programModule;
+		AbstractRegisterFactory* m_registerFactory;
+		IImage* m_image;
+		Symbolization::DataTypeFactory m_dataTypeFactory;
+		Symbolization::UserSymbolDef m_userSymbolDef;
+	public:
+		PCodeGraphReferenceSearch(CE::ProgramModule* programModule, AbstractRegisterFactory* registerFactory, IImage* image)
+			: m_programModule(programModule), m_registerFactory(registerFactory), m_image(image), m_dataTypeFactory(m_programModule)
+		{
+			m_userSymbolDef = Symbolization::UserSymbolDef(m_programModule);
+			m_userSymbolDef.m_globalMemoryArea = new CE::Symbol::MemoryArea(m_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
+			m_userSymbolDef.m_stackMemoryArea = new CE::Symbol::MemoryArea(m_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
+			m_userSymbolDef.m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(m_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
+		}
+
+		~PCodeGraphReferenceSearch() {
+			delete m_userSymbolDef.m_globalMemoryArea;
+			delete m_userSymbolDef.m_stackMemoryArea;
+			delete m_userSymbolDef.m_funcBodyMemoryArea;
+		}
+
+		std::list<int> findNewFunctionOffsets(FunctionPCodeGraph* funcGraph) {
+			auto decCodeGraph = new DecompiledCodeGraph(funcGraph, FunctionCallInfo({}));
+
+			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
+			auto decompiler = CE::Decompiler::Decompiler(decCodeGraph, m_registerFactory, funcCallInfoCallback);
+			decompiler.start();
+
+			auto clonedDecCodeGraph = decCodeGraph->clone();
+			Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
+
+			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &m_userSymbolDef, &m_dataTypeFactory);
+			sdaBuilding.start();
+
+			std::list<int> offsets;
+			for (auto symbol : sdaBuilding.getAutoSymbols()) {
+				if (auto memSymbol = dynamic_cast<CE::Symbol::AutoSdaMemSymbol*>(symbol)) {
+					for (auto& storage : memSymbol->getStorages()) {
+						if (storage.getType() == Storage::STORAGE_GLOBAL) {
+							if (m_image->defineSegment(storage.getOffset()) == IImage::CODE_SEGMENT) {
+								offsets.push_back(storage.getOffset());
+							}
+						}
+					}
+				}
+				delete symbol;
+			}
+
+			delete clonedDecCodeGraph;
+			delete decCodeGraph;
+			delete sdaCodeGraph;
+			return offsets;
+		}
+	};
+
 	// Analysis of an image of some program assembled by X86 (.exe or .dll)
 	class ImageAnalyzerX86
 	{
 		IImage* m_image;
 		ImagePCodeGraph* m_imageGraph = nullptr;
+		PCodeGraphReferenceSearch* m_graphReferenceSearch;
+
 		RegisterFactoryX86 m_registerFactoryX86;
 		PCode::DecoderX86 m_decoder;
 	public:
-		ImageAnalyzerX86(IImage* image, ImagePCodeGraph* imageGraph)
-			: m_image(image), m_imageGraph(imageGraph), m_decoder(&m_registerFactoryX86)
+		ImageAnalyzerX86(IImage* image, ImagePCodeGraph* imageGraph, PCodeGraphReferenceSearch* graphReferenceSearch = nullptr)
+			: m_image(image), m_imageGraph(imageGraph), m_graphReferenceSearch(graphReferenceSearch), m_decoder(&m_registerFactoryX86)
 		{}
 
-		void start(const std::map<int64_t, PCode::Instruction*>& offsetToInstruction = {}) {
-			auto entryPointOffset = m_image->getOffsetOfEntryPoint();
-			auto curFuncGraph = m_imageGraph->createFunctionGraph();
+		void start(int startOffset, const std::map<int64_t, PCode::Instruction*>& offsetToInstruction = {}) {
+			std::list<int> nextOffsetsToVisitLater = { startOffset };
+			std::set<PCodeBlock*> mutualBlocks;
 
-			buildGraphAtOffset((int64_t)entryPointOffset << 8, curFuncGraph, offsetToInstruction);
+			while (!nextOffsetsToVisitLater.empty()) {
+				auto startInstrOffset = (int64_t)nextOffsetsToVisitLater.back() << 8;
+				nextOffsetsToVisitLater.pop_back();
 
-			std::list<PCodeBlock*> path;
-			CalculateLevelsForPCodeBlocks(curFuncGraph->getStartBlock(), path);
+				auto block = m_imageGraph->getBlockAtOffset(startInstrOffset);
+				if (block == nullptr) {
+					auto funcGraph = m_imageGraph->createFunctionGraph();
+					buildGraphAtOffset(startInstrOffset, funcGraph, offsetToInstruction);
+
+					auto newOffsets = m_graphReferenceSearch->findNewFunctionOffsets(funcGraph);
+					nextOffsetsToVisitLater.insert(nextOffsetsToVisitLater.end(), newOffsets.begin(), newOffsets.end());
+
+					std::list<PCodeBlock*> path;
+					CalculateLevelsForPCodeBlocks(funcGraph->getStartBlock(), path);
+				}
+				else {
+					mutualBlocks.insert(block);
+				}
+			}
+
+			findMutualSubgraphs(mutualBlocks);
 		}
 
-		void startFrom(int startOffset, const std::map<int64_t, PCode::Instruction*>& offsetToInstruction = {}) {
+		void startOnce(int startOffset, const std::map<int64_t, PCode::Instruction*>& offsetToInstruction = {}) {
 			auto curFuncGraph = m_imageGraph->createFunctionGraph();
 			buildGraphAtOffset((int64_t)startOffset << 8, curFuncGraph, offsetToInstruction);
 
@@ -36,6 +115,10 @@ namespace CE::Decompiler
 		}
 
 	private:
+		void findMutualSubgraphs(std::set<PCodeBlock*> mutualBlocks) {
+
+		}
+
 		// fill {funcGraph} with PCode blocks
 		void buildGraphAtOffset(int64_t startInstrOffset, FunctionPCodeGraph* funcGraph, std::map<int64_t, PCode::Instruction*> offsetToInstruction) {
 			m_imageGraph->createBlock(funcGraph, startInstrOffset);
@@ -50,7 +133,7 @@ namespace CE::Decompiler
 				PCode::Instruction* instr = nullptr;
 				PCodeBlock* curBlock = nullptr;
 
-				if (offset != -1) {
+				if (offset != -1 && visitedOffsets.find(offset) == visitedOffsets.end()) {
 					// any offset have to be assoicated with some existing block
 					curBlock = m_imageGraph->getBlockAtOffset(offset, false);
 					if (curBlock != nullptr) {
@@ -123,7 +206,7 @@ namespace CE::Decompiler
 							targetOffset = it->second << 8;
 					}
 
-					if (targetOffset == -1 || !m_image->containCode(targetOffset >> 8)) {
+					if (targetOffset == -1 || m_image->defineSegment(targetOffset >> 8) != IImage::CODE_SEGMENT) {
 						offset = -1;
 						continue;
 					}

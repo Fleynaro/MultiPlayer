@@ -12,6 +12,20 @@ namespace CE::Decompiler
 			: m_funcGraph(asmGraph), m_functionCallInfo(functionCallInfo)
 		{}
 
+		~DecompiledCodeGraph() {
+			for (auto block : m_decompiledBlocks) {
+				delete block;
+			}
+
+			for (auto block : m_removedDecompiledBlocks) {
+				delete block;
+			}
+
+			for (auto symbol : getSymbols()) {
+				delete symbol;
+			}
+		}
+
 		FunctionPCodeGraph* getFuncGraph() {
 			return m_funcGraph;
 		}

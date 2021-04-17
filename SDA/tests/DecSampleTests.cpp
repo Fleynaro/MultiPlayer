@@ -51,43 +51,55 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 	
 	auto image = new PEImage((byte*)buffer, size);
 	auto imageGraph = new ImagePCodeGraph;
-	ImageAnalyzerX86 imageAnalyzer(image, imageGraph);
-	imageAnalyzer.startFrom(0xA290E0); //0x031138a2
 
+	PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &m_registerFactoryX86, image);
 
-	auto graph = *imageGraph->getFunctionGraphList().begin();
-	auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
+	ImageAnalyzerX86 imageAnalyzer(image, imageGraph, &graphReferenceSearch);
+	imageAnalyzer.start(0x9f39d8);
 
-	auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getParameterInfos(); };
-	auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, funcCallInfoCallback);
-	decompiler->start();
-	showDecGraph(decCodeGraph);
+	bool showAllInfo = true;
 
-	auto clonedDecCodeGraph = decCodeGraph->clone();
-	//clonedDecCodeGraph->checkOnSingleParents();
-	Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
-	clonedDecCodeGraph->checkOnSingleParents();
-	//showDecGraph(clonedDecCodeGraph);
-
-	auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
-	auto userSymbolDef = createUserSymbolDef();
+	for (auto graph : imageGraph->getFunctionGraphList())
 	{
-		
+		auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
+
+		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getParameterInfos(); };
+		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, funcCallInfoCallback);
+		decompiler->start();
+		//showDecGraph(decCodeGraph);
+
+		auto clonedDecCodeGraph = decCodeGraph->clone();
+		//clonedDecCodeGraph->checkOnSingleParents();
+		Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
+		clonedDecCodeGraph->checkOnSingleParents();
+
+		if(showAllInfo)
+			showDecGraph(clonedDecCodeGraph);
+
+		auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+		auto userSymbolDef = createUserSymbolDef();
+		{
+
+		}
+
+		Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
+		Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
+		sdaBuilding.start();
+		if (showAllInfo) {
+			showAllSymbols(sdaCodeGraph);
+			showDecGraph(sdaCodeGraph->getDecGraph());
+		}
+
+		Symbolization::SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
+		sdaDataTypesCalculating.start();
+		showAllSymbols(sdaCodeGraph);
+		if (showAllInfo)
+			showDecGraph(sdaCodeGraph->getDecGraph());
+
+		Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
+		showDecGraph(sdaCodeGraph->getDecGraph(), true);
+		printf("+++++++++++++++++\n\n\n\n");
 	}
-
-	Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
-	Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
-	sdaBuilding.start();
-	showAllSymbols(sdaCodeGraph);
-	showDecGraph(sdaCodeGraph->getDecGraph());
-
-	Symbolization::SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
-	sdaDataTypesCalculating.start();
-	showAllSymbols(sdaCodeGraph);
-	showDecGraph(sdaCodeGraph->getDecGraph());
-
-	Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
-	showDecGraph(sdaCodeGraph->getDecGraph());
 }
 
 // 1) DECODERS
@@ -190,7 +202,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 		instr->setInfo(i++, 1, 0);
 		offsetToInstruction[instr->getOffset()] = instr;
 	}
-	imageAnalyzer.start(offsetToInstruction);
+	imageAnalyzer.startOnce(0, offsetToInstruction);
 
 	auto graph = *imageGraph->getFunctionGraphList().begin();
 	auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
@@ -593,8 +605,8 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 		// 1) INSTRUCTION DECODNING (from bytes to pCode graph)
 		auto imageGraph = new ImagePCodeGraph;
-		ImageAnalyzerX86 imageAnalyzer(sampleTest->m_image, imageGraph);
-		imageAnalyzer.startFrom(sampleTest->m_imageOffset);
+		ImageAnalyzerX86 imageAnalyzer(sampleTest->m_image, imageGraph, nullptr);
+		imageAnalyzer.startOnce(sampleTest->m_imageOffset);
 		auto graph = *imageGraph->getFunctionGraphList().begin();
 
 		if (m_isOutput && sampleTest->m_showAsmBefore)

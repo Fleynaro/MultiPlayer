@@ -135,6 +135,14 @@ namespace CE::Decompiler::PrimaryTree
 		}
 
 		~Block() {
+			for (auto line : m_seqLines) {
+				delete line;
+			}
+
+			for (auto line : m_symbolParallelAssignmentLines) {
+				delete line;
+			}
+
 			for (auto refBlock : m_blocksReferencedTo) {
 				if (refBlock->m_nextNearBlock == this)
 					refBlock->m_nextNearBlock = refBlock->m_nextFarBlock;

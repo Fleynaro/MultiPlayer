@@ -28,22 +28,22 @@ namespace CE
 			return (int)m_pImgNtHeaders->OptionalHeader.AddressOfEntryPoint;
 		}
 
-		DWORD toImageOffset(DWORD rva) override
-		{
-			size_t i = 0;
-			PIMAGE_SECTION_HEADER pSeh;
-			if (rva == 0) {
-				return (rva);
-			}
-			pSeh = m_pImgSecHeader;
-			for (i = 0; i < m_pImgNtHeaders->FileHeader.NumberOfSections; i++) {
-				if (rva >= pSeh->VirtualAddress && rva < pSeh->VirtualAddress +
-					pSeh->Misc.VirtualSize) {
-					break;
-				}
-				pSeh++;
-			}
-			return (rva - pSeh->VirtualAddress + pSeh->PointerToRawData);
+		SegmentType defineSegment(int offset) override {
+			auto pSeh = defineSection(offset);
+			auto name = std::string((char*)pSeh->Name);
+			if (name == ".text")
+				return CODE_SEGMENT;
+			if (name == ".data" || name == ".rdata")
+				return DATA_SEGMENT;
+			return NONE_SEGMENT;
+		}
+
+		// rva to file offset (ghidra makes this transform automatically)
+		int toImageOffset(int offset) override {
+			if (offset == 0)
+				return offset;
+			auto pSeh = defineSection(offset);
+			return (offset - pSeh->VirtualAddress + pSeh->PointerToRawData);
 		}
 
 		static void LoadPEImage(const std::string& filename, char** buffer, int* size) {
@@ -62,6 +62,19 @@ namespace CE
 		}
 
 	private:
+		PIMAGE_SECTION_HEADER defineSection(DWORD rva) {
+			size_t i = 0;
+			PIMAGE_SECTION_HEADER pSeh = m_pImgSecHeader;
+			for (i = 0; i < m_pImgNtHeaders->FileHeader.NumberOfSections; i++) {
+				if (rva >= pSeh->VirtualAddress && rva < pSeh->VirtualAddress +
+					pSeh->Misc.VirtualSize) {
+					break;
+				}
+				pSeh++;
+			}
+			return pSeh;
+		}
+
 		void parse() {
 			auto& dos_header = *(IMAGE_DOS_HEADER*)m_data;
 			auto e_magic = (char*)&dos_header.e_magic;

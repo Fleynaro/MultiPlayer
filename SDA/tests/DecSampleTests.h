@@ -96,11 +96,13 @@ public:
 		return blockList;
 	}
 
-	void showDecGraph(DecompiledCodeGraph* decGraph) {
+	void showDecGraph(DecompiledCodeGraph* decGraph, bool minInfo = false) {
 		LinearViewSimpleConsoleOutput output(buildBlockList(decGraph), decGraph);
 		if (m_isOutput) {
+			if(minInfo)
+				output.setMinInfoToShow();
 			output.show();
-			out("******************\n\n");
+			out("******************\n\n\n");
 		}
 	}
 

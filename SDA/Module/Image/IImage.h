@@ -5,18 +5,24 @@ namespace CE
 {
 	class IImage {
 	public:
+		enum SegmentType {
+			NONE_SEGMENT,
+			CODE_SEGMENT,
+			DATA_SEGMENT
+		};
+
 		virtual byte* getData() = 0;
 
 		virtual int getSize() = 0;
 
 		virtual int getOffsetOfEntryPoint() = 0;
 
-		virtual DWORD toImageOffset(DWORD rva) {
-			return rva;
+		virtual int toImageOffset(int offset) {
+			return offset;
 		}
 
-		virtual bool containCode(int offset) {
-			return true;
+		virtual SegmentType defineSegment(int offset) {
+			return NONE_SEGMENT;
 		}
 	};
 };

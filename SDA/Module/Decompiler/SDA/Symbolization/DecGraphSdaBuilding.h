@@ -23,13 +23,17 @@ namespace CE::Decompiler::Symbolization
 
 			addSdaSymbols();
 		}
+
+		auto& getAutoSymbols() {
+			return m_autoSymbols;
+		}
 	private:
 		UserSymbolDef* m_userSymbolDef;
 		DataTypeFactory* m_dataTypeFactory;
 		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols; //for cache purposes
 		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols; //stackVar1
 		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
-		std::set<CE::Symbol::ISymbol*> m_autoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
+		std::set<CE::Symbol::AutoSdaSymbol*> m_autoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
 		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols; // defined by user (e.g. playerObj)
 		std::map<HS::Value, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts; //for cache purposes
 
@@ -262,14 +266,17 @@ namespace CE::Decompiler::Symbolization
 				}
 
 				if (paramIdx != 0) {
-					auto& funcParams = m_userSymbolDef->m_signature->getParameters();
-					if (paramIdx <= funcParams.size()) {
-						//USER-DEFINED func. parameter
-						auto sdaSymbol = funcParams[paramIdx - 1];
-						storeMemSdaSymbol(sdaSymbol, symbol, offset);
-						m_userDefinedSymbols.insert(sdaSymbol);
-						return sdaSymbol;
+					if (m_userSymbolDef->m_signature) {
+						auto& funcParams = m_userSymbolDef->m_signature->getParameters();
+						if (paramIdx <= funcParams.size()) {
+							//USER-DEFINED func. parameter
+							auto sdaSymbol = funcParams[paramIdx - 1];
+							storeMemSdaSymbol(sdaSymbol, symbol, offset);
+							m_userDefinedSymbols.insert(sdaSymbol);
+							return sdaSymbol;
+						}
 					}
+
 					//auto func. parameter
 					auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::FUNC_PARAMETER, "param" + std::to_string(paramIdx), paramIdx, size);
 					storeMemSdaSymbol(sdaSymbol, symbol, offset);

@@ -15,6 +15,7 @@ CE::Decompiler::Symbol::Symbol* CE::Decompiler::Symbol::Symbol::clone(ExprTree::
 	if (it != ctx->m_clonedSymbols.end())
 		return it->second;
 	auto newSymbol = cloneSymbol();
+	newSymbol->m_decGraph = m_decGraph;
 	ctx->m_clonedSymbols.insert(std::make_pair(this, newSymbol));
 	return newSymbol;
 }
