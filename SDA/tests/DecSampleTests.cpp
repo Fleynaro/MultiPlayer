@@ -52,7 +52,8 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 	auto image = new PEImage((byte*)buffer, size);
 	auto imageGraph = new ImagePCodeGraph;
 	ImageAnalyzerX86 imageAnalyzer(image, imageGraph);
-	imageAnalyzer.startFrom(0xA290A8);
+	imageAnalyzer.startFrom(0xA290E0); //0x031138a2
+
 
 	auto graph = *imageGraph->getFunctionGraphList().begin();
 	auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
@@ -85,8 +86,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 	showAllSymbols(sdaCodeGraph);
 	showDecGraph(sdaCodeGraph->getDecGraph());
 
-	Optimization::SdaGraphMemoryOptimization memoryOptimization(sdaCodeGraph);
-	memoryOptimization.start();
+	Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
 	showDecGraph(sdaCodeGraph->getDecGraph());
 }
 
@@ -182,7 +182,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	};
 
 	auto imageGraph = new ImagePCodeGraph;
-	ImageAnalyzerX86 imageAnalyzer(new SimpelBufferImage(nullptr, 0), imageGraph);
+	ImageAnalyzerX86 imageAnalyzer(new SimpleBufferImage(nullptr, 0), imageGraph);
 
 	std::map<int64_t, PCode::Instruction*> offsetToInstruction;
 	int i = 0;
@@ -246,7 +246,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	
 	//ignore all tests except
-	m_doTestIdOnly = 102;
+	m_doTestIdOnly = 1000;
 
 	{
 		//simple function
@@ -534,6 +534,35 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func6_109"), 0xffffffffff8e6ad4);
 		}
 	}
+
+
+	char* buffer;
+	int size;
+	PEImage::LoadPEImage("R:\\Rockstar Games\\Grand Theft Auto V\\GTA5_dump.exe", &buffer, &size);
+	auto gta5_image = new PEImage((byte*)buffer, size);
+
+	{
+		//native function with arguments are in a context structure
+		test = createSampleTest(1000, gta5_image, 0xA290A8);
+		test->m_enabled = true;
+		test->m_showFinalResult = true;
+		test->enableAllAndShowAll();
+		test->m_symbolization = true;
+
+		/*
+			TODO:
+			1) there have not to be stack_0x40
+		*/
+	}
+
+	{
+		//native function with arguments are in a context structure
+		test = createSampleTest(1001, gta5_image, 0xA290E0);
+		test->m_enabled = true;
+		test->m_showFinalResult = true;
+		test->enableAllAndShowAll();
+		test->m_symbolization = true;
+	}
 }
 
 bool ProgramModuleFixtureDecSamples::checkHash(int type, std::list<std::pair<int, HS::Value>>& sampleTestHashes, HS::Value hash, SampleTest* sampleTest) {
@@ -564,13 +593,12 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 		// 1) INSTRUCTION DECODNING (from bytes to pCode graph)
 		auto imageGraph = new ImagePCodeGraph;
-		auto image = new SimpelBufferImage(sampleTest->m_content.data(), (int)sampleTest->m_content.size());
-		ImageAnalyzerX86 imageAnalyzer(image, imageGraph);
-		imageAnalyzer.start();
+		ImageAnalyzerX86 imageAnalyzer(sampleTest->m_image, imageGraph);
+		imageAnalyzer.startFrom(sampleTest->m_imageOffset);
 		auto graph = *imageGraph->getFunctionGraphList().begin();
 
 		if (m_isOutput && sampleTest->m_showAsmBefore)
-			graph->printDebug(sampleTest->m_content.data());
+			graph->printDebug(0x0);
 
 		// 4) DECOMPILING (transform the asm graph to decompiled code graph)
 		auto info = CE::Decompiler::FunctionCallInfo(sampleTest->m_userSymbolDef.m_signature->getParameterInfos());

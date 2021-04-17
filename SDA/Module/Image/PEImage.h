@@ -25,7 +25,25 @@ namespace CE
 		}
 
 		int getOffsetOfEntryPoint() override {
-			return (int)rvaToOffset(m_pImgNtHeaders->OptionalHeader.AddressOfEntryPoint);
+			return (int)m_pImgNtHeaders->OptionalHeader.AddressOfEntryPoint;
+		}
+
+		DWORD toImageOffset(DWORD rva) override
+		{
+			size_t i = 0;
+			PIMAGE_SECTION_HEADER pSeh;
+			if (rva == 0) {
+				return (rva);
+			}
+			pSeh = m_pImgSecHeader;
+			for (i = 0; i < m_pImgNtHeaders->FileHeader.NumberOfSections; i++) {
+				if (rva >= pSeh->VirtualAddress && rva < pSeh->VirtualAddress +
+					pSeh->Misc.VirtualSize) {
+					break;
+				}
+				pSeh++;
+			}
+			return (rva - pSeh->VirtualAddress + pSeh->PointerToRawData);
 		}
 
 		static void LoadPEImage(const std::string& filename, char** buffer, int* size) {
@@ -57,24 +75,6 @@ namespace CE
 				throw std::exception();
 
 			m_pImgSecHeader = (PIMAGE_SECTION_HEADER)(m_data + dos_header.e_lfanew + sizeof(IMAGE_NT_HEADERS));
-		}
-
-		DWORD rvaToOffset(DWORD rva)
-		{
-			size_t i = 0;
-			PIMAGE_SECTION_HEADER pSeh;
-			if (rva == 0) {
-				return (rva);
-			}
-			pSeh = m_pImgSecHeader;
-			for (i = 0; i < m_pImgNtHeaders->FileHeader.NumberOfSections; i++) {
-				if (rva >= pSeh->VirtualAddress && rva < pSeh->VirtualAddress +
-					pSeh->Misc.VirtualSize) {
-					break;
-				}
-				pSeh++;
-			}
-			return (rva - pSeh->VirtualAddress + pSeh->PointerToRawData);
 		}
 	};
 };

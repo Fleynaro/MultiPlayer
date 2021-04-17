@@ -6,14 +6,14 @@ namespace CE::Decompiler::PCode
 	class AbstractDecoder
 	{
 	public:
-		void decode(void* baseAddr, int offset, int maxSize = 0x0) {
-			m_baseAddr = baseAddr;
+		void decode(void* addr, int offset, int maxSize = 0x0) {
+			m_addr = addr;
 			m_curOffset = offset;
 			m_curOrderId = 0x0;
 			m_curInstrLength = 0x0;
 			m_maxSize = maxSize;
 			clear();
-			tryDecode(baseAddr, offset);
+			tryDecode(addr, offset);
 		}
 
 		void clear() {
@@ -35,7 +35,7 @@ namespace CE::Decompiler::PCode
 		}
 	protected:
 		std::list<Instruction*> m_result;
-		void* m_baseAddr = nullptr;
+		void* m_addr = nullptr;
 		int m_curOffset = 0x0;
 		int m_curOrderId = 0;
 		int m_curInstrLength = 0x0;

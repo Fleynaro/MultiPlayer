@@ -3,12 +3,12 @@
 
 namespace CE
 {
-	class SimpelBufferImage : public IImage
+	class SimpleBufferImage : public IImage
 	{
 		byte* m_data;
 		int m_size;
 	public:
-		SimpelBufferImage(byte* data, int size)
+		SimpleBufferImage(byte* data, int size)
 			: m_data(data), m_size(size)
 		{}
 

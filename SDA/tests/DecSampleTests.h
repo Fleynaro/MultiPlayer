@@ -225,7 +225,8 @@ public:
 	struct SampleTest
 	{
 		int m_testId;
-		std::vector<byte> m_content; // list of instructions
+		IImage* m_image;
+		int m_imageOffset = 0;
 		Symbolization::UserSymbolDef m_userSymbolDef;
 		std::map<int64_t, Signature*> m_functions;
 		bool m_enabled = true;
@@ -264,9 +265,34 @@ public:
 	bool checkHash(int type, std::list<std::pair<int, HS::Value>>& sampleTestHashes, HS::Value hash, SampleTest* sampleTest);
 
 	SampleTest* createSampleTest(int testId, std::vector<byte> content) {
+		class VectorBufferImage : public IImage
+		{
+			std::vector<byte> m_content;
+		public:
+			VectorBufferImage(std::vector<byte> content)
+				: m_content(content)
+			{}
+
+			byte* getData() override {
+				return m_content.data();
+			}
+
+			int getSize() override {
+				return (int)m_content.size();
+			}
+
+			int getOffsetOfEntryPoint() override {
+				return 0;
+			}
+		};
+		return createSampleTest(testId, new VectorBufferImage(content));
+	}
+
+	SampleTest* createSampleTest(int testId, IImage* image, int offset = 0) {
 		auto test = new SampleTest;
 		test->m_testId = testId;
-		test->m_content = content;
+		test->m_image = image;
+		test->m_imageOffset = offset;
 		test->m_userSymbolDef = createUserSymbolDef();
 		m_sampleTests.push_back(test);
 		return test;

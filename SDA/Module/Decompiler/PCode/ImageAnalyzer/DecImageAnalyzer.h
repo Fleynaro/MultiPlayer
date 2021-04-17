@@ -36,6 +36,7 @@ namespace CE::Decompiler
 		}
 
 	private:
+		// fill {funcGraph} with PCode blocks
 		void buildGraphAtOffset(int64_t startInstrOffset, FunctionPCodeGraph* funcGraph, std::map<int64_t, PCode::Instruction*> offsetToInstruction) {
 			m_imageGraph->createBlock(funcGraph, startInstrOffset);
 			std::set<int64_t> visitedOffsets;
@@ -60,7 +61,7 @@ namespace CE::Decompiler
 						}
 						else {
 							if (byteOffset < m_image->getSize()) {
-								m_decoder.decode(m_image->getData(), byteOffset, m_image->getSize());
+								m_decoder.decode(m_image->getData() + m_image->toImageOffset(byteOffset), byteOffset, m_image->getSize());
 								for (auto instr : m_decoder.getDecodedPCodeInstructions()) {
 									offsetToInstruction[instr->getOffset()] = instr;
 								}
