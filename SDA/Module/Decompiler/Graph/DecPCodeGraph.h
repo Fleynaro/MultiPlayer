@@ -28,6 +28,17 @@ namespace CE::Decompiler
 			: m_funcGraph(asmGraph), m_minOffset(minOffset), m_maxOffset(maxOffset), ID((int)(minOffset >> 8))
 		{}
 
+		void removeRefBlock(PCodeBlock* block) {
+			m_blocksReferencedTo.remove(block);
+		}
+
+		void disconnect() {
+			for (auto nextBlock : getNextBlocks()) {
+				nextBlock->removeRefBlock(this);
+			}
+			m_nextNearBlock = m_nextFarBlock = nullptr;
+		}
+
 		FunctionPCodeGraph* getFuncGraph() {
 			return m_funcGraph;
 		}
@@ -64,6 +75,17 @@ namespace CE::Decompiler
 
 		PCodeBlock* getNextFarBlock() {
 			return m_nextFarBlock;
+		}
+
+		std::list<PCodeBlock*> getNextBlocks() {
+			std::list<PCodeBlock*> nextBlocks;
+			if (m_nextFarBlock) {
+				nextBlocks.push_back(m_nextFarBlock);
+			}
+			if (m_nextNearBlock) {
+				nextBlocks.push_back(m_nextNearBlock);
+			}
+			return nextBlocks;
 		}
 
 		PCode::Instruction* getLastInstruction() {

@@ -81,7 +81,8 @@ namespace CE::Decompiler
 		}
 
 		BitMask64 operator>>(int offset) const {
-			return m_bitMask >> offset;
+			auto val = m_bitMask >> offset;
+			return val;
 		}
 
 		BitMask64 operator<<(int offset) const {
@@ -106,7 +107,7 @@ namespace CE::Decompiler
 
 	private:
 		static uint64_t GetBitMask64BySize(int size) {
-			if (size == 8)
+			if (size >= 8) // todo: increase from 8 to 16 bytes (it requires 128-bit arithmetic implementation)
 				return -1;
 			return ((uint64_t)1 << (uint64_t)(size * 8)) - 1;
 		}

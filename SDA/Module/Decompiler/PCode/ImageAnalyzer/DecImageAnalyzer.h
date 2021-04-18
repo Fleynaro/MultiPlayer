@@ -216,10 +216,11 @@ namespace CE::Decompiler
 					PCodeBlock* nextFarBlock = nullptr;
 					auto alreadyExistingBlock = m_imageGraph->getBlockAtOffset(targetOffset);
 					if (alreadyExistingBlock != nullptr) {
-						// split the already existing block into 2 non-empty blocks
+						// split the already existing block into 2 non-empty blocks 
 						if (targetOffset > alreadyExistingBlock->getMinOffset() && targetOffset < alreadyExistingBlock->getMaxOffset() - 1) {
-							auto block1 = m_imageGraph->createBlock(alreadyExistingBlock->getFuncGraph(), targetOffset);
-							auto block2 = alreadyExistingBlock;
+							auto block1 = alreadyExistingBlock;
+							auto block2 = m_imageGraph->createBlock(alreadyExistingBlock->getFuncGraph(), targetOffset);
+
 							std::list<PCode::Instruction*> instrOfBlock1;
 							std::list<PCode::Instruction*> instrOfBlock2;
 							for (auto instr : alreadyExistingBlock->getInstructions()) {
@@ -229,10 +230,20 @@ namespace CE::Decompiler
 							}
 							block1->getInstructions() = instrOfBlock1;
 							block2->getInstructions() = instrOfBlock2;
-							block1->setMaxOffset(targetOffset);
+
 							block2->setMaxOffset(alreadyExistingBlock->getMaxOffset());
+							block1->setMaxOffset(targetOffset);
+
+							if(block1->getNextNearBlock())
+								block2->setNextNearBlock(block1->getNextNearBlock());
+							if (block1->getNextFarBlock())
+								block2->setNextFarBlock(block1->getNextFarBlock());
+							block1->disconnect();
 							block1->setNextNearBlock(block2);
 							nextFarBlock = block2;
+
+							if (curBlock == alreadyExistingBlock)
+								alreadyExistingBlock = curBlock = block2;
 						}
 						curBlock->setNextFarBlock(alreadyExistingBlock);
 					}

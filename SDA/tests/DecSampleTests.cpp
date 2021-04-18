@@ -57,7 +57,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 	PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &m_registerFactoryX86, image);
 
 	ImageAnalyzer imageAnalyzer(image, imageGraph, &decoder, &m_registerFactoryX86, &graphReferenceSearch);
-	imageAnalyzer.start(0x9f39d8);
+	imageAnalyzer.start(0x1428EBC); //0x9f39d8
 	if (warningContainer.hasAnything()) {
 		printf("\nTROUBLES:\n%s\n", warningContainer.getAllMessages().c_str());
 	}
@@ -252,7 +252,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 
 	Optimization::SdaGraphMemoryOptimization memoryOptimization(sdaCodeGraph);
 	memoryOptimization.start();
-	showDecGraph(sdaCodeGraph->getDecGraph());
+	showDecGraph(sdaCodeGraph->getDecGraph(), true);
 }
 
 void ProgramModuleFixtureDecSamples::initSampleTestHashes() {
@@ -269,11 +269,20 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	
 	//ignore all tests except
-	m_doTestIdOnly = 1000;
+	m_doTestIdOnly = 5;
+
+	{
+		// TEST
+		test = createSampleTest(5, { 0x48, 0x89, 0x5C, 0x24, 0x08, 0x4C, 0x63, 0x41, 0x14, 0x4C, 0x8B, 0x09, 0x4C, 0x8B, 0xD1, 0x49, 0x2B, 0xD1, 0x48, 0x8B, 0xC2, 0x48, 0x99, 0x49, 0xF7, 0xF8, 0x48, 0x63, 0xD8, 0x4C, 0x8B, 0xD8, 0x48, 0x8B, 0xD3, 0x49, 0x0F, 0xAF, 0xD0, 0x42, 0x83, 0x0C, 0x0A, 0xFF, 0x83, 0x79, 0x18, 0xFF, 0x75, 0x03, 0x89, 0x41, 0x18, 0x83, 0x79, 0x1C, 0xFF, 0x75, 0x06, 0x48, 0x8D, 0x41, 0x1C, 0xEB, 0x0C, 0x8B, 0x41, 0x14, 0x0F, 0xAF, 0x41, 0x1C, 0x48, 0x98, 0x48, 0x03, 0x01, 0x44, 0x89, 0x18, 0x48, 0x8B, 0x41, 0x08, 0x44, 0x89, 0x59, 0x1C, 0x80, 0x0C, 0x18, 0x80, 0x8B, 0x41, 0x20, 0x48, 0x8B, 0x5C, 0x24, 0x08, 0x8D, 0x48, 0xFF, 0x33, 0xC8, 0x81, 0xE1, 0xFF, 0xFF, 0xFF, 0x3F, 0x33, 0xC8, 0x41, 0x89, 0x4A, 0x20, 0xC3 });
+		test->m_enabled = true;
+		test->m_showFinalResult = true;
+		test->enableAllAndShowAll();
+		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test10");
+	}
 
 	{
 		//simple function
-		test = createSampleTest(1, GetFuncBytes(&Test_SimpleFunc));
+		test = createSampleTest(10, GetFuncBytes(&Test_SimpleFunc));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
 		//test->enableAllAndShowAll();
@@ -286,7 +295,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 
 	{
 		//multidimension stack array like stackArray[1][2][3]
-		test = createSampleTest(2, GetFuncBytes(&Test_Array));
+		test = createSampleTest(11, GetFuncBytes(&Test_Array));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
 		//test->enableAllAndShowAll();
@@ -301,7 +310,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 
 	{
 		//hard work with complex data structures
-		test = createSampleTest(3, GetFuncBytes(&Test_StructsAndArray));
+		test = createSampleTest(12, GetFuncBytes(&Test_StructsAndArray));
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
 		//test->enableAllAndShowAll();
@@ -316,6 +325,15 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		sig->addParameter("param2", findType("uint64_t", ""));
 		sig->setReturnType(findType("uint32_t", "[1]"));
 		test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func1_2"), 0xffffffffffffff90);
+	}
+
+	{
+		// idiv (16 bytes operation)
+		test = createSampleTest(30, { 0x4C, 0x63, 0x41, 0x14, 0x4C, 0x8B, 0x09, 0x4C, 0x8B, 0xD1, 0x49, 0x2B, 0xD1, 0x48, 0x8B, 0xC2, 0x48, 0x99, 0x49, 0xF7, 0xF8, 0x48, 0x63, 0xD8, 0x4C, 0x8B, 0xD8, 0x48, 0x8B, 0xD3, 0x49, 0x0F, 0xAF, 0xD0, 0x42, 0x83, 0x0C, 0x0A, 0xFF });
+		test->m_enabled = true;
+		test->m_showFinalResult = true;
+		//test->enableAllAndShowAll();
+		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test10");
 	}
 
 	{

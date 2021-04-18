@@ -177,19 +177,32 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		BitMask64 getMask() override {
+			if (m_rightNode)
+			{
+				if (m_operation == And)
+					return m_leftNode->getMask() & m_rightNode->getMask();
+				if (m_operation == Shl || m_operation == Shr) {
+					if (auto numberLeaf = dynamic_cast<INumberLeaf*>(m_rightNode)) {
+						if (m_operation == Shl) {
+							return m_leftNode->getMask() << (int)numberLeaf->getValue();
+						}
+						else {
+							if (numberLeaf->getValue() == 64)
+								return uint64_t(0);
+							return m_leftNode->getMask() >> (int)numberLeaf->getValue();
+						}
+					}
+					return m_leftNode->getMask();
+				}
+			}
+			else if (!m_instr) {
+				return m_leftNode->getMask();
+			}
+
 			if (m_instr) {
 				return m_instr->m_output->getMask().getBitMask64().withoutOffset();
 			}
-			if (!m_rightNode || m_operation == Shr)
-				return m_leftNode->getMask();
-			if(m_operation == And)
-				return m_leftNode->getMask() & m_rightNode->getMask();
-			if (m_operation == Shl) {
-				if (auto numberLeaf = dynamic_cast<INumberLeaf*>(m_rightNode)) {
-					return m_leftNode->getMask() << (int)numberLeaf->getValue();
-				}
-				return m_leftNode->getMask();
-			}
+
 			if (m_operation == Concat) {
 				return BitMask64(m_leftNode->getMask().getSize() + m_rightNode->getMask().getSize());
 			}

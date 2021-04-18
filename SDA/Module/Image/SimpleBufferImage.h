@@ -23,5 +23,9 @@ namespace CE
 		int getOffsetOfEntryPoint() override {
 			return 0;
 		}
+
+		SegmentType defineSegment(int offset) override {
+			return CODE_SEGMENT;
+		}
 	};
 };

@@ -28,7 +28,7 @@ namespace CE::Decompiler::Optimization
 		GraphLinesExpanding graphLinesExpanding(decGraph);
 		graphLinesExpanding.start();
 		GraphUselessLineDeleting GraphUselessLineDeleting(decGraph);
-		GraphUselessLineDeleting.start();
+		//GraphUselessLineDeleting.start();
 		
 		DecompiledCodeGraph::CalculateHeightForDecBlocks(decGraph->getStartBlock());
 	}

@@ -130,7 +130,8 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::INT_SEXT:
 	{
 		auto expr = requestVarnode(m_instr->m_input0);
-		if (m_instr->m_id == InstructionId::INT_SEXT) {
+		if (m_instr->m_id == InstructionId::INT_SEXT && m_instr->m_output->getSize() <= 8) {
+			// todo: increase from 8 to 16 bytes (it requires 128-bit arithmetic implementation)
 			expr = new ExprTree::CastNode(expr, m_instr->m_output->getSize(), true);
 		}
 		m_ctx->setVarnode(m_instr->m_output, expr);

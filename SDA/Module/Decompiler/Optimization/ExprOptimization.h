@@ -44,12 +44,12 @@ namespace CE::Decompiler::Optimization
 			exprConcatAndSubpieceBuilding.start();
 			node = exprConcatAndSubpieceBuilding.getNode();
 
+			// condition
 			if (auto cond = dynamic_cast<AbstractCondition*>(node)) {
 				ExprConstConditionCalculating exprConstConditionCalculating(cond);
 				exprConstConditionCalculating.start();
 				node = exprConstConditionCalculating.getNode();
 			}
-
 			if (auto cond = dynamic_cast<Condition*>(node)) {
 				ExprSimpleConditionOptimization exprSimpleConditionOptimization(cond);
 				exprSimpleConditionOptimization.start();
