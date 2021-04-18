@@ -52,21 +52,30 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 	auto image = new PEImage((byte*)buffer, size);
 	auto imageGraph = new ImagePCodeGraph;
 
+	WarningContainer warningContainer;
+	PCode::DecoderX86 decoder(&m_registerFactoryX86, &warningContainer);
 	PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &m_registerFactoryX86, image);
 
-	ImageAnalyzerX86 imageAnalyzer(image, imageGraph, &graphReferenceSearch);
+	ImageAnalyzer imageAnalyzer(image, imageGraph, &decoder, &m_registerFactoryX86, &graphReferenceSearch);
 	imageAnalyzer.start(0x9f39d8);
+	if (warningContainer.hasAnything()) {
+		printf("\nTROUBLES:\n%s\n", warningContainer.getAllMessages().c_str());
+	}
 
 	bool showAllInfo = true;
 
 	for (auto graph : imageGraph->getFunctionGraphList())
 	{
+		if (showAllInfo)
+			graph->printDebug(0x0);
+
 		auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
 
 		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getParameterInfos(); };
 		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, funcCallInfoCallback);
 		decompiler->start();
-		//showDecGraph(decCodeGraph);
+		showDecGraph(decCodeGraph);
+
 
 		auto clonedDecCodeGraph = decCodeGraph->clone();
 		//clonedDecCodeGraph->checkOnSingleParents();
@@ -194,7 +203,9 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	};
 
 	auto imageGraph = new ImagePCodeGraph;
-	ImageAnalyzerX86 imageAnalyzer(new SimpleBufferImage(nullptr, 0), imageGraph);
+	WarningContainer warningContainer;
+	PCode::DecoderX86 decoder(&m_registerFactoryX86, &warningContainer);
+	ImageAnalyzer imageAnalyzer(new SimpleBufferImage(nullptr, 0), imageGraph, &decoder, &m_registerFactoryX86);
 
 	std::map<int64_t, PCode::Instruction*> offsetToInstruction;
 	int i = 0;
@@ -605,7 +616,10 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 		// 1) INSTRUCTION DECODNING (from bytes to pCode graph)
 		auto imageGraph = new ImagePCodeGraph;
-		ImageAnalyzerX86 imageAnalyzer(sampleTest->m_image, imageGraph, nullptr);
+		WarningContainer warningContainer;
+		PCode::DecoderX86 decoder(&m_registerFactoryX86, &warningContainer);
+
+		ImageAnalyzer imageAnalyzer(sampleTest->m_image, imageGraph, &decoder, &m_registerFactoryX86);
 		imageAnalyzer.startOnce(sampleTest->m_imageOffset);
 		auto graph = *imageGraph->getFunctionGraphList().begin();
 
@@ -630,6 +644,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 		//show code
 		out("********************* BEFORE OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
+		printf("\nTROUBLES:\n%s\n", warningContainer.getAllMessages().c_str());
 		auto blockList = buildBlockList(decCodeGraph);
 		LinearViewSimpleConsoleOutput output(blockList, decCodeGraph);
 		if (m_isOutput) {

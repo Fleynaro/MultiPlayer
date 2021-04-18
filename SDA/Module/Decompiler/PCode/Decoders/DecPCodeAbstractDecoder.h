@@ -1,11 +1,16 @@
 #pragma once
 #include "../DecRegisterFactory.h"
+#include "../../DecWarningContainer.h"
 
 namespace CE::Decompiler::PCode
 {
-	class AbstractDecoder
+	class AbstractDecoder : public IWarningGenerator
 	{
 	public:
+		AbstractDecoder(WarningContainer* warningContainer)
+			: m_warningContainer(warningContainer)
+		{}
+
 		void decode(void* addr, int offset, int maxSize = 0x0) {
 			m_addr = addr;
 			m_curOffset = offset;
@@ -33,7 +38,12 @@ namespace CE::Decompiler::PCode
 		int getInstructionLength() {
 			return m_curInstrLength;
 		}
+
+		WarningContainer* getWarningContainer() override {
+			return m_warningContainer;
+		}
 	protected:
+		WarningContainer* m_warningContainer;
 		std::list<Instruction*> m_result;
 		void* m_addr = nullptr;
 		int m_curOffset = 0x0;

@@ -8,17 +8,16 @@ namespace CE::Decompiler::PCode
 {
 	class DecoderX86 : public AbstractDecoder
 	{
+		ZydisDecoder m_decoder;
+		RegisterFactoryX86* m_registerFactoryX86;
+		ZydisDecodedInstruction* m_curInstr;
 	public:
-		DecoderX86(RegisterFactoryX86* registerFactoryX86)
-			: m_registerFactoryX86(registerFactoryX86)
+		DecoderX86(RegisterFactoryX86* registerFactoryX86, WarningContainer* warningContainer)
+			: m_registerFactoryX86(registerFactoryX86), AbstractDecoder(warningContainer)
 		{
 			ZydisDecoderInit(&m_decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
 		}
 	private:
-		ZydisDecoder m_decoder;
-		RegisterFactoryX86* m_registerFactoryX86;
-		ZydisDecodedInstruction* m_curInstr;
-
 		enum class FlagCond {
 			NONE,
 			Z,
@@ -68,6 +67,51 @@ namespace CE::Decompiler::PCode
 
 			switch (mnemonic)
 			{
+			case ZYDIS_MNEMONIC_CBW:
+			case ZYDIS_MNEMONIC_CWDE:
+			case ZYDIS_MNEMONIC_CDQE:
+			{
+				int srcRegSize = 0;
+				switch (mnemonic)
+				{
+				case ZYDIS_MNEMONIC_CBW:
+					srcRegSize = 1;
+					break;
+				case ZYDIS_MNEMONIC_CWDE:
+					srcRegSize = 2;
+					break;
+				case ZYDIS_MNEMONIC_CDQE:
+					srcRegSize = 4;
+					break;
+				}
+				addMicroInstruction(InstructionId::INT_SEXT, CreateVarnode(ZYDIS_REGISTER_RAX, srcRegSize), nullptr, CreateVarnode(ZYDIS_REGISTER_RAX, srcRegSize * 2));
+				break;
+			}
+
+			case ZYDIS_MNEMONIC_CWD:
+			case ZYDIS_MNEMONIC_CDQ:
+			case ZYDIS_MNEMONIC_CQO:
+			{
+				int srcRegSize = 0;
+				switch (mnemonic)
+				{
+				case ZYDIS_MNEMONIC_CWD:
+					srcRegSize = 2;
+					break;
+				case ZYDIS_MNEMONIC_CDQ:
+					srcRegSize = 4;
+					break;
+				case ZYDIS_MNEMONIC_CQO:
+					srcRegSize = 8;
+					break;
+				}
+				
+				auto varnode = new SymbolVarnode(srcRegSize * 2);
+				addMicroInstruction(InstructionId::INT_SEXT, CreateVarnode(ZYDIS_REGISTER_RAX, srcRegSize), nullptr, varnode);
+				addMicroInstruction(InstructionId::SUBPIECE, varnode, new ConstantVarnode(srcRegSize, 0x4), CreateVarnode(ZYDIS_REGISTER_RDX, srcRegSize));
+				break;
+			}
+
 			case ZYDIS_MNEMONIC_CVTDQ2PD:
 			case ZYDIS_MNEMONIC_CVTDQ2PS:
 			case ZYDIS_MNEMONIC_CVTPD2DQ:
@@ -800,7 +844,7 @@ namespace CE::Decompiler::PCode
 					auto instrExt = InstructionId::INT_ZEXT;
 					auto instrDiv = InstructionId::INT_DIV;
 					auto instrRem = InstructionId::INT_REM;
-					if (mnemonic == ZYDIS_MNEMONIC_IMUL) {
+					if (mnemonic == ZYDIS_MNEMONIC_IDIV) {
 						instrExt = InstructionId::INT_SEXT;
 						instrDiv = InstructionId::INT_SDIV;
 						instrRem = InstructionId::INT_SREM;
@@ -1208,7 +1252,8 @@ namespace CE::Decompiler::PCode
 			}
 
 			default: {
-				addMicroInstruction(InstructionId::UNKNOWN, new ConstantVarnode(0x0, 0x8));
+				auto instr = addMicroInstruction(InstructionId::UNKNOWN, new ConstantVarnode(0x0, 0x8));
+				getWarningContainer()->addWarning("impossible to decode " + instr->m_originalView + " (at 0x"+ Generic::String::NumberToHex(instr->getOriginalInstructionOffset()) +")");
 			}
 			
 			}
@@ -1285,7 +1330,7 @@ namespace CE::Decompiler::PCode
 			return varnodeOutput;
 		}
 
-		void addMicroInstruction(InstructionId id, Varnode* input0, Varnode* input1 = nullptr, Varnode* output = nullptr, bool zext = true) {
+		Instruction* addMicroInstruction(InstructionId id, Varnode* input0, Varnode* input1 = nullptr, Varnode* output = nullptr, bool zext = true) {
 			auto instr = new Instruction(id, input0, input1, output, m_curOffset, m_curInstrLength, m_curOrderId++);
 			if (m_curOrderId == 1) { //for debug info
 				ZydisFormatter formatter;
@@ -1296,6 +1341,7 @@ namespace CE::Decompiler::PCode
 				instr->m_originalView = buffer;
 			}
 			m_result.push_back(instr);
+			return instr;
 		}
 
 		void setDestinationMemOperand(const ZydisDecodedOperand& operand, int size, int offset, Varnode* varnode, Varnode* memLocVarnode = nullptr) {

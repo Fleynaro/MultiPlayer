@@ -65,18 +65,18 @@ namespace CE::Decompiler
 		}
 	};
 
-	// Analysis of an image of some program assembled by X86 (.exe or .dll)
-	class ImageAnalyzerX86
+	// Analysis of an image of some program (.exe or .dll)
+	class ImageAnalyzer
 	{
 		IImage* m_image;
 		ImagePCodeGraph* m_imageGraph = nullptr;
 		PCodeGraphReferenceSearch* m_graphReferenceSearch;
 
-		RegisterFactoryX86 m_registerFactoryX86;
-		PCode::DecoderX86 m_decoder;
+		AbstractRegisterFactory* m_registerFactory;
+		PCode::AbstractDecoder* m_decoder;
 	public:
-		ImageAnalyzerX86(IImage* image, ImagePCodeGraph* imageGraph, PCodeGraphReferenceSearch* graphReferenceSearch = nullptr)
-			: m_image(image), m_imageGraph(imageGraph), m_graphReferenceSearch(graphReferenceSearch), m_decoder(&m_registerFactoryX86)
+		ImageAnalyzer(IImage* image, ImagePCodeGraph* imageGraph, PCode::AbstractDecoder* decoder, AbstractRegisterFactory* registerFactory, PCodeGraphReferenceSearch* graphReferenceSearch = nullptr)
+			: m_image(image), m_imageGraph(imageGraph), m_decoder(decoder), m_registerFactory(registerFactory), m_graphReferenceSearch(graphReferenceSearch)
 		{}
 
 		void start(int startOffset, const std::map<int64_t, PCode::Instruction*>& offsetToInstruction = {}) {
@@ -144,8 +144,8 @@ namespace CE::Decompiler
 						}
 						else {
 							if (byteOffset < m_image->getSize()) {
-								m_decoder.decode(m_image->getData() + m_image->toImageOffset(byteOffset), byteOffset, m_image->getSize());
-								for (auto instr : m_decoder.getDecodedPCodeInstructions()) {
+								m_decoder->decode(m_image->getData() + m_image->toImageOffset(byteOffset), byteOffset, m_image->getSize());
+								for (auto instr : m_decoder->getDecodedPCodeInstructions()) {
 									offsetToInstruction[instr->getOffset()] = instr;
 								}
 							}
@@ -191,7 +191,7 @@ namespace CE::Decompiler
 				// create a new block
 				if (PCode::Instruction::IsBranching(instr->m_id)) {
 					PCode::VirtualMachineContext vmCtx;
-					PCode::ConstValueCalculating constValueCalculating(curBlock->getInstructions(), &vmCtx, &m_registerFactoryX86);
+					PCode::ConstValueCalculating constValueCalculating(curBlock->getInstructions(), &vmCtx, m_registerFactory);
 					constValueCalculating.start(funcGraph->getConstValues());
 
 					int64_t targetOffset = -1;
@@ -208,6 +208,7 @@ namespace CE::Decompiler
 
 					if (targetOffset == -1 || m_image->defineSegment(targetOffset >> 8) != IImage::CODE_SEGMENT) {
 						offset = -1;
+						m_decoder->getWarningContainer()->addWarning("rva "+ std::to_string(targetOffset >> 8) +" is not correct in the jump instruction "+ instr->m_originalView +" (at 0x"+ Generic::String::NumberToHex(instr->getOriginalInstructionOffset()) +")");
 						continue;
 					}
 

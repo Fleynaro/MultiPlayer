@@ -20,6 +20,7 @@ using namespace CE::DataType;
 
 class ProgramModuleFixtureDecBase : public ProgramModuleFixture {
 public:
+	RegisterFactoryX86 m_registerFactoryX86;
 	Signature* m_defSignature;
 	bool m_isOutput = true;
 
@@ -157,7 +158,6 @@ public:
 
 class ProgramModuleFixtureDecComponent : public ProgramModuleFixtureDecBase {
 public:
-	RegisterFactoryX86 m_registerFactoryX86;
 	PCode::VirtualMachineContext m_vmCtx;
 
 	ProgramModuleFixtureDecComponent() {
@@ -167,7 +167,8 @@ public:
 	// decode {bytes} into pcode instructions
 	std::list<Instruction*> decode(std::vector<byte> bytes) {
 		std::list<Instruction*> decodedInstructions;
-		PCode::DecoderX86 decoder(&m_registerFactoryX86);
+		WarningContainer warningContainer;
+		PCode::DecoderX86 decoder(&m_registerFactoryX86, &warningContainer);
 		int offset = 0;
 		while (offset < bytes.size()) {
 			decoder.decode(bytes.data() + offset, offset, (int)bytes.size());
