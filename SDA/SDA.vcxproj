@@ -13,6 +13,10 @@
       <Configuration>ReleaseExe</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseGuiExe|x64">
+      <Configuration>ReleaseGuiExe</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
@@ -47,6 +51,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseGuiExe|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -68,32 +79,41 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='ReleaseExe|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseGuiExe|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugExe|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)Vendor\magic_enum\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir);$(ProjectDir)Vendor\imgui-1.82;$(ProjectDir)Vendor\magic_enum\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)Vendor\magic_enum\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir);$(ProjectDir)Vendor\imgui-1.82;$(ProjectDir)Vendor\magic_enum\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>$(GTA5_ROOT)\FastLoader</OutDir>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseExe|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)Vendor\magic_enum\include;$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir);$(ProjectDir)Vendor\imgui-1.82;$(ProjectDir)Vendor\magic_enum\include;$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(ProjectDir)Module\Decompiler\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <EmbedManifest>false</EmbedManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseGuiExe|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir);$(ProjectDir)Vendor\imgui-1.82;$(ProjectDir)Vendor\magic_enum\include;$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(ProjectDir)Module\Decompiler\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)Module;$(ProjectDir)..\GUI;$(ProjectDir);$(ProjectDir)Vendor\magic_enum\include;$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Module;$(ProjectDir);$(ProjectDir)Vendor\imgui-1.82;$(ProjectDir)Vendor\magic_enum\include;$(ProjectDir)..\TestCodeToDecompile;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Vendor\SQliteCpp\lib;$(ProjectDir)Vendor\ZydisDisassembler\lib;$(ProjectDir)Vendor\Thrift\lib;$(ProjectDir)Vendor\minhook\lib;$(ProjectDir)Vendor\gtest\lib;$(ProjectDir)Module\Decompiler\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>$(GTA5_ROOT)\FastLoader</OutDir>
     <EmbedManifest>false</EmbedManifest>
@@ -104,7 +124,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;UNIT_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -146,7 +166,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SDA_DLL_EXPORTS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SDA_DLL_EXPORTS;NDEBUG;_CONSOLE;UNIT_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <Optimization>Disabled</Optimization>
@@ -155,6 +175,31 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>gtestd.lib;d3d11.lib;libMinHook.x64.lib;libthrift.lib;SQLiteCpp.lib;sqlite3.lib;Zycore.lib;Zydis.lib;TestCodeToDecompile.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseGuiExe|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SDA_DLL_EXPORTS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>Disabled</Optimization>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\gtest\include;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -188,9 +233,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\GUI\Shared\GUI\Items\Items.cpp" />
-    <ClCompile Include="..\GUI\Shared\GUI\Widgets\FileBrowserTree.cpp" />
-    <ClCompile Include="..\Shared\SDA\SdaInterface.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Module\Address\ProcessModule.cpp" />
     <ClCompile Include="Module\Address\AddressRange.cpp" />
     <ClCompile Include="Module\Code\Function\Function.cpp" />
@@ -278,7 +321,6 @@
     <ClCompile Include="Module\Manager\TypeManager.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\Analyser.cpp" />
     <ClCompile Include="Module\MemoryAnalyser\AVX\avx.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="Module\Statistic\Function\Collector\Record\BeforeCallInfo.cpp" />
     <ClCompile Include="Module\Statistic\Function\Collector\Record\CallInfoWriter.cpp" />
     <ClCompile Include="Module\Trigger\AbstractTrigger.cpp" />
@@ -299,15 +341,20 @@
     <ClCompile Include="Utils\Buffer.cpp" />
     <ClCompile Include="Utils\BufferStreamRecorder.cpp" />
     <ClCompile Include="Utils\ObjectHash.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_demo.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_draw.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="Vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="Vendor\imgui-1.82\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Vendor\imgui-1.82\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="Vendor\imgui-1.82\imgui.cpp" />
+    <ClCompile Include="Vendor\imgui-1.82\imgui_demo.cpp" />
+    <ClCompile Include="Vendor\imgui-1.82\imgui_draw.cpp" />
+    <ClCompile Include="Vendor\imgui-1.82\imgui_tables.cpp" />
+    <ClCompile Include="Vendor\imgui-1.82\imgui_widgets.cpp" />
+    <ClCompile Include="Vendor\imgui-1.82\misc\cpp\imgui_stdlib.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GUI\Attribute.h" />
+    <ClInclude Include="GUI\DecompilerDemoWindow.h" />
+    <ClInclude Include="GUI\GUI.h" />
+    <ClInclude Include="GUI\StyleThemes.h" />
     <ClInclude Include="Module\Address\ProcessModule.h" />
     <ClInclude Include="Module\Address\AddressRange.h" />
     <ClInclude Include="Module\Code\Function\Function.h" />
@@ -502,7 +549,6 @@
     <ClInclude Include="tests\AbstractTest.h" />
     <ClInclude Include="tests\CommonTest.h" />
     <ClInclude Include="tests\DecSampleTests.h" />
-    <ClInclude Include="UserInterface.h" />
     <ClInclude Include="Utility\DebugView.h" />
     <ClInclude Include="Utility\FileWrapper.h" />
     <ClInclude Include="Utility\Generic.h" />
@@ -518,15 +564,16 @@
     <ClInclude Include="Utils\MultipleAction.h" />
     <ClInclude Include="Utils\ObjectHash.h" />
     <ClInclude Include="Utils\Table.h" />
-    <ClInclude Include="Vendor\imgui\imconfig.h" />
-    <ClInclude Include="Vendor\imgui\imgui.h" />
-    <ClInclude Include="Vendor\imgui\imgui_impl_dx11.h" />
-    <ClInclude Include="Vendor\imgui\imgui_impl_win32.h" />
-    <ClInclude Include="Vendor\imgui\imgui_internal.h" />
-    <ClInclude Include="Vendor\imgui\imstb_rectpack.h" />
-    <ClInclude Include="Vendor\imgui\imstb_textedit.h" />
-    <ClInclude Include="Vendor\imgui\imstb_truetype.h" />
-    <ClInclude Include="Vendor\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="Vendor\imgui-1.82\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="Vendor\imgui-1.82\backends\imgui_impl_win32.h" />
+    <ClInclude Include="Vendor\imgui-1.82\imconfig.h" />
+    <ClInclude Include="Vendor\imgui-1.82\imgui.h" />
+    <ClInclude Include="Vendor\imgui-1.82\imgui_include.h" />
+    <ClInclude Include="Vendor\imgui-1.82\imgui_internal.h" />
+    <ClInclude Include="Vendor\imgui-1.82\imstb_rectpack.h" />
+    <ClInclude Include="Vendor\imgui-1.82\imstb_textedit.h" />
+    <ClInclude Include="Vendor\imgui-1.82\imstb_truetype.h" />
+    <ClInclude Include="Vendor\imgui-1.82\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="Vendor\SQliteCpp\sqlite3\sqlite3.h" />
     <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Assertion.h" />
     <ClInclude Include="Vendor\SQliteCpp\SQLiteCpp\Backup.h" />

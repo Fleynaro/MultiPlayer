@@ -7,4 +7,8 @@
     <LocalDebuggerCommandArguments>--gtest_catch_exceptions=0</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseGuiExe|x64'">
+    <LocalDebuggerCommandArguments>--gtest_catch_exceptions=0</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

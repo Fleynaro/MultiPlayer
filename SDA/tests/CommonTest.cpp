@@ -548,16 +548,6 @@ TEST_F(ProgramModuleFixture, Test_Common_RemoveDB)
     //clear();
 }
 
-void executeCode() {
-   /* using namespace Ghidra;
-    auto m_programModule = (new ProgramModuleFixtureBase)->m_programModule;
-    auto sync = m_programModule->getGhidraSync();
-    auto typeManager = m_programModule->getTypeManager();
-    auto funcManager = m_programModule->getFunctionManager();
-    */
-    
-}
-
 
 
 
@@ -618,11 +608,10 @@ int sumArray(arrType arr[3][2], char* str)
     return sum;
 }
 
+#ifdef UNIT_TEST
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
-
-    executeCode();
-
+    
     Hook::init();
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
@@ -631,3 +620,4 @@ int main(int argc, char** argv) {
     //::testing::GTEST_FLAG(filter) = "Test_Dec_*";
 	return RUN_ALL_TESTS();
 }
+#endif

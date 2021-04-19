@@ -1,104 +1,225 @@
-п»ї#include <Program.h>
-#include <SdaInterface.h>
-#include <FunctionTag/FunctionTag.h>
+#include <GUI/DecompilerDemoWindow.h>
 
-Program* g_program = nullptr;
+// Forward declarations of functions included in this code module:
+ATOM                MyRegisterClass(HINSTANCE hInstance);
+BOOL                InitInstance(HINSTANCE, int, HWND&);
+LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 
-
-int setRot2(int a, float x, float y, float z, int c);
-
-class SomeClass2
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPWSTR    lpCmdLine,
+	_In_ int       nCmdShow)
 {
-public:
-	virtual int getValue() {
-		return 4;
-	}
-};
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
 
-auto g_someClass2 = new SomeClass2;
-int g_IntegerVal2 = 4;
+	// TODO: Place code here.
 
-void setPlayerPos2() {
-	g_IntegerVal2 = 5;
-}
+	// Initialize global strings
+	MyRegisterClass(hInstance);
 
-void setPlayerVel2() {
-	int a = 5;
-}
-
-float gVar2 = 0;
-void changeGvar2() {
-	gVar2 = 2.0;
-	setPlayerVel2();
-}
-
-int setRot2(int a, float x, float y, float z, int c)
-{
-	if (a <= 2) {
-		int result = setRot2(a + 1, x, y, z, c);
-	}
-	g_IntegerVal2 = 100;
-	float result = x + y + z + a + c + g_someClass2->getValue();
-	result = pow(result, 1);
-	setPlayerPos2();
-	gVar2 = float(rand() % 10);
-	changeGvar2();
-	return result;
-}
-
-//MY TODO*: 1) СЃРґРµР»Р°С‚СЊ РґСЂРµРІРѕРІРёРґРЅС‹Р№ Р°РЅР°Р»РёР· С‡РµСЂРµР· С‚РµРіРё С‚РёРїР° get/set; СЃРґРµР»Р°С‚СЊ РјРµРЅРµРґР¶РµСЂ
-//MY TODO*: 1.1) 
-//MY TODO*: 2) GUI СЃРґРµР»Р°С‚СЊ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ РґРµСЂРµРІР° РІС‹Р·РѕРІРѕРІ РґР»СЏ С„СѓРЅРєС†РёРё СЃ С„РёР»СЊС‚СЂРѕРј(РЅР°Р»РёС‡РёРµ РїРµСЂРµРјРµРЅРЅС‹С…, РІРёСЂС‚. РІС‹Р·РѕРІРѕРІ, collapse all btn)
-//MY TODO*: 3) СЂРµРґР°РєС‚РѕСЂ СЃРёРіРЅР°С‚СѓСЂС‹ С„СѓРЅРєС†РёР№. РґР»СЏ СЌС‚РѕРіРѕ РѕРїСЂРµРґРµР»РёС‚СЊ РїРѕ РєР°РєРѕРј Р°СЂРіСѓРјРµРЅС‚Сѓ/С‚РёРїСѓ РєР»РёРєРЅСѓР»Рё
-//MY TODO*: 3.1) СЃРґРµР»Р°С‚СЊ РІС‹СЃРІРµС‡РёРІР°СЋС‰РµРµСЃСЏ РѕРєРѕС€РєРѕ СЃ С‚РёРїР°РјРё РєР°Рє РІ РіРёРґСЂРµ
-//MY TODO*: 4) РІС‹Р·РѕРІ С„СѓРЅРєС†РёР№ СЃ РїР°СЂР°РјРµС‚СЂР°РјРё. РїР°СЂР°РјРµС‚СЂС‹: РѕР±С‹С‡РЅС‹Рµ С‚РёРїС‹, СѓРєР°Р·Р°С‚РµР»Рё РЅР° РєР»Р°СЃСЃС‹, СЃР°РјРё РєР»Р°СЃСЃС‹(СЃС‚РµРє) Рё enum
-//MY TODO*: 4.1) СЃРґРµР»Р°С‚СЊ РјРµРЅРµРґР¶РµСЂ РґР»СЏ СЌРєР·РµРјРїР»СЏСЂРѕРІ РєР»Р°СЃСЃР°, РіРґРµ РјС‹ СѓРєР°Р·С‹РІР°РµРј СЃР°РјРё Р·РЅР°С‡РµРЅРёСЏ РїРѕР»РµР№. РІС‹РґРµР»СЏРµС‚СЃСЏ РІ РєСѓС‡Рµ Рё С…СЂР°РЅРёС‚СЃСЏ.
-//MY TODO*: 5) СЃРґРµР»Р°С‚СЊ СЂРµРґР°РєС‚РѕСЂ РєР»Р°СЃСЃРѕРІ С‚Р°РєРѕР№ Р¶Рµ РєР°Рє Рё РІ ReClass. + СѓРєР°Р·С‹РІР°С‚СЊ pointer РЅР° РєР»Р°СЃСЃ РІ РїР°РјСЏС‚Рё, РґРѕР»Р¶РЅС‹ РїРѕРґСЃРІРµС‡РёРІР°С‚СЊСЃСЏ Р·РЅР°С‡РµРЅРёСЏ. РќРѕ С‚СѓС‚ С‚Р°РєР¶Рµ РµСЃС‚СЊ Рё РјРµС‚РѕРґС‹ РµС‰Рµ. РџСЂРµРґР»Р°РіР°РµС‚СЃСЏ СЃРґРµР»Р°С‚СЊ СЂРµРґР°РєС‚РѕСЂ РІ РІРёРґРµ С‚РµРєСЃС‚Р° РєРѕРґР°
-//MY TODO*: 6) СЃРѕС…СЂР°РЅРµРЅРёРµ РЅР°СЃС‚СЂРѕРµРє СЋР·РµСЂР° РІ РѕС‚РґРµР»СЊРЅРѕР№ Р‘Р”
-//MY TODO*: 6.1) СЃРѕС…СЂР°РЅРµРЅРёРµ СЃРѕСЃС‚РѕСЏРЅРёСЏ С„РёР»СЊС‚СЂРѕРІ РїРѕРёСЃРєР°(РµСЃС‚СЊ combo box Рё РєРЅРѕРїРєР° СЃРѕС…СЂР°РЅРёС‚СЊ СЃ РЅР°Р·РІР°РЅРёРµРј РѕС‚ СЋР·РµСЂР°)
-//MY TODO*: 6.2) СЃРѕС…СЂР°РЅРµРЅРёРµ СѓРєР°Р·Р°РЅРЅС‹С… СЃРѕСЃС‚РѕСЏРЅРёР№ СЃРїРёСЃРєР° РїР°СЂР°РјРµС‚СЂРѕРІ РґР»СЏ РІС‹Р·РѕРІР° С„СѓРЅРєС†РёР№
-//MY TODO*: 7) С‚СЂРёРіРіРµСЂС‹. СЃРґРµР»Р°С‚СЊ РјРµРЅРµРґР¶РµСЂ. РІ РѕРґРЅРѕРј С‚СЂРёРіРіРµСЂРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РЅРµСЃРєРѕР»СЊРєРѕ С„СѓРЅРєС†РёР№(РІС‹Р±РѕСЂ С‡РµСЂРµР· СЃРїРµС†. РІРёРґР¶РµС‚ combobox + search) + СѓРєР°Р·Р°РЅРёРµ РІ РЅРµРј СЃРїРёСЃРєР° С„РёР»СЊС‚СЂРѕРІ Рё РґРµР№СЃС‚РІРёР№
-//MY TODO*: 7.1) Рє РєР°Р¶РґРѕРјСѓ С‚СЂРёРіРіРµСЂСѓ РїСЂРёРєР»Р°РґС‹РІР°РµС‚СЃСЏ СЃС‚Р°С‚РёСЃС‚РёРєР° РІС‹Р·РѕРІРѕРІ С„СѓРЅРєС†РёР№, РіРґРµ СЃС‚СЂРѕРёС‚СЃСЏ РіРёСЃС‚РѕРіСЂР°РјРјР° Рё С‚Рґ
-//MY TODO*: 8) РњРµРЅРµРґР¶РµСЂ С€СЂРёС„С‚РѕРІ РґР»СЏ GUI
-//MY TODO*: 9) Р’СЃРµРІРѕР·РјРѕР¶РЅС‹Рµ РІРёРґС‹ Р°РЅР°Р»РёР·РѕРІ
-//MY TODO*: 9.1) РќР°Р»РёС‡РёРµ РѕР±С‰РёС… С„СѓРЅРєС†РёР№ Сѓ РґРІСѓС… С„СѓРЅРєС†РёР№
-//MY TODO*: 9.2) РќР°С…РѕР¶РґРµРЅРёРµ РєСЂР°С‚С‡Р°Р№С€РµРіРѕ РїСѓС‚Рё РґР»СЏ 2-С… С„СѓРЅРєС†РёР№ РІ РіСЂР°С„Рµ РІС‹Р·РѕРІРѕРІ
-
-
-//MY TODO*: 10) Р’СЃРµ РІРёРґР¶РµС‚С‹ - РєРѕРЅС‚РµР№РЅРµСЂС‹. Р›СЋР±РѕРµ РґРѕР±Р°РІР»РµРЅРёРµ СЃРІРѕР№СЃС‚РІ Рє СЌР»РµРјРµРЅС‚Р°Рј UI - РЅР°СЃР»РµРґРѕРІР°РЅРёРµ.
-//MY TODO*: 10.1) FilterConditionList - СЂРµР°Р»РёР·РѕРІР°С‚СЊ С„СѓРЅРєС†РёСЋ render
-//MY TODO*: 10.2) Р›РµРЅРёРІР°СЏ РёРЅРёС†РёР»РёР·Р°С†РёСЏ РґР»СЏ СЌР»РµРјРµРЅС‚РѕРІ РёРЅС‚РµСЂС„РµР№СЃР°. Р•СЃР»Рё РЅРµ РїРѕРєР°Р·С‹РІР°С‚СЃСЏ - РЅРµ СЃРѕР·РґР°РІР°С‚СЊ. Р®Р·Р°С‚СЊ С‡С‚Рѕ-С‚Рѕ С‚РёРїР° beginImGui.
-//MY TODO*: 10.3) ToolDesc - РµСЃС‚СЊ 2 С‚РёРїР°, С‚РµРєСЃС‚РѕРІС‹Р№ Рё РєРѕРЅС‚РµР№РЅРµСЂ(shortcut, РєРѕРЅС‚РµРєСЃС‚РЅРѕРµ РјРµРЅСЋ). Р­С‚Рѕ РѕС‚РґРµР»СЊРЅС‹Рµ РєР»Р°СЃСЃС‹. РћРЅРё С†РµРїР»СЏСЋС‚СЃСЏ Рє Р»СЋР±РѕРјСѓ СЌР»РµРјРµРЅС‚Сѓ UI. Р”Р»СЏ СЌС‚РѕРіРѕ СЋР·Р°РµРј Р°С‚С‚СЂРёР±СѓС‚ Attribute::ToolDesc, Attribute::ContextMenu. РЈРЅРёРєР°Р»СЊРЅРѕ РґР»СЏ РєР°Р¶РґРѕРіРѕ СЌР»РµРјРµРЅС‚Р° Рё РїРѕСЏРІР»СЏРµС‚СЃСЏ РїСЂРё hover!
-//MY TODO*: 10.4) Р”Р»СЏ РєР°Р¶РґРѕРіРѕ СЌР»РµРјРµРЅС‚Р°(РёР»Рё РіР»РѕР±Р°Р»СЊРЅРѕ) СЃРѕР·РґР°С‚СЊ С‚Р°Р№РјРµСЂ - РІРёСЂС‚. РјРµС‚РѕРґ timer Рё РІС‹Р·С‹РІР°С‚СЊ РІРЅРµ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ isShow
-//MY TODO*: 10.5) Р’ С‚Р°Р№РјРµСЂРµ СѓРґР°Р»СЏС‚СЊ РІСЂРµРјРµРЅРЅРѕ СЃРѕР·РґР°РЅРЅС‹Рµ РѕР±СЉРµРєС‚С‹. РќСѓР¶РЅРѕ РґР»СЏ 10.2: РїРѕРјРµС‡Р°С‚СЊ РєР°Рє РґРѕРїСѓСЃРєР°СЋС‰РµРµ СѓРґР°Р»РµРЅРёРµ РїРѕСЃР»РµРґСѓСЋС‰РµРµ(ITemporable); РЅР°РїСЂРёРјРµСЂ, СЃРёРіРЅР°С‚СѓСЂР° С„СѓРЅРєС†РёРё
-//MY TODO*: 10.6) Р±РѕР»СЊС€Рµ РІСЂР°Р·СѓРјРёС‚РµР»СЊРЅС‹С… СЃРѕР±С‹С‚РёР№: onHoverIn, onHoverOut(СЋР·Р°СЋС‚СЃСЏ РІ toolDesc: create Рё remove); onShow, onHide(Р»РµРЅРёРІР°СЏ РёРЅРёС†РёР»РёР·Р°С†РёСЏ)
-//MY TODO*: 10.6.1) РњРѕР¶РЅРѕ РїСЂРѕСЃС‚Рѕ РїРѕ СЃРѕР±С‹С‚РёСЋ hover СЃРѕР·РґР°С‚СЊ/РїРѕРєР°Р·Р°С‚СЊ(РµСЃР»Рё РїРµСЂРµРґР°Р»СЃСЏ) tooldesc, РґРµСЂР¶Р°С‚СЊ РІ РїР°РјСЏС‚Рё РґРѕ hoverOut Рё delete. Рў.Рµ. РІСЂСѓС‡РЅСѓСЋ СѓРїСЂР°РІР»СЏРµРј
-//MY TODO*: 10.7) context menu - РїРѕ РїРєРј
-//MY TODO*: 10.8) address viewer(link) and copy to clipboard
-
-//MY TODO*: 11) Р¤СѓРЅРєС†РёРё WinApi, directx Рё РґСЂСѓРіРёС… Р»РёР± РјРѕР¶РЅРѕ РїРѕСЃС‚Р°РІР»СЏС‚СЊ РІ Р±Р°Р·РѕРІРѕРј РЅР°Р±РѕСЂРµ Рё СЃСЂР°Р·Сѓ РґР»СЏ РЅРёС… РїРѕР»СѓС‡Р°С‚СЊ Р°РґСЂРµСЃ
-
-/*
-	Р’Р°Р¶РЅРѕ: РІСЂРµРјСЏ Р¶РёР·РЅРё РѕР±СЉРµРєС‚РѕРІ UI <= РІСЂРµРјСЏ Р¶РёР·РЅРё СЃСѓС‰РЅРѕСЃС‚РµР№ РїСЂРѕРіСЂР°РјРјС‹ -> Р·РЅР°С‡РёС‚ РјРѕР¶РЅРѕ С…СЂР°РЅРёС‚СЊ СѓРєР°Р·Р°С‚РµР»Рё РЅР° РѕР±СЉРµРєС‚С‹ РЅРµ С…Р°РґСѓРјС‹РІР°СЏСЃСЊ
-*/
-
-BOOL APIENTRY DllMain(HMODULE hModule,
-	DWORD  ul_reason_for_call,
-	LPVOID lpReserved
-)
-{
-	switch (ul_reason_for_call)
+	// Perform application initialization:
+	HWND hWnd;
+	if (!InitInstance(hInstance, nCmdShow, hWnd))
 	{
-	case DLL_PROCESS_ATTACH:
+		return FALSE;
+	}
+
+	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
+	ID3D11Device* m_pd3dDevice = NULL;						// Устройство (для создания объектов)
+	ID3D11DeviceContext* m_pImmediateContext = NULL;		// Контекст (устройство рисования)
+	IDXGISwapChain* m_pSwapChain = NULL;					// Цепь связи (буфера с экраном)
+	ID3D11RenderTargetView* m_pRenderTargetView = NULL;		// Объект вида, задний буфер
+	ID3D11Texture2D* m_pDepthStencil = NULL;				// Текстура буфера глубин
+	ID3D11DepthStencilView* m_pDepthStencilView = NULL;		// Объект вида, буфер глубин
+	D3D_DRIVER_TYPE m_driverType = D3D_DRIVER_TYPE_NULL;
+	HRESULT hr = S_OK;
+
+	RECT rc;
+	GetClientRect(hWnd, &rc);
+	UINT width = rc.right - rc.left;	// получаем ширину
+	UINT height = rc.bottom - rc.top;	// и высоту окна
+
+	UINT createDeviceFlags = 0;
+#ifdef _DEBUG
+	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+	D3D_DRIVER_TYPE driverTypes[] =
 	{
-		DebugOutput("sda.dll loaded successfully!");
-		g_program = new Program(hModule);
-		break;
+		D3D_DRIVER_TYPE_HARDWARE,
+		D3D_DRIVER_TYPE_WARP,
+		D3D_DRIVER_TYPE_REFERENCE,
+	};
+	UINT numDriverTypes = ARRAYSIZE(driverTypes);
+
+	// Тут мы создаем список поддерживаемых версий DirectX
+	D3D_FEATURE_LEVEL featureLevels[] =
+	{
+		D3D_FEATURE_LEVEL_11_0,
+		D3D_FEATURE_LEVEL_10_1,
+		D3D_FEATURE_LEVEL_10_0,
+	};
+	UINT numFeatureLevels = ARRAYSIZE(featureLevels);
+
+	// Сейчас мы создадим устройства DirectX. Для начала заполним структуру,
+	// которая описывает свойства переднего буфера и привязывает его к нашему окну.
+	DXGI_SWAP_CHAIN_DESC sd;			// Структура, описывающая цепь связи (Swap Chain)
+	ZeroMemory(&sd, sizeof(sd));	// очищаем ее
+	sd.BufferCount = 1;					// у нас один буфер
+	sd.BufferDesc.Width = width;		// ширина буфера
+	sd.BufferDesc.Height = height;		// высота буфера
+	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;	// формат пикселя в буфере
+	sd.BufferDesc.RefreshRate.Numerator = 60;			// частота обновления экрана
+	sd.BufferDesc.RefreshRate.Denominator = 1;
+	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;	// назначение буфера - задний буфер
+	sd.OutputWindow = hWnd;							// привязываем к нашему окну
+	sd.SampleDesc.Count = 1;
+	sd.SampleDesc.Quality = 0;
+	sd.Windowed = TRUE;						// не полноэкранный режим
+
+	for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++)
+	{
+		m_driverType = driverTypes[driverTypeIndex];
+		hr = D3D11CreateDeviceAndSwapChain(NULL, m_driverType, NULL, createDeviceFlags, featureLevels, numFeatureLevels,
+			D3D11_SDK_VERSION, &sd, &m_pSwapChain, &m_pd3dDevice, &featureLevel, &m_pImmediateContext);
+		if (SUCCEEDED(hr))  // Если устройства созданы успешно, то выходим из цикла
+			break;
 	}
-	case DLL_THREAD_ATTACH:
-	case DLL_THREAD_DETACH:
-	case DLL_PROCESS_DETACH:
-		break;
+	if (FAILED(hr)) return hr;
+
+
+	// Теперь создаем задний буфер. Обратите внимание, в SDK
+		// RenderTargetOutput - это передний буфер, а RenderTargetView - задний.
+		// Извлекаем описание заднего буфера
+	ID3D11Texture2D* pBackBuffer = NULL;
+	hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+	if (FAILED(hr)) return hr;
+
+	// По полученному описанию создаем поверхность рисования
+	hr = m_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRenderTargetView);
+	pBackBuffer->Release();
+	if (FAILED(hr)) return hr;
+
+
+	// Переходим к созданию буфера глубин
+		// Создаем текстуру-описание буфера глубин
+	D3D11_TEXTURE2D_DESC descDepth;	// Структура с параметрами
+	ZeroMemory(&descDepth, sizeof(descDepth));
+	descDepth.Width = width;		// ширина и
+	descDepth.Height = height;		// высота текстуры
+	descDepth.MipLevels = 1;		// уровень интерполяции
+	descDepth.ArraySize = 1;
+	descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;	// формат (размер пикселя)
+	descDepth.SampleDesc.Count = 1;
+	descDepth.SampleDesc.Quality = 0;
+	descDepth.Usage = D3D11_USAGE_DEFAULT;
+	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;		// вид - буфер глубин
+	descDepth.CPUAccessFlags = 0;
+	descDepth.MiscFlags = 0;
+	// При помощи заполненной структуры-описания создаем объект текстуры
+	hr = m_pd3dDevice->CreateTexture2D(&descDepth, NULL, &m_pDepthStencil);
+	if (FAILED(hr)) return hr;
+
+	// Теперь надо создать сам объект буфера глубин
+	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;	// Структура с параметрами
+	ZeroMemory(&descDSV, sizeof(descDSV));
+	descDSV.Format = descDepth.Format;		// формат как в текстуре
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.Texture2D.MipSlice = 0;
+	// При помощи заполненной структуры-описания и текстуры создаем объект буфера глубин
+	hr = m_pd3dDevice->CreateDepthStencilView(m_pDepthStencil, &descDSV, &m_pDepthStencilView);
+	if (FAILED(hr)) return hr;
+
+	// Подключаем объект заднего буфера и объект буфера глубин к контексту устройства
+	m_pImmediateContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+
+
+	// our gui app
+	GUI::GUI gui;
+	gui.m_windowManager->addWindow(new GUI::DecompilerDemoWindow);
+	gui.init(hWnd, m_pd3dDevice, m_pImmediateContext);
+
+
+	MSG msg;
+	// Main message loop:
+	while (GetMessage(&msg, nullptr, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+
+		static ULONGLONG prevTime;
+		ULONGLONG curTime = GetTickCount64();
+		if (curTime - prevTime > 1000 / 60) {
+			float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+			m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView, ClearColor);
+			gui.render();
+			m_pSwapChain->Present(0, 0);
+		}
 	}
+
+	return (int)msg.wParam;
+}
+
+ATOM MyRegisterClass(HINSTANCE hInstance)
+{
+	WNDCLASSEXW wcex = {};
+
+	wcex.cbSize = sizeof(WNDCLASSEX);
+
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.hInstance = hInstance;
+	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszClassName = L"Main";
+
+	return RegisterClassExW(&wcex);
+}
+
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow, HWND& hWnd)
+{
+	int width = 1280;
+	int height = 720;
+
+	RECT rc = { 0, 0, width, height };
+	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+	hWnd = CreateWindowW(L"Main", L"SDA", WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, 0, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance, nullptr);
+
+	if (!hWnd)
+	{
+		return FALSE;
+	}
+
+	ShowWindow(hWnd, nCmdShow);
+	// UpdateWindow(hWnd);
+
 	return TRUE;
+}
+
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam)) {
+		return 0;
+	}
+
+	switch (message)
+	{
+	break;
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		// TODO: Add any drawing code that uses hdc here...
+		EndPaint(hWnd, &ps);
+	}
+	break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+	}
+
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }
