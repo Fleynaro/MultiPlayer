@@ -1,3 +1,4 @@
+#include "main.h"
 #include <GUI/Windows/DecompilerDemoWindow.h>
 
 // Forward declarations of functions included in this code module:

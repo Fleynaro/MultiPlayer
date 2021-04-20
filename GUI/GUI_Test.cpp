@@ -2,6 +2,10 @@
 //
 
 #include "framework.h"
+#include <iostream>
+#include <winsock2.h>
+#include <immintrin.h>
+#include <d3d11.h>
 #include "GUI_Test.h"
 
 #define MAX_LOADSTRING 100

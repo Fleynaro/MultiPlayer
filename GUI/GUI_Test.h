@@ -1,5 +1,6 @@
 #pragma once
 #include "resource.h"
+
 #include <GUI.h>
 
 namespace GUI {

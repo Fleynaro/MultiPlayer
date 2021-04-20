@@ -160,6 +160,8 @@
     <ClInclude Include="include\Attribute.h" />
     <ClInclude Include="include\GUI.h" />
     <ClInclude Include="include\StyleThemes.h" />
+    <ClInclude Include="include\Widgets\CodeEditor\CodeEditor.h" />
+    <ClInclude Include="include\Widgets\CodeEditor\original\TextEditor.h" />
     <ClInclude Include="Vendor\imgui-1.82\backends\imgui_impl_dx11.h" />
     <ClInclude Include="Vendor\imgui-1.82\backends\imgui_impl_win32.h" />
     <ClInclude Include="Vendor\imgui-1.82\imconfig.h" />
@@ -174,6 +176,7 @@
   <ItemGroup>
     <ClCompile Include="Attribute.cpp" />
     <ClCompile Include="GUI.cpp" />
+    <ClCompile Include="include\Widgets\CodeEditor\original\TextEditor.cpp" />
     <ClCompile Include="Vendor\imgui-1.82\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="Vendor\imgui-1.82\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="Vendor\imgui-1.82\imgui.cpp" />

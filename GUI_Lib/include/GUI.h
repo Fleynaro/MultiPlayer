@@ -1,5 +1,21 @@
 #pragma once
+#include <fstream>
+#include <vector>
+#include <list>
+#include <map>
+#include <set>
+#include <queue>
+#include <stack>
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include <random>
+#include <string>
+#include <functional>
+#include <windows.h>
+
 #include "../imgui_include.h"
+
 #include "Attribute.h"
 #include "StyleThemes.h"
 
