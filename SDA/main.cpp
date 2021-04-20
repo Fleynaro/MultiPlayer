@@ -1,4 +1,4 @@
-#include <GUI/DecompilerDemoWindow.h>
+#include <GUI/Windows/DecompilerDemoWindow.h>
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);

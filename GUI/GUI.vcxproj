@@ -32,6 +32,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>GUI</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <ProjectName>GUI_Test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -100,15 +101,21 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)..\GUI_Lib\include;$(ProjectDir)..\GUI_Lib\Vendor\imgui-1.82;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryWPath>$(ProjectDir)..\GUI_Lib\lib;$(LibraryWPath)</LibraryWPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseGuiExe|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)..\GUI_Lib\include;$(ProjectDir)..\GUI_Lib\Vendor\imgui-1.82;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryWPath>$(ProjectDir)..\GUI_Lib\lib;$(LibraryWPath)</LibraryWPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)..\GUI_Lib\include;$(ProjectDir)..\GUI_Lib\Vendor\imgui-1.82;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryWPath>$(ProjectDir)..\GUI_Lib\lib;$(LibraryWPath)</LibraryWPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -127,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Vendor\imgui;$(ProjectDir)..\GUI\Shared;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -149,7 +156,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Vendor\imgui;$(ProjectDir)..\GUI\Shared;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -184,7 +191,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Vendor\imgui;$(ProjectDir)..\GUI\Shared;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -233,51 +240,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
-    <ClInclude Include="GUI.h" />
+    <ClInclude Include="GUI_Test.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="Shared\GUI\imgui_include.h" />
-    <ClInclude Include="Shared\GUI\Items\Attribute.h" />
-    <ClInclude Include="Shared\GUI\Items\Events.h" />
-    <ClInclude Include="Shared\GUI\Items\Items.h" />
-    <ClInclude Include="Shared\GUI\Items\IWidget.h" />
-    <ClInclude Include="Shared\GUI\Items\IWindow.h" />
-    <ClInclude Include="Shared\GUI\Items\StyleThemes.h" />
-    <ClInclude Include="Shared\GUI\Widgets\CodeEditor\CodeEditor.h" />
-    <ClInclude Include="Shared\GUI\Widgets\CodeEditor\TextEditor.h" />
-    <ClInclude Include="Shared\GUI\Widgets\FileBrowserTree.h" />
-    <ClInclude Include="Shared\GUI\Widgets\ILoadContent.h" />
-    <ClInclude Include="Shared\GUI\Widgets\PageNavigation.h" />
-    <ClInclude Include="Shared\GUI\Widgets\PopupContextWindow.h" />
-    <ClInclude Include="Shared\GUI\Widgets\Template\CategoryListSearch.h" />
-    <ClInclude Include="Shared\GUI\Widgets\Template\CategoryListSearchWithPageNav.h" />
-    <ClInclude Include="Shared\GUI\Widgets\Template\ControlPanel.h" />
-    <ClInclude Include="Shared\GUI\Widgets\Template\InteractiveInput.h" />
-    <ClInclude Include="Shared\GUI\Widgets\Template\ItemList.h" />
-    <ClInclude Include="Shared\GUI\Windows\Templates\ManagerWin.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="TestWindows.h" />
-    <ClInclude Include="UI.h" />
-    <ClInclude Include="Vendor\imgui\imconfig.h" />
-    <ClInclude Include="Vendor\imgui\imgui.h" />
-    <ClInclude Include="Vendor\imgui\imgui_impl_dx11.h" />
-    <ClInclude Include="Vendor\imgui\imgui_impl_win32.h" />
-    <ClInclude Include="Vendor\imgui\imgui_internal.h" />
-    <ClInclude Include="Vendor\imgui\imstb_rectpack.h" />
-    <ClInclude Include="Vendor\imgui\imstb_textedit.h" />
-    <ClInclude Include="Vendor\imgui\imstb_truetype.h" />
-    <ClInclude Include="Vendor\imgui\misc\cpp\imgui_stdlib.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GUI.cpp" />
-    <ClCompile Include="Shared\GUI\Items\Items.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_demo.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_draw.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="Vendor\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="Vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="GUI_Test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GUI.rc" />
@@ -285,6 +254,11 @@
   <ItemGroup>
     <Image Include="GUI.ico" />
     <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GUI_Lib\GUI_Lib.vcxproj">
+      <Project>{141892fb-6885-4a9e-9c97-1a0edaacc0c2}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
