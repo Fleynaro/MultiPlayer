@@ -1,10 +1,12 @@
+#include <Program.h>
 #include "DecompilerDemoWindow.h"
 #include <asmtk/asmtk.h>
 
+using namespace CE;
 using namespace asmjit;
 using namespace asmtk;
 
-static std::string dumpCode(const uint8_t* buf, size_t size) {
+std::string dumpCode(const uint8_t* buf, size_t size) {
     enum { kCharsPerLine = 39 };
     char hex[kCharsPerLine * 2 + 1];
 
@@ -33,11 +35,24 @@ static std::string dumpCode(const uint8_t* buf, size_t size) {
     return result;
 }
 
-void GUI::DecompilerDemoWindow::deassembly() {
+FS::Directory getCurrentDir() {
+    char filename[MAX_PATH];
+    GetModuleFileName(NULL, filename, MAX_PATH);
+    return FS::File(filename).getDirectory().next("test");
+}
+
+void GUI::DecompilerDemoWindow::initProgram() {
+    getCurrentDir().createIfNotExists();
+    m_programModule = new ProgramModule(getCurrentDir());
+
+    m_programModule->initDataBase("database.db");
+    m_programModule->initManagers();
+    m_programModule->load();
+}
+
+void GUI::DecompilerDemoWindow::deassembly(const std::string& textCode) {
     CodeHolder code;
     code.init(Environment(Environment::kArchX64));
-
-    auto textCode = m_asmCodeEditor->getEditor().GetText();
 
     // Attach x86::Assembler `code`.
     x86::Assembler a(&code);
@@ -60,4 +75,25 @@ void GUI::DecompilerDemoWindow::deassembly() {
     CodeBuffer& buffer = code.sectionById(0)->buffer();
     auto hexBytesStr = dumpCode(buffer.data(), buffer.size());
     m_bytes_input.setInputText(hexBytesStr);
+}
+
+
+// decompiler
+#include <Decompiler/Decompiler.h>
+#include <Decompiler/LinearView/DecLinearView.h>
+#include <Decompiler/LinearView/DecLinearViewOptimization.h>
+#include <Decompiler/LinearView/DecLinearViewSimpleOutput.h>
+#include <Decompiler/Optimization/DecGraphOptimization.h>
+#include <Decompiler/SDA/Symbolization/DecGraphSymbolization.h>
+#include <Decompiler/SDA/Optimizaton/SdaGraphFinalOptimization.h>
+#include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>
+#include <Decompiler/PCode/DecPCodeConstValueCalc.h>
+#include <Decompiler/PCode/ImageAnalyzer/DecImageAnalyzer.h>
+#include <Module/Image/VectorBufferImage.h>
+#include <Manager/Managers.h>
+
+void GUI::DecompilerDemoWindow::decompile(const std::string& hexBytesStr)
+{
+    auto image = VectorBufferImage(content);
+
 }

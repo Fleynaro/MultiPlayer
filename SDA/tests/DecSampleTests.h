@@ -11,6 +11,7 @@
 #include <Decompiler/PCode/DecPCodeConstValueCalc.h>
 #include <Decompiler/PCode/ImageAnalyzer/DecImageAnalyzer.h>
 #include <Module/Image/SimpleBufferImage.h>
+#include <Module/Image/VectorBufferImage.h>
 #include <Manager/Managers.h>
 #include <TestCodeToDecompile.h>
 
@@ -268,30 +269,6 @@ public:
 	bool checkHash(int type, std::list<std::pair<int, HS::Value>>& sampleTestHashes, HS::Value hash, SampleTest* sampleTest);
 
 	SampleTest* createSampleTest(int testId, std::vector<byte> content) {
-		class VectorBufferImage : public IImage
-		{
-			std::vector<byte> m_content;
-		public:
-			VectorBufferImage(std::vector<byte> content)
-				: m_content(content)
-			{}
-
-			byte* getData() override {
-				return m_content.data();
-			}
-
-			int getSize() override {
-				return (int)m_content.size();
-			}
-
-			int getOffsetOfEntryPoint() override {
-				return 0;
-			}
-
-			SegmentType defineSegment(int offset) override {
-				return CODE_SEGMENT;
-			}
-		};
 		return createSampleTest(testId, new VectorBufferImage(content));
 	}
 

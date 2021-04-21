@@ -17,6 +17,14 @@ namespace GUI::Widget
 		TextEditor& getEditor() {
 			return m_editor;
 		}
+
+		ImVec2& getSize() {
+			return m_size;
+		}
+
+		/*void setSize(ImVec2 size) {
+			m_size = size;
+		}*/
 	protected:
 		TextEditor m_editor;
 

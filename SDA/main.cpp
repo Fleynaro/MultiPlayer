@@ -2,9 +2,14 @@
 #include <GUI/Windows/DecompilerDemoWindow.h>
 
 // Forward declarations of functions included in this code module:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
+ATOM                RegisterWindowsClasses(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int, HWND&);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+
+ID3D11Device* g_pd3dDevice = NULL;						// Устройство (для создания объектов)
+ID3D11DeviceContext* g_pd3dDeviceContext = NULL;		// Контекст (устройство рисования)
+IDXGISwapChain* g_pSwapChain = NULL;					// Цепь связи (буфера с экраном)
+ID3D11RenderTargetView* g_pRenderTargetView = NULL;		// Объект вида, задний буфер
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -17,7 +22,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// TODO: Place code here.
 
 	// Initialize global strings
-	MyRegisterClass(hInstance);
+	RegisterWindowsClasses(hInstance);
 
 	// Perform application initialization:
 	HWND hWnd;
@@ -27,19 +32,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
-	ID3D11Device* m_pd3dDevice = NULL;						// Устройство (для создания объектов)
-	ID3D11DeviceContext* m_pImmediateContext = NULL;		// Контекст (устройство рисования)
-	IDXGISwapChain* m_pSwapChain = NULL;					// Цепь связи (буфера с экраном)
-	ID3D11RenderTargetView* m_pRenderTargetView = NULL;		// Объект вида, задний буфер
 	ID3D11Texture2D* m_pDepthStencil = NULL;				// Текстура буфера глубин
 	ID3D11DepthStencilView* m_pDepthStencilView = NULL;		// Объект вида, буфер глубин
 	D3D_DRIVER_TYPE m_driverType = D3D_DRIVER_TYPE_NULL;
 	HRESULT hr = S_OK;
 
-	RECT rc;
-	GetClientRect(hWnd, &rc);
-	UINT width = rc.right - rc.left;	// получаем ширину
-	UINT height = rc.bottom - rc.top;	// и высоту окна
+	UINT width, height;
+	GUI::GetScreenSize(hWnd, &width, &height);
 
 	UINT createDeviceFlags = 0;
 #ifdef _DEBUG
@@ -83,7 +82,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	{
 		m_driverType = driverTypes[driverTypeIndex];
 		hr = D3D11CreateDeviceAndSwapChain(NULL, m_driverType, NULL, createDeviceFlags, featureLevels, numFeatureLevels,
-			D3D11_SDK_VERSION, &sd, &m_pSwapChain, &m_pd3dDevice, &featureLevel, &m_pImmediateContext);
+			D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
 		if (SUCCEEDED(hr))  // Если устройства созданы успешно, то выходим из цикла
 			break;
 	}
@@ -94,11 +93,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// RenderTargetOutput - это передний буфер, а RenderTargetView - задний.
 		// Извлекаем описание заднего буфера
 	ID3D11Texture2D* pBackBuffer = NULL;
-	hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+	hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 	if (FAILED(hr)) return hr;
 
 	// По полученному описанию создаем поверхность рисования
-	hr = m_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRenderTargetView);
+	hr = g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &g_pRenderTargetView);
 	pBackBuffer->Release();
 	if (FAILED(hr)) return hr;
 
@@ -119,7 +118,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	descDepth.CPUAccessFlags = 0;
 	descDepth.MiscFlags = 0;
 	// При помощи заполненной структуры-описания создаем объект текстуры
-	hr = m_pd3dDevice->CreateTexture2D(&descDepth, NULL, &m_pDepthStencil);
+	hr = g_pd3dDevice->CreateTexture2D(&descDepth, NULL, &m_pDepthStencil);
 	if (FAILED(hr)) return hr;
 
 	// Теперь надо создать сам объект буфера глубин
@@ -129,17 +128,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	descDSV.Texture2D.MipSlice = 0;
 	// При помощи заполненной структуры-описания и текстуры создаем объект буфера глубин
-	hr = m_pd3dDevice->CreateDepthStencilView(m_pDepthStencil, &descDSV, &m_pDepthStencilView);
+	hr = g_pd3dDevice->CreateDepthStencilView(m_pDepthStencil, &descDSV, &m_pDepthStencilView);
 	if (FAILED(hr)) return hr;
 
 	// Подключаем объект заднего буфера и объект буфера глубин к контексту устройства
-	m_pImmediateContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+	g_pd3dDeviceContext->OMSetRenderTargets(1, &g_pRenderTargetView, m_pDepthStencilView);
 
 
 	// our gui app
 	GUI::GUI gui;
-	gui.m_windowManager->addWindow(new GUI::DecompilerDemoWindow);
-	gui.init(hWnd, m_pd3dDevice, m_pImmediateContext);
+	gui.m_windowManager->addWindow(new GUI::DecompilerDemoWindow(hWnd));
+	gui.init(hWnd, g_pd3dDevice, g_pd3dDeviceContext);
 
 
 	MSG msg;
@@ -153,16 +152,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		ULONGLONG curTime = GetTickCount64();
 		if (curTime - prevTime > 1000 / 60) {
 			float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
-			m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView, ClearColor);
+			g_pd3dDeviceContext->ClearRenderTargetView(g_pRenderTargetView, ClearColor);
 			gui.render();
-			m_pSwapChain->Present(0, 0);
+			g_pSwapChain->Present(0, 0);
 		}
 	}
 
 	return (int)msg.wParam;
 }
 
-ATOM MyRegisterClass(HINSTANCE hInstance)
+ATOM RegisterWindowsClasses(HINSTANCE hInstance)
 {
 	WNDCLASSEXW wcex = {};
 
@@ -208,15 +207,59 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
-	break;
+	case WM_SIZE:
+	{
+		if (g_pSwapChain)
+		{
+			// This code taken from https://docs.microsoft.com/ru-ru/windows/win32/direct3ddxgi/d3d10-graphics-programming-guide-dxgi?redirectedfrom=MSDN#Handling_Window_Resizing
+			g_pd3dDeviceContext->OMSetRenderTargets(0, 0, 0);
+
+			// Release all outstanding references to the swap chain's buffers.
+			g_pRenderTargetView->Release();
+
+			HRESULT hr;
+			// Preserve the existing buffer count and format.
+			// Automatically choose the width and height to match the client rect for HWNDs.
+			hr = g_pSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
+
+			// Perform error handling here!
+
+			// Get buffer and create a render-target-view.
+			ID3D11Texture2D* pBuffer;
+			hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
+				(void**)&pBuffer);
+			// Perform error handling here!
+
+			hr = g_pd3dDevice->CreateRenderTargetView(pBuffer, NULL,
+				&g_pRenderTargetView);
+			// Perform error handling here!
+			pBuffer->Release();
+
+			g_pd3dDeviceContext->OMSetRenderTargets(1, &g_pRenderTargetView, NULL);
+
+			UINT width, height;
+			GUI::GetScreenSize(hWnd, &width, &height);
+
+			// Set up the viewport.
+			D3D11_VIEWPORT vp;
+			vp.Width = (FLOAT)width;
+			vp.Height = (FLOAT)height;
+			vp.MinDepth = 0.0f;
+			vp.MaxDepth = 1.0f;
+			vp.TopLeftX = 0;
+			vp.TopLeftY = 0;
+			g_pd3dDeviceContext->RSSetViewports(1, &vp);
+		}
+		break;
+	}
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
 		// TODO: Add any drawing code that uses hdc here...
 		EndPaint(hWnd, &ps);
+		break;
 	}
-	break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;

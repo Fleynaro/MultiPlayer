@@ -494,6 +494,7 @@
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraStructureTypeMapper.h" />
     <ClInclude Include="Module\GhidraSync\Mappers\GhidraTypedefTypeMapper.h" />
     <ClInclude Include="Module\Image\SimpleBufferImage.h" />
+    <ClInclude Include="Module\Image\VectorBufferImage.h" />
     <ClInclude Include="Module\Manager\AbstractManager.h" />
     <ClInclude Include="Module\Manager\FunctionManager.h" />
     <ClInclude Include="Module\Manager\FunctionTagManager.h" />

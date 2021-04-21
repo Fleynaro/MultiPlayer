@@ -33,6 +33,13 @@ namespace GUI
 		return ImColor(R, G, B, A);
 	}
 
+	static void GetScreenSize(HWND hWnd, UINT* width, UINT* height) {
+		RECT rc;
+		GetClientRect(hWnd, &rc);
+		*width = rc.right - rc.left;
+		*height = rc.bottom - rc.top;
+	}
+
 	class Control
 	{
 		bool m_display = true;
@@ -720,18 +727,15 @@ namespace GUI
 		bool m_focused = false;
 		ImGuiWindowFlags m_flags;
 
-		float m_width = 0.0;
-		float m_height = 0.0;
-		float m_x = -1.f;
-		float m_y = -1.f;
+		ImVec2 m_pos;
+		ImVec2 m_size;
 
-		float m_actualWidth = 0.0;
-		float m_actualHeight = 0.0;
-		float m_actualX = 0.0;
-		float m_actualY = 0.0;
+		bool m_fitHostWindowSize = false;
+
+		HWND m_hWnd;
 	public:
-		Window(const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None)
-			: Attribute::Name(name), m_flags(flags)
+		Window(HWND hWnd, const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None)
+			: m_hWnd(hWnd), Attribute::Name(name), m_flags(flags)
 		{}
 
 		bool isFlags(ImGuiWindowFlags flags) {
@@ -750,32 +754,29 @@ namespace GUI
 			m_open = state;
 		}
 
-		void setWidth(float value) {
-			m_width = value;
+		void setPos(ImVec2 pos) {
+			m_pos = pos;
 		}
 
-		void setHeight(float value) {
-			m_height = value;
+		ImVec2& getPos() {
+			return m_pos;
 		}
 
-		void setPosX(float value) {
-			m_x = value;
+		void setSize(ImVec2 size) {
+			m_size = size;
 		}
 
-		void setPosY(float value) {
-			m_y = value;
-		}
-
-		float getX() {
-			return m_actualX;
-		}
-
-		float getY() {
-			return m_actualY;
+		ImVec2& getSize() {
+			return m_size;
 		}
 
 		bool isFocused() {
 			return m_focused;
+		}
+
+		void makeFitHostWindowSize(bool toggle) {
+			setPos(ImVec2(0.0, 0.0));
+			m_fitHostWindowSize = toggle;
 		}
 	protected:
 		void renderControl() override {
@@ -783,6 +784,9 @@ namespace GUI
 			pushIdParam();
 			bool isOpen = ImGui::Begin(getName().c_str(), &m_open, m_flags);
 			popIdParam();
+
+			m_pos = ImGui::GetWindowPos();
+			m_size = ImGui::GetWindowSize();
 
 			if (isOpen)
 			{
@@ -797,28 +801,19 @@ namespace GUI
 
 	private:
 		void pushParams() {
-			if (m_x != -1.f && isFlags(ImGuiWindowFlags_NoMove)) {
-				ImGui::SetNextWindowPos(ImVec2(m_x, m_y));
+			if (isFlags(ImGuiWindowFlags_NoMove)) {
+				ImGui::SetNextWindowPos(m_pos);
 			}
 
-			float width = m_width;
-			float height = m_height;
-			if (width != 0 || height != 0) {
-				if (!isFlags(ImGuiWindowFlags_NoResize)) {
-					if (width != 0) {
-						if (width > m_actualWidth) {
-							m_actualWidth = width;
-						}
-						width = m_actualWidth;
-					}
-					if (height != 0) {
-						if (height > m_actualHeight) {
-							m_actualHeight = height;
-						}
-						height = m_actualHeight;
-					}
+			if (isFlags(ImGuiWindowFlags_NoResize)) {
+				if (m_fitHostWindowSize) {
+					UINT width, height;
+					GetScreenSize(m_hWnd, &width, &height);
+					ImGui::SetNextWindowSize(ImVec2((float)width, (float)height));
 				}
-				ImGui::SetNextWindowSize(ImVec2(width, height));
+				else {
+					ImGui::SetNextWindowSize(m_size);
+				}
 			}
 		}
 
