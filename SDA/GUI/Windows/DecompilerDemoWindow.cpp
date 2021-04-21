@@ -69,7 +69,6 @@ void GUI::DecompilerDemoWindow::deassembly(const std::string& textCode) {
         m_asmParsingErrorText.setText(std::string("Errors:\n") + DebugUtils::errorAsString(err));
         return;
     }
-    m_asmParsingErrorText.setDisplay(false);
 
     // Now you can print the code, which is stored in the first section (.text).
     CodeBuffer& buffer = code.sectionById(0)->buffer();
@@ -79,21 +78,127 @@ void GUI::DecompilerDemoWindow::deassembly(const std::string& textCode) {
 
 
 // decompiler
-#include <Decompiler/Decompiler.h>
-#include <Decompiler/LinearView/DecLinearView.h>
-#include <Decompiler/LinearView/DecLinearViewOptimization.h>
-#include <Decompiler/LinearView/DecLinearViewSimpleOutput.h>
-#include <Decompiler/Optimization/DecGraphOptimization.h>
-#include <Decompiler/SDA/Symbolization/DecGraphSymbolization.h>
-#include <Decompiler/SDA/Optimizaton/SdaGraphFinalOptimization.h>
-#include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>
-#include <Decompiler/PCode/DecPCodeConstValueCalc.h>
-#include <Decompiler/PCode/ImageAnalyzer/DecImageAnalyzer.h>
+#include <Decompiler/DecMisc.h>
 #include <Module/Image/VectorBufferImage.h>
 #include <Manager/Managers.h>
 
+int hexToDec(char c) {
+    if (c <= '9')
+        return c - '0';
+    if (c >= 'a')
+        return c - 'a' + 10;
+    return c - 'A' + 10;
+}
+
+bool parseHexBytesStr(const std::string& hexBytesStr, std::vector<byte>& bytes) {
+    byte b;
+    for (int i = 0; i < hexBytesStr.length(); i ++) {
+        if (i % 3 == 0)
+            b = hexToDec(hexBytesStr[i]) << 4;
+        else if (i % 3 == 1) {
+            b |= hexToDec(hexBytesStr[i]);
+            bytes.push_back(b);
+        }
+    }
+    return true;
+}
+
+std::string getAsmListing(uint8_t* data, ZyanUSize length) {
+    std::string result;
+
+    ZydisDecoder decoder;
+    ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_ADDRESS_WIDTH_64);
+
+    // Initialize formatter. Only required when you actually plan to do instruction
+    // formatting ("disassembling"), like we do here
+    ZydisFormatter formatter;
+    ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
+
+    // Loop over the instructions in our buffer.
+    // The runtime-address (instruction pointer) is chosen arbitrary here in order to better
+    // visualize relative addressing
+    ZyanUSize offset = 0;
+    ZydisDecodedInstruction instruction;
+    while (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, data + offset, length - offset,
+        &instruction)))
+    {
+        // Format & print the binary instruction structure to human readable format
+        char buffer[256];
+        ZydisFormatterFormatInstruction(&formatter, &instruction, buffer, sizeof(buffer),
+            ZYDIS_RUNTIME_ADDRESS_NONE);
+
+        result += std::string(buffer) + "\n";
+        offset += instruction.length;
+    }
+
+    return result;
+}
+
+void GUI::DecompilerDemoWindow::assembly(const std::string& hexBytesStr)
+{
+    std::vector<byte> bytes;
+    if (!parseHexBytesStr(hexBytesStr, bytes)) {
+        m_bytesParsingErrorText.setDisplay(true);
+        m_bytesParsingErrorText.setText("parsing error");
+        return;
+    }
+
+    m_asmCodeEditor->getEditor().SetText(
+        getAsmListing(bytes.data(), (ZyanUSize)bytes.size())
+    );
+}
+
 void GUI::DecompilerDemoWindow::decompile(const std::string& hexBytesStr)
 {
-    auto image = VectorBufferImage(content);
+    using namespace CE::Decompiler;
+    using namespace CE::Symbol;
+    using namespace CE::DataType;
 
+    std::vector<byte> bytes;
+    if (!parseHexBytesStr(hexBytesStr, bytes)) {
+        m_bytesParsingErrorText.setDisplay(true);
+        m_bytesParsingErrorText.setText("parsing error");
+        return;
+    }
+
+    auto image = VectorBufferImage(bytes);
+    auto imageGraph = new ImagePCodeGraph;
+
+    RegisterFactoryX86 registerFactoryX86;
+
+    WarningContainer warningContainer;
+    PCode::DecoderX86 decoder(&registerFactoryX86, &warningContainer);
+    PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &registerFactoryX86, &image);
+
+    ImageAnalyzer imageAnalyzer(&image, imageGraph, &decoder, &registerFactoryX86, &graphReferenceSearch);
+    imageAnalyzer.startOnce(0x0);
+    if (warningContainer.hasAnything()) {
+        m_decInfoText.setText(warningContainer.getAllMessages());
+    }
+
+    for (auto graph : imageGraph->getFunctionGraphList())
+    {
+        auto decCodeGraph = new DecompiledCodeGraph(graph, FunctionCallInfo({}));
+
+        auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
+        auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, funcCallInfoCallback);
+        decompiler->start();
+        
+        auto clonedDecCodeGraph = decCodeGraph->clone();
+        Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
+        clonedDecCodeGraph->checkOnSingleParents();
+
+        auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+        auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
+        Symbolization::SymbolizeWithSDA(sdaCodeGraph, userSymbolDef);
+        Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
+
+        auto allSymbolsStr = Misc::ShowAllSymbols(sdaCodeGraph);
+        LinearViewSimpleOutput output(Misc::BuildBlockList(sdaCodeGraph->getDecGraph()), sdaCodeGraph->getDecGraph());
+        output.setMinInfoToShow();
+        output.generate();
+
+        auto resultTextCode = allSymbolsStr + "\n" + output.getTextCode();
+        m_decCodeEditor->getEditor().SetText(resultTextCode);
+    }
 }

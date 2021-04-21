@@ -375,6 +375,7 @@
     <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\Decompiler\DecGraphBlockLinker.h" />
+    <ClInclude Include="Module\Decompiler\DecMisc.h" />
     <ClInclude Include="Module\Decompiler\DecWarningContainer.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraphBlockFlowIterator.h" />

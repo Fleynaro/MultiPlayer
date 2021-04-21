@@ -5,7 +5,7 @@
 
 namespace CE::Decompiler::ExprTree
 {
-	bool g_MARK_SDA_NODES = false;
+	static bool g_MARK_SDA_NODES = false;
 
 	// used for all sda nodes to cast them from their types to another in some cases
 	class DataTypeCast

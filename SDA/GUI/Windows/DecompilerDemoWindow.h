@@ -13,8 +13,11 @@ namespace GUI {
 		Widget::CodeEditor* m_decCodeEditor;
 		Text::ColoredText m_asmParsingErrorText;
 		Input::TextInput m_bytes_input;
+		Text::ColoredText m_bytesParsingErrorText;
 		Button::StdButton m_deassembly_btn;
+		Button::StdButton m_assembly_btn;
 		Button::StdButton m_decompile_btn;
+		Text::ColoredText m_decInfoText;
 
 		CE::ProgramModule* m_programModule;
 	public:
@@ -28,14 +31,26 @@ namespace GUI {
 			// Controls
 			m_asmCodeEditor = new Widget::CodeEditor("assembler code", ImVec2(200.0f, 300.0f));
 			m_asmCodeEditor->getEditor().SetLanguageDefinition(TextEditor::LanguageDefinition::C());
+			m_asmCodeEditor->getEditor().SetText(
+				"mov eax, 0x10\n"
+				"mov ebx, 0x20\n"
+				"add eax, ebx\n"
+				"mov [rsp], eax"
+			);
+
 			m_decCodeEditor = new Widget::CodeEditor("decompiled code", ImVec2(200.0f, 400.0f));
 			m_decCodeEditor->getEditor().SetLanguageDefinition(TextEditor::LanguageDefinition::C());
 			m_decCodeEditor->getEditor().SetReadOnly(true);
 
 			m_asmParsingErrorText.setColor(ColorRGBA(0xFF0000FF));
 			m_asmParsingErrorText.setDisplay(false);
+			m_bytesParsingErrorText.setColor(ColorRGBA(0xFF0000FF));
+			m_bytesParsingErrorText.setDisplay(false);
+			m_decInfoText.setColor(ColorRGBA(0xFF0000FF));
+			m_decInfoText.setDisplay(false);
 			m_bytes_input = Input::TextInput();
 			m_deassembly_btn = Button::StdButton("deassembly");
+			m_assembly_btn = Button::StdButton("assembly");
 			m_decompile_btn = Button::StdButton("decompile");
 
 			initProgram();
@@ -44,8 +59,9 @@ namespace GUI {
 	protected:
 
 		void renderWindow() override {
-			m_asmCodeEditor->getSize().x = getSize().x;
-			m_decCodeEditor->getSize().x = getSize().x;
+			m_asmCodeEditor->getSize() = getSize();
+			m_asmCodeEditor->getSize().y *= 0.6;
+			m_decCodeEditor->getSize() = getSize();
 
 			if (ImGui::BeginTabBar("#tabs"))
 			{
@@ -57,11 +73,22 @@ namespace GUI {
 						Text::Text("Here write your assembler code:").show();
 						m_asmCodeEditor->show();
 						m_asmParsingErrorText.show();
+
 						NewLine();
 						if (m_deassembly_btn.present()) {
+							m_asmParsingErrorText.setDisplay(false);
+
 							auto textCode = m_asmCodeEditor->getEditor().GetText();
 							if (!textCode.empty()) {
 								deassembly(textCode);
+							}
+						}
+
+						SameLine();
+						if (m_assembly_btn.present()) {
+							m_bytesParsingErrorText.setDisplay(false);
+							if (!m_bytes_input.getInputText().empty()) {
+								assembly(m_bytes_input.getInputText());
 							}
 						}
 					}
@@ -71,11 +98,18 @@ namespace GUI {
 						Separator();
 						Text::Text("The machine code is presented as bytes in hexadecimal format:").show();
 						m_bytes_input.show();
+						m_bytesParsingErrorText.show();
 						NewLine();
 						if (m_decompile_btn.present()) {
+							m_bytesParsingErrorText.setDisplay(false);
+
 							if (!m_bytes_input.getInputText().empty()) {
 								tabFlag = ImGuiTabItemFlags_SetSelected;
 								decompile(m_bytes_input.getInputText());
+							}
+							else {
+								m_bytesParsingErrorText.setDisplay(true);
+								m_bytesParsingErrorText.setText("Please, enter hex bytes (format: 66 89 51 02)");
 							}
 						}
 					}
@@ -89,6 +123,7 @@ namespace GUI {
 						Separator();
 						Text::Text("Here the decompiled code is presented:").show();
 						m_decCodeEditor->show();
+						m_decInfoText.show();
 					}
 					ImGui::EndTabItem();
 				}
@@ -98,6 +133,8 @@ namespace GUI {
 	private:
 
 		void initProgram();
+
+		void assembly(const std::string& hexBytesStr);
 
 		void deassembly(const std::string& textCode);
 

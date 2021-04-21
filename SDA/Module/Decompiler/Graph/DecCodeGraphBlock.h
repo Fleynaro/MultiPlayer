@@ -316,8 +316,8 @@ namespace CE::Decompiler::PrimaryTree
 			return newBlock;
 		}
 
-		void printDebug(bool cond = true, const std::string& tabStr = "") {
-			std::string result = "";
+		std::string printDebug(bool cond = true, const std::string& tabStr = "") {
+			std::string result;
 			for (auto line : m_seqLines) {
 				result += tabStr + line->getNode()->printDebug();
 			}
@@ -329,7 +329,7 @@ namespace CE::Decompiler::PrimaryTree
 			if (cond && getNoJumpCondition() != nullptr) {
 				result += "------> Condition: " + getNoJumpCondition()->printDebug() + "\n";
 			}
-			printf("%s", result.c_str());
+			return result;
 		}
 
 		protected:

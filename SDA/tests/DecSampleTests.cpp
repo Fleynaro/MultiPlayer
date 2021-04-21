@@ -86,7 +86,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 			showDecGraph(clonedDecCodeGraph);
 
 		auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
-		auto userSymbolDef = createUserSymbolDef();
+		auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
 		{
 
 		}
@@ -95,13 +95,13 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 		Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 		sdaBuilding.start();
 		if (showAllInfo) {
-			showAllSymbols(sdaCodeGraph);
+			printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 			showDecGraph(sdaCodeGraph->getDecGraph());
 		}
 
 		Symbolization::SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
 		sdaDataTypesCalculating.start();
-		showAllSymbols(sdaCodeGraph);
+		printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 		if (showAllInfo)
 			showDecGraph(sdaCodeGraph->getDecGraph());
 
@@ -230,7 +230,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	//showDecGraph(clonedDecCodeGraph);
 
 	auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
-	auto userSymbolDef = createUserSymbolDef();
+	auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
 	{
 		auto entity = typeManager()->createStructure("EntityTest", "");
 		entity->addField(0x0, "vec", GetUnit(m_vec3D));
@@ -242,12 +242,12 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
 	Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 	sdaBuilding.start();
-	showAllSymbols(sdaCodeGraph);
+	printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 	showDecGraph(sdaCodeGraph->getDecGraph());
 
 	Symbolization::SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
 	sdaDataTypesCalculating.start();
-	showAllSymbols(sdaCodeGraph);
+	printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 	showDecGraph(sdaCodeGraph->getDecGraph());
 
 	Optimization::SdaGraphMemoryOptimization memoryOptimization(sdaCodeGraph);
@@ -663,8 +663,8 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 		//show code
 		out("********************* BEFORE OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 		printf("\nTROUBLES:\n%s\n", warningContainer.getAllMessages().c_str());
-		auto blockList = buildBlockList(decCodeGraph);
-		LinearViewSimpleConsoleOutput output(blockList, decCodeGraph);
+		auto blockList = Misc::BuildBlockList(decCodeGraph);
+		LinearViewSimpleOutput output(blockList, decCodeGraph);
 		if (m_isOutput) {
 			output.show();
 		}
@@ -683,8 +683,8 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 		//show code
 		out("\n\n\n********************* AFTER OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-		blockList = buildBlockList(clonedDecCodeGraph);
-		LinearViewSimpleConsoleOutput output2(blockList, clonedDecCodeGraph);
+		blockList = Misc::BuildBlockList(clonedDecCodeGraph);
+		LinearViewSimpleOutput output2(blockList, clonedDecCodeGraph);
 		if (m_isOutput) {
 			output2.show();
 		}
@@ -701,10 +701,10 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 				testFail = true;
 			}
 			out("\n\n\n********************* AFTER SYMBOLIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-			blockList = buildBlockList(sdaCodeGraph->getDecGraph());
+			blockList = Misc::BuildBlockList(sdaCodeGraph->getDecGraph());
 
-			showAllSymbols(sdaCodeGraph);
-			LinearViewSimpleConsoleOutput output3(blockList, sdaCodeGraph->getDecGraph());
+			printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
+			LinearViewSimpleOutput output3(blockList, sdaCodeGraph->getDecGraph());
 			output3.setMinInfoToShow();
 			if (m_isOutput) {
 				output3.show();
@@ -715,9 +715,9 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			m_isOutput |= sampleTest->m_showFinalResult;
 			out("\n\n\n********************* AFTER FINAL OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 			Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
-			blockList = buildBlockList(sdaCodeGraph->getDecGraph());
+			blockList = Misc::BuildBlockList(sdaCodeGraph->getDecGraph());
 			clonedDecCodeGraph->checkOnSingleParents();
-			LinearViewSimpleConsoleOutput output4(blockList, sdaCodeGraph->getDecGraph());
+			LinearViewSimpleOutput output4(blockList, sdaCodeGraph->getDecGraph());
 			output4.setMinInfoToShow();
 			output4.m_SHOW_BLOCK_HEADER = true;
 			if (m_isOutput) {

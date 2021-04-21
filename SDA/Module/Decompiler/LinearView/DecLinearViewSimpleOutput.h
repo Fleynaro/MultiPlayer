@@ -3,10 +3,11 @@
 
 namespace CE::Decompiler
 {
-	class LinearViewSimpleConsoleOutput
+	class LinearViewSimpleOutput
 	{
 		LinearView::BlockList* m_blockList;
 		DecompiledCodeGraph* m_decGraph;
+		std::string m_textCode;
 	public:
 		bool m_SHOW_ASM = true;
 		bool m_SHOW_PCODE = false;
@@ -14,9 +15,13 @@ namespace CE::Decompiler
 		bool m_SHOW_LINEAR_LEVEL_EXT = true;
 		bool m_SHOW_BLOCK_HEADER = true;
 
-		LinearViewSimpleConsoleOutput(LinearView::BlockList* blockList, DecompiledCodeGraph* decGraph)
+		LinearViewSimpleOutput(LinearView::BlockList* blockList, DecompiledCodeGraph* decGraph)
 			: m_blockList(blockList), m_decGraph(decGraph)
 		{}
+
+		std::string getTextCode() {
+			return m_textCode;
+		}
 
 		void setMinInfoToShow() {
 			m_SHOW_ASM = false;
@@ -25,13 +30,18 @@ namespace CE::Decompiler
 			m_SHOW_LINEAR_LEVEL_EXT = false;
 		}
 
+		void generate() {
+			genCode(m_blockList);
+		}
+
 		void show() {
-			showCode(m_blockList);
+			generate();
+			printf("%s", m_textCode.c_str());
 		}
 	private:
 		std::set<LinearView::Block*> m_blocksToGoTo;
 
-		void showCode(LinearView::BlockList* blockList, int level = 0) {
+		void genCode(LinearView::BlockList* blockList, int level = 0) {
 			std::string tabStr = "";
 			for (int i = 0; i < level; i++)
 				tabStr += "\t";
@@ -42,26 +52,26 @@ namespace CE::Decompiler
 
 				if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
 					showBlockCode(asmBlock, block, tabStr);
-					printf("%sif(%s) {\n", tabStr.c_str(), condition->m_cond ? condition->m_cond->printDebug().c_str() : "");
-					showCode(condition->m_mainBranch, level + 1);
+					m_textCode += tabStr + "if("+ (condition->m_cond ? condition->m_cond->printDebug() : "") +") {\n";
+					genCode(condition->m_mainBranch, level + 1);
 					if (m_SHOW_ALL_GOTO || !condition->m_elseBranch->isEmpty()) {
-						printf("%s} else {\n", tabStr.c_str());
-						showCode(condition->m_elseBranch, level + 1);
+						m_textCode += tabStr + "} else {\n";
+						genCode(condition->m_elseBranch, level + 1);
 					}
-					printf("%s}\n", tabStr.c_str());
+					m_textCode += tabStr +"}\n";
 				}
 				else if (auto whileCycle = dynamic_cast<LinearView::WhileCycle*>(block)) {
 					if (!whileCycle->m_isDoWhileCycle) {
 						showBlockCode(asmBlock, block, tabStr);
-						printf("%swhile(%s) {\n", tabStr.c_str(), whileCycle->m_cond ? whileCycle->m_cond->printDebug().c_str() : "");
-						showCode(whileCycle->m_mainBranch, level + 1);
-						printf("%s}\n", tabStr.c_str());
+						m_textCode += tabStr + "while("+ (whileCycle->m_cond ? whileCycle->m_cond->printDebug() : "") +") {\n";
+						genCode(whileCycle->m_mainBranch, level + 1);
+						m_textCode += tabStr +"}\n";
 					}
 					else {
-						printf("%sdo {\n", tabStr.c_str());
-						showCode(whileCycle->m_mainBranch, level + 1);
+						m_textCode += tabStr +"do {\n";
+						genCode(whileCycle->m_mainBranch, level + 1);
 						showBlockCode(asmBlock, block, "\t" + tabStr);
-						printf("%s} while(%s);\n", tabStr.c_str(), whileCycle->m_cond ? whileCycle->m_cond->printDebug().c_str() : "");
+						m_textCode += tabStr +"} while("+ (whileCycle->m_cond ? whileCycle->m_cond->printDebug() : "") +");\n";
 					}
 				}
 				else {
@@ -70,7 +80,7 @@ namespace CE::Decompiler
 
 				if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
 					if (endBlock->getReturnNode() != nullptr) {
-						printf("%sreturn %s\n", tabStr.c_str(), endBlock->getReturnNode()->printDebug().c_str());
+						m_textCode += tabStr +"return "+ endBlock->getReturnNode()->printDebug() +"\n";
 					}
 				}
 			}
@@ -96,31 +106,31 @@ namespace CE::Decompiler
 					else if (gotoType == LinearView::GotoType::Continue)
 						typeName = "[continue]";
 					if (m_SHOW_ALL_GOTO) {
-						printf("%s//goto to block %s (%s) %s\n", tabStr.c_str(), blockName.c_str(), levelInfo.c_str(), typeName.c_str());
+						m_textCode += tabStr + "//goto to block "+ blockName +" ("+ levelInfo +") "+ typeName +"\n";
 					}
 					else {
-						printf("%s%s\n", tabStr.c_str(), typeName.c_str());
+						m_textCode += tabStr + typeName +"\n";
 					}
 				}
 			}
 			else if (m_SHOW_ALL_GOTO) {
-				printf("%s//goto is null (%s)\n", tabStr.c_str(), levelInfo.c_str());
+				m_textCode += tabStr +"//goto is null ("+ levelInfo +")\n";
 			}
 		}
 
 		void showBlockCode(PCodeBlock* pcodeBlock, LinearView::Block* block, std::string tabStr) {
 			auto blockName = Generic::String::NumberToHex(pcodeBlock->ID);
 			if (m_SHOW_BLOCK_HEADER) {
-				printf("%s//block %s (level: %i, maxHeight: %i, backOrderId: %i, linearLevel: %i, refCount: %i)\n", tabStr.c_str(), blockName.c_str(), block->m_decBlock->m_level, block->m_decBlock->m_maxHeight, block->getBackOrderId(), block->getLinearLevel(), block->m_decBlock->getRefBlocksCount());
+				m_textCode += tabStr +"//block "+ blockName +" (level: "+ std::to_string(block->m_decBlock->m_level) +", maxHeight: "+ std::to_string(block->m_decBlock->m_maxHeight) +", backOrderId: " + std::to_string(block->getBackOrderId()) + ", linearLevel: " + std::to_string(block->getLinearLevel()) + ", refCount: " + std::to_string(block->m_decBlock->getRefBlocksCount()) + ")\n";
 			}
 			if (m_blocksToGoTo.find(block) != m_blocksToGoTo.end()) {
-				printf("%slabel_%s:\n", tabStr.c_str(), blockName.c_str());
+				m_textCode += tabStr + "label_"+ blockName +":\n";
 			}
 			if (m_SHOW_ASM) {
-				pcodeBlock->printDebug(nullptr, tabStr, false, m_SHOW_PCODE);
-				printf("%s------------\n", tabStr.c_str());
+				m_textCode += pcodeBlock->printDebug(nullptr, tabStr, false, m_SHOW_PCODE);
+				m_textCode += tabStr +"------------\n";
 			}
-			block->m_decBlock->printDebug(false, tabStr);
+			m_textCode += block->m_decBlock->printDebug(false, tabStr);
 		}
 	};
 };

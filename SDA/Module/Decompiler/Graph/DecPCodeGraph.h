@@ -92,31 +92,32 @@ namespace CE::Decompiler
 			return *std::prev(m_instructions.end());
 		}
 
-		void printDebug(void* addr, const std::string& tabStr, bool extraInfo, bool pcode) {
-			ZydisFormatter formatter;
-			ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
+		std::string printDebug(void* addr, const std::string& tabStr, bool extraInfo, bool pcode) {
+			std::string result;
 
 			ZyanU64 runtime_address = (ZyanU64)addr;
 			for (auto instr : m_instructions) {
 				std::string prefix = tabStr + "0x" + Generic::String::NumberToHex(runtime_address + instr->getOriginalInstructionOffset());
 				if (!instr->m_originalView.empty())
-					printf("%s %s\n", prefix.c_str(), instr->m_originalView.c_str());
+					result += prefix + " " + instr->m_originalView + "\n";
 				if (pcode) {
-					prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Generic::String::NumberToHex(instr->getOffset()).c_str() + ")";
-					printf("\t%s %s", prefix.c_str(), instr->printDebug().c_str());
+					prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Generic::String::NumberToHex(instr->getOffset()) + ")";
+					result += "\t" + prefix + " " + instr->printDebug() + "\n";
 					if (instr->m_id == PCode::InstructionId::UNKNOWN)
-						printf(" <------------------------------------------------ ");
-					printf("\n");
+						result += " <------------------------------------------------ ";
+					result += "\n";
 				}
 			}
 
 			if (extraInfo) {
-				printf("Level: %i\n", m_level);
+				result += "Level: "+ std::to_string(m_level) +"\n";
 				if (m_nextNearBlock != nullptr)
-					printf("Next near: %s\n", Generic::String::NumberToHex(m_nextNearBlock->getMinOffset()).c_str());
+					result += "Next near: "+ Generic::String::NumberToHex(m_nextNearBlock->getMinOffset()) +"\n";
 				if (m_nextFarBlock != nullptr)
-					printf("Next far: %s\n", Generic::String::NumberToHex(m_nextFarBlock->getMinOffset()).c_str());
+					result += "Next far: " + Generic::String::NumberToHex(m_nextFarBlock->getMinOffset()) + "\n";
 			}
+
+			return result;
 		}
 	};
 
@@ -153,7 +154,7 @@ namespace CE::Decompiler
 
 		void printDebug(void* addr) {
 			for (auto block : m_offsetToBlock) {
-				block.second->printDebug(addr, "", true, true);
+				puts(block.second->printDebug(addr, "", true, true).c_str());
 				puts("==================");
 			}
 		}

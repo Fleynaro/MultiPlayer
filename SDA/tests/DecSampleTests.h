@@ -10,6 +10,7 @@
 #include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>
 #include <Decompiler/PCode/DecPCodeConstValueCalc.h>
 #include <Decompiler/PCode/ImageAnalyzer/DecImageAnalyzer.h>
+#include <Decompiler/DecMisc.h>
 #include <Module/Image/SimpleBufferImage.h>
 #include <Module/Image/VectorBufferImage.h>
 #include <Manager/Managers.h>
@@ -70,15 +71,6 @@ public:
 		return DataType::GetUnit(typeManager()->getTypeByName(typeName), typeLevel);
 	}
 
-	Symbolization::UserSymbolDef createUserSymbolDef() {
-		auto userSymbolDef = Symbolization::UserSymbolDef(m_programModule);
-		userSymbolDef.m_signature = m_defSignature;
-		userSymbolDef.m_globalMemoryArea = m_programModule->getGlobalMemoryArea();
-		userSymbolDef.m_stackMemoryArea = new CE::Symbol::MemoryArea(m_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
-		userSymbolDef.m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(m_programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
-		return userSymbolDef;
-	}
-
 	Signature* createDefSig(std::string name) {
 		auto defSignature = typeManager()->createSignature(name);
 		defSignature->addParameter("param1", findType("uint32_t"));
@@ -90,46 +82,14 @@ public:
 		return defSignature;
 	}
 
-	LinearView::BlockList* buildBlockList(DecompiledCodeGraph* graph) {
-		auto converter = LinearView::Converter(graph);
-		converter.start();
-		auto blockList = converter.getBlockList();
-		OptimizeBlockList(blockList);
-		return blockList;
-	}
-
 	void showDecGraph(DecompiledCodeGraph* decGraph, bool minInfo = false) {
-		LinearViewSimpleConsoleOutput output(buildBlockList(decGraph), decGraph);
+		LinearViewSimpleOutput output(Misc::BuildBlockList(decGraph), decGraph);
 		if (m_isOutput) {
 			if(minInfo)
 				output.setMinInfoToShow();
 			output.show();
 			out("******************\n\n\n");
 		}
-	}
-
-	//show all symbols
-	void showAllSymbols(SdaCodeGraph* sdaCodeGraph) {
-		sdaCodeGraph->getSdaSymbols().sort([](CE::Symbol::ISymbol* a, CE::Symbol::ISymbol* b) { return a->getName() < b->getName(); });
-		for (auto var : sdaCodeGraph->getSdaSymbols()) {
-			std::string comment = "//priority: " + std::to_string(var->getDataType()->getPriority());
-			//size
-			if (var->getDataType()->isArray())
-				comment += ", size: " + std::to_string(var->getDataType()->getSize());
-			//offsets
-			if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(var)) {
-				if (!autoSdaSymbol->getInstrOffsets().empty()) {
-					comment += ", offsets: ";
-					for (auto off : autoSdaSymbol->getInstrOffsets()) {
-						comment += std::to_string(off) + ", ";
-					}
-					comment.pop_back();
-					comment.pop_back();
-				}
-			}
-			out("%s %s; %s\n", var->getDataType()->getDisplayName().c_str(), var->getName().c_str(), comment.c_str());
-		}
-		out("\n");
 	}
 
 	// print message
@@ -185,7 +145,7 @@ public:
 	void showInstructions(const std::list<Instruction*>& instructions) {
 		PCodeBlock pcodeBlock(nullptr, 0, 0);
 		pcodeBlock.getInstructions() = instructions;
-		pcodeBlock.printDebug(nullptr, "", false, true);
+		out(pcodeBlock.printDebug(nullptr, "", false, true).c_str());
 	}
 
 	// execute pcode on the virtual machine
@@ -277,7 +237,7 @@ public:
 		test->m_testId = testId;
 		test->m_image = image;
 		test->m_imageOffset = offset;
-		test->m_userSymbolDef = createUserSymbolDef();
+		test->m_userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
 		m_sampleTests.push_back(test);
 		return test;
 	}
