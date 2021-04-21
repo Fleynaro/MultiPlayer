@@ -595,7 +595,7 @@ namespace GUI
 		class BulletText : public Text
 		{
 		public:
-			BulletText(const std::string& text)
+			BulletText(const std::string& text = "")
 				: Text(text)
 			{}
 
@@ -607,9 +607,9 @@ namespace GUI
 
 		class ColoredText : public Text
 		{
-			ColorRGBA m_color = 0x0;
+			ColorRGBA m_color;
 		public:
-			ColoredText(const std::string& text, ColorRGBA color)
+			ColoredText(const std::string& text = "", ColorRGBA color = -1)
 				: Text(text), m_color(color)
 			{}
 
@@ -718,14 +718,68 @@ namespace GUI
 	{
 		bool m_open = true;
 		bool m_focused = false;
-		ImGuiWindowFlags m_flags = ImGuiWindowFlags_None;
+		ImGuiWindowFlags m_flags;
+
+		float m_width = 0.0;
+		float m_height = 0.0;
+		float m_x = -1.f;
+		float m_y = -1.f;
+
+		float m_actualWidth = 0.0;
+		float m_actualHeight = 0.0;
+		float m_actualX = 0.0;
+		float m_actualY = 0.0;
 	public:
-		Window(const std::string& name)
-			: Attribute::Name(name)
+		Window(const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None)
+			: Attribute::Name(name), m_flags(flags)
 		{}
 
+		bool isFlags(ImGuiWindowFlags flags) {
+			return (m_flags & flags) != 0;
+		}
+
+		void setFlags(ImGuiWindowFlags flags) {
+			m_flags |= flags;
+		}
+
+		void removeFlags(ImGuiWindowFlags flags) {
+			m_flags &= ~flags;
+		}
+
+		void setOpen(bool state) {
+			m_open = state;
+		}
+
+		void setWidth(float value) {
+			m_width = value;
+		}
+
+		void setHeight(float value) {
+			m_height = value;
+		}
+
+		void setPosX(float value) {
+			m_x = value;
+		}
+
+		void setPosY(float value) {
+			m_y = value;
+		}
+
+		float getX() {
+			return m_actualX;
+		}
+
+		float getY() {
+			return m_actualY;
+		}
+
+		bool isFocused() {
+			return m_focused;
+		}
 	protected:
 		void renderControl() override {
+			pushParams();
 			pushIdParam();
 			bool isOpen = ImGui::Begin(getName().c_str(), &m_open, m_flags);
 			popIdParam();
@@ -742,6 +796,32 @@ namespace GUI
 		virtual void renderWindow() = 0;
 
 	private:
+		void pushParams() {
+			if (m_x != -1.f && isFlags(ImGuiWindowFlags_NoMove)) {
+				ImGui::SetNextWindowPos(ImVec2(m_x, m_y));
+			}
+
+			float width = m_width;
+			float height = m_height;
+			if (width != 0 || height != 0) {
+				if (!isFlags(ImGuiWindowFlags_NoResize)) {
+					if (width != 0) {
+						if (width > m_actualWidth) {
+							m_actualWidth = width;
+						}
+						width = m_actualWidth;
+					}
+					if (height != 0) {
+						if (height > m_actualHeight) {
+							m_actualHeight = height;
+						}
+						height = m_actualHeight;
+					}
+				}
+				ImGui::SetNextWindowSize(ImVec2(width, height));
+			}
+		}
+
 		void checkIfClose() {
 			if (m_open == false) {
 
