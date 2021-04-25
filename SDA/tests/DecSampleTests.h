@@ -238,6 +238,7 @@ public:
 		test->m_image = image;
 		test->m_imageOffset = offset;
 		test->m_userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
+		test->m_userSymbolDef.m_signature = m_defSignature;
 		m_sampleTests.push_back(test);
 		return test;
 	}

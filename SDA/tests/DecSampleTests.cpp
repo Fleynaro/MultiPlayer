@@ -87,6 +87,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 
 		auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 		auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
+		userSymbolDef.m_signature = m_defSignature;
 		{
 
 		}
@@ -231,6 +232,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 
 	auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
 	auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
+	userSymbolDef.m_signature = m_defSignature;
 	{
 		auto entity = typeManager()->createStructure("EntityTest", "");
 		entity->addField(0x0, "vec", GetUnit(m_vec3D));
@@ -269,7 +271,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	
 	//ignore all tests except
-	m_doTestIdOnly = 5;
+	m_doTestIdOnly = 107;
 
 	{
 		// TEST
