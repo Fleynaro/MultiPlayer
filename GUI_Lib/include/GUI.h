@@ -158,13 +158,13 @@ namespace GUI
 	protected:
 		void processGenericEvents() {
 			// mouse
-			if(ImGui::IsItemHovered() && ImGui::IsMouseClicked(0))
+			if(ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 				m_isClickedByLeftMouseBtn = true;
 
-			if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+			if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
 				m_isClickedByRightMouseBtn = true;
 
-			if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(2))
+			if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
 				m_isClickedByMiddleMouseBtn = true;
 
 			// hover
@@ -685,40 +685,61 @@ namespace GUI
 		};
 	};
 
-	class AbstractTreeView : public Control
+	class TabItem :
+		public Control,
+		public Attribute::Id,
+		public Attribute::Name,
+		public Attribute::Flags<
+			ImGuiTabItemFlags,
+			ImGuiTabItemFlags_None
+		>
 	{
+		bool m_isOpened = false;
+		bool m_isSelected = false;
 	public:
-		AbstractTreeView()
+		TabItem(const std::string& name, ImGuiTabItemFlags flags = ImGuiTabItemFlags_None)
+			: Attribute::Name(name), Attribute::Flags<ImGuiTabItemFlags, ImGuiTabItemFlags_None>(flags)
 		{}
+
+		bool present() {
+			Control::show();
+			return isOpened();
+		}
+
+		void select() {
+			addFlags(ImGuiTabItemFlags_SetSelected, true);
+			m_isSelected = true;
+		}
+
+		bool isOpened() {
+			return m_isOpened;
+		}
+
 	protected:
-		class TreeNode :
-			public Control
-		{
-			bool m_isOpened;
-		public:
-			TreeNode(const std::string& name) {
-				m_isOpened = ImGui::TreeNode(name.c_str());
+		void renderControl() override {
+			pushIdParam();
+
+			m_isOpened = ImGui::BeginTabItem(getName().c_str(), nullptr, getFlags());
+			if (m_isSelected) {
+				addFlags(ImGuiTabItemFlags_SetSelected, false);
+				m_isSelected = false;
 			}
 
-			~TreeNode() {
-				if(m_isOpened)
-					ImGui::TreePop();
-			}
-
-			bool isOpened() {
-				return m_isOpened;
-			}
-		};
+			popIdParam();
+		}
 	};
 
 	class Window :
 		public Control,
 		public Attribute::Id,
-		public Attribute::Name
+		public Attribute::Name,
+		public Attribute::Flags<
+			ImGuiWindowFlags,
+			ImGuiWindowFlags_None
+		>
 	{
 		bool m_isOpened = true;
 		bool m_isFocused = false;
-		ImGuiWindowFlags m_flags;
 
 		ImVec2 m_pos;
 		ImVec2 m_size;
@@ -726,20 +747,8 @@ namespace GUI
 		bool m_fullscreen = false;
 	public:
 		Window(const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None)
-			: Attribute::Name(name), m_flags(flags)
+			: Attribute::Name(name), Attribute::Flags<ImGuiWindowFlags, ImGuiWindowFlags_None>(flags)
 		{}
-
-		bool isFlags(ImGuiWindowFlags flags) {
-			return (m_flags & flags) != 0;
-		}
-
-		void setFlags(ImGuiWindowFlags flags) {
-			m_flags |= flags;
-		}
-
-		void removeFlags(ImGuiWindowFlags flags) {
-			m_flags &= ~flags;
-		}
 
 		void setPos(ImVec2 pos) {
 			m_pos = pos;
@@ -774,7 +783,7 @@ namespace GUI
 		void renderControl() override {
 			pushParams();
 			pushIdParam();
-			bool isOpen = ImGui::Begin(getName().c_str(), &m_isOpened, m_flags);
+			bool isOpen = ImGui::Begin(getName().c_str(), &m_isOpened, getFlags());
 			popIdParam();
 
 			m_pos = ImGui::GetWindowPos();
@@ -795,7 +804,7 @@ namespace GUI
 				const ImGuiViewport* viewport = ImGui::GetMainViewport();
 				ImGui::SetNextWindowPos(m_pos = viewport->WorkPos);
 				ImGui::SetNextWindowSize(m_size = viewport->WorkSize);
-				m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
+				addFlags(ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings);
 			}
 			else {
 				if (isFlags(ImGuiWindowFlags_NoMove)) {

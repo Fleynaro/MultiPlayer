@@ -161,6 +161,10 @@ namespace GUI
 				: m_flags(flags)
 			{};
 
+			bool isFlags(T flags) {
+				return (m_flags & flags) != 0;
+			}
+
 			T getFlags() {
 				return m_flags;
 			}

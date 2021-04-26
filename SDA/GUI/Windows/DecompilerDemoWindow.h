@@ -127,6 +127,8 @@ namespace GUI {
 					}
 					ImGui::EndTabItem();
 				}
+
+				ImGui::EndTabBar();
 			}
 		}
 
