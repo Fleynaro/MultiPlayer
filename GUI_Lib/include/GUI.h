@@ -33,13 +33,6 @@ namespace GUI
 		return ImColor(R, G, B, A);
 	}
 
-	static void GetScreenSize(HWND hWnd, UINT* width, UINT* height) {
-		RECT rc;
-		GetClientRect(hWnd, &rc);
-		*width = rc.right - rc.left;
-		*height = rc.bottom - rc.top;
-	}
-
 	class Control
 	{
 		bool m_display = true;
@@ -723,19 +716,17 @@ namespace GUI
 		public Attribute::Id,
 		public Attribute::Name
 	{
-		bool m_open = true;
-		bool m_focused = false;
+		bool m_isOpened = true;
+		bool m_isFocused = false;
 		ImGuiWindowFlags m_flags;
 
 		ImVec2 m_pos;
 		ImVec2 m_size;
 
-		bool m_fitHostWindowSize = false;
-
-		HWND m_hWnd;
+		bool m_fullscreen = false;
 	public:
-		Window(HWND hWnd, const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None)
-			: m_hWnd(hWnd), Attribute::Name(name), m_flags(flags)
+		Window(const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None)
+			: Attribute::Name(name), m_flags(flags)
 		{}
 
 		bool isFlags(ImGuiWindowFlags flags) {
@@ -748,10 +739,6 @@ namespace GUI
 
 		void removeFlags(ImGuiWindowFlags flags) {
 			m_flags &= ~flags;
-		}
-
-		void setOpen(bool state) {
-			m_open = state;
 		}
 
 		void setPos(ImVec2 pos) {
@@ -771,18 +758,23 @@ namespace GUI
 		}
 
 		bool isFocused() {
-			return m_focused;
+			return m_isFocused;
 		}
 
-		void makeFitHostWindowSize(bool toggle) {
-			setPos(ImVec2(0.0, 0.0));
-			m_fitHostWindowSize = toggle;
+		bool isClosed() {
+			auto isOpened = m_isOpened;
+			m_isOpened = true;
+			return !isOpened;
+		}
+
+		void setFullscreen(bool toggle) {
+			m_fullscreen = toggle;
 		}
 	protected:
 		void renderControl() override {
 			pushParams();
 			pushIdParam();
-			bool isOpen = ImGui::Begin(getName().c_str(), &m_open, m_flags);
+			bool isOpen = ImGui::Begin(getName().c_str(), &m_isOpened, m_flags);
 			popIdParam();
 
 			m_pos = ImGui::GetWindowPos();
@@ -793,74 +785,61 @@ namespace GUI
 				renderWindow();
 				ImGui::End();
 			}
-
-			checkIfClose();
 		}
 
 		virtual void renderWindow() = 0;
 
 	private:
 		void pushParams() {
-			if (isFlags(ImGuiWindowFlags_NoMove)) {
-				ImGui::SetNextWindowPos(m_pos);
+			if (m_fullscreen) {
+				const ImGuiViewport* viewport = ImGui::GetMainViewport();
+				ImGui::SetNextWindowPos(m_pos = viewport->WorkPos);
+				ImGui::SetNextWindowSize(m_size = viewport->WorkSize);
+				m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
 			}
-
-			if (isFlags(ImGuiWindowFlags_NoResize)) {
-				if (m_fitHostWindowSize) {
-					UINT width, height;
-					GetScreenSize(m_hWnd, &width, &height);
-					ImGui::SetNextWindowSize(ImVec2((float)width, (float)height));
+			else {
+				if (isFlags(ImGuiWindowFlags_NoMove)) {
+					ImGui::SetNextWindowPos(m_pos);
 				}
-				else {
+
+				if (isFlags(ImGuiWindowFlags_NoResize)) {
 					ImGui::SetNextWindowSize(m_size);
 				}
-			}
-		}
-
-		void checkIfClose() {
-			if (m_open == false) {
-
-			}
-		}
-	};
-
-	class WindowManager
-	{
-		std::list<Window*> m_windows;
-	public:
-		void addWindow(Window* window) {
-
-			m_windows.push_back(window);
-		}
-
-		void removeWindow(Window* window) {
-			m_windows.remove(window);
-		}
-
-		void renderAllWindows() {
-			for (auto it : m_windows) {
-				it->show();
 			}
 		}
 	};
 
 	class GUI
 	{
+		Window* m_mainWindow;
 	public:
-		WindowManager* m_windowManager;
-
 		GUI()
-		{
-			m_windowManager = new WindowManager;
+		{}
+
+		void setMainWindow(Window* mainWindow) {
+			m_mainWindow = mainWindow;
 		}
 
-		void init(void* hwnd, ID3D11Device* device, ID3D11DeviceContext* ctx)
+		void init(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* ctx)
 		{
 			IMGUI_CHECKVERSION();
 			ImGui::CreateContext();
+
+			ImGuiIO& io = ImGui::GetIO();
+			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
+
 			ImGui_ImplWin32_Init(hwnd);
 			ImGui_ImplDX11_Init(device, ctx);
 			ImGui::StyleColorsDark();
+		}
+
+		void cleanup() {
+			// Cleanup
+			ImGui_ImplDX11_Shutdown();
+			ImGui_ImplWin32_Shutdown();
+			ImGui::DestroyContext();
 		}
 
 		void render()
@@ -870,11 +849,19 @@ namespace GUI
 			ImGui::NewFrame();
 
 			//ImGui::PushFont(GUI::Font::Tahoma);
-			m_windowManager->renderAllWindows();
+			m_mainWindow->show();
 			//ImGui::PopFont();
 
+			// Render
 			ImGui::Render();
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+			// Update and Render additional Platform Windows
+			if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+			{
+				ImGui::UpdatePlatformWindows();
+				ImGui::RenderPlatformWindowsDefault();
+			}
 		}
 	};
 };

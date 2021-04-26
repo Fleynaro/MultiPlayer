@@ -21,12 +21,12 @@ namespace GUI {
 
 		CE::ProgramModule* m_programModule;
 	public:
-		DecompilerDemoWindow(HWND hWnd)
-			: Window(hWnd, "Decompiler")
+		DecompilerDemoWindow()
+			: Window("Decompiler")
 		{
 			// Window params
 			setFlags(ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar);
-			makeFitHostWindowSize(true);
+			setFullscreen(true);
 
 			// Controls
 			m_asmCodeEditor = new Widget::CodeEditor("assembler code", ImVec2(200.0f, 300.0f));
