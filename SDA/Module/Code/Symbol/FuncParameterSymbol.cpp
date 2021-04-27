@@ -4,15 +4,14 @@
 using namespace CE;
 using namespace CE::Symbol;
 
-std::list<Decompiler::Storage> FuncParameterSymbol::getStorages() {
-	std::list<Decompiler::Storage> storages;
+Decompiler::Storage FuncParameterSymbol::getStorage() {
 	auto paramIdx = getParameterIndex();
 	for (auto& paramInfo : m_signature->getParameterInfos()) {
 		if (paramIdx == paramInfo.m_storage.getIndex()) {
-			storages.push_back(paramInfo.m_storage);
+			return paramInfo.m_storage;
 		}
 	}
-	return storages;
+	return Decompiler::Storage();
 }
 
 void FuncParameterSymbol::setFuncSignature(DataType::Signature* signature) {

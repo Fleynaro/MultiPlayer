@@ -7,6 +7,6 @@ namespace CE::Symbol
 	class IMemorySymbol : virtual public ISymbol
 	{
 	public:
-		virtual std::list<Decompiler::Storage> getStorages() = 0;
+		virtual Decompiler::Storage getStorage() = 0;
 	};
 };

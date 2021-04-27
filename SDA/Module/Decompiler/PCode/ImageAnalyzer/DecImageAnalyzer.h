@@ -30,7 +30,7 @@ namespace CE::Decompiler
 			delete m_userSymbolDef.m_funcBodyMemoryArea;
 		}
 
-		std::list<int> findNewFunctionOffsets(FunctionPCodeGraph* funcGraph) {
+		void findNewFunctionOffsets(FunctionPCodeGraph* funcGraph, std::list<int>& nonVirtFuncOffsets, std::list<int>& otherOffsets) {
 			auto decCodeGraph = new DecompiledCodeGraph(funcGraph, FunctionCallInfo({}));
 
 			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
@@ -44,14 +44,12 @@ namespace CE::Decompiler
 			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &m_userSymbolDef, &m_dataTypeFactory);
 			sdaBuilding.start();
 
-			std::list<int> offsets;
 			for (auto symbol : sdaBuilding.getAutoSymbols()) {
 				if (auto memSymbol = dynamic_cast<CE::Symbol::AutoSdaMemSymbol*>(symbol)) {
-					for (auto& storage : memSymbol->getStorages()) {
-						if (storage.getType() == Storage::STORAGE_GLOBAL) {
-							if (m_image->defineSegment(storage.getOffset()) == IImage::CODE_SEGMENT) {
-								offsets.push_back(storage.getOffset());
-							}
+					auto storage = memSymbol->getStorage();
+					if (storage.getType() == Storage::STORAGE_GLOBAL) {
+						if (m_image->defineSegment(storage.getOffset()) == IImage::CODE_SEGMENT) {
+							nonVirtFuncOffsets.push_back(storage.getOffset());
 						}
 					}
 				}
@@ -61,7 +59,6 @@ namespace CE::Decompiler
 			delete clonedDecCodeGraph;
 			delete decCodeGraph;
 			delete sdaCodeGraph;
-			return offsets;
 		}
 	};
 
@@ -80,53 +77,111 @@ namespace CE::Decompiler
 		{}
 
 		void start(int startOffset, const std::map<int64_t, PCode::Instruction*>& offsetToInstruction = {}) {
+			std::set<int64_t> visitedOffsets;
 			std::list<int> nextOffsetsToVisitLater = { startOffset };
-			std::set<PCodeBlock*> mutualBlocks;
+			std::list<std::pair<FunctionPCodeGraph*, std::list<int>>> nonVirtFuncOffsetsForGraphs;
+			std::map<int, FunctionPCodeGraph*> offsetsToFuncGraphs;
+			std::list<PCodeBlock*> blocksToReconnect;
 
+			// generate an image graph
 			while (!nextOffsetsToVisitLater.empty()) {
 				auto startInstrOffset = (int64_t)nextOffsetsToVisitLater.back() << 8;
+				if (visitedOffsets.find(startInstrOffset) != visitedOffsets.end())
+					continue;
+				visitedOffsets.insert(startInstrOffset);
 				nextOffsetsToVisitLater.pop_back();
 
+				auto funcGraph = m_imageGraph->createFunctionGraph();
 				auto block = m_imageGraph->getBlockAtOffset(startInstrOffset);
 				if (block == nullptr) {
-					auto funcGraph = m_imageGraph->createFunctionGraph();
-					buildGraphAtOffset(startInstrOffset, funcGraph, offsetToInstruction);
-
-					auto newOffsets = m_graphReferenceSearch->findNewFunctionOffsets(funcGraph);
-					nextOffsetsToVisitLater.insert(nextOffsetsToVisitLater.end(), newOffsets.begin(), newOffsets.end());
-
-					std::list<PCodeBlock*> path;
-					CalculateLevelsForPCodeBlocks(funcGraph->getStartBlock(), path);
+					auto startBlock = m_imageGraph->createBlock(startInstrOffset);
+					funcGraph->setStartBlock(startBlock);
+					createPCodeBlocksAtOffset(startInstrOffset, funcGraph, offsetToInstruction);
+					offsetsToFuncGraphs[startInstrOffset >> 8] = funcGraph;
+					
+					std::list<int> nonVirtFuncOffsets;
+					std::list<int> otherOffsets;
+					m_graphReferenceSearch->findNewFunctionOffsets(funcGraph, nonVirtFuncOffsets, otherOffsets);
+					nextOffsetsToVisitLater.insert(nextOffsetsToVisitLater.end(), nonVirtFuncOffsets.begin(), nonVirtFuncOffsets.end());
+					nextOffsetsToVisitLater.insert(nextOffsetsToVisitLater.end(), otherOffsets.begin(), otherOffsets.end());
+					nonVirtFuncOffsetsForGraphs.push_back(std::make_pair(funcGraph, nonVirtFuncOffsets));
 				}
 				else {
-					mutualBlocks.insert(block);
+					// if the function call references to a block of the existing graph
+					funcGraph->setStartBlock(block);
+					offsetsToFuncGraphs[startInstrOffset >> 8] = funcGraph;
+					blocksToReconnect.push_back(block);
 				}
 			}
 
-			findMutualSubgraphs(mutualBlocks);
+			// associate function graphs with other function graphs through non-virtual calls
+			for (auto pair : nonVirtFuncOffsetsForGraphs) {
+				auto graph = pair.first;
+				auto offsets = pair.second;
+				for (auto offset : offsets) {
+					auto it = offsetsToFuncGraphs.find(offset);
+					if (it != offsetsToFuncGraphs.end()) {
+						graph->getNonVirtFuncCalls().push_back(it->second);
+					}
+				}
+			}
+
+			// other
+			reconnectBlocksAndReplaceJmpByCall(blocksToReconnect);
+			gatherBlocksForPCodeGraphs();
+			calculateLevelsForPCodeGraphs();
 		}
 
 		void startOnce(int startOffset, const std::map<int64_t, PCode::Instruction*>& offsetToInstruction = {}) {
 			auto curFuncGraph = m_imageGraph->createFunctionGraph();
-			buildGraphAtOffset((int64_t)startOffset << 8, curFuncGraph, offsetToInstruction);
+			createPCodeBlocksAtOffset((int64_t)startOffset << 8, curFuncGraph, offsetToInstruction);
 
 			std::list<PCodeBlock*> path;
 			CalculateLevelsForPCodeBlocks(curFuncGraph->getStartBlock(), path);
 		}
 
 	private:
-		void findMutualSubgraphs(std::set<PCodeBlock*> mutualBlocks) {
+		// reconnect all blocks that are referenced by function calls
+		void reconnectBlocksAndReplaceJmpByCall(std::list<PCodeBlock*> blocks) {
+			for (auto block : blocks) {
+				for (auto refBlock : block->m_blocksReferencedTo) {
+					auto lastInstr = refBlock->getLastInstruction();
+					if (PCode::Instruction::IsBranching(lastInstr->m_id)) {
+						// replace JMP with CALL
+						lastInstr->m_id = PCode::InstructionId::CALL;
+						// add RET
+						auto retInstr = new Instruction(PCode::InstructionId::RETURN, nullptr, nullptr, nullptr, lastInstr->getFirstInstrOffsetInNextOrigInstr(), 1, 0);
+						refBlock->getInstructions().push_back(retInstr);
+					}
+					refBlock->removeNextBlock(block);
+				}
+				block->m_blocksReferencedTo.clear();
+			}
+		}
 
+		// fill member {m_blocks} for each graph
+		void gatherBlocksForPCodeGraphs() {
+			for (auto funcGraph : m_imageGraph->getFunctionGraphList()) {
+				std::set<PCodeBlock*> blocks;
+				GatherPCodeBlocks(funcGraph->getStartBlock(), blocks);
+				funcGraph->getBlocks() = blocks;
+			}
+		}
+
+		// calculate {m_level} for all block of each graph
+		void calculateLevelsForPCodeGraphs() {
+			for (auto funcGraph : m_imageGraph->getFunctionGraphList()) {
+				std::list<PCodeBlock*> path;
+				CalculateLevelsForPCodeBlocks(funcGraph->getStartBlock(), path);
+			}
 		}
 
 		// fill {funcGraph} with PCode blocks
-		void buildGraphAtOffset(int64_t startInstrOffset, FunctionPCodeGraph* funcGraph, std::map<int64_t, PCode::Instruction*> offsetToInstruction) {
-			m_imageGraph->createBlock(funcGraph, startInstrOffset);
+		void createPCodeBlocksAtOffset(int64_t startInstrOffset, FunctionPCodeGraph* funcGraph, std::map<int64_t, PCode::Instruction*> offsetToInstruction) {
 			std::set<int64_t> visitedOffsets;
 			std::list<int64_t> nextOffsetsToVisitLater;
 			
 			auto offset = startInstrOffset;
-
 			while (true) {
 				auto byteOffset = offset >> 8;
 				auto instrOrder = offset & 0xFF;
@@ -219,7 +274,7 @@ namespace CE::Decompiler
 						// split the already existing block into 2 non-empty blocks 
 						if (targetOffset > alreadyExistingBlock->getMinOffset() && targetOffset < alreadyExistingBlock->getMaxOffset() - 1) {
 							auto block1 = alreadyExistingBlock;
-							auto block2 = m_imageGraph->createBlock(alreadyExistingBlock->getFuncGraph(), targetOffset);
+							auto block2 = m_imageGraph->createBlock(targetOffset);
 
 							std::list<PCode::Instruction*> instrOfBlock1;
 							std::list<PCode::Instruction*> instrOfBlock2;
@@ -240,7 +295,6 @@ namespace CE::Decompiler
 								block2->setNextFarBlock(block1->getNextFarBlock());
 							block1->disconnect();
 							block1->setNextNearBlock(block2);
-							nextFarBlock = block2;
 
 							if (curBlock == alreadyExistingBlock)
 								alreadyExistingBlock = curBlock = block2;
@@ -248,7 +302,7 @@ namespace CE::Decompiler
 						curBlock->setNextFarBlock(alreadyExistingBlock);
 					}
 					else {
-						nextFarBlock = m_imageGraph->createBlock(funcGraph, targetOffset);
+						nextFarBlock = m_imageGraph->createBlock(targetOffset);
 						curBlock->setNextFarBlock(nextFarBlock);
 					}
 
@@ -256,7 +310,7 @@ namespace CE::Decompiler
 					PCodeBlock* nextNearBlock = nullptr;
 					if (instr->m_id == PCode::InstructionId::CBRANCH) {
 						if (m_imageGraph->getBlockAtOffset(nextInstrOffset) == nullptr) {
-							nextNearBlock = m_imageGraph->createBlock(funcGraph, nextInstrOffset);
+							nextNearBlock = m_imageGraph->createBlock(nextInstrOffset);
 							curBlock->setNextNearBlock(nextNearBlock);
 						}
 					}
@@ -307,6 +361,15 @@ namespace CE::Decompiler
 			CalculateLevelsForPCodeBlocks(block->getNextNearBlock(), path);
 			CalculateLevelsForPCodeBlocks(block->getNextFarBlock(), path);
 			path.pop_back();
+		}
+
+		// pass pcode graph and gather its blocks
+		static void GatherPCodeBlocks(PCodeBlock* block, std::set<PCodeBlock*>& gatheredBlocks) {
+			if (block == nullptr || gatheredBlocks.find(block) != gatheredBlocks.end())
+				return;
+			gatheredBlocks.insert(block);
+			GatherPCodeBlocks(block->getNextNearBlock(), gatheredBlocks);
+			GatherPCodeBlocks(block->getNextFarBlock(), gatheredBlocks);
 		}
 	};
 };

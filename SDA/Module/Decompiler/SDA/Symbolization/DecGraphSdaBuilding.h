@@ -201,12 +201,10 @@ namespace CE::Decompiler::Symbolization
 					// creating sda symbol leaf (memory or normal)
 					SdaSymbolLeaf* newSdaSymbolLeaf = nullptr;
 					if (auto memSymbol = dynamic_cast<CE::Symbol::IMemorySymbol*>(sdaSymbol)) {
-						for (auto& storage : memSymbol->getStorages()) {
-							if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
-								// stackVar or globalVar
-								newSdaSymbolLeaf = new SdaMemSymbolLeaf(memSymbol, sdaSymbolLeafToReplace->m_symbol, storage.getOffset(), true);
-								break;
-							}
+						auto storage = memSymbol->getStorage();
+						if (storage.getType() == Storage::STORAGE_STACK || storage.getType() == Storage::STORAGE_GLOBAL) {
+							// stackVar or globalVar
+							newSdaSymbolLeaf = new SdaMemSymbolLeaf(memSymbol, sdaSymbolLeafToReplace->m_symbol, storage.getOffset(), true);
 						}
 					}
 

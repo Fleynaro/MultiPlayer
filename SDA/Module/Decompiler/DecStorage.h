@@ -6,12 +6,13 @@ namespace CE::Decompiler
 	class Storage {
 	public:
 		enum StorageType {
+			STORAGE_NONE,
 			STORAGE_REGISTER,
 			STORAGE_STACK,
 			STORAGE_GLOBAL
 		};
 
-		Storage(StorageType storageType, int registerId, int64_t offset);
+		Storage(StorageType storageType = STORAGE_NONE, int registerId = 0, int64_t offset = 0);
 
 		StorageType getType();
 

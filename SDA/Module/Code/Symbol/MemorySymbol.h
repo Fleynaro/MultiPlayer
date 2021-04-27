@@ -36,8 +36,8 @@ namespace CE::Symbol
 			return GLOBAL_VAR;
 		}
 
-		std::list<Decompiler::Storage> getStorages() override {
-			return { Decompiler::Storage(Decompiler::Storage::STORAGE_GLOBAL, 0, *m_offsets.begin()) };
+		Decompiler::Storage getStorage() override {
+			return Decompiler::Storage(Decompiler::Storage::STORAGE_GLOBAL, 0, *m_offsets.begin());
 		}
 	};
 
@@ -52,8 +52,8 @@ namespace CE::Symbol
 			return LOCAL_STACK_VAR;
 		}
 
-		std::list<Decompiler::Storage> getStorages() override {
-			return { Decompiler::Storage(Decompiler::Storage::STORAGE_STACK, 0, *m_offsets.begin()) };
+		Decompiler::Storage getStorage() override {
+			return Decompiler::Storage(Decompiler::Storage::STORAGE_STACK, 0, *m_offsets.begin());
 		}
 	};
 

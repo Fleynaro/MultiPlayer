@@ -11,7 +11,6 @@ namespace CE::Decompiler
 	// pcode graph for a non-branched block
 	class PCodeBlock
 	{
-		FunctionPCodeGraph* m_funcGraph;
 		int64_t m_minOffset;
 		int64_t m_maxOffset;
 		std::list<PCode::Instruction*> m_instructions; // content of the block
@@ -24,8 +23,8 @@ namespace CE::Decompiler
 
 		PCodeBlock() = default;
 
-		PCodeBlock(FunctionPCodeGraph* asmGraph, int64_t minOffset, int64_t maxOffset)
-			: m_funcGraph(asmGraph), m_minOffset(minOffset), m_maxOffset(maxOffset), ID((int)(minOffset >> 8))
+		PCodeBlock(int64_t minOffset, int64_t maxOffset)
+			: m_minOffset(minOffset), m_maxOffset(maxOffset), ID((int)(minOffset >> 8))
 		{}
 
 		void removeRefBlock(PCodeBlock* block) {
@@ -37,10 +36,6 @@ namespace CE::Decompiler
 				nextBlock->removeRefBlock(this);
 			}
 			m_nextNearBlock = m_nextFarBlock = nullptr;
-		}
-
-		FunctionPCodeGraph* getFuncGraph() {
-			return m_funcGraph;
 		}
 
 		std::list<PCode::Instruction*>& getInstructions() {
@@ -57,6 +52,13 @@ namespace CE::Decompiler
 
 		void setMaxOffset(int64_t offset) {
 			m_maxOffset = offset;
+		}
+
+		void removeNextBlock(PCodeBlock* nextBlock) {
+			if (nextBlock == m_nextNearBlock)
+				m_nextNearBlock = nullptr;
+			if (nextBlock == m_nextFarBlock)
+				m_nextFarBlock = nullptr;
 		}
 
 		void setNextNearBlock(PCodeBlock* nextBlock) {
@@ -126,7 +128,9 @@ namespace CE::Decompiler
 	{
 		ImagePCodeGraph* m_imagePCodeGraph;
 		PCodeBlock* m_startBlock = nullptr;
-		std::map<int64_t, PCodeBlock*> m_offsetToBlock;
+		std::set<PCodeBlock*> m_blocks;
+		std::list<FunctionPCodeGraph*> m_nonVirtFuncCalls;
+		std::list<FunctionPCodeGraph*> m_virtFuncCalls;
 		std::map<PCode::Instruction*, DataValue> m_constValues;
 	public:
 
@@ -134,14 +138,20 @@ namespace CE::Decompiler
 			: m_imagePCodeGraph(imagePCodeGraph)
 		{}
 
-		void addBlock(int64_t offset, PCodeBlock* block) {
-			m_offsetToBlock[offset] = block;
-			if (!m_startBlock)
-				m_startBlock = block;
+		void setStartBlock(PCodeBlock* block) {
+			m_startBlock = block;
 		}
 
-		std::map<int64_t, PCodeBlock*>& getBlocks() {
-			return m_offsetToBlock;
+		auto& getNonVirtFuncCalls() {
+			return m_nonVirtFuncCalls;
+		}
+
+		auto& getVirtFuncCalls() {
+			return m_virtFuncCalls;
+		}
+
+		auto& getBlocks() {
+			return m_blocks;
 		}
 
 		PCodeBlock* getStartBlock() {
@@ -153,8 +163,8 @@ namespace CE::Decompiler
 		}
 
 		void printDebug(void* addr) {
-			for (auto block : m_offsetToBlock) {
-				puts(block.second->printDebug(addr, "", true, true).c_str());
+			for (auto block : m_blocks) {
+				puts(block->printDebug(addr, "", true, true).c_str());
 				puts("==================");
 			}
 		}
@@ -164,7 +174,7 @@ namespace CE::Decompiler
 	class ImagePCodeGraph
 	{
 		std::list<FunctionPCodeGraph*> m_funcGraphList;
-		std::map<int64_t, PCodeBlock> m_offsetToBlock;
+		std::map<int64_t, PCodeBlock> m_blocks;
 	public:
 
 		ImagePCodeGraph()
@@ -176,10 +186,9 @@ namespace CE::Decompiler
 			return graph;
 		}
 
-		PCodeBlock* createBlock(FunctionPCodeGraph* graph, int64_t offset) {
-			m_offsetToBlock.insert(std::make_pair(offset, PCodeBlock(graph, offset, offset)));
-			auto newBlock = &m_offsetToBlock[offset];
-			graph->addBlock(offset, newBlock);
+		PCodeBlock* createBlock(int64_t offset) {
+			m_blocks.insert(std::make_pair(offset, PCodeBlock(offset, offset)));
+			auto newBlock = &m_blocks[offset];
 			return newBlock;
 		}
 
@@ -188,8 +197,8 @@ namespace CE::Decompiler
 		}
 
 		PCodeBlock* getBlockAtOffset(int64_t offset, bool halfInterval = true) {
-			auto it = std::prev(m_offsetToBlock.upper_bound(offset));
-			if (it != m_offsetToBlock.end()) {
+			auto it = std::prev(m_blocks.upper_bound(offset));
+			if (it != m_blocks.end()) {
 				bool boundUp = halfInterval ? (offset < it->second.getMaxOffset()) : (offset <= it->second.getMaxOffset());
 				if (boundUp && offset >= it->second.getMinOffset()) {
 					return &it->second;

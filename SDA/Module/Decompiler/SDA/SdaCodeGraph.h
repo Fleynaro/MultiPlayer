@@ -14,6 +14,9 @@ namespace CE::Decompiler
 			: m_decGraph(decGraph)
 		{}
 
+		~SdaCodeGraph() {
+		}
+
 		DecompiledCodeGraph* getDecGraph() {
 			return m_decGraph;
 		}

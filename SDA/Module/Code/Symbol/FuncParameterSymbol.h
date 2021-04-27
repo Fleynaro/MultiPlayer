@@ -20,7 +20,7 @@ namespace CE::Symbol
 			return FUNC_PARAMETER;
 		}
 
-		std::list<Decompiler::Storage> getStorages() override;
+		Decompiler::Storage getStorage() override;
 
 		void setFuncSignature(DataType::Signature* signature);
 

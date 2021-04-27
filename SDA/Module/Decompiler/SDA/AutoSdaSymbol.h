@@ -32,12 +32,12 @@ namespace CE::Symbol
 			: AutoSdaSymbol(type, 0, instrOffsets, manager, dataType, name, comment), m_offset(offset)
 		{}
 
-		std::list<Decompiler::Storage> getStorages() override {
+		Decompiler::Storage getStorage() override {
 			if (getType() == LOCAL_STACK_VAR)
-				return { Decompiler::Storage(Decompiler::Storage::STORAGE_STACK, 0, m_offset) };
+				return Decompiler::Storage(Decompiler::Storage::STORAGE_STACK, 0, m_offset);
 			if (getType() == GLOBAL_VAR)
-				return { Decompiler::Storage(Decompiler::Storage::STORAGE_GLOBAL, 0, m_offset) };
-			return {};
+				return Decompiler::Storage(Decompiler::Storage::STORAGE_GLOBAL, 0, m_offset);
+			return Decompiler::Storage();
 		}
 	};
 };
