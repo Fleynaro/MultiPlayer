@@ -37,11 +37,11 @@ Function::Function* FunctionManager::createFunction(Symbol::FunctionSymbol* func
 }
 
 Function::Function* FunctionManager::createFunction(const std::string& name, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature, const std::string& comment) {
-	auto symbol = dynamic_cast<Symbol::FunctionSymbol*>(getProgramModule()->getSymbolManager()->createSymbol(Symbol::FUNCTION, DataType::GetUnit(signature), name, comment));
+	auto manager = getProgramModule()->getSymbolManager();
+	auto symbol = new Symbol::FunctionSymbol(manager, DataType::GetUnit(signature), name, comment);
 	auto func = createFunction(symbol, module, ranges, signature);
-	if (auto memSymbol = dynamic_cast<Symbol::MemorySymbol*>(symbol)) {
-		getProgramModule()->getGlobalMemoryArea()->addSymbol(memSymbol, module->toRelAddr(func->getAddress()));
-	}
+	getProgramModule()->getGlobalMemoryArea()->addSymbol(symbol, module->toRelAddr(func->getAddress()));
+	manager->bind(symbol);
 	return func;
 }
 

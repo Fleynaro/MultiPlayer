@@ -44,7 +44,7 @@ void ProgramModule::load()
 	getProcessModuleManager()->loadProcessModules();
 	getTypeManager()->loadBefore();
 	getSymbolManager()->loadSymbols();
-	getMemoryAreaManager()->loadMemoryAreas();
+	getMemoryAreaManager()->loadSymTables();
 	getFunctionManager()->loadFunctions();
 	getTypeManager()->loadAfter();
 	getFunctionTagManager()->loadUserTags();
@@ -58,7 +58,7 @@ void ProgramModule::initManagers()
 	m_typeManager = new TypeManager(this);
 	m_functionManager = new FunctionManager(this);
 	m_symbolManager = new SymbolManager(this);
-	m_memoryAreaManager = new MemoryAreaManager(this);
+	m_memoryAreaManager = new SymbolTableManager(this);
 	m_vtableManager = new VtableManager(this);
 	m_triggerManager = new TriggerManager(this);
 	m_triggerGroupManager = new TriggerGroupManager(this);
@@ -108,7 +108,7 @@ SymbolManager* ProgramModule::getSymbolManager() {
 	return m_symbolManager;
 }
 
-MemoryAreaManager* ProgramModule::getMemoryAreaManager() {
+SymbolTableManager* ProgramModule::getMemoryAreaManager() {
 	return m_memoryAreaManager;
 }
 
@@ -136,8 +136,8 @@ StatManager* ProgramModule::getStatManager() {
 	return m_statManager;
 }
 
-Symbol::MemoryArea* ProgramModule::getGlobalMemoryArea() {
-	return getMemoryAreaManager()->getMainGlobalMemoryArea();
+Symbol::SymbolTable* ProgramModule::getGlobalMemoryArea() {
+	return getMemoryAreaManager()->getMainGlobalSymTable();
 }
 
 DB::ITransaction* ProgramModule::getTransaction() {

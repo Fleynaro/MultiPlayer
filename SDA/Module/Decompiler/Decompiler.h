@@ -51,8 +51,7 @@ namespace CE::Decompiler
 		std::map<PCodeBlock*, PrimaryTree::Block*> m_pcodeToDecBlocks;
 		
 		void decompileAllBlocks() {
-			for (auto& pair : m_decompiledGraph->getFuncGraph()->getBlocks()) {
-				auto pcodeBlock = pair.second;
+			for (auto pcodeBlock : m_decompiledGraph->getFuncGraph()->getBlocks()) {
 				DecompiledBlockInfo decompiledBlock;
 				decompiledBlock.m_pcodeBlock = pcodeBlock;
 				if (!pcodeBlock->getNextNearBlock() && !pcodeBlock->getNextFarBlock()) {

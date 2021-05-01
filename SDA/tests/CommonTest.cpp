@@ -22,7 +22,7 @@ TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
     auto modulesManager = m_programModule->getProcessModuleManager();
     ProcessModule* kernel32;
     ProcessModule* ucrtbase;
-    memoryAreaManager->createMainGlobalMemoryArea(0x1000000);
+    memoryAreaManager->createMainGlobalSymTable(0x1000000);
 
     //for processes
     {
@@ -82,9 +82,11 @@ TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
     //for symbols & memory areas
     {
         using namespace Symbol;
-        auto stackVar_0x10 = dynamic_cast<MemorySymbol*>(symbolManager->createSymbol(LOCAL_STACK_VAR, DataType::GetUnit(typeManager->getTypeByName("int32_t")), "stackVar_0x10"));
-        auto stackVar_0x20 = dynamic_cast<MemorySymbol*>(symbolManager->createSymbol(LOCAL_STACK_VAR, DataType::GetUnit(typeManager->getTypeByName("int64_t")), "stackVar_0x20"));
-        auto stackFrame = memoryAreaManager->createMemoryArea(MemoryArea::STACK_SPACE, 0x100);
+        auto stackVar_0x10 = new LocalStackVarSymbol(symbolManager, 0x10, DataType::GetUnit(typeManager->getTypeByName("int32_t")), "stackVar_0x10");
+        auto stackVar_0x20 = new LocalStackVarSymbol(symbolManager, 0x10, DataType::GetUnit(typeManager->getTypeByName("int64_t")), "stackVar_0x20");
+        symbolManager->bind(stackVar_0x10);
+        symbolManager->bind(stackVar_0x20);
+        auto stackFrame = memoryAreaManager->createSymbolTable(SymbolTable::STACK_SPACE, 0x100);
         stackFrame->addSymbol(stackVar_0x10, 0x10);
         stackFrame->addSymbol(stackVar_0x20, 0x20);
     }
@@ -200,7 +202,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
         auto memoryAreaManager = m_programModule->getMemoryAreaManager();
         ASSERT_GE(memoryAreaManager->getItemsCount(), 2);
 
-        if (auto testStackFrame = memoryAreaManager->getMemoryAreaById(2)) {
+        if (auto testStackFrame = memoryAreaManager->getSymbolTableById(2)) {
             ASSERT_EQ(testStackFrame->getSymbols().size(), 2);
             //testStackFrame->getSymbolAt(0x10);
         }

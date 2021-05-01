@@ -3,30 +3,30 @@
 #include <Code/Symbol/MemoryArea/MemoryArea.h>
 
 namespace DB {
-	class MemoryAreaMapper;
+	class SymbolTableMapper;
 };
 
 namespace CE
 {
-	class MemoryAreaManager : public AbstractItemManager
+	class SymbolTableManager : public AbstractItemManager
 	{
 	public:
-		using Iterator = AbstractIterator<Symbol::MemoryArea>;
+		using Iterator = AbstractIterator<Symbol::SymbolTable>;
 
-		MemoryAreaManager(ProgramModule* module);
+		SymbolTableManager(ProgramModule* module);
 
-		void loadMemoryAreas();
+		void loadSymTables();
 
-		void createMainGlobalMemoryArea(int size);
+		void createMainGlobalSymTable(int size);
 
-		Symbol::MemoryArea* createMemoryArea(Symbol::MemoryArea::MemoryAreaType type, int size);
+		Symbol::SymbolTable* createSymbolTable(Symbol::SymbolTable::SymbolTableType type, int size);
 
-		Symbol::MemoryArea* getMemoryAreaById(DB::Id id);
+		Symbol::SymbolTable* getSymbolTableById(DB::Id id);
 
-		Symbol::MemoryArea* getMainGlobalMemoryArea();
+		Symbol::SymbolTable* getMainGlobalSymTable();
 
 	private:
-		Symbol::MemoryArea* m_globalMemoryArea = nullptr;
-		DB::MemoryAreaMapper* m_memoryAreaMapper;
+		Symbol::SymbolTable* m_globalSymbolTable = nullptr;
+		DB::SymbolTableMapper* m_memoryAreaMapper;
 	};
 };

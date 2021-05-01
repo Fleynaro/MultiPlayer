@@ -13,10 +13,10 @@ namespace CE::Decompiler::Symbolization
 	struct UserSymbolDef {
 		CE::ProgramModule* m_programModule;
 		Signature* m_signature = nullptr;
-		CE::Symbol::MemoryArea* m_globalMemoryArea = nullptr;
-		CE::Symbol::MemoryArea* m_stackMemoryArea = nullptr;
-		CE::Symbol::MemoryArea* m_funcBodyMemoryArea = nullptr;
-		int64_t m_offset = 0x0;
+		CE::Symbol::SymbolTable* m_globalSymbolTable = nullptr;
+		CE::Symbol::SymbolTable* m_stackSymbolTable = nullptr;
+		CE::Symbol::SymbolTable* m_funcBodySymbolTable = nullptr;
+		int64_t m_startOffset = 0x0;
 
 		UserSymbolDef(CE::ProgramModule* programModule = nullptr)
 			: m_programModule(programModule)

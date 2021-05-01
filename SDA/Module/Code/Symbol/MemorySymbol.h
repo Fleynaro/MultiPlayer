@@ -4,32 +4,14 @@
 
 namespace CE::Symbol
 {
-	class MemoryArea;
+	class SymbolTable;
 
-	class MemorySymbol : public AbstractSymbol
+	class GlobalVarSymbol : public AbstractSymbol, public IMemorySymbol
 	{
+		int64_t m_offset;
 	public:
-		MemoryArea* m_memoryArea = nullptr;
-		std::list<int64_t> m_offsets;
-
-		MemorySymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: AbstractSymbol(manager, type, name, comment)
-		{}
-
-		virtual int getSize() {
-			return getDataType()->getSize();
-		}
-
-		MemoryArea* getMemoryArea() {
-			return m_memoryArea;
-		}
-	};
-
-	class GlobalVarSymbol : public MemorySymbol, public IMemorySymbol
-	{
-	public:
-		GlobalVarSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: MemorySymbol(manager, type, name, comment)
+		GlobalVarSymbol(SymbolManager* manager, int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "")
+			: AbstractSymbol(manager, type, name, comment), m_offset(offset)
 		{}
 
 		Type getType() override {
@@ -37,15 +19,16 @@ namespace CE::Symbol
 		}
 
 		Decompiler::Storage getStorage() override {
-			return Decompiler::Storage(Decompiler::Storage::STORAGE_GLOBAL, 0, *m_offsets.begin());
+			return Decompiler::Storage(Decompiler::Storage::STORAGE_GLOBAL, 0, m_offset);
 		}
 	};
 
-	class LocalStackVarSymbol : public MemorySymbol, public IMemorySymbol
+	class LocalStackVarSymbol : public AbstractSymbol, public IMemorySymbol
 	{
+		int64_t m_offset;
 	public:
-		LocalStackVarSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: MemorySymbol(manager, type, name, comment)
+		LocalStackVarSymbol(SymbolManager* manager, int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "")
+			: AbstractSymbol(manager, type, name, comment), m_offset(offset)
 		{}
 
 		Type getType() override {
@@ -53,19 +36,7 @@ namespace CE::Symbol
 		}
 
 		Decompiler::Storage getStorage() override {
-			return Decompiler::Storage(Decompiler::Storage::STORAGE_STACK, 0, *m_offsets.begin());
-		}
-	};
-
-	class LocalInstrVarSymbol : public MemorySymbol
-	{
-	public:
-		LocalInstrVarSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: MemorySymbol(manager, type, name, comment)
-		{}
-
-		Type getType() override {
-			return LOCAL_INSTR_VAR;
+			return Decompiler::Storage(Decompiler::Storage::STORAGE_STACK, 0, m_offset);
 		}
 	};
 };

@@ -60,7 +60,7 @@ namespace GUI {
 
 		void renderWindow() override {
 			m_asmCodeEditor->getSize() = getSize();
-			m_asmCodeEditor->getSize().y *= 0.6;
+			m_asmCodeEditor->getSize().y *= 0.6f;
 			m_decCodeEditor->getSize() = getSize();
 
 			if (ImGui::BeginTabBar("#tabs"))

@@ -57,9 +57,14 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 	PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &m_registerFactoryX86, image);
 
 	ImageAnalyzer imageAnalyzer(image, imageGraph, &decoder, &m_registerFactoryX86, &graphReferenceSearch);
-	imageAnalyzer.start(0x1428EBC); //0x9f39d8
+	imageAnalyzer.start(0x9f39d8); //0x9f39d8
 	if (warningContainer.hasAnything()) {
 		printf("\nTROUBLES:\n%s\n", warningContainer.getAllMessages().c_str());
+	}
+
+	if (true) {
+		ImagePCodeGraphAnalyzer graphAnalyzer(imageGraph);
+		graphAnalyzer.start();
 	}
 
 	bool showAllInfo = true;
@@ -165,43 +170,110 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_ExprOptim)
 // 4) SYMBOLIZATION
 TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 {
-	SymbolVarnode* playerPos[] = { new SymbolVarnode(4), new SymbolVarnode(4), new SymbolVarnode(4) };
-	SymbolVarnode* playerId = new SymbolVarnode(4);
-	SymbolVarnode* addr = new SymbolVarnode(8);
+	std::list<Instruction*> instructions;
 	auto rip = new CE::Decompiler::PCode::RegisterVarnode(m_registerFactoryX86.createInstructionPointerRegister());
-	auto offset = 0.5f;
-	std::list<Instruction*> instructions = {
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr),
-		new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr),
+	auto rsp = new CE::Decompiler::PCode::RegisterVarnode(m_registerFactoryX86.createStackPointerRegister());
+	SymbolVarnode* addr = new SymbolVarnode(8);
+	SymbolVarnode* val4 = new SymbolVarnode(4);
+	SymbolVarnode* val8 = new SymbolVarnode(8);
+	auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
+	userSymbolDef.m_signature = m_defSignature;
 
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr),
-		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[0]),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr),
-		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[1]),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x8, 8), addr),
-		new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[2]),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0xC, 8), addr),
-		new Instruction(InstructionId::LOAD, addr, nullptr, playerId),
+	switch (2)
+	{
+	case 1: {
+		SymbolVarnode* playerPos[] = { new SymbolVarnode(4), new SymbolVarnode(4), new SymbolVarnode(4) };
+		SymbolVarnode* playerId = new SymbolVarnode(4);
+		auto offset = 0.5f;
 
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr),
-		new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr),
+		{
+			auto entity = typeManager()->createStructure("EntityTest", "");
+			entity->addField(0x0, "vec", GetUnit(m_vec3D));
+			entity->addField(0xC, "id", findType("uint32_t", ""));
+			userSymbolDef.m_globalSymbolTable->addSymbol(new GlobalVarSymbol(symbolManager(), 0x100, GetUnit(entity), "entity1"), 0x100);
+			userSymbolDef.m_globalSymbolTable->addSymbol(new GlobalVarSymbol(symbolManager(), 0x200, GetUnit(entity), "entity2"), 0x200);
+		}
 
-		new Instruction(InstructionId::FLOAT_ADD, playerPos[0], new ConstantVarnode((uint32_t&)offset, 4), playerPos[0]),
-		new Instruction(InstructionId::FLOAT_ADD, playerPos[1], new ConstantVarnode((uint32_t&)offset, 4), playerPos[1]),
-		new Instruction(InstructionId::FLOAT_ADD, playerPos[2], new ConstantVarnode((uint32_t&)offset, 4), playerPos[2]),
+		instructions = {
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr),
+			new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr),
 
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x1000, 8), addr),
-		//new Instruction(InstructionId::CALL, addr, nullptr, nullptr, 15, 1, 1),
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x0, 8), addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[0]),
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[1]),
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x8, 8), addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, playerPos[2]),
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0xC, 8), addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, playerId),
 
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x0, 8), addr),
-		new Instruction(InstructionId::STORE, addr, playerPos[0], nullptr),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x4, 8), addr),
-		new Instruction(InstructionId::STORE, addr, playerPos[1], nullptr),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x8, 8), addr),
-		new Instruction(InstructionId::STORE, addr, playerPos[2], nullptr),
-		new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0xC, 8), addr),
-		new Instruction(InstructionId::STORE, addr, playerId, nullptr),
-	};
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100 + 0x4, 8), addr),
+			new Instruction(InstructionId::STORE, addr, new ConstantVarnode(0, 4), nullptr),
+
+			new Instruction(InstructionId::FLOAT_ADD, playerPos[0], new ConstantVarnode((uint32_t&)offset, 4), playerPos[0]),
+			new Instruction(InstructionId::FLOAT_ADD, playerPos[1], new ConstantVarnode((uint32_t&)offset, 4), playerPos[1]),
+			new Instruction(InstructionId::FLOAT_ADD, playerPos[2], new ConstantVarnode((uint32_t&)offset, 4), playerPos[2]),
+
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x1000, 8), addr),
+			//new Instruction(InstructionId::CALL, addr, nullptr, nullptr, 15, 1, 1),
+
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x0, 8), addr),
+			new Instruction(InstructionId::STORE, addr, playerPos[0], nullptr),
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x4, 8), addr),
+			new Instruction(InstructionId::STORE, addr, playerPos[1], nullptr),
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0x8, 8), addr),
+			new Instruction(InstructionId::STORE, addr, playerPos[2], nullptr),
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x200 + 0xC, 8), addr),
+			new Instruction(InstructionId::STORE, addr, playerId, nullptr),
+		};
+		break;
+	}
+
+	case 2: {
+		auto rcx = new CE::Decompiler::PCode::RegisterVarnode(m_registerFactoryX86.createRegister(ZYDIS_REGISTER_RCX, 0x8));
+		auto rdx = new CE::Decompiler::PCode::RegisterVarnode(m_registerFactoryX86.createRegister(ZYDIS_REGISTER_RDX, 0x8));
+		SymbolVarnode* gvar_val = new SymbolVarnode(4);
+		SymbolVarnode* stack_val = new SymbolVarnode(4);
+		SymbolVarnode* arr_val = new SymbolVarnode(4);
+
+		// TODO: if-else
+
+		instructions = {
+			// global var
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x100, 8), addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, gvar_val),
+
+			// stack var
+			new Instruction(InstructionId::INT_ADD, rsp, new ConstantVarnode(0x10, 8), addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, stack_val),
+
+			// array
+			new Instruction(InstructionId::INT_ADD, rip, new ConstantVarnode(0x10, 8), addr),
+			new Instruction(InstructionId::INT_MULT, rdx, new ConstantVarnode(0x4, 8), val8),
+			new Instruction(InstructionId::INT_ADD, addr, val8, addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, arr_val),
+
+			// class field 1
+			new Instruction(InstructionId::INT_ADD, rcx, new ConstantVarnode(0x10, 8), addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, addr),
+			new Instruction(InstructionId::INT_ADD, addr, new ConstantVarnode(0x4, 8), addr),
+			new Instruction(InstructionId::LOAD, addr, nullptr, val4),
+			new Instruction(InstructionId::INT_MULT, val4, new ConstantVarnode(0x2, 8), val4),
+			new Instruction(InstructionId::STORE, addr, val4, nullptr),
+
+			// class field 2
+			new Instruction(InstructionId::INT_ADD, rcx, new ConstantVarnode(0x20, 8), addr),
+			new Instruction(InstructionId::COPY, gvar_val, nullptr, val4),
+			new Instruction(InstructionId::INT_ADD, val4, stack_val, val4),
+			new Instruction(InstructionId::STORE, addr, val4, nullptr),
+
+			// class field 2
+			new Instruction(InstructionId::INT_ADD, rcx, new ConstantVarnode(0x30, 8), addr),
+			new Instruction(InstructionId::STORE, addr, arr_val, nullptr),
+		};
+		break;
+	}
+	}
 
 	auto imageGraph = new ImagePCodeGraph;
 	WarningContainer warningContainer;
@@ -214,7 +286,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 		instr->setInfo(i++, 1, 0);
 		offsetToInstruction[instr->getOffset()] = instr;
 	}
-	imageAnalyzer.startOnce(0, offsetToInstruction);
+	imageAnalyzer.start(0, offsetToInstruction, true);
 
 	auto graph = *imageGraph->getFunctionGraphList().begin();
 	auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
@@ -231,16 +303,6 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	//showDecGraph(clonedDecCodeGraph);
 
 	auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
-	auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
-	userSymbolDef.m_signature = m_defSignature;
-	{
-		auto entity = typeManager()->createStructure("EntityTest", "");
-		entity->addField(0x0, "vec", GetUnit(m_vec3D));
-		entity->addField(0xC, "id", findType("uint32_t", ""));
-		userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(GLOBAL_VAR, GetUnit(entity), "entity1"), 0x100);
-		userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(GLOBAL_VAR, GetUnit(entity), "entity2"), 0x200);
-	}
-
 	Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
 	Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 	sdaBuilding.start();
@@ -305,9 +367,9 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test1");
 		sig->setReturnType(findType("uint64_t"));
 
-		test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, findType("int32_t", "[2][3][4]"), "stackArray"), -0x68);
-		test->m_userSymbolDef.m_funcBodyMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_INSTR_VAR, findType("int64_t", ""), "idx"), 4608);
-		test->m_userSymbolDef.m_funcBodyMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_INSTR_VAR, findType("uint32_t", ""), "result"), 19201);
+		test->m_userSymbolDef.m_stackSymbolTable->addSymbol(new LocalStackVarSymbol(symbolManager(), -0x68, findType("int32_t", "[2][3][4]"), "stackArray"), -0x68);
+		test->m_userSymbolDef.m_funcBodySymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), findType("int64_t", ""), "idx"), 4608);
+		test->m_userSymbolDef.m_funcBodySymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), findType("uint32_t", ""), "result"), 19201);
 	}
 
 	{
@@ -320,13 +382,13 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		sig->addParameter("myParam1", findType("uint32_t", "[1]"));
 		sig->setReturnType(findType("int32_t"));
 
-		test->m_userSymbolDef.m_funcBodyMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_INSTR_VAR, findType("uint32_t", "[1]"), "someObject"), 9985);
+		test->m_userSymbolDef.m_funcBodySymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), findType("uint32_t", "[1]"), "someObject"), 9985);
 
 		sig = test->m_functions[0xffffffffffffff90] = typeManager()->createSignature("Func1_2");
 		sig->addParameter("param1", findType("uint64_t", ""));
 		sig->addParameter("param2", findType("uint64_t", ""));
 		sig->setReturnType(findType("uint32_t", "[1]"));
-		test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func1_2"), 0xffffffffffffff90);
+		test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), GetUnit(sig), "Func1_2"), 0xffffffffffffff90);
 	}
 
 	{
@@ -367,7 +429,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 			auto sig = test->m_functions[0xfffffffffffde098] = typeManager()->createSignature("getEntitySig");
 			sig->addParameter("param1", findType("uint32_t"));
 			sig->setReturnType(GetUnit(entity, "[1]"));
-			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "getEntity"), 0xfffffffffffde098);
+			test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), GetUnit(sig), "getEntity"), 0xfffffffffffde098);
 		}
 	}
 
@@ -444,8 +506,8 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		sig->addParameter("param2", findType("int32_t", ""));
 		sig->addParameter("param3", findType("bool", ""));
 		sig->setReturnType(GetUnit(m_vecExt3D, "[1]"));
-		test->m_userSymbolDef.m_funcBodyMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_INSTR_VAR, GetUnit(m_vec3D, "[1]"), "pos2"), 23042);
-		test->m_userSymbolDef.m_funcBodyMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_INSTR_VAR, GetUnit(m_vec3D, "[1]"), "pos3"), 31234);
+		test->m_userSymbolDef.m_funcBodySymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), GetUnit(m_vec3D, "[1]"), "pos2"), 23042);
+		test->m_userSymbolDef.m_funcBodySymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), GetUnit(m_vec3D, "[1]"), "pos3"), 31234);
 
 		{
 			auto vtable = typeManager()->createStructure("Vtable106", "");
@@ -454,7 +516,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 			auto entity = typeManager()->createStructure("Entity106", "");
 			entity->addField(0, "vtable", GetUnit(vtable, "[1]"));
 			entity->addField(96, "matrix", GetUnit(m_matrix4x4));
-			test->m_userSymbolDef.m_funcBodyMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_INSTR_VAR, GetUnit(entity, "[1]"), "entity"), 17153);
+			test->m_userSymbolDef.m_funcBodySymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), GetUnit(entity, "[1]"), "entity"), 17153);
 		}
 	}
 
@@ -474,11 +536,11 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 			valueUI->addField(0xC, "m_unk", findType("uint32_t", ""));
 			valueUI->addField(0x10, "m_formatText", findType("uint64_t", ""));
 			//todo: test this sample without these definitions
-			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value1"), -0xA8);
-			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value2"), -0x88);
-			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value3"), -0x68);
-			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value4"), -0x48);
-			test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(valueUI), "value5"), -0x28);
+			test->m_userSymbolDef.m_stackSymbolTable->addSymbol(new LocalStackVarSymbol(symbolManager(), -0xA8, GetUnit(valueUI), "value1"), -0xA8);
+			test->m_userSymbolDef.m_stackSymbolTable->addSymbol(new LocalStackVarSymbol(symbolManager(), -0x88, GetUnit(valueUI), "value2"), -0x88);
+			test->m_userSymbolDef.m_stackSymbolTable->addSymbol(new LocalStackVarSymbol(symbolManager(), -0x68, GetUnit(valueUI), "value3"), -0x68);
+			test->m_userSymbolDef.m_stackSymbolTable->addSymbol(new LocalStackVarSymbol(symbolManager(), -0x48, GetUnit(valueUI), "value4"), -0x48);
+			test->m_userSymbolDef.m_stackSymbolTable->addSymbol(new LocalStackVarSymbol(symbolManager(), -0x28, GetUnit(valueUI), "value5"), -0x28);
 
 			auto uiDrawSig = test->m_functions[0xfffffffffffedf50] = typeManager()->createSignature("UI_Draw107");
 			uiDrawSig->addParameter("param1", findType("uint64_t", ""));
@@ -487,7 +549,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 			uiDrawSig->addParameter("param4", GetUnit(valueUI, "[1]"));
 			uiDrawSig->addParameter("param5", GetUnit(valueUI, "[1]"));
 			uiDrawSig->addParameter("param6", GetUnit(valueUI, "[1]"));
-			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(uiDrawSig), "UI_Draw"), 0xfffffffffffedf50);
+			test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new LocalStackVarSymbol(symbolManager(), 0xfffffffffffedf50, GetUnit(uiDrawSig), "UI_Draw"), 0xfffffffffffedf50);
 		}
 	}
 
@@ -509,7 +571,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		sig->addParameter("translationVec2", GetUnit(m_vec4D, "[1]"));
 		sig->setReturnType(findType("uint64_t"));
 
-		test->m_userSymbolDef.m_stackMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(LOCAL_STACK_VAR, GetUnit(m_matrix4x4, "[1]"), "matrix"), -int(0xffffffd0));
+		test->m_userSymbolDef.m_stackSymbolTable->addSymbol(new LocalStackVarSymbol(symbolManager(), -int(0xffffffd0), GetUnit(m_matrix4x4, "[1]"), "matrix"), -int(0xffffffd0));
 	}
 
 	{
@@ -543,15 +605,15 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 			sig->addParameter("param3", findType("uint64_t", ""));
 			sig->addParameter("param4", findType("uint64_t", ""));
 			sig->setReturnType(findType("bool"));
-			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func1_109"), 0xc14c);
-			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func2_109"), 0xffffffffffe19b7c);
+			test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new FunctionSymbol(symbolManager(), GetUnit(sig), "Func1_109"), 0xc14c);
+			test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new FunctionSymbol(symbolManager(), GetUnit(sig), "Func2_109"), 0xffffffffffe19b7c);
 
 			sig = test->m_functions[0xcd74] = typeManager()->createSignature("Func2_109");
 			sig->addParameter("param1", findType("uint32_t", ""));
 			sig->addParameter("param2", findType("char", "[1]"));
 			sig->addParameter("param3", findType("char", "[1]"));
 			sig->setReturnType(findType("uint64_t"));
-			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func3_109"), 0xcd74);
+			test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new FunctionSymbol(symbolManager(), GetUnit(sig), "Func3_109"), 0xcd74);
 
 			sig = test->m_functions[0xc208] = typeManager()->createSignature("Func4_109");
 			sig->addParameter("param1", findType("uint32_t", ""));
@@ -559,7 +621,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 			sig->addParameter("param3", findType("bool", ""));
 			sig->addParameter("param4", findType("uint32_t", ""));
 			sig->setReturnType(findType("uint64_t"));
-			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func4_109"), 0xc208);
+			test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new FunctionSymbol(symbolManager(), GetUnit(sig), "Func4_109"), 0xc208);
 
 			sig = test->m_functions[0x7e1804] = typeManager()->createSignature("Func5_109");
 			sig->addParameter("param1", findType("uint32_t", ""));
@@ -567,14 +629,14 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 			sig->addParameter("param3", findType("bool", ""));
 			sig->addParameter("param4", findType("uint32_t", ""));
 			sig->setReturnType(findType("uint32_t"));
-			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func5_109"), 0x7e1804);
+			test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new FunctionSymbol(symbolManager(), GetUnit(sig), "Func5_109"), 0x7e1804);
 
 			sig = test->m_functions[0xffffffffff8e6ad4] = typeManager()->createSignature("Func6_109");
 			sig->addParameter("param1", findType("uint64_t", ""));
 			sig->addParameter("param2", findType("uint64_t", ""));
 			sig->addParameter("param3", findType("uint32_t", ""));
 			sig->addParameter("param4", findType("byte", ""));
-			test->m_userSymbolDef.m_globalMemoryArea->addSymbol((MemorySymbol*)symbolManager()->createSymbol(FUNCTION, GetUnit(sig), "Func6_109"), 0xffffffffff8e6ad4);
+			test->m_userSymbolDef.m_globalSymbolTable->addSymbol(new FunctionSymbol(symbolManager(), GetUnit(sig), "Func6_109"), 0xffffffffff8e6ad4);
 		}
 	}
 
@@ -640,7 +702,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 		PCode::DecoderX86 decoder(&m_registerFactoryX86, &warningContainer);
 
 		ImageAnalyzer imageAnalyzer(sampleTest->m_image, imageGraph, &decoder, &m_registerFactoryX86);
-		imageAnalyzer.startOnce(sampleTest->m_imageOffset);
+		imageAnalyzer.start(sampleTest->m_imageOffset, {}, true);
 		auto graph = *imageGraph->getFunctionGraphList().begin();
 
 		if (m_isOutput && sampleTest->m_showAsmBefore)

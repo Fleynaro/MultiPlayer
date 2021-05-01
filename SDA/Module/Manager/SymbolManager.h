@@ -17,7 +17,7 @@ namespace CE
 
 		void loadSymbols();
 
-		Symbol::AbstractSymbol* createSymbol(Symbol::Type type, DataTypePtr dataType, const std::string& name, const std::string& comment = "");
+		void bind(Symbol::AbstractSymbol* symbol);
 
 		Symbol::FuncParameterSymbol* getDefaultFuncParameterSymbol();
 

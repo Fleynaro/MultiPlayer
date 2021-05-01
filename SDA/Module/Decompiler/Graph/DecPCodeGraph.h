@@ -192,8 +192,12 @@ namespace CE::Decompiler
 			return newBlock;
 		}
 
-		std::list<FunctionPCodeGraph*>& getFunctionGraphList() {
+		auto& getFunctionGraphList() {
 			return m_funcGraphList;
+		}
+
+		FunctionPCodeGraph* getFirstFunctionGraph() {
+			return *m_funcGraphList.begin();
 		}
 
 		PCodeBlock* getBlockAtOffset(int64_t offset, bool halfInterval = true) {

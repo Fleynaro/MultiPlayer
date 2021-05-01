@@ -171,7 +171,7 @@ void GUI::DecompilerDemoWindow::decompile(const std::string& hexBytesStr)
     PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &registerFactoryX86, &image);
 
     ImageAnalyzer imageAnalyzer(&image, imageGraph, &decoder, &registerFactoryX86, &graphReferenceSearch);
-    imageAnalyzer.startOnce(0x0);
+    imageAnalyzer.start(0x0, {}, true);
     if (warningContainer.hasAnything()) {
         m_decInfoText.setText(warningContainer.getAllMessages());
     }

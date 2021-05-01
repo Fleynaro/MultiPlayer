@@ -52,7 +52,7 @@ namespace CE
 
 			//get length of file
 			infile.seekg(0, std::ios::end);
-			*size = infile.tellg();
+			*size = (int)infile.tellg();
 			infile.seekg(0, std::ios::beg);
 
 			*buffer = new char[*size];

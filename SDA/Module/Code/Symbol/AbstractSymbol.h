@@ -35,6 +35,10 @@ namespace CE
 			DataTypePtr getDataType() override;
 
 			void setDataType(DataTypePtr dataType) override;
+
+			virtual int getSize() {
+				return getDataType()->getSize();
+			}
 		private:
 			DataTypePtr m_dataType;
 			SymbolManager* m_manager;

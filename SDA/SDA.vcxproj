@@ -351,6 +351,7 @@
     <ClInclude Include="Module\Code\Symbol\FuncParameterSymbol.h" />
     <ClInclude Include="Module\Code\Symbol\FunctionSymbol.h" />
     <ClInclude Include="Module\Code\Symbol\IMemorySymbol.h" />
+    <ClInclude Include="Module\Code\Symbol\LocalInstrVarSymbol.h" />
     <ClInclude Include="Module\Code\Symbol\MemoryArea\MemoryArea.h" />
     <ClInclude Include="Module\Code\Symbol\MemorySymbol.h" />
     <ClInclude Include="Module\Code\Symbol\AbstractSymbol.h" />
@@ -377,6 +378,7 @@
     <ClInclude Include="Module\Decompiler\DecGraphBlockLinker.h" />
     <ClInclude Include="Module\Decompiler\DecMisc.h" />
     <ClInclude Include="Module\Decompiler\DecWarningContainer.h" />
+    <ClInclude Include="Module\Decompiler\Graph\Analyzer\ImagePCodeGraphAnalyzer.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraph.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraphBlockFlowIterator.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecPCodeGraph.h" />

@@ -55,9 +55,9 @@ namespace CE::Decompiler::Misc
 
     static Symbolization::UserSymbolDef CreateUserSymbolDef(ProgramModule* programModule) {
         auto userSymbolDef = Symbolization::UserSymbolDef(programModule);
-        userSymbolDef.m_globalMemoryArea = programModule->getGlobalMemoryArea();
-        userSymbolDef.m_stackMemoryArea = new CE::Symbol::MemoryArea(programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::STACK_SPACE, 100000);
-        userSymbolDef.m_funcBodyMemoryArea = new CE::Symbol::MemoryArea(programModule->getMemoryAreaManager(), CE::Symbol::MemoryArea::GLOBAL_SPACE, 100000);
+        userSymbolDef.m_globalSymbolTable = programModule->getGlobalMemoryArea();
+        userSymbolDef.m_stackSymbolTable = new CE::Symbol::SymbolTable(programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
+        userSymbolDef.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
         return userSymbolDef;
     }
 };

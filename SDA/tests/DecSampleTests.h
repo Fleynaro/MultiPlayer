@@ -10,6 +10,7 @@
 #include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>
 #include <Decompiler/PCode/DecPCodeConstValueCalc.h>
 #include <Decompiler/PCode/ImageAnalyzer/DecImageAnalyzer.h>
+#include <Decompiler/Graph/Analyzer/ImagePCodeGraphAnalyzer.h>
 #include <Decompiler/DecMisc.h>
 #include <Module/Image/SimpleBufferImage.h>
 #include <Module/Image/VectorBufferImage.h>
@@ -143,7 +144,7 @@ public:
 
 	// show all pcode instructions with original asm instructions
 	void showInstructions(const std::list<Instruction*>& instructions) {
-		PCodeBlock pcodeBlock(nullptr, 0, 0);
+		PCodeBlock pcodeBlock(0, 0);
 		pcodeBlock.getInstructions() = instructions;
 		out(pcodeBlock.printDebug(nullptr, "", false, true).c_str());
 	}

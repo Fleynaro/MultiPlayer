@@ -16,12 +16,10 @@ void SymbolManager::loadSymbols() {
 	m_symbolMapper->loadAll();
 }
 
-AbstractSymbol* SymbolManager::createSymbol(Symbol::Type type, DataTypePtr dataType, const std::string& name, const std::string& comment) {
-	auto symbol = CreateSymbol(this, type, dataType, name, comment);
+void SymbolManager::bind(Symbol::AbstractSymbol* symbol) {
 	symbol->setMapper(m_symbolMapper);
 	symbol->setId(m_symbolMapper->getNextId());
 	getProgramModule()->getTransaction()->markAsNew(symbol);
-	return symbol;
 }
 
 Symbol::FuncParameterSymbol* SymbolManager::getDefaultFuncParameterSymbol() {

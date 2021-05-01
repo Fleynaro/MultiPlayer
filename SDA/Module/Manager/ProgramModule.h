@@ -11,7 +11,7 @@ namespace CE
 	class ProcessModuleManager;
 	class TypeManager;
 	class SymbolManager;
-	class MemoryAreaManager;
+	class SymbolTableManager;
 	class FunctionManager;
 	class FunctionTagManager;
 	class VtableManager;
@@ -24,7 +24,7 @@ namespace CE
 	};
 
 	namespace Symbol {
-		class MemoryArea;
+		class SymbolTable;
 	};
 
 	class ProgramModule
@@ -52,7 +52,7 @@ namespace CE
 
 		SymbolManager* getSymbolManager();
 
-		MemoryAreaManager* getMemoryAreaManager();
+		SymbolTableManager* getMemoryAreaManager();
 
 		FunctionManager* getFunctionManager();
 
@@ -66,7 +66,7 @@ namespace CE
 
 		StatManager* getStatManager();
 
-		Symbol::MemoryArea* getGlobalMemoryArea();
+		Symbol::SymbolTable* getGlobalMemoryArea();
 
 		DB::ITransaction* getTransaction();
 
@@ -82,7 +82,7 @@ namespace CE
 		ProcessModuleManager* m_processModuleManager = nullptr;
 		TypeManager* m_typeManager = nullptr;
 		SymbolManager* m_symbolManager = nullptr;
-		MemoryAreaManager* m_memoryAreaManager = nullptr;
+		SymbolTableManager* m_memoryAreaManager = nullptr;
 		FunctionManager* m_functionManager = nullptr;
 		VtableManager* m_vtableManager = nullptr;
 		TriggerManager* m_triggerManager = nullptr;

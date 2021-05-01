@@ -55,7 +55,9 @@ void Signature::addParameter(Symbol::FuncParameterSymbol* symbol) {
 }
 
 void Signature::addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment) {
-	auto paramSymbol = dynamic_cast<Symbol::FuncParameterSymbol*>(getTypeManager()->getProgramModule()->getSymbolManager()->createSymbol(Symbol::FUNC_PARAMETER, dataType, name, comment));
+	auto manager = getTypeManager()->getProgramModule()->getSymbolManager();
+	auto paramSymbol = new Symbol::FuncParameterSymbol(manager, dataType, name, comment);
+	manager->bind(paramSymbol);
 	addParameter(paramSymbol);
 }
 

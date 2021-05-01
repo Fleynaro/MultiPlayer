@@ -3,27 +3,27 @@
 #include <Code/Symbol/MemoryArea/MemoryArea.h>
 
 namespace CE {
-	class MemoryAreaManager;
+	class SymbolTableManager;
 };
 
 namespace DB
 {
-	class MemoryAreaMapper : public AbstractMapper
+	class SymbolTableMapper : public AbstractMapper
 	{
 	public:
-		MemoryAreaMapper(IRepository* repository);
+		SymbolTableMapper(IRepository* repository);
 
 		void loadAll();
 
 		Id getNextId() override;
 
-		CE::MemoryAreaManager* getManager();
+		CE::SymbolTableManager* getManager();
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
-		void loadSymbolsForAllMemAreas(Database* db);
+		void loadSymbolsForAllSymTables(Database* db);
 
-		void saveSymbolsForMemArea(TransactionContext* ctx, CE::Symbol::MemoryArea* memoryArea);
+		void saveSymbolsForSymTable(TransactionContext* ctx, CE::Symbol::SymbolTable* memoryArea);
 
 		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
@@ -32,6 +32,6 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
-		void bind(SQLite::Statement& query, CE::Symbol::MemoryArea& memoryArea);
+		void bind(SQLite::Statement& query, CE::Symbol::SymbolTable& memoryArea);
 	};
 };

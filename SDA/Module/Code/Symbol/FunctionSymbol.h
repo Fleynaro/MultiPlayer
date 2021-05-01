@@ -7,11 +7,11 @@ namespace CE::Function {
 
 namespace CE::Symbol
 {
-	class FunctionSymbol : public MemorySymbol
+	class FunctionSymbol : public AbstractSymbol
 	{
 	public:
 		FunctionSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: MemorySymbol(manager, type, name, comment)
+			: AbstractSymbol(manager, type, name, comment)
 		{}
 
 		Type getType() override {

@@ -27,6 +27,10 @@ namespace CE::Decompiler::Symbolization
 		auto& getAutoSymbols() {
 			return m_autoSymbols;
 		}
+
+		auto& getUserDefinedSymbols() {
+			return m_userDefinedSymbols;
+		}
 	private:
 		UserSymbolDef* m_userSymbolDef;
 		DataTypeFactory* m_dataTypeFactory;
@@ -283,9 +287,9 @@ namespace CE::Decompiler::Symbolization
 
 				//MEMORY symbol with offset (e.g. globalVar1)
 				if (reg.m_type == Register::Type::StackPointer)
-					return createMemorySymbol(m_userSymbolDef->m_stackMemoryArea, CE::Symbol::LOCAL_STACK_VAR, "stack", symbol, offset, size);
+					return createMemorySymbol(m_userSymbolDef->m_stackSymbolTable, CE::Symbol::LOCAL_STACK_VAR, "stack", symbol, offset, size);
 				else if (reg.m_type == Register::Type::InstructionPointer)
-					return createMemorySymbol(m_userSymbolDef->m_globalMemoryArea, CE::Symbol::GLOBAL_VAR, "global", symbol, offset, size);
+					return createMemorySymbol(m_userSymbolDef->m_globalSymbolTable, CE::Symbol::GLOBAL_VAR, "global", symbol, offset, size);
 
 				//NOT-MEMORY symbol (unknown registers)
 				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "in_" + reg.printDebug(), 0, size);
@@ -301,7 +305,7 @@ namespace CE::Decompiler::Symbolization
 
 				if (!instrOffsets.empty()) {
 					for (auto instrOffset : instrOffsets) {
-						auto symbolPair = m_userSymbolDef->m_funcBodyMemoryArea->getSymbolAt(instrOffset);
+						auto symbolPair = m_userSymbolDef->m_funcBodySymbolTable->getSymbolAt(instrOffset);
 						if (symbolPair.second != nullptr) {
 							auto sdaSymbol = symbolPair.second;
 							m_userDefinedSymbols.insert(sdaSymbol);
@@ -324,7 +328,7 @@ namespace CE::Decompiler::Symbolization
 			return nullptr;
 		}
 
-		CE::Symbol::ISymbol* createMemorySymbol(CE::Symbol::MemoryArea* memoryArea, CE::Symbol::Type type, const std::string& name, Symbol::Symbol* symbol, int64_t& offset, int size) {
+		CE::Symbol::ISymbol* createMemorySymbol(CE::Symbol::SymbolTable* memoryArea, CE::Symbol::Type type, const std::string& name, Symbol::Symbol* symbol, int64_t& offset, int size) {
 			//try to find USER-DEFINED symbol in mem. area
 			auto symbolPair = memoryArea->getSymbolAt(offset);
 			if (symbolPair.second != nullptr) {
@@ -335,7 +339,7 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			uint64_t offsetView = offset;
-			if (memoryArea->getType() == CE::Symbol::MemoryArea::STACK_SPACE)
+			if (memoryArea->getType() == CE::Symbol::SymbolTable::STACK_SPACE)
 				offsetView = (uint32_t)-offset;
 
 			auto sdaSymbol = createAutoSdaSymbol(type, name + "_0x" + Generic::String::NumberToHex(offsetView), offset, size);
@@ -357,17 +361,18 @@ namespace CE::Decompiler::Symbolization
 			return sdaSymbol;
 		}
 
+		// load stack or global memory symbol by decompiler symbol (RSP/RIP) and offset
 		CE::Symbol::ISymbol* loadMemSdaSymbol(Symbol::Symbol* symbol, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
-				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) { // todo: remove zydis constant
+				if (reg.m_type == Register::Type::StackPointer) {
 					auto it = m_stackToSymbols.find(offset);
 					if (it != m_stackToSymbols.end()) {
 						offset = 0x0;
 						return it->second;
 					}
 				}
-				else if (reg.getGenericId() == ZYDIS_REGISTER_RIP) {
+				else if (reg.m_type == Register::Type::InstructionPointer) {
 					auto it = m_globalToSymbols.find(offset);
 					if (it != m_globalToSymbols.end()) {
 						offset = toGlobalOffset(0x0);
@@ -378,15 +383,16 @@ namespace CE::Decompiler::Symbolization
 			return nullptr;
 		}
 
+		// store stack or global memory symbol by decompiler symbol (RSP/RIP) and offset
 		void storeMemSdaSymbol(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* symbol, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
-				if (reg.getGenericId() == ZYDIS_REGISTER_RSP) { // todo: remove zydis constant
+				if (reg.m_type == Register::Type::StackPointer) {
 					m_stackToSymbols[offset] = sdaSymbol;
 					offset = 0x0;
 					return;
 				}
-				else if (reg.getGenericId() == ZYDIS_REGISTER_RIP) {
+				else if (reg.m_type == Register::Type::InstructionPointer) {
 					m_globalToSymbols[offset] = sdaSymbol;
 					offset = toGlobalOffset(0x0);
 					return;
@@ -395,11 +401,11 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		int64_t toGlobalOffset(int64_t offset) {
-			return m_userSymbolDef->m_offset + offset;
+			return m_userSymbolDef->m_startOffset + offset;
 		}
 
 		int64_t toLocalOffset(int64_t offset) {
-			return offset - m_userSymbolDef->m_offset;
+			return offset - m_userSymbolDef->m_startOffset;
 		}
 	};
 };

@@ -56,19 +56,19 @@ bool Function::Function::isContainingAddress(void* addr) {
 	return false;
 }
 
-Symbol::MemoryArea* Function::Function::getStackMemoryArea() {
-	return m_stackMemoryArea;
+Symbol::SymbolTable* Function::Function::getStackMemoryArea() {
+	return m_stackSymbolTable;
 }
 
-void Function::Function::setStackMemoryArea(Symbol::MemoryArea* stackMemoryArea) {
-	m_stackMemoryArea = stackMemoryArea;
+void Function::Function::setStackMemoryArea(Symbol::SymbolTable* stackMemoryArea) {
+	m_stackSymbolTable = stackMemoryArea;
 }
 
-Symbol::MemoryArea* Function::Function::getBodyMemoryArea() {
+Symbol::SymbolTable* Function::Function::getBodyMemoryArea() {
 	return m_bodyMemoryArea;
 }
 
-void Function::Function::setBodyMemoryArea(Symbol::MemoryArea* bodyMemoryArea) {
+void Function::Function::setBodyMemoryArea(Symbol::SymbolTable* bodyMemoryArea) {
 	m_bodyMemoryArea = bodyMemoryArea;
 }
 

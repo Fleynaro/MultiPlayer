@@ -41,13 +41,13 @@ namespace CE
 
 			bool isContainingAddress(void* addr);
 
-			Symbol::MemoryArea* getStackMemoryArea();
+			Symbol::SymbolTable* getStackMemoryArea();
 
-			void setStackMemoryArea(Symbol::MemoryArea* stackMemoryArea);
+			void setStackMemoryArea(Symbol::SymbolTable* stackMemoryArea);
 
-			Symbol::MemoryArea* getBodyMemoryArea();
+			Symbol::SymbolTable* getBodyMemoryArea();
 
-			void setBodyMemoryArea(Symbol::MemoryArea* bodyMemoryArea);
+			void setBodyMemoryArea(Symbol::SymbolTable* bodyMemoryArea);
 
 			Trigger::Function::Hook* getHook();
 
@@ -69,8 +69,8 @@ namespace CE
 			ProcessModule* m_module;
 			AddressRangeList m_ranges;
 			DataType::Signature* m_signature;
-			Symbol::MemoryArea* m_stackMemoryArea = nullptr;
-			Symbol::MemoryArea* m_bodyMemoryArea = nullptr;
+			Symbol::SymbolTable* m_stackSymbolTable = nullptr;
+			Symbol::SymbolTable* m_bodyMemoryArea = nullptr;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionManager* m_manager;
 			bool m_exported = false;

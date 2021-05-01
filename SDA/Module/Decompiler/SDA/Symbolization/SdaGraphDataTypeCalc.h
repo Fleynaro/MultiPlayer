@@ -261,11 +261,13 @@ namespace CE::Decompiler::Symbolization
 				return;
 			}
 			else if (auto unknownLocation = dynamic_cast<UnknownLocation*>(sdaNode)) {
-				//if it is a pointer, see to make sure it could'be transformed to an array or a class field
-				if (!dynamic_cast<GoarTopNode*>(unknownLocation->getBaseSdaNode())) {
-					if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
-						unknownLocation->replaceWith(goarNode);
-						delete unknownLocation;
+				if (false) {
+					//if it is a pointer, see to make sure it could'be transformed to an array or a class field
+					if (!dynamic_cast<GoarTopNode*>(unknownLocation->getBaseSdaNode())) {
+						if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
+							unknownLocation->replaceWith(goarNode);
+							delete unknownLocation;
+						}
 					}
 				}
 			}
