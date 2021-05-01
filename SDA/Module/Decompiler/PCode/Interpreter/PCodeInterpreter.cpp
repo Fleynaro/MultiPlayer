@@ -332,22 +332,20 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 		auto funcCallCtx = new ExprTree::FunctionCall(dstLocExpr, m_instr);
 
 		for (int paramIdx = 1; paramIdx <= 100; paramIdx++) {
-			try {
-				auto paramInfo = funcCallInfo.findParamInfoByIndex(paramIdx);
+			auto paramInfo = funcCallInfo.findParamInfoByIndex(paramIdx);
+			if (paramInfo.m_storage.getType() != Storage::STORAGE_NONE) {
 				auto node = buildParameterInfoExpr(paramInfo);
 				funcCallCtx->addParamNode(node);
 			}
-			catch (std::exception&) {
+			else {
 				break;
 			}
 		}
 
 		PCode::Register dstRegister;
-		try {
-			auto paramInfo = funcCallInfo.findParamInfoByIndex(0);
-			dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(paramInfo.m_storage.getRegisterId(), paramInfo.m_size, paramInfo.m_storage.getOffset());
-		}
-		catch (std::exception&) {
+		auto retInfo = funcCallInfo.getReturnInfo();
+		if (retInfo.m_storage.getType() != Storage::STORAGE_NONE) {
+			dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(retInfo.m_storage.getRegisterId(), retInfo.m_size, retInfo.m_storage.getOffset());
 		}
 
 		auto funcResultVar = new Symbol::FunctionResultVar(m_instr, dstRegister.m_valueRangeMask);
@@ -364,13 +362,10 @@ void InstructionInterpreter::execute(PrimaryTree::Block* block, ExecutionBlockCo
 	case InstructionId::RETURN:
 	{
 		if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(m_block)) {
-			try {
-				auto& funcCallInfo = m_ctx->m_decompiler->m_decompiledGraph->getFunctionCallInfo();
-				auto paramInfo = funcCallInfo.findParamInfoByIndex(0);
-				auto dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(paramInfo.m_storage.getRegisterId(), paramInfo.m_size, paramInfo.m_storage.getOffset());
+			auto& retInfo = m_ctx->m_decompiler->m_returnInfo;
+			if (retInfo.m_storage.getType() != Storage::STORAGE_NONE) {
+				auto dstRegister = m_ctx->m_decompiler->getRegisterFactory()->createRegister(retInfo.m_storage.getRegisterId(), retInfo.m_size, retInfo.m_storage.getOffset());
 				endBlock->setReturnNode(m_ctx->requestRegisterExpr(dstRegister));
-			}
-			catch (std::exception&) {
 			}
 		}
 		break;

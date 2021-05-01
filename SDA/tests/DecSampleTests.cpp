@@ -63,7 +63,8 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 	}
 
 	if (true) {
-		ImagePCodeGraphAnalyzer graphAnalyzer(imageGraph);
+		auto programGraph = new ProgramGraph(imageGraph);
+		ImagePCodeGraphAnalyzer graphAnalyzer(programGraph, m_programModule, &m_registerFactoryX86);
 		graphAnalyzer.start();
 	}
 
@@ -74,10 +75,10 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 		if (showAllInfo)
 			graph->printDebug(0x0);
 
-		auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
+		auto decCodeGraph = new DecompiledCodeGraph(graph);
 
-		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getParameterInfos(); };
-		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, funcCallInfoCallback);
+		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getCallInfo(); };
+		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, m_defSignature->getCallInfo().getReturnInfo(), funcCallInfoCallback);
 		decompiler->start();
 		showDecGraph(decCodeGraph);
 
@@ -289,10 +290,10 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	imageAnalyzer.start(0, offsetToInstruction, true);
 
 	auto graph = *imageGraph->getFunctionGraphList().begin();
-	auto decCodeGraph = new DecompiledCodeGraph(graph, m_defSignature->getParameterInfos());
+	auto decCodeGraph = new DecompiledCodeGraph(graph);
 
-	auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getParameterInfos(); };
-	auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, funcCallInfoCallback);
+	auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getCallInfo(); };
+	auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, m_defSignature->getCallInfo().getReturnInfo(), funcCallInfoCallback);
 	decompiler->start();
 	showDecGraph(decCodeGraph);
 
@@ -709,19 +710,19 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			graph->printDebug(0x0);
 
 		// 4) DECOMPILING (transform the asm graph to decompiled code graph)
-		auto info = CE::Decompiler::FunctionCallInfo(sampleTest->m_userSymbolDef.m_signature->getParameterInfos());
-		auto decCodeGraph = new DecompiledCodeGraph(graph, info);
+		auto info = sampleTest->m_userSymbolDef.m_signature->getCallInfo();
+		auto decCodeGraph = new DecompiledCodeGraph(graph);
 		
 		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) {
 			if (offset != 0x0) {
 				auto it = sampleTest->m_functions.find(offset);
 				if (it != sampleTest->m_functions.end())
-					return CE::Decompiler::FunctionCallInfo(it->second->getParameterInfos());
+					return CE::Decompiler::FunctionCallInfo(it->second->getCallInfo());
 			}
-			return CE::Decompiler::FunctionCallInfo(m_defSignature->getParameterInfos());
+			return CE::Decompiler::FunctionCallInfo(m_defSignature->getCallInfo());
 		};
 		RegisterFactoryX86 registerFactoryX86;
-		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, funcCallInfoCallback);
+		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, info.getReturnInfo(), funcCallInfoCallback);
 		decompiler->start();
 
 		//show code

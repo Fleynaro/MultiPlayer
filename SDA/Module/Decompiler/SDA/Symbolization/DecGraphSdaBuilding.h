@@ -6,9 +6,19 @@ namespace CE::Decompiler::Symbolization
 	// Transformation from untyped raw graph to typed one (creating sda nodes)
 	class SdaBuilding : public SdaGraphModification
 	{
+		UserSymbolDef* m_userSymbolDef;
+		DataTypeFactory* m_dataTypeFactory;
+		Signature::CallingConvetion m_callingConvention;
+		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols; //for cache purposes
+		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols; //stackVar1
+		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
+		std::set<CE::Symbol::AutoSdaSymbol*> m_autoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
+		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols; // defined by user (e.g. playerObj)
+		std::map<HS::Value, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts; //for cache purposes
 	public:
-		SdaBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory)
-			: SdaGraphModification(sdaCodeGraph), m_userSymbolDef(userSymbolDef), m_dataTypeFactory(dataTypeFactory)
+
+		SdaBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory, Signature::CallingConvetion callingConvention = Signature::FASTCALL)
+			: SdaGraphModification(sdaCodeGraph), m_userSymbolDef(userSymbolDef), m_dataTypeFactory(dataTypeFactory), m_callingConvention(callingConvention)
 		{}
 
 		void start() override {
@@ -32,14 +42,6 @@ namespace CE::Decompiler::Symbolization
 			return m_userDefinedSymbols;
 		}
 	private:
-		UserSymbolDef* m_userSymbolDef;
-		DataTypeFactory* m_dataTypeFactory;
-		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols; //for cache purposes
-		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols; //stackVar1
-		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
-		std::set<CE::Symbol::AutoSdaSymbol*> m_autoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
-		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols; // defined by user (e.g. playerObj)
-		std::map<HS::Value, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts; //for cache purposes
 
 		// join auto symbols and user symbols together
 		void addSdaSymbols() {
@@ -252,23 +254,12 @@ namespace CE::Decompiler::Symbolization
 
 			//try to find corresponding function parameter if {symbol} is register (RCX -> param1, RDX -> param2)
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
-				int paramIdx = 0;
 				auto& reg = regSymbol->m_register;
-				auto paramInfos = m_sdaCodeGraph->getDecGraph()->getFunctionCallInfo().getParamInfos();
+				int paramIdx = 0;
 
-				// finding function parameter
-				for (auto paramInfo : paramInfos) {
-					auto& storage = paramInfo.m_storage;
-					if (storage.getType() == Storage::STORAGE_REGISTER && reg.getGenericId() == storage.getRegisterId() || (offset == storage.getOffset() &&
-						(storage.getType() == Storage::STORAGE_STACK && reg.m_type == Register::Type::StackPointer ||
-							storage.getType() == Storage::STORAGE_GLOBAL && reg.m_type == Register::Type::InstructionPointer))) {
-						paramIdx = storage.getIndex();
-						break;
-					}
-				}
-
-				if (paramIdx != 0) {
-					if (m_userSymbolDef->m_signature) {
+				if (m_userSymbolDef->m_signature) {
+					paramIdx = m_userSymbolDef->m_signature->getCallInfo().findIndex(reg, offset);
+					if (paramIdx > 0) {
 						auto& funcParams = m_userSymbolDef->m_signature->getParameters();
 						if (paramIdx <= funcParams.size()) {
 							//USER-DEFINED func. parameter
@@ -278,7 +269,14 @@ namespace CE::Decompiler::Symbolization
 							return sdaSymbol;
 						}
 					}
+				}
+				else {
+					if (m_callingConvention == Signature::FASTCALL) {
+						paramIdx = GetIndex_FASTCALL(reg, offset);
+					}
+				}
 
+				if (paramIdx > 0) {
 					//auto func. parameter
 					auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::FUNC_PARAMETER, "param" + std::to_string(paramIdx), paramIdx, size);
 					storeMemSdaSymbol(sdaSymbol, symbol, offset);
@@ -397,6 +395,7 @@ namespace CE::Decompiler::Symbolization
 					offset = toGlobalOffset(0x0);
 					return;
 				}
+				//todo: for other...
 			}
 		}
 

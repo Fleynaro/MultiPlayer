@@ -1,5 +1,5 @@
 #pragma once
-#include <main.h>
+#include "PCode/DecPCode.h"
 
 namespace CE::Decompiler
 {
@@ -25,21 +25,24 @@ namespace CE::Decompiler
 		int64_t m_offset;
 	};
 
-	class ParameterStorage : public Storage {
-	public:
-		ParameterStorage(int index, StorageType storageType, int registerId, int64_t offset);
+	struct ParameterInfo {
+		int m_index = 0;
+		int m_size = 0;
+		Storage m_storage;
+
+		ParameterInfo() = default;
+
+		ParameterInfo(int index, int size, Storage storage)
+			: m_index(index), m_size(size), m_storage(storage)
+		{}
+
+		ParameterInfo(int size, Storage storage)
+			: m_size(size), m_storage(storage)
+		{}
 
 		int getIndex();
-	private:
-		int m_index;
 	};
-
-	struct ParameterInfo {
-		int m_size;
-		ParameterStorage m_storage;
-
-		ParameterInfo(int size, ParameterStorage storage);
-	};
+	using ReturnInfo = ParameterInfo;
 
 	class FunctionCallInfo {
 		std::list<ParameterInfo> m_paramInfos;
@@ -48,6 +51,31 @@ namespace CE::Decompiler
 
 		std::list<ParameterInfo>& getParamInfos();
 
-		ParameterInfo& findParamInfoByIndex(int idx);
+		ParameterInfo findParamInfoByIndex(int idx);
+
+		ReturnInfo getReturnInfo();
+
+		int findIndex(PCode::Register reg, int64_t offset);
 	};
+
+	static int GetIndex_FASTCALL(PCode::Register reg, int64_t offset) {
+		if (reg.m_type == PCode::Register::Type::StackPointer) {
+			return (int)offset / 0x8 - 5 + 1;
+		}
+		static std::map<PCode::RegisterId, int> regToParamId = {
+			std::pair(ZYDIS_REGISTER_RCX, 1),
+			std::pair(ZYDIS_REGISTER_ZMM0, 1),
+			std::pair(ZYDIS_REGISTER_RDX, 2),
+			std::pair(ZYDIS_REGISTER_ZMM1, 2),
+			std::pair(ZYDIS_REGISTER_R8, 3),
+			std::pair(ZYDIS_REGISTER_ZMM2, 3),
+			std::pair(ZYDIS_REGISTER_R9, 4),
+			std::pair(ZYDIS_REGISTER_ZMM3, 4),
+		};
+		auto it = regToParamId.find(reg.getGenericId());
+		if (it != regToParamId.end()) {
+			return it->second;
+		}
+		return -1;
+	}
 };

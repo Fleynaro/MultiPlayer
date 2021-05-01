@@ -6,8 +6,8 @@ using namespace CE::Symbol;
 
 Decompiler::Storage FuncParameterSymbol::getStorage() {
 	auto paramIdx = getParameterIndex();
-	for (auto& paramInfo : m_signature->getParameterInfos()) {
-		if (paramIdx == paramInfo.m_storage.getIndex()) {
+	for (auto& paramInfo : m_signature->getCallInfo().getParamInfos()) {
+		if (paramIdx == paramInfo.getIndex()) {
 			return paramInfo.m_storage;
 		}
 	}

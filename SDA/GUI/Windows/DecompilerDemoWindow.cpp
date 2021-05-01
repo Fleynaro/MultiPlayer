@@ -178,10 +178,10 @@ void GUI::DecompilerDemoWindow::decompile(const std::string& hexBytesStr)
 
     for (auto graph : imageGraph->getFunctionGraphList())
     {
-        auto decCodeGraph = new DecompiledCodeGraph(graph, FunctionCallInfo({}));
+        auto decCodeGraph = new DecompiledCodeGraph(graph);
 
         auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
-        auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, funcCallInfoCallback);
+        auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, ReturnInfo(), funcCallInfoCallback);
         decompiler->start();
         
         auto clonedDecCodeGraph = decCodeGraph->clone();

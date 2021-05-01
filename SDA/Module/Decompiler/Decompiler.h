@@ -22,10 +22,11 @@ namespace CE::Decompiler
 		std::map<PrimaryTree::Block*, DecompiledBlockInfo> m_decompiledBlocks;
 
 		DecompiledCodeGraph* m_decompiledGraph;
+		ReturnInfo m_returnInfo;
 		std::function<FunctionCallInfo(int, ExprTree::INode*)> m_funcCallInfoCallback;
 
-		Decompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, std::function<FunctionCallInfo(int, ExprTree::INode*)> funcCallInfoCallback)
-			: m_decompiledGraph(decompiledGraph), m_registerFactory(registerFactory), m_funcCallInfoCallback(funcCallInfoCallback)
+		Decompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, ReturnInfo returnInfo, std::function<FunctionCallInfo(int, ExprTree::INode*)> funcCallInfoCallback)
+			: m_decompiledGraph(decompiledGraph), m_registerFactory(registerFactory), m_returnInfo(returnInfo), m_funcCallInfoCallback(funcCallInfoCallback)
 		{
 			m_instructionInterpreter = new PCode::InstructionInterpreter;
 		}

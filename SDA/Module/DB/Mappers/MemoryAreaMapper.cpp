@@ -50,6 +50,8 @@ void SymbolTableMapper::loadSymbolsForAllSymTables(Database* db) {
 			continue;
 		auto symbol = getManager()->getProgramModule()->getSymbolManager()->getSymbolById(symbol_id);
 		memoryArea->addSymbol(symbol, offset);
+		if (auto memSymbol = dynamic_cast<MemorySymbol*>(symbol))
+			memSymbol->setOffset(offset);
 	}
 }
 

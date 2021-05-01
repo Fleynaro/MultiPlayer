@@ -1,15 +1,14 @@
 #pragma once
 #include "DecCodeGraphBlock.h"
 #include "DecPCodeGraph.h"
-#include "../DecStorage.h"
 
 namespace CE::Decompiler
 {
 	class DecompiledCodeGraph
 	{
 	public:
-		DecompiledCodeGraph(FunctionPCodeGraph* asmGraph, FunctionCallInfo functionCallInfo)
-			: m_funcGraph(asmGraph), m_functionCallInfo(functionCallInfo)
+		DecompiledCodeGraph(FunctionPCodeGraph* asmGraph)
+			: m_funcGraph(asmGraph)
 		{}
 
 		~DecompiledCodeGraph() {
@@ -42,10 +41,6 @@ namespace CE::Decompiler
 			return m_decompiledBlocks;
 		}
 
-		FunctionCallInfo& getFunctionCallInfo() {
-			return m_functionCallInfo;;
-		}
-
 		std::list<Symbol::Symbol*>& getSymbols() {
 			return m_symbols;
 		}
@@ -67,7 +62,7 @@ namespace CE::Decompiler
 
 		DecompiledCodeGraph* clone() {
 			PrimaryTree::BlockCloneContext ctx;
-			ctx.m_graph = new DecompiledCodeGraph(m_funcGraph, m_functionCallInfo);
+			ctx.m_graph = new DecompiledCodeGraph(m_funcGraph);
 			ctx.m_nodeCloneContext.m_cloneSymbols = true;
 			getStartBlock()->clone(&ctx);
 			for (auto pair : ctx.m_clonedBlocks) {
@@ -138,7 +133,6 @@ namespace CE::Decompiler
 		std::map<PrimaryTree::Block*, PCodeBlock*> m_decBlockToBlock;
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
 		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
-		FunctionCallInfo m_functionCallInfo;
 		std::list<Symbol::Symbol*> m_symbols;
 
 		// pass decompiled graph and calculate max distance from the root to each node (dec block). Similarly to asm graph!

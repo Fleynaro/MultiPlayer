@@ -32,12 +32,12 @@ void SignatureTypeMapper::loadStorages(Database* db) {
 			continue;
 
 		int index = query.getColumn("idx");
-		auto storage_type = (Decompiler::ParameterStorage::StorageType)(int)query.getColumn("storage_type");
+		auto storage_type = (Decompiler::Storage::StorageType)(int)query.getColumn("storage_type");
 		int register_id = query.getColumn("register_id");
 		int offset = query.getColumn("offset");
 
-		auto storage = Decompiler::ParameterStorage(index, storage_type, register_id, offset);
-		signature->getCustomStorages().push_back(storage);
+		auto storage = Decompiler::Storage(storage_type, register_id, offset);
+		signature->getCustomStorages().push_back(std::pair(index, storage));
 	}
 }
 
@@ -49,11 +49,13 @@ void SignatureTypeMapper::saveStorages(TransactionContext* ctx, DataType::Signat
 	}
 
 	{
-		for (auto storage : sig.getCustomStorages()) {
+		for (auto& pair : sig.getCustomStorages()) {
+			auto index = pair.first;
+			auto storage = pair.second;
 			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_signature_storages (signature_id, idx, storage_type, register_id, offset) \
 					VALUES(?1, ?2, ?3, ?4, ?5)");
 			query.bind(1, sig.getId());
-			query.bind(2, storage.getIndex());
+			query.bind(2, index);
 			query.bind(3, storage.getType());
 			query.bind(4, storage.getRegisterId());
 			query.bind(5, storage.getOffset());

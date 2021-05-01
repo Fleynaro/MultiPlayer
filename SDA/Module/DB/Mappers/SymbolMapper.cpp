@@ -36,8 +36,28 @@ IDomainObject* SymbolMapper::doLoad(Database* db, SQLite::Statement& query) {
 	if (dataType == nullptr) {
 		dataType = getManager()->getProgramModule()->getTypeManager()->getDefaultType();
 	}
+	auto dataTypeUnit = DataType::GetUnit(dataType, query.getColumn("pointer_lvl"));
 
-	auto symbol = CreateSymbol(getManager(), type, DataType::GetUnit(dataType, query.getColumn("pointer_lvl")), name, comment);
+	AbstractSymbol* symbol = nullptr;
+	switch (type)
+	{
+	case FUNCTION:
+		symbol = new FunctionSymbol(getManager(), dataTypeUnit, name, comment);
+		break;
+	case GLOBAL_VAR:
+		symbol = new GlobalVarSymbol(getManager(), -1, dataTypeUnit, name, comment);
+		break;
+	case LOCAL_INSTR_VAR:
+		symbol = new LocalInstrVarSymbol(getManager(), dataTypeUnit, name, comment);
+		break;
+	case LOCAL_STACK_VAR:
+		symbol = new LocalStackVarSymbol(getManager(), -1, dataTypeUnit, name, comment);
+		break;
+	case FUNC_PARAMETER:
+		symbol = new FuncParameterSymbol(getManager(), dataTypeUnit, name, comment);
+		break;
+	}
+
 	symbol->setId(symbol_id);
 	return symbol;
 }

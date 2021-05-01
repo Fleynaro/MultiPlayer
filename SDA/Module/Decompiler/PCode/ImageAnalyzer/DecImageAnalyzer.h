@@ -16,7 +16,7 @@ namespace CE::Decompiler
 		Symbolization::UserSymbolDef m_userSymbolDef;
 	public:
 		PCodeGraphReferenceSearch(CE::ProgramModule* programModule, AbstractRegisterFactory* registerFactory, IImage* image)
-			: m_programModule(programModule), m_registerFactory(registerFactory), m_image(image), m_dataTypeFactory(m_programModule)
+			: m_programModule(programModule), m_registerFactory(registerFactory), m_image(image), m_dataTypeFactory(programModule)
 		{
 			m_userSymbolDef = Symbolization::UserSymbolDef(m_programModule);
 			m_userSymbolDef.m_globalSymbolTable = new CE::Symbol::SymbolTable(m_programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
@@ -31,10 +31,10 @@ namespace CE::Decompiler
 		}
 
 		void findNewFunctionOffsets(FunctionPCodeGraph* funcGraph, std::list<int>& nonVirtFuncOffsets, std::list<int>& otherOffsets) {
-			auto decCodeGraph = new DecompiledCodeGraph(funcGraph, FunctionCallInfo({}));
+			auto decCodeGraph = new DecompiledCodeGraph(funcGraph);
 
 			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
-			auto decompiler = CE::Decompiler::Decompiler(decCodeGraph, m_registerFactory, funcCallInfoCallback);
+			auto decompiler = CE::Decompiler::Decompiler(decCodeGraph, m_registerFactory, ReturnInfo(), funcCallInfoCallback);
 			decompiler.start();
 
 			auto clonedDecCodeGraph = decCodeGraph->clone();
