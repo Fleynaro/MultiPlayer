@@ -10,8 +10,7 @@ namespace CE::Decompiler::Symbolization
 		Signature* m_signature;
 		DataTypeFactory* m_dataTypeFactory;
 		//used to proceed passing
-		bool m_nextPassUpRequired = false;
-		//bool m_nextPassDownRequired = false;
+		bool m_nextPassRequired = false;
 	public:
 		SdaDataTypesCalculater(SdaCodeGraph* sdaCodeGraph, Signature* signature, DataTypeFactory* dataTypeFactory)
 			: SdaGraphModification(sdaCodeGraph), m_signature(signature), m_dataTypeFactory(dataTypeFactory)
@@ -27,15 +26,11 @@ namespace CE::Decompiler::Symbolization
 
 			do {
 				do {
-					m_nextPassUpRequired = false;
+					m_nextPassRequired = false;
 					pass_up(allTopNodes);
-				} while (m_nextPassUpRequired);
+				} while (m_nextPassRequired);
 				pass_down(allTopNodes);
-				/*do {
-					m_nextPassDownRequired = false;
-					pass_down(allTopNodes);
-				} while (m_nextPassDownRequired);*/
-			} while (m_nextPassUpRequired);
+			} while (m_nextPassRequired);
 		}
 
 	private:
@@ -91,21 +86,19 @@ namespace CE::Decompiler::Symbolization
 				// read value, assignments...
 			}
 
-			// first iterate over all childs
+			// last iterate over all childs
 			node->iterateChildNodes([&](INode* childNode) {
 				moveExplicitCastsDown(childNode);
 				});
 		}
 
-		void calculateDataTypes(INode* node) {
+	protected:
+		virtual void calculateDataTypes(INode* node) {
 			// first iterate over all childs
 			node->iterateChildNodes([&](INode* childNode) {
 				calculateDataTypes(childNode);
 				});
-			calculateDataType(node);
-		}
 
-		void calculateDataType(INode* node) {
 			auto sdaNode = dynamic_cast<ISdaNode*>(node);
 			if (!sdaNode)
 				return;
@@ -160,46 +153,50 @@ namespace CE::Decompiler::Symbolization
 						}
 					}
 				}
-				else if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaGenNode->getNode())) {
-					auto maskSize = linearExpr->getMask().getSize();
+				else if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaGenNode->getNode())) { // or it is a pointer with offset, or it is some linear operation
 					auto sdaConstTerm = dynamic_cast<SdaNumberLeaf*>(linearExpr->getConstTerm());
-
-					//calculate the data type
-					DataTypePtr defaultDataType = m_dataTypeFactory->getDefaultType(maskSize);
 					DataTypePtr calcPointerDataType = sdaConstTerm->getDataType();
-					ISdaNode* baseSdaNode = nullptr; // it is a pointer
+					
+					//finding a pointer among terms (base term)
+					ISdaNode* sdaPointerNode = nullptr; // it is a pointer
 					int baseNodeIdx = 0;
 					int idx = 0;
-					for (auto term : linearExpr->getTerms()) { // finding a pointer among terms (base term)
+					for (auto term : linearExpr->getTerms()) {
 						if (auto sdaTermNode = dynamic_cast<ISdaNode*>(term)) {
-							calcPointerDataType = calcDataTypeForOperands(calcPointerDataType, sdaTermNode->getDataType());
 							if (sdaTermNode->getDataType()->isPointer()) {
-								baseSdaNode = sdaTermNode;
+								sdaPointerNode = sdaTermNode;
 								baseNodeIdx = idx;
+								calcPointerDataType = m_dataTypeFactory->getDefaultType(0x8);
 								break;
 							}
+							calcPointerDataType = calcDataTypeForOperands(calcPointerDataType, sdaTermNode->getDataType());
 						}
 						idx++;
 					}
 
 					//set the default data type (usually size of 8 bytes) for all terms (including the base)
-					cast(sdaConstTerm, defaultDataType);
+					cast(sdaConstTerm, calcPointerDataType);
 					for (auto termNode : linearExpr->getTerms()) {
 						if (auto sdaTermNode = dynamic_cast<ISdaNode*>(termNode)) {
-							cast(sdaTermNode, defaultDataType);
+							cast(sdaTermNode, calcPointerDataType);
 						}
 					}
-					sdaGenNode->setDataType(defaultDataType);
-					//cast to the pointer data type (can be the same as default): *(float*)((uint64_t)param1 + 0x10)
-					cast(sdaGenNode, calcPointerDataType);
 
 					//if we figure out a pointer then we guarantee it is always some unk location
-					if (baseSdaNode) {
+					if (sdaPointerNode) {
 						auto unknownLocation = new UnknownLocation(linearExpr, baseNodeIdx); //wrap LinearExpr 
 						linearExpr->addParentNode(unknownLocation);
 						sdaGenNode->replaceWith(unknownLocation);
 						delete sdaGenNode;
-						calculateDataType(unknownLocation);
+
+						// should be (float*)((uint64_t)param1 + 0x10)
+						//cast(unknownLocation, sdaPointerNode->getDataType());
+						//then build a goar or anything
+						handleUnknownLocation(unknownLocation);
+					}
+					else {
+						// not a pointer, just some linear operation
+						sdaGenNode->setDataType(calcPointerDataType);
 					}
 				}
 				else if (auto assignmentNode = dynamic_cast<AssignmentNode*>(sdaGenNode->getNode())) {
@@ -208,14 +205,13 @@ namespace CE::Decompiler::Symbolization
 							auto dstNodeDataType = dstSdaNode->getDataType();
 							auto srcNodeDataType = srcSdaNode->getDataType();
 
-							// or change data type of the dst AUTO symbol, or cast the src expr. to be fit to the dst by data type
-							if (canDataTypeBeChangedTo(dstSdaNode, srcNodeDataType)) {
-								dstSdaNode->setDataType(srcNodeDataType);
-								m_nextPassUpRequired = true;
+							if (dstNodeDataType->getSize() == srcNodeDataType->getSize() && dstNodeDataType->getPriority() < srcNodeDataType->getPriority()) {
+								cast(dstSdaNode, srcNodeDataType);
+								dstSdaNode->getCast()->clearCast();
+								dstNodeDataType = dstSdaNode->getDataType();
 							}
-							else {
-								cast(srcSdaNode, dstNodeDataType);
-							}
+
+							cast(srcSdaNode, dstNodeDataType);
 							sdaGenNode->setDataType(dstNodeDataType);
 						}
 					}
@@ -292,8 +288,8 @@ namespace CE::Decompiler::Symbolization
 							linearExpr->addParentNode(unknownLocation);
 							sdaSymbolLeaf->replaceWith(unknownLocation);
 							linearExpr->addTerm(sdaSymbolLeaf);
-							// recalculate but for unknownLocation
-							calculateDataType(unknownLocation);
+							//then build a goar or anything
+							handleUnknownLocation(unknownLocation);
 						}
 					}
 					// why a symbol only? Because no cases when (param1->field_1)->field_2 as memVar exists.
@@ -322,7 +318,6 @@ namespace CE::Decompiler::Symbolization
 			}
 		}
 
-	protected:
 		// casting {sdaNode} to {toDataType}
 		void cast(ISdaNode* sdaNode, DataTypePtr toDataType) {
 			//exception case (better change number view between HEX and non-HEX than do the cast)
@@ -336,45 +331,30 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			//CASTING
-			sdaNode->getCast()->setCastDataType(toDataType, isExplicitCast(sdaNode->getDataType(), toDataType));
+			auto explicitCast = isExplicitCast(sdaNode->getSrcDataType(), toDataType);
+			sdaNode->getCast()->setCastDataType(toDataType, explicitCast);
 
-			if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaNode)) {
-				// for complex pointer (linear view): {players} + player_id * 0x1008
-				if (toDataType->isPointer()) {
-					SdaSymbolLeaf* sdaTermLeafToChange = nullptr;
-					for (auto term : linearExpr->getTerms()) {
-						if (auto sdaTermLeaf = dynamic_cast<SdaSymbolLeaf*>(term)) {
-							if (canDataTypeBeChangedTo(sdaTermLeaf, toDataType)) {
-								sdaTermLeafToChange = sdaTermLeaf; //{players} is symbol with datatype {uint64_t}
-								if (sdaTermLeaf->getSdaSymbol()->getDataType()->isPointer())
-									break;
-							}
-						}
-					}
-					if (sdaTermLeafToChange) {
-						//{uint64_t} -> {Player*}
-						sdaTermLeafToChange->setDataType(toDataType);
-						m_nextPassUpRequired = true;
-					}
-				}
-			}
-			else {
-				if (canDataTypeBeChangedTo(sdaNode, toDataType)) {
-					sdaNode->setDataType(toDataType);
-					m_nextPassUpRequired = true;
-				}
-			}
-		}
-
-		// for AUTO sda symbols that have to acquire a data type with the biggest priority (e.g. uint64_t -> Player*)
-		bool canDataTypeBeChangedTo(ISdaNode* sdaNode, DataTypePtr toDataType) {
+			// for AUTO sda symbols that have to acquire a data type with the biggest priority (e.g. uint64_t -> Player*)
 			if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode)) {
 				if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(sdaSymbolLeaf->getSdaSymbol())) {
 					auto symbolDataType = autoSdaSymbol->getDataType();
-					return symbolDataType->getSize() == toDataType->getSize() && symbolDataType->getPriority() < toDataType->getPriority();
+					if (symbolDataType->getSize() == toDataType->getSize() && symbolDataType->getPriority() < toDataType->getPriority()) {
+						sdaSymbolLeaf->setDataType(toDataType);
+						m_nextPassRequired = true;
+					}
 				}
 			}
-			return false;
+			// *(uint32_t*)(p + 4) -> *(float*)(p + 4)
+			else if (auto sdaReadValueNode = dynamic_cast<SdaReadValueNode*>(sdaNode)) {
+				if (sdaReadValueNode->getSize() == toDataType->getSize()) {
+					auto addrSdaNode = sdaReadValueNode->getAddress();
+					auto newAddrDataType = DataType::CloneUnit(toDataType);
+					newAddrDataType->addPointerLevelInFront();
+
+					cast(addrSdaNode, newAddrDataType);
+					sdaNode->setDataType(toDataType);
+				}
+			}
 		}
 
 		// does it need explicit casting (e.g. (float)0x100024)

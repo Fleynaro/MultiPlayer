@@ -73,6 +73,15 @@ namespace CE::Decompiler
 			{}
 
 		private:
+			void calculateDataTypes(INode* node) override {
+				Symbolization::SdaDataTypesCalculater::calculateDataTypes(node);
+				if (auto sdaReadValueNode = dynamic_cast<SdaReadValueNode*>(node)) {
+
+				}
+			}
+
+			// никаких локаций изначально нет, ибо нет указателей. лучше обработку вести с SdaReadValueNode для выражений типа: p + 0x10, p + 0x4 * i, ...
+			// после на след. проходах появятся локации. нужно создать свою ноду-символ, которая будет впитывать тип
 			void handleUnknownLocation(UnknownLocation* unknownLoc) override {
 				auto baseSdaNode = unknownLoc->getBaseSdaNode();
 				if (auto readValueNode = dynamic_cast<ReadValueNode*>(baseSdaNode->getParentNode())) {
@@ -85,9 +94,10 @@ namespace CE::Decompiler
 						}
 
 						auto offset = unknownLoc->getConstTermValue();
+						auto newFieldDataType = sdaReadValueNode->getDataType();
 						auto it = rawStructure->m_fields.find(offset);
-						if (it == rawStructure->m_fields.end() || it->second->getPriority() < sdaReadValueNode->getDataType()->getPriority()) {
-							rawStructure->m_fields[offset] = sdaReadValueNode->getDataType();
+						if (it == rawStructure->m_fields.end() || it->second->getPriority() < newFieldDataType->getPriority()) {
+							rawStructure->m_fields[offset] = newFieldDataType;
 							if (unknownLoc->getArrTerms().size() > 0) {
 								rawStructure->m_arrayBegins.insert(offset);
 							}
