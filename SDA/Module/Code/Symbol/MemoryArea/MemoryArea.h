@@ -17,6 +17,10 @@ namespace CE
 
 			SymbolTable(SymbolTableManager* manager, SymbolTableType type, int size);
 
+			SymbolTable(SymbolTableType type, int size)
+				: SymbolTable(nullptr, type, size)
+			{}
+
 			SymbolTableManager* getManager();
 
 			SymbolTableType getType();

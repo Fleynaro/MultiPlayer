@@ -62,7 +62,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 		printf("\nTROUBLES:\n%s\n", warningContainer.getAllMessages().c_str());
 	}
 
-	if (true) {
+	if (false) {
 		auto programGraph = new ProgramGraph(imageGraph);
 		ImagePCodeGraphAnalyzer graphAnalyzer(programGraph, m_programModule, &m_registerFactoryX86);
 		graphAnalyzer.start();
@@ -106,7 +106,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 			showDecGraph(sdaCodeGraph->getDecGraph());
 		}
 
-		Symbolization::SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
+		Symbolization::SdaDataTypesCalculater sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
 		sdaDataTypesCalculating.start();
 		printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 		if (showAllInfo)
@@ -178,7 +178,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	SymbolVarnode* val4 = new SymbolVarnode(4);
 	SymbolVarnode* val8 = new SymbolVarnode(8);
 	auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
-	userSymbolDef.m_signature = m_defSignature;
+	//userSymbolDef.m_signature = m_defSignature;
 
 	switch (2)
 	{
@@ -238,6 +238,10 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 		SymbolVarnode* arr_val = new SymbolVarnode(4);
 
 		// TODO: if-else
+
+		{
+			//userSymbolDef.m_funcBodySymbolTable->addSymbol(new LocalInstrVarSymbol(symbolManager(), findType("uint32_t", "[1]"), "userVar1"), 2304);
+		}
 
 		instructions = {
 			// global var
@@ -310,7 +314,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 	showDecGraph(sdaCodeGraph->getDecGraph());
 
-	Symbolization::SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
+	Symbolization::SdaDataTypesCalculater sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
 	sdaDataTypesCalculating.start();
 	printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 	showDecGraph(sdaCodeGraph->getDecGraph());

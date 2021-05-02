@@ -30,7 +30,11 @@ namespace CE
 				Signature
 			};
 
-			Type(TypeManager* typeManager, const std::string& name, const std::string& comment);
+			Type(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
+
+			Type(const std::string& name, const std::string& comment = "")
+				: Type(nullptr, name, comment)
+			{}
 
 			virtual Group getGroup() = 0;
 

@@ -10,7 +10,7 @@ namespace CE::Decompiler::Symbolization
 		SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 		sdaBuilding.start();
 
-		SdaDataTypesCalculating sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
+		SdaDataTypesCalculater sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
 		sdaDataTypesCalculating.start();
 	}
 };

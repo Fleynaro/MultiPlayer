@@ -27,7 +27,7 @@ namespace CE::Decompiler::Symbolization
 			while (buildSingleGoar(resultSdaNode, resultBitOffset, m_sdaTerms));
 
 			if (dynamic_cast<GoarNode*>(resultSdaNode)) {
-				bool isPointer = m_baseSdaNode->getDataType()->isPointer();
+				bool isPointer = m_baseSdaNode->getSrcDataType()->isPointer(); // getting a type without a cast (a pointer inside uint64_t)
 				if (isPointer) {
 					//if the base is a kind of pointer then remove & operation (and set it up later in the top of the built GOAR)
 					if (auto addrGetting = dynamic_cast<IMappedToMemory*>(m_baseSdaNode)) {
@@ -54,7 +54,7 @@ namespace CE::Decompiler::Symbolization
 
 	private:
 		bool buildSingleGoar(ISdaNode*& sdaNode, int64_t& bitOffset, std::list<ISdaNode*>& terms) {
-			auto dataType = sdaNode->getDataType();
+			auto dataType = sdaNode->getSrcDataType(); // getting a type without a cast (a pointer inside uint64_t)
 			auto ptrLevels = dataType->getPointerLevels();
 			auto baseDataType = dataType->getBaseType();
 

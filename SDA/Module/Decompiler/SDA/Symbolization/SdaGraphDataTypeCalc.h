@@ -5,10 +5,15 @@
 namespace CE::Decompiler::Symbolization
 {
 	//Calculating data types for all nodes and building GOAR structures
-	class SdaDataTypesCalculating : public SdaGraphModification
+	class SdaDataTypesCalculater : public SdaGraphModification
 	{
+		Signature* m_signature;
+		DataTypeFactory* m_dataTypeFactory;
+		//used to proceed passing
+		bool m_nextPassUpRequired = false;
+		//bool m_nextPassDownRequired = false;
 	public:
-		SdaDataTypesCalculating(SdaCodeGraph* sdaCodeGraph, Signature* signature, DataTypeFactory* dataTypeFactory)
+		SdaDataTypesCalculater(SdaCodeGraph* sdaCodeGraph, Signature* signature, DataTypeFactory* dataTypeFactory)
 			: SdaGraphModification(sdaCodeGraph), m_signature(signature), m_dataTypeFactory(dataTypeFactory)
 		{}
 
@@ -21,32 +26,75 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			do {
-				m_nextPassRequired = false;
-				//make a pass through all top nodes
-				pass(allTopNodes);
-			} while (m_nextPassRequired);
+				do {
+					m_nextPassUpRequired = false;
+					pass_up(allTopNodes);
+				} while (m_nextPassUpRequired);
+				pass_down(allTopNodes);
+				/*do {
+					m_nextPassDownRequired = false;
+					pass_down(allTopNodes);
+				} while (m_nextPassDownRequired);*/
+			} while (m_nextPassUpRequired);
 		}
+
 	private:
-		Signature* m_signature;
-		DataTypeFactory* m_dataTypeFactory;
-		//used to proceed passing
-		bool m_nextPassRequired = false;
-		
-		//make a pass through the specified top nodes
-		void pass(const std::list<Block::BlockTopNode*>& topNodes) {
+		//make a pass up through the specified top nodes
+		void pass_up(const std::list<Block::BlockTopNode*>& topNodes) {
 			for (auto topNode : topNodes) {
 				auto node = topNode->getNode();
 				INode::UpdateDebugInfo(node);
 				calculateDataTypes(node);
 
 				//for return statement
-				if (auto returnTopNode = dynamic_cast<Block::ReturnTopNode*>(topNode)) {
-					if (auto returnNode = dynamic_cast<ISdaNode*>(returnTopNode->getNode())) {
-						auto retDataType = m_signature->getReturnType();
-						cast(returnNode, retDataType);
+				if (m_signature) {
+					if (auto returnTopNode = dynamic_cast<Block::ReturnTopNode*>(topNode)) {
+						if (auto returnNode = dynamic_cast<ISdaNode*>(returnTopNode->getNode())) {
+							auto retDataType = m_signature->getReturnType();
+							cast(returnNode, retDataType);
+						}
 					}
 				}
 			}
+		}
+
+		//make a pass down through the specified top nodes
+		void pass_down(const std::list<Block::BlockTopNode*>& topNodes) {
+			for (auto topNode : topNodes) {
+				auto node = topNode->getNode();
+				INode::UpdateDebugInfo(node);
+				moveExplicitCastsDown(node);
+			}
+		}
+
+		void moveExplicitCastsDown(INode* node) {
+			auto sdaNode = dynamic_cast<ISdaNode*>(node);
+			if (!sdaNode || !sdaNode->getCast()->hasExplicitCast())
+				return;
+			auto castDataType = sdaNode->getCast()->getCastDataType();
+
+			if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(sdaNode))
+			{
+				if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenNode->getNode())) {
+					if (!IsOperationUnsupportedToCalculate(opNode->m_operation)
+						&& opNode->m_operation != Concat && opNode->m_operation != Subpiece) {
+						if (auto sdaLeftSdaNode = dynamic_cast<ISdaNode*>(opNode->m_leftNode)) {
+							if (auto sdaRightSdaNode = dynamic_cast<ISdaNode*>(opNode->m_rightNode)) {
+								cast(sdaLeftSdaNode, castDataType);
+								cast(sdaRightSdaNode, castDataType);
+								sdaGenNode->setDataType(castDataType);
+								sdaNode->getCast()->clearCast();
+							}
+						}
+					}
+				}
+				// read value, assignments...
+			}
+
+			// first iterate over all childs
+			node->iterateChildNodes([&](INode* childNode) {
+				moveExplicitCastsDown(childNode);
+				});
 		}
 
 		void calculateDataTypes(INode* node) {
@@ -97,7 +145,7 @@ namespace CE::Decompiler::Symbolization
 									rightNodeDataType = sdaRightSdaNode->getDataType();
 								}
 
-								auto calcDataType = calcDataTypeForOperands(sdaLeftSdaNode->getDataType(), sdaRightSdaNode->getDataType());
+								auto calcDataType = calcDataTypeForOperands(sdaLeftSdaNode->getDataType(), rightNodeDataType);
 								if (opNode->isFloatingPoint()) { // floating operation used?
 									calcDataType = calcDataTypeForOperands(calcDataType, m_dataTypeFactory->getDefaultType(maskSize, true, true));
 								}
@@ -117,13 +165,14 @@ namespace CE::Decompiler::Symbolization
 					auto sdaConstTerm = dynamic_cast<SdaNumberLeaf*>(linearExpr->getConstTerm());
 
 					//calculate the data type
-					DataTypePtr calcDataType = sdaConstTerm->getDataType();
-					ISdaNode* baseSdaNode = nullptr;
+					DataTypePtr defaultDataType = m_dataTypeFactory->getDefaultType(maskSize);
+					DataTypePtr calcPointerDataType = sdaConstTerm->getDataType();
+					ISdaNode* baseSdaNode = nullptr; // it is a pointer
 					int baseNodeIdx = 0;
 					int idx = 0;
 					for (auto term : linearExpr->getTerms()) { // finding a pointer among terms (base term)
 						if (auto sdaTermNode = dynamic_cast<ISdaNode*>(term)) {
-							calcDataType = calcDataTypeForOperands(calcDataType, sdaTermNode->getDataType());
+							calcPointerDataType = calcDataTypeForOperands(calcPointerDataType, sdaTermNode->getDataType());
 							if (sdaTermNode->getDataType()->isPointer()) {
 								baseSdaNode = sdaTermNode;
 								baseNodeIdx = idx;
@@ -133,19 +182,16 @@ namespace CE::Decompiler::Symbolization
 						idx++;
 					}
 
-					if (maskSize != calcDataType->getSize()) {
-						// todo: print warning
-						calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
-					}
-
-					//cast to the data type
-					cast(sdaConstTerm, calcDataType);
+					//set the default data type (usually size of 8 bytes) for all terms (including the base)
+					cast(sdaConstTerm, defaultDataType);
 					for (auto termNode : linearExpr->getTerms()) {
 						if (auto sdaTermNode = dynamic_cast<ISdaNode*>(termNode)) {
-							cast(sdaTermNode, calcDataType);
+							cast(sdaTermNode, defaultDataType);
 						}
 					}
-					sdaGenNode->setDataType(calcDataType);
+					sdaGenNode->setDataType(defaultDataType);
+					//cast to the pointer data type (can be the same as default): *(float*)((uint64_t)param1 + 0x10)
+					cast(sdaGenNode, calcPointerDataType);
 
 					//if we figure out a pointer then we guarantee it is always some unk location
 					if (baseSdaNode) {
@@ -165,7 +211,7 @@ namespace CE::Decompiler::Symbolization
 							// or change data type of the dst AUTO symbol, or cast the src expr. to be fit to the dst by data type
 							if (canDataTypeBeChangedTo(dstSdaNode, srcNodeDataType)) {
 								dstSdaNode->setDataType(srcNodeDataType);
-								m_nextPassRequired = true;
+								m_nextPassUpRequired = true;
 							}
 							else {
 								cast(srcSdaNode, dstNodeDataType);
@@ -250,6 +296,7 @@ namespace CE::Decompiler::Symbolization
 							calculateDataType(unknownLocation);
 						}
 					}
+					// why a symbol only? Because no cases when (param1->field_1)->field_2 as memVar exists.
 				}
 			}
 			else if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(sdaNode)) {
@@ -261,18 +308,21 @@ namespace CE::Decompiler::Symbolization
 				return;
 			}
 			else if (auto unknownLocation = dynamic_cast<UnknownLocation*>(sdaNode)) {
-				if (false) {
-					//if it is a pointer, see to make sure it could'be transformed to an array or a class field
-					if (!dynamic_cast<GoarTopNode*>(unknownLocation->getBaseSdaNode())) {
-						if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
-							unknownLocation->replaceWith(goarNode);
-							delete unknownLocation;
-						}
-					}
+				handleUnknownLocation(unknownLocation);
+			}
+		}
+
+		virtual void handleUnknownLocation(UnknownLocation* unknownLocation) {
+			//if it is a pointer, see to make sure it could'be transformed to an array or a class field
+			if (!dynamic_cast<GoarTopNode*>(unknownLocation->getBaseSdaNode())) {
+				if (auto goarNode = SdaGoarBuilding(m_dataTypeFactory, unknownLocation).create()) {
+					unknownLocation->replaceWith(goarNode);
+					delete unknownLocation;
 				}
 			}
 		}
 
+	protected:
 		// casting {sdaNode} to {toDataType}
 		void cast(ISdaNode* sdaNode, DataTypePtr toDataType) {
 			//exception case (better change number view between HEX and non-HEX than do the cast)
@@ -304,14 +354,14 @@ namespace CE::Decompiler::Symbolization
 					if (sdaTermLeafToChange) {
 						//{uint64_t} -> {Player*}
 						sdaTermLeafToChange->setDataType(toDataType);
-						m_nextPassRequired = true;
+						m_nextPassUpRequired = true;
 					}
 				}
 			}
 			else {
 				if (canDataTypeBeChangedTo(sdaNode, toDataType)) {
 					sdaNode->setDataType(toDataType);
-					m_nextPassRequired = true;
+					m_nextPassUpRequired = true;
 				}
 			}
 		}
