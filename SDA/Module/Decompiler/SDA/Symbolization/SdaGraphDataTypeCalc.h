@@ -9,8 +9,6 @@ namespace CE::Decompiler::Symbolization
 	{
 		Signature* m_signature;
 		DataTypeFactory* m_dataTypeFactory;
-		//used to proceed passing
-		bool m_nextPassRequired = false;
 	public:
 		SdaDataTypesCalculater(SdaCodeGraph* sdaCodeGraph, Signature* signature, DataTypeFactory* dataTypeFactory)
 			: SdaGraphModification(sdaCodeGraph), m_signature(signature), m_dataTypeFactory(dataTypeFactory)
@@ -93,6 +91,9 @@ namespace CE::Decompiler::Symbolization
 		}
 
 	protected:
+		//used to proceed passing
+		bool m_nextPassRequired = false;
+
 		virtual void calculateDataTypes(INode* node) {
 			// first iterate over all childs
 			node->iterateChildNodes([&](INode* childNode) {
@@ -159,13 +160,13 @@ namespace CE::Decompiler::Symbolization
 					
 					//finding a pointer among terms (base term)
 					ISdaNode* sdaPointerNode = nullptr; // it is a pointer
-					int baseNodeIdx = 0;
+					int sdaPointerNodeIdx = 0;
 					int idx = 0;
 					for (auto term : linearExpr->getTerms()) {
 						if (auto sdaTermNode = dynamic_cast<ISdaNode*>(term)) {
 							if (sdaTermNode->getDataType()->isPointer()) {
 								sdaPointerNode = sdaTermNode;
-								baseNodeIdx = idx;
+								sdaPointerNodeIdx = idx;
 								calcPointerDataType = m_dataTypeFactory->getDefaultType(0x8);
 								break;
 							}
@@ -184,7 +185,7 @@ namespace CE::Decompiler::Symbolization
 
 					//if we figure out a pointer then we guarantee it is always some unk location
 					if (sdaPointerNode) {
-						auto unknownLocation = new UnknownLocation(linearExpr, baseNodeIdx); //wrap LinearExpr 
+						auto unknownLocation = new UnknownLocation(linearExpr, sdaPointerNodeIdx); //wrap LinearExpr 
 						linearExpr->addParentNode(unknownLocation);
 						sdaGenNode->replaceWith(unknownLocation);
 						delete sdaGenNode;

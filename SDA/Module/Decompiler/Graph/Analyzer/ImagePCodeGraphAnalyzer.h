@@ -73,33 +73,68 @@ namespace CE::Decompiler
 			{}
 
 		private:
+			bool isArrayIndexNode(ISdaNode* sdaNode) {
+				if (auto sdaGenTermNode = dynamic_cast<SdaGenericNode*>(sdaNode)) {
+					if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenTermNode->getNode())) {
+						if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(opNode->m_rightNode)) {
+							if (opNode->m_operation == Mul) {
+								return true;
+							}
+						}
+					}
+				}
+				return false;
+			}
+
 			void calculateDataTypes(INode* node) override {
 				Symbolization::SdaDataTypesCalculater::calculateDataTypes(node);
 				if (auto sdaReadValueNode = dynamic_cast<SdaReadValueNode*>(node)) {
+					auto addrSdaNode = sdaReadValueNode->getAddress();
 
+					ISdaNode* sdaPointerNode = nullptr;
+					if (auto sdaGenNode = dynamic_cast<SdaGenericNode*>(addrSdaNode)) {
+						if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaGenNode)) {
+							for (auto term : linearExpr->getTerms()) {
+								if (auto sdaTermNode = dynamic_cast<ISdaNode*>(term)) {
+									if (sdaTermNode->getMask().getSize() == 0x8 && !isArrayIndexNode(sdaTermNode)) {
+										if (!sdaPointerNode) {
+											sdaPointerNode = nullptr;
+											break;
+										}
+										sdaPointerNode = sdaTermNode;
+									}
+								}
+							}
+						}
+						
+					}
+					else if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(addrSdaNode)) {
+						sdaPointerNode = sdaSymbolLeaf;
+					}
+
+					if (sdaPointerNode) {
+						auto rawStructure = new RawStructure;
+						m_imagePCodeGraphAnalyzer->m_rawStructures.push_back(rawStructure);
+						sdaPointerNode->setDataType(DataType::GetUnit(rawStructure, "[1]"));
+						m_nextPassRequired = true;
+					}
 				}
 			}
 
-			// никаких локаций изначально нет, ибо нет указателей. лучше обработку вести с SdaReadValueNode для выражений типа: p + 0x10, p + 0x4 * i, ...
-			// после на след. проходах появятся локации. нужно создать свою ноду-символ, которая будет впитывать тип
 			void handleUnknownLocation(UnknownLocation* unknownLoc) override {
-				auto baseSdaNode = unknownLoc->getBaseSdaNode();
-				if (auto readValueNode = dynamic_cast<ReadValueNode*>(baseSdaNode->getParentNode())) {
-					if (auto sdaReadValueNode = dynamic_cast<SdaReadValueNode*>(readValueNode->getParentNode())) {
-						auto rawStructure = dynamic_cast<RawStructure*>(baseSdaNode->getDataType()->getType());
-						if (!rawStructure) {
-							rawStructure = new RawStructure;
-							m_imagePCodeGraphAnalyzer->m_rawStructures.push_back(rawStructure);
-							baseSdaNode->setDataType(DataType::GetUnit(rawStructure, "[1]"));
-						}
-
-						auto offset = unknownLoc->getConstTermValue();
-						auto newFieldDataType = sdaReadValueNode->getDataType();
-						auto it = rawStructure->m_fields.find(offset);
-						if (it == rawStructure->m_fields.end() || it->second->getPriority() < newFieldDataType->getPriority()) {
-							rawStructure->m_fields[offset] = newFieldDataType;
-							if (unknownLoc->getArrTerms().size() > 0) {
-								rawStructure->m_arrayBegins.insert(offset);
+				if (auto readValueNode = dynamic_cast<ReadValueNode*>(unknownLoc->getParentNode())) {
+					if (auto sdaReadValueNode = dynamic_cast<SdaReadValueNode*>(readValueNode->getParentNode()))
+					{
+						auto baseSdaNode = unknownLoc->getBaseSdaNode();
+						if (auto rawStructure = dynamic_cast<RawStructure*>(baseSdaNode->getSrcDataType()->getType())) {
+							auto offset = unknownLoc->getConstTermValue();
+							auto newFieldDataType = sdaReadValueNode->getDataType();
+							auto it = rawStructure->m_fields.find(offset);
+							if (it == rawStructure->m_fields.end() || it->second->getPriority() < newFieldDataType->getPriority()) {
+								rawStructure->m_fields[offset] = newFieldDataType;
+								if (unknownLoc->getArrTerms().size() > 0) {
+									rawStructure->m_arrayBegins.insert(offset);
+								}
 							}
 						}
 					}
