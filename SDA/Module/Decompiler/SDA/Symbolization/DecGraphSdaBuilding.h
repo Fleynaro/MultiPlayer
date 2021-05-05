@@ -162,7 +162,7 @@ namespace CE::Decompiler::Symbolization
 						//if [rip] or [rsp] register
 						if (regSymbol->m_register.isPointer()) {
 							//transform to global offset
-							if (regSymbol->m_register.m_type == Register::Type::InstructionPointer) {
+							if (regSymbol->m_register.getType() == Register::Type::InstructionPointer) {
 								transformToGlobalOffset = true;
 							}
 							isStackOrGlobal = true;
@@ -284,9 +284,9 @@ namespace CE::Decompiler::Symbolization
 				}
 
 				//MEMORY symbol with offset (e.g. globalVar1)
-				if (reg.m_type == Register::Type::StackPointer)
+				if (reg.getType() == Register::Type::StackPointer)
 					return createMemorySymbol(m_userSymbolDef->m_stackSymbolTable, CE::Symbol::LOCAL_STACK_VAR, "stack", symbol, offset, size);
-				else if (reg.m_type == Register::Type::InstructionPointer)
+				else if (reg.getType() == Register::Type::InstructionPointer)
 					return createMemorySymbol(m_userSymbolDef->m_globalSymbolTable, CE::Symbol::GLOBAL_VAR, "global", symbol, offset, size);
 
 				//NOT-MEMORY symbol (unknown registers)
@@ -363,14 +363,14 @@ namespace CE::Decompiler::Symbolization
 		CE::Symbol::ISymbol* loadMemSdaSymbol(Symbol::Symbol* symbol, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
-				if (reg.m_type == Register::Type::StackPointer) {
+				if (reg.getType() == Register::Type::StackPointer) {
 					auto it = m_stackToSymbols.find(offset);
 					if (it != m_stackToSymbols.end()) {
 						offset = 0x0;
 						return it->second;
 					}
 				}
-				else if (reg.m_type == Register::Type::InstructionPointer) {
+				else if (reg.getType() == Register::Type::InstructionPointer) {
 					auto it = m_globalToSymbols.find(offset);
 					if (it != m_globalToSymbols.end()) {
 						offset = toGlobalOffset(0x0);
@@ -385,12 +385,12 @@ namespace CE::Decompiler::Symbolization
 		void storeMemSdaSymbol(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* symbol, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
-				if (reg.m_type == Register::Type::StackPointer) {
+				if (reg.getType() == Register::Type::StackPointer) {
 					m_stackToSymbols[offset] = sdaSymbol;
 					offset = 0x0;
 					return;
 				}
-				else if (reg.m_type == Register::Type::InstructionPointer) {
+				else if (reg.getType() == Register::Type::InstructionPointer) {
 					m_globalToSymbols[offset] = sdaSymbol;
 					offset = toGlobalOffset(0x0);
 					return;

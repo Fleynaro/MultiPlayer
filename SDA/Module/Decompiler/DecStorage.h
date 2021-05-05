@@ -59,7 +59,7 @@ namespace CE::Decompiler
 	};
 
 	static int GetIndex_FASTCALL(PCode::Register reg, int64_t offset) {
-		if (reg.m_type == PCode::Register::Type::StackPointer) {
+		if (reg.getType() == PCode::Register::Type::StackPointer) {
 			return (int)offset / 0x8 - 5 + 1;
 		}
 		static std::map<PCode::RegisterId, int> regToParamId = {
@@ -72,7 +72,7 @@ namespace CE::Decompiler
 			std::pair(ZYDIS_REGISTER_R9, 4),
 			std::pair(ZYDIS_REGISTER_ZMM3, 4),
 		};
-		auto it = regToParamId.find(reg.getGenericId());
+		auto it = regToParamId.find(reg.getId());
 		if (it != regToParamId.end()) {
 			return it->second;
 		}

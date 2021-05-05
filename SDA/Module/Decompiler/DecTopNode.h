@@ -31,10 +31,6 @@ namespace CE::Decompiler
 			return m_node;
 		}
 
-		ExprTree::INode** getNodePtr() {
-			return &m_node;
-		}
-
 		void setNode(ExprTree::INode* node) {
 			m_node = node;
 			node->addParentNode(this);

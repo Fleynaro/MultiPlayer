@@ -232,7 +232,7 @@ namespace CE::Decompiler::PrimaryTree
 			return (int)m_blocksReferencedTo.size();
 		}
 
-		// get count of blocks which reference to this block and located higher
+		// get count of blocks which reference to this block without loops
 		int getRefHighBlocksCount() {
 			int count = 0;
 			for (auto refBlock : m_blocksReferencedTo) {

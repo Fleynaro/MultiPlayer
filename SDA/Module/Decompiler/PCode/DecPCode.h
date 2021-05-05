@@ -25,19 +25,35 @@ namespace CE::Decompiler::PCode
 			Vector
 		};
 
-		std::string m_debugInfo;
+	private:
 		RegisterId m_genericId;
+		int m_index; // for SIMD registers (XMM, YMM, ZMM)
 		Type m_type;
-		ExtBitMask m_valueRangeMask; // range of possible values
 
-		Register(RegisterId genericId = 0, ExtBitMask valueRangeMask = 0x0, Type type = Type::Generic)
-			: m_genericId(genericId), m_valueRangeMask(valueRangeMask), m_type(type)
+	public:
+		std::string m_debugInfo;
+		BitMask64 m_valueRangeMask; // range of possible values
+
+		Register(RegisterId genericId = 0, int index = 0, BitMask64 valueRangeMask = 0x0, Type type = Type::Generic)
+			: m_genericId(genericId), m_index(index), m_valueRangeMask(valueRangeMask), m_type(type)
 		{
 			m_debugInfo = printDebug();
 		}
 
+		Type getType() const {
+			return m_type;
+		}
+
+		int getId() const {
+			return (m_genericId << 8) | m_index;
+		}
+
 		RegisterId getGenericId() const {
 			return m_genericId;
+		}
+
+		int getIndex() const {
+			return m_index;
 		}
 
 		bool isValid() const {
@@ -74,7 +90,7 @@ namespace CE::Decompiler::PCode
 			std::string maskStr = std::to_string(size);
 			if (isVector()) {
 				if (size == 4 || size == 8) {
-					maskStr = std::string(size == 4 ? "D" : "Q") + (char)('a' + (char)(m_valueRangeMask.getOffset() / (size * 8)));
+					maskStr = std::string(size == 4 ? "D" : "Q") + (char)('a' + (char)m_index);
 				}
 			}
 
@@ -100,9 +116,9 @@ namespace CE::Decompiler::PCode
 	};
 
 	// that is the feature of x86: setting value to EAX cleans fully RAX
-	static ExtBitMask GetValueRangeMaskWithException(const PCode::Register& reg) {
-		if (reg.m_type == Register::Type::Generic && reg.m_valueRangeMask == ExtBitMask(4))
-			return ExtBitMask(8);
+	static BitMask64 GetValueRangeMaskWithException(const PCode::Register& reg) {
+		if (reg.getType() == Register::Type::Generic && reg.m_valueRangeMask == BitMask64(4))
+			return BitMask64(8);
 		return reg.m_valueRangeMask;
 	}
 
@@ -114,8 +130,8 @@ namespace CE::Decompiler::PCode
 
 		virtual int getSize() = 0;
 
-		virtual ExtBitMask getMask() {
-			return ExtBitMask(getSize());
+		virtual BitMask64 getMask() {
+			return BitMask64(getSize());
 		}
 
 		virtual std::string printDebug() = 0;
@@ -135,7 +151,7 @@ namespace CE::Decompiler::PCode
 			return m_register.getSize();
 		}
 
-		ExtBitMask getMask() override {
+		BitMask64 getMask() override {
 			return m_register.m_valueRangeMask;
 		}
 

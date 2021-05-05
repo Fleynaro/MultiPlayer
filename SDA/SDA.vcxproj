@@ -387,6 +387,7 @@
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewBlocks.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewOptimization.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
+    <ClInclude Include="Module\Decompiler\NewDecompiler.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprCompositeCondOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConcatAndSubpieceBuilding.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConstCalculating.h" />

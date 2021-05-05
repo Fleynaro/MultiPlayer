@@ -28,9 +28,9 @@ ReturnInfo FunctionCallInfo::getReturnInfo() {
 int FunctionCallInfo::findIndex(Register reg, int64_t offset) {
 	for (auto paramInfo : m_paramInfos) {
 		auto& storage = paramInfo.m_storage;
-		if (storage.getType() == Storage::STORAGE_REGISTER && reg.getGenericId() == storage.getRegisterId() || (offset == storage.getOffset() &&
-			(storage.getType() == Storage::STORAGE_STACK && reg.m_type == Register::Type::StackPointer ||
-				storage.getType() == Storage::STORAGE_GLOBAL && reg.m_type == Register::Type::InstructionPointer))) {
+		if (storage.getType() == Storage::STORAGE_REGISTER && reg.getId() == storage.getRegisterId() || (offset == storage.getOffset() &&
+			(storage.getType() == Storage::STORAGE_STACK && reg.getType() == Register::Type::StackPointer ||
+				storage.getType() == Storage::STORAGE_GLOBAL && reg.getType() == Register::Type::InstructionPointer))) {
 			return paramInfo.getIndex();
 		}
 	}

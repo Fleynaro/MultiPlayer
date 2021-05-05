@@ -57,7 +57,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 	PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &m_registerFactoryX86, image);
 
 	ImageAnalyzer imageAnalyzer(image, imageGraph, &decoder, &m_registerFactoryX86, &graphReferenceSearch);
-	imageAnalyzer.start(0x9f39d8); //0x9f39d8
+	imageAnalyzer.start(0x11ea44); //0x9f39d8
 	if (warningContainer.hasAnything()) {
 		printf("\nTROUBLES:\n%s\n", warningContainer.getAllMessages().c_str());
 	}

@@ -114,7 +114,7 @@ namespace CE::Decompiler
 	};
 
 	// Extended bit mask as if it stores more 64 bits (e.g. for both EAX and XMM registers)
-	class ExtBitMask {
+	/*class ExtBitMask {
 		BitMask64 m_bitMask64;
 		uint8_t m_index = 0x0;
 	public:
@@ -205,5 +205,5 @@ namespace CE::Decompiler
 		int getOffset() const {
 			return m_bitMask64.getOffset() + m_index * 64;
 		}
-	};
+	};*/
 };

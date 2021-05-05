@@ -15,10 +15,10 @@ namespace CE::Decompiler::Symbol
 	// symbol of decompiler level that has some concrete value (low-level, before symbolization)
 	class Symbol
 	{
-		ExtBitMask m_mask;
+		BitMask64 m_mask;
 		DecompiledCodeGraph* m_decGraph;
 	public:
-		Symbol(ExtBitMask mask)
+		Symbol(BitMask64 mask)
 			: m_mask(mask)
 		{}
 
@@ -28,7 +28,7 @@ namespace CE::Decompiler::Symbol
 			return m_mask.getSize();
 		}
 
-		ExtBitMask getMask() {
+		BitMask64 getMask() {
 			return m_mask;
 		}
 
@@ -58,8 +58,8 @@ namespace CE::Decompiler::Symbol
 
 		HS getHash() override {
 			return HS()
-				<< m_register.getGenericId()
-				<< m_register.m_valueRangeMask.getBitMask64().getValue();
+				<< m_register.getId()
+				<< m_register.m_valueRangeMask.getValue();
 		}
 
 		std::string printDebug() override {
@@ -75,7 +75,7 @@ namespace CE::Decompiler::Symbol
 	// variable on high-level
 	class AbstractVariable : public Symbol, public PCode::IRelatedToInstruction {
 	public:
-		AbstractVariable(ExtBitMask mask)
+		AbstractVariable(BitMask64 mask)
 			: Symbol(mask)
 		{}
 
@@ -97,7 +97,7 @@ namespace CE::Decompiler::Symbol
 	public:
 		std::list<PCode::Instruction*> m_instructionsRelatedTo;
 
-		LocalVariable(ExtBitMask mask)
+		LocalVariable(BitMask64 mask)
 			: AbstractVariable(mask)
 		{}
 
@@ -149,7 +149,7 @@ namespace CE::Decompiler::Symbol
 	public:
 		PCode::Instruction* m_instr;
 
-		FunctionResultVar(PCode::Instruction* instr, ExtBitMask mask)
+		FunctionResultVar(PCode::Instruction* instr, BitMask64 mask)
 			: m_instr(instr), AbstractVariable(mask)
 		{}
 
