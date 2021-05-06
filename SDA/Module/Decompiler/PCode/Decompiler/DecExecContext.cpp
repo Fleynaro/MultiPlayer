@@ -1,7 +1,23 @@
+#include "DecExecContext.h"
 #include "Decompiler.h"
 
-using namespace CE;
 using namespace CE::Decompiler;
+
+ExprTree::INode* RegisterExecContext::requestRegister(const PCode::Register& reg) {
+	BitMask64 needReadMask = reg.m_valueRangeMask;
+	auto regParts = findRegisterParts(reg.getId(), needReadMask);
+	if (!needReadMask.isZero()) {
+		auto symbol = new Symbol::RegisterVariable(reg);
+		m_decompiler->m_decompiledGraph->addSymbol(symbol);
+		RegisterPart part;
+		part.m_regMask = reg.m_valueRangeMask;
+		part.m_maskToChange = needReadMask;
+		part.m_expr = new ExprTree::SymbolLeaf(symbol);
+		regParts.push_back(part);
+	}
+
+	return CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
+}
 
 void RegisterExecContext::join(RegisterExecContext* ctx) {
 	for (auto& pair : ctx->m_registers) {
@@ -87,7 +103,7 @@ std::list<RegisterExecContext::RegisterPart> RegisterExecContext::findRegisterPa
 	std::list<RegisterPart> regParts;
 	for (auto sameRegInfo : sameRegisters) {
 		auto sameRegExceptionMask = GetValueRangeMaskWithException(sameRegInfo->m_register); //for x86 only!!!
-		//if the masks intersected
+																							 //if the masks intersected
 		if (!(needReadMask & sameRegExceptionMask).isZero()) {
 			RegisterPart part;
 			part.m_regMask = sameRegInfo->m_register.m_valueRangeMask;
@@ -101,7 +117,7 @@ std::list<RegisterExecContext::RegisterPart> RegisterExecContext::findRegisterPa
 					if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(localVarLeaf->m_symbol)) {
 						auto it = m_decompiler->m_localVars.find(localVar);
 						if (it != m_decompiler->m_localVars.end()) {
-							// iterate over all ctxs and create assginments: localVar1 = 0x5
+							// iterate over all ctxs and create assignments: localVar1 = 0x5
 							auto& localVarInfo = it->second;
 							for (auto execCtx : localVarInfo.m_execCtxs) {
 								auto expr = execCtx->m_registerExecCtx.requestRegister(localVarInfo.m_register);
@@ -110,6 +126,7 @@ std::list<RegisterExecContext::RegisterPart> RegisterExecContext::findRegisterPa
 								blockInfo.m_decBlock->addSymbolParallelAssignmentLine(localVarLeaf, expr);
 							}
 
+							m_decompiler->m_decompiledGraph->addSymbol(localVar);
 							m_decompiler->m_localVars.erase(it);
 						}
 					}

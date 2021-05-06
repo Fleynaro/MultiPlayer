@@ -48,7 +48,7 @@ namespace CE::Decompiler
 
 			for (auto block : blockList->getBlocks()) {
 				auto decBlock = block->m_decBlock;
-				auto asmBlock = m_decGraph->getAsmGraphBlocks()[decBlock];
+				auto asmBlock = decBlock->m_pcodeBlock;
 
 				if (auto condition = dynamic_cast<LinearView::Condition*>(block)) {
 					showBlockCode(asmBlock, block, tabStr);
@@ -93,7 +93,7 @@ namespace CE::Decompiler
 			if (blockList->m_goto != nullptr) {
 				auto gotoType = blockList->getGotoType();
 				if (m_SHOW_ALL_GOTO || gotoType != LinearView::GotoType::None) {
-					auto blockName = Generic::String::NumberToHex(m_decGraph->getAsmGraphBlocks()[blockList->m_goto->m_decBlock]->ID);
+					auto blockName = Generic::String::NumberToHex(blockList->m_goto->m_decBlock->m_pcodeBlock->ID);
 					std::string typeName = "";
 					if (gotoType == LinearView::GotoType::None)
 						typeName = "[None]";

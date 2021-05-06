@@ -17,7 +17,7 @@ namespace CE::Decompiler::ExprTree
 		{}
 		
 		BitMask64 getMask() override {
-			return m_symbol->getMask().getBitMask64().withoutOffset();
+			return m_symbol->getMask().withoutOffset();
 		}
 
 		HS getHash() override {

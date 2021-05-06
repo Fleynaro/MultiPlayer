@@ -44,7 +44,7 @@ namespace CE::Decompiler
 	private:
 		static Register CreateRegister(ZydisRegister reg, int size, int64_t offset = 0x0) {
 			auto mask = BitMask64(size) << int((offset % 8) * 8);
-			auto index = offset / 8;
+			auto index = (int)offset / 8;
 
 			if (reg == ZYDIS_REGISTER_RIP)
 				return Register(reg, 0, mask, Register::Type::InstructionPointer);

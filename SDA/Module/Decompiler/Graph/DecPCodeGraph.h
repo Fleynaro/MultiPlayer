@@ -104,7 +104,7 @@ namespace CE::Decompiler
 					result += prefix + " " + instr->m_originalView + "\n";
 				if (pcode) {
 					prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Generic::String::NumberToHex(instr->getOffset()) + ")";
-					result += "\t" + prefix + " " + instr->printDebug() + "\n";
+					result += "\t" + prefix + " " + instr->printDebug();
 					if (instr->m_id == PCode::InstructionId::UNKNOWN)
 						result += " <------------------------------------------------ ";
 					result += "\n";

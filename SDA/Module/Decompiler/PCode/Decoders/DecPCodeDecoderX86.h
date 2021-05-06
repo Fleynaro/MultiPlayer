@@ -1378,7 +1378,7 @@ namespace CE::Decompiler::PCode
 					resultVarnode = indexRegVarnode = CreateVarnode(operand.mem.index, memLocExprSize);
 					if (operand.mem.scale != 1) {
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);
-						addMicroInstruction(InstructionId::INT_MULT, resultVarnode, new ConstantVarnode(operand.mem.scale & resultVarnode->getMask().getBitMask64().getValue(), memLocExprSize), symbolVarnode);
+						addMicroInstruction(InstructionId::INT_MULT, resultVarnode, new ConstantVarnode(operand.mem.scale & resultVarnode->getMask().getValue(), memLocExprSize), symbolVarnode);
 						resultVarnode = symbolVarnode;
 					}
 					if (baseRegVarnode != nullptr) {
@@ -1392,7 +1392,7 @@ namespace CE::Decompiler::PCode
 				}
 
 				if (operand.mem.disp.has_displacement) {
-					auto constValue = (uint64_t&)operand.mem.disp.value & resultVarnode->getMask().getBitMask64().getValue();
+					auto constValue = (uint64_t&)operand.mem.disp.value & resultVarnode->getMask().getValue();
 					auto dispVarnode = new ConstantVarnode(constValue, memLocExprSize);
 					if (resultVarnode != nullptr) {
 						auto symbolVarnode = new SymbolVarnode(memLocExprSize);

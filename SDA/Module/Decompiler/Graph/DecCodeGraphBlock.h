@@ -2,6 +2,11 @@
 #include "../ExprTree/ExprTree.h"
 #include "../DecTopNode.h"
 
+namespace CE::Decompiler
+{
+	class PCodeBlock;
+};
+
 namespace CE::Decompiler::PrimaryTree
 {
 	class Block;
@@ -117,6 +122,7 @@ namespace CE::Decompiler::PrimaryTree
 	public:
 		std::string m_name;
 		int m_level = 0;
+		PCodeBlock* m_pcodeBlock;
 	private:
 		std::list<Block*> m_blocksReferencedTo;
 		Block* m_nextNearBlock = nullptr;
@@ -128,8 +134,8 @@ namespace CE::Decompiler::PrimaryTree
 		int m_maxHeight = 0;
 		DecompiledCodeGraph* m_decompiledGraph;
 
-		Block(DecompiledCodeGraph* decompiledGraph, int level)
-			: m_decompiledGraph(decompiledGraph), m_level(level)
+		Block(DecompiledCodeGraph* decompiledGraph, PCodeBlock* pcodeBlock, int level)
+			: m_decompiledGraph(decompiledGraph), m_pcodeBlock(pcodeBlock), m_level(level)
 		{
 			m_noJmpCond = new JumpTopNode(this);
 		}
@@ -334,7 +340,7 @@ namespace CE::Decompiler::PrimaryTree
 
 		protected:
 			virtual Block* clone(BlockCloneContext* ctx, int level) {
-				return new Block(ctx->m_graph, level);
+				return new Block(ctx->m_graph, m_pcodeBlock, level);
 			}
 	};
 
@@ -343,8 +349,8 @@ namespace CE::Decompiler::PrimaryTree
 	{
 		ReturnTopNode* m_returnNode = nullptr; // operator return where the result is
 	public:
-		EndBlock(DecompiledCodeGraph* decompiledGraph, int level)
-			: Block(decompiledGraph, level)
+		EndBlock(DecompiledCodeGraph* decompiledGraph, PCodeBlock* pcodeBlock, int level)
+			: Block(decompiledGraph, pcodeBlock, level)
 		{
 			m_returnNode = new ReturnTopNode(this);
 		}
@@ -374,7 +380,7 @@ namespace CE::Decompiler::PrimaryTree
 
 	protected:
 		Block* clone(BlockCloneContext* ctx, int level) override {
-			auto newBlock = new EndBlock(ctx->m_graph, level);
+			auto newBlock = new EndBlock(ctx->m_graph, m_pcodeBlock, level);
 			if (getReturnNode())
 				newBlock->setReturnNode(getReturnNode()->clone(&ctx->m_nodeCloneContext));
 			return newBlock;

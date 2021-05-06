@@ -200,7 +200,7 @@ namespace CE::Decompiler::ExprTree
 			}
 
 			if (m_instr) {
-				return m_instr->m_output->getMask().getBitMask64().withoutOffset();
+				return m_instr->m_output->getMask().withoutOffset();
 			}
 
 			if (m_operation == Concat) {

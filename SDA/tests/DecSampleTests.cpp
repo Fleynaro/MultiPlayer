@@ -44,6 +44,8 @@ TEST(Decompiler, Test_MemLocation)
 // IMAGE
 TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 {
+	return;
+
 	// R:\\Rockstar Games\\Grand Theft Auto V\\GTA5_dump.exe
 	char* buffer;
 	int size;
@@ -180,7 +182,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
 	//userSymbolDef.m_signature = m_defSignature;
 
-	switch (2)
+	switch (1)
 	{
 	case 1: {
 		SymbolVarnode* playerPos[] = { new SymbolVarnode(4), new SymbolVarnode(4), new SymbolVarnode(4) };
@@ -338,7 +340,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	
 	//ignore all tests except
-	m_doTestIdOnly = 107;
+	m_doTestIdOnly = 102;
 
 	{
 		// TEST
@@ -457,7 +459,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		test = createSampleTest(102, { 0x89, 0xC8, 0x89, 0xD3, 0x83, 0xF8, 0x00, 0x7D, 0x02, 0xF7, 0xD8, 0x83, 0xFB, 0x00, 0x7D, 0x02, 0xF7, 0xDB, 0x39, 0xD8, 0x7D, 0x01, 0x93, 0x83, 0xFB, 0x00, 0x74, 0x04, 0x29, 0xD8, 0xEB, 0xF2, 0x89, 0x04, 0x24, 0x89, 0x1C, 0x24 });
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
-		//test->enableAllAndShowAll();
+		test->enableAllAndShowAll();
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test102");
 		sig->addParameter("a", findType("int32_t", ""));
 		sig->addParameter("b", findType("int32_t", ""));

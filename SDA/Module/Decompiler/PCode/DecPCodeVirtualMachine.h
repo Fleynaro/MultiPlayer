@@ -17,9 +17,9 @@ namespace CE::Decompiler::PCode
 
 		void setConstantValue(const Register& reg, DataValue value) {
 			RegisterStorage regStorage;
-			auto& dataCell = regStorage.m_data[reg.m_valueRangeMask.getIndex()];
-			dataCell = dataCell & ~GetValueRangeMaskWithException(reg).getBitMask64().getValue() | value;
-			m_registers[reg.getGenericId()] = regStorage;
+			auto& dataCell = regStorage.m_data[reg.getIndex()];
+			dataCell = dataCell & ~GetValueRangeMaskWithException(reg).getValue() | value;
+			m_registers[reg.getId()] = regStorage;
 		}
 
 		void setConstantValue(Varnode* varnode, DataValue value) {
@@ -34,9 +34,9 @@ namespace CE::Decompiler::PCode
 		bool tryGetConstantValue(Varnode* varnode, DataValue& value) {
 			if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
 				auto& reg = varnodeRegister->m_register;
-				auto it = m_registers.find(reg.getGenericId());
+				auto it = m_registers.find(reg.getId());
 				if (it != m_registers.end()) {
-					value = it->second.m_data[reg.m_valueRangeMask.getIndex()] >> reg.m_valueRangeMask.getBitMask64().getOffset();
+					value = it->second.m_data[reg.getIndex()] >> reg.m_valueRangeMask.getOffset();
 					return true;
 				}
 			}
@@ -56,7 +56,7 @@ namespace CE::Decompiler::PCode
 
 		void clear(Varnode* varnode) {
 			if (auto varnodeRegister = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {
-				m_registers.erase(varnodeRegister->m_register.getGenericId());
+				m_registers.erase(varnodeRegister->m_register.getId());
 			}
 			else if (auto varnodeSymbol = dynamic_cast<PCode::SymbolVarnode*>(varnode)) {
 				m_symbolVarnodes.erase(varnodeSymbol);

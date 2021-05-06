@@ -1,6 +1,6 @@
 #pragma once
 #include "AbstractTest.h"
-#include <Decompiler/Decompiler.h>
+#include <Decompiler/PCode/Decompiler/Decompiler.h>
 #include <Decompiler/LinearView/DecLinearView.h>
 #include <Decompiler/LinearView/DecLinearViewOptimization.h>
 #include <Decompiler/LinearView/DecLinearViewSimpleOutput.h>

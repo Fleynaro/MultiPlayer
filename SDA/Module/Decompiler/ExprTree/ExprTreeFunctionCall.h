@@ -60,7 +60,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		BitMask64 getMask() override {
-			return m_functionResultVar ? m_functionResultVar->getMask().getBitMask64() : 0x0;
+			return m_functionResultVar ? m_functionResultVar->getMask() : 0x0;
 		}
 
 		bool isFloatingPoint() override {

@@ -29,10 +29,6 @@ namespace CE::Decompiler
 			return m_funcGraph;
 		}
 
-		std::map<PrimaryTree::Block*, PCodeBlock*>& getAsmGraphBlocks() {
-			return m_decBlockToBlock;
-		}
-
 		PrimaryTree::Block* getStartBlock() {
 			return *getDecompiledBlocks().begin();
 		}
@@ -69,7 +65,6 @@ namespace CE::Decompiler
 				auto origBlock = pair.first;
 				auto clonedBlock = pair.second;
 				ctx.m_graph->m_decompiledBlocks.push_back(clonedBlock);
-				ctx.m_graph->m_decBlockToBlock[clonedBlock] = m_decBlockToBlock[origBlock];
 			}
 			for (auto block : m_removedDecompiledBlocks) {
 				ctx.m_graph->m_removedDecompiledBlocks.push_back(block->clone(&ctx));
@@ -130,7 +125,6 @@ namespace CE::Decompiler
 		}
 	private:
 		FunctionPCodeGraph* m_funcGraph;
-		std::map<PrimaryTree::Block*, PCodeBlock*> m_decBlockToBlock;
 		std::list<PrimaryTree::Block*> m_decompiledBlocks;
 		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
 		std::list<Symbol::Symbol*> m_symbols;

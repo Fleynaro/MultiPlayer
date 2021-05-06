@@ -56,7 +56,7 @@ namespace CE::Decompiler::Optimization
 		bool isUnknownRegister(PCode::Register& reg) {
 			bool isFound = false;
 			/*for (auto paramInfo : m_decGraph->getFunctionCallInfo().getParamInfos()) {
-				if (reg.getGenericId() == paramInfo.m_storage.getRegisterId()) {
+				if (reg.getId() == paramInfo.m_storage.getRegisterId()) {
 					isFound = true;
 					break;
 				}

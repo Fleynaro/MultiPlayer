@@ -269,11 +269,11 @@
     <ClCompile Include="Module\DB\Transaction.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
+    <ClCompile Include="Module\Decompiler\PCode\Decompiler\Decompiler.cpp" />
     <ClCompile Include="Module\Decompiler\DecStorage.cpp" />
-    <ClCompile Include="Module\Decompiler\PCode\Interpreter\PCodeExecutionContext.cpp" />
-    <ClCompile Include="Module\Decompiler\PCode\Interpreter\PCodeInterpreter.cpp" />
+    <ClCompile Include="Module\Decompiler\PCode\Decompiler\DecExecContext.cpp" />
+    <ClCompile Include="Module\Decompiler\PCode\Decompiler\PCodeInterpreter.cpp" />
     <ClCompile Include="Module\Decompiler\LinearView\DecLinearView.cpp" />
-    <ClCompile Include="Module\Decompiler\Decompiler.cpp" />
     <ClCompile Include="Module\Decompiler\DecSymbol.cpp" />
     <ClCompile Include="Module\Decompiler\SDA\MemLocation.cpp" />
     <ClCompile Include="Module\Disassembler\DisasmDecoder.cpp" />
@@ -375,7 +375,6 @@
     <ClInclude Include="Module\DB\Mappers\TriggerMapper.h" />
     <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
-    <ClInclude Include="Module\Decompiler\DecGraphBlockLinker.h" />
     <ClInclude Include="Module\Decompiler\DecMisc.h" />
     <ClInclude Include="Module\Decompiler\DecWarningContainer.h" />
     <ClInclude Include="Module\Decompiler\Graph\Analyzer\ImagePCodeGraphAnalyzer.h" />
@@ -387,7 +386,7 @@
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewBlocks.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewOptimization.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
-    <ClInclude Include="Module\Decompiler\NewDecompiler.h" />
+    <ClInclude Include="Module\Decompiler\PCode\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprCompositeCondOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConcatAndSubpieceBuilding.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConstCalculating.h" />
@@ -406,6 +405,7 @@
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphUselessLineOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphViewOptimization.h" />
     <ClInclude Include="Module\Decompiler\PCode\ImageAnalyzer\DecImageAnalyzer.h" />
+    <ClInclude Include="Module\Decompiler\PCode\Decompiler\DecExecContext.h" />
     <ClInclude Include="Module\Image\IImage.h" />
     <ClInclude Include="Module\Image\PEImage.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaReadValue.h" />
@@ -414,9 +414,7 @@
     <ClInclude Include="Module\Decompiler\SDA\Optimizaton\SdaGraphFinalOptimization.h" />
     <ClInclude Include="Module\Decompiler\SDA\Optimizaton\SdaGraphMemoryOptimization.h" />
     <ClInclude Include="Module\Decompiler\PCode\Decoders\DecPCodeAbstractDecoder.h" />
-    <ClInclude Include="Module\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecPCodeConstValueCalc.h" />
-    <ClInclude Include="Module\Decompiler\PCode\Interpreter\PCodeExecutionContext.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecPCode.h" />
     <ClInclude Include="Module\Decompiler\DecStorage.h" />
     <ClInclude Include="Module\Decompiler\DecTest.h" />
@@ -431,7 +429,7 @@
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeMirrorNode.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeNode.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTreeOperationalNode.h" />
-    <ClInclude Include="Module\Decompiler\PCode\Interpreter\PCodeInterpreter.h" />
+    <ClInclude Include="Module\Decompiler\PCode\Decompiler\PCodeInterpreter.h" />
     <ClInclude Include="Module\Decompiler\Optimization\DecGraphOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprOptimization.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecPCodeVirtualMachine.h" />
