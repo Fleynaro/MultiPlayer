@@ -58,10 +58,12 @@ namespace CE::Decompiler
 			m_registers[reg.getId()].push_back(registerInfo);
 
 			// delete only here because new expr may be the same as old expr: mov rax, rax
-			for (auto it : oldTopNodes) {
-				delete it;
+			for (auto topNode : oldTopNodes) {
+				delete topNode;
 			}
 		}
+
+		void copyFrom(RegisterExecContext* ctx);
 
 		void join(RegisterExecContext* ctx);
 
@@ -116,11 +118,12 @@ namespace CE::Decompiler
 	{
 		std::map<PCode::SymbolVarnode*, TopNode*> m_symbolVarnodes;
 	public:
+		RegisterExecContext m_startRegisterExecCtx;
 		RegisterExecContext m_registerExecCtx;
 		PCodeBlock* m_pcodeBlock;
 
 		ExecContext(Decompiler* decompiler, PCodeBlock* pcodeBlock)
-			: m_registerExecCtx(decompiler, this), m_pcodeBlock(pcodeBlock)
+			: m_startRegisterExecCtx(decompiler, this), m_registerExecCtx(m_startRegisterExecCtx), m_pcodeBlock(pcodeBlock)
 		{}
 
 		ExprTree::INode* requestVarnode(PCode::Varnode* varnode) {
@@ -161,9 +164,7 @@ namespace CE::Decompiler
 
 		void join(ExecContext* ctx) {
 			if (!m_registerExecCtx.m_isFilled) {
-				m_registerExecCtx = ctx->m_registerExecCtx;
-				m_registerExecCtx.m_execContext = this;
-				m_registerExecCtx.m_isFilled = true;
+				m_registerExecCtx.copyFrom(&ctx->m_registerExecCtx);
 			}
 			else {
 				m_registerExecCtx.join(&ctx->m_registerExecCtx);

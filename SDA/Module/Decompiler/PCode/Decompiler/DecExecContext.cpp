@@ -19,6 +19,22 @@ ExprTree::INode* RegisterExecContext::requestRegister(const PCode::Register& reg
 	return CreateExprFromRegisterParts(regParts, reg.m_valueRangeMask);
 }
 
+void RegisterExecContext::copyFrom(RegisterExecContext* ctx) {
+	auto decompiler = m_decompiler;
+	auto execCtx = m_execContext;
+	*this = *ctx;
+	m_decompiler = decompiler;
+	m_execContext = execCtx;
+	m_isFilled = true;
+
+	for (auto& pair : m_registers) {
+		auto& registers = pair.second;
+		for (auto& regInfo : registers) {
+			regInfo.m_expr = new TopNode(regInfo.m_expr->getNode());
+		}
+	}
+}
+
 void RegisterExecContext::join(RegisterExecContext* ctx) {
 	for (auto& pair : ctx->m_registers) {
 		auto regId = pair.first;
@@ -32,7 +48,7 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 									  // find equal registers with equal top nodes (expr), they are mutual
 			for (auto it1 = regs1.begin(); it1 != regs1.end(); it1++) {
 				for (auto it2 = regs2.begin(); it2 != regs2.end(); it2++) {
-					if (it1->m_register == it2->m_register && it1->m_expr == it2->m_expr) {
+					if (it1->m_register == it2->m_register && it1->m_expr->getNode() == it2->m_expr->getNode()) {
 						neededRegs.push_back(*it2);
 						regs1.erase(it1);
 						regs2.erase(it2);
@@ -62,9 +78,11 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 				// local var info for par. assignments
 				Decompiler::LocalVarInfo localVarInfo;
 				localVarInfo.m_register = newRegister;
-				for (auto& regs : { regs1, regs2 })
-					for (auto& regInfo : regs)
+				for (auto& regs : { regs1, regs2 }) {
+					for (auto& regInfo : regs) {
 						localVarInfo.m_execCtxs.push_back(regInfo.m_srcExecContext);
+					}
+				}
 				m_decompiler->m_localVars[symbol] = localVarInfo;
 
 				neededRegs.push_back(registerInfo);

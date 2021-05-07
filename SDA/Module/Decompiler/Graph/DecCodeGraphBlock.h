@@ -141,9 +141,7 @@ namespace CE::Decompiler::PrimaryTree
 		}
 
 		~Block() {
-			for (auto line : m_seqLines) {
-				delete line;
-			}
+			clearCode();
 
 			for (auto line : m_symbolParallelAssignmentLines) {
 				delete line;
@@ -157,7 +155,16 @@ namespace CE::Decompiler::PrimaryTree
 			}
 
 			delete m_noJmpCond;
+			
 			disconnect();
+		}
+
+		void clearCode() {
+			for (auto line : m_seqLines) {
+				delete line;
+			}
+			m_seqLines.clear();
+			m_noJmpCond->clear();
 		}
 
 		// make the block independent from the decompiled graph

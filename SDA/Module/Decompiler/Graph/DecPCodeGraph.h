@@ -163,7 +163,14 @@ namespace CE::Decompiler
 		}
 
 		void printDebug(void* addr) {
-			for (auto block : m_blocks) {
+			std::list<PCodeBlock*> blocks;
+			for (auto block : m_blocks)
+				blocks.push_back(block);
+			blocks.sort([](PCodeBlock* a, PCodeBlock* b) {
+				return a->getMinOffset() < b->getMinOffset();
+				});
+
+			for (auto block : blocks) {
 				puts(block->printDebug(addr, "", true, true).c_str());
 				puts("==================");
 			}

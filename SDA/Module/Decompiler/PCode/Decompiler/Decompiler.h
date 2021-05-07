@@ -82,12 +82,14 @@ namespace CE::Decompiler
 			blockInfo.m_enterCount++;
 			auto refHighBlocksCount = blockInfo.m_decBlock->getRefHighBlocksCount();
 			if (blockInfo.m_enterCount >= refHighBlocksCount) {
-				if (!blockInfo.m_isDecompiled) {
-					//execute the instructions and then change the execution context
-					PCode::InstructionInterpreter instructionInterpreter(this, blockInfo.m_decBlock, blockInfo.m_execCtx);
-					for (auto instr : pcodeBlock->getInstructions()) {
-						instructionInterpreter.execute(instr);
-					}
+				// save the register context in the begining
+				blockInfo.m_execCtx->m_startRegisterExecCtx.copyFrom(&blockInfo.m_execCtx->m_registerExecCtx);
+
+				// execute the instructions and then change the execution context
+				blockInfo.m_decBlock->clearCode();
+				PCode::InstructionInterpreter instructionInterpreter(this, blockInfo.m_decBlock, blockInfo.m_execCtx);
+				for (auto instr : pcodeBlock->getInstructions()) {
+					instructionInterpreter.execute(instr);
 				}
 
 				auto hasAlreadyDecompiled = blockInfo.m_isDecompiled;
@@ -100,13 +102,17 @@ namespace CE::Decompiler
 					auto nextVersionOfDecompiling = versionOfDecompiling;
 					if (nextPCodeBlock->m_level < pcodeBlock->m_level) {
 						// if it is a loop
-						if (hasAlreadyDecompiled)
+						if (!hasAlreadyDecompiled)
 							nextVersionOfDecompiling = ++m_loopsCount + 1;
 					}
 
 					if (nextVersionOfDecompiling <= nextDecBlockInfo.m_versionOfDecompiling)
 						continue;
 
+					if (nextDecBlockInfo.m_isDecompiled) {
+						// delete nextDecBlockInfo.m_execCtx->m_registerExecCtx
+						nextDecBlockInfo.m_execCtx->m_registerExecCtx.copyFrom(&nextDecBlockInfo.m_execCtx->m_startRegisterExecCtx);
+					}
 					nextDecBlockInfo.m_execCtx->join(blockInfo.m_execCtx);
 					interpreteGraph(nextPCodeBlock, nextVersionOfDecompiling);
 				}	
