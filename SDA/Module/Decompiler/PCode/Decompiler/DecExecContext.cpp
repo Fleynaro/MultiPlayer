@@ -30,7 +30,7 @@ void RegisterExecContext::copyFrom(RegisterExecContext* ctx) {
 	for (auto& pair : m_registers) {
 		auto& registers = pair.second;
 		for (auto& regInfo : registers) {
-			regInfo.m_expr = new TopNode(regInfo.m_expr->getNode());
+			regInfo.m_expr = new RegTopNode(regInfo.m_expr->getNode());
 		}
 	}
 }
@@ -45,7 +45,7 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 			auto regs1 = pair.second; // from ctx->m_registers
 			auto& regs2 = it->second; // from m_registers
 
-									  // find equal registers with equal top nodes (expr), they are mutual
+			// find equal registers with equal top nodes (expr), they are mutual
 			for (auto it1 = regs1.begin(); it1 != regs1.end(); it1++) {
 				for (auto it2 = regs2.begin(); it2 != regs2.end(); it2++) {
 					if (it1->m_register == it2->m_register && it1->m_expr->getNode() == it2->m_expr->getNode()) {
@@ -59,33 +59,81 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 
 			// if there are registers which come from different blocks
 			if (!regs1.empty() && !regs2.empty()) {
-				auto mask1 = calculateMaxMask(regs1);
+				/*auto mask1 = calculateMaxMask(regs1);
 				auto mask2 = calculateMaxMask(regs2);
-				auto resultMask = mask1 & mask2;
+				auto resultMask = mask1 & mask2;*/
 
-				// new register
-				auto& sampleReg = regs1.begin()->m_register;
-				auto newRegister = Register(sampleReg.getGenericId(), sampleReg.getIndex(), resultMask, sampleReg.getType());;
+				// calculate masks which belongs to different groups with non-intersected registers.
+				// need for XMM registers to split low and high parts into two independent local vars
+				auto resultMasks = CalculateMasks(regs1, regs2); // todo: does it need?
 
-				// new local var and register info
-				RegisterInfo registerInfo;
-				registerInfo.m_register = newRegister;
-				auto symbol = new Symbol::LocalVariable(resultMask);
-				registerInfo.m_expr = new TopNode(new ExprTree::SymbolLeaf(symbol));
-				registerInfo.m_srcExecContext = m_execContext;
-				registerInfo.m_hasParAssginmentCreated = true;
+				for (auto resultMask : resultMasks)
+				{
+					// new register
+					auto& sampleReg = regs1.begin()->m_register;
+					auto newRegister = Register(sampleReg.getGenericId(), sampleReg.getIndex(), resultMask, sampleReg.getType());;
 
-				// local var info for par. assignments
-				Decompiler::LocalVarInfo localVarInfo;
-				localVarInfo.m_register = newRegister;
-				for (auto& regs : { regs1, regs2 }) {
-					for (auto& regInfo : regs) {
-						localVarInfo.m_execCtxs.push_back(regInfo.m_srcExecContext);
+					// parent contexts
+					std::set<ExecContext*> newExecCtxs;
+
+					// iterate over all register parts in two parent contexts
+					Symbol::LocalVariable* existingLocalVar = nullptr;
+					for (auto& regs : { regs1, regs2 }) {
+						for (auto& regInfo : regs) {
+							// add contexts
+							if (regInfo.m_srcExecContext != m_execContext)
+								newExecCtxs.insert(regInfo.m_srcExecContext);
+
+							if (!existingLocalVar) {
+								// find an exitsting symbol with need size for re-using
+								std::list<ExprTree::SymbolLeaf*> symbolLeafs;
+								GatherSymbolLeafsFromNode(regInfo.m_expr->getNode(), symbolLeafs);
+								for (auto symbolLeaf : symbolLeafs) {
+									if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolLeaf->m_symbol)) {
+										auto& localVarInfo = m_decompiler->m_localVars[localVar];
+
+										if (localVarInfo.m_register.intersect(newRegister)) {
+											if (localVarInfo.m_register.m_valueRangeMask == newRegister.m_valueRangeMask) {
+												existingLocalVar = localVar;
+											}
+											else {
+												// when eax=localVar and ax=5 coming in
+												if (regInfo.m_srcExecContext == m_execContext) {
+													for (auto ctx : localVarInfo.m_execCtxs)
+														newExecCtxs.insert(ctx);
+												}
+											}
+											break;
+										}
+									}
+								}
+							}
+						}
 					}
-				}
-				m_decompiler->m_localVars[symbol] = localVarInfo;
 
-				neededRegs.push_back(registerInfo);
+					// new register info
+					RegisterInfo registerInfo;
+					registerInfo.m_register = newRegister;
+					auto localVar = existingLocalVar;
+					if (!localVar) {
+						// new local var
+						localVar = new Symbol::LocalVariable(resultMask);
+						// info for par. assignments
+						Decompiler::LocalVarInfo localVarInfo;
+						localVarInfo.m_register = newRegister;
+						m_decompiler->m_localVars[localVar] = localVarInfo;
+					}
+					registerInfo.m_expr = new RegTopNode(new ExprTree::SymbolLeaf(localVar));
+					registerInfo.m_srcExecContext = m_execContext;
+
+					// add parent contexts where par. assignments (localVar = 5) will be created
+					auto& localVarInfo = m_decompiler->m_localVars[localVar];
+					for (auto ctx : newExecCtxs)
+						localVarInfo.m_execCtxs.insert(ctx);
+
+					// add new register info
+					neededRegs.push_back(registerInfo);
+				}
 			}
 
 			// remove non-mutual registers from m_registers
@@ -128,30 +176,6 @@ std::list<RegisterExecContext::RegisterPart> RegisterExecContext::findRegisterPa
 			part.m_maskToChange = needReadMask & sameRegExceptionMask;
 			part.m_expr = sameRegInfo->m_expr->getNode();
 			regParts.push_back(part);
-
-			// if this register containts a local var symbol
-			if (sameRegInfo->m_hasParAssginmentCreated) {
-				if (auto localVarLeaf = dynamic_cast<ExprTree::SymbolLeaf*>(sameRegInfo->m_expr->getNode())) {
-					if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(localVarLeaf->m_symbol)) {
-						auto it = m_decompiler->m_localVars.find(localVar);
-						if (it != m_decompiler->m_localVars.end()) {
-							// iterate over all ctxs and create assignments: localVar1 = 0x5
-							auto& localVarInfo = it->second;
-							for (auto execCtx : localVarInfo.m_execCtxs) {
-								auto expr = execCtx->m_registerExecCtx.requestRegister(localVarInfo.m_register);
-
-								auto& blockInfo = m_decompiler->m_decompiledBlocks[execCtx->m_pcodeBlock];
-								blockInfo.m_decBlock->addSymbolParallelAssignmentLine(localVarLeaf, expr);
-							}
-
-							m_decompiler->m_decompiledGraph->addSymbol(localVar);
-							m_decompiler->m_localVars.erase(it);
-						}
-					}
-				}
-				sameRegInfo->m_hasParAssginmentCreated = false;
-			}
-
 			needReadMask = needReadMask & ~sameRegExceptionMask;
 		}
 

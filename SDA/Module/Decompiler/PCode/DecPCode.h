@@ -73,14 +73,18 @@ namespace CE::Decompiler::PCode
 			return m_valueRangeMask.getSize();
 		}
 
+		int getOffset() const {
+			return m_valueRangeMask.getOffset() + m_index * 64;
+		}
+
 		// check if memory area of two registers intersected
 		bool intersect(const Register& reg) const {
 			//if the masks intersected
-			return m_genericId == reg.m_genericId && !(m_valueRangeMask & reg.m_valueRangeMask).isZero();
+			return getId() == reg.getId() && !(m_valueRangeMask & reg.m_valueRangeMask).isZero();
 		}
 
 		bool operator ==(const Register& reg) const {
-			return m_genericId == reg.m_genericId && m_valueRangeMask == reg.m_valueRangeMask;
+			return getId() == reg.getId() && m_valueRangeMask == reg.m_valueRangeMask;
 		}
 
 		std::string printDebug() {
@@ -90,7 +94,7 @@ namespace CE::Decompiler::PCode
 			std::string maskStr = std::to_string(size);
 			if (isVector()) {
 				if (size == 4 || size == 8) {
-					maskStr = std::string(size == 4 ? "D" : "Q") + (char)('a' + (char)m_index);
+					maskStr = std::string(size == 4 ? "D" : "Q") + (char)('a' + (char)(getOffset() / (size * 8)));
 				}
 			}
 

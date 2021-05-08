@@ -27,25 +27,5 @@ namespace CE::Decompiler
 				}
 			}
 		}
-
-		// get all symbol leafs from the specified {node} according to the specified {symbol}
-		void gatherSymbolLeafsFromNode(INode* node, Symbol::Symbol* symbol, std::list<ExprTree::SymbolLeaf*>& symbolLeafs) {
-			node->iterateChildNodes([&](INode* childNode) {
-				gatherSymbolLeafsFromNode(childNode, symbol, symbolLeafs);
-				});
-
-			if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(node)) {
-				if (symbolLeaf->m_symbol == symbol) {
-					symbolLeafs.push_back(symbolLeaf);
-				}
-			}
-		}
-
-		// check if the specified {node} has the specified {symbol}
-		bool doesNodeHaveSymbol(INode* node, Symbol::Symbol* symbol) {
-			std::list<ExprTree::SymbolLeaf*> symbolLeafs;
-			gatherSymbolLeafsFromNode(node, symbol, symbolLeafs);
-			return !symbolLeafs.empty();
-		}
 	};
 };

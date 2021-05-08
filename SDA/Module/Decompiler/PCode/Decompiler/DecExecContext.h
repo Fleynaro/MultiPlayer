@@ -6,13 +6,19 @@ namespace CE::Decompiler
 	class Decompiler;
 	class ExecContext;
 
+	class RegTopNode : public TopNode {
+	public:
+		RegTopNode(ExprTree::INode* node)
+			: TopNode(node)
+		{}
+	};
+
 	struct RegisterExecContext
 	{
 		struct RegisterInfo {
 			PCode::Register m_register;
-			TopNode* m_expr;
+			RegTopNode* m_expr;
 			ExecContext* m_srcExecContext;
-			bool m_hasParAssginmentCreated = false;
 		};
 
 		struct RegisterPart {
@@ -33,7 +39,7 @@ namespace CE::Decompiler
 		ExprTree::INode* requestRegister(const PCode::Register& reg);
 
 		void setRegister(const PCode::Register& reg, ExprTree::INode* newExpr) {
-			std::list<TopNode*> oldTopNodes;
+			std::list<RegTopNode*> oldTopNodes;
 
 			auto it = m_registers.find(reg.getId());
 			if (it != m_registers.end()) {
@@ -42,7 +48,7 @@ namespace CE::Decompiler
 				for (auto it2 = registers.begin(); it2 != registers.end(); it2++) {
 					if (reg.intersect(it2->m_register)) {
 						oldTopNodes.push_back(it2->m_expr);
-						m_registers.erase(it);
+						registers.erase(it2);
 					}
 				}
 			}
@@ -53,7 +59,7 @@ namespace CE::Decompiler
 			// add the register
 			RegisterInfo registerInfo;
 			registerInfo.m_register = reg;
-			registerInfo.m_expr = new TopNode(newExpr);
+			registerInfo.m_expr = new RegTopNode(newExpr);
 			registerInfo.m_srcExecContext = m_execContext;
 			m_registers[reg.getId()].push_back(registerInfo);
 
@@ -70,12 +76,41 @@ namespace CE::Decompiler
 	private:
 		std::list<RegisterPart> findRegisterParts(int regId, BitMask64& needReadMask);
 
-		BitMask64 calculateMaxMask(const std::list<RegisterInfo>& regs) {
+		/*BitMask64 calculateMaxMask(const std::list<RegisterInfo>& regs) {
 			BitMask64 mask;
 			for (auto reg : regs) {
 				mask = mask | reg.m_register.m_valueRangeMask;
 			}
 			return mask;
+		}*/
+
+		static std::list<BitMask64> FindNonIntersectedMasks(const std::list<RegisterInfo>& regs) {
+			std::list<BitMask64> masks;
+			for (const auto& reg : regs) {
+				masks.push_back(reg.m_register.m_valueRangeMask);
+			}
+			for (auto it1 = masks.begin(); it1 != masks.end(); it1 ++) {
+				for (auto it2 = std::next(it1); it2 != masks.end(); it2++) {
+					if (!(*it1 & *it2).isZero()) {
+						*it1 = *it1 | *it2;
+						masks.erase(it2);
+					}
+				}
+			}
+			return masks;
+		}
+
+		static std::set<BitMask64> CalculateMasks(const std::list<RegisterInfo>& regs1, const std::list<RegisterInfo>& regs2) {
+			auto masks1 = FindNonIntersectedMasks(regs1);
+			auto masks2 = FindNonIntersectedMasks(regs2);
+			std::set<BitMask64> resultMasks;
+			for (auto mask1 : masks1) {
+				for (auto mask2 : masks2) {
+					if(!(mask1 & mask2).isZero())
+						resultMasks.insert(mask1 & mask2);
+				}
+			}
+			return resultMasks;
 		}
 
 		static ExprTree::INode* CreateExprFromRegisterParts(std::list<RegisterPart> regParts, BitMask64 requestRegMask) {

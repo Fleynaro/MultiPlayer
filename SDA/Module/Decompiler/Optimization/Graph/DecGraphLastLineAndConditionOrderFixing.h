@@ -33,7 +33,7 @@ namespace CE::Decompiler::Optimization
 			for (auto symbolAssignmentLine : block->getSymbolParallelAssignmentLines()) {
 				if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbolLeaf()->m_symbol)) {
 					//if localVar expressed through itself (e.g. localVar = {localVar + 1})
-					if (doesNodeHaveSymbol(symbolAssignmentLine->getSrcNode(), localVar)) {
+					if (DoesNodeHaveSymbol(symbolAssignmentLine->getSrcNode(), localVar)) {
 						// grab right node (e.g. {localVar + 1})
 						localVars.insert(std::make_pair(symbolAssignmentLine->getSrcNode()->getHash().getHashValue(), localVar));
 					}

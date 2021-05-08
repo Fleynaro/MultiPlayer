@@ -28,7 +28,7 @@ namespace CE::Decompiler::Symbol
 			return m_mask.getSize();
 		}
 
-		BitMask64 getMask() {
+		BitMask64& getMask() {
 			return m_mask;
 		}
 

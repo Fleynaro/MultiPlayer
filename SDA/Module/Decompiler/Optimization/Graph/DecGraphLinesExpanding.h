@@ -43,7 +43,7 @@ namespace CE::Decompiler::Optimization
 				for (auto it2 = std::next(it); it2 != newSeqLines.end(); it2++) {
 					auto anotherNextSeqLine = *it2;
 					std::list<ExprTree::SymbolLeaf*> symbolLeafs;
-					gatherSymbolLeafsFromNode(anotherNextSeqLine->getSrcNode(), localVar, symbolLeafs);
+					GatherSymbolLeafsFromNode(anotherNextSeqLine->getSrcNode(), symbolLeafs, localVar);
 					//if we find anything like this {localVar2 = localVar1 + 1}
 					if (!symbolLeafs.empty()) {
 						if (!localTempVar) {

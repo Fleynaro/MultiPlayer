@@ -122,14 +122,14 @@ void Signature::updateParameterStorages() {
 				auto it = paramToReg.find(paramIdx);
 				if (it != paramToReg.end()) {
 					auto& reg = it->second;
-					bool isFloatingPoint = paramType->isFloatingPoint();
-					auto storage = Storage(Storage::STORAGE_REGISTER, !isFloatingPoint ? reg.first : reg.second, 0x0);
-					m_paramInfos.push_back(ParameterInfo(paramType->getSize(), storage));
+					auto regId = !paramType->isFloatingPoint() ? reg.first : reg.second;
+					auto storage = Storage(Storage::STORAGE_REGISTER, regId, 0x0);
+					m_paramInfos.push_back(ParameterInfo(paramIdx, paramType->getSize(), storage));
 				}
 			}
 			else {
 				auto storage = Storage(Storage::STORAGE_STACK, ZYDIS_REGISTER_RSP, paramIdx * 0x8);
-				m_paramInfos.push_back(ParameterInfo(paramType->getSize(), storage));
+				m_paramInfos.push_back(ParameterInfo(paramIdx, paramType->getSize(), storage));
 			}
 
 			paramIdx++;
@@ -138,9 +138,9 @@ void Signature::updateParameterStorages() {
 		//return
 		auto retType = getReturnType();
 		if (retType->getSize() != 0x0) {
-			bool isFloatingPoint = retType->isFloatingPoint();
-			auto storage = Storage(Storage::STORAGE_REGISTER, !isFloatingPoint ? ZYDIS_REGISTER_RAX : ZYDIS_REGISTER_ZMM0, 0x0);
-			m_paramInfos.push_back(ParameterInfo(retType->getSize(), storage));
+			auto regId = !retType->isFloatingPoint() ? ZYDIS_REGISTER_RAX : ZYDIS_REGISTER_ZMM0;
+			auto storage = Storage(Storage::STORAGE_REGISTER, regId, 0x0);
+			m_paramInfos.push_back(ReturnInfo(retType->getSize(), storage));
 		}
 	}
 }
