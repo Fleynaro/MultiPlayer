@@ -4,7 +4,7 @@
 
 namespace CE::Decompiler
 {
-	class Decompiler;
+	class PrimaryDecompiler;
 };
 
 namespace CE::Decompiler::PCode
@@ -12,7 +12,7 @@ namespace CE::Decompiler::PCode
 	class InstructionInterpreter
 	{
 	public:
-		InstructionInterpreter(Decompiler* decompiler, PrimaryTree::Block* block, ExecContext* ctx)
+		InstructionInterpreter(PrimaryDecompiler* decompiler, PrimaryTree::Block* block, ExecContext* ctx)
 			: m_decompiler(decompiler), m_block(block), m_ctx(ctx)
 		{}
 
@@ -30,7 +30,7 @@ namespace CE::Decompiler::PCode
 		// create assignment line: memVar1 = read([memory location])
 		ExprTree::SymbolLeaf* createMemSymbol(ExprTree::ReadValueNode* readValueNode, PCode::Instruction* instr = nullptr);
 	private:
-		Decompiler* m_decompiler;
+		PrimaryDecompiler* m_decompiler;
 		PrimaryTree::Block* m_block;
 		ExecContext* m_ctx;
 		Instruction* m_instr;

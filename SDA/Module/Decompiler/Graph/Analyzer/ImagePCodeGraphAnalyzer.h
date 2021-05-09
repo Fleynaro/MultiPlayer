@@ -164,17 +164,13 @@ namespace CE::Decompiler
 			for (auto nextFuncGraph : funcGraph->getNonVirtFuncCalls())
 				doDepthPassAllFuncGraphs(nextFuncGraph);
 
-			auto decCodeGraph = new DecompiledCodeGraph(funcGraph);
 
 			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
-			auto decompiler = CE::Decompiler::Decompiler(decCodeGraph, m_registerFactory, ReturnInfo(), funcCallInfoCallback);
+			auto decompiler = CE::Decompiler::Decompiler(funcGraph, funcCallInfoCallback, ReturnInfo(), m_registerFactory);
 			decompiler.start();
 
-			auto clonedDecCodeGraph = decCodeGraph->clone();
-			delete decCodeGraph;
-			Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
-
-			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+			auto decCodeGraph = decompiler.getDecGraph();
+			auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
 
 			Symbolization::UserSymbolDef userSymbolDef;
 			userSymbolDef.m_globalSymbolTable = m_globalSymbolTable;

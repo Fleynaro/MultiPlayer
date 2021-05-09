@@ -376,6 +376,7 @@
     <ClInclude Include="Module\DB\Mappers\TypedefTypeMapper.h" />
     <ClInclude Include="Module\DB\Transaction.h" />
     <ClInclude Include="Module\Decompiler\DecMisc.h" />
+    <ClInclude Include="Module\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\DecWarningContainer.h" />
     <ClInclude Include="Module\Decompiler\Graph\Analyzer\ImagePCodeGraphAnalyzer.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraph.h" />
@@ -386,6 +387,7 @@
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewBlocks.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewOptimization.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
+    <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphParAssignmentCreator.h" />
     <ClInclude Include="Module\Decompiler\PCode\Decompiler\Decompiler.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprCompositeCondOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConcatAndSubpieceBuilding.h" />
@@ -398,7 +400,6 @@
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphConcatOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphCondBlockOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphExprOptimization.h" />
-    <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphInstructionsForLocalVarsSearch.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphLastLineAndConditionOrderFixing.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphLinesExpanding.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphModification.h" />

@@ -77,23 +77,17 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 		if (showAllInfo)
 			graph->printDebug(0x0);
 
-		auto decCodeGraph = new DecompiledCodeGraph(graph);
-
 		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getCallInfo(); };
-		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, m_defSignature->getCallInfo().getReturnInfo(), funcCallInfoCallback);
+		auto decompiler = new CE::Decompiler::Decompiler(graph, funcCallInfoCallback, m_defSignature->getCallInfo().getReturnInfo(), &m_registerFactoryX86);
 		decompiler->start();
+
+		auto decCodeGraph = decompiler->getDecGraph();
 		showDecGraph(decCodeGraph);
 
-
-		auto clonedDecCodeGraph = decCodeGraph->clone();
-		//clonedDecCodeGraph->checkOnSingleParents();
-		Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
-		clonedDecCodeGraph->checkOnSingleParents();
-
 		if(showAllInfo)
-			showDecGraph(clonedDecCodeGraph);
+			showDecGraph(decCodeGraph);
 
-		auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+		auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
 		auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
 		userSymbolDef.m_signature = m_defSignature;
 		{
@@ -296,20 +290,15 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	imageAnalyzer.start(0, offsetToInstruction, true);
 
 	auto graph = *imageGraph->getFunctionGraphList().begin();
-	auto decCodeGraph = new DecompiledCodeGraph(graph);
 
 	auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getCallInfo(); };
-	auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &m_registerFactoryX86, m_defSignature->getCallInfo().getReturnInfo(), funcCallInfoCallback);
+	auto decompiler = new CE::Decompiler::Decompiler(graph, funcCallInfoCallback, m_defSignature->getCallInfo().getReturnInfo(), &m_registerFactoryX86);
 	decompiler->start();
+
+	auto decCodeGraph = decompiler->getDecGraph();
 	showDecGraph(decCodeGraph);
 
-	auto clonedDecCodeGraph = decCodeGraph->clone();
-	//clonedDecCodeGraph->checkOnSingleParents();
-	Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
-	clonedDecCodeGraph->checkOnSingleParents();
-	//showDecGraph(clonedDecCodeGraph);
-
-	auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+	auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
 	Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
 	Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 	sdaBuilding.start();
@@ -340,7 +329,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	
 	//ignore all tests except
-	m_doTestIdOnly = 101;
+	m_doTestIdOnly = 103;
 
 	{
 		// TEST
@@ -424,6 +413,7 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		test->enableAllAndShowAll();
 		sig = test->m_userSymbolDef.m_signature = typeManager()->createSignature("test100");
 		sig->addParameter("myParam1", findType("uint32_t", "[1]"));
+		sig->addParameter("myParam2", findType("uint32_t"));
 		sig->setReturnType(findType("uint64_t"));
 
 		{
@@ -717,7 +707,6 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 		// 4) DECOMPILING (transform the asm graph to decompiled code graph)
 		auto info = sampleTest->m_userSymbolDef.m_signature->getCallInfo();
-		auto decCodeGraph = new DecompiledCodeGraph(graph);
 		
 		auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) {
 			if (offset != 0x0) {
@@ -728,25 +717,11 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			return CE::Decompiler::FunctionCallInfo(m_defSignature->getCallInfo());
 		};
 		RegisterFactoryX86 registerFactoryX86;
-		auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, info.getReturnInfo(), funcCallInfoCallback);
+		auto decompiler = new CE::Decompiler::Decompiler(graph, funcCallInfoCallback, info.getReturnInfo(), &registerFactoryX86);
 		decompiler->start();
-
-		//show code
-		out("********************* BEFORE OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-		printf("\nTROUBLES:\n%s\n", warningContainer.getAllMessages().c_str());
-		auto blockList = Misc::BuildBlockList(decCodeGraph);
-		LinearViewSimpleOutput output(blockList, decCodeGraph);
-		if (m_isOutput) {
-			output.show();
-		}
-
-
-		// 5) OPTIMIZATION (optimize the decompiled code graph)
-		auto clonedDecCodeGraph = decCodeGraph->clone();
-		clonedDecCodeGraph->checkOnSingleParents();
-		Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
-		clonedDecCodeGraph->checkOnSingleParents();
-		if (!checkHash(0, sampleTestHashes, clonedDecCodeGraph->getHash().getHashValue(), sampleTest)) {
+		auto decCodeGraph = decompiler->getDecGraph();
+		
+		if (!checkHash(0, sampleTestHashes, decCodeGraph->getHash().getHashValue(), sampleTest)) {
 			printf("\n\nHERE IS THE TROUBLE:");
 			m_isOutput = true;
 			testFail = true;
@@ -754,8 +729,8 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 
 		//show code
 		out("\n\n\n********************* AFTER OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-		blockList = Misc::BuildBlockList(clonedDecCodeGraph);
-		LinearViewSimpleOutput output2(blockList, clonedDecCodeGraph);
+		auto blockList = Misc::BuildBlockList(decCodeGraph);
+		LinearViewSimpleOutput output2(blockList, decCodeGraph);
 		if (m_isOutput) {
 			output2.show();
 		}
@@ -763,7 +738,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 		// 6) SYMBOLIZATION
 		if (sampleTest->m_symbolization) {
 			m_isOutput |= sampleTest->m_showSymbCode;
-			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+			auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
 			Symbolization::SymbolizeWithSDA(sdaCodeGraph, sampleTest->m_userSymbolDef);
 			
 			if (!checkHash(1, sampleTestHashes, sdaCodeGraph->getDecGraph()->getHash().getHashValue(), sampleTest)) {
@@ -780,14 +755,14 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			if (m_isOutput) {
 				output3.show();
 			}
-			clonedDecCodeGraph->checkOnSingleParents();
+			decCodeGraph->checkOnSingleParents();
 
 			// 7) FINAL OPTIMIZATION
 			m_isOutput |= sampleTest->m_showFinalResult;
 			out("\n\n\n********************* AFTER FINAL OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
 			Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
 			blockList = Misc::BuildBlockList(sdaCodeGraph->getDecGraph());
-			clonedDecCodeGraph->checkOnSingleParents();
+			decCodeGraph->checkOnSingleParents();
 			LinearViewSimpleOutput output4(blockList, sdaCodeGraph->getDecGraph());
 			output4.setMinInfoToShow();
 			output4.m_SHOW_BLOCK_HEADER = true;

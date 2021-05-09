@@ -20,6 +20,8 @@ ExprTree::INode* RegisterExecContext::requestRegister(const PCode::Register& reg
 }
 
 void RegisterExecContext::copyFrom(RegisterExecContext* ctx) {
+	clear();
+
 	auto decompiler = m_decompiler;
 	auto execCtx = m_execContext;
 	*this = *ctx;
@@ -30,7 +32,7 @@ void RegisterExecContext::copyFrom(RegisterExecContext* ctx) {
 	for (auto& pair : m_registers) {
 		auto& registers = pair.second;
 		for (auto& regInfo : registers) {
-			regInfo.m_expr = new RegTopNode(regInfo.m_expr->getNode());
+			regInfo.m_expr = new TopNode(regInfo.m_expr->getNode());
 		}
 	}
 }
@@ -59,13 +61,16 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 
 			// if there are registers which come from different blocks
 			if (!regs1.empty() && !regs2.empty()) {
-				/*auto mask1 = calculateMaxMask(regs1);
+				// WAY 1 (single mask)
+				auto mask1 = calculateMaxMask(regs1);
 				auto mask2 = calculateMaxMask(regs2);
-				auto resultMask = mask1 & mask2;*/
+				auto resultMask = mask1 & mask2;
+				auto resultMasks = { resultMask };
 
+				// WAY 2 (multiple masks)
 				// calculate masks which belongs to different groups with non-intersected registers.
 				// need for XMM registers to split low and high parts into two independent local vars
-				auto resultMasks = CalculateMasks(regs1, regs2); // todo: does it need?
+				// auto resultMasks = CalculateMasks(regs1, regs2); // todo: does it need?
 
 				for (auto resultMask : resultMasks)
 				{
@@ -119,11 +124,11 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 						// new local var
 						localVar = new Symbol::LocalVariable(resultMask);
 						// info for par. assignments
-						Decompiler::LocalVarInfo localVarInfo;
+						PrimaryDecompiler::LocalVarInfo localVarInfo;
 						localVarInfo.m_register = newRegister;
 						m_decompiler->m_localVars[localVar] = localVarInfo;
 					}
-					registerInfo.m_expr = new RegTopNode(new ExprTree::SymbolLeaf(localVar));
+					registerInfo.m_expr = new TopNode(new ExprTree::SymbolLeaf(localVar));
 					registerInfo.m_srcExecContext = m_execContext;
 
 					// add parent contexts where par. assignments (localVar = 5) will be created

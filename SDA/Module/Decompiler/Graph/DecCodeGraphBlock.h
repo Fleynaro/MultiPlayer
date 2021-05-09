@@ -10,11 +10,6 @@ namespace CE::Decompiler
 namespace CE::Decompiler::PrimaryTree
 {
 	class Block;
-	struct BlockCloneContext {
-		DecompiledCodeGraph* m_graph;
-		std::map<Block*, Block*> m_clonedBlocks;
-		ExprTree::NodeCloneContext m_nodeCloneContext;
-	};
 
 	// Decompiled block which contains the abstract tree
 	class Block
@@ -89,7 +84,7 @@ namespace CE::Decompiler::PrimaryTree
 				return getAssignmentNode()->getSrcNode();
 			}
 
-			virtual SeqAssignmentLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
+			SeqAssignmentLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
 				return new SeqAssignmentLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
 			}
 		};
@@ -114,7 +109,7 @@ namespace CE::Decompiler::PrimaryTree
 				return dynamic_cast<ExprTree::SymbolLeaf*>(getDstNode());
 			}
 
-			SeqAssignmentLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) override {
+			SymbolParallelAssignmentLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
 				return new SymbolParallelAssignmentLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
 			}
 		};
@@ -305,28 +300,26 @@ namespace CE::Decompiler::PrimaryTree
 			return m_seqLines.empty() && m_symbolParallelAssignmentLines.empty();
 		}
 
-		Block* clone(BlockCloneContext* ctx) {
-			auto it = ctx->m_clonedBlocks.find(this);
-			if (it != ctx->m_clonedBlocks.end())
-				return it->second;
-			auto newBlock = clone(ctx, m_level);
-			ctx->m_clonedBlocks.insert(std::make_pair(this, newBlock));
-			newBlock->m_maxHeight = m_maxHeight;
-			newBlock->m_name = m_name;
-			if(m_nextNearBlock)
-				newBlock->setNextNearBlock(m_nextNearBlock->clone(ctx));
-			if(m_nextFarBlock)
-				newBlock->setNextFarBlock(m_nextFarBlock->clone(ctx));
-			if(getNoJumpCondition())
-				newBlock->setNoJumpCondition(dynamic_cast<ExprTree::AbstractCondition*>(getNoJumpCondition()->clone(&ctx->m_nodeCloneContext)));
-			for (auto line : m_seqLines) {
-				newBlock->m_seqLines.push_back(line->clone(newBlock, &ctx->m_nodeCloneContext));
+		// clone all expr.
+		virtual void cloneAllExpr() {
+			ExprTree::NodeCloneContext nodeCloneContext;
+
+			auto seqLines = m_seqLines;
+			m_seqLines.clear();
+			for (auto line : seqLines) {
+				m_seqLines.push_back(line->clone(this, &nodeCloneContext));
+				delete line;
 			}
-			for (auto line : m_symbolParallelAssignmentLines) {
-				auto newLine = dynamic_cast<SymbolParallelAssignmentLine*>(line->clone(newBlock, &ctx->m_nodeCloneContext));
-				newBlock->m_symbolParallelAssignmentLines.push_back(newLine);
+
+			auto symbolParallelAssignmentLines = m_symbolParallelAssignmentLines;
+			m_symbolParallelAssignmentLines.clear();
+			for (auto line : symbolParallelAssignmentLines) {
+				m_symbolParallelAssignmentLines.push_back(line->clone(this, &nodeCloneContext));
+				delete line;
 			}
-			return newBlock;
+
+			if (getNoJumpCondition())
+				setNoJumpCondition(dynamic_cast<ExprTree::AbstractCondition*>(getNoJumpCondition()->clone(&nodeCloneContext)));
 		}
 
 		std::string printDebug(bool cond = true, const std::string& tabStr = "") {
@@ -344,11 +337,6 @@ namespace CE::Decompiler::PrimaryTree
 			}
 			return result;
 		}
-
-		protected:
-			virtual Block* clone(BlockCloneContext* ctx, int level) {
-				return new Block(ctx->m_graph, m_pcodeBlock, level);
-			}
 	};
 
 	// Block in which the control flow end (the last instruction of these blocks is RET).
@@ -385,12 +373,10 @@ namespace CE::Decompiler::PrimaryTree
 			m_returnNode->setNode(returnNode);
 		}
 
-	protected:
-		Block* clone(BlockCloneContext* ctx, int level) override {
-			auto newBlock = new EndBlock(ctx->m_graph, m_pcodeBlock, level);
+		void cloneAllExpr() override {
+			Block::cloneAllExpr();
 			if (getReturnNode())
-				newBlock->setReturnNode(getReturnNode()->clone(&ctx->m_nodeCloneContext));
-			return newBlock;
+				setReturnNode(getReturnNode()->clone());
 		}
 	};
 };

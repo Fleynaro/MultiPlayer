@@ -180,15 +180,14 @@ void GUI::DecompilerDemoWindow::decompile(const std::string& hexBytesStr)
     {
         auto decCodeGraph = new DecompiledCodeGraph(graph);
 
-        auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
+       /* auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
         auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, ReturnInfo(), funcCallInfoCallback);
-        decompiler->start();
+        decompiler->start();*/
         
-        auto clonedDecCodeGraph = decCodeGraph->clone();
-        Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
-        clonedDecCodeGraph->checkOnSingleParents();
+        //Optimization::ProcessDecompiledGraph(clonedDecCodeGraph);
+        decCodeGraph->checkOnSingleParents();
 
-        auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+        auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
         auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
         Symbolization::SymbolizeWithSDA(sdaCodeGraph, userSymbolDef);
         Optimization::MakeFinalGraphOptimization(sdaCodeGraph);

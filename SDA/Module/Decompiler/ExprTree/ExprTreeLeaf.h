@@ -54,17 +54,17 @@ namespace CE::Decompiler::ExprTree
 	class NumberLeaf : public Node, public INumberLeaf
 	{
 		uint64_t m_value;
-		BitMask64 m_mask;
+		BitMask64 m_rangeValueMask;
 	public:
 
-		NumberLeaf(uint64_t value, BitMask64 mask)
-			: m_value(value & mask.getValue()), m_mask(mask)
+		NumberLeaf(uint64_t value, BitMask64 rangeValueMask)
+			: m_value(value & rangeValueMask.getValue()), m_rangeValueMask(rangeValueMask)
 		{}
 
-		NumberLeaf(double value, BitMask64 mask)
-			: m_mask(mask)
+		NumberLeaf(double value, BitMask64 rangeValueMask)
+			: m_rangeValueMask(rangeValueMask)
 		{
-			if(m_mask.getSize() == 4)
+			if(rangeValueMask.getSize() == 4)
 				(float&)m_value = (float)value;
 			else (double&)m_value = value;
 		}
@@ -78,11 +78,11 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		BitMask64 getMask() override {
-			return m_mask;
+			return m_value;
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return new NumberLeaf(m_value, m_mask);
+			return new NumberLeaf(m_value, m_rangeValueMask);
 		}
 
 		std::string printDebug() override {

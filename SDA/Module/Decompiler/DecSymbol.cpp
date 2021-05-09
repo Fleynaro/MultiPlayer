@@ -4,10 +4,6 @@
 using namespace CE::Decompiler;
 using namespace CE::Decompiler::Symbol;
 
-CE::Decompiler::Symbol::Symbol::~Symbol() {
-	m_decGraph->removeSymbol(this);
-}
-
 CE::Decompiler::Symbol::Symbol* CE::Decompiler::Symbol::Symbol::clone(ExprTree::NodeCloneContext* ctx) {
 	if (!ctx->m_cloneSymbols)
 		return this;
@@ -15,7 +11,6 @@ CE::Decompiler::Symbol::Symbol* CE::Decompiler::Symbol::Symbol::clone(ExprTree::
 	if (it != ctx->m_clonedSymbols.end())
 		return it->second;
 	auto newSymbol = cloneSymbol();
-	newSymbol->m_decGraph = m_decGraph;
 	ctx->m_clonedSymbols.insert(std::make_pair(this, newSymbol));
 	return newSymbol;
 }

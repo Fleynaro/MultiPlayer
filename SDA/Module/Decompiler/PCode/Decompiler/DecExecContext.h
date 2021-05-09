@@ -3,21 +3,14 @@
 
 namespace CE::Decompiler
 {
-	class Decompiler;
+	class PrimaryDecompiler;
 	class ExecContext;
-
-	class RegTopNode : public TopNode {
-	public:
-		RegTopNode(ExprTree::INode* node)
-			: TopNode(node)
-		{}
-	};
 
 	struct RegisterExecContext
 	{
 		struct RegisterInfo {
 			PCode::Register m_register;
-			RegTopNode* m_expr;
+			TopNode* m_expr;
 			ExecContext* m_srcExecContext;
 		};
 
@@ -27,19 +20,27 @@ namespace CE::Decompiler
 			ExprTree::INode* m_expr = nullptr;
 		};
 
-		Decompiler* m_decompiler;
+		PrimaryDecompiler* m_decompiler;
 		std::map<PCode::RegisterId, std::list<RegisterInfo>> m_registers;
 		ExecContext* m_execContext;
 		bool m_isFilled = false;
 
-		RegisterExecContext(Decompiler* decompiler, ExecContext* execContext)
+		RegisterExecContext(PrimaryDecompiler* decompiler, ExecContext* execContext)
 			: m_decompiler(decompiler), m_execContext(execContext)
 		{}
+
+		void clear() {
+			for (auto& pair : m_registers) {
+				auto& registers = pair.second;
+				for (auto& regInfo : registers)
+					delete regInfo.m_expr;
+			}
+		}
 
 		ExprTree::INode* requestRegister(const PCode::Register& reg);
 
 		void setRegister(const PCode::Register& reg, ExprTree::INode* newExpr) {
-			std::list<RegTopNode*> oldTopNodes;
+			std::list<TopNode*> oldTopNodes;
 
 			auto it = m_registers.find(reg.getId());
 			if (it != m_registers.end()) {
@@ -59,7 +60,7 @@ namespace CE::Decompiler
 			// add the register
 			RegisterInfo registerInfo;
 			registerInfo.m_register = reg;
-			registerInfo.m_expr = new RegTopNode(newExpr);
+			registerInfo.m_expr = new TopNode(newExpr);
 			registerInfo.m_srcExecContext = m_execContext;
 			m_registers[reg.getId()].push_back(registerInfo);
 
@@ -76,13 +77,13 @@ namespace CE::Decompiler
 	private:
 		std::list<RegisterPart> findRegisterParts(int regId, BitMask64& needReadMask);
 
-		/*BitMask64 calculateMaxMask(const std::list<RegisterInfo>& regs) {
+		BitMask64 calculateMaxMask(const std::list<RegisterInfo>& regs) {
 			BitMask64 mask;
 			for (auto reg : regs) {
 				mask = mask | reg.m_register.m_valueRangeMask;
 			}
 			return mask;
-		}*/
+		}
 
 		static std::list<BitMask64> FindNonIntersectedMasks(const std::list<RegisterInfo>& regs) {
 			std::list<BitMask64> masks;
@@ -153,13 +154,23 @@ namespace CE::Decompiler
 	{
 		std::map<PCode::SymbolVarnode*, TopNode*> m_symbolVarnodes;
 	public:
-		RegisterExecContext m_startRegisterExecCtx;
-		RegisterExecContext m_registerExecCtx;
+		RegisterExecContext m_startRegisterExecCtx; // state before decompiling
+		RegisterExecContext m_registerExecCtx; // state during decompiling and after
 		PCodeBlock* m_pcodeBlock;
 
-		ExecContext(Decompiler* decompiler, PCodeBlock* pcodeBlock)
+		ExecContext(PrimaryDecompiler* decompiler, PCodeBlock* pcodeBlock)
 			: m_startRegisterExecCtx(decompiler, this), m_registerExecCtx(m_startRegisterExecCtx), m_pcodeBlock(pcodeBlock)
 		{}
+
+		~ExecContext() {
+			m_startRegisterExecCtx.clear();
+			m_registerExecCtx.clear();
+
+			for (auto& pair : m_symbolVarnodes) {
+				auto topNode = pair.second;
+				delete topNode;
+			}
+		}
 
 		ExprTree::INode* requestVarnode(PCode::Varnode* varnode) {
 			if (auto registerVarnode = dynamic_cast<PCode::RegisterVarnode*>(varnode)) {

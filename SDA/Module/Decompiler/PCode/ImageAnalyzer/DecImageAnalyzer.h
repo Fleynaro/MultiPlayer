@@ -31,16 +31,12 @@ namespace CE::Decompiler
 		}
 
 		void findNewFunctionOffsets(FunctionPCodeGraph* funcGraph, std::list<int>& nonVirtFuncOffsets, std::list<int>& otherOffsets) {
-			auto decCodeGraph = new DecompiledCodeGraph(funcGraph);
-
 			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
-			auto decompiler = CE::Decompiler::Decompiler(decCodeGraph, m_registerFactory, ReturnInfo(), funcCallInfoCallback);
+			auto decompiler = CE::Decompiler::Decompiler(funcGraph, funcCallInfoCallback, ReturnInfo(), m_registerFactory);
 			decompiler.start();
 
-			auto clonedDecCodeGraph = decCodeGraph->clone();
-			Optimization::OptimizeDecompiledGraph(clonedDecCodeGraph);
-
-			auto sdaCodeGraph = new SdaCodeGraph(clonedDecCodeGraph);
+			auto decCodeGraph = decompiler.getDecGraph();
+			auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
 			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &m_userSymbolDef, &m_dataTypeFactory);
 			sdaBuilding.start();
 
@@ -57,7 +53,6 @@ namespace CE::Decompiler
 				delete symbol;
 			}
 
-			delete clonedDecCodeGraph;
 			delete decCodeGraph;
 			delete sdaCodeGraph;
 		}

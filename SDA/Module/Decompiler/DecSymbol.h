@@ -16,13 +16,12 @@ namespace CE::Decompiler::Symbol
 	class Symbol
 	{
 		BitMask64 m_mask;
-		DecompiledCodeGraph* m_decGraph;
 	public:
 		Symbol(BitMask64 mask)
 			: m_mask(mask)
 		{}
 
-		virtual ~Symbol();
+		virtual ~Symbol() {}
 
 		int getSize() {
 			return m_mask.getSize();
@@ -33,10 +32,6 @@ namespace CE::Decompiler::Symbol
 		}
 
 		virtual HS getHash() = 0;
-
-		void setDecGraph(DecompiledCodeGraph* decGraph) {
-			m_decGraph = decGraph;
-		}
 
 		Symbol* clone(ExprTree::NodeCloneContext* ctx);
 

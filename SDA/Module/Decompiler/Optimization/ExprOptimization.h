@@ -13,6 +13,7 @@ namespace CE::Decompiler::Optimization
 	class ExprOptimization
 	{
 		TopNode* m_topNode;
+		bool m_isChanged = false;
 	public:
 		ExprOptimization(TopNode* node)
 			: m_topNode(node)
@@ -20,7 +21,13 @@ namespace CE::Decompiler::Optimization
 
 		void start() {
 			linearExprToOpNodes(m_topNode->getNode()); // remove linear expressions
-			optimizeGenerally(m_topNode->getNode());
+
+			// todo: calculate hashes using cache
+			do {
+				m_isChanged = false;
+				optimizeGenerally(m_topNode->getNode());
+			} while (m_isChanged);
+
 			opNodesToLinearExpr(m_topNode->getNode()); // create linear expressions
 		}
 
@@ -33,32 +40,38 @@ namespace CE::Decompiler::Optimization
 			ExprUnification exprUnification(node);
 			exprUnification.start();
 			node = exprUnification.getNode();
+			m_isChanged |= exprUnification.isChanged();
 			
 			if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
 				ExprConstCalculating exprConstCalculating(opNode);
 				exprConstCalculating.start();
 				node = exprConstCalculating.getNode();
+				m_isChanged |= exprConstCalculating.isChanged();
 			}
 
 			ExprConcatAndSubpieceBuilding exprConcatAndSubpieceBuilding(node);
 			exprConcatAndSubpieceBuilding.start();
 			node = exprConcatAndSubpieceBuilding.getNode();
+			m_isChanged |= exprConcatAndSubpieceBuilding.isChanged();
 
 			// condition
 			if (auto cond = dynamic_cast<AbstractCondition*>(node)) {
 				ExprConstConditionCalculating exprConstConditionCalculating(cond);
 				exprConstConditionCalculating.start();
 				node = exprConstConditionCalculating.getNode();
+				m_isChanged |= exprConstConditionCalculating.isChanged();
 			}
 			if (auto cond = dynamic_cast<Condition*>(node)) {
 				ExprSimpleConditionOptimization exprSimpleConditionOptimization(cond);
 				exprSimpleConditionOptimization.start();
 				node = exprSimpleConditionOptimization.getNode();
+				m_isChanged |= exprSimpleConditionOptimization.isChanged();
 			}
 			else if (auto compCond = dynamic_cast<CompositeCondition*>(node)) {
 				ExprCompositeConditionOptimization exprCompositeConditionOptimization(compCond);
 				exprCompositeConditionOptimization.start();
 				node = exprCompositeConditionOptimization.getNode();
+				m_isChanged |= exprCompositeConditionOptimization.isChanged();
 			}
 		}
 

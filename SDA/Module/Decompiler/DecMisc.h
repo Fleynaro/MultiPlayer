@@ -1,9 +1,8 @@
 #pragma once
-#include <Decompiler/PCode/Decompiler/Decompiler.h>
+#include <Decompiler/Decompiler.h>
 #include <Decompiler/LinearView/DecLinearView.h>
 #include <Decompiler/LinearView/DecLinearViewOptimization.h>
 #include <Decompiler/LinearView/DecLinearViewSimpleOutput.h>
-#include <Decompiler/Optimization/DecGraphOptimization.h>
 #include <Decompiler/SDA/Symbolization/DecGraphSymbolization.h>
 #include <Decompiler/SDA/Optimizaton/SdaGraphFinalOptimization.h>
 #include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>

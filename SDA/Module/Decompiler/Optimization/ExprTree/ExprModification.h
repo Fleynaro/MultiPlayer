@@ -22,7 +22,17 @@ namespace CE::Decompiler
 			return m_node;
 		}
 
+		bool isChanged() {
+			return m_isChanged;
+		}
+
 	protected:
+		bool m_isChanged = false;
+
+		void changed() {
+			m_isChanged = true;
+		}
+
 		// replace this node with another
 		void replace(INode* newNode, bool destroy = true) {
 			m_node->replaceWith(newNode);
@@ -30,6 +40,7 @@ namespace CE::Decompiler
 				delete m_node;
 			}
 			m_node = newNode;
+			changed();
 			INode::UpdateDebugInfo(m_node);
 		}
 	};

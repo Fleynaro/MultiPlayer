@@ -4,16 +4,13 @@
 
 namespace CE::Decompiler
 {
-	class Decompiler
+	class PrimaryDecompiler
 	{
 	public:
 		struct LocalVarInfo {
 			PCode::Register m_register;
 			std::set<ExecContext*> m_execCtxs;
-
-			// need to change the size of local var
-			int m_countOfInstances = 0;
-			BitMask64 m_instanceMask;
+			bool m_used = false;
 		};
 
 		std::map<Symbol::LocalVariable*, LocalVarInfo> m_localVars;
@@ -37,9 +34,23 @@ namespace CE::Decompiler
 		std::function<FunctionCallInfo(int, ExprTree::INode*)> m_funcCallInfoCallback;
 		std::map<PCodeBlock*, DecompiledBlockInfo> m_decompiledBlocks;
 
-		Decompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, ReturnInfo returnInfo, std::function<FunctionCallInfo(int, ExprTree::INode*)> funcCallInfoCallback)
+		PrimaryDecompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, ReturnInfo returnInfo, std::function<FunctionCallInfo(int, ExprTree::INode*)> funcCallInfoCallback)
 			: m_decompiledGraph(decompiledGraph), m_registerFactory(registerFactory), m_returnInfo(returnInfo), m_funcCallInfoCallback(funcCallInfoCallback)
 		{}
+
+		~PrimaryDecompiler() {
+			for (auto& pair : m_decompiledBlocks) {
+				auto& decBlockInfo = pair.second;
+				delete decBlockInfo.m_execCtx;
+			}
+
+			for (auto& pair : m_localVars) {
+				auto localVar = pair.first;
+				auto& localVarInfo = pair.second;
+				if(!localVarInfo.m_used)
+					delete localVar;
+			}
+		}
 
 		void start() {
 			// prepare
@@ -71,9 +82,6 @@ namespace CE::Decompiler
 				m_decompiledGraph->getDecompiledBlocks().push_back(info.m_decBlock);
 			}
 			m_decompiledGraph->sortBlocksByLevel();
-
-			// create assignments
-			createParAssignmentsForLocalVars();
 		}
 
 		AbstractRegisterFactory* getRegisterFactory() {
@@ -117,7 +125,6 @@ namespace CE::Decompiler
 						continue;
 
 					if (nextDecBlockInfo.m_isDecompiled) {
-						// delete nextDecBlockInfo.m_execCtx->m_registerExecCtx
 						nextDecBlockInfo.m_execCtx->m_registerExecCtx.copyFrom(&nextDecBlockInfo.m_execCtx->m_startRegisterExecCtx);
 					}
 					nextDecBlockInfo.m_execCtx->join(blockInfo.m_execCtx);
@@ -135,60 +142,6 @@ namespace CE::Decompiler
 				if (auto nextPCodeBlock = decBlockInfo.m_pcodeBlock->getNextFarBlock()) {
 					decBlockInfo.m_decBlock->setNextFarBlock(m_decompiledBlocks[nextPCodeBlock].m_decBlock);
 				}
-			}
-		}
-		
-		// iterate over all exprs in dec. graph and find localVar to create par. assignments
-		void createParAssignmentsForLocalVars() {
-			for (const auto decBlock : m_decompiledGraph->getDecompiledBlocks()) {
-				for (auto topNode : decBlock->getAllTopNodes()) {
-					std::list<ExprTree::SymbolLeaf*> symbolLeafs;
-					GatherSymbolLeafsFromNode(topNode->getNode(), symbolLeafs);
-					for (auto symbolLeaf : symbolLeafs) {
-						if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolLeaf->m_symbol)) {
-							auto& localVarInfo = m_localVars[localVar];
-
-							for (auto parentNode : symbolLeaf->getParentNodes()) {
-								if (!dynamic_cast<RegTopNode*>(parentNode))
-									continue;
-
-								localVarInfo.m_countOfInstances++;
-								if (auto opNode = dynamic_cast<ExprTree::OperationalNode*>(parentNode)) { // need after optimization
-									if (opNode->m_operation == ExprTree::And) {
-										localVarInfo.m_instanceMask = localVarInfo.m_instanceMask | opNode->m_rightNode->getMask();
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-			for (auto& pair : m_localVars) {
-				auto localVar = pair.first;
-				auto& localVarInfo = pair.second;
-
-				if (localVarInfo.m_countOfInstances == 0)
-					continue;
-
-				// change the size of local var
-				if(!localVarInfo.m_instanceMask.isZero())
-					localVar->getMask() = localVarInfo.m_register.m_valueRangeMask = localVarInfo.m_register.m_valueRangeMask & localVarInfo.m_instanceMask;
-
-				// iterate over all ctxs and create assignments: localVar1 = 0x5
-				for (auto execCtx : localVarInfo.m_execCtxs) {
-					auto expr = execCtx->m_registerExecCtx.requestRegister(localVarInfo.m_register);
-
-					// to avoide: localVar1 = localVar1
-					if (auto symbolLeaf = dynamic_cast<ExprTree::SymbolLeaf*>(expr))
-						if (symbolLeaf->m_symbol == localVar)
-							continue;
-
-					auto& blockInfo = m_decompiledBlocks[execCtx->m_pcodeBlock];
-					blockInfo.m_decBlock->addSymbolParallelAssignmentLine(new ExprTree::SymbolLeaf(localVar), expr);
-				}
-
-				m_decompiledGraph->addSymbol(localVar);
 			}
 		}
 	};

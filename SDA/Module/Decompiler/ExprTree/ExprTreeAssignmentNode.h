@@ -59,12 +59,16 @@ namespace CE::Decompiler::ExprTree
 			return m_srcNode;
 		}
 
-		INode** getDstNodePtr() {
-			return &m_dstNode;
+		void setDstNode(INode* node) {
+			m_dstNode->removeBy(this);
+			m_dstNode = node;
+			node->addParentNode(this);
 		}
 
-		INode** getSrcNodePtr() {
-			return &m_srcNode;
+		void setSrcNode(INode* node) {
+			m_srcNode->removeBy(this);
+			m_srcNode = node;
+			node->addParentNode(this);
 		}
 
 		BitMask64 getMask() override {

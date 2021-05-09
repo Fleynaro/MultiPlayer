@@ -48,7 +48,6 @@ namespace CE::Decompiler
 		}
 
 		void addSymbol(Symbol::Symbol* symbol) {
-			symbol->setDecGraph(this);
 			m_symbols.push_back(symbol);
 		}
 
@@ -56,25 +55,10 @@ namespace CE::Decompiler
 			m_symbols.remove(symbol);
 		}
 
-		DecompiledCodeGraph* clone() {
-			PrimaryTree::BlockCloneContext ctx;
-			ctx.m_graph = new DecompiledCodeGraph(m_funcGraph);
-			ctx.m_nodeCloneContext.m_cloneSymbols = true;
-			getStartBlock()->clone(&ctx);
-			for (auto pair : ctx.m_clonedBlocks) {
-				auto origBlock = pair.first;
-				auto clonedBlock = pair.second;
-				ctx.m_graph->m_decompiledBlocks.push_back(clonedBlock);
+		void cloneAllExpr() {
+			for (auto block : m_decompiledBlocks) {
+				block->cloneAllExpr();
 			}
-			for (auto block : m_removedDecompiledBlocks) {
-				ctx.m_graph->m_removedDecompiledBlocks.push_back(block->clone(&ctx));
-			}
-			for (auto pair : ctx.m_nodeCloneContext.m_clonedSymbols) {
-				auto clonedSymbol = pair.second;
-				ctx.m_graph->m_symbols.push_back(clonedSymbol);
-			}
-			ctx.m_graph->sortBlocksByLevel();
-			return ctx.m_graph;
 		}
 
 		void sortBlocksByLevel() {

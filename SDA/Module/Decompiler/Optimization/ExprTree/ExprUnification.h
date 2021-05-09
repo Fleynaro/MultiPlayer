@@ -30,6 +30,7 @@ namespace CE::Decompiler::Optimization
 			if (IsOperationMoving(opNode->m_operation)) {
 				if (IsSwap(opNode->m_leftNode, opNode->m_rightNode)) {
 					std::swap(opNode->m_leftNode, opNode->m_rightNode);
+					changed();
 				}
 			}
 		}

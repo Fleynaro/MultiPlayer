@@ -6,27 +6,33 @@
 #include "Graph/DecGraphUselessLineOptimization.h"
 #include "Graph/DecGraphLastLineAndConditionOrderFixing.h"
 #include "Graph/DecGraphViewOptimization.h"
+#include "Graph/DecGraphParAssignmentCreator.h"
 
 namespace CE::Decompiler::Optimization
 {
 	// make full optimization of decompiled graph
-	static void OptimizeDecompiledGraph(DecompiledCodeGraph* decGraph)
+	static void ProcessDecompiledGraph(DecompiledCodeGraph* decGraph, PrimaryDecompiler* decompiler)
 	{
+		decGraph->cloneAllExpr();
+
 		GraphCondBlockOptimization graphCondBlockOptimization(decGraph);
 		graphCondBlockOptimization.start();
-		decGraph->checkOnSingleParents();
-		GraphLastLineAndConditionOrderFixing graphLastLineAndConditionOrderFixing(decGraph);
-		graphLastLineAndConditionOrderFixing.start();
-		GraphLocalVarsRelToInstructions graphLocalVarsRelToInstructions(decGraph);
-		graphLocalVarsRelToInstructions.start();
-		decGraph->checkOnSingleParents();
+
 		GraphExprOptimization graphExprOptimization(decGraph);
 		graphExprOptimization.start();
-		decGraph->checkOnSingleParents();
+
+		GraphParAssignmentCreator graphParAssignmentCreator(decGraph, decompiler);
+		graphParAssignmentCreator.start();
+
+		GraphLastLineAndConditionOrderFixing graphLastLineAndConditionOrderFixing(decGraph);
+		graphLastLineAndConditionOrderFixing.start();
+		
 		GraphViewOptimization graphViewOptimization(decGraph);
 		graphViewOptimization.start();
+
 		GraphLinesExpanding graphLinesExpanding(decGraph);
 		graphLinesExpanding.start();
+
 		GraphUselessLineDeleting GraphUselessLineDeleting(decGraph);
 		//GraphUselessLineDeleting.start();
 		
