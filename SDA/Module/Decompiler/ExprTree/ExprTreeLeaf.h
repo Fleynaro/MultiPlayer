@@ -46,6 +46,8 @@ namespace CE::Decompiler::ExprTree
 
 		virtual void setValue(uint64_t value) = 0;
 
+		virtual BitMask64 getRangeValueMask() = 0;
+
 		HS getHash() override {
 			return HS() << getValue();
 		}
@@ -75,6 +77,10 @@ namespace CE::Decompiler::ExprTree
 
 		void setValue(uint64_t value) override {
 			m_value = value;
+		}
+
+		BitMask64 getRangeValueMask() override {
+			return m_rangeValueMask;
 		}
 
 		BitMask64 getMask() override {

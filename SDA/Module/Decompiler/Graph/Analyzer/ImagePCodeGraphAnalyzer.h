@@ -33,41 +33,41 @@ namespace CE::Decompiler
 
 	class ImagePCodeGraphAnalyzer
 	{
-		class RawStructure : public DataType::Type
-		{
-		public:
-			std::map<int64_t, DataTypePtr> m_fields;
-			std::set<int64_t> m_arrayBegins;
-
-			RawStructure()
-				: DataType::Type("RawStructure")
-			{}
-
-			DB::Id getId() override {
-				return 100000;
-			}
-
-			std::string getDisplayName() override {
-				return "RawStructure";
-			}
-
-			Group getGroup() override {
-				return Structure;
-			}
-
-			int getSize() override {
-				return 0x100;
-			}
-
-			bool isUserDefined() override {
-				return false;
-			}
-		};
-
 		class StructureFinder : public Symbolization::SdaDataTypesCalculater
 		{
 			ImagePCodeGraphAnalyzer* m_imagePCodeGraphAnalyzer;
 		public:
+			class RawStructure : public DataType::Type
+			{
+			public:
+				std::map<int64_t, DataTypePtr> m_fields;
+				std::set<int64_t> m_arrayBegins;
+
+				RawStructure()
+					: DataType::Type("RawStructure")
+				{}
+
+				DB::Id getId() override {
+					return 100000;
+				}
+
+				std::string getDisplayName() override {
+					return "RawStructure";
+				}
+
+				Group getGroup() override {
+					return Structure;
+				}
+
+				int getSize() override {
+					return 0x100;
+				}
+
+				bool isUserDefined() override {
+					return false;
+				}
+			};
+
 			StructureFinder(SdaCodeGraph* sdaCodeGraph, ImagePCodeGraphAnalyzer* imagePCodeGraphAnalyzer)
 				: Symbolization::SdaDataTypesCalculater(sdaCodeGraph, nullptr, &imagePCodeGraphAnalyzer->m_dataTypeFactory), m_imagePCodeGraphAnalyzer(imagePCodeGraphAnalyzer)
 			{}
@@ -147,7 +147,7 @@ namespace CE::Decompiler
 		AbstractRegisterFactory* m_registerFactory;
 		Symbolization::DataTypeFactory m_dataTypeFactory;
 		CE::Symbol::SymbolTable* m_globalSymbolTable;
-		std::list<RawStructure*> m_rawStructures;
+		std::list<StructureFinder::RawStructure*> m_rawStructures;
 	public:
 		ImagePCodeGraphAnalyzer(ProgramGraph* programGraph, CE::ProgramModule* programModule, AbstractRegisterFactory* registerFactory)
 			: m_programGraph(programGraph), m_programModule(programModule), m_registerFactory(registerFactory), m_dataTypeFactory(programModule)
@@ -156,13 +156,70 @@ namespace CE::Decompiler
 		}
 
 		void start() {
-			doDepthPassAllFuncGraphs(m_programGraph->getIamgePCodeGraph()->getFirstFunctionGraph());
+			auto firstGraph = m_programGraph->getIamgePCodeGraph()->getFirstFunctionGraph();
+
+			doPassToDefineReturnValues(firstGraph);
+			doPassToFindStructures(firstGraph);
 		}
 
 	private:
-		void doDepthPassAllFuncGraphs(FunctionPCodeGraph* funcGraph) {
+		struct ReturnValueStatInfo {
+			Register m_register;
+			int m_score;
+		};
+		std::map<FunctionPCodeGraph*, std::list<ReturnValueStatInfo>> m_retValueScores;
+
+		void doPassToDefineReturnValues(FunctionPCodeGraph* funcGraph) {
 			for (auto nextFuncGraph : funcGraph->getNonVirtFuncCalls())
-				doDepthPassAllFuncGraphs(nextFuncGraph);
+				doPassToDefineReturnValues(nextFuncGraph);
+
+			DecompiledCodeGraph decompiledCodeGraph(funcGraph);
+			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
+			auto decompiler = CE::Decompiler::PrimaryDecompiler(&decompiledCodeGraph, m_registerFactory, ReturnInfo(), funcCallInfoCallback);
+			decompiler.start();
+
+			ExecContext execContext(&decompiler);
+			for (auto& pair : decompiler.m_decompiledBlocks) {
+				auto& decBlockInfo = pair.second;
+				if (auto block = dynamic_cast<PrimaryTree::EndBlock*>(decBlockInfo.m_decBlock)) {
+					execContext.join(decBlockInfo.m_execCtx);
+				}
+			}
+
+			// iterate over all return registers
+			auto retRegIds = { ZYDIS_REGISTER_RAX << 8, ZYDIS_REGISTER_ZMM0 << 8 };
+			std::list<ReturnValueStatInfo> retValueScores;
+			for (auto regId : retRegIds) {
+				auto& registers = execContext.m_registerExecCtx.m_registers;
+				auto it = registers.find(regId);
+				if (it == registers.end())
+					continue;
+				auto& regList = it->second;
+
+				// select min register (AL inside EAX)
+				BitMask64 minMask(8);
+				RegisterExecContext::RegisterInfo* minRegInfo = nullptr;
+				for (auto& regInfo : regList) {
+					if (minMask.getValue() == -1 || regInfo.m_register.m_valueRangeMask < minMask) {
+						minMask = regInfo.m_register.m_valueRangeMask;
+						minRegInfo = &regInfo;
+					}
+				}
+
+				if (minRegInfo) {
+					ReturnValueStatInfo retValueStatInfo;
+					retValueStatInfo.m_register = minRegInfo->m_register;
+					retValueStatInfo.m_score ++;
+					retValueScores.push_back(retValueStatInfo);
+				}
+			}
+
+			m_retValueScores[funcGraph] = retValueScores;
+		}
+
+		void doPassToFindStructures(FunctionPCodeGraph* funcGraph) {
+			for (auto nextFuncGraph : funcGraph->getNonVirtFuncCalls())
+				doPassToFindStructures(nextFuncGraph);
 
 
 			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };

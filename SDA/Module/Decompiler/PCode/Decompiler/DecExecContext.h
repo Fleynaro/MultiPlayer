@@ -12,6 +12,12 @@ namespace CE::Decompiler
 			PCode::Register m_register;
 			TopNode* m_expr;
 			ExecContext* m_srcExecContext;
+
+			enum REGISTER_USING {
+				REGISTER_NOT_USING = 0b11,
+				REGISTER_PARTIALLY_USING = 0b00,
+				REGISTER_FULLY_USING = 0b10
+			} m_using = REGISTER_NOT_USING;
 		};
 
 		struct RegisterPart {
@@ -156,9 +162,9 @@ namespace CE::Decompiler
 	public:
 		RegisterExecContext m_startRegisterExecCtx; // state before decompiling
 		RegisterExecContext m_registerExecCtx; // state during decompiling and after
-		PCodeBlock* m_pcodeBlock;
+		PCodeBlock* m_pcodeBlock; // need as a key only
 
-		ExecContext(PrimaryDecompiler* decompiler, PCodeBlock* pcodeBlock)
+		ExecContext(PrimaryDecompiler* decompiler, PCodeBlock* pcodeBlock = nullptr)
 			: m_startRegisterExecCtx(decompiler, this), m_registerExecCtx(m_startRegisterExecCtx), m_pcodeBlock(pcodeBlock)
 		{}
 

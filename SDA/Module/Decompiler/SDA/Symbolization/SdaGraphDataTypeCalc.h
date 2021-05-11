@@ -81,7 +81,6 @@ namespace CE::Decompiler::Symbolization
 						}
 					}
 				}
-				// read value, assignments...
 			}
 
 			// last iterate over all childs
@@ -143,9 +142,11 @@ namespace CE::Decompiler::Symbolization
 								if (opNode->isFloatingPoint()) { // floating operation used?
 									calcDataType = calcDataTypeForOperands(calcDataType, m_dataTypeFactory->getDefaultType(maskSize, true, true));
 								}
-								if (maskSize != calcDataType->getSize()) {
-									// todo: print warning
-									calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
+								else {
+									if (maskSize > calcDataType->getSize()) {
+										// todo: print warning
+										calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
+									}
 								}
 								cast(sdaLeftSdaNode, calcDataType);
 								cast(sdaRightSdaNode, calcDataType);
@@ -297,7 +298,6 @@ namespace CE::Decompiler::Symbolization
 				}
 			}
 			else if (auto sdaNumberLeaf = dynamic_cast<SdaNumberLeaf*>(sdaNode)) {
-				auto valueMask = sdaNumberLeaf->getMask();
 				sdaNumberLeaf->setDataType(m_dataTypeFactory->calcDataTypeForNumber(sdaNumberLeaf->m_value));
 			}
 			else if (auto goarNode = dynamic_cast<GoarNode*>(sdaNode)) {

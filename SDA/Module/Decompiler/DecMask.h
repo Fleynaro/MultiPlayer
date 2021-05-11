@@ -3,7 +3,7 @@
 
 namespace CE::Decompiler
 {
-	// 64-bit mask (max length for all kind of operations)
+	// 64-bit mask (max length for all kind of operations). May be or continious (0b111), or not (0b101).
 	class BitMask64 {
 		uint64_t m_bitMask = 0x0;
 	public:
@@ -30,7 +30,7 @@ namespace CE::Decompiler
 			return m_bitMask >> getOffset();
 		}
 
-		// calculate count of 1 bits
+		// calculate count of 1-bits
 		int getBitsCount() const {
 			int bitCount = 0;
 			for (auto m = m_bitMask; m != 0; m = m >> 1) {
@@ -45,17 +45,46 @@ namespace CE::Decompiler
 		int getOffset() const {
 			int offset = 0;
 			auto mask = m_bitMask;
-			while (offset < sizeof(m_bitMask) * 0x8 && bool(mask & 0b1) == 0) {
+			auto maxSizeInBits = getMaxSizeInBits() - 1;
+			while (offset <= maxSizeInBits && bool(mask & 0b1) == 0) {
 				offset += 1;
 				mask = mask >> 1;
 			}
 			return offset;
 		}
 
-		// get size of mask (in bytes)
+		// get size of continious mask (in bytes)
 		int getSize() const {
 			auto bitsCount = getBitsCount();
 			return (bitsCount / 8) + ((bitsCount % 8) ? 1 : 0);
+		}
+
+		int getMaxSizeInBits() const {
+			return sizeof(m_bitMask) * 0x8;
+		}
+
+		// calculate offset from the end
+		int getOffsetFromTheEnd() const {
+			int offset = 0;
+			auto mask = m_bitMask;
+			auto maxSizeInBits = getMaxSizeInBits() - 1; // usually it is 63
+			while (offset <= maxSizeInBits && bool((mask >> maxSizeInBits) & 0b1) == 0) {
+				offset += 1;
+				mask = mask << 1;
+			}
+			return offset;
+		}
+
+		int getSizeOfNonContiniousMask() const {
+			auto minSizeInBits = getMaxSizeInBits() - getOffsetFromTheEnd();
+			auto minSize = ceil(minSizeInBits / 8.f);
+			if (minSize < 1)
+				return 1;
+			if (minSize < 2)
+				return 2;
+			if (minSize < 4)
+				return 4;
+			return 8;
 		}
 
 		// get bytemask where 1 bit = 8 bits in bitmask

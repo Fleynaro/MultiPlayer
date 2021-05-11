@@ -181,6 +181,7 @@ namespace CE::Decompiler::ExprTree
 			{
 				if (m_operation == And)
 					return m_leftNode->getMask() & m_rightNode->getMask();
+
 				if (m_operation == Shl || m_operation == Shr) {
 					if (auto numberLeaf = dynamic_cast<INumberLeaf*>(m_rightNode)) {
 						if (m_operation == Shl) {
@@ -192,7 +193,10 @@ namespace CE::Decompiler::ExprTree
 							return m_leftNode->getMask() >> (int)numberLeaf->getValue();
 						}
 					}
-					return m_leftNode->getMask();
+
+					// todo: see the case ([rcx] & 0x5123) << [rdx]
+					if (!m_instr)
+						throw std::logic_error("impossible to define a mask for shr/shl operation");
 				}
 			}
 			else if (!m_instr) {
@@ -204,7 +208,7 @@ namespace CE::Decompiler::ExprTree
 			}
 
 			if (m_operation == Concat) {
-				return BitMask64(m_leftNode->getMask().getSize() + m_rightNode->getMask().getSize());
+				return BitMask64(min(8, m_leftNode->getMask().getSize() + m_rightNode->getMask().getSize()));
 			}
 			return m_leftNode->getMask() | m_rightNode->getMask();
 		}

@@ -118,8 +118,13 @@ namespace CE::Decompiler::ExprTree
 			m_value = value;
 		}
 
-		BitMask64 getMask() override {
+		BitMask64 getRangeValueMask() override {
 			return BitMask64(m_calcDataType->getSize());
+		}
+
+		BitMask64 getMask() override {
+			// todo: change to return m_value;
+			return getRangeValueMask();
 		}
 
 		DataTypePtr getSrcDataType() override {
