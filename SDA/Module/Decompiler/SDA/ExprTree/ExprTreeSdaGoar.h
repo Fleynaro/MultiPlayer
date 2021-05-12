@@ -30,8 +30,8 @@ namespace CE::Decompiler::ExprTree
 			return { m_base };
 		}
 
-		BitMask64 getMask() override {
-			return BitMask64(getSrcDataType()->getSize());
+		int getSize() override {
+			return getSrcDataType()->getSize();
 		}
 
 		HS getHash() override {

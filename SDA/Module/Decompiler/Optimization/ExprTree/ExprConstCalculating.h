@@ -88,7 +88,7 @@ namespace CE::Decompiler::Optimization
 			if (auto leftNumberLeaf = dynamic_cast<INumberLeaf*>(opNode->m_leftNode)) {
 				if (auto rightNumberLeaf = dynamic_cast<INumberLeaf*>(opNode->m_rightNode)) {
 					auto result = Calculate(leftNumberLeaf->getValue(), rightNumberLeaf->getValue(), opNode->m_operation);
-					replace(new NumberLeaf(result, opNode->getMask()));
+					replace(new NumberLeaf(result, opNode->getSize()));
 					return true;
 				}
 			}
@@ -104,15 +104,15 @@ namespace CE::Decompiler::Optimization
 		bool processConstRightOperand(OperationalNode* opNode) {
 			if (auto rightNumberLeaf = dynamic_cast<INumberLeaf*>(opNode->m_rightNode)) {
 				if (opNode->m_operation != Div && opNode->m_operation != Mod) {
-					auto opNodeMask = opNode->getMask();
-					if (opNodeMask == 0x0) {
-						replace(new NumberLeaf((uint64_t)0, opNodeMask));
+					auto opNodeMask = CalculateMask(opNode);
+					if (opNodeMask.isZero()) {
+						replace(new NumberLeaf((uint64_t)0, opNode->getSize()));
 						return true;
 					}
 
 					if (rightNumberLeaf->getValue() == 0) {
 						if (opNode->m_operation == Mul || opNode->m_operation == And) {
-							replace(new NumberLeaf((uint64_t)0, opNodeMask));
+							replace(new NumberLeaf((uint64_t)0, opNode->getSize()));
 							return true;
 						}
 						else {
@@ -128,7 +128,7 @@ namespace CE::Decompiler::Optimization
 								return true;
 							}
 						} else if (opNode->m_operation == And) {
-							auto leftNodeMask = opNode->m_leftNode->getMask();
+							auto leftNodeMask = CalculateMask(opNode->m_leftNode);
 							if ((leftNodeMask.getValue() & rightNumberLeaf->getValue()) == leftNodeMask.getValue()) {
 								auto newExpr = opNode->m_leftNode;
 								replace(newExpr);
@@ -155,7 +155,7 @@ namespace CE::Decompiler::Optimization
 			if (opNode->m_operation == Xor || opNode->m_operation == And || opNode->m_operation == Or) {
 				if (opNode->m_leftNode->getHash().getHashValue() == opNode->m_rightNode->getHash().getHashValue()) {
 					if (opNode->m_operation == Xor) {
-						replace(new NumberLeaf((uint64_t)0, opNode->getMask()));
+						replace(new NumberLeaf((uint64_t)0, opNode->getSize()));
 						return true;
 					}
 					else {

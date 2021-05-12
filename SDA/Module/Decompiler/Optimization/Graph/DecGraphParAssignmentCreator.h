@@ -74,17 +74,19 @@ namespace CE::Decompiler::Optimization
 
 				// try to change the size of the local var
 				if (info.areAllParentOpNode) {
-					BitMask64 mask;
+					ExprBitMask mask;
 					for (auto& pair : info.m_opNodes) {
 						auto opNode = pair.first;
 						auto isSymbolInLeftNode = pair.second;
 						auto anotherOperand = (isSymbolInLeftNode ? opNode->m_rightNode : opNode->m_leftNode);
-						mask = mask | anotherOperand->getMask();
+						mask = mask | CalculateMask(anotherOperand);
 					}
 
 					// change the size of local var
-					if (!mask.isZero() && localVar->getMask() != mask) {
-						localVar->getMask() = localVarInfo.m_register.m_valueRangeMask = localVarInfo.m_register.m_valueRangeMask & mask;
+					auto newLocalVarSize = mask.getSize();
+					if (newLocalVarSize != 0 && newLocalVarSize != localVar->getSize()) {
+						localVar->setSize(newLocalVarSize);
+						localVarInfo.m_register.m_valueRangeMask = BitMask64(newLocalVarSize);
 						// optimize all parent operational AND nodes
 						for (auto& pair : info.m_opNodes) {
 							auto opNode = pair.first;

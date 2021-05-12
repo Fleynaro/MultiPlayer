@@ -162,7 +162,7 @@ namespace CE::Decompiler::ExprTree
 		HS getHash() override {
 			auto hs = HS()
 				<< (int)m_operation
-				<< getMask().getValue()
+				<< getSize()
 				<< isFloatingPoint();
 
 			auto leftNodeHash = m_leftNode->getHash();
@@ -176,41 +176,11 @@ namespace CE::Decompiler::ExprTree
 			return hs;
 		}
 
-		BitMask64 getMask() override {
-			if (m_rightNode)
-			{
-				if (m_operation == And)
-					return m_leftNode->getMask() & m_rightNode->getMask();
-
-				if (m_operation == Shl || m_operation == Shr) {
-					if (auto numberLeaf = dynamic_cast<INumberLeaf*>(m_rightNode)) {
-						if (m_operation == Shl) {
-							return m_leftNode->getMask() << (int)numberLeaf->getValue();
-						}
-						else {
-							if (numberLeaf->getValue() == 64)
-								return uint64_t(0);
-							return m_leftNode->getMask() >> (int)numberLeaf->getValue();
-						}
-					}
-
-					// todo: see the case ([rcx] & 0x5123) << [rdx]
-					if (!m_instr)
-						throw std::logic_error("impossible to define a mask for shr/shl operation");
-				}
-			}
-			else if (!m_instr) {
-				return m_leftNode->getMask();
-			}
-
-			if (m_instr) {
-				return m_instr->m_output->getMask().withoutOffset();
-			}
-
+		int getSize() override {
 			if (m_operation == Concat) {
-				return BitMask64(min(8, m_leftNode->getMask().getSize() + m_rightNode->getMask().getSize()));
+				return min(8, m_leftNode->getSize() + m_rightNode->getSize());
 			}
-			return m_leftNode->getMask() | m_rightNode->getMask();
+			return m_leftNode->getSize();
 		}
 
 		bool isFloatingPoint() override {
@@ -225,7 +195,7 @@ namespace CE::Decompiler::ExprTree
 			if (!m_leftNode || !m_rightNode)
 				return "";
 			std::string result = "";
-			auto opSizeStr = getOpSize(getMask().getSize(), isFloatingPoint());
+			auto opSizeStr = getOpSize(getSize(), isFloatingPoint());
 			if (m_operation == Xor) {
 				auto numLeaf = dynamic_cast<INumberLeaf*>(m_rightNode);
 				if (numLeaf && numLeaf->getValue() == -1) {
@@ -233,7 +203,7 @@ namespace CE::Decompiler::ExprTree
 				}
 			}
 			if (m_operation == Concat) {
-				result = "CONCAT<"+ opSizeStr +">(" + m_leftNode->printDebug() + ", " + m_rightNode->printDebug() + "; " + std::to_string(m_rightNode->getMask().getSize() * 0x8) +")";
+				result = "CONCAT<"+ opSizeStr +">(" + m_leftNode->printDebug() + ", " + m_rightNode->printDebug() + "; " + std::to_string(m_rightNode->getSize() * 0x8) +")";
 			}
 			
 			if(result.empty())
@@ -256,6 +226,7 @@ namespace CE::Decompiler::ExprTree
 	// Reads value of some size(in bytes) from the specified memory location
 	class ReadValueNode : public OperationalNode
 	{
+		int m_size;
 	public:
 		Symbol::MemoryVariable* m_memVar = nullptr;
 
@@ -267,11 +238,7 @@ namespace CE::Decompiler::ExprTree
 			return m_leftNode;
 		}
 
-		BitMask64 getMask() override {
-			return BitMask64(getSize());
-		}
-
-		int getSize() {
+		int getSize() override {
 			return m_size;
 		}
 
@@ -287,21 +254,17 @@ namespace CE::Decompiler::ExprTree
 				return "";
 			return m_updateDebugInfo = ("*{uint_" + std::to_string(8 * getSize()) + "t*}" + m_leftNode->printDebug());
 		}
-	private:
-		int m_size;
 	};
 
 	// Casting between signed and unsgined value of different size (for movsx, imul, idiv, ...)
 	class CastNode : public OperationalNode
 	{
+		int m_size;
+		bool m_isSigned;
 	public:
 		CastNode(INode* node, int size, bool isSigned)
 			: OperationalNode(node, nullptr, Cast), m_size(size), m_isSigned(isSigned)
 		{}
-
-		BitMask64 getMask() override {
-			return BitMask64(getSize());
-		}
 
 		HS getHash() override {
 			return OperationalNode::getHash() << m_size << m_isSigned;
@@ -311,7 +274,7 @@ namespace CE::Decompiler::ExprTree
 			return m_leftNode;
 		}
 
-		int getSize() {
+		int getSize() override {
 			return m_size;
 		}
 
@@ -328,9 +291,6 @@ namespace CE::Decompiler::ExprTree
 				return "";
 			return m_updateDebugInfo = ("{"+ std::string(!m_isSigned ? "u" : "") +"int_" + std::to_string(8 * getSize()) + "t}" + m_leftNode->printDebug());
 		}
-	private:
-		int m_size;
-		bool m_isSigned;
 	};
 
 	// Gets two arguments (float) and returns boolean value: CARRY, SCARRY, SBORROW
@@ -348,8 +308,8 @@ namespace CE::Decompiler::ExprTree
 			: OperationalNode(node1, node2, Functional, instr), m_funcId(id)
 		{}
 
-		BitMask64 getMask() override {
-			return BitMask64(1);
+		int getSize() override {
+			return 1;
 		}
 
 		HS getHash() override {
@@ -370,6 +330,7 @@ namespace CE::Decompiler::ExprTree
 	// Gets one argument (float or int) and returns float value: FABS, FSQRT, FLOOR, TOFLOAT, ...
 	class FloatFunctionalNode : public OperationalNode
 	{
+		int m_size;
 	public:
 		enum class Id {
 			FABS,
@@ -387,12 +348,8 @@ namespace CE::Decompiler::ExprTree
 			: OperationalNode(node1, nullptr, fFunctional, instr), m_funcId(id), m_size(size)
 		{}
 
-		int getSize() {
+		int getSize() override {
 			return m_size;
-		}
-
-		BitMask64 getMask() override {
-			return BitMask64(m_size);
 		}
 
 		HS getHash() override {
@@ -413,7 +370,5 @@ namespace CE::Decompiler::ExprTree
 			return m_updateDebugInfo = (std::string(magic_enum::enum_name(m_funcId)) + "(" + m_leftNode->printDebug() + ")");
 		}
 
-	private:
-		int m_size;
 	};
 };

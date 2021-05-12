@@ -38,8 +38,8 @@ namespace CE::Decompiler::ExprTree
 			m_calcDataType = dataType;
 		}
 
-		BitMask64 getMask() override {
-			return m_node->getMask();
+		int getSize() override {
+			return m_node->getSize();
 		}
 
 		bool isFloatingPoint() override {

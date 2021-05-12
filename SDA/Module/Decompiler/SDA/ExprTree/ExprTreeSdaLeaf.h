@@ -21,8 +21,8 @@ namespace CE::Decompiler::ExprTree
 			return m_sdaSymbol;
 		}
 
-		BitMask64 getMask() override {
-			return BitMask64(getDataType()->getSize());
+		int getSize() override {
+			return getDataType()->getSize();
 		}
 
 		HS getHash() override {
@@ -118,13 +118,8 @@ namespace CE::Decompiler::ExprTree
 			m_value = value;
 		}
 
-		BitMask64 getRangeValueMask() override {
-			return BitMask64(m_calcDataType->getSize());
-		}
-
-		BitMask64 getMask() override {
-			// todo: change to return m_value;
-			return getRangeValueMask();
+		int getSize() override {
+			return getDataType()->getSize();
 		}
 
 		DataTypePtr getSrcDataType() override {

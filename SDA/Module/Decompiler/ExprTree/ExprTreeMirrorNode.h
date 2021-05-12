@@ -35,8 +35,8 @@ namespace CE::Decompiler::ExprTree
 			return {};
 		}
 
-		BitMask64 getMask() override {
-			return m_node->getMask();
+		int getSize() override {
+			return m_node->getSize();
 		}
 
 		bool isFloatingPoint() override {

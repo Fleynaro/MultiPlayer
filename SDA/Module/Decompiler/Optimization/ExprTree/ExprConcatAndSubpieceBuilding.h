@@ -39,11 +39,11 @@ namespace CE::Decompiler::Optimization
 			if (pairOp1.second || pairOp2.second) {
 				if (pairOp2.second < pairOp1.second)
 					std::swap(pairOp1, pairOp2);
-				if (pairOp2.second - pairOp1.second == pairOp1.first->getMask().getSize() * 0x8) {
-					auto sumSize = pairOp1.first->getMask().getSize() + pairOp2.first->getMask().getSize();
+				if (pairOp2.second - pairOp1.second == pairOp1.first->getSize() * 0x8) {
+					auto sumSize = pairOp1.first->getSize() + pairOp2.first->getSize();
 					auto newNode = new OperationalNode(pairOp2.first, pairOp1.first, Concat);
 					if (pairOp1.second)
-						newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second, BitMask64(4)), Shl);
+						newNode = new OperationalNode(newNode, new NumberLeaf((uint64_t)pairOp1.second, 4), Shl);
 					if (leftTail) {
 						newNode = new OperationalNode(leftTail, newNode, Or);
 					}

@@ -50,7 +50,7 @@ namespace CE::Decompiler::Optimization
 			// iterate over all terms
 			for (auto termInfo : m_terms) {
 				auto node = termInfo.second.first;
-				auto mask = node->getMask();
+				auto mask = CalculateMask(node);
 				auto multiplier = (uint64_t&)termInfo.second.second;
 				
 				INode* term;
@@ -58,7 +58,7 @@ namespace CE::Decompiler::Optimization
 					term = termInfo.second.first;
 				}
 				else {
-					auto multiplierLeaf = new NumberLeaf(multiplier, mask);
+					auto multiplierLeaf = new NumberLeaf(multiplier, node->getSize());
 					term = new OperationalNode(node, multiplierLeaf, m_operationMul);
 				}
 				linearExpr->addTerm(term);
@@ -68,7 +68,7 @@ namespace CE::Decompiler::Optimization
 
 		//(5x - 10y) * 2 + 5 ->	{x: 10, y: -20, constTerm: 5}
 		void defineTerms(INode* node, int64_t k, int level = 0) {
-			auto size = node->getMask().getSize();
+			auto size = node->getSize();
 
 			// called for add operation (e.g. x + 5)
 			if (auto numberLeaf = dynamic_cast<INumberLeaf*>(node)) {

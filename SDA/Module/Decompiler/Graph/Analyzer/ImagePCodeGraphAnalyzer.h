@@ -96,7 +96,7 @@ namespace CE::Decompiler
 						if (auto linearExpr = dynamic_cast<LinearExpr*>(sdaGenNode)) {
 							for (auto term : linearExpr->getTerms()) {
 								if (auto sdaTermNode = dynamic_cast<ISdaNode*>(term)) {
-									if (sdaTermNode->getMask().getSize() == 0x8 && !isArrayIndexNode(sdaTermNode)) {
+									if (sdaTermNode->getSize() == 0x8 && !isArrayIndexNode(sdaTermNode)) {
 										if (!sdaPointerNode) {
 											sdaPointerNode = nullptr;
 											break;

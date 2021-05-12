@@ -82,8 +82,8 @@ namespace CE::Decompiler::ExprTree
 			return m_linearExpr->getInstructionsRelatedTo();
 		}
 
-		BitMask64 getMask() override {
-			return m_linearExpr->getMask();
+		int getSize() override {
+			return m_linearExpr->getSize();
 		}
 
 		HS getHash() override {

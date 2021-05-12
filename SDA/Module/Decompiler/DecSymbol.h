@@ -15,20 +15,15 @@ namespace CE::Decompiler::Symbol
 	// symbol of decompiler level that has some concrete value (low-level, before symbolization)
 	class Symbol
 	{
-		BitMask64 m_mask;
 	public:
-		Symbol(BitMask64 mask)
-			: m_mask(mask)
+		Symbol(int size)
+			: m_size(size)
 		{}
 
 		virtual ~Symbol() {}
 
 		int getSize() {
-			return m_mask.getSize();
-		}
-
-		BitMask64& getMask() {
-			return m_mask;
+			return m_size;
 		}
 
 		virtual HS getHash() = 0;
@@ -38,6 +33,8 @@ namespace CE::Decompiler::Symbol
 		virtual std::string printDebug() = 0;
 
 	protected:
+		int m_size;
+
 		virtual Symbol* cloneSymbol() = 0;
 	};
 	
@@ -48,7 +45,7 @@ namespace CE::Decompiler::Symbol
 		PCode::Register m_register;
 
 		RegisterVariable(PCode::Register reg)
-			: m_register(reg), Symbol(reg.m_valueRangeMask)
+			: m_register(reg), Symbol(reg.getSize())
 		{}
 
 		HS getHash() override {
@@ -70,8 +67,8 @@ namespace CE::Decompiler::Symbol
 	// variable on high-level
 	class AbstractVariable : public Symbol, public PCode::IRelatedToInstruction {
 	public:
-		AbstractVariable(BitMask64 mask)
-			: Symbol(mask)
+		AbstractVariable(int size)
+			: Symbol(size)
 		{}
 
 		HS getHash() override {
@@ -92,9 +89,13 @@ namespace CE::Decompiler::Symbol
 	public:
 		std::list<PCode::Instruction*> m_instructionsRelatedTo;
 
-		LocalVariable(BitMask64 mask)
-			: AbstractVariable(mask)
+		LocalVariable(int size)
+			: AbstractVariable(size)
 		{}
+
+		void setSize(int size) {
+			m_size = size;
+		}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
 			return m_instructionsRelatedTo;
@@ -106,7 +107,7 @@ namespace CE::Decompiler::Symbol
 
 	protected:
 		Symbol* cloneSymbol() override {
-			auto localVar = new LocalVariable(getMask());
+			auto localVar = new LocalVariable(getSize());
 			localVar->m_instructionsRelatedTo = m_instructionsRelatedTo;
 			return localVar;
 		}
@@ -144,8 +145,8 @@ namespace CE::Decompiler::Symbol
 	public:
 		PCode::Instruction* m_instr;
 
-		FunctionResultVar(PCode::Instruction* instr, BitMask64 mask)
-			: m_instr(instr), AbstractVariable(mask)
+		FunctionResultVar(PCode::Instruction* instr, int size)
+			: m_instr(instr), AbstractVariable(size)
 		{}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {
@@ -160,7 +161,7 @@ namespace CE::Decompiler::Symbol
 
 	protected:
 		Symbol* cloneSymbol() override {
-			return new FunctionResultVar(m_instr, getMask());
+			return new FunctionResultVar(m_instr, getSize());
 		}
 	};
 };

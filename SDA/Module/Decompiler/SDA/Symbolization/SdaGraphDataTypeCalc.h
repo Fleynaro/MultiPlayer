@@ -126,7 +126,6 @@ namespace CE::Decompiler::Symbolization
 				else if (auto opNode = dynamic_cast<OperationalNode*>(sdaGenNode->getNode())) {
 					if (!IsOperationUnsupportedToCalculate(opNode->m_operation)
 						&& opNode->m_operation != Concat && opNode->m_operation != Subpiece) {
-						auto maskSize = opNode->getMask().getSize();
 						if (auto sdaLeftSdaNode = dynamic_cast<ISdaNode*>(opNode->m_leftNode)) {
 							if (auto sdaRightSdaNode = dynamic_cast<ISdaNode*>(opNode->m_rightNode)) {
 								DataTypePtr leftNodeDataType = sdaLeftSdaNode->getDataType();
@@ -138,14 +137,15 @@ namespace CE::Decompiler::Symbolization
 									rightNodeDataType = sdaRightSdaNode->getDataType();
 								}
 
+								auto opNodeSize = opNode->getSize();
 								auto calcDataType = calcDataTypeForOperands(sdaLeftSdaNode->getDataType(), rightNodeDataType);
 								if (opNode->isFloatingPoint()) { // floating operation used?
-									calcDataType = calcDataTypeForOperands(calcDataType, m_dataTypeFactory->getDefaultType(maskSize, true, true));
+									calcDataType = calcDataTypeForOperands(calcDataType, m_dataTypeFactory->getDefaultType(opNodeSize, true, true));
 								}
 								else {
-									if (maskSize > calcDataType->getSize()) {
+									if (opNodeSize > calcDataType->getSize()) {
 										// todo: print warning
-										calcDataType = m_dataTypeFactory->getDefaultType(maskSize);
+										calcDataType = m_dataTypeFactory->getDefaultType(opNodeSize);
 									}
 								}
 								cast(sdaLeftSdaNode, calcDataType);

@@ -14,8 +14,8 @@ namespace CE::Decompiler::ExprTree
 
 		virtual void inverse() = 0;
 
-		BitMask64 getMask() override {
-			return BitMask64(1);
+		int getSize() override {
+			return 1;
 		}
 
 		std::list<PCode::Instruction*> getInstructionsRelatedTo() override {

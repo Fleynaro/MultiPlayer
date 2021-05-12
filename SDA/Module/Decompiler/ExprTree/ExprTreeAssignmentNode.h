@@ -71,8 +71,8 @@ namespace CE::Decompiler::ExprTree
 			node->addParentNode(this);
 		}
 
-		BitMask64 getMask() override {
-			return m_srcNode->getMask();
+		int getSize() override {
+			return m_srcNode->getSize();
 		}
 
 		HS getHash() override {

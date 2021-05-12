@@ -138,11 +138,11 @@ namespace CE::Decompiler
 				//regMask = 0xFFFFFFFF, maskToChange = 0xFFFF0000: expr(eax) | expr(ax) => (expr1 & 0xFFFF0000) | expr2
 				if ((regPart.m_regMask & regPart.m_maskToChange) != regPart.m_regMask) {
 					auto mask = (regPart.m_regMask & regPart.m_maskToChange) >> bitLeftShift;
-					regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf(mask.getValue(), regExpr->getMask()), ExprTree::And);
+					regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf(mask.getValue(), regExpr->getSize()), ExprTree::And);
 				}
 
 				if (bitShift != 0) {
-					regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf((uint64_t)abs(bitShift), regExpr->getMask()), bitShift > 0 ? ExprTree::Shr : ExprTree::Shl);
+					regExpr = new ExprTree::OperationalNode(regExpr, new ExprTree::NumberLeaf((uint64_t)abs(bitShift), regExpr->getSize()), bitShift > 0 ? ExprTree::Shr : ExprTree::Shl);
 				}
 
 				if (resultExpr) {
@@ -190,7 +190,7 @@ namespace CE::Decompiler
 				}
 			}
 			if (auto varnodeConstant = dynamic_cast<PCode::ConstantVarnode*>(varnode)) {
-				return new ExprTree::NumberLeaf(varnodeConstant->m_value, varnodeConstant->getMask());
+				return new ExprTree::NumberLeaf(varnodeConstant->m_value, varnodeConstant->getMask().getSize());
 			}
 			return nullptr;
 		}

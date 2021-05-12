@@ -71,8 +71,8 @@ namespace CE::Decompiler::ExprTree
 			m_typeContext->m_returnType = dataType;
 		}
 
-		BitMask64 getMask() override {
-			return m_funcCall->getMask();
+		int getSize() override {
+			return m_funcCall->getSize();
 		}
 
 		bool isFloatingPoint() override {

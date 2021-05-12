@@ -145,11 +145,11 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_ExprOptim)
 	NodeCloneContext exprCloneCtx;
 	auto rcx = new CE::Decompiler::Symbol::RegisterVariable(m_registerFactoryX86.createRegister(ZYDIS_REGISTER_RCX, 8));
 	auto rdx = new CE::Decompiler::Symbol::RegisterVariable(m_registerFactoryX86.createRegister(ZYDIS_REGISTER_RDX, 8));
-	auto expr1 = new OperationalNode(new NumberLeaf((uint64_t)2, BitMask64(8)), new NumberLeaf((uint64_t)0x10, BitMask64(8)), Mul); // 2 * 0x10 = 0x20
+	auto expr1 = new OperationalNode(new NumberLeaf((uint64_t)2, 8), new NumberLeaf((uint64_t)0x10, 8), Mul); // 2 * 0x10 = 0x20
 	auto expr2 = new OperationalNode(new SymbolLeaf(rcx), expr1, Add); // rcx + 0x20
 	auto expr3 = new OperationalNode(new SymbolLeaf(rdx), expr2, Add); // rcx + 0x20 + rdx
 	auto expr4 = new OperationalNode(expr3, expr1, Add); // (rcx + 0x20 + rdx) + 0x20
-	auto result = new OperationalNode(expr4, new NumberLeaf((uint64_t)0xFFFF, BitMask64(8)), And);
+	auto result = new OperationalNode(expr4, new NumberLeaf((uint64_t)0xFFFF, 8), And);
 	
 	printf("before: %s\n", result->printDebug().c_str());
 
@@ -157,8 +157,8 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_ExprOptim)
 	optimize(clone1);
 	printf("after: %s\n", clone1->getNode()->printDebug().c_str());
 
-	replaceSymbolWithExpr(clone1->getNode(), rcx, new NumberLeaf((uint64_t)0x5, BitMask64(8))); // rcx -> 0x5
-	replaceSymbolWithExpr(clone1->getNode(), rdx, new NumberLeaf((uint64_t)0x5, BitMask64(8))); // rdx -> 0x5
+	replaceSymbolWithExpr(clone1->getNode(), rcx, new NumberLeaf((uint64_t)0x5, 8)); // rcx -> 0x5
+	replaceSymbolWithExpr(clone1->getNode(), rdx, new NumberLeaf((uint64_t)0x5, 8)); // rdx -> 0x5
 	auto clone2 = new TopNode(clone1->getNode()->clone(&exprCloneCtx));
 	optimize(clone2);
 	ASSERT_EQ(dynamic_cast<NumberLeaf*>(clone2->getNode())->getValue(), 0x40 + 0x5 + 0x5);
@@ -717,9 +717,22 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 			return CE::Decompiler::FunctionCallInfo(m_defSignature->getCallInfo());
 		};
 		RegisterFactoryX86 registerFactoryX86;
-		auto decompiler = new CE::Decompiler::Decompiler(graph, funcCallInfoCallback, info.getReturnInfo(), &registerFactoryX86);
-		decompiler->start();
-		auto decCodeGraph = decompiler->getDecGraph();
+
+		auto decCodeGraph = new DecompiledCodeGraph(graph);
+		auto primaryDecompiler = CE::Decompiler::PrimaryDecompiler(decCodeGraph, &registerFactoryX86, info.getReturnInfo(), funcCallInfoCallback);
+		primaryDecompiler.start();
+
+		//show code
+		if (m_isOutput) {
+			out("\n\n\n********************* BEFORE OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
+			auto blockList = Misc::BuildBlockList(decCodeGraph);
+			LinearViewSimpleOutput output(blockList, decCodeGraph);
+			output.show();
+		}
+
+		Optimization::ProcessDecompiledGraph(decCodeGraph, &primaryDecompiler);
+		decCodeGraph->checkOnSingleParents();
+
 		
 		if (!checkHash(0, sampleTestHashes, decCodeGraph->getHash().getHashValue(), sampleTest)) {
 			printf("\n\nHERE IS THE TROUBLE:");
@@ -728,11 +741,11 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 		}
 
 		//show code
-		out("\n\n\n********************* AFTER OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-		auto blockList = Misc::BuildBlockList(decCodeGraph);
-		LinearViewSimpleOutput output2(blockList, decCodeGraph);
 		if (m_isOutput) {
-			output2.show();
+			out("\n\n\n********************* AFTER OPTIMIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
+			auto blockList = Misc::BuildBlockList(decCodeGraph);
+			LinearViewSimpleOutput output(blockList, decCodeGraph);
+			output.show();
 		}
 
 		// 6) SYMBOLIZATION
@@ -747,7 +760,7 @@ TEST_F(ProgramModuleFixtureDecSamples, Test_Dec_Samples)
 				testFail = true;
 			}
 			out("\n\n\n********************* AFTER SYMBOLIZATION(test id %i): *********************\n\n", sampleTest->m_testId);
-			blockList = Misc::BuildBlockList(sdaCodeGraph->getDecGraph());
+			auto blockList = Misc::BuildBlockList(sdaCodeGraph->getDecGraph());
 
 			printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 			LinearViewSimpleOutput output3(blockList, sdaCodeGraph->getDecGraph());

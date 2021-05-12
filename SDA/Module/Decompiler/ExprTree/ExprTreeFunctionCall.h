@@ -59,8 +59,8 @@ namespace CE::Decompiler::ExprTree
 			m_paramNodes.push_back(node);
 		}
 
-		BitMask64 getMask() override {
-			return m_functionResultVar ? m_functionResultVar->getMask() : 0x0;
+		int getSize() override {
+			return m_functionResultVar ? m_functionResultVar->getSize() : 0x0;
 		}
 
 		bool isFloatingPoint() override {

@@ -69,9 +69,9 @@ namespace CE::Decompiler::Symbolization
 				std::vector<DataTypePtr> paramTypes;
 				DataTypePtr returnType;
 				for (auto paramNode : funcCall->getParamNodes()) {
-					paramTypes.push_back(m_dataTypeFactory->getDefaultType(paramNode->getMask().getSize()));
+					paramTypes.push_back(m_dataTypeFactory->getDefaultType(paramNode->getSize()));
 				}
-				returnType = m_dataTypeFactory->getDefaultType(funcCall->getMask().getSize());
+				returnType = m_dataTypeFactory->getDefaultType(funcCall->getSize());
 				typeContext = std::make_shared<SdaFunctionNode::TypeContext>(paramTypes, returnType);
 				m_funcTypeContexts[keyHash] = typeContext;
 			}
@@ -243,7 +243,7 @@ namespace CE::Decompiler::Symbolization
 				return;
 
 			//otherwise create generic sda node
-			auto sdaNode = new SdaGenericNode(node, m_dataTypeFactory->getDefaultType(node->getMask().getSize(), false, node->isFloatingPoint()));
+			auto sdaNode = new SdaGenericNode(node, m_dataTypeFactory->getDefaultType(node->getSize(), false, node->isFloatingPoint()));
 			node->replaceWith(sdaNode);
 			node->addParentNode(sdaNode);
 		}

@@ -18,10 +18,6 @@ namespace CE::Decompiler::ExprTree
 			m_readValueNode->removeBy(this);
 		}
 
-		int getSize() {
-			return m_readValueNode->getSize();
-		}
-
 		ISdaNode* getAddress() {
 			return dynamic_cast<ISdaNode*>(m_readValueNode->getAddress());
 		}
@@ -39,8 +35,8 @@ namespace CE::Decompiler::ExprTree
 			return m_readValueNode->getInstructionsRelatedTo();
 		}
 
-		BitMask64 getMask() override {
-			return m_readValueNode->getMask();
+		int getSize() override {
+			return m_readValueNode->getSize();
 		}
 
 		HS getHash() override {

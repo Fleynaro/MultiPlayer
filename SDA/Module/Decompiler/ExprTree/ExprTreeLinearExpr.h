@@ -19,7 +19,7 @@ namespace CE::Decompiler::ExprTree
 		LinearExpr(int64_t constTerm = 0x0, OperationType operation = Add)
 			: m_operation(operation)
 		{
-			auto numberLeaf = new NumberLeaf((uint64_t)constTerm, BitMask64(8));
+			auto numberLeaf = new NumberLeaf((uint64_t)constTerm, 8);
 			numberLeaf->addParentNode(this);
 			m_constTerm = numberLeaf;
 		}
@@ -72,12 +72,12 @@ namespace CE::Decompiler::ExprTree
 			return {};
 		}
 
-		BitMask64 getMask() override {
-			BitMask64 mask = getConstTerm()->getValue();
+		int getSize() override {
+			auto size = getConstTerm()->getSize();
 			for (auto term : m_terms) {
-				mask = mask | term->getMask();
+				size = max(size, term->getSize());
 			}
-			return mask;
+			return size;
 		}
 
 		bool isFloatingPoint() override {
@@ -115,7 +115,7 @@ namespace CE::Decompiler::ExprTree
 			for (auto it = m_terms.begin(); it != m_terms.end(); it ++) {
 				result += (*it)->printDebug();
 				if (it != std::prev(m_terms.end()) || m_constTerm->getValue()) {
-					result += " " + ShowOperation(m_operation) + OperationalNode::getOpSize(getMask().getSize(), isFloatingPoint()) + " ";
+					result += " " + ShowOperation(m_operation) + OperationalNode::getOpSize(getSize(), isFloatingPoint()) + " ";
 				}
 			}
 

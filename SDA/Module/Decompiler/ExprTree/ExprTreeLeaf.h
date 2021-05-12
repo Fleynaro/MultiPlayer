@@ -15,9 +15,9 @@ namespace CE::Decompiler::ExprTree
 		SymbolLeaf(Symbol::Symbol* symbol)
 			: m_symbol(symbol)
 		{}
-		
-		BitMask64 getMask() override {
-			return m_symbol->getMask().withoutOffset();
+
+		int getSize() override {
+			return m_symbol->getSize();
 		}
 
 		HS getHash() override {
@@ -46,8 +46,6 @@ namespace CE::Decompiler::ExprTree
 
 		virtual void setValue(uint64_t value) = 0;
 
-		virtual BitMask64 getRangeValueMask() = 0;
-
 		HS getHash() override {
 			return HS() << getValue();
 		}
@@ -56,17 +54,17 @@ namespace CE::Decompiler::ExprTree
 	class NumberLeaf : public Node, public INumberLeaf
 	{
 		uint64_t m_value;
-		BitMask64 m_rangeValueMask;
+		int m_size;
 	public:
 
-		NumberLeaf(uint64_t value, BitMask64 rangeValueMask)
-			: m_value(value & rangeValueMask.getValue()), m_rangeValueMask(rangeValueMask)
+		NumberLeaf(uint64_t value, int size)
+			: m_value(value), m_size(size)
 		{}
 
-		NumberLeaf(double value, BitMask64 rangeValueMask)
-			: m_rangeValueMask(rangeValueMask)
+		NumberLeaf(double value, int size)
+			: m_size(size)
 		{
-			if(rangeValueMask.getSize() == 4)
+			if(m_size == 4)
 				(float&)m_value = (float)value;
 			else (double&)m_value = value;
 		}
@@ -79,20 +77,16 @@ namespace CE::Decompiler::ExprTree
 			m_value = value;
 		}
 
-		BitMask64 getRangeValueMask() override {
-			return m_rangeValueMask;
-		}
-
-		BitMask64 getMask() override {
-			return m_value;
+		int getSize() override {
+			return m_size;
 		}
 
 		INode* clone(NodeCloneContext* ctx) override {
-			return new NumberLeaf(m_value, m_rangeValueMask);
+			return new NumberLeaf(m_value, m_size);
 		}
 
 		std::string printDebug() override {
-			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value) + "{"+ std::to_string((int)m_value) +"}");
+			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value) + "{"+ (std::to_string((int)m_value)) +"}");
 		}
 	};
 
@@ -102,8 +96,8 @@ namespace CE::Decompiler::ExprTree
 		FloatNanLeaf()
 		{}
 
-		BitMask64 getMask() override {
-			return BitMask64(8);
+		int getSize() override {
+			return 8;
 		}
 
 		HS getHash() override {

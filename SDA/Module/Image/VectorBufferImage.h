@@ -24,7 +24,9 @@ namespace CE
 		}
 
 		SegmentType defineSegment(int offset) override {
-			return CODE_SEGMENT;
+			if(offset >= 0 && offset < m_content.size())
+				return CODE_SEGMENT;
+			return NONE_SEGMENT;
 		}
 	};
 };

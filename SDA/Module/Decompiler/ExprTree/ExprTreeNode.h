@@ -44,7 +44,7 @@ namespace CE::Decompiler::ExprTree
 
 		virtual HS getHash() = 0;
 
-		virtual BitMask64 getMask() = 0;
+		virtual int getSize() = 0;
 
 		virtual bool isFloatingPoint() = 0;
 

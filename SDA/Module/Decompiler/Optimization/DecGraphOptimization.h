@@ -1,6 +1,5 @@
 #pragma once
 #include "Graph/DecGraphCondBlockOptimization.h"
-#include "Graph/DecGraphInstructionsForLocalVarsSearch.h"
 #include "Graph/DecGraphExprOptimization.h"
 #include "Graph/DecGraphLinesExpanding.h"
 #include "Graph/DecGraphUselessLineOptimization.h"

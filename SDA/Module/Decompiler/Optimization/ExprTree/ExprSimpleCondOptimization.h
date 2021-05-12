@@ -47,22 +47,21 @@ namespace CE::Decompiler::Optimization
 		//if(((((([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}) *.4 0xffffffff{-1}) +.4 [mem_3_32]) == 0x0{0})) -> if(([mem_3_32] == ((([mem_2_32] *.4 0x4{4}) >>.4 0x2{2}) *.4 0x1{1})))
 		bool moveTermToRightPartOfCondition(Condition* cond) {
 			if (auto addOpNode = dynamic_cast<OperationalNode*>(cond->m_leftNode)) {
-				auto mask = addOpNode->getMask();
 				if (addOpNode->m_operation == Add) {
 					auto leftNode = addOpNode->m_leftNode;
 					auto rightNode = addOpNode->m_rightNode;
 					bool isTermMoving = false;
-					if (dynamic_cast<INumberLeaf*>(addOpNode->m_rightNode) || IsNegative(addOpNode->m_rightNode, mask)) {
+					if (dynamic_cast<INumberLeaf*>(addOpNode->m_rightNode) || IsNegative(addOpNode->m_rightNode, addOpNode->getSize())) {
 						isTermMoving = true;
 					}
-					else if (IsNegative(addOpNode->m_leftNode, mask)) {
+					else if (IsNegative(addOpNode->m_leftNode, addOpNode->getSize())) {
 						std::swap(leftNode, rightNode);
 						isTermMoving = true;
 					}
 
 					if (isTermMoving) {
 						//move expr from left node of the condition to the right node being multiplied -1
-						auto newPartOfRightExpr = new OperationalNode(rightNode, new NumberLeaf((uint64_t)(int64_t)-1, mask), Mul);
+						auto newPartOfRightExpr = new OperationalNode(rightNode, new NumberLeaf((uint64_t)(int64_t)-1, addOpNode->getSize()), Mul);
 						auto newRightExpr = new OperationalNode(cond->m_rightNode, newPartOfRightExpr, Add);
 						auto newCond = new Condition(leftNode, newRightExpr, cond->m_cond, cond->m_instr);
 						replace(newCond);
@@ -82,14 +81,14 @@ namespace CE::Decompiler::Optimization
 		}
 
 		//check negative arithmetic sign of expr node
-		static bool IsNegative(INode* node, BitMask64& rangeValueMask) {
+		static bool IsNegative(INode* node, int size) {
 			if (auto numberLeaf = dynamic_cast<INumberLeaf*>(node)) {
-				if ((numberLeaf->getValue() >> (rangeValueMask.getBitsCount() - 1)) & 0b1)
+				if ((numberLeaf->getValue() >> (size * 0x8 - 1)) & 0b1)
 					return true;
 			}
 			else if (auto opNode = dynamic_cast<OperationalNode*>(node)) {
 				if (opNode->m_operation == Mul)
-					return IsNegative(opNode->m_rightNode, rangeValueMask);
+					return IsNegative(opNode->m_rightNode, size);
 			}
 			return false;
 		}
