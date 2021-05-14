@@ -14,9 +14,9 @@ namespace CE::Decompiler
 			ExecContext* m_srcExecContext;
 
 			enum REGISTER_USING {
-				REGISTER_NOT_USING = 0b11,
-				REGISTER_PARTIALLY_USING = 0b00,
-				REGISTER_FULLY_USING = 0b10
+				REGISTER_NOT_USING,
+				REGISTER_PARTIALLY_USING,
+				REGISTER_FULLY_USING
 			} m_using = REGISTER_NOT_USING;
 		};
 

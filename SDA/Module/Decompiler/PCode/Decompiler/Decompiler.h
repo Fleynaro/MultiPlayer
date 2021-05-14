@@ -6,16 +6,7 @@ namespace CE::Decompiler
 {
 	class PrimaryDecompiler
 	{
-	public:
-		struct LocalVarInfo {
-			PCode::Register m_register;
-			std::set<ExecContext*> m_execCtxs;
-			bool m_used = false;
-		};
-
-		std::map<Symbol::LocalVariable*, LocalVarInfo> m_localVars;
-
-	private:
+	protected:
 		struct DecompiledBlockInfo {
 			PCodeBlock* m_pcodeBlock = nullptr;
 			PrimaryTree::Block* m_decBlock = nullptr;
@@ -25,10 +16,19 @@ namespace CE::Decompiler
 			bool m_isDecompiled = false;
 		};
 
+	private:
 		AbstractRegisterFactory* m_registerFactory;
 		int m_loopsCount = 0;
 
 	public:
+		struct LocalVarInfo {
+			PCode::Register m_register;
+			std::set<ExecContext*> m_execCtxs;
+			bool m_used = false;
+		};
+
+		std::map<Symbol::LocalVariable*, LocalVarInfo> m_localVars;
+
 		DecompiledCodeGraph* m_decompiledGraph;
 		ReturnInfo m_returnInfo;
 		std::function<FunctionCallInfo(int, ExprTree::INode*)> m_funcCallInfoCallback;
@@ -82,10 +82,21 @@ namespace CE::Decompiler
 				m_decompiledGraph->getDecompiledBlocks().push_back(info.m_decBlock);
 			}
 			m_decompiledGraph->sortBlocksByLevel();
+
+			onFinal();
 		}
 
 		AbstractRegisterFactory* getRegisterFactory() {
 			return m_registerFactory;
+		}
+
+	protected:
+		virtual void onInstructionHandled(DecompiledBlockInfo& blockInfo, PCode::Instruction* instr) {
+
+		}
+
+		virtual void onFinal() {
+
 		}
 
 	private:
@@ -105,6 +116,7 @@ namespace CE::Decompiler
 				PCode::InstructionInterpreter instructionInterpreter(this, blockInfo.m_decBlock, blockInfo.m_execCtx);
 				for (auto instr : pcodeBlock->getInstructions()) {
 					instructionInterpreter.execute(instr);
+					onInstructionHandled(blockInfo, instr);
 				}
 
 				auto hasAlreadyDecompiled = blockInfo.m_isDecompiled;

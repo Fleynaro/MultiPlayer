@@ -16,14 +16,6 @@ namespace CE::Decompiler::ExprTree
 			m_constTerm->addParentNode(this);
 		}
 
-		LinearExpr(int64_t constTerm = 0x0, OperationType operation = Add)
-			: m_operation(operation)
-		{
-			auto numberLeaf = new NumberLeaf((uint64_t)constTerm, 8);
-			numberLeaf->addParentNode(this);
-			m_constTerm = numberLeaf;
-		}
-
 		~LinearExpr() {
 			for (auto term : m_terms) {
 				term->removeBy(this);

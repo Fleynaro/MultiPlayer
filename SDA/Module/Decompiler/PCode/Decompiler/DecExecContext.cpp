@@ -76,7 +76,8 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 				{
 					// new register
 					auto& sampleReg = regs1.begin()->m_register;
-					auto newRegister = Register(sampleReg.getGenericId(), sampleReg.getIndex(), resultMask, sampleReg.getType());;
+					auto newRegister = Register(sampleReg.getGenericId(), sampleReg.getIndex(), resultMask, sampleReg.getType());
+					auto newUsing = RegisterInfo::REGISTER_NOT_USING;
 
 					// parent contexts
 					std::set<ExecContext*> newExecCtxs;
@@ -88,6 +89,20 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 							// add contexts
 							if (regInfo.m_srcExecContext != m_execContext)
 								newExecCtxs.insert(regInfo.m_srcExecContext);
+
+							// change using state
+							if (newUsing == RegisterInfo::REGISTER_NOT_USING) {
+								if (regInfo.m_using == RegisterInfo::REGISTER_PARTIALLY_USING) {
+									newUsing = RegisterInfo::REGISTER_PARTIALLY_USING;
+								} else if (regInfo.m_using == RegisterInfo::REGISTER_FULLY_USING) {
+									newUsing = RegisterInfo::REGISTER_FULLY_USING;
+								}
+							}
+							else if (newUsing == RegisterInfo::REGISTER_FULLY_USING) {
+								if (regInfo.m_using <= RegisterInfo::REGISTER_PARTIALLY_USING) {
+									newUsing = RegisterInfo::REGISTER_PARTIALLY_USING;
+								}
+							}
 
 							if (!existingLocalVar) {
 								// find an exitsting symbol with need size for re-using
@@ -130,6 +145,7 @@ void RegisterExecContext::join(RegisterExecContext* ctx) {
 					}
 					registerInfo.m_expr = new TopNode(new ExprTree::SymbolLeaf(localVar));
 					registerInfo.m_srcExecContext = m_execContext;
+					registerInfo.m_using = newUsing;
 
 					// add parent contexts where par. assignments (localVar = 5) will be created
 					auto& localVarInfo = m_decompiler->m_localVars[localVar];
@@ -176,6 +192,8 @@ std::list<RegisterExecContext::RegisterPart> RegisterExecContext::findRegisterPa
 		auto sameRegExceptionMask = GetValueRangeMaskWithException(sameRegInfo->m_register); //for x86 only!!!
 																							 //if the masks intersected
 		if (!(needReadMask & sameRegExceptionMask).isZero()) {
+			sameRegInfo->m_using = RegisterInfo::REGISTER_FULLY_USING;
+
 			RegisterPart part;
 			part.m_regMask = sameRegInfo->m_register.m_valueRangeMask;
 			part.m_maskToChange = needReadMask & sameRegExceptionMask;

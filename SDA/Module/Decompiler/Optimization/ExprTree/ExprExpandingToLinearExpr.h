@@ -16,6 +16,7 @@ namespace CE::Decompiler::Optimization
 		// terms
 		std::map<HS::Value, std::pair<INode*, int64_t>> m_terms;
 		int64_t m_constTerm;
+		int m_constTermSize = 1;
 
 		// is there a sense to build LinearExpr? (yes for {(5x + 2) * 2}, but no for {5x + 2})
 		bool m_doBuilding = false;
@@ -46,7 +47,8 @@ namespace CE::Decompiler::Optimization
 	private:
 		// using terms (including constant term) build linear expression
 		LinearExpr* buildLinearExpr() {
-			auto linearExpr = new LinearExpr(m_constTerm, m_operationAdd); // todo: change size for number
+			auto constTerm = new NumberLeaf((uint64_t&)m_constTerm, m_constTermSize);
+			auto linearExpr = new LinearExpr(constTerm, m_operationAdd); // todo: change size for number
 			// iterate over all terms
 			for (auto termInfo : m_terms) {
 				auto node = termInfo.second.first;
@@ -78,12 +80,14 @@ namespace CE::Decompiler::Optimization
 					m_operationMul,
 					size
 				);
+
 				m_constTerm = ExprConstCalculating::Calculate(
 					m_constTerm,
 					constTerm,
 					m_operationAdd,
 					size
 				);
+				m_constTermSize = max(m_constTermSize, size);
 				m_doBuilding = true;
 				return;
 			}
