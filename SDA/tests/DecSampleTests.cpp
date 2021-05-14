@@ -637,33 +637,34 @@ void ProgramModuleFixtureDecSamples::initSampleTest()
 		}
 	}
 
+	if (false) {
+		char* buffer;
+		int size;
+		PEImage::LoadPEImage("R:\\Rockstar Games\\Grand Theft Auto V\\GTA5_dump.exe", &buffer, &size);
+		auto gta5_image = new PEImage((byte*)buffer, size);
 
-	char* buffer;
-	int size;
-	PEImage::LoadPEImage("R:\\Rockstar Games\\Grand Theft Auto V\\GTA5_dump.exe", &buffer, &size);
-	auto gta5_image = new PEImage((byte*)buffer, size);
+		{
+			//native function with arguments are in a context structure
+			test = createSampleTest(1000, gta5_image, 0xA290A8);
+			test->m_enabled = true;
+			test->m_showFinalResult = true;
+			test->enableAllAndShowAll();
+			test->m_symbolization = true;
 
-	{
-		//native function with arguments are in a context structure
-		test = createSampleTest(1000, gta5_image, 0xA290A8);
-		test->m_enabled = true;
-		test->m_showFinalResult = true;
-		test->enableAllAndShowAll();
-		test->m_symbolization = true;
+			/*
+				TODO:
+				1) there have not to be stack_0x40
+			*/
+		}
 
-		/*
-			TODO:
-			1) there have not to be stack_0x40
-		*/
-	}
-
-	{
-		//native function with arguments are in a context structure
-		test = createSampleTest(1001, gta5_image, 0xA290E0);
-		test->m_enabled = true;
-		test->m_showFinalResult = true;
-		test->enableAllAndShowAll();
-		test->m_symbolization = true;
+		{
+			//native function with arguments are in a context structure
+			test = createSampleTest(1001, gta5_image, 0xA290E0);
+			test->m_enabled = true;
+			test->m_showFinalResult = true;
+			test->enableAllAndShowAll();
+			test->m_symbolization = true;
+		}
 	}
 }
 

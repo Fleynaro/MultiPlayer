@@ -46,7 +46,7 @@ namespace CE::Decompiler::Optimization
 	private:
 		// using terms (including constant term) build linear expression
 		LinearExpr* buildLinearExpr() {
-			auto linearExpr = new LinearExpr(m_constTerm, m_operationAdd);
+			auto linearExpr = new LinearExpr(m_constTerm, m_operationAdd); // todo: change size for number
 			// iterate over all terms
 			for (auto termInfo : m_terms) {
 				auto node = termInfo.second.first;

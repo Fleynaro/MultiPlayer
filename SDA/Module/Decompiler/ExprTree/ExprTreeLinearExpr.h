@@ -73,7 +73,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		int getSize() override {
-			auto size = getConstTerm()->getSize();
+			auto size = 1;
 			for (auto term : m_terms) {
 				size = max(size, term->getSize());
 			}

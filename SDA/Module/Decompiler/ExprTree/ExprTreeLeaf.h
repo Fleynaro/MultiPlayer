@@ -58,7 +58,7 @@ namespace CE::Decompiler::ExprTree
 	public:
 
 		NumberLeaf(uint64_t value, int size)
-			: m_value(value), m_size(size)
+			: m_value(value & BitMask64(size).getValue()), m_size(size)
 		{}
 
 		NumberLeaf(double value, int size)
