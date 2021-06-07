@@ -7,10 +7,10 @@ using namespace CE;
 using namespace CE::DataType;
 using namespace CE::Decompiler;
 
-Signature::Signature(TypeManager* typeManager, const std::string& name, const std::string& comment, CallingConvetion callingConvetion)
-	: UserType(typeManager, name, comment), m_callingConvetion(callingConvetion)
+Signature::Signature(const std::string& name, const std::string& comment, CallingConvetion callingConvetion)
+	: UserType(name, comment), m_callingConvetion(callingConvetion)
 {
-	setReturnType(DataType::GetUnit(typeManager->getProgramModule()->getTypeManager()->getDefaultReturnType()));
+	setReturnType(DataType::GetUnit(new DataType::Byte));
 }
 
 Type::Group Signature::getGroup() {
@@ -67,9 +67,10 @@ void Signature::addParameter(Symbol::FuncParameterSymbol* symbol) {
 }
 
 void Signature::addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment) {
+	auto paramSymbol = new Symbol::FuncParameterSymbol(dataType, name, comment);
 	auto manager = getTypeManager()->getProgramModule()->getSymbolManager();
-	auto paramSymbol = new Symbol::FuncParameterSymbol(manager, dataType, name, comment);
-	manager->bind(paramSymbol);
+	if(manager)
+		manager->bind(paramSymbol);
 	addParameter(paramSymbol);
 }
 

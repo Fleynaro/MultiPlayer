@@ -10,7 +10,7 @@ using namespace CE;
 FunctionManager::FunctionManager(ProgramModule* module)
 	: AbstractItemManager(module)
 {
-	m_funcDefMapper = new DB::FunctionMapper(this);
+	m_funcMapper = new DB::FunctionMapper(this);
 	m_ghidraFunctionMapper = new Ghidra::FunctionMapper(this, getProgramModule()->getTypeManager()->m_ghidraDataTypeMapper);
 	createDefaultFunction();
 }
@@ -20,35 +20,23 @@ FunctionManager::~FunctionManager() {
 }
 
 void FunctionManager::loadFunctions() {
-	m_funcDefMapper->loadAll();
+	m_funcMapper->loadAll();
 }
 
 void FunctionManager::loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dataPacket) {
 	m_ghidraFunctionMapper->load(dataPacket);
 }
 
-Function::Function* FunctionManager::createFunction(Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature) {
-	auto func = new Function::Function(this, functionSymbol, module, ranges, signature);
-	func->setMapper(m_funcDefMapper);
-	func->setGhidraMapper(m_ghidraFunctionMapper);
-	func->setId(m_funcDefMapper->getNextId());
-	getProgramModule()->getTransaction()->markAsNew(func);
-	return func;
-}
-
-Function::Function* FunctionManager::createFunction(const std::string& name, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature, const std::string& comment) {
-	auto manager = getProgramModule()->getSymbolManager();
-	auto symbol = new Symbol::FunctionSymbol(manager, DataType::GetUnit(signature), name, comment);
-	auto func = createFunction(symbol, module, ranges, signature);
-	getProgramModule()->getGlobalMemoryArea()->addSymbol(symbol, module->toRelAddr(func->getAddress()));
-	manager->bind(symbol);
-	return func;
+void FunctionManager::bind(Function::Function* function) {
+	function->setMapper(m_funcMapper);
+	function->setId(m_funcMapper->getNextId());
+	getProgramModule()->getTransaction()->markAsNew(function);
 }
 
 void FunctionManager::createDefaultFunction() {
 	auto sig = new DataType::Signature(getProgramModule()->getTypeManager(), "defSig");
-	auto symbol = new Symbol::FunctionSymbol(getProgramModule()->getSymbolManager(), DataType::GetUnit(sig), "defFunction");
-	m_defFunction = new Function::Function(this, symbol, nullptr, {}, sig);
+	auto symbol = new Symbol::FunctionSymbol(DataType::GetUnit(sig), "defFunction");
+	m_defFunction = new Function::Function(symbol, nullptr);
 }
 
 Function::Function* FunctionManager::getDefaultFunction() {

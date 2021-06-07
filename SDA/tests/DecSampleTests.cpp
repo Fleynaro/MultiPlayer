@@ -66,7 +66,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 
 	if (false) {
 		auto programGraph = new ProgramGraph(imageGraph);
-		ImagePCodeGraphAnalyzer graphAnalyzer(programGraph, m_programModule, &m_registerFactoryX86);
+		ImagePCodeGraphAnalyzer graphAnalyzer(programGraph, m_programModule, &m_registerFactoryX86, &graphReferenceSearch);
 		graphAnalyzer.start();
 	}
 

@@ -6,10 +6,10 @@ namespace CE::Symbol
 	class LocalInstrVarSymbol : public AbstractSymbol
 	{
 	public:
-		std::list<int64_t> m_offsets;
+		std::list<int64_t> m_instrOffsets;
 
-		LocalInstrVarSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: AbstractSymbol(manager, type, name, comment)
+		LocalInstrVarSymbol(DataTypePtr type, const std::string& name, const std::string& comment = "")
+			: AbstractSymbol(type, name, comment)
 		{}
 
 		Type getType() override {

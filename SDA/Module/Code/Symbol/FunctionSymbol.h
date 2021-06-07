@@ -7,11 +7,11 @@ namespace CE::Function {
 
 namespace CE::Symbol
 {
-	class FunctionSymbol : public AbstractSymbol
+	class FunctionSymbol : public GlobalVarSymbol
 	{
 	public:
-		FunctionSymbol(SymbolManager* manager, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: AbstractSymbol(manager, type, name, comment)
+		FunctionSymbol(int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "")
+			: GlobalVarSymbol(offset, type, name, comment)
 		{}
 
 		Type getType() override {

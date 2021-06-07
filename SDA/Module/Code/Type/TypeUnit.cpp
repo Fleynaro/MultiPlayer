@@ -7,7 +7,7 @@ using namespace CE;
 using namespace CE::DataType;
 
 Unit::Unit(DataType::Type* type, std::list<int> levels)
-	: Type(type->getTypeManager(), "", ""), m_type(type), m_levels(levels)
+	: Type("", ""), m_type(type), m_levels(levels)
 {}
 
 Unit::Group Unit::getGroup() {

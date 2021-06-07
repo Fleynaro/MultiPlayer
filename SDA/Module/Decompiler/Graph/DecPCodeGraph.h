@@ -133,6 +133,8 @@ namespace CE::Decompiler
 		std::list<FunctionPCodeGraph*> m_virtFuncCalls;
 		std::map<PCode::Instruction*, DataValue> m_constValues;
 	public:
+		// head is a function that has not parents (main/all virtual functions)
+		bool m_isHead = true;
 
 		FunctionPCodeGraph(ImagePCodeGraph* imagePCodeGraph)
 			: m_imagePCodeGraph(imagePCodeGraph)
@@ -181,6 +183,7 @@ namespace CE::Decompiler
 	class ImagePCodeGraph
 	{
 		std::list<FunctionPCodeGraph*> m_funcGraphList;
+		std::list<FunctionPCodeGraph*> m_headFuncGraphs;
 		std::map<int64_t, PCodeBlock> m_blocks;
 	public:
 
@@ -199,11 +202,15 @@ namespace CE::Decompiler
 			return newBlock;
 		}
 
+		auto& getHeadFuncGraphs() {
+			return m_headFuncGraphs;
+		}
+
 		auto& getFunctionGraphList() {
 			return m_funcGraphList;
 		}
 
-		FunctionPCodeGraph* getFirstFunctionGraph() {
+		FunctionPCodeGraph* getEntryFunctionGraph() {
 			return *m_funcGraphList.begin();
 		}
 

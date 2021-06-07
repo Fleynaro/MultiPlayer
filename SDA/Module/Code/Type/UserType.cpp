@@ -4,10 +4,6 @@
 using namespace CE;
 using namespace CE::DataType;
 
-UserType::UserType(TypeManager* typeManager, const std::string& name, const std::string& comment)
-	: Type(typeManager, name, comment)
-{}
-
 bool UserType::isUserDefined() {
 	return true;
 }

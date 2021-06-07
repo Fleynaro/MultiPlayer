@@ -28,10 +28,8 @@ namespace CE
 
 		void loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
-		Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature);
-
-		Function::Function* createFunction(const std::string& name, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature, const std::string& comment = "");
-
+		void bind(Function::Function* function);
+		
 		void createDefaultFunction();
 
 		Function::Function* getDefaultFunction();
@@ -48,6 +46,6 @@ namespace CE
 	private:
 		FunctionTagManager* m_tagManager;
 		Function::Function* m_defFunction = nullptr;
-		DB::FunctionMapper* m_funcDefMapper;
+		DB::FunctionMapper* m_funcMapper;
 	};
 };

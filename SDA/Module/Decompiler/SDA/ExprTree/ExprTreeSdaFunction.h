@@ -28,7 +28,7 @@ namespace CE::Decompiler::ExprTree
 
 	private:
 		FunctionCall* m_funcCall;
-		DataType::Signature* m_signature = nullptr;
+		DataType::ISignature* m_signature = nullptr;
 		std::shared_ptr<TypeContext> m_typeContext;
 
 	public:
@@ -93,11 +93,11 @@ namespace CE::Decompiler::ExprTree
 			return sdaFunctionNode;
 		}
 
-		DataType::Signature* getSignature() {
+		DataType::ISignature* getSignature() {
 			return m_signature;
 		}
 
-		void setSignature(DataType::Signature* signature) {
+		void setSignature(DataType::ISignature* signature) {
 			m_signature = signature;
 		}
 

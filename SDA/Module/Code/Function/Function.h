@@ -1,5 +1,4 @@
 #pragma once
-#include <Address/AddressRange.h>
 #include <GhidraSync/GhidraObject.h>
 #include "../Type/FunctionSignature.h"
 #include "../Symbol/Symbol.h"
@@ -11,6 +10,11 @@ namespace CE
 		class Hook;
 	};
 
+	namespace Decompiler
+	{
+		class FunctionPCodeGraph;
+	};
+
 	class FunctionManager;
 	class ProcessModule;
 
@@ -19,9 +23,13 @@ namespace CE
 		class Function : public DB::DomainObject, public Ghidra::Object, public IDescription
 		{
 		public:
-			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature);
+			Function(/*ProcessModule* processModule, */Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph)
+				: /*m_processModule(processModule), */m_functionSymbol(functionSymbol), m_funcGraph(funcGraph)
+			{}
 
 			Symbol::FunctionSymbol* getFunctionSymbol();
+
+			Decompiler::FunctionPCodeGraph* getFuncGraph();
 
 			const std::string getName() override;
 
@@ -33,13 +41,7 @@ namespace CE
 
 			DataType::Signature* getSignature();
 
-			void* getAddress();
-
-			AddressRangeList& getAddressRangeList();
-
-			void addRange(AddressRange range);
-
-			bool isContainingAddress(void* addr);
+			int getOffset();
 
 			Symbol::SymbolTable* getStackMemoryArea();
 
@@ -65,10 +67,9 @@ namespace CE
 
 			FunctionManager* getManager();
 		private:
+			ProcessModule* m_processModule;
+			Decompiler::FunctionPCodeGraph* m_funcGraph;
 			Symbol::FunctionSymbol* m_functionSymbol;
-			ProcessModule* m_module;
-			AddressRangeList m_ranges;
-			DataType::Signature* m_signature;
 			Symbol::SymbolTable* m_stackSymbolTable = nullptr;
 			Symbol::SymbolTable* m_bodyMemoryArea = nullptr;
 			Trigger::Function::Hook* m_hook = nullptr;

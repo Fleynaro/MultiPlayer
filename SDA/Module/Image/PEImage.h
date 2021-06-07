@@ -46,6 +46,12 @@ namespace CE
 			return (offset - pSeh->VirtualAddress + pSeh->PointerToRawData);
 		}
 
+		// virtual address to file offset
+		int addrToImageOffset(uint64_t addr) override {
+			auto offset = int(addr - m_pImgNtHeaders->OptionalHeader.ImageBase);
+			return toImageOffset(offset);
+		}
+
 		static void LoadPEImage(const std::string& filename, char** buffer, int* size) {
 			//open file
 			std::ifstream infile(filename, std::ios::binary);

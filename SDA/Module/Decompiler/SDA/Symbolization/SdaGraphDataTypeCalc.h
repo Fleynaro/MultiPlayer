@@ -256,7 +256,7 @@ namespace CE::Decompiler::Symbolization
 			else if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(sdaNode)) {
 				// example: (world->vtable->func_get_player)(player_id) where {world->vtable->func_get_player} has a signature type calculated through the step of goar building
 				if (auto dstCastNode = dynamic_cast<ISdaNode*>(sdaFunctionNode->getDestination())) {
-					if (auto signature = dynamic_cast<DataType::Signature*>(dstCastNode->getDataType()->getType())) {
+					if (auto signature = dynamic_cast<DataType::ISignature*>(dstCastNode->getDataType()->getType())) {
 						if (!sdaFunctionNode->getSignature()) {
 							// assign a signature that calculated in function destination (world->vtable->func_get_player)
 							sdaFunctionNode->setSignature(signature);
@@ -285,7 +285,7 @@ namespace CE::Decompiler::Symbolization
 					if (g == Type::Group::Structure || g == Type::Group::Class) {
 						if (dynamic_cast<ReadValueNode*>(sdaSymbolLeaf->getParentNode())) {
 							// just add offset: *(float*)(param1) -> *(float*)(param1 + 0x0)
-							auto linearExpr = new LinearExpr(int64_t(0));
+							auto linearExpr = new LinearExpr(new SdaNumberLeaf(0));
 							auto unknownLocation = new UnknownLocation(linearExpr, 0);
 							linearExpr->addParentNode(unknownLocation);
 							sdaSymbolLeaf->replaceWith(unknownLocation);
@@ -319,6 +319,9 @@ namespace CE::Decompiler::Symbolization
 			}
 		}
 
+		virtual void onDataTypeCasting(DataTypePtr fromDataType, DataTypePtr toDataType) {
+		}
+
 		// casting {sdaNode} to {toDataType}
 		void cast(ISdaNode* sdaNode, DataTypePtr toDataType) {
 			//exception case (better change number view between HEX and non-HEX than do the cast)
@@ -332,13 +335,15 @@ namespace CE::Decompiler::Symbolization
 			}
 
 			//CASTING
-			auto explicitCast = isExplicitCast(sdaNode->getSrcDataType(), toDataType);
+			auto fromDataType = sdaNode->getSrcDataType();
+			auto explicitCast = isExplicitCast(fromDataType, toDataType);
+			onDataTypeCasting(fromDataType, toDataType);
 			sdaNode->getCast()->setCastDataType(toDataType, explicitCast);
 
 			// for AUTO sda symbols that have to acquire a data type with the biggest priority (e.g. uint64_t -> Player*)
 			if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode)) {
-				if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(sdaSymbolLeaf->getSdaSymbol())) {
-					auto symbolDataType = autoSdaSymbol->getDataType();
+				if (sdaSymbolLeaf->getSdaSymbol()->isAutoSymbol()) {
+					auto symbolDataType = sdaSymbolLeaf->getSdaSymbol()->getDataType();
 					if (symbolDataType->getSize() == toDataType->getSize() && symbolDataType->getPriority() < toDataType->getPriority()) {
 						sdaSymbolLeaf->setDataType(toDataType);
 						m_nextPassRequired = true;

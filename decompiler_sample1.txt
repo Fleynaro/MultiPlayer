@@ -1,0 +1,66 @@
+
+struct Ped {
+    void* vtable;
+    float x;
+    float y;
+    float angle;
+};
+
+struct PlayerPed {
+    Ped base;
+    int id;
+};
+
+struct BotPed {
+    Ped base;
+    int lifeTime;
+};
+
+void Ped_constructor(Ped* ped) {
+    ped->vtable = (void*)0x100;
+    ped->x = 0.f;
+    ped->y = 0.f;
+    // на выходе: astruct_1
+}
+
+void Ped_setSpawnPos(Ped* ped) {
+    ped->x = 4.f;
+    ped->y = 5.f;
+    // на выходе: astruct_4
+}
+
+void PlayerPed_constructor(PlayerPed* ped) {
+    // ped: uint64_t -> astruct_1*
+    Ped_constructor((Ped*)ped);
+    // виртуальная таблица, значит нужен новый класс astruct_2*
+    ped->base.vtable = (void*)0x200;
+    ped->id = 0;
+    // на выходе: astruct_2
+}
+
+void BotPed_constructor(BotPed* ped) {
+    // ped: uint64_t -> astruct_1*
+    Ped_constructor((Ped*)ped);
+    // astruct_1 пополняется новым полем
+    ped->lifeTime = 0;
+    // виртуальная таблица, значит нужен новый класс astruct_3*
+    ped->base.vtable = (void*)0x300;
+    // на выходе: astruct_3
+}
+
+void* AllocateMemory(int size) {
+    return 0x0;
+}
+
+void main()
+{
+    // для player
+    PlayerPed* newPlayerPed = (PlayerPed*)AllocateMemory(sizeof(PlayerPed));
+    PlayerPed_constructor(newPlayerPed);
+    Ped_setSpawnPos(&newPlayerPed->base);
+
+    // для bot
+    BotPed* newBotPed = (BotPed*)AllocateMemory(sizeof(BotPed));
+    BotPed_constructor(newBotPed);
+    Ped_setSpawnPos(&newBotPed->base);
+}

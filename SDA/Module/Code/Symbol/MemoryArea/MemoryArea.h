@@ -27,17 +27,17 @@ namespace CE
 
 			int getSize();
 
-			void addSymbol(AbstractSymbol* symbol, int64_t offset);
+			void addSymbol(ISymbol* symbol, int64_t offset);
 
-			std::pair<int64_t, AbstractSymbol*> getSymbolAt(int64_t offset);
+			std::pair<int64_t, ISymbol*> getSymbolAt(int64_t offset);
 
-			std::map<int64_t, AbstractSymbol*>::iterator getSymbolIterator(int64_t offset);
+			std::map<int64_t, ISymbol*>::iterator getSymbolIterator(int64_t offset);
 
-			std::map<int64_t, AbstractSymbol*>& getSymbols();
+			std::map<int64_t, ISymbol*>& getSymbols();
 		private:
 			SymbolTableType m_type;
 			int m_size;
-			std::map<int64_t, AbstractSymbol*> m_symbols;
+			std::map<int64_t, ISymbol*> m_symbols;
 			SymbolTableManager* m_manager;
 		};
 	};

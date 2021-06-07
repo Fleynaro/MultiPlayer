@@ -42,8 +42,8 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		void setDataType(DataTypePtr dataType) override {
-			if (auto autoSdaSymbol = dynamic_cast<CE::Symbol::AutoSdaSymbol*>(m_sdaSymbol)) {
-				autoSdaSymbol->setDataType(dataType);
+			if (m_sdaSymbol->isAutoSymbol()) {
+				m_sdaSymbol->setDataType(dataType);
 			}
 		}
 

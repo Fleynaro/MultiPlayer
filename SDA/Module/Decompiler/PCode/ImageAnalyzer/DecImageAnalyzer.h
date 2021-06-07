@@ -15,6 +15,12 @@ namespace CE::Decompiler
 		Symbolization::DataTypeFactory m_dataTypeFactory;
 		Symbolization::UserSymbolDef m_userSymbolDef;
 	public:
+		struct VTable {
+			int64_t m_offset;
+			std::list<int64_t> m_funcOffsets;
+		};
+		std::list<VTable> m_vtables;
+
 		PCodeGraphReferenceSearch(CE::ProgramModule* programModule, AbstractRegisterFactory* registerFactory, IImage* image)
 			: m_programModule(programModule), m_registerFactory(registerFactory), m_image(image), m_dataTypeFactory(programModule)
 		{
@@ -40,13 +46,23 @@ namespace CE::Decompiler
 			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &m_userSymbolDef, &m_dataTypeFactory);
 			sdaBuilding.start();
 
-			for (auto symbol : sdaBuilding.getAutoSymbols()) {
-				if (auto memSymbol = dynamic_cast<CE::Symbol::AutoSdaMemSymbol*>(symbol)) {
+			for (auto symbol : sdaBuilding.getNewAutoSymbols()) {
+				if (auto memSymbol = dynamic_cast<CE::Symbol::IMemorySymbol*>(symbol)) {
 					auto storage = memSymbol->getStorage();
 					auto offset = (int)storage.getOffset();
 					if (storage.getType() == Storage::STORAGE_GLOBAL) {
-						if (m_image->defineSegment(offset) == IImage::CODE_SEGMENT) {
+						auto segmentType = m_image->defineSegment(offset);
+						if (segmentType == IImage::CODE_SEGMENT) {
 							nonVirtFuncOffsets.push_back(offset);
+						}
+						else if(segmentType == IImage::DATA_SEGMENT) {
+							auto imageOffset = m_image->toImageOffset(offset);
+							VTable* pVtable = nullptr;
+							checkOnVTable(imageOffset, pVtable);
+							if (pVtable) {
+								for(auto funcOffset : pVtable->m_funcOffsets)
+									otherOffsets.push_back(funcOffset);
+							}
 						}
 					}
 				}
@@ -55,6 +71,33 @@ namespace CE::Decompiler
 
 			delete decCodeGraph;
 			delete sdaCodeGraph;
+		}
+
+	private:
+		// analyze memory area to define if it is a vtable
+		void checkOnVTable(int startOffset, VTable* pVtable) {
+			std::list<int64_t> funcOffsets;
+			auto data = m_image->getData();
+			for (int offset = startOffset; offset < m_image->getSize(); offset += sizeof(uint64_t)) {
+				auto funcAddr = (uint64_t&)data[offset];
+				// all vtables ends with zero address
+				if (funcAddr == 0x0)
+					break;
+				auto funcOffset = m_image->addrToImageOffset(funcAddr);
+				if (m_image->defineSegment(funcOffset) != IImage::CODE_SEGMENT)
+					break;
+				funcOffsets.push_back(funcOffset);
+			}
+
+			if (funcOffsets.empty())
+				return;
+
+			// we found a vtable
+			VTable vtable;
+			vtable.m_offset = startOffset;
+			vtable.m_funcOffsets = funcOffsets;
+			m_vtables.push_back(vtable);
+			pVtable = &*m_vtables.rbegin();
 		}
 	};
 
@@ -120,9 +163,17 @@ namespace CE::Decompiler
 				for (auto offset : offsets) {
 					auto it = offsetsToFuncGraphs.find(offset);
 					if (it != offsetsToFuncGraphs.end()) {
-						graph->getNonVirtFuncCalls().push_back(it->second);
+						auto otherGraph = it->second;
+						otherGraph->m_isHead = false;
+						graph->getNonVirtFuncCalls().push_back(otherGraph);
 					}
 				}
+			}
+
+			// add all head functions into the list
+			for (auto funcGraph : m_imageGraph->getFunctionGraphList()) {
+				if(funcGraph->m_isHead)
+					m_imageGraph->getHeadFuncGraphs().push_back(funcGraph);
 			}
 
 			// other

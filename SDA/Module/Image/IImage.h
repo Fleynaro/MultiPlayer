@@ -21,6 +21,10 @@ namespace CE
 			return offset;
 		}
 
+		virtual int addrToImageOffset(uint64_t addr) {
+			throw std::logic_error("not implemented");
+		}
+
 		virtual SegmentType defineSegment(int offset) {
 			return NONE_SEGMENT;
 		}

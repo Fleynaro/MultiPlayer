@@ -274,6 +274,7 @@
     <ClCompile Include="Module\DB\Transaction.cpp" />
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
+    <ClCompile Include="Module\Decompiler\Graph\Analyzer\ImagePCodeGraphAnalyzer.cpp" />
     <ClCompile Include="Module\Decompiler\PCode\Decompiler\Decompiler.cpp" />
     <ClCompile Include="Module\Decompiler\DecStorage.cpp" />
     <ClCompile Include="Module\Decompiler\PCode\Decompiler\DecExecContext.cpp" />

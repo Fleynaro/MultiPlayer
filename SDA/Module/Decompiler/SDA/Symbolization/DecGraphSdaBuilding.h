@@ -12,7 +12,7 @@ namespace CE::Decompiler::Symbolization
 		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols; //for cache purposes
 		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols; //stackVar1
 		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
-		std::set<CE::Symbol::AutoSdaSymbol*> m_autoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
+		std::set<CE::Symbol::ISymbol*> m_newAutoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
 		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols; // defined by user (e.g. playerObj)
 		std::map<HS::Value, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts; //for cache purposes
 	public:
@@ -34,8 +34,8 @@ namespace CE::Decompiler::Symbolization
 			addSdaSymbols();
 		}
 
-		auto& getAutoSymbols() {
-			return m_autoSymbols;
+		auto& getNewAutoSymbols() {
+			return m_newAutoSymbols;
 		}
 
 		auto& getUserDefinedSymbols() {
@@ -45,7 +45,7 @@ namespace CE::Decompiler::Symbolization
 
 		// join auto symbols and user symbols together
 		void addSdaSymbols() {
-			for (auto sdaSymbol : m_autoSymbols) {
+			for (auto sdaSymbol : m_newAutoSymbols) {
 				m_sdaCodeGraph->getSdaSymbols().push_back(sdaSymbol);
 			}
 
@@ -249,7 +249,7 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		CE::Symbol::ISymbol* findOrCreateSymbol(Symbol::Symbol* symbol, int size, int64_t& offset) {
-			if (auto sdaSymbol = loadMemSdaSymbol(symbol, offset))
+			if (auto sdaSymbol = loadSdaSymbolIfMem(symbol, offset))
 				return sdaSymbol;
 
 			//try to find corresponding function parameter if {symbol} is register (RCX -> param1, RDX -> param2)
@@ -264,7 +264,7 @@ namespace CE::Decompiler::Symbolization
 						if (paramIdx <= funcParams.size()) {
 							//USER-DEFINED func. parameter
 							auto sdaSymbol = funcParams[paramIdx - 1];
-							storeMemSdaSymbol(sdaSymbol, symbol, offset);
+							storeSdaSymbolIfMem(sdaSymbol, symbol, offset);
 							m_userDefinedSymbols.insert(sdaSymbol);
 							return sdaSymbol;
 						}
@@ -278,19 +278,42 @@ namespace CE::Decompiler::Symbolization
 
 				if (paramIdx > 0) {
 					//auto func. parameter
-					auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::FUNC_PARAMETER, "param" + std::to_string(paramIdx), paramIdx, size);
-					storeMemSdaSymbol(sdaSymbol, symbol, offset);
-					return sdaSymbol;
+					auto funcParamSymbol = new CE::Symbol::FuncParameterSymbol(paramIdx, m_userSymbolDef->m_signature, m_dataTypeFactory->getDefaultType(size), "param" + std::to_string(paramIdx));
+					funcParamSymbol->setAutoSymbol(true);
+					storeSdaSymbolIfMem(funcParamSymbol, symbol, offset);
+					return funcParamSymbol;
 				}
 
 				//MEMORY symbol with offset (e.g. globalVar1)
-				if (reg.getType() == Register::Type::StackPointer)
-					return createMemorySymbol(m_userSymbolDef->m_stackSymbolTable, CE::Symbol::LOCAL_STACK_VAR, "stack", symbol, offset, size);
-				else if (reg.getType() == Register::Type::InstructionPointer)
-					return createMemorySymbol(m_userSymbolDef->m_globalSymbolTable, CE::Symbol::GLOBAL_VAR, "global", symbol, offset, size);
+				bool isStackPointer = (reg.getType() == Register::Type::StackPointer);
+				if (isStackPointer || reg.getType() == Register::Type::InstructionPointer) {
+					//try to find USER-DEFINED symbol in mem. area
+					auto symTable = isStackPointer ? m_userSymbolDef->m_stackSymbolTable : m_userSymbolDef->m_globalSymbolTable;
+					auto symbolPair = symTable->getSymbolAt(offset);
+					if (symbolPair.second != nullptr) {
+						offset -= symbolPair.first;
+						auto sdaSymbol = symbolPair.second;
+						m_userDefinedSymbols.insert(sdaSymbol);
+						return sdaSymbol;
+					}
 
+					CE::Symbol::AbstractSymbol* sdaSymbol = nullptr;
+					auto dataType = m_dataTypeFactory->getDefaultType(size);
+					if (isStackPointer) {
+						sdaSymbol = new CE::Symbol::LocalStackVarSymbol(offset, dataType, "stack_0x" + Generic::String::NumberToHex((uint32_t)-offset));
+					}
+					else {
+						sdaSymbol = new CE::Symbol::GlobalVarSymbol(offset, dataType, "global_0x" + Generic::String::NumberToHex(offset));
+					}
+					m_newAutoSymbols.insert(sdaSymbol);
+					storeSdaSymbolIfMem(sdaSymbol, symbol, offset);
+					return sdaSymbol;
+				}
+				
 				//NOT-MEMORY symbol (unknown registers)
-				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, "in_" + reg.printDebug(), 0, size);
+				auto sdaSymbol = new CE::Symbol::LocalInstrVarSymbol(m_dataTypeFactory->getDefaultType(size), "in_" + reg.printDebug());
+				sdaSymbol->setAutoSymbol(true);
+				m_newAutoSymbols.insert(sdaSymbol);
 				return sdaSymbol;
 			}
 
@@ -320,47 +343,17 @@ namespace CE::Decompiler::Symbolization
 					suffix = "mem";
 				else if (dynamic_cast<Symbol::FunctionResultVar*>(symbol))
 					suffix = "func";
-				auto sdaSymbol = createAutoSdaSymbol(CE::Symbol::LOCAL_INSTR_VAR, suffix + "Var" + Generic::String::NumberToHex(symbolWithId->getId()), 0, size, instrOffsets);
+				auto sdaSymbol = new CE::Symbol::LocalInstrVarSymbol(m_dataTypeFactory->getDefaultType(size), suffix + "Var" + Generic::String::NumberToHex(symbolWithId->getId()));
+				sdaSymbol->setAutoSymbol(true);
+				sdaSymbol->m_instrOffsets = instrOffsets;
+				m_newAutoSymbols.insert(sdaSymbol);
 				return sdaSymbol;
 			}
 			return nullptr;
 		}
 
-		CE::Symbol::ISymbol* createMemorySymbol(CE::Symbol::SymbolTable* memoryArea, CE::Symbol::Type type, const std::string& name, Symbol::Symbol* symbol, int64_t& offset, int size) {
-			//try to find USER-DEFINED symbol in mem. area
-			auto symbolPair = memoryArea->getSymbolAt(offset);
-			if (symbolPair.second != nullptr) {
-				offset -= symbolPair.first;
-				auto sdaSymbol = symbolPair.second;
-				m_userDefinedSymbols.insert(sdaSymbol);
-				return sdaSymbol;
-			}
-
-			uint64_t offsetView = offset;
-			if (memoryArea->getType() == CE::Symbol::SymbolTable::STACK_SPACE)
-				offsetView = (uint32_t)-offset;
-
-			auto sdaSymbol = createAutoSdaSymbol(type, name + "_0x" + Generic::String::NumberToHex(offsetView), offset, size);
-			storeMemSdaSymbol(sdaSymbol, symbol, offset);
-			return sdaSymbol;
-		}
-
-		CE::Symbol::AutoSdaSymbol* createAutoSdaSymbol(CE::Symbol::Type type, const std::string& name, int64_t value, int size, std::list<int64_t> instrOffsets = {}) {
-			auto dataType = m_dataTypeFactory->getDefaultType(size);
-			auto symbolManager = m_userSymbolDef->m_programModule->getSymbolManager();
-			CE::Symbol::AutoSdaSymbol* sdaSymbol;
-			if (type == CE::Symbol::LOCAL_STACK_VAR || type == CE::Symbol::GLOBAL_VAR) {
-				sdaSymbol = new CE::Symbol::AutoSdaMemSymbol(type, value, instrOffsets, symbolManager, dataType, name);
-			}
-			else {
-				sdaSymbol = new CE::Symbol::AutoSdaSymbol(type, value, instrOffsets, symbolManager, dataType, name);
-			}
-			m_autoSymbols.insert(sdaSymbol);
-			return sdaSymbol;
-		}
-
 		// load stack or global memory symbol by decompiler symbol (RSP/RIP) and offset
-		CE::Symbol::ISymbol* loadMemSdaSymbol(Symbol::Symbol* symbol, int64_t& offset) {
+		CE::Symbol::ISymbol* loadSdaSymbolIfMem(Symbol::Symbol* symbol, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
 				if (reg.getType() == Register::Type::StackPointer) {
@@ -382,7 +375,7 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		// store stack or global memory symbol by decompiler symbol (RSP/RIP) and offset
-		void storeMemSdaSymbol(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* symbol, int64_t& offset) {
+		void storeSdaSymbolIfMem(CE::Symbol::ISymbol* sdaSymbol, Symbol::Symbol* symbol, int64_t& offset) {
 			if (auto regSymbol = dynamic_cast<Symbol::RegisterVariable*>(symbol)) {
 				auto& reg = regSymbol->m_register;
 				if (reg.getType() == Register::Type::StackPointer) {

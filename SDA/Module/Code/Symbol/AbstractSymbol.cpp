@@ -3,9 +3,13 @@
 using namespace CE;
 using namespace CE::Symbol;
 
-AbstractSymbol::AbstractSymbol(SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment)
-	: m_manager(manager), m_dataType(dataType), Descrtiption(name, comment)
-{}
+void AbstractSymbol::setAutoSymbol(bool toggle) {
+	m_isAutoSymbol = toggle;
+}
+
+bool AbstractSymbol::isAutoSymbol() {
+	return m_isAutoSymbol;
+}
 
 SymbolManager* AbstractSymbol::getManager() {
 	return m_manager;

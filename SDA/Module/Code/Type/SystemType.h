@@ -37,7 +37,7 @@ namespace CE
 			};
 
 			SystemType()
-				: Type(nullptr, "", "")
+				: Type("", "")
 			{}
 
 			DB::Id getId() override {

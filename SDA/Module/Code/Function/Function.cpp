@@ -5,12 +5,12 @@
 
 using namespace CE;
 
-Function::Function::Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, ProcessModule* module, AddressRangeList ranges, DataType::Signature* signature)
-	: m_manager(manager), m_functionSymbol(functionSymbol), m_module(module), m_ranges(ranges), m_signature(signature)
-{}
-
 Symbol::FunctionSymbol* Function::Function::getFunctionSymbol() {
 	return m_functionSymbol;
+}
+
+Decompiler::FunctionPCodeGraph* Function::Function::getFuncGraph() {
+	return m_funcGraph;
 }
 
 const std::string Function::Function::getName() {
@@ -30,30 +30,11 @@ void Function::Function::setComment(const std::string& comment) {
 }
 
 DataType::Signature* Function::Function::getSignature() {
-	return m_signature;
+	return dynamic_cast<DataType::Signature*>(m_functionSymbol->getDataType()->getType());
 }
 
-void* Function::Function::getAddress() {
-	if (m_ranges.empty())
-		return nullptr;
-	return m_ranges.begin()->getMinAddress();
-}
-
-AddressRangeList& Function::Function::getAddressRangeList() {
-	return m_ranges;
-}
-
-void Function::Function::addRange(AddressRange range) {
-	m_ranges.push_back(range);
-}
-
-bool Function::Function::isContainingAddress(void* addr) {
-	for (auto& range : m_ranges) {
-		if (range.isContainingAddress(addr)) {
-			return true;
-		}
-	}
-	return false;
+int Function::Function::getOffset() {
+	return m_functionSymbol->getOffset();
 }
 
 Symbol::SymbolTable* Function::Function::getStackMemoryArea() {
@@ -94,11 +75,11 @@ bool Function::Function::isExported() {
 
 Ghidra::Id Function::Function::getGhidraId()
 {
-	return (Ghidra::Id)getProcessModule()->toRelAddr(getAddress());
+	return (Ghidra::Id)getOffset();
 }
 
 ProcessModule* Function::Function::getProcessModule() {
-	return m_module;
+	return m_processModule;
 }
 
 FunctionManager* Function::Function::getManager() {
