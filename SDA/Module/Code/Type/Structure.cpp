@@ -48,7 +48,7 @@ DataTypePtr Structure::Field::getDataType() {
 }
 
 Structure::Structure(TypeManager* typeManager, const std::string& name, const std::string& comment)
-	: UserType(typeManager, name, comment)
+	: UserType(name, comment)
 {
 	m_defaultField = new Field(this, "undefined", GetUnit(getTypeManager()->getTypeByName("byte")), -1, -1);
 }

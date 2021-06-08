@@ -36,15 +36,119 @@ namespace CE::Decompiler
 		class RawStructureOwner : public DataType::Type
 		{
 		public:
-			std::map<int64_t, DataTypePtr> m_fields;
-			std::set<int64_t> m_arrayBegins;
+			class RawStructure
+			{
+			public:
+				struct Field {
+					int64_t m_offset;
+					DataTypePtr m_dataType;
+					bool m_isArray = false;
+				};
 
-			RawStructureOwner()
-				: DataType::Type("RawStructure")
-			{}
+				std::map<int64_t, Field> m_fields;
+				std::set<int64_t> m_arrayBegins;
+				std::list<RawStructureOwner*> m_owners;
+
+				RawStructure* m_parentRawStructure = nullptr;
+				std::list<RawStructure*> m_childRawStructures;
+
+				RawStructure(RawStructureOwner* owner)
+				{
+					m_owners.push_back(owner);
+				}
+
+				void removeFromOwner(RawStructureOwner* owner) {
+					m_owners.remove(owner);
+					if (m_owners.empty())
+						delete this;
+				}
+
+				void addParent(RawStructure* rawStructure) {
+					m_parentRawStructure = rawStructure;
+					rawStructure->m_childRawStructures.push_back(this);
+				}
+
+				bool isSpaceEmpty(int64_t bitOffset, int bitSize) {
+					if (bitOffset < 0 || bitSize <= 0)
+						return false;
+					return bitSize < getNextEmptyBitsCount(bitOffset);
+				}
+
+			private:
+				int getNextEmptyBitsCount(int64_t bitOffset) {
+					auto it = m_fields.upper_bound(bitOffset);
+					if (it != m_fields.end()) {
+						return int(it->first - bitOffset);
+					}
+					return 0x1000;
+				}
+			};
+
+			int m_id;
+			RawStructure* m_rawStructure;
+
+			RawStructureOwner(int id)
+				: m_id(id), DataType::Type("RawStructure")
+			{
+				m_rawStructure = new RawStructure(this);
+			}
+
+			// if there's an empty space or there's a field with the same size
+			bool canFieldBeAddedAtOffset(int64_t bitOffset, int size) {
+				auto it = m_rawStructure->m_fields.find(bitOffset);
+				if (it != m_rawStructure->m_fields.end())
+					return it->second.m_dataType->getSize() == size;
+				return m_rawStructure->isSpaceEmpty(bitOffset, size * 0x8);
+			}
+
+			// create a new branch and set it current
+			void createNewBranch(int64_t bitOffset) {
+				auto parentRawStructure = new RawStructure(this);
+				auto newRawStructure = new RawStructure(this);
+
+				// copy fields to other raw-structures
+				for (auto& pair : m_rawStructure->m_fields) {
+					auto fieldOffset = pair.first;
+					auto fieldDataType = pair.second;
+					if (fieldOffset < bitOffset) {
+						parentRawStructure->m_fields[fieldOffset] = fieldDataType;
+						m_rawStructure->m_fields.erase(fieldOffset);
+					}
+				}
+
+				// add parent
+				m_rawStructure->addParent(parentRawStructure);
+				newRawStructure->addParent(parentRawStructure);
+
+				// set the new branch as current
+				m_rawStructure->removeFromOwner(this);
+				m_rawStructure = newRawStructure;
+			}
+
+			void merge(RawStructureOwner* rawStructOwner) {
+				auto rawStructure = rawStructOwner->m_rawStructure;
+
+				// add all fields
+				for (auto& pair : rawStructure->m_fields) {
+					auto& field = pair.second;
+					if (!canFieldBeAddedAtOffset(field.m_offset, field.m_dataType->getSize()))
+						createNewBranch(field.m_offset);
+					addField(field);
+				}
+
+				// delete raw-structure
+				for (auto owner : rawStructure->m_owners) {
+					owner->m_rawStructure = m_rawStructure;
+				}
+				delete rawStructure;
+			}
+
+			void addField(RawStructure::Field field) {
+				m_rawStructure->m_fields[field.m_offset] = field;
+			}
 
 			DB::Id getId() override {
-				return 100000;
+				return m_id;
 			}
 
 			std::string getDisplayName() override {
@@ -64,16 +168,20 @@ namespace CE::Decompiler
 			}
 		};
 
+		// it owns a raw-signature that can be changed by another during the main pass (it implements the decorator pattern)
 		class RawSignatureOwner : public DataType::Type, public DataType::ISignature
 		{
 		public:
+			// it have stat info about return value
 			struct ReturnValueStatInfo {
 				Register m_register;
 				int m_score = 0;
+				// for marker nodes
 				int m_meetMarkesCount = 0;
 				int m_totalMarkesCount = 0;
 			};
 
+			// it is an extended implemetation of a func. signature that supports merge operation
 			class RawSignature : public DataType::Signature
 			{
 			public:
@@ -81,7 +189,6 @@ namespace CE::Decompiler
 				std::list<RawSignatureOwner*> m_owners;
 				std::list<Function::Function*> m_functions;
 				
-
 				RawSignature(RawSignatureOwner* owner)
 					: DataType::Signature("raw-signature")
 				{
@@ -238,9 +345,8 @@ namespace CE::Decompiler
 
 					// create a raw structure
 					if (sdaPointerNode) {
-						auto rawStructure = new RawStructureOwner;
-						m_imagePCodeGraphAnalyzer->m_rawStructures.push_back(rawStructure);
-						sdaPointerNode->setDataType(DataType::GetUnit(rawStructure, "[1]"));
+						auto rawStructOwner = m_imagePCodeGraphAnalyzer->createRawStructureOwner();
+						sdaPointerNode->setDataType(DataType::GetUnit(rawStructOwner, "[1]"));
 						m_nextPassRequired = true;
 					}
 				}
@@ -271,24 +377,25 @@ namespace CE::Decompiler
 					if (auto sdaReadValueNode = dynamic_cast<SdaReadValueNode*>(readValueNode->getParentNode()))
 					{
 						auto baseSdaNode = unknownLoc->getBaseSdaNode();
-						if (auto rawStructure = dynamic_cast<RawStructureOwner*>(baseSdaNode->getSrcDataType()->getType())) {
+						if (auto rawStructOwner = dynamic_cast<RawStructureOwner*>(baseSdaNode->getSrcDataType()->getType())) {
 							auto fieldOffset = unknownLoc->getConstTermValue();
 							auto newFieldDataType = sdaReadValueNode->getDataType();
 
-							auto it = rawStructure->m_fields.find(fieldOffset);
-							if (it == rawStructure->m_fields.end() || it->second->getPriority() < newFieldDataType->getPriority()) {
-								// set data type to the field from something
-								rawStructure->m_fields[fieldOffset] = newFieldDataType;
+							if (!rawStructOwner->canFieldBeAddedAtOffset(fieldOffset, newFieldDataType->getSize()))
+								rawStructOwner->createNewBranch(fieldOffset);
 
-								// if it is an array
-								if (unknownLoc->getArrTerms().size() > 0) {
-									rawStructure->m_arrayBegins.insert(fieldOffset);
-								}
+							auto it = rawStructOwner->m_rawStructure->m_fields.find(fieldOffset);
+							if (it == rawStructOwner->m_rawStructure->m_fields.end() || it->second.m_dataType->getPriority() < newFieldDataType->getPriority()) {
+								// set data type to the field from something
+								RawStructureOwner::RawStructure::Field field;
+								field.m_offset = fieldOffset;
+								field.m_dataType = newFieldDataType;
+								field.m_isArray = unknownLoc->getArrTerms().size() > 0; // if it is an array
+								rawStructOwner->addField(field);
 							}
 							else {
 								// set data type to something from the field
-								auto fieldDataType = rawStructure->m_fields[fieldOffset];
-								cast(sdaReadValueNode, fieldDataType);
+								cast(sdaReadValueNode, it->second.m_dataType);
 							}
 						}
 					}
@@ -296,19 +403,27 @@ namespace CE::Decompiler
 			}
 
 			void onDataTypeCasting(DataTypePtr fromDataType, DataTypePtr toDataType) override {
-				auto dataType1 = fromDataType;
-				auto dataType2 = toDataType;
+				auto dataType1 = fromDataType->getType();
+				auto dataType2 = toDataType->getType();
 
-				if (auto rawSigOwner1 = dynamic_cast<RawSignatureOwner*>(dataType1->getType())) {
-					if (auto rawSigOwner2 = dynamic_cast<RawSignatureOwner*>(dataType2->getType())) {
+				if (auto rawSigOwner1 = dynamic_cast<RawSignatureOwner*>(dataType1)) {
+					if (auto rawSigOwner2 = dynamic_cast<RawSignatureOwner*>(dataType2)) {
 						rawSigOwner1->merge(rawSigOwner2);
+					}
+				}
+
+				if (auto rawStructOwner1 = dynamic_cast<RawStructureOwner*>(dataType1)) {
+					if (auto rawStructOwner2 = dynamic_cast<RawStructureOwner*>(dataType2)) {
+						rawStructOwner1->merge(rawStructOwner2);
 					}
 				}
 			}
 		};
 
+		// decompiler for definition of return values for each function
 		class PrimaryDecompilerForReturnVal : public AbstractPrimaryDecompiler
 		{
+			// it appeared after a function call that have potentially a return value
 			class MarkerNode : public Node
 			{
 			public:
@@ -322,6 +437,7 @@ namespace CE::Decompiler
 					rawSigOwner->m_rawSignature->m_retValStatInfo.m_totalMarkesCount++;
 				}
 
+				// if it has been meet in the decompiled code
 				void meet() {
 					if (!m_hasMeet) {
 						m_rawSigOwner->m_rawSignature->m_retValStatInfo.m_meetMarkesCount++;
@@ -390,7 +506,7 @@ namespace CE::Decompiler
 		Symbolization::DataTypeFactory m_dataTypeFactory;
 		PCodeGraphReferenceSearch* m_graphReferenceSearch;
 		CE::Symbol::SymbolTable* m_globalSymbolTable;
-		std::list<RawStructureOwner*> m_rawStructures;
+		std::list<RawStructureOwner*> m_rawStructOwners;
 	public:
 		std::map<int64_t, RawSignatureOwner*> m_funcOffsetToSig;
 		std::map<int64_t, RawSignatureOwner*> m_virtFuncCallOffsetToSig;
@@ -419,11 +535,10 @@ namespace CE::Decompiler
 				for (auto headFuncGraph : m_programGraph->getImagePCodeGraph()->getHeadFuncGraphs()) {
 					std::set<FunctionPCodeGraph*> visitedGraphs;
 					doPassToDefineReturnValues(headFuncGraph, visitedGraphs);
+					changeFunctionSignaturesByRetValStat();
 					
 					visitedGraphs.clear();
 					doMainPass(headFuncGraph, visitedGraphs);
-
-					changeFunctionSignaturesByRetValStat();
 				}
 			}
 		}
@@ -432,6 +547,7 @@ namespace CE::Decompiler
 		std::list<Function::Function*> m_newFunctions;
 		bool m_nextPassRequired = false;
 
+		// need call after pass "to define return values"
 		void changeFunctionSignaturesByRetValStat() {
 			for (auto& pair : m_funcOffsetToSig) {
 				auto rawSigOwner = pair.second;
@@ -448,6 +564,7 @@ namespace CE::Decompiler
 			}
 		}
 
+		// first pass to define return values
 		void doPassToDefineReturnValues(FunctionPCodeGraph* funcGraph, std::set<FunctionPCodeGraph*>& visitedGraphs) {
 			visitedGraphs.insert(funcGraph);
 			for (auto nextFuncGraph : funcGraph->getNonVirtFuncCalls())
@@ -523,6 +640,7 @@ namespace CE::Decompiler
 			funcSigOwner->m_rawSignature->m_retValStatInfo = resultRetValueStatInfo;
 		}
 
+		// second pass
 		void doMainPass(FunctionPCodeGraph* funcGraph, std::set<FunctionPCodeGraph*>& visitedGraphs) {
 			visitedGraphs.insert(funcGraph);
 			for (auto nextFuncGraph : funcGraph->getNonVirtFuncCalls())
@@ -642,19 +760,29 @@ namespace CE::Decompiler
 		// create vtables that have been found during reference search
 		void createVTables() {
 			for (const auto& vtable : m_graphReferenceSearch->m_vtables) {
-				auto rawStructure = new RawStructureOwner();
+				auto rawStructOwner = createRawStructureOwner();
 				// fill the structure with virtual functions
 				int offset = 0;
 				for (auto funcOffset : vtable.m_funcOffsets) {
 					auto it = m_funcOffsetToSig.find(funcOffset);
-					if (it != m_funcOffsetToSig.end())
-						rawStructure->m_fields[offset] = DataType::GetUnit(it->second->m_rawSignature, "[1]");
+					if (it != m_funcOffsetToSig.end()) {
+						RawStructureOwner::RawStructure::Field field;
+						field.m_offset = offset;
+						field.m_dataType = DataType::GetUnit(it->second->m_rawSignature, "[1]");
+						rawStructOwner->addField(field);
+					}
 					offset += 0x8;
 				}
 				// add global var for vtable
-				auto vtableVarSymbol = new CE::Symbol::GlobalVarSymbol(vtable.m_offset, DataType::GetUnit(rawStructure), "vtable");
+				auto vtableVarSymbol = new CE::Symbol::GlobalVarSymbol(vtable.m_offset, DataType::GetUnit(rawStructOwner), "vtable");
 				m_globalSymbolTable->addSymbol(vtableVarSymbol, vtable.m_offset);
 			}
+		}
+
+		RawStructureOwner* createRawStructureOwner() {
+			auto newId = (int)m_rawStructOwners.size() + 1;
+			auto rawStructOwner = new RawStructureOwner(newId);
+			m_rawStructOwners.push_back(rawStructOwner);
 		}
 	};
 };
