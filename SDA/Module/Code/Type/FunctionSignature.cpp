@@ -10,7 +10,7 @@ using namespace CE::Decompiler;
 Signature::Signature(const std::string& name, const std::string& comment, CallingConvetion callingConvetion)
 	: UserType(name, comment), m_callingConvetion(callingConvetion)
 {
-	setReturnType(DataType::GetUnit(new DataType::Byte));
+	setReturnType(DataType::GetUnit(new DataType::Void));
 }
 
 Type::Group Signature::getGroup() {

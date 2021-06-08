@@ -39,7 +39,7 @@ namespace CE
 
 			void setComment(const std::string& comment) override;
 
-			DataType::Signature* getSignature();
+			DataType::ISignature* getSignature();
 
 			int getOffset();
 

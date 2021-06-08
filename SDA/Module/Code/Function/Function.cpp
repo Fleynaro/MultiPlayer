@@ -29,8 +29,8 @@ void Function::Function::setComment(const std::string& comment) {
 	m_functionSymbol->setComment(comment);
 }
 
-DataType::Signature* Function::Function::getSignature() {
-	return dynamic_cast<DataType::Signature*>(m_functionSymbol->getDataType()->getType());
+DataType::ISignature* Function::Function::getSignature() {
+	return m_functionSymbol->getSignature();
 }
 
 int Function::Function::getOffset() {

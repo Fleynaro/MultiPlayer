@@ -26,6 +26,10 @@ namespace CE::Symbol
 			return m_function;
 		}
 
+		DataType::ISignature* getSignature() {
+			return dynamic_cast<DataType::ISignature*>(getDataType()->getType());
+		}
+
 		void setFunction(Function::Function* function) {
 			m_function = function;
 		}

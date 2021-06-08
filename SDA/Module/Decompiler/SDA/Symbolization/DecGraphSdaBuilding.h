@@ -14,7 +14,6 @@ namespace CE::Decompiler::Symbolization
 		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
 		std::set<CE::Symbol::ISymbol*> m_newAutoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
 		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols; // defined by user (e.g. playerObj)
-		std::map<HS::Value, std::shared_ptr<SdaFunctionNode::TypeContext>> m_funcTypeContexts; //for cache purposes
 	public:
 
 		SdaBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory, Signature::CallingConvetion callingConvention = Signature::FASTCALL)
@@ -56,30 +55,7 @@ namespace CE::Decompiler::Symbolization
 
 		// build high-level sda analog of low-level function node
 		SdaFunctionNode* buildSdaFunctionNode(FunctionCall* funcCall) {
-			std::shared_ptr<SdaFunctionNode::TypeContext> typeContext;
-			/*
-				TODO:
-				1. Унаследовать от IMemorySymbol от FunctionSymbol(он должен содержать функцию) => будет создаваться SdaMemSymbolLeaf => будет учитываться offset
-				2. Для виртуальных вызовов вычислять обычный хеш(или не вычислять вообще!)
-				То есть лучше не по хешу, а по оффсету (но в общем случае dst - выражение, а не число)
-			*/
-			auto keyHash = funcCall->getDestination()->getHash().getHashValue();
-			auto it = m_funcTypeContexts.find(keyHash);
-			if (true || it == m_funcTypeContexts.end()) {
-				std::vector<DataTypePtr> paramTypes;
-				DataTypePtr returnType;
-				for (auto paramNode : funcCall->getParamNodes()) {
-					paramTypes.push_back(m_dataTypeFactory->getDefaultType(paramNode->getSize()));
-				}
-				returnType = m_dataTypeFactory->getDefaultType(funcCall->getSize());
-				typeContext = std::make_shared<SdaFunctionNode::TypeContext>(paramTypes, returnType);
-				m_funcTypeContexts[keyHash] = typeContext;
-			}
-			else {
-				typeContext = it->second;
-			}
-
-			return new SdaFunctionNode(funcCall, typeContext);
+			return new SdaFunctionNode(funcCall);
 		}
 
 		// build high-level sda analog of low-level number leaf

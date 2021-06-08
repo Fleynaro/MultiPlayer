@@ -11,9 +11,9 @@ namespace CE::Symbol
 	class FuncParameterSymbol : public AbstractSymbol, public IMemorySymbol
 	{
 		int m_paramIdx;
-		DataType::Signature* m_signature;
+		DataType::ISignature* m_signature;
 	public:
-		FuncParameterSymbol(int paramIdx, DataType::Signature* signature, DataTypePtr type, const std::string& name, const std::string& comment = "")
+		FuncParameterSymbol(int paramIdx, DataType::ISignature* signature, DataTypePtr type, const std::string& name, const std::string& comment = "")
 			: m_paramIdx(paramIdx), m_signature(signature), AbstractSymbol(type, name, comment)
 		{}
 
@@ -35,7 +35,7 @@ namespace CE::Symbol
 			return Decompiler::Storage();
 		}
 
-		void setFuncSignature(DataType::Signature* signature) {
+		void setFuncSignature(DataType::ISignature* signature) {
 			m_signature = signature;
 		}
 	};

@@ -4,7 +4,7 @@
 
 namespace CE::Decompiler
 {
-	class PrimaryDecompiler
+	class AbstractPrimaryDecompiler
 	{
 	protected:
 		struct DecompiledBlockInfo {
@@ -31,14 +31,13 @@ namespace CE::Decompiler
 
 		DecompiledCodeGraph* m_decompiledGraph;
 		ReturnInfo m_returnInfo;
-		std::function<FunctionCallInfo(int, ExprTree::INode*)> m_funcCallInfoCallback;
 		std::map<PCodeBlock*, DecompiledBlockInfo> m_decompiledBlocks;
 
-		PrimaryDecompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, ReturnInfo returnInfo, std::function<FunctionCallInfo(int, ExprTree::INode*)> funcCallInfoCallback)
-			: m_decompiledGraph(decompiledGraph), m_registerFactory(registerFactory), m_returnInfo(returnInfo), m_funcCallInfoCallback(funcCallInfoCallback)
+		AbstractPrimaryDecompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, ReturnInfo returnInfo)
+			: m_decompiledGraph(decompiledGraph), m_registerFactory(registerFactory), m_returnInfo(returnInfo)
 		{}
 
-		~PrimaryDecompiler() {
+		~AbstractPrimaryDecompiler() {
 			for (auto& pair : m_decompiledBlocks) {
 				auto& decBlockInfo = pair.second;
 				delete decBlockInfo.m_execCtx;
@@ -90,13 +89,19 @@ namespace CE::Decompiler
 			return m_registerFactory;
 		}
 
-	protected:
-		virtual void onInstructionHandled(DecompiledBlockInfo& blockInfo, PCode::Instruction* instr) {
-
+		FunctionCallInfo requestFunctionCallInfo(ExecContext* ctx, PCode::Instruction* instr) {
+			int funcOffset = 0;
+			auto& constValues = m_decompiledGraph->getFuncGraph()->getConstValues();
+			auto it = constValues.find(instr);
+			if (it != constValues.end())
+				funcOffset = (int)it->second;
+			return requestFunctionCallInfo(ctx, instr, funcOffset);
 		}
 
-		virtual void onFinal() {
+	protected:
+		virtual FunctionCallInfo requestFunctionCallInfo(ExecContext* ctx, PCode::Instruction* instr, int dstLocOffset) = 0;
 
+		virtual void onFinal() {
 		}
 
 	private:
@@ -116,7 +121,6 @@ namespace CE::Decompiler
 				PCode::InstructionInterpreter instructionInterpreter(this, blockInfo.m_decBlock, blockInfo.m_execCtx);
 				for (auto instr : pcodeBlock->getInstructions()) {
 					instructionInterpreter.execute(instr);
-					onInstructionHandled(blockInfo, instr);
 				}
 
 				auto hasAlreadyDecompiled = blockInfo.m_isDecompiled;
@@ -155,6 +159,23 @@ namespace CE::Decompiler
 					decBlockInfo.m_decBlock->setNextFarBlock(m_decompiledBlocks[nextPCodeBlock].m_decBlock);
 				}
 			}
+		}
+	};
+
+	class PrimaryDecompiler : public AbstractPrimaryDecompiler
+	{
+	public:
+		using FuncCallInfoCallbackType = std::function<FunctionCallInfo(PCode::Instruction*, int)>;
+	private:
+		FuncCallInfoCallbackType m_funcCallInfoCallback;
+	public:
+		PrimaryDecompiler(DecompiledCodeGraph* decompiledGraph, AbstractRegisterFactory* registerFactory, ReturnInfo returnInfo, FuncCallInfoCallbackType funcCallInfoCallback)
+			: AbstractPrimaryDecompiler(decompiledGraph, registerFactory, returnInfo), m_funcCallInfoCallback(funcCallInfoCallback)
+		{}
+
+	protected:
+		FunctionCallInfo requestFunctionCallInfo(ExecContext* ctx, PCode::Instruction* instr, int funcOffset) override {
+			return m_funcCallInfoCallback(instr, funcOffset);
 		}
 	};
 };

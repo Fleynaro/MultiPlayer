@@ -14,6 +14,8 @@ namespace CE
 				FASTCALL
 			};
 
+			virtual bool isAuto() = 0;
+
 			virtual CallingConvetion getCallingConvetion() = 0;
 
 			virtual std::list<std::pair<int, Decompiler::Storage>>& getCustomStorages() = 0;
@@ -48,6 +50,14 @@ namespace CE
 
 			std::string getDisplayName() override;
 
+			bool isAuto() override {
+				return m_isAuto;
+			}
+
+			void setAuto(bool toggle) {
+				m_isAuto = toggle;
+			}
+
 			CallingConvetion getCallingConvetion() override;
 
 			std::list<std::pair<int, Decompiler::Storage>>& getCustomStorages() override;
@@ -71,6 +81,7 @@ namespace CE
 			Decompiler::FunctionCallInfo getCallInfo() override;
 
 		private:
+			bool m_isAuto = false;
 			CallingConvetion m_callingConvetion;
 			std::list<Decompiler::ParameterInfo> m_paramInfos;
 			bool m_hasSignatureUpdated = false;

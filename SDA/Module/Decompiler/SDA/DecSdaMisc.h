@@ -12,7 +12,7 @@ namespace CE::Decompiler::Symbolization
 
 	struct UserSymbolDef {
 		CE::ProgramModule* m_programModule;
-		Signature* m_signature = nullptr;
+		ISignature* m_signature = nullptr;
 		CE::Symbol::SymbolTable* m_globalSymbolTable = nullptr;
 		CE::Symbol::SymbolTable* m_stackSymbolTable = nullptr;
 		CE::Symbol::SymbolTable* m_funcBodySymbolTable = nullptr;

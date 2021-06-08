@@ -26,12 +26,12 @@ namespace CE::Decompiler
 			ExprTree::INode* m_expr = nullptr;
 		};
 
-		PrimaryDecompiler* m_decompiler;
+		AbstractPrimaryDecompiler* m_decompiler;
 		std::map<PCode::RegisterId, std::list<RegisterInfo>> m_registers;
 		ExecContext* m_execContext;
 		bool m_isFilled = false;
 
-		RegisterExecContext(PrimaryDecompiler* decompiler, ExecContext* execContext)
+		RegisterExecContext(AbstractPrimaryDecompiler* decompiler, ExecContext* execContext)
 			: m_decompiler(decompiler), m_execContext(execContext)
 		{}
 
@@ -164,7 +164,7 @@ namespace CE::Decompiler
 		RegisterExecContext m_registerExecCtx; // state during decompiling and after
 		PCodeBlock* m_pcodeBlock; // need as a key only
 
-		ExecContext(PrimaryDecompiler* decompiler, PCodeBlock* pcodeBlock = nullptr)
+		ExecContext(AbstractPrimaryDecompiler* decompiler, PCodeBlock* pcodeBlock = nullptr)
 			: m_startRegisterExecCtx(decompiler, this), m_registerExecCtx(m_startRegisterExecCtx), m_pcodeBlock(pcodeBlock)
 		{}
 

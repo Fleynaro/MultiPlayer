@@ -254,29 +254,7 @@ namespace CE::Decompiler::Symbolization
 				cast(addrSdaNode, defPtrDataType);
 			}
 			else if (auto sdaFunctionNode = dynamic_cast<SdaFunctionNode*>(sdaNode)) {
-				// example: (world->vtable->func_get_player)(player_id) where {world->vtable->func_get_player} has a signature type calculated through the step of goar building
-				if (auto dstCastNode = dynamic_cast<ISdaNode*>(sdaFunctionNode->getDestination())) {
-					if (auto signature = dynamic_cast<DataType::ISignature*>(dstCastNode->getDataType()->getType())) {
-						if (!sdaFunctionNode->getSignature()) {
-							// assign a signature that calculated in function destination (world->vtable->func_get_player)
-							sdaFunctionNode->setSignature(signature);
-						}
-					}
-				}
-
-				// cast {player_id} to int type if it has float type
-				int paramIdx = 1;
-				for (auto paramNode : sdaFunctionNode->getParamNodes()) {
-					if (auto paramSdaNode = dynamic_cast<ISdaNode*>(paramNode)) {
-						auto paramNodeDataType = paramSdaNode->getDataType();
-						sdaFunctionNode->getTypeContext()->setParamDataTypeWithPriority(paramIdx, paramNodeDataType);
-						if (sdaFunctionNode->getSignature()) {
-							auto paramNodeProperDataType = sdaFunctionNode->getParamDataType(paramIdx);
-							cast(paramSdaNode, paramNodeProperDataType);
-						}
-					}
-					paramIdx++;
-				}
+				handleFunctionNode(sdaFunctionNode);
 			}
 			else if (auto sdaSymbolLeaf = dynamic_cast<SdaSymbolLeaf*>(sdaNode)) {
 				// example: *(float*)(param1) where <param1> is <float*>
@@ -306,6 +284,36 @@ namespace CE::Decompiler::Symbolization
 			}
 			else if (auto unknownLocation = dynamic_cast<UnknownLocation*>(sdaNode)) {
 				handleUnknownLocation(unknownLocation);
+			}
+		}
+
+		virtual void handleFunctionNode(SdaFunctionNode* sdaFunctionNode) {
+			auto funcSignature = sdaFunctionNode->getSignature();
+			if (funcSignature)
+			{
+				// iterate over all params of the signature
+				auto paramsCount = (int)min(funcSignature->getParameters().size(), sdaFunctionNode->getParamNodes().size());
+				for (int paramIdx = 0; paramIdx < paramsCount; paramIdx++) {
+					auto paramNode = sdaFunctionNode->getParamNodes()[paramIdx];
+					if (auto paramSdaNode = dynamic_cast<ISdaNode*>(paramNode)) {
+						auto funcParamSymbol = funcSignature->getParameters()[paramIdx];
+						auto sigDataType = funcParamSymbol->getDataType();
+						auto nodeDataType = paramSdaNode->getDataType();
+
+						// or a type of the node, or a type of the sig parameter
+						if (funcParamSymbol->isAutoSymbol() && nodeDataType->getPriority() > sigDataType->getPriority()) {
+							// change a type of the parameter symbol
+							funcParamSymbol->setDataType(nodeDataType);
+							onDataTypeCasting(sigDataType, nodeDataType);
+						}
+						else {
+							if (nodeDataType->getPriority() < sigDataType->getPriority()) {
+								cast(paramSdaNode, sigDataType);
+							}
+						}
+					}
+					paramIdx++;
+				}
 			}
 		}
 

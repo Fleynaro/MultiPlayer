@@ -320,16 +320,9 @@ void InstructionInterpreter::execute(Instruction* instr) {
 	case InstructionId::CALLIND:
 	{
 		auto dstLocExpr = requestVarnode(m_instr->m_input0);
-
-		int dstLocOffset = 0;
-		auto& constValues = m_block->m_decompiledGraph->getFuncGraph()->getConstValues();
-		auto it = constValues.find(m_instr);
-		if (it != constValues.end())
-			dstLocOffset = (int)it->second;
-
-		auto funcCallInfo = m_decompiler->m_funcCallInfoCallback(dstLocOffset, dstLocExpr);
 		auto funcCallCtx = new ExprTree::FunctionCall(dstLocExpr, m_instr);
 
+		auto funcCallInfo = m_decompiler->requestFunctionCallInfo(m_ctx, m_instr);
 		for (int paramIdx = 1; paramIdx <= 100; paramIdx++) {
 			auto paramInfo = funcCallInfo.findParamInfoByIndex(paramIdx);
 			if (paramInfo.m_storage.getType() != Storage::STORAGE_NONE) {

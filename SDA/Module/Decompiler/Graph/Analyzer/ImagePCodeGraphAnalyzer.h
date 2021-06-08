@@ -67,19 +67,26 @@ namespace CE::Decompiler
 		class RawSignatureOwner : public DataType::Type, public DataType::ISignature
 		{
 		public:
+			struct ReturnValueStatInfo {
+				Register m_register;
+				int m_score = 0;
+				int m_meetMarkesCount = 0;
+				int m_totalMarkesCount = 0;
+			};
+
 			class RawSignature : public DataType::Signature
 			{
 			public:
+				ReturnValueStatInfo m_retValStatInfo;
 				std::list<RawSignatureOwner*> m_owners;
 				std::list<Function::Function*> m_functions;
+				
 
 				RawSignature(RawSignatureOwner* owner)
 					: DataType::Signature("raw-signature")
 				{
 					m_owners.push_back(owner);
 				}
-
-
 			};
 
 			RawSignature* m_rawSignature;
@@ -121,6 +128,10 @@ namespace CE::Decompiler
 
 			bool isUserDefined() override {
 				return false;
+			}
+
+			bool isAuto() override {
+				return true;
 			}
 
 			std::string getDisplayName() override {
@@ -235,19 +246,24 @@ namespace CE::Decompiler
 				}
 			}
 
-			/*void handleFunctionNode(SdaFunctionNode* sdaFunctionNode) override {
+			void handleFunctionNode(SdaFunctionNode* sdaFunctionNode) override {
+				Symbolization::SdaDataTypesCalculater::handleFunctionNode(sdaFunctionNode);
+
 				if (auto dstCastNode = dynamic_cast<ISdaNode*>(sdaFunctionNode->getDestination())) {
 					if (auto sdaMemSymbolLeaf = dynamic_cast<SdaMemSymbolLeaf*>(dstCastNode)) {
 						if (auto funcSymbol = dynamic_cast<CE::Symbol::FunctionSymbol*>(sdaMemSymbolLeaf->getSdaSymbol())) {
+							// if it is a non-virtual function call
 							return;
 						}
 					}
 
-					if (auto rawSignature = dynamic_cast<RawSignatureOwner*>(dstCastNode->getDataType()->getType())) {
-						
+					if (auto rawSigOwner = dynamic_cast<RawSignatureOwner*>(dstCastNode->getDataType()->getType())) {
+						auto funcCallOffset = sdaFunctionNode->getCallInstrOffset();
+						m_imagePCodeGraphAnalyzer->m_virtFuncCallOffsetToSig.insert(std::pair(funcCallOffset, rawSigOwner));
+						m_imagePCodeGraphAnalyzer->m_nextPassRequired = true;
 					}
 				}
-			}*/
+			}
 
 			void handleUnknownLocation(UnknownLocation* unknownLoc) override {
 				// define fields of structures using the parent node: SdaReadValueNode
@@ -283,43 +299,88 @@ namespace CE::Decompiler
 				auto dataType1 = fromDataType;
 				auto dataType2 = toDataType;
 
-				if (dataType1->getGroup() == DataType::Type::Signature && dataType2->getGroup() == DataType::Type::Signature)
-				{
-
+				if (auto rawSigOwner1 = dynamic_cast<RawSignatureOwner*>(dataType1->getType())) {
+					if (auto rawSigOwner2 = dynamic_cast<RawSignatureOwner*>(dataType2->getType())) {
+						rawSigOwner1->merge(rawSigOwner2);
+					}
 				}
 			}
 		};
 
-		class PrimaryDecompilerForAnalysis : public PrimaryDecompiler
+		class PrimaryDecompilerForReturnVal : public AbstractPrimaryDecompiler
 		{
 			class MarkerNode : public Node
 			{
 			public:
-				MarkerNode()
-				{}
+				Register m_register;
+				RawSignatureOwner* m_rawSigOwner;
+				bool m_hasMeet = false;
+
+				MarkerNode(Register reg, RawSignatureOwner* rawSigOwner)
+					: m_register(reg), m_rawSigOwner(rawSigOwner)
+				{
+					rawSigOwner->m_rawSignature->m_retValStatInfo.m_totalMarkesCount++;
+				}
+
+				void meet() {
+					if (!m_hasMeet) {
+						m_rawSigOwner->m_rawSignature->m_retValStatInfo.m_meetMarkesCount++;
+						m_hasMeet = true;
+					}
+				}
+
+				HS getHash() override {
+					return HS()
+						<< (uint64_t)m_rawSigOwner;
+				}
+
+				int getSize() override {
+					return m_register.getSize();
+				}
+
+				INode* clone(NodeCloneContext* ctx) override {
+					return new MarkerNode(m_register, m_rawSigOwner);
+				}
 			};
 
 			ImagePCodeGraphAnalyzer* m_imagePCodeGraphAnalyzer = nullptr;
 		public:
-			using PrimaryDecompiler::PrimaryDecompiler;
+			using AbstractPrimaryDecompiler::AbstractPrimaryDecompiler;
 
 			void setImagePCodeGraphAnalyzer(ImagePCodeGraphAnalyzer* imagePCodeGraphAnalyzer) {
 				m_imagePCodeGraphAnalyzer = imagePCodeGraphAnalyzer;
 			}
-		protected:
-			void onInstructionHandled(DecompiledBlockInfo& blockInfo, PCode::Instruction* instr) override {
-				if (instr->m_id == PCode::InstructionId::CALL || instr->m_id == PCode::InstructionId::CALLIND) {
-					auto& constValues = m_decompiledGraph->getFuncGraph()->getConstValues();
-					auto it = constValues.find(instr);
-					if (it != constValues.end()) {
-						auto dstLocOffset = (int)it->second;
 
+		private:
+			FunctionCallInfo requestFunctionCallInfo(ExecContext* ctx, PCode::Instruction* instr, int funcOffset) override {
+				auto rawSigOwner = m_imagePCodeGraphAnalyzer->getRawSignatureOwner(instr, funcOffset);
+				if (rawSigOwner) {
+					auto& retValStatInfo = rawSigOwner->m_rawSignature->m_retValStatInfo;
+					if (retValStatInfo.m_score > 0) {
+						auto& reg = retValStatInfo.m_register;
+						auto markerNode = new MarkerNode(reg, rawSigOwner);
+						ctx->m_registerExecCtx.setRegister(reg, markerNode);
+					}
+				}
+					
+				return FunctionCallInfo({});
+			}
+			
+			void onFinal() {
+				// find marker nodes
+				for (const auto decBlock : m_decompiledGraph->getDecompiledBlocks()) {
+					for (auto topNode : decBlock->getAllTopNodes()) {
+						findMarkerNodes(topNode->getNode());
 					}
 				}
 			}
 
-			void onFinal() {
-
+			void findMarkerNodes(INode* node) {
+				node->iterateChildNodes([&](INode* childNode) {
+					findMarkerNodes(childNode);
+					});
+				if(auto markerNode = dynamic_cast<MarkerNode*>(node))
+					markerNode->meet();
 			}
 		};
 
@@ -331,6 +392,9 @@ namespace CE::Decompiler
 		CE::Symbol::SymbolTable* m_globalSymbolTable;
 		std::list<RawStructureOwner*> m_rawStructures;
 	public:
+		std::map<int64_t, RawSignatureOwner*> m_funcOffsetToSig;
+		std::map<int64_t, RawSignatureOwner*> m_virtFuncCallOffsetToSig;
+
 		ImagePCodeGraphAnalyzer(ProgramGraph* programGraph, CE::ProgramModule* programModule, AbstractRegisterFactory* registerFactory, PCodeGraphReferenceSearch* graphReferenceSearch = nullptr)
 			: m_programGraph(programGraph), m_programModule(programModule), m_registerFactory(registerFactory), m_dataTypeFactory(programModule), m_graphReferenceSearch(graphReferenceSearch)
 		{
@@ -343,31 +407,46 @@ namespace CE::Decompiler
 			2) Сделать 2 итерации по 2 прохода(1 - retValue, 2 - типы и структуры) графа программы сначала без виртуальных вызовов, потом с вирт. вызовами.
 			3) Реализовать getAllFuncCalls = getNonVirtFuncCalls + getVirtFuncCalls
 
-			TODO 05.06.21:
-			1) Создание функций
-			2) Создание raw-сигнатур и их привязыка к не вирт. функциям
-			3) Создание 2-х карт с raw-сигнатурами, одну из которых заполнить сразу
-			4) 
+			TODO 08.06.21:
+			1) виртуальные вызовы добавить в граф
 		*/
 
 		void start() {
 			createNewFunctions();
+			createVTables();
 
-			for (auto headFuncGraph : m_programGraph->getImagePCodeGraph()->getHeadFuncGraphs()) {
-				std::set<FunctionPCodeGraph*> visitedGraphs;
-				doPassToDefineReturnValues(headFuncGraph, visitedGraphs);
-				visitedGraphs.clear();
-				doPassToFindStructures(headFuncGraph, visitedGraphs);
+			while (m_nextPassRequired) {
+				for (auto headFuncGraph : m_programGraph->getImagePCodeGraph()->getHeadFuncGraphs()) {
+					std::set<FunctionPCodeGraph*> visitedGraphs;
+					doPassToDefineReturnValues(headFuncGraph, visitedGraphs);
+					
+					visitedGraphs.clear();
+					doMainPass(headFuncGraph, visitedGraphs);
+
+					changeFunctionSignaturesByRetValStat();
+				}
 			}
 		}
 
 	private:
-		struct ReturnValueStatInfo {
-			Register m_register;
-			int m_score;
-		};
-		std::map<FunctionPCodeGraph*, std::list<ReturnValueStatInfo>> m_retValueScores;
 		std::list<Function::Function*> m_newFunctions;
+		bool m_nextPassRequired = false;
+
+		void changeFunctionSignaturesByRetValStat() {
+			for (auto& pair : m_funcOffsetToSig) {
+				auto rawSigOwner = pair.second;
+				auto& retValStatInfo = rawSigOwner->m_rawSignature->m_retValStatInfo;
+				// need to define if the return value from a function call requested somewhere
+				retValStatInfo.m_score += retValStatInfo.m_meetMarkesCount * 5 / retValStatInfo.m_totalMarkesCount;
+				
+				if (retValStatInfo.m_score >= 2) {
+					auto retType = m_dataTypeFactory.getDefaultType(retValStatInfo.m_register.getSize());
+					rawSigOwner->setReturnType(retType);
+				}
+
+				retValStatInfo.m_score = 0;
+			}
+		}
 
 		void doPassToDefineReturnValues(FunctionPCodeGraph* funcGraph, std::set<FunctionPCodeGraph*>& visitedGraphs) {
 			visitedGraphs.insert(funcGraph);
@@ -375,9 +454,18 @@ namespace CE::Decompiler
 				if(visitedGraphs.find(nextFuncGraph) == visitedGraphs.end())
 					doPassToDefineReturnValues(nextFuncGraph, visitedGraphs);
 
+			auto funcOffset = funcGraph->getStartBlock()->getMinOffset() >> 8;
+			auto it = m_funcOffsetToSig.find(funcOffset);
+			if (it == m_funcOffsetToSig.end())
+				throw std::logic_error("no signature");
+			auto funcSigOwner = it->second;
+			// we interest function signatures without return type (void). In the next pass some of signatures will acquire a return type
+			if (funcSigOwner->getReturnType()->getSize() != 0)
+				return;
+
 			DecompiledCodeGraph decompiledCodeGraph(funcGraph);
 			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
-			auto decompiler = PrimaryDecompilerForAnalysis(&decompiledCodeGraph, m_registerFactory, ReturnInfo(), funcCallInfoCallback);
+			auto decompiler = PrimaryDecompilerForReturnVal(&decompiledCodeGraph, m_registerFactory, ReturnInfo());
 			decompiler.setImagePCodeGraphAnalyzer(this);
 			decompiler.start();
 
@@ -392,7 +480,7 @@ namespace CE::Decompiler
 
 			// iterate over all return registers within {execContext}
 			auto retRegIds = { ZYDIS_REGISTER_RAX << 8, ZYDIS_REGISTER_ZMM0 << 8 };
-			std::list<ReturnValueStatInfo> retValueScores;
+			RawSignatureOwner::ReturnValueStatInfo resultRetValueStatInfo;
 			for (auto regId : retRegIds) {
 				auto& registers = execContext.m_registerExecCtx.m_registers;
 				auto it = registers.find(regId);
@@ -412,7 +500,7 @@ namespace CE::Decompiler
 
 				// give scores to the register
 				if (minRegInfo) {
-					ReturnValueStatInfo retValueStatInfo;
+					RawSignatureOwner::ReturnValueStatInfo retValueStatInfo;
 					retValueStatInfo.m_register = minRegInfo->m_register;
 					switch (minRegInfo->m_using)
 					{
@@ -426,21 +514,28 @@ namespace CE::Decompiler
 						retValueStatInfo.m_score += 1;
 						break;
 					}
-					retValueScores.push_back(retValueStatInfo);
+
+					if (resultRetValueStatInfo.m_score < retValueStatInfo.m_score)
+						resultRetValueStatInfo = retValueStatInfo;
 				}
 			}
-
-			m_retValueScores[funcGraph] = retValueScores;
+			// set register with the biggest score
+			funcSigOwner->m_rawSignature->m_retValStatInfo = resultRetValueStatInfo;
 		}
 
-		void doPassToFindStructures(FunctionPCodeGraph* funcGraph, std::set<FunctionPCodeGraph*>& visitedGraphs) {
+		void doMainPass(FunctionPCodeGraph* funcGraph, std::set<FunctionPCodeGraph*>& visitedGraphs) {
 			visitedGraphs.insert(funcGraph);
 			for (auto nextFuncGraph : funcGraph->getNonVirtFuncCalls())
 				if (visitedGraphs.find(nextFuncGraph) == visitedGraphs.end())
 					doPassToDefineReturnValues(nextFuncGraph, visitedGraphs);
 
 
-			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
+			auto funcCallInfoCallback = [&](PCode::Instruction* instr, int funcOffset) {
+				auto rawSigOwner = getRawSignatureOwner(instr, funcOffset);
+				if (rawSigOwner)
+					return rawSigOwner->getCallInfo();
+				return FunctionCallInfo({});
+			};
 			auto decompiler = CE::Decompiler::Decompiler(funcGraph, funcCallInfoCallback, ReturnInfo(), m_registerFactory);
 			decompiler.start();
 
@@ -453,10 +548,10 @@ namespace CE::Decompiler
 			userSymbolDef.m_stackSymbolTable = new CE::Symbol::SymbolTable(m_programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
 			userSymbolDef.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(m_programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
 
-			auto funcOffset = funcGraph->getStartBlock()->getMinOffset();
-			auto pair = m_globalSymbolTable->getSymbolAt(funcOffset);
-			if(auto funcSymbol = dynamic_cast<CE::Symbol::FunctionSymbol*>(pair.second))
-				userSymbolDef.m_signature = funcSymbol->getFunction()->getSignature();
+			auto funcOffset = funcGraph->getStartBlock()->getMinOffset() >> 8;
+			auto it = m_funcOffsetToSig.find(funcOffset);
+			if (it != m_funcOffsetToSig.end())
+				userSymbolDef.m_signature = it->second->m_rawSignature;
 			if (!userSymbolDef.m_signature)
 				throw std::logic_error("no signature");
 
@@ -491,6 +586,7 @@ namespace CE::Decompiler
 				delete symbol;
 			}
 
+			// fill the signature with new params that have been found
 			if (!userSymbolDef.m_signature->getParameters().empty()) {
 				// no new params appeared during second and next pass
 				for (int i = 1; i < 100 && funcParamSymbols.empty(); i++) {
@@ -513,14 +609,51 @@ namespace CE::Decompiler
 
 		}
 
+		// find func. signature for the function call (virt. or non-virt.)
+		RawSignatureOwner* getRawSignatureOwner(PCode::Instruction* instr, int funcOffset) {
+			if (funcOffset != 0) {
+				// if it is a non-virt. call
+				auto it = m_funcOffsetToSig.find(funcOffset);
+				if (it != m_funcOffsetToSig.end())
+					return it->second;
+				return nullptr;
+			}
+			// if it is a virt. call
+			auto it = m_virtFuncCallOffsetToSig.find(instr->getOffset());
+			if (it != m_virtFuncCallOffsetToSig.end())
+				return it->second;
+			return nullptr;
+		}
+
+		// create new functions for all pcode func. graphs
 		void createNewFunctions() {
 			for (auto funcGraph : m_programGraph->getImagePCodeGraph()->getFunctionGraphList()) {
 				auto rawSignature = new RawSignatureOwner();
-				auto funcOffset = funcGraph->getStartBlock()->getMinOffset();
+				auto funcOffset = funcGraph->getStartBlock()->getMinOffset() >> 8;
+				m_funcOffsetToSig[funcOffset] = rawSignature;
 				auto funcSymbol = new CE::Symbol::FunctionSymbol(funcOffset, DataType::GetUnit(rawSignature), "func");
 				m_globalSymbolTable->addSymbol(funcSymbol, funcOffset);
 				auto function = new Function::Function(funcSymbol, funcGraph);
+				rawSignature->m_rawSignature->m_functions.push_back(function);
 				m_newFunctions.push_back(function);
+			}
+		}
+
+		// create vtables that have been found during reference search
+		void createVTables() {
+			for (const auto& vtable : m_graphReferenceSearch->m_vtables) {
+				auto rawStructure = new RawStructureOwner();
+				// fill the structure with virtual functions
+				int offset = 0;
+				for (auto funcOffset : vtable.m_funcOffsets) {
+					auto it = m_funcOffsetToSig.find(funcOffset);
+					if (it != m_funcOffsetToSig.end())
+						rawStructure->m_fields[offset] = DataType::GetUnit(it->second->m_rawSignature, "[1]");
+					offset += 0x8;
+				}
+				// add global var for vtable
+				auto vtableVarSymbol = new CE::Symbol::GlobalVarSymbol(vtable.m_offset, DataType::GetUnit(rawStructure), "vtable");
+				m_globalSymbolTable->addSymbol(vtableVarSymbol, vtable.m_offset);
 			}
 		}
 	};
