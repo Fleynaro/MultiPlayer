@@ -33,6 +33,7 @@ namespace CE::Decompiler
 
 	class ImagePCodeGraphAnalyzer
 	{
+		// it owns raw-structure that can be changed by another during the main pass
 		class RawStructureOwner : public DataType::Type
 		{
 		public:
@@ -43,12 +44,13 @@ namespace CE::Decompiler
 					int64_t m_offset;
 					DataTypePtr m_dataType;
 					bool m_isArray = false;
+					// todo: add stat info like "instr. offset to datatype"
 				};
 
 				std::map<int64_t, Field> m_fields;
-				std::set<int64_t> m_arrayBegins;
 				std::list<RawStructureOwner*> m_owners;
 
+				// for hierarchy
 				RawStructure* m_parentRawStructure = nullptr;
 				std::list<RawStructure*> m_childRawStructures;
 
@@ -775,7 +777,7 @@ namespace CE::Decompiler
 				}
 				// add global var for vtable
 				auto vtableVarSymbol = new CE::Symbol::GlobalVarSymbol(vtable.m_offset, DataType::GetUnit(rawStructOwner), "vtable");
-				m_globalSymbolTable->addSymbol(vtableVarSymbol, vtable.m_offset);
+				m_globalSymbolTable->addSymbol(vtableVarSymbol, vtable.m_offset); // todo: intersecting might be
 			}
 		}
 
