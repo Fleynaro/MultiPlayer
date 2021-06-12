@@ -28,6 +28,12 @@ Symbol::FuncParameterSymbol* SymbolManager::Factory::createFuncParameterSymbol(i
 	return symbol;
 }
 
+Symbol::StructFieldSymbol* SymbolManager::Factory::createStructFieldSymbol(int absBitOffset, int bitSize, DataType::IStructure* structure, DataTypePtr type, const std::string& name, const std::string& comment) {
+	auto symbol = new Symbol::StructFieldSymbol(m_symbolManager, structure, type, absBitOffset, bitSize, name, comment);
+	bind(symbol);
+	return symbol;
+}
+
 Symbol::FunctionSymbol* SymbolManager::Factory::createFunctionSymbol(int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "") {
 	auto symbol = new Symbol::FunctionSymbol(m_symbolManager, offset, type, name, comment);
 	bind(symbol);

@@ -1,50 +1,15 @@
 #include "Structure.h"
 #include <Manager/TypeManager.h>
+#include <Manager/SymbolManager.h>
 
 using namespace CE;
 using namespace CE::DataType;
 
-Structure::Field::Field(Structure* structure, const std::string& name, DataTypePtr type, int absBitOffset, int bitSize, const std::string& comment)
-	: m_structure(structure), m_absBitOffset(absBitOffset), m_bitSize(bitSize), Descrtiption(name, comment)
+CE::DataType::Structure::Structure(TypeManager* typeManager, const std::string& name, const std::string& comment)
+	: UserType(typeManager, name, comment)
 {
-	setDataType(type);
-}
-
-int Structure::Field::getBitSize() {
-	return m_bitSize;
-}
-
-int Structure::Field::getAbsBitOffset() {
-	return m_absBitOffset;
-}
-
-int Structure::Field::getBitOffset() {
-	return m_absBitOffset - getOffset() * 0x8;
-}
-
-int Structure::Field::getSize() {
-	return m_type->getSize();
-}
-
-int Structure::Field::getOffset() {
-	auto byteOffset = m_absBitOffset / 0x8;
-	return byteOffset - (isBitField() ? (byteOffset % getSize()) : 0);
-}
-
-bool Structure::Field::isBitField() {
-	return (m_bitSize % 0x8) != 0 || (m_absBitOffset % 0x8) != 0;
-}
-
-bool Structure::Field::isDefault() {
-	return m_structure->getDefaultField() == this;
-}
-
-void Structure::Field::setDataType(DataTypePtr type) {
-	m_type = type;
-}
-
-DataTypePtr Structure::Field::getDataType() {
-	return m_type;
+	auto factory = typeManager->getProject()->getSymbolManager()->getFactory(false);
+	m_defaultField = factory.createStructFieldSymbol(-1, -1, this, GetUnit(typeManager->getFactory().getDefaultType()), "undefined");
 }
 
 Structure::~Structure() {
@@ -112,13 +77,20 @@ void Structure::addField(int offset, const std::string& name, DataTypePtr type, 
 	addField(offset * 0x8, type->getSize() * 0x8, name, type, desc);
 }
 
-void Structure::addField(int bitOffset, int bitSize, const std::string& name, DataTypePtr type, const std::string& desc) {
-	m_fields.insert(std::make_pair(bitOffset, new Field(this, name, type, bitOffset, bitSize, desc)));
+void Structure::addField(int bitOffset, int bitSize, const std::string& name, DataTypePtr type, const std::string& comment) {
+	auto factory = getTypeManager()->getProject()->getSymbolManager()->getFactory();
+	auto field = factory.createStructFieldSymbol(bitOffset, bitSize, this, type, name, comment);
+	addField(field);
+}
+
+void Structure::addField(Field* field) {
+	field->setStructure(this);
+	m_fields.insert(std::make_pair(field->getAbsBitOffset(), field));
 	m_size = getSizeByLastField();
 }
 
 bool Structure::removeField(Field* field) {
-	removeField(field->m_absBitOffset);
+	removeField(field->getAbsBitOffset());
 }
 
 bool Structure::removeField(int bitOffset) {
@@ -137,16 +109,16 @@ bool Structure::moveField(int bitOffset, int bitsCount) {
 	auto field = it->second;
 
 	if (bitsCount > 0) {
-		if (!areEmptyFields(field->m_absBitOffset + field->getBitSize(), std::abs(bitsCount)))
+		if (!areEmptyFields(field->getAbsBitOffset() + field->getBitSize(), std::abs(bitsCount)))
 			return false;
 	}
 	else {
-		if (!areEmptyFields(field->m_absBitOffset - std::abs(bitsCount), std::abs(bitsCount)))
+		if (!areEmptyFields(field->getAbsBitOffset() - std::abs(bitsCount), std::abs(bitsCount)))
 			return false;
 	}
 
-	moveField_(field->m_absBitOffset, bitsCount);
-	field->m_absBitOffset += bitsCount;
+	moveField_(field->getAbsBitOffset(), bitsCount);
+	field->getAbsBitOffset() += bitsCount;
 	return true;
 }
 
@@ -165,8 +137,8 @@ bool Structure::moveFields(int bitOffset, int bitsCount) {
 	}
 	while (it != end) {
 		auto field = it->second;
-		moveField_(field->m_absBitOffset, bitsCount);
-		field->m_absBitOffset += bitsCount;
+		moveField_(field->getAbsBitOffset(), bitsCount);
+		field->getAbsBitOffset() += bitsCount;
 		if (bitsCount > 0)
 			it--; else it++;
 	}
@@ -177,7 +149,7 @@ Structure::FieldMapType::iterator Structure::getFieldIterator(int bitOffset) {
 	auto it = std::prev(m_fields.upper_bound(bitOffset));
 	if (it != m_fields.end()) {
 		auto field = it->second;
-		if (bitOffset < field->m_absBitOffset + field->getBitSize()) {
+		if (bitOffset < field->getAbsBitOffset() + field->getBitSize()) {
 			return it;
 		}
 	}

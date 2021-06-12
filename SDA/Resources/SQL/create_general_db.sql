@@ -26,7 +26,7 @@ CREATE TABLE "sda_symbols"
 	"type_id"	INTEGER NOT NULL,
 	"pointer_lvl"	TEXT,
 	"comment"	TEXT,
-    "value" INTEGER,
+    "extra_info" TEXT,
 	"save_id"	INTEGER,
 	"ghidra_sync_id"	INTEGER,
 	"deleted"	INTEGER DEFAULT 0

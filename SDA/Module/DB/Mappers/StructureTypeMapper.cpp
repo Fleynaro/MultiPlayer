@@ -1,5 +1,5 @@
 #include "StructureTypeMapper.h"
-#include <Manager/TypeManager.h>
+#include <Manager/SymbolManager.h>
 #include <Code/Type/Structure.h>
 #include <GhidraSync/Mappers/GhidraStructureTypeMapper.h>
 
@@ -37,8 +37,9 @@ void StructureTypeMapper::loadFieldsForStructure(Database* db, CE::DataType::Str
 
 	while (query.executeStep())
 	{
-		auto type = getParentMapper()->getManager()->getProject()->getTypeManager()->findTypeById(query.getColumn("type_id"));
-		structure->addField(query.getColumn("offset"), query.getColumn("name"), DataType::GetUnit(type, query.getColumn("pointer_lvl")));
+		auto symbolManager = getParentMapper()->getManager()->getProject()->getSymbolManager();
+		auto field_symbol = dynamic_cast<CE::Symbol::StructFieldSymbol*>(symbolManager->findSymbolById(query.getColumn("field_symbol_id")));
+		structure->addField(field_symbol);
 	}
 }
 
@@ -52,12 +53,9 @@ void StructureTypeMapper::saveFieldsForStructure(TransactionContext* ctx, CE::Da
 	{
 		for (auto& it : structure->getFields()) {
 			auto field = it.second;
-			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_struct_fields (struct_id, offset, name, type_id, pointer_lvl) VALUES(?1, ?2, ?3, ?4, ?5)");
+			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_struct_fields (struct_id, field_symbol_id) VALUES(?1, ?2)");
 			query.bind(1, structure->getId());
-			query.bind(2, field->getOffset());
-			query.bind(3, field->getName());
-			query.bind(4, field->getDataType()->getId());
-			query.bind(5, DataType::GetPointerLevelStr(field->getDataType()));
+			query.bind(2, field->getId());
 			query.exec();
 		}
 	}

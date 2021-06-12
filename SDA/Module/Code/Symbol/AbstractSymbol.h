@@ -12,7 +12,8 @@ namespace CE
 			GLOBAL_VAR,
 			LOCAL_INSTR_VAR,
 			LOCAL_STACK_VAR,
-			FUNC_PARAMETER
+			FUNC_PARAMETER,
+			STRUCT_FIELD
 		};
 
 		class ISymbol : virtual public IDescription

@@ -245,6 +245,7 @@
     <ClCompile Include="Module\Code\Function\Function.cpp" />
     <ClCompile Include="Module\Code\Symbol\AbstractSymbol.cpp" />
     <ClCompile Include="Module\Code\Symbol\FuncParameterSymbol.cpp" />
+    <ClCompile Include="Module\Code\Symbol\StructFieldSymbol.cpp" />
     <ClCompile Include="Module\Code\Symbol\SymbolTable\SymbolTable.cpp" />
     <ClCompile Include="Module\Code\Type\FunctionSignature.cpp" />
     <ClCompile Include="Module\Code\Type\AbstractType.cpp" />
@@ -349,6 +350,7 @@
     <ClInclude Include="Module\Code\Symbol\FunctionSymbol.h" />
     <ClInclude Include="Module\Code\Symbol\IMemorySymbol.h" />
     <ClInclude Include="Module\Code\Symbol\LocalInstrVarSymbol.h" />
+    <ClInclude Include="Module\Code\Symbol\StructFieldSymbol.h" />
     <ClInclude Include="Module\Code\Symbol\SymbolTable\SymbolTable.h" />
     <ClInclude Include="Module\Code\Symbol\MemorySymbol.h" />
     <ClInclude Include="Module\Code\Symbol\AbstractSymbol.h" />

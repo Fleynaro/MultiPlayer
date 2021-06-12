@@ -1,48 +1,48 @@
 #pragma once
 #include "UserType.h"
+#include <Code/Symbol/StructFieldSymbol.h>
 
 namespace CE::DataType
 {
-	class Structure : public UserType
+	class IStructure
 	{
 	public:
-		class Field : public Descrtiption
-		{
-			friend class Structure;
-		public:
-			Field(Structure* structure, const std::string& name, DataTypePtr type, int absBitOffset, int bitSize, const std::string& comment = "");
-
-			void setDataType(DataTypePtr type);
-
-			DataTypePtr getDataType();
-
-			int getBitSize();
-
-			int getAbsBitOffset();
-
-			int getBitOffset();
-
-			int getSize();
-
-			int getOffset();
-
-			bool isBitField();
-
-			bool isDefault();
-		private:
-			DataTypePtr m_type;
-			int m_bitSize;
-			int m_absBitOffset;
-			Structure* m_structure;
-		};
-
+		using Field = Symbol::StructFieldSymbol;
 		using FieldMapType = std::map<int, Field*>;
 
-		Structure(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
-			: UserType(typeManager, name, comment)
-		{
-			m_defaultField = new Field(this, "undefined", GetUnit(new DataType::Byte), -1, -1);
-		}
+		virtual void resize(int size) = 0;
+
+		virtual int getSizeByLastField() = 0;
+
+		virtual FieldMapType& getFields() = 0;
+
+		virtual int getNextEmptyBitsCount(int bitOffset) = 0;
+
+		virtual bool areEmptyFields(int bitOffset, int bitSize) = 0;
+
+		virtual bool areEmptyFieldsInBytes(int offset, int size) = 0;
+
+		virtual Field* getField(int bitOffset) = 0;
+
+		virtual void addField(int bitOffset, int bitSize, const std::string& name, DataTypePtr type, const std::string& desc = "") = 0;
+
+		virtual void addField(int offset, const std::string& name, DataTypePtr type, const std::string& desc = "") = 0;
+
+		virtual void addField(Field* field) = 0;
+
+		virtual bool removeField(Field* field) = 0;
+
+		virtual bool removeField(int bitOffset) = 0;
+
+		virtual bool moveField(int bitOffset, int bitsCount) = 0;
+
+		virtual bool moveFields(int bitOffset, int bitsCount) = 0;
+	};
+
+	class Structure : public UserType, public IStructure
+	{
+	public:
+		Structure(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
 
 		~Structure();
 
@@ -50,31 +50,33 @@ namespace CE::DataType
 
 		int getSize() override;
 
-		void resize(int size);
+		void resize(int size) override;
 
-		int getSizeByLastField();
+		int getSizeByLastField() override;
 
-		FieldMapType& getFields();
+		FieldMapType& getFields() override;
 
-		int getNextEmptyBitsCount(int bitOffset);
+		int getNextEmptyBitsCount(int bitOffset) override;
 
-		bool areEmptyFields(int bitOffset, int bitSize);
+		bool areEmptyFields(int bitOffset, int bitSize) override;
 
-		bool areEmptyFieldsInBytes(int offset, int size);
+		bool areEmptyFieldsInBytes(int offset, int size) override;
 
-		Field* getField(int bitOffset);
+		Field* getField(int bitOffset) override;
 
-		void addField(int bitOffset, int bitSize, const std::string& name, DataTypePtr type, const std::string& desc = "");
+		void addField(int bitOffset, int bitSize, const std::string& name, DataTypePtr type, const std::string& desc = "") override;
 
-		void addField(int offset, const std::string& name, DataTypePtr type, const std::string& desc = "");
+		void addField(int offset, const std::string& name, DataTypePtr type, const std::string& desc = "") override;
 
-		bool removeField(Field* field);
+		void addField(Field* field) override;
 
-		bool removeField(int bitOffset);
+		bool removeField(Field* field) override;
 
-		bool moveField(int bitOffset, int bitsCount);
+		bool removeField(int bitOffset) override;
 
-		bool moveFields(int bitOffset, int bitsCount);
+		bool moveField(int bitOffset, int bitsCount) override;
+
+		bool moveFields(int bitOffset, int bitsCount) override;
 
 	private:
 		FieldMapType::iterator getFieldIterator(int bitOffset);
