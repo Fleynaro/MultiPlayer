@@ -8,7 +8,11 @@ namespace CE
 		class Typedef : public UserType
 		{
 		public:
-			Typedef(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
+			Typedef(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
+				: UserType(typeManager, name, comment)
+			{
+				m_refType = GetUnit(new DataType::Byte);
+			}
 
 			Group getGroup() override;
 

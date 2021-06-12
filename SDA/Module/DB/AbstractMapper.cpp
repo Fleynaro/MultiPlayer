@@ -13,7 +13,6 @@ void DB::AbstractMapper::load(Database* db, Statement& query) {
 		if (obj != nullptr) {
 			if (m_repository != nullptr)
 				m_repository->onLoaded(obj);
-			obj->setMapper(this);
 		}
 	}
 }

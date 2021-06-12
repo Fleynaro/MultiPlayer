@@ -1,6 +1,7 @@
 #pragma once
 #include "AbstractManager.h"
 #include <Code/Symbol/Symbol.h>
+#include <Manager/TypeManager.h>
 
 namespace DB {
 	class SymbolMapper;
@@ -11,20 +12,39 @@ namespace CE
 	class SymbolManager : public AbstractItemManager
 	{
 	public:
+		class Factory : public AbstractFactory
+		{
+			SymbolManager* m_symbolManager;
+			DB::SymbolMapper* m_symbolMapper;
+		public:
+			Factory(SymbolManager* symbolManager, DB::SymbolMapper* symbolMapper, bool generateId)
+				: m_symbolManager(symbolManager), m_symbolMapper(symbolMapper), AbstractFactory(generateId)
+			{}
+
+			Symbol::FuncParameterSymbol* createFuncParameterSymbol(int paramIdx, DataType::IFunctionSignature* signature, DataTypePtr type, const std::string& name, const std::string& comment = "");
+
+			Symbol::FunctionSymbol* createFunctionSymbol(int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "");
+
+			Symbol::LocalInstrVarSymbol* createLocalInstrVarSymbol(DataTypePtr type, const std::string& name, const std::string& comment = "");
+
+			Symbol::GlobalVarSymbol* createGlobalVarSymbol(int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "");
+
+			Symbol::LocalStackVarSymbol* createLocalStackVarSymbol(int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "");
+		private:
+			void bind(Symbol::AbstractSymbol* symbol);
+		};
+
 		using Iterator = AbstractIterator<Symbol::AbstractSymbol>;
 		
-		SymbolManager(ProgramModule* module);
+		SymbolManager(Project* module);
+
+		Factory getFactory(bool generateId = true);
 
 		void loadSymbols();
 
-		void bind(Symbol::AbstractSymbol* symbol);
-
-		Symbol::FuncParameterSymbol* getDefaultFuncParameterSymbol();
-
-		Symbol::AbstractSymbol* getSymbolById(DB::Id id);
+		Symbol::AbstractSymbol* findSymbolById(DB::Id id);
 
 	private:
-		Symbol::FuncParameterSymbol* m_defaultFuncParameterSymbol;
 		DB::SymbolMapper* m_symbolMapper;
 	};
 };

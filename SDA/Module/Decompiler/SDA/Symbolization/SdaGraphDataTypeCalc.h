@@ -7,10 +7,10 @@ namespace CE::Decompiler::Symbolization
 	//Calculating data types for all nodes and building GOAR structures
 	class SdaDataTypesCalculater : public SdaGraphModification
 	{
-		Signature* m_signature;
+		FunctionSignature* m_signature;
 		DataTypeFactory* m_dataTypeFactory;
 	public:
-		SdaDataTypesCalculater(SdaCodeGraph* sdaCodeGraph, Signature* signature, DataTypeFactory* dataTypeFactory)
+		SdaDataTypesCalculater(SdaCodeGraph* sdaCodeGraph, FunctionSignature* signature, DataTypeFactory* dataTypeFactory)
 			: SdaGraphModification(sdaCodeGraph), m_signature(signature), m_dataTypeFactory(dataTypeFactory)
 		{}
 

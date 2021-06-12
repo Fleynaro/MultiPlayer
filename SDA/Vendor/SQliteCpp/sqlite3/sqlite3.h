@@ -424,7 +424,7 @@ SQLITE_API int sqlite3_exec(
 */
 #define SQLITE_OK           0   /* Successful result */
 /* beginning-of-error-codes */
-#define SQLITE_ERROR        1   /* Generic error */
+#define SQLITE_ERROR        1   /* Helper error */
 #define SQLITE_INTERNAL     2   /* Internal logic error in SQLite */
 #define SQLITE_PERM         3   /* Access permission denied */
 #define SQLITE_ABORT        4   /* Callback routine requested an abort */

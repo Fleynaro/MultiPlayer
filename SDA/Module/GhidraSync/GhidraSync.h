@@ -3,7 +3,7 @@
 #include "GhidraClient.h"
 
 namespace CE {
-	class ProgramModule;
+	class Project;
 };
 
 namespace CE::Ghidra
@@ -13,17 +13,17 @@ namespace CE::Ghidra
 	class Sync
 	{
 	public:
-		Sync(CE::ProgramModule* programModule);
+		Sync(CE::Project* programModule);
 
 		~Sync();
 
-		ProgramModule* getProgramModule();
+		Project* getProject();
 
 		Client* getClient();
 
 		packet::DataSyncPacketManagerServiceClient* getDataSyncPacketManagerServiceClient();
 	private:
-		CE::ProgramModule* m_programModule;
+		CE::Project* m_programModule;
 		Client* m_client;
 		packet::DataSyncPacketManagerServiceClient* m_dataSyncPacketManagerServiceClient;
 	};

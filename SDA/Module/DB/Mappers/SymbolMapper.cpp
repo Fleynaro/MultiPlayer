@@ -12,13 +12,13 @@ SymbolMapper::SymbolMapper(IRepository* repository)
 {}
 
 void SymbolMapper::loadAll() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	Statement query(db, "SELECT * FROM sda_symbols");
 	load(&db, query);
 }
 
 Id SymbolMapper::getNextId() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	return GenerateNextId(&db, "sda_symbols");
 }
 
@@ -31,30 +31,31 @@ IDomainObject* SymbolMapper::doLoad(Database* db, SQLite::Statement& query) {
 	auto type = (Symbol::Type)(int)query.getColumn("type");
 	std::string name = query.getColumn("name");
 	std::string comment = query.getColumn("comment");
+	auto value = (int64_t)query.getColumn("type");
 
-	auto dataType = getManager()->getProgramModule()->getTypeManager()->getTypeById(query.getColumn("type_id"));
-	if (dataType == nullptr) {
-		dataType = getManager()->getProgramModule()->getTypeManager()->getDefaultType();
-	}
+	auto dataType = getManager()->getProject()->getTypeManager()->findTypeById(query.getColumn("type_id"));
+	if (dataType == nullptr)
+		dataType = getManager()->getProject()->getTypeManager()->getFactory().getDefaultType();
 	auto dataTypeUnit = DataType::GetUnit(dataType, query.getColumn("pointer_lvl"));
 
 	AbstractSymbol* symbol = nullptr;
+	auto factory = getManager()->getFactory(false);
 	switch (type)
 	{
 	case FUNCTION:
-		symbol = new FunctionSymbol(getManager(), dataTypeUnit, name, comment);
+		symbol = factory.createFunctionSymbol(value, dataTypeUnit, name, comment);
 		break;
 	case GLOBAL_VAR:
-		symbol = new GlobalVarSymbol(getManager(), -1, dataTypeUnit, name, comment);
+		symbol = factory.createGlobalVarSymbol(value, dataTypeUnit, name, comment);
 		break;
 	case LOCAL_INSTR_VAR:
-		symbol = new LocalInstrVarSymbol(getManager(), dataTypeUnit, name, comment);
+		symbol = factory.createLocalInstrVarSymbol(dataTypeUnit, name, comment);
 		break;
 	case LOCAL_STACK_VAR:
-		symbol = new LocalStackVarSymbol(getManager(), -1, dataTypeUnit, name, comment);
+		symbol = factory.createLocalStackVarSymbol(value, dataTypeUnit, name, comment);
 		break;
 	case FUNC_PARAMETER:
-		symbol = new FuncParameterSymbol(getManager(), dataTypeUnit, name, comment);
+		symbol = factory.createFuncParameterSymbol((int)value, nullptr, dataTypeUnit, name, comment);
 		break;
 	}
 
@@ -68,10 +69,10 @@ void SymbolMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 
 void SymbolMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto symbol = static_cast<AbstractSymbol*>(obj);
-	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_symbols (symbol_id, type, name, type_id, pointer_lvl, comment, save_id, ghidra_sync_id) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, 0)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_symbols (symbol_id, type, name, type_id, pointer_lvl, comment, value, save_id, ghidra_sync_id) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0)");
 	query.bind(1, symbol->getId());
 	bind(query, *symbol);
-	query.bind(7, ctx->m_saveId);
+	query.bind(8, ctx->m_saveId);
 	query.exec();
 }
 
@@ -89,4 +90,11 @@ void SymbolMapper::bind(SQLite::Statement& query, AbstractSymbol& symbol) {
 	query.bind(4, symbol.getDataType()->getId());
 	query.bind(5, DataType::GetPointerLevelStr(symbol.getDataType()));
 	query.bind(6, symbol.getComment());
+
+	if(auto memSymbol = dynamic_cast<AbstractMemorySymbol*>(&symbol))
+		query.bind(7, memSymbol->getOffset());
+	else if (auto funcParamSymbol = dynamic_cast<FuncParameterSymbol*>(&symbol))
+		query.bind(7, funcParamSymbol->getParamIdx());
+	else
+		query.bind(7, 0);
 }

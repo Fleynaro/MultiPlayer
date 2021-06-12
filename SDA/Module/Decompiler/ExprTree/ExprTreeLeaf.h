@@ -86,7 +86,7 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		std::string printDebug() override {
-			return m_updateDebugInfo = ("0x" + Generic::String::NumberToHex(m_value) + "{"+ (std::to_string((int)m_value)) +"}");
+			return m_updateDebugInfo = ("0x" + Helper::String::NumberToHex(m_value) + "{"+ (std::to_string((int)m_value)) +"}");
 		}
 	};
 

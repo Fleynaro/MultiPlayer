@@ -171,7 +171,7 @@ namespace CE::Decompiler
 		};
 
 		// it owns a raw-signature that can be changed by another during the main pass (it implements the decorator pattern)
-		class RawSignatureOwner : public DataType::Type, public DataType::ISignature
+		class RawSignatureOwner : public DataType::Type, public DataType::IFunctionSignature
 		{
 		public:
 			// it have stat info about return value
@@ -184,7 +184,7 @@ namespace CE::Decompiler
 			};
 
 			// it is an extended implemetation of a func. signature that supports merge operation
-			class RawSignature : public DataType::Signature
+			class RawSignature : public DataType::FunctionSignature
 			{
 			public:
 				ReturnValueStatInfo m_retValStatInfo;
@@ -192,7 +192,7 @@ namespace CE::Decompiler
 				std::list<Function::Function*> m_functions;
 				
 				RawSignature(RawSignatureOwner* owner)
-					: DataType::Signature("raw-signature")
+					: DataType::FunctionSignature("raw-signature")
 				{
 					m_owners.push_back(owner);
 				}
@@ -228,7 +228,7 @@ namespace CE::Decompiler
 			}
 
 			Group getGroup() override {
-				return Signature;
+				return FunctionSignature;
 			}
 
 			int getSize() override {
@@ -503,7 +503,7 @@ namespace CE::Decompiler
 		};
 
 		ProgramGraph* m_programGraph;
-		CE::ProgramModule* m_programModule;
+		CE::Project* m_programModule;
 		AbstractRegisterFactory* m_registerFactory;
 		Symbolization::DataTypeFactory m_dataTypeFactory;
 		PCodeGraphReferenceSearch* m_graphReferenceSearch;
@@ -513,7 +513,7 @@ namespace CE::Decompiler
 		std::map<int64_t, RawSignatureOwner*> m_funcOffsetToSig;
 		std::map<int64_t, RawSignatureOwner*> m_virtFuncCallOffsetToSig;
 
-		ImagePCodeGraphAnalyzer(ProgramGraph* programGraph, CE::ProgramModule* programModule, AbstractRegisterFactory* registerFactory, PCodeGraphReferenceSearch* graphReferenceSearch = nullptr)
+		ImagePCodeGraphAnalyzer(ProgramGraph* programGraph, CE::Project* programModule, AbstractRegisterFactory* registerFactory, PCodeGraphReferenceSearch* graphReferenceSearch = nullptr)
 			: m_programGraph(programGraph), m_programModule(programModule), m_registerFactory(registerFactory), m_dataTypeFactory(programModule), m_graphReferenceSearch(graphReferenceSearch)
 		{
 			m_globalSymbolTable = new CE::Symbol::SymbolTable(m_programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
@@ -686,7 +686,7 @@ namespace CE::Decompiler
 			// gather all new symbols (only after parameters of all function will be defined)
 			std::map<int, CE::Symbol::FuncParameterSymbol*> funcParamSymbols;
 			for (auto symbol : sdaBuilding.getNewAutoSymbols()) {
-				if (auto memSymbol = dynamic_cast<CE::Symbol::MemorySymbol*>(symbol)) {
+				if (auto memSymbol = dynamic_cast<CE::Symbol::AbstractMemorySymbol*>(symbol)) {
 					if (symbol->getType() == CE::Symbol::GLOBAL_VAR) {
 						userSymbolDef.m_globalSymbolTable->addSymbol(memSymbol, memSymbol->getOffset());
 					}

@@ -8,8 +8,8 @@ namespace CE
 		class UserType : public Type, public Ghidra::Object
 		{
 		public:
-			UserType(const std::string& name, const std::string& comment = "")
-				: Type(name, comment)
+			UserType(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
+				: Type(typeManager, name, comment)
 			{}
 
 			bool isUserDefined() override;

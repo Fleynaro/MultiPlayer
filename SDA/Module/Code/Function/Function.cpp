@@ -29,7 +29,7 @@ void Function::Function::setComment(const std::string& comment) {
 	m_functionSymbol->setComment(comment);
 }
 
-DataType::ISignature* Function::Function::getSignature() {
+DataType::IFunctionSignature* Function::Function::getSignature() {
 	return m_functionSymbol->getSignature();
 }
 

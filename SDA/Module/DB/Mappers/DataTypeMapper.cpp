@@ -22,7 +22,7 @@ DataTypeMapper::DataTypeMapper(IRepository* repository)
 }
 
 void DataTypeMapper::loadBefore() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	Statement query(db, "SELECT * FROM sda_types WHERE id >= 1000 AND deleted = 0");
 	load(&db, query);
 
@@ -30,7 +30,7 @@ void DataTypeMapper::loadBefore() {
 }
 
 void DataTypeMapper::loadAfter() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	m_structureTypeMapper->loadStructures(&db);
 	m_classTypeMapper->loadClasses(&db);
 	m_signatureTypeMapper->loadParameterSymbols(&db);
@@ -38,7 +38,7 @@ void DataTypeMapper::loadAfter() {
 }
 
 Id DataTypeMapper::getNextId() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	return GenerateNextId(&db, "sda_types");
 }
 
@@ -64,7 +64,7 @@ IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
 	case DataType::Type::Group::Class:
 		obj = m_classTypeMapper->doLoad(db, query);
 		break;
-	case DataType::Type::Group::Signature:
+	case DataType::Type::Group::FunctionSignature:
 		obj = m_signatureTypeMapper->doLoad(db, query);
 		break;
 	}

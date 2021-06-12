@@ -3,10 +3,6 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Class::Class(TypeManager* typeManager, const std::string& name, const std::string& comment)
-	: Structure(typeManager, name, comment)
-{}
-
 Type::Group Class::getGroup() {
 	return Group::Class;
 }
@@ -54,17 +50,6 @@ void Class::setBaseClass(Class* base, bool createBaseClassField) {
 
 		addField(baseClassOffset, "base", GetUnit(base), "{this field created automatically}");
 	}
-}
-
-CE::Function::VTable* Class::getVtable() {
-	if (m_vtable != nullptr && getBaseClass() != nullptr) {
-		return getBaseClass()->getVtable();
-	}
-	return m_vtable;
-}
-
-void Class::setVtable(Function::VTable* vtable) {
-	m_vtable = vtable;
 }
 
 Class::MethodIterator::MethodIterator(Class* Class)

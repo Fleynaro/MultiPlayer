@@ -3,10 +3,6 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Enum::Enum(TypeManager* typeManager, const std::string& name, const std::string& comment)
-	: UserType(typeManager, name, comment)
-{}
-
 int Enum::getSize() {
 	return m_size;
 }

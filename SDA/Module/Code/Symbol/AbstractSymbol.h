@@ -34,8 +34,8 @@ namespace CE
 		class AbstractSymbol : virtual public ISymbol, public DB::DomainObject, public Descrtiption
 		{
 		public:
-			AbstractSymbol(DataTypePtr dataType, const std::string& name, const std::string& comment = "")
-				: m_dataType(dataType), Descrtiption(name, comment)
+			AbstractSymbol(SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "")
+				: m_manager(manager), m_dataType(dataType), Descrtiption(name, comment)
 			{}
 
 			void setAutoSymbol(bool toggle);

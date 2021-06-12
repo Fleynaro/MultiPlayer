@@ -23,7 +23,7 @@ using namespace CE::DataType;
 class ProgramModuleFixtureDecBase : public ProgramModuleFixture {
 public:
 	RegisterFactoryX86 m_registerFactoryX86;
-	Signature* m_defSignature;
+	FunctionSignature* m_defSignature;
 	bool m_isOutput = true;
 
 	ProgramModuleFixtureDecBase() {
@@ -68,10 +68,10 @@ public:
 	}
 
 	CE::DataTypePtr findType(std::string typeName, std::string typeLevel = "") {
-		return DataType::GetUnit(typeManager()->getTypeByName(typeName), typeLevel);
+		return DataType::GetUnit(typeManager()->findTypeByName(typeName), typeLevel);
 	}
 
-	Signature* createDefSig(std::string name) {
+	FunctionSignature* createDefSig(std::string name) {
 		auto defSignature = typeManager()->createSignature(name);
 		defSignature->addParameter("param1", findType("uint32_t"));
 		defSignature->addParameter("param2", findType("uint32_t"));
@@ -192,7 +192,7 @@ public:
 		IImage* m_image;
 		int m_imageOffset = 0;
 		Symbolization::UserSymbolDef m_userSymbolDef;
-		std::map<int64_t, Signature*> m_functions;
+		std::map<int64_t, FunctionSignature*> m_functions;
 		bool m_enabled = true;
 		bool m_symbolization = true;
 		bool m_showAllCode = false;

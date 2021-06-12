@@ -46,15 +46,15 @@ TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
         auto module = m_programModule->getProcessModuleManager()->getMainModule();
 
         auto setRotSig = typeManager->createSignature("setRotSig");
-        setRotSig->addParameter("arg1", DataType::GetUnit(typeManager->getTypeByName("int32_t")));
-        setRotSig->addParameter("arg2", DataType::GetUnit(typeManager->getTypeByName("float")));
-        setRotSig->addParameter("arg3", DataType::GetUnit(typeManager->getTypeByName("float")));
-        setRotSig->addParameter("arg4", DataType::GetUnit(typeManager->getTypeByName("float")));
-        setRotSig->addParameter("arg5", DataType::GetUnit(typeManager->getTypeByName("int32_t")));
+        setRotSig->addParameter("arg1", DataType::GetUnit(typeManager->findTypeByName("int32_t")));
+        setRotSig->addParameter("arg2", DataType::GetUnit(typeManager->findTypeByName("float")));
+        setRotSig->addParameter("arg3", DataType::GetUnit(typeManager->findTypeByName("float")));
+        setRotSig->addParameter("arg4", DataType::GetUnit(typeManager->findTypeByName("float")));
+        setRotSig->addParameter("arg5", DataType::GetUnit(typeManager->findTypeByName("int32_t")));
 
         auto sumArraySig = typeManager->createSignature("sumArraySig");
-        sumArraySig->addParameter("arr", DataType::GetUnit(typeManager->getTypeByName("int32_t"), "*[3][2]"));
-        sumArraySig->addParameter("str", DataType::GetUnit(typeManager->getTypeByName("char"), "*"));
+        sumArraySig->addParameter("arr", DataType::GetUnit(typeManager->findTypeByName("int32_t"), "*[3][2]"));
+        sumArraySig->addParameter("str", DataType::GetUnit(typeManager->findTypeByName("char"), "*"));
 
         auto function1 = funcManager->createFunction(g_testFuncName, module,    { AddressRange(&setRot, calculateFunctionSize((byte*)&setRot)) },                   setRotSig, "set rot to an entity");
         auto function2 = funcManager->createFunction("changeGvar", module,    { AddressRange(&changeGvar, calculateFunctionSize((byte*)&changeGvar)) },             typeManager->createSignature("changeGvarSig"));
@@ -82,8 +82,8 @@ TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
     //for symbols & memory areas
     {
         using namespace Symbol;
-        auto stackVar_0x10 = new LocalStackVarSymbol(symbolManager, 0x10, DataType::GetUnit(typeManager->getTypeByName("int32_t")), "stackVar_0x10");
-        auto stackVar_0x20 = new LocalStackVarSymbol(symbolManager, 0x10, DataType::GetUnit(typeManager->getTypeByName("int64_t")), "stackVar_0x20");
+        auto stackVar_0x10 = new LocalStackVarSymbol(symbolManager, 0x10, DataType::GetUnit(typeManager->findTypeByName("int32_t")), "stackVar_0x10");
+        auto stackVar_0x20 = new LocalStackVarSymbol(symbolManager, 0x10, DataType::GetUnit(typeManager->findTypeByName("int64_t")), "stackVar_0x20");
         symbolManager->bind(stackVar_0x10);
         symbolManager->bind(stackVar_0x20);
         auto stackFrame = memoryAreaManager->createSymbolTable(SymbolTable::STACK_SPACE, 0x100);
@@ -105,14 +105,14 @@ TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
 
         //structure
         auto screen = typeManager->createStructure("Screen", "this is a structure type");
-        screen->addField(0, "width", DataType::GetUnit(typeManager->getTypeByName("float")));
-        screen->addField(4, "height", DataType::GetUnit(typeManager->getTypeByName("float")));
+        screen->addField(0, "width", DataType::GetUnit(typeManager->findTypeByName("float")));
+        screen->addField(4, "height", DataType::GetUnit(typeManager->findTypeByName("float")));
         ASSERT_EQ(screen->getSize(), 8);
 
         //class
         auto entity = typeManager->createClass("Entity", "this is a class type");
         entity->addField(20, "type", DataType::GetUnit(tdef), "position of entity");
-        auto tPos = DataType::GetUnit(typeManager->getTypeByName("float"), "[3]");
+        auto tPos = DataType::GetUnit(typeManager->findTypeByName("float"), "[3]");
         entity->addField(30, "pos", tPos, "position of entity");
         entity->addField(50, "screen", DataType::GetUnit(screen), "screen of entity");
         ASSERT_EQ(entity->getSize(), 58);
@@ -141,7 +141,7 @@ TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
         //derrived class
         auto ped = typeManager->createClass("Ped", "this is a derrived class type");
         ped->setBaseClass(entity);
-        ped->addField(100, "head_angle", DataType::GetUnit(typeManager->getTypeByName("float")));
+        ped->addField(100, "head_angle", DataType::GetUnit(typeManager->findTypeByName("float")));
         auto method = funcManager->createFunction("getHeadAngle", modulesManager->getMainModule(), {}, typeManager->createSignature("getHeadAngleSig"));
         ped->addMethod(method);
     }
@@ -202,7 +202,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
         auto memoryAreaManager = m_programModule->getMemoryAreaManager();
         ASSERT_GE(memoryAreaManager->getItemsCount(), 2);
 
-        if (auto testStackFrame = memoryAreaManager->getSymbolTableById(2)) {
+        if (auto testStackFrame = memoryAreaManager->findSymbolTableById(2)) {
             ASSERT_EQ(testStackFrame->getSymbols().size(), 2);
             //testStackFrame->getSymbolAt(0x10);
         }
@@ -214,7 +214,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
         //for structure
         {
-            auto type = typeManager->getTypeByName("Screen");
+            auto type = typeManager->findTypeByName("Screen");
             ASSERT_NE(type, nullptr);
             ASSERT_EQ(type->getGroup(), DataType::Type::Structure);
             if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
@@ -224,7 +224,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
         //for class
         {
-            auto type = typeManager->getTypeByName("Entity");
+            auto type = typeManager->findTypeByName("Entity");
             ASSERT_NE(type, nullptr);
             ASSERT_EQ(type->getGroup(), DataType::Type::Class);
             if (auto entity = dynamic_cast<DataType::Class*>(type)) {
@@ -234,7 +234,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
         //for derrived class
         {
-            auto type = typeManager->getTypeByName("Ped");
+            auto type = typeManager->findTypeByName("Ped");
             ASSERT_NE(type, nullptr);
             ASSERT_EQ(type->getGroup(), DataType::Type::Class);
             if (auto ped = dynamic_cast<DataType::Class*>(type)) {
@@ -246,7 +246,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
         //for typedef & enumeration
         {
-            auto type = typeManager->getTypeByName("ObjectType");
+            auto type = typeManager->findTypeByName("ObjectType");
             ASSERT_NE(type, nullptr);
             ASSERT_EQ(type->getGroup(), DataType::Type::Typedef);
             if (auto objType = dynamic_cast<DataType::Typedef*>(type)) {
@@ -266,7 +266,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
         
         //for function trigger
         {
-            auto trigger = trManager->getTriggerByName("testTrigger1");
+            auto trigger = trManager->findTriggerByName("testTrigger1");
             ASSERT_NE(trigger, nullptr);
             if (auto funcTrigger = dynamic_cast<Trigger::Function::Trigger*>(trigger)) {
                 ASSERT_EQ(funcTrigger->getFilters()->getFilters().size(), 2);
@@ -284,7 +284,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
         //for group trigger
         {
-            auto group = trGroupManager->getTriggerGroupByName("triggerTestGroup");
+            auto group = trGroupManager->findTriggerGroupByName("triggerTestGroup");
             ASSERT_NE(group, nullptr);
             if (auto trgroup = dynamic_cast<Trigger::TriggerGroup*>(group)) {
                 ASSERT_EQ(trgroup->getTriggers().size(), 2);
@@ -409,7 +409,7 @@ TEST_F(ProgramModuleFixture, Test_Common_FunctionTrigger)
     //iterator 2
     {
         int i = 0;
-        DereferenceIterator it(&arr, DataType::GetUnit(typeManager->getTypeByName("int32_t"), "[6]"));
+        DereferenceIterator it(&arr, DataType::GetUnit(typeManager->findTypeByName("int32_t"), "[6]"));
         while (it.hasNext()) {
             auto item = it.next();
             auto value = *(int*)item.first;
@@ -491,7 +491,7 @@ TEST_F(ProgramModuleFixture, Test_Common_GhidraSync)
         typeManager->loadTypesFrom(&dataPacket);
         funcManager->loadFunctionsFrom(&dataPacket);
         
-        auto type = typeManager->getTypeByName("Screen2D");
+        auto type = typeManager->findTypeByName("Screen2D");
         if (type != nullptr) {
             int runCode = rand();
             printf("<<< Run code = %i >>>", runCode);
@@ -508,7 +508,7 @@ TEST_F(ProgramModuleFixture, Test_Common_GhidraSync)
                     auto vfunc1 = it->second;
                     vfunc1->setComment("runCode = " + std::to_string(runCode));
                     it++;
-                    if (auto vfunc2 = dynamic_cast<DataType::Signature*>(it->second->getDataType()->getType())) {
+                    if (auto vfunc2 = dynamic_cast<DataType::FunctionSignature*>(it->second->getDataType()->getType())) {
                         ASSERT_EQ(vfunc2->getParameters().size(), 1);
                         ASSERT_EQ(vfunc2->getParameters()[0]->getDataType()->getType(), screen2d);
                     }
@@ -527,7 +527,7 @@ TEST_F(ProgramModuleFixture, Test_Common_GhidraSync)
 
         //class
         {
-            auto type = typeManager->getTypeByName("Entity");
+            auto type = typeManager->findTypeByName("Entity");
             if (auto screen = dynamic_cast<DataType::Class*>(type)) {
                 SyncCommitment.upsert(screen);
             }

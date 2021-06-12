@@ -7,16 +7,19 @@
 
 using namespace CE;
 
-FunctionManager::FunctionManager(ProgramModule* module)
+FunctionManager::FunctionManager(Project* module)
 	: AbstractItemManager(module)
 {
 	m_funcMapper = new DB::FunctionMapper(this);
-	m_ghidraFunctionMapper = new Ghidra::FunctionMapper(this, getProgramModule()->getTypeManager()->m_ghidraDataTypeMapper);
-	createDefaultFunction();
+	m_ghidraFunctionMapper = new Ghidra::FunctionMapper(this, getProject()->getTypeManager()->m_ghidraDataTypeMapper);
 }
 
 FunctionManager::~FunctionManager() {
 	delete m_ghidraFunctionMapper;
+}
+
+FunctionManager::Factory FunctionManager::getFactory(bool generateId) {
+	return Factory(this, m_ghidraFunctionMapper, m_funcMapper, generateId);
 }
 
 void FunctionManager::loadFunctions() {
@@ -27,27 +30,11 @@ void FunctionManager::loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dat
 	m_ghidraFunctionMapper->load(dataPacket);
 }
 
-void FunctionManager::bind(Function::Function* function) {
-	function->setMapper(m_funcMapper);
-	function->setId(m_funcMapper->getNextId());
-	getProgramModule()->getTransaction()->markAsNew(function);
+Function::Function* CE::FunctionManager::findFunctionById(DB::Id id) {
+	return dynamic_cast<Function::Function*>(find(id));
 }
 
-void FunctionManager::createDefaultFunction() {
-	auto sig = new DataType::Signature(getProgramModule()->getTypeManager(), "defSig");
-	auto symbol = new Symbol::FunctionSymbol(DataType::GetUnit(sig), "defFunction");
-	m_defFunction = new Function::Function(symbol, nullptr);
-}
-
-Function::Function* FunctionManager::getDefaultFunction() {
-	return m_defFunction;
-}
-
-Function::Function* FunctionManager::getFunctionById(DB::Id id) {
-	return static_cast<Function::Function*>(find(id));
-}
-
-Function::Function* FunctionManager::getFunctionByGhidraId(Ghidra::Id id)
+Function::Function* CE::FunctionManager::findFunctionByGhidraId(Ghidra::Id id)
 {
 	Iterator it(this);
 	while (it.hasNext()) {
@@ -59,22 +46,12 @@ Function::Function* FunctionManager::getFunctionByGhidraId(Ghidra::Id id)
 	return nullptr;
 }
 
-Function::Function* FunctionManager::getFunctionAt(void* addr) {
-	Iterator it(this);
-	while (it.hasNext()) {
-		auto func = it.next();
-		if (func->isContainingAddress(addr)) {
-			return func;
-		}
-	}
-	return nullptr;
-}
-
-void FunctionManager::setFunctionTagManager(FunctionTagManager* manager) {
-	m_tagManager = manager;
-}
-
-FunctionTagManager* FunctionManager::getFunctionTagManager() {
-	return m_tagManager;
+Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, bool generateId) {
+	auto func = new Function::Function(m_functionManager, functionSymbol, funcGraph);
+	func->setMapper(m_funcMapper);
+	func->setGhidraMapper(m_ghidraFunctionMapper);
+	if (generateId)
+		func->setId(m_funcMapper->getNextId());
+	return func;
 }
 

@@ -102,7 +102,7 @@ namespace CE::Decompiler::Symbol
 		}
 
 		std::string printDebug() override {
-			return "[var_" + Generic::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
+			return "[var_" + Helper::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 
 	protected:
@@ -130,7 +130,7 @@ namespace CE::Decompiler::Symbol
 		}
 
 		std::string printDebug() override {
-			return "[mem_" + Generic::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
+			return "[mem_" + Helper::String::NumberToHex(getId()) + "_" + std::to_string(getSize() * 8) + "]";
 		}
 
 	protected:

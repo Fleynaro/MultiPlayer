@@ -43,7 +43,7 @@ FS::Directory getCurrentDir() {
 
 void GUI::DecompilerDemoWindow::initProgram() {
     getCurrentDir().createIfNotExists();
-    m_programModule = new ProgramModule(getCurrentDir());
+    m_programModule = new Project(getCurrentDir());
 
     m_programModule->initDataBase("database.db");
     m_programModule->initManagers();

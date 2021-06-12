@@ -19,7 +19,7 @@ void SyncCommitment::remove(IObject* obj) {
 void SyncCommitment::commit() {
 	packet::SDataFullSyncPacket dataPacket;
 	SyncContext ctx;
-	auto& db = m_sync->getProgramModule()->getDB();
+	auto& db = m_sync->getProject()->getDB();
 	SQLite::Transaction transaction(db);
 
 	ctx.m_syncId = createSyncRecord();
@@ -42,7 +42,7 @@ void SyncCommitment::commit() {
 
 int SyncCommitment::createSyncRecord() {
 	using namespace std::chrono;
-	auto& db = m_sync->getProgramModule()->getDB();
+	auto& db = m_sync->getProject()->getDB();
 	SQLite::Statement query(db, "INSERT INTO sda_ghidra_sync (date, type, comment, objectsCount) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, duration_cast<seconds>(system_clock::now().time_since_epoch()).count());
 	query.bind(2, 1);

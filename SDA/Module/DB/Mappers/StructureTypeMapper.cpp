@@ -15,7 +15,7 @@ void StructureTypeMapper::loadStructures(Database * db) {
 
 	while (query.executeStep())
 	{
-		auto type = getParentMapper()->getManager()->getTypeById(query.getColumn("struct_id"));
+		auto type = getParentMapper()->getManager()->findTypeById(query.getColumn("struct_id"));
 		if (auto structure = dynamic_cast<DataType::Structure*>(type)) {
 			structure->resize(query.getColumn("size"));
 			loadFieldsForStructure(db, structure);
@@ -24,12 +24,10 @@ void StructureTypeMapper::loadStructures(Database * db) {
 }
 
 IDomainObject* StructureTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
-	auto type = new DataType::Structure(
-		getParentMapper()->getManager(),
+	auto type = getParentMapper()->getManager()->getFactory(false).createStructure(
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
-	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_structureTypeMapper);
 	return type;
 }
 
@@ -39,11 +37,7 @@ void StructureTypeMapper::loadFieldsForStructure(Database* db, CE::DataType::Str
 
 	while (query.executeStep())
 	{
-		auto type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getTypeById(query.getColumn("type_id"));
-		if (type == nullptr) {
-			type = getParentMapper()->getManager()->getProgramModule()->getTypeManager()->getDefaultType();
-		}
-
+		auto type = getParentMapper()->getManager()->getProject()->getTypeManager()->findTypeById(query.getColumn("type_id"));
 		structure->addField(query.getColumn("offset"), query.getColumn("name"), DataType::GetUnit(type, query.getColumn("pointer_lvl")));
 	}
 }

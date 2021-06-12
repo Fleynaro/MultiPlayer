@@ -20,12 +20,39 @@ namespace CE
 	class TypeManager : public AbstractItemManager
 	{
 	public:
+		class Factory : public AbstractFactory
+		{
+			TypeManager* m_typeManager;
+			Ghidra::DataTypeMapper* m_ghidraDataTypeMapper;
+			DB::DataTypeMapper* m_dataTypeMapper;
+		public:
+			Factory(TypeManager* typeManager, Ghidra::DataTypeMapper* ghidraDataTypeMapper, DB::DataTypeMapper* dataTypeMapper, bool generateId)
+				: m_typeManager(typeManager), m_ghidraDataTypeMapper(ghidraDataTypeMapper), m_dataTypeMapper(dataTypeMapper), AbstractFactory(generateId)
+			{}
+
+			DataType::Typedef* createTypedef(const std::string& name, const std::string& desc = "");
+
+			DataType::Enum* createEnum(const std::string& name, const std::string& desc = "");
+
+			DataType::Structure* createStructure(const std::string& name, const std::string& desc);
+
+			DataType::Class* createClass(const std::string& name, const std::string& desc = "");
+
+			DataType::FunctionSignature* createSignature(DataType::FunctionSignature::CallingConvetion callingConvetion, const std::string& name, const std::string& desc = "");
+
+			DataType::Type* getDefaultType();
+
+			DataType::Type* getDefaultReturnType();
+		};
+
 		using Iterator = AbstractIterator<DataType::Type>;
 		Ghidra::DataTypeMapper* m_ghidraDataTypeMapper;
 
-		TypeManager(ProgramModule* module);
+		TypeManager(Project* module);
 
 		~TypeManager();
+
+		Factory getFactory(bool generateId = true);
 
 		void addSystemTypes();
 
@@ -37,25 +64,11 @@ namespace CE
 
 		void loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
-		DataType::Typedef* createTypedef(const std::string& name, const std::string& desc = "");
+		DataType::Type* findTypeById(DB::Id id);
 
-		DataType::Enum* createEnum(const std::string& name, const std::string& desc = "");
+		DataType::Type* findTypeByName(const std::string& typeName);
 
-		DataType::Structure* createStructure(const std::string& name, const std::string& desc);
-
-		DataType::Class* createClass(const std::string& name, const std::string& desc = "");
-
-		DataType::Signature* createSignature(const std::string& name, const std::string& desc = "");
-
-		DataType::Type* getDefaultType();
-
-		DataType::Type* getDefaultReturnType();
-
-		DataType::Type* getTypeById(DB::Id id);
-
-		DataType::Type* getTypeByName(const std::string& typeName);
-
-		DataType::Type* getTypeByGhidraId(Ghidra::Id id);
+		DataType::Type* findTypeByGhidraId(Ghidra::Id id);
 
 		Ghidra::Id getGhidraId(DataType::Type* type);
 	private:

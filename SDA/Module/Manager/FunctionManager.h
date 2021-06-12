@@ -12,40 +12,39 @@ namespace CE::Ghidra {
 
 namespace CE
 {
-	class FunctionTagManager;
-
 	class FunctionManager : public AbstractItemManager
 	{
 	public:
+		class Factory : public AbstractFactory
+		{
+			FunctionManager* m_functionManager;
+			Ghidra::FunctionMapper* m_ghidraFunctionMapper;
+			DB::FunctionMapper* m_funcMapper;
+		public:
+			Factory(FunctionManager* functionManager, Ghidra::FunctionMapper* ghidraFunctionMapper, DB::FunctionMapper* funcMapper, bool generateId)
+				: m_functionManager(functionManager), m_ghidraFunctionMapper(ghidraFunctionMapper), m_funcMapper(funcMapper), AbstractFactory(generateId)
+			{}
+
+			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, bool generateId = true);
+		};
+
 		using Iterator = AbstractIterator<Function::Function>;
 		Ghidra::FunctionMapper* m_ghidraFunctionMapper;
 
-		FunctionManager(ProgramModule* module);
+		FunctionManager(Project* module);
 
 		~FunctionManager();
+
+		Factory getFactory(bool generateId);
 
 		void loadFunctions();
 
 		void loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
-		void bind(Function::Function* function);
-		
-		void createDefaultFunction();
+		Function::Function* findFunctionById(DB::Id id);
 
-		Function::Function* getDefaultFunction();
-
-		Function::Function* getFunctionById(DB::Id id);
-
-		Function::Function* getFunctionByGhidraId(Ghidra::Id id);
-
-		Function::Function* getFunctionAt(void* addr);
-
-		void setFunctionTagManager(FunctionTagManager* manager);
-
-		FunctionTagManager* getFunctionTagManager();
+		Function::Function* findFunctionByGhidraId(Ghidra::Id id);
 	private:
-		FunctionTagManager* m_tagManager;
-		Function::Function* m_defFunction = nullptr;
 		DB::FunctionMapper* m_funcMapper;
 	};
 };

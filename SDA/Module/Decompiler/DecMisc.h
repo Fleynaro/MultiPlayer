@@ -52,7 +52,7 @@ namespace CE::Decompiler::Misc
         return blockList;
     }
 
-    static Symbolization::UserSymbolDef CreateUserSymbolDef(ProgramModule* programModule) {
+    static Symbolization::UserSymbolDef CreateUserSymbolDef(Project* programModule) {
         auto userSymbolDef = Symbolization::UserSymbolDef(programModule);
         userSymbolDef.m_globalSymbolTable = programModule->getGlobalMemoryArea();
         userSymbolDef.m_stackSymbolTable = new CE::Symbol::SymbolTable(programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);

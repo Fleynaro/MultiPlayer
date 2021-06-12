@@ -10,7 +10,9 @@ namespace CE
 		public:
 			using FieldDict = std::map<int, std::string>;
 
-			Enum(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
+			Enum(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
+				: UserType(typeManager, name, comment)
+			{}
 
 			int getSize() override;
 

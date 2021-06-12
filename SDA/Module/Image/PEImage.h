@@ -89,7 +89,7 @@ namespace CE
 
 			m_pImgNtHeaders = (PIMAGE_NT_HEADERS)(m_data + dos_header.e_lfanew);
 
-			auto signature = (char*)&m_pImgNtHeaders->Signature;
+			auto signature = (char*)&m_pImgNtHeaders->FunctionSignature;
 			if (std::string(signature, 2) != "PE")
 				throw std::exception();
 

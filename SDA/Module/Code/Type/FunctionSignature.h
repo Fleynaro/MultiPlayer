@@ -7,7 +7,7 @@ namespace CE
 {
 	namespace DataType
 	{
-		class ISignature
+		class IFunctionSignature
 		{
 		public:
 			enum CallingConvetion {
@@ -39,10 +39,10 @@ namespace CE
 			virtual Decompiler::FunctionCallInfo getCallInfo() = 0;
 		};
 
-		class Signature : public UserType, public ISignature
+		class FunctionSignature : public UserType, public IFunctionSignature
 		{
 		public:
-			Signature(const std::string& name, const std::string& comment = "", CallingConvetion callingConvetion = FASTCALL);
+			FunctionSignature(TypeManager* typeManager, const std::string& name, const std::string& comment = "", CallingConvetion callingConvetion = FASTCALL);
 			
 			Group getGroup() override;
 

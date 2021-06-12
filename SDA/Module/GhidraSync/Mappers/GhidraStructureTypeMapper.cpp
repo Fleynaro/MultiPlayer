@@ -10,7 +10,7 @@ StructureTypeMapper::StructureTypeMapper(DataTypeMapper* dataTypeMapper)
 
 void StructureTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	for (auto structDesc : dataPacket->structures) {
-		auto type = m_dataTypeMapper->m_typeManager->getTypeByGhidraId(structDesc.type.id);
+		auto type = m_dataTypeMapper->m_typeManager->findTypeByGhidraId(structDesc.type.id);
 		if (type == nullptr)
 			throw std::exception("item not found");
 		if (auto structure = dynamic_cast<DataType::Structure*>(type)) {

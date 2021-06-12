@@ -99,30 +99,30 @@ ZydisMnemonic_ Sub::getMnemonicId() {
 
 
 
-Generic::Generic(ZydisMnemonic_ mnemonicId)
+Helper::Helper(ZydisMnemonic_ mnemonicId)
 	: m_mnemonicId(mnemonicId)
 {}
 
-ZydisMnemonic_ Generic::getMnemonicId() {
+ZydisMnemonic_ Helper::getMnemonicId() {
 	return m_mnemonicId;
 }
 
-bool Generic::isGeneric() {
+bool Helper::isGeneric() {
 	return true;
 }
 
-void* Generic::getAbsoluteAddr() {
+void* Helper::getAbsoluteAddr() {
 	return nullptr;
 }
 
-int Generic::getOperandCount() {
+int Helper::getOperandCount() {
 	return 0;
 }
 
 
 
 GenericWithOperands::GenericWithOperands(ZydisMnemonic_ mnemonicId, int operandCount)
-	: Generic(mnemonicId), m_operandCount(operandCount)
+	: Helper(mnemonicId), m_operandCount(operandCount)
 {}
 
 void* GenericWithOperands::getAbsoluteAddr() {

@@ -3,7 +3,7 @@
 #include "IMemorySymbol.h"
 
 namespace CE::DataType {
-	class Signature;
+	class IFunctionSignature;
 };
 
 namespace CE::Symbol
@@ -11,10 +11,10 @@ namespace CE::Symbol
 	class FuncParameterSymbol : public AbstractSymbol, public IMemorySymbol
 	{
 		int m_paramIdx;
-		DataType::ISignature* m_signature;
+		DataType::IFunctionSignature* m_signature;
 	public:
-		FuncParameterSymbol(int paramIdx, DataType::ISignature* signature, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: m_paramIdx(paramIdx), m_signature(signature), AbstractSymbol(type, name, comment)
+		FuncParameterSymbol(SymbolManager* manager, int paramIdx, DataType::IFunctionSignature* signature, DataTypePtr type, const std::string& name, const std::string& comment = "")
+			: m_paramIdx(paramIdx), m_signature(signature), AbstractSymbol(manager, type, name, comment)
 		{}
 
 		int getParamIdx() {
@@ -35,7 +35,7 @@ namespace CE::Symbol
 			return Decompiler::Storage();
 		}
 
-		void setFuncSignature(DataType::ISignature* signature) {
+		void setFuncSignature(DataType::IFunctionSignature* signature) {
 			m_signature = signature;
 		}
 	};

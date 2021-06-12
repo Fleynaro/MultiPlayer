@@ -1,6 +1,6 @@
 #pragma once
 #include <DB/AbstractMapper.h>
-#include "ProgramModule.h"
+#include <Project.h>
 #include <Utils/Iterator.h>
 
 namespace CE
@@ -8,16 +8,26 @@ namespace CE
 	class AbstractManager
 	{
 	public:
-		AbstractManager(ProgramModule* programModule);
+		AbstractManager(Project* project);
 		
-		ProgramModule* getProgramModule();
+		Project* getProject();
 	private:
-		ProgramModule* m_programModule;
+		Project* m_programModule;
 	};
 
 	class AbstractItemManager : public AbstractManager, public DB::IRepository
 	{
 	public:
+		class AbstractFactory
+		{
+		protected:
+			bool m_generateId;
+
+			AbstractFactory(bool generateId)
+				: m_generateId(generateId)
+			{}
+		};
+
 		using ItemMapType = std::map<DB::Id, DB::IDomainObject*>;
 		template<typename T = DB::DomainObject>
 		class AbstractIterator : public IIterator<T*>
@@ -39,7 +49,7 @@ namespace CE
 			ItemMapType::iterator m_end;
 		};
 
-		AbstractItemManager(ProgramModule* programModule);
+		AbstractItemManager(Project* programModule);
 
 		void onLoaded(DB::IDomainObject* obj) override;
 

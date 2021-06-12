@@ -8,7 +8,7 @@ namespace CE::Decompiler::Symbolization
 	{
 		UserSymbolDef* m_userSymbolDef;
 		DataTypeFactory* m_dataTypeFactory;
-		Signature::CallingConvetion m_callingConvention;
+		FunctionSignature::CallingConvetion m_callingConvention;
 		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols; //for cache purposes
 		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols; //stackVar1
 		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
@@ -16,7 +16,7 @@ namespace CE::Decompiler::Symbolization
 		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols; // defined by user (e.g. playerObj)
 	public:
 
-		SdaBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory, Signature::CallingConvetion callingConvention = Signature::FASTCALL)
+		SdaBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory, FunctionSignature::CallingConvetion callingConvention = FunctionSignature::FASTCALL)
 			: SdaGraphModification(sdaCodeGraph), m_userSymbolDef(userSymbolDef), m_dataTypeFactory(dataTypeFactory), m_callingConvention(callingConvention)
 		{}
 
@@ -247,7 +247,7 @@ namespace CE::Decompiler::Symbolization
 					}
 				}
 				else {
-					if (m_callingConvention == Signature::FASTCALL) {
+					if (m_callingConvention == FunctionSignature::FASTCALL) {
 						paramIdx = GetIndex_FASTCALL(reg, offset);
 					}
 				}
@@ -276,10 +276,10 @@ namespace CE::Decompiler::Symbolization
 					CE::Symbol::AbstractSymbol* sdaSymbol = nullptr;
 					auto dataType = m_dataTypeFactory->getDefaultType(size);
 					if (isStackPointer) {
-						sdaSymbol = new CE::Symbol::LocalStackVarSymbol(offset, dataType, "stack_0x" + Generic::String::NumberToHex((uint32_t)-offset));
+						sdaSymbol = new CE::Symbol::LocalStackVarSymbol(offset, dataType, "stack_0x" + Helper::String::NumberToHex((uint32_t)-offset));
 					}
 					else {
-						sdaSymbol = new CE::Symbol::GlobalVarSymbol(offset, dataType, "global_0x" + Generic::String::NumberToHex(offset));
+						sdaSymbol = new CE::Symbol::GlobalVarSymbol(offset, dataType, "global_0x" + Helper::String::NumberToHex(offset));
 					}
 					m_newAutoSymbols.insert(sdaSymbol);
 					storeSdaSymbolIfMem(sdaSymbol, symbol, offset);
@@ -319,7 +319,7 @@ namespace CE::Decompiler::Symbolization
 					suffix = "mem";
 				else if (dynamic_cast<Symbol::FunctionResultVar*>(symbol))
 					suffix = "func";
-				auto sdaSymbol = new CE::Symbol::LocalInstrVarSymbol(m_dataTypeFactory->getDefaultType(size), suffix + "Var" + Generic::String::NumberToHex(symbolWithId->getId()));
+				auto sdaSymbol = new CE::Symbol::LocalInstrVarSymbol(m_dataTypeFactory->getDefaultType(size), suffix + "Var" + Helper::String::NumberToHex(symbolWithId->getId()));
 				sdaSymbol->setAutoSymbol(true);
 				sdaSymbol->m_instrOffsets = instrOffsets;
 				m_newAutoSymbols.insert(sdaSymbol);

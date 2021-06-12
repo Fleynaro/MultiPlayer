@@ -94,10 +94,10 @@ namespace CE::Disassembler::Code
 			ZydisMnemonic_ getMnemonicId() override;
 		};
 
-		class Generic : virtual public Instruction
+		class Helper : virtual public Instruction
 		{
 		public:
-			Generic(ZydisMnemonic_ mnemonicId);
+			Helper(ZydisMnemonic_ mnemonicId);
 
 			ZydisMnemonic_ getMnemonicId() override;
 
@@ -110,7 +110,7 @@ namespace CE::Disassembler::Code
 			ZydisMnemonic_ m_mnemonicId;
 		};
 
-		class GenericWithOperands : public Generic, public AbstractInstructionWithOperands<2>
+		class GenericWithOperands : public Helper, public AbstractInstructionWithOperands<2>
 		{
 		public:
 			GenericWithOperands(ZydisMnemonic_ mnemonicId, int operandCount);

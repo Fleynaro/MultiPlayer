@@ -14,14 +14,14 @@ FunctionMapper::FunctionMapper(CE::FunctionManager* repository)
 {}
 
 void FunctionMapper::loadAll() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	Statement query(db, "SELECT * FROM sda_functions WHERE deleted=0");
 	load(&db, query);
 	loadFunctionRanges(&db);
 }
 
 Id FunctionMapper::getNextId() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	return GenerateNextId(&db, "sda_functions");
 }
 
@@ -38,9 +38,9 @@ IDomainObject* FunctionMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int body_mem_area_id = query.getColumn("body_mem_area_id");
 	int is_exported = query.getColumn("exported");
 
-	auto symbol = dynamic_cast<Symbol::FunctionSymbol*>(getManager()->getProgramModule()->getSymbolManager()->getSymbolById(func_symbol_id));
-	auto signature = dynamic_cast<DataType::Signature*>(getManager()->getProgramModule()->getTypeManager()->getTypeById(signature_id));
-	auto module = getManager()->getProgramModule()->getProcessModuleManager()->getProcessModuleById(module_id);
+	auto symbol = dynamic_cast<Symbol::FunctionSymbol*>(getManager()->getProject()->getSymbolManager()->findSymbolById(func_symbol_id));
+	auto signature = dynamic_cast<DataType::FunctionSignature*>(getManager()->getProject()->getTypeManager()->findTypeById(signature_id));
+	auto module = getManager()->getProject()->getProcessModuleManager()->getProcessModuleById(module_id);
 
 	auto function =
 		new Function::Function(
@@ -56,14 +56,14 @@ IDomainObject* FunctionMapper::doLoad(Database* db, SQLite::Statement& query) {
 	}
 
 	if (stack_mem_area_id) {
-		auto stack_mem_area = getManager()->getProgramModule()->getMemoryAreaManager()->getSymbolTableById(stack_mem_area_id);
+		auto stack_mem_area = getManager()->getProject()->getMemoryAreaManager()->findSymbolTableById(stack_mem_area_id);
 		if (stack_mem_area != nullptr) {
 			function->setStackMemoryArea(stack_mem_area);
 		}
 	}
 
 	if (body_mem_area_id) {
-		auto body_mem_area = getManager()->getProgramModule()->getMemoryAreaManager()->getSymbolTableById(body_mem_area_id);
+		auto body_mem_area = getManager()->getProject()->getMemoryAreaManager()->findSymbolTableById(body_mem_area_id);
 		if (body_mem_area != nullptr) {
 			function->setBodyMemoryArea(body_mem_area);
 		}
@@ -80,7 +80,7 @@ void FunctionMapper::loadFunctionRanges(Database* db) {
 	while (query.executeStep())
 	{
 		int func_id = query.getColumn("func_id");
-		auto function = getManager()->getFunctionById(func_id);
+		auto function = getManager()->findFunctionById(func_id);
 		if (!function)
 			continue;
 

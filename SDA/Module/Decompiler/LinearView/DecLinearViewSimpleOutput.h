@@ -93,7 +93,7 @@ namespace CE::Decompiler
 			if (blockList->m_goto != nullptr) {
 				auto gotoType = blockList->getGotoType();
 				if (m_SHOW_ALL_GOTO || gotoType != LinearView::GotoType::None) {
-					auto blockName = Generic::String::NumberToHex(blockList->m_goto->m_decBlock->m_pcodeBlock->ID);
+					auto blockName = Helper::String::NumberToHex(blockList->m_goto->m_decBlock->m_pcodeBlock->ID);
 					std::string typeName = "";
 					if (gotoType == LinearView::GotoType::None)
 						typeName = "[None]";
@@ -119,7 +119,7 @@ namespace CE::Decompiler
 		}
 
 		void showBlockCode(PCodeBlock* pcodeBlock, LinearView::Block* block, std::string tabStr) {
-			auto blockName = Generic::String::NumberToHex(pcodeBlock->ID);
+			auto blockName = Helper::String::NumberToHex(pcodeBlock->ID);
 			if (m_SHOW_BLOCK_HEADER) {
 				m_textCode += tabStr +"//block "+ blockName +" (level: "+ std::to_string(block->m_decBlock->m_level) +", maxHeight: "+ std::to_string(block->m_decBlock->m_maxHeight) +", backOrderId: " + std::to_string(block->getBackOrderId()) + ", linearLevel: " + std::to_string(block->getLinearLevel()) + ", refCount: " + std::to_string(block->m_decBlock->getRefBlocksCount()) + ")\n";
 			}

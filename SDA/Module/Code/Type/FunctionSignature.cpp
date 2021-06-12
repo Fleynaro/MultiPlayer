@@ -7,33 +7,33 @@ using namespace CE;
 using namespace CE::DataType;
 using namespace CE::Decompiler;
 
-Signature::Signature(const std::string& name, const std::string& comment, CallingConvetion callingConvetion)
-	: UserType(name, comment), m_callingConvetion(callingConvetion)
+FunctionSignature::FunctionSignature(TypeManager* typeManager, const std::string& name, const std::string& comment, CallingConvetion callingConvetion)
+	: UserType(typeManager, name, comment), m_callingConvetion(callingConvetion)
 {
-	setReturnType(DataType::GetUnit(new DataType::Void));
+	setReturnType(DataType::GetUnit(typeManager->getFactory().getDefaultReturnType()));
 }
 
-Type::Group Signature::getGroup() {
-	return Group::Signature;
+Type::Group FunctionSignature::getGroup() {
+	return Group::FunctionSignature;
 }
 
-int Signature::getSize() {
+int FunctionSignature::getSize() {
 	return sizeof(std::uintptr_t);
 }
 
-std::string Signature::getDisplayName() {
+std::string FunctionSignature::getDisplayName() {
 	return getSigName();
 }
 
-Signature::CallingConvetion Signature::getCallingConvetion() {
+FunctionSignature::CallingConvetion FunctionSignature::getCallingConvetion() {
 	return m_callingConvetion;
 }
 
-std::list<std::pair<int, Decompiler::Storage>>& Signature::getCustomStorages() {
+std::list<std::pair<int, Decompiler::Storage>>& FunctionSignature::getCustomStorages() {
 	return m_customStorages;
 }
 
-std::string Signature::getSigName() {
+std::string FunctionSignature::getSigName() {
 	std::string name = getReturnType()->getDisplayName() + " " + getName() + "(";
 
 	auto& argList = getParameters();
@@ -47,44 +47,43 @@ std::string Signature::getSigName() {
 	return name + ")";
 }
 
-void Signature::setReturnType(DataTypePtr returnType) {
+void FunctionSignature::setReturnType(DataTypePtr returnType) {
 	m_returnType = returnType;
 	m_hasSignatureUpdated = true;
 }
 
-DataTypePtr Signature::getReturnType() {
+DataTypePtr FunctionSignature::getReturnType() {
 	return m_returnType;
 }
 
-std::vector<Symbol::FuncParameterSymbol*>& Signature::getParameters() {
+std::vector<Symbol::FuncParameterSymbol*>& FunctionSignature::getParameters() {
 	return m_parameters;
 }
 
-void Signature::addParameter(Symbol::FuncParameterSymbol* symbol) {
+void FunctionSignature::addParameter(Symbol::FuncParameterSymbol* symbol) {
 	m_parameters.push_back(symbol);
 	symbol->setFuncSignature(this);
 	m_hasSignatureUpdated = true;
 }
 
-void Signature::addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment) {
-	auto paramSymbol = new Symbol::FuncParameterSymbol(dataType, name, comment);
-	auto manager = getTypeManager()->getProgramModule()->getSymbolManager();
-	if(manager)
-		manager->bind(paramSymbol);
+void FunctionSignature::addParameter(const std::string& name, DataTypePtr dataType, const std::string& comment) {
+	auto symbolManager = getTypeManager()->getProject()->getSymbolManager();
+	auto paramIdx = (int)m_parameters.size();
+	auto paramSymbol = symbolManager->getFactory().createFuncParameterSymbol(paramIdx, this, dataType, name, comment);
 	addParameter(paramSymbol);
 }
 
-void Signature::removeLastParameter() {
+void FunctionSignature::removeLastParameter() {
 	m_parameters.pop_back();
 	m_hasSignatureUpdated = true;
 }
 
-void Signature::deleteAllParameters() {
+void FunctionSignature::deleteAllParameters() {
 	m_parameters.clear();
 	m_hasSignatureUpdated = true;
 }
 
-FunctionCallInfo Signature::getCallInfo() {
+FunctionCallInfo FunctionSignature::getCallInfo() {
 	if (m_hasSignatureUpdated) {
 		m_paramInfos.clear();
 		updateParameterStorages();
@@ -93,7 +92,7 @@ FunctionCallInfo Signature::getCallInfo() {
 	return FunctionCallInfo(m_paramInfos);
 }
 
-void Signature::updateParameterStorages() {
+void FunctionSignature::updateParameterStorages() {
 	for (auto pair : getCustomStorages()) {
 		auto paramIdx = pair.first;
 		auto storage = pair.second;
@@ -108,7 +107,7 @@ void Signature::updateParameterStorages() {
 	}
 
 	//calling conventions
-	if (getCallingConvetion() == Signature::FASTCALL) {
+	if (getCallingConvetion() == FunctionSignature::FASTCALL) {
 		//parameters
 		int paramIdx = 1;
 		for (auto param : getParameters()) {

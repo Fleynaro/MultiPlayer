@@ -2,7 +2,6 @@
 #include <Code/Type/Class.h>
 #include <Manager/TypeManager.h>
 #include <Manager/FunctionManager.h>
-#include <Manager/VTableManager.h>
 #include <GhidraSync/Mappers/GhidraClassTypeMapper.h>
 
 using namespace DB;
@@ -18,14 +17,9 @@ void ClassTypeMapper::loadClasses(Database* db)
 
 	while (query.executeStep())
 	{
-		auto type = getParentMapper()->getManager()->getTypeById(query.getColumn("struct_id"));
+		auto type = getParentMapper()->getManager()->findTypeById(query.getColumn("struct_id"));
 		if (auto Class = dynamic_cast<DataType::Class*>(type)) {
-			Function::VTable* vtable = getParentMapper()->getManager()->getProgramModule()->getVTableManager()->getVTableById(query.getColumn("vtable_id"));
-			if (vtable != nullptr) {
-				Class->setVtable(vtable);
-			}
-			
-			type = getParentMapper()->getManager()->getTypeById(query.getColumn("base_struct_id"));
+			type = getParentMapper()->getManager()->findTypeById(query.getColumn("base_struct_id"));
 			if (auto baseClass = dynamic_cast<DataType::Class*>(type)) {
 				Class->setBaseClass(baseClass, false);
 			}
@@ -37,12 +31,10 @@ void ClassTypeMapper::loadClasses(Database* db)
 
 IDomainObject* ClassTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
-	auto type = new DataType::Class(
-		getParentMapper()->getManager(),
+	auto type = getParentMapper()->getManager()->getFactory(false).createClass(
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
-	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_classTypeMapper);
 	return type;
 }
 
@@ -53,7 +45,7 @@ void ClassTypeMapper::loadMethodsForClass(Database* db, DataType::Class* Class)
 
 	while (query.executeStep())
 	{
-		auto func = getParentMapper()->getManager()->getProgramModule()->getFunctionManager()->getFunctionById(query.getColumn("func_id"));
+		auto func = getParentMapper()->getManager()->getProject()->getFunctionManager()->findFunctionById(query.getColumn("func_id"));
 		Class->addMethod(func);
 	}
 }
@@ -104,7 +96,6 @@ void ClassTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 void ClassTypeMapper::bind(SQLite::Statement& query, CE::DataType::Class& type)
 {
 	query.bind(2, type.getBaseClass() != nullptr ? type.getBaseClass()->getId() : 0);
-	auto vtable = type.getVtable();
 	//query.bind(3, vtable == nullptr ? 0 : vtable->getId());
 }
 

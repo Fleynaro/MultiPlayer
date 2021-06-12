@@ -11,13 +11,13 @@ TriggerGroupMapper::TriggerGroupMapper(IRepository* repository)
 
 void TriggerGroupMapper::loadAll()
 {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	Statement query(db, "SELECT * FROM sda_trigger_groups");
 	load(&db, query);
 }
 
 Id TriggerGroupMapper::getNextId() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	return GenerateNextId(&db, "sda_trigger_groups");
 }
 
@@ -28,10 +28,10 @@ TriggerGroupManager* TriggerGroupMapper::getManager()
 
 IDomainObject* TriggerGroupMapper::doLoad(Database* db, SQLite::Statement& query)
 {
-	auto group = new Trigger::TriggerGroup(
-		getManager(),
+	auto group = getManager()->createTriggerGroup(
 		query.getColumn("name"),
-		query.getColumn("desc")
+		query.getColumn("desc"),
+		false
 	);
 	group->setId(query.getColumn("group_id"));
 	loadTriggersForGroup(db, group);
@@ -63,7 +63,7 @@ void TriggerGroupMapper::loadTriggersForGroup(Database* db, Trigger::TriggerGrou
 
 	while (query.executeStep())
 	{
-		auto trigger = getManager()->getProgramModule()->getTriggerManager()->getTriggerById(query.getColumn("trigger_id"));
+		auto trigger = getManager()->getProject()->getTriggerManager()->findTriggerById(query.getColumn("trigger_id"));
 		if (trigger != nullptr)
 			group->addTrigger(trigger);
 	}

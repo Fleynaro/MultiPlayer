@@ -1,5 +1,5 @@
-#include "MemoryAreaMapper.h"
-#include <Manager/MemoryAreaManager.h>
+#include "SymbolTableMapper.h"
+#include <Manager/SymbolTableManager.h>
 #include <Manager/SymbolManager.h>
 
 using namespace DB;
@@ -11,14 +11,14 @@ SymbolTableMapper::SymbolTableMapper(IRepository* repository)
 {}
 
 void SymbolTableMapper::loadAll() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	Statement query(db, "SELECT * FROM sda_mem_areas");
 	load(&db, query);
 	loadSymbolsForAllSymTables(&db);
 }
 
 Id SymbolTableMapper::getNextId() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	return GenerateNextId(&db, "sda_mem_areas");
 }
 
@@ -45,12 +45,12 @@ void SymbolTableMapper::loadSymbolsForAllSymTables(Database* db) {
 		int mem_area_id = query.getColumn("mem_area_id");
 		int64_t offset = query.getColumn("offset");
 
-		auto memoryArea = getManager()->getSymbolTableById(mem_area_id);
+		auto memoryArea = getManager()->findSymbolTableById(mem_area_id);
 		if (memoryArea == nullptr)
 			continue;
-		auto symbol = getManager()->getProgramModule()->getSymbolManager()->getSymbolById(symbol_id);
+		auto symbol = getManager()->getProject()->getSymbolManager()->findSymbolById(symbol_id);
 		memoryArea->addSymbol(symbol, offset);
-		if (auto memSymbol = dynamic_cast<MemorySymbol*>(symbol))
+		if (auto memSymbol = dynamic_cast<AbstractMemorySymbol*>(symbol))
 			memSymbol->setOffset(offset);
 	}
 }

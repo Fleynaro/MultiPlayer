@@ -17,11 +17,11 @@ namespace DB
 
 	protected:
 
-		void saveStorages(TransactionContext* ctx, CE::DataType::Signature& sig);
+		void saveStorages(TransactionContext* ctx, CE::DataType::FunctionSignature& sig);
 
-		void saveParameterSymbols(TransactionContext* ctx, CE::DataType::Signature& sig);
+		void saveParameterSymbols(TransactionContext* ctx, CE::DataType::FunctionSignature& sig);
 
-		void removeParameterSymbols(TransactionContext* ctx, CE::DataType::Signature& sig);
+		void removeParameterSymbols(TransactionContext* ctx, CE::DataType::FunctionSignature& sig);
 
 		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
@@ -30,7 +30,7 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
-		void bind(SQLite::Statement& query, CE::DataType::Signature& type);
+		void bind(SQLite::Statement& query, CE::DataType::FunctionSignature& type);
 
 		DataTypeMapper* getParentMapper();
 	};

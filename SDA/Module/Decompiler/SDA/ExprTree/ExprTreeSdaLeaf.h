@@ -149,7 +149,7 @@ namespace CE::Decompiler::ExprTree
 						return m_updateDebugInfo = std::to_string((int64_t)m_value);
 				}
 			}
-			return "0x" + Generic::String::NumberToHex(m_value);
+			return "0x" + Helper::String::NumberToHex(m_value);
 		}
 	};
 };

@@ -324,7 +324,7 @@ void ProgramModuleFixtureDecSamples::initSampleTestHashes() {
 void ProgramModuleFixtureDecSamples::initSampleTest()
 {
 	SampleTest* test;
-	Signature* sig;
+	FunctionSignature* sig;
 
 	//important: all test function (Test_SimpleFunc, Test_Array, ...) located in another project (TestCodeToDecompile.lib)
 	

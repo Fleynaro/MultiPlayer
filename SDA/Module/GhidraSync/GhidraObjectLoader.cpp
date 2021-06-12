@@ -4,7 +4,7 @@
 using namespace CE;
 using namespace CE::Ghidra;
 
-GhidraObjectLoader::GhidraObjectLoader(CE::ProgramModule* programModule)
+GhidraObjectLoader::GhidraObjectLoader(CE::Project* programModule)
 	: m_programModule(programModule)
 {}
 

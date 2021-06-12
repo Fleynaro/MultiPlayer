@@ -1,5 +1,5 @@
 #include "FunctionTriggerMapper.h"
-#include <Trigger/FunctionTrigger.h>
+#include <Manager/TriggerManager.h>
 
 using namespace DB;
 using namespace CE;
@@ -9,11 +9,12 @@ FunctionTriggerMapper::FunctionTriggerMapper(TriggerMapper* parentMapper)
 {}
 
 IDomainObject* FunctionTriggerMapper::doLoad(Database * db, SQLite::Statement & query) {
-	auto trigger = new Trigger::Function::Trigger(
-		getParentMapper()->getManager(),
+	auto trigger = getParentMapper()->getManager()->createFunctionTrigger(
 		query.getColumn("name"),
-		query.getColumn("desc")
+		query.getColumn("desc"),
+		false
 	);
+
 	trigger->setId(query.getColumn("trigger_id"));
 	loadFiltersForFuncTrigger(db, trigger);
 	return trigger;

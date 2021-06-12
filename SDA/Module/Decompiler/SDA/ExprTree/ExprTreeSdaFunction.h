@@ -73,9 +73,9 @@ namespace CE::Decompiler::ExprTree
 		}
 
 		// example: (world->vtable->func_get_player)(player_id) where {world->vtable->func_get_player} has a signature type calculated through the step of goar building
-		DataType::ISignature* getSignature() {
+		DataType::IFunctionSignature* getSignature() {
 			if (auto dstCastNode = dynamic_cast<ISdaNode*>(getDestination()))
-				if (auto signature = dynamic_cast<DataType::ISignature*>(dstCastNode->getDataType()->getType()))
+				if (auto signature = dynamic_cast<DataType::IFunctionSignature*>(dstCastNode->getDataType()->getType()))
 					return signature;
 			return nullptr;
 		}

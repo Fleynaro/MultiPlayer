@@ -1,7 +1,6 @@
 #pragma once
 #include "../PCode/DecPCode.h"
 #include "../PCode/DecPCodeConstValueCalc.h"
-#include <Utility/Generic.h>
 
 namespace CE::Decompiler
 {
@@ -99,11 +98,11 @@ namespace CE::Decompiler
 
 			ZyanU64 runtime_address = (ZyanU64)addr;
 			for (auto instr : m_instructions) {
-				std::string prefix = tabStr + "0x" + Generic::String::NumberToHex(runtime_address + instr->getOriginalInstructionOffset());
+				std::string prefix = tabStr + "0x" + Helper::String::NumberToHex(runtime_address + instr->getOriginalInstructionOffset());
 				if (!instr->m_originalView.empty())
 					result += prefix + " " + instr->m_originalView + "\n";
 				if (pcode) {
-					prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Generic::String::NumberToHex(instr->getOffset()) + ")";
+					prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Helper::String::NumberToHex(instr->getOffset()) + ")";
 					result += "\t" + prefix + " " + instr->printDebug();
 					if (instr->m_id == PCode::InstructionId::UNKNOWN)
 						result += " <------------------------------------------------ ";
@@ -114,9 +113,9 @@ namespace CE::Decompiler
 			if (extraInfo) {
 				result += "Level: "+ std::to_string(m_level) +"\n";
 				if (m_nextNearBlock != nullptr)
-					result += "Next near: "+ Generic::String::NumberToHex(m_nextNearBlock->getMinOffset()) +"\n";
+					result += "Next near: "+ Helper::String::NumberToHex(m_nextNearBlock->getMinOffset()) +"\n";
 				if (m_nextFarBlock != nullptr)
-					result += "Next far: " + Generic::String::NumberToHex(m_nextFarBlock->getMinOffset()) + "\n";
+					result += "Next far: " + Helper::String::NumberToHex(m_nextFarBlock->getMinOffset()) + "\n";
 			}
 
 			return result;

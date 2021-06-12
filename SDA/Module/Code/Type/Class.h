@@ -2,7 +2,6 @@
 #include "Structure.h"
 #include "SystemType.h"
 #include "../Function/Function.h"
-#include "../VTable/VTable.h"
 #include <Utils/Iterator.h>
 
 namespace CE::DataType
@@ -28,7 +27,6 @@ namespace CE::DataType
 
 			Function::Function* next() override;
 		private:
-			Function::VTable* m_vtable;
 			std::list<Class*> m_classes;
 			MethodListType::iterator m_iterator;
 			MethodListType::iterator m_end;
@@ -37,7 +35,9 @@ namespace CE::DataType
 			void updateIterator();
 		};
 
-		Class(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
+		Class(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
+			: Structure(typeManager, name, comment)
+		{}
 
 		Group getGroup() override;
 
@@ -50,12 +50,7 @@ namespace CE::DataType
 		Class* getBaseClass();
 
 		void setBaseClass(Class* base, bool createBaseClassField = true);
-
-		Function::VTable* getVtable();
-
-		void setVtable(Function::VTable* vtable);
 	private:
-		Function::VTable* m_vtable = nullptr; //просто для галочки, по сути - это массив определенний undefined вирт. функций
 		Class* m_base = nullptr;
 		MethodListType m_methods;
 	};

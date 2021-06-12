@@ -155,7 +155,7 @@ int Unit::getSize() {
 }
 
 std::string Unit::getViewValue(void* addr) {
-	return "(" + getDisplayName() + ")0x" + Generic::String::NumberToHex(*(uint64_t*)addr);
+	return "(" + getDisplayName() + ")0x" + Helper::String::NumberToHex(*(uint64_t*)addr);
 }
 
 DataType::Type* Unit::getType() {

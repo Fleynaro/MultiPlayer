@@ -2,7 +2,7 @@
 
 using namespace CE;
 
-AbstractItemManager::AbstractItemManager(ProgramModule* programModule)
+AbstractItemManager::AbstractItemManager(Project* programModule)
 	: AbstractManager(programModule)
 {}
 
@@ -37,10 +37,10 @@ int AbstractItemManager::getItemsCount() {
 	return (int)m_items.size();
 }
 
-AbstractManager::AbstractManager(ProgramModule* programModule)
+AbstractManager::AbstractManager(Project* programModule)
 	: m_programModule(programModule)
 {}
 
-ProgramModule* AbstractManager::getProgramModule() {
+Project* AbstractManager::getProject() {
 	return m_programModule;
 }

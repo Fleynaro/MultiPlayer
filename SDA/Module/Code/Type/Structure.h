@@ -38,7 +38,11 @@ namespace CE::DataType
 
 		using FieldMapType = std::map<int, Field*>;
 
-		Structure(TypeManager* typeManager, const std::string& name, const std::string& comment = "");
+		Structure(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
+			: UserType(typeManager, name, comment)
+		{
+			m_defaultField = new Field(this, "undefined", GetUnit(new DataType::Byte), -1, -1);
+		}
 
 		~Structure();
 

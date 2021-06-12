@@ -1253,7 +1253,7 @@ namespace CE::Decompiler::PCode
 
 			default: {
 				auto instr = addMicroInstruction(InstructionId::UNKNOWN, new ConstantVarnode(0x0, 0x8));
-				getWarningContainer()->addWarning("impossible to decode " + instr->m_originalView + " (at 0x"+ Generic::String::NumberToHex(instr->getOriginalInstructionOffset()) +")");
+				getWarningContainer()->addWarning("impossible to decode " + instr->m_originalView + " (at 0x"+ Helper::String::NumberToHex(instr->getOriginalInstructionOffset()) +")");
 			}
 			
 			}

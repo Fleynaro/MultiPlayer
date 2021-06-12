@@ -9,7 +9,7 @@
 #include <sstream>
 
 
-namespace Generic
+namespace Helper
 {
 	namespace String {
 		extern std::vector<std::string> Split(const std::string& input, const std::string& regex);

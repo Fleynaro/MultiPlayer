@@ -1,20 +1,19 @@
-#include "ProgramModule.h"
+#include "Project.h"
 #include <GhidraSync/GhidraSync.h>
-#include <FunctionTag/FunctionTag.h>
-#include <Utility/Resource.h>
+#include <Utils/Resource.h>
 
 //managers
-#include "Managers.h"
+#include <Manager/Managers.h>
 
 using namespace CE;
 
-ProgramModule::ProgramModule(FS::Directory dir)
+Project::Project(FS::Directory dir)
 	: m_dir(dir)
 {
 	m_ghidraSync = new Ghidra::Sync(this);
 }
 
-ProgramModule::~ProgramModule() {
+Project::~Project() {
 	if (haveAllManagersBeenLoaded()) {
 		delete m_processModuleManager;
 		delete m_functionManager;
@@ -35,38 +34,33 @@ ProgramModule::~ProgramModule() {
 		delete m_db;
 }
 
-void ProgramModule::initTransaction() {
+void Project::initTransaction() {
 	m_transaction = new DB::Transaction(m_db);
 }
 
-void ProgramModule::load()
+void Project::load()
 {
-	getProcessModuleManager()->loadProcessModules();
 	getTypeManager()->loadBefore();
 	getSymbolManager()->loadSymbols();
 	getMemoryAreaManager()->loadSymTables();
 	getFunctionManager()->loadFunctions();
 	getTypeManager()->loadAfter();
-	getFunctionTagManager()->loadUserTags();
 	getTriggerManager()->loadTriggers();
 	getTriggerGroupManager()->loadTriggerGroups();
 }
 
-void ProgramModule::initManagers()
+void Project::initManagers()
 {
-	m_processModuleManager = new ProcessModuleManager(this);
 	m_typeManager = new TypeManager(this);
 	m_functionManager = new FunctionManager(this);
 	m_symbolManager = new SymbolManager(this);
 	m_memoryAreaManager = new SymbolTableManager(this);
-	m_vtableManager = new VtableManager(this);
 	m_triggerManager = new TriggerManager(this);
 	m_triggerGroupManager = new TriggerGroupManager(this);
 	m_statManager = new StatManager(this);
-	m_functionManager->setFunctionTagManager(new FunctionTagManager(this, m_functionManager));
 }
 
-void ProgramModule::createGeneralDataBase()
+void Project::createGeneralDataBase()
 {
 	using namespace SQLite;
 
@@ -80,7 +74,7 @@ void ProgramModule::createGeneralDataBase()
 	m_db->exec(query);
 }
 
-void ProgramModule::initDataBase(std::string filename)
+void Project::initDataBase(std::string filename)
 {
 	auto filedb = FS::File(getDirectory(), filename);
 	bool filedbExisting = filedb.exists();
@@ -92,63 +86,63 @@ void ProgramModule::initDataBase(std::string filename)
 	initTransaction();
 }
 
-SQLite::Database& ProgramModule::getDB() {
+SQLite::Database& Project::getDB() {
 	return *m_db;
 }
 
-ProcessModuleManager* ProgramModule::getProcessModuleManager() {
+ProcessModuleManager* Project::getProcessModuleManager() {
 	return m_processModuleManager;
 }
 
-TypeManager* ProgramModule::getTypeManager() {
+TypeManager* Project::getTypeManager() {
 	return m_typeManager;
 }
 
-SymbolManager* ProgramModule::getSymbolManager() {
+SymbolManager* Project::getSymbolManager() {
 	return m_symbolManager;
 }
 
-SymbolTableManager* ProgramModule::getMemoryAreaManager() {
+SymbolTableManager* Project::getMemoryAreaManager() {
 	return m_memoryAreaManager;
 }
 
-FunctionManager* ProgramModule::getFunctionManager() {
+FunctionManager* Project::getFunctionManager() {
 	return m_functionManager;
 }
 
-FunctionTagManager* ProgramModule::getFunctionTagManager() {
+FunctionTagManager* Project::getFunctionTagManager() {
 	return m_functionManager->getFunctionTagManager();
 }
 
-VtableManager* ProgramModule::getVTableManager() {
+VtableManager* Project::getVTableManager() {
 	return m_vtableManager;
 }
 
-TriggerManager* ProgramModule::getTriggerManager() {
+TriggerManager* Project::getTriggerManager() {
 	return m_triggerManager;
 }
 
-TriggerGroupManager* ProgramModule::getTriggerGroupManager() {
+TriggerGroupManager* Project::getTriggerGroupManager() {
 	return m_triggerGroupManager;
 }
 
-StatManager* ProgramModule::getStatManager() {
+StatManager* Project::getStatManager() {
 	return m_statManager;
 }
 
-Symbol::SymbolTable* ProgramModule::getGlobalMemoryArea() {
+Symbol::SymbolTable* Project::getGlobalMemoryArea() {
 	return getMemoryAreaManager()->getMainGlobalSymTable();
 }
 
-DB::ITransaction* ProgramModule::getTransaction() {
+DB::ITransaction* Project::getTransaction() {
 	return m_transaction;
 }
 
-FS::Directory& ProgramModule::getDirectory() {
+FS::Directory& Project::getDirectory() {
 	return m_dir;
 }
 
-Ghidra::Sync* ProgramModule::getGhidraSync() {
+Ghidra::Sync* Project::getGhidraSync() {
 	return m_ghidraSync;
 }
 

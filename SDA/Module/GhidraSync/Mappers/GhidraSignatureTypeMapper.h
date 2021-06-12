@@ -15,9 +15,9 @@ namespace CE::Ghidra
 
 		void remove(SyncContext* ctx, IObject* obj) override;
 
-		datatype::SDataTypeSignature buildDesc(DataType::Signature* sig);
+		datatype::SDataTypeSignature buildDesc(DataType::FunctionSignature* sig);
 
-		void changeSignatureByDesc(DataType::Signature* sig, const datatype::SDataTypeSignature& sigDesc);
+		void changeSignatureByDesc(DataType::FunctionSignature* sig, const datatype::SDataTypeSignature& sigDesc);
 
 	private:
 		DataTypeMapper* m_dataTypeMapper;

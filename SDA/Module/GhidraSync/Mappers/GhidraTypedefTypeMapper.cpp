@@ -10,7 +10,7 @@ TypedefTypeMapper::TypedefTypeMapper(DataTypeMapper* dataTypeMapper)
 
 void TypedefTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	for (auto typedefDesc : dataPacket->typedefs) {
-		auto type = m_dataTypeMapper->m_typeManager->getTypeByGhidraId(typedefDesc.type.id);
+		auto type = m_dataTypeMapper->m_typeManager->findTypeByGhidraId(typedefDesc.type.id);
 		if (type == nullptr)
 			throw std::exception("item not found");
 		if (auto typeDef = dynamic_cast<DataType::Typedef*>(type)) {

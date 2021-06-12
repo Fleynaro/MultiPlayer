@@ -18,7 +18,7 @@ namespace CE::Decompiler::PCode
 	{
 	public:
 		enum class Type {
-			Generic,
+			Helper,
 			StackPointer,
 			InstructionPointer,
 			Flag,
@@ -34,7 +34,7 @@ namespace CE::Decompiler::PCode
 		std::string m_debugInfo;
 		BitMask64 m_valueRangeMask; // range of possible values
 
-		Register(RegisterId genericId = 0, int index = 0, BitMask64 valueRangeMask = 0x0, Type type = Type::Generic)
+		Register(RegisterId genericId = 0, int index = 0, BitMask64 valueRangeMask = 0x0, Type type = Type::Helper)
 			: m_genericId(genericId), m_index(index), m_valueRangeMask(valueRangeMask), m_type(type)
 		{
 			m_debugInfo = printDebug();
@@ -121,7 +121,7 @@ namespace CE::Decompiler::PCode
 
 	// that is the feature of x86: setting value to EAX cleans fully RAX
 	static BitMask64 GetValueRangeMaskWithException(const PCode::Register& reg) {
-		if (reg.getType() == Register::Type::Generic && reg.m_valueRangeMask == BitMask64(4))
+		if (reg.getType() == Register::Type::Helper && reg.m_valueRangeMask == BitMask64(4))
 			return BitMask64(8);
 		return reg.m_valueRangeMask;
 	}

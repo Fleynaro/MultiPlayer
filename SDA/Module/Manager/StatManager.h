@@ -7,7 +7,7 @@ namespace CE
 	class StatManager : public AbstractManager
 	{
 	public:
-		StatManager(ProgramModule* sda);
+		StatManager(Project* sda);
 
 		~StatManager();
 

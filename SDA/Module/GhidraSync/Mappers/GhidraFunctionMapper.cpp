@@ -13,10 +13,10 @@ FunctionMapper::FunctionMapper(CE::FunctionManager* functionManager, DataTypeMap
 
 void FunctionMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	for (auto funcDesc : dataPacket->functions) {
-		auto function = m_functionManager->getFunctionByGhidraId(funcDesc.id);
+		auto function = m_functionManager->findFunctionByGhidraId(funcDesc.id);
 		if (function == nullptr) {
-			auto mainModule = m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule();
-			auto signatureType = m_functionManager->getProgramModule()->getTypeManager()->createSignature("", "");
+			auto mainModule = m_functionManager->getProject()->getProcessModuleManager()->getMainModule();
+			auto signatureType = m_functionManager->getProject()->getTypeManager()->createSignature("", "");
 			function = m_functionManager->createFunction("", mainModule, {}, signatureType);
 		}
 		changeFunctionByDesc(function, funcDesc);
@@ -46,8 +46,8 @@ AddressRangeList FunctionMapper::getRangesFromDesc(const std::vector<function::S
 	AddressRangeList ranges;
 	for (auto& range : rangeDescs) {
 		ranges.push_back(AddressRange(
-			m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule()->toAbsAddr(range.minOffset),
-			m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule()->toAbsAddr(range.maxOffset)
+			m_functionManager->getProject()->getProcessModuleManager()->getMainModule()->toAbsAddr(range.minOffset),
+			m_functionManager->getProject()->getProcessModuleManager()->getMainModule()->toAbsAddr(range.maxOffset)
 		));
 	}
 	return ranges;
@@ -79,8 +79,8 @@ function::SFunction FunctionMapper::buildDesc(Function::Function* function) {
 
 	for (auto& range : function->getAddressRangeList()) {
 		function::SFunctionRange rangeDesc;
-		rangeDesc.__set_minOffset(m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule()->toRelAddr(range.getMinAddress()));
-		rangeDesc.__set_maxOffset(m_functionManager->getProgramModule()->getProcessModuleManager()->getMainModule()->toRelAddr(range.getMaxAddress()));
+		rangeDesc.__set_minOffset(m_functionManager->getProject()->getProcessModuleManager()->getMainModule()->toRelAddr(range.getMinAddress()));
+		rangeDesc.__set_maxOffset(m_functionManager->getProject()->getProcessModuleManager()->getMainModule()->toRelAddr(range.getMaxAddress()));
 		funcDesc.ranges.push_back(rangeDesc);
 	}
 

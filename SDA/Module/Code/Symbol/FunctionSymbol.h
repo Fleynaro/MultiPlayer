@@ -10,8 +10,8 @@ namespace CE::Symbol
 	class FunctionSymbol : public GlobalVarSymbol
 	{
 	public:
-		FunctionSymbol(int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: GlobalVarSymbol(offset, type, name, comment)
+		FunctionSymbol(SymbolManager* manager, int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "")
+			: GlobalVarSymbol(manager, offset, type, name, comment)
 		{}
 
 		Type getType() override {
@@ -26,8 +26,8 @@ namespace CE::Symbol
 			return m_function;
 		}
 
-		DataType::ISignature* getSignature() {
-			return dynamic_cast<DataType::ISignature*>(getDataType()->getType());
+		DataType::IFunctionSignature* getSignature() {
+			return dynamic_cast<DataType::IFunctionSignature*>(getDataType()->getType());
 		}
 
 		void setFunction(Function::Function* function) {

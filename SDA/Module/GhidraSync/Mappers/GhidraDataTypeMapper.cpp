@@ -21,7 +21,7 @@ DataTypeMapper::DataTypeMapper(CE::TypeManager* typeManager)
 
 void DataTypeMapper::createTypeByDescIfNotExists(const datatype::SDataType& typeDesc)
 {
-	auto type = m_typeManager->getTypeByGhidraId(typeDesc.id);
+	auto type = m_typeManager->findTypeByGhidraId(typeDesc.id);
 	if (type == nullptr) {
 		createTypeByDesc(typeDesc);
 	}
@@ -122,7 +122,7 @@ DataTypePtr DataTypeMapper::getTypeByDesc(const shared::STypeUnit& desc) {
 		ptr_levels.push_back((int)lvl);
 	}
 	
-	auto type = m_typeManager->getTypeByGhidraId(desc.typeId);
+	auto type = m_typeManager->findTypeByGhidraId(desc.typeId);
 	if (type == nullptr) {
 		type = m_typeManager->getDefaultType();
 	}

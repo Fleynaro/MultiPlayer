@@ -9,7 +9,7 @@ namespace CE::Decompiler
 {
 	class PCodeGraphReferenceSearch
 	{
-		CE::ProgramModule* m_programModule;
+		CE::Project* m_programModule;
 		AbstractRegisterFactory* m_registerFactory;
 		IImage* m_image;
 		Symbolization::DataTypeFactory m_dataTypeFactory;
@@ -21,7 +21,7 @@ namespace CE::Decompiler
 		};
 		std::list<VTable> m_vtables;
 
-		PCodeGraphReferenceSearch(CE::ProgramModule* programModule, AbstractRegisterFactory* registerFactory, IImage* image)
+		PCodeGraphReferenceSearch(CE::Project* programModule, AbstractRegisterFactory* registerFactory, IImage* image)
 			: m_programModule(programModule), m_registerFactory(registerFactory), m_image(image), m_dataTypeFactory(programModule)
 		{
 			m_userSymbolDef = Symbolization::UserSymbolDef(m_programModule);
@@ -294,7 +294,7 @@ namespace CE::Decompiler
 
 					if (targetOffset == -1 || m_image->defineSegment((int)(targetOffset >> 8)) != IImage::CODE_SEGMENT) {
 						offset = -1;
-						m_decoder->getWarningContainer()->addWarning("rva "+ std::to_string(targetOffset >> 8) +" is not correct in the jump instruction "+ instr->m_originalView +" (at 0x"+ Generic::String::NumberToHex(instr->getOriginalInstructionOffset()) +")");
+						m_decoder->getWarningContainer()->addWarning("rva "+ std::to_string(targetOffset >> 8) +" is not correct in the jump instruction "+ instr->m_originalView +" (at 0x"+ Helper::String::NumberToHex(instr->getOriginalInstructionOffset()) +")");
 						continue;
 					}
 

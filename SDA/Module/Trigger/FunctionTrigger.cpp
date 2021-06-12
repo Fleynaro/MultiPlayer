@@ -63,7 +63,7 @@ void Trigger::setStatCollectingEnable(bool toggle) {
 		return;
 	}
 
-	m_statCollector = getManager()->getProgramModule()->getStatManager()->getCollector();
+	m_statCollector = getManager()->getProject()->getStatManager()->getCollector();
 }
 
 void Trigger::setNotExecute(bool toggle) {

@@ -10,17 +10,17 @@ SignatureTypeMapper::SignatureTypeMapper(DataTypeMapper* dataTypeMapper)
 
 void SignatureTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	for (auto sigDesc : dataPacket->signatures) {
-		auto type = m_dataTypeMapper->m_typeManager->getTypeByGhidraId(sigDesc.type.id);
+		auto type = m_dataTypeMapper->m_typeManager->findTypeByGhidraId(sigDesc.type.id);
 		if (type == nullptr)
 			throw std::exception("item not found");
-		if (auto sigDef = dynamic_cast<DataType::Signature*>(type)) {
+		if (auto sigDef = dynamic_cast<DataType::FunctionSignature*>(type)) {
 			changeSignatureByDesc(sigDef, sigDesc);
 		}
 	}
 }
 
 void SignatureTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto type = static_cast<DataType::Signature*>(obj);
+	auto type = static_cast<DataType::FunctionSignature*>(obj);
 	ctx->m_dataPacket->signatures.push_back(buildDesc(type));
 	m_dataTypeMapper->upsert(ctx, obj);
 }
@@ -29,7 +29,7 @@ void SignatureTypeMapper::remove(SyncContext* ctx, IObject* obj) {
 	m_dataTypeMapper->remove(ctx, obj);
 }
 
-datatype::SDataTypeSignature SignatureTypeMapper::buildDesc(DataType::Signature* sig) {
+datatype::SDataTypeSignature SignatureTypeMapper::buildDesc(DataType::FunctionSignature* sig) {
 	datatype::SDataTypeSignature sigDesc;
 	sigDesc.__set_type(m_dataTypeMapper->buildDesc(sig));
 	sigDesc.__set_returnType(m_dataTypeMapper->buildTypeUnitDesc(sig->getReturnType()));
@@ -43,7 +43,7 @@ datatype::SDataTypeSignature SignatureTypeMapper::buildDesc(DataType::Signature*
 	return sigDesc;
 }
 
-void SignatureTypeMapper::changeSignatureByDesc(DataType::Signature* sig, const datatype::SDataTypeSignature& sigDesc) {
+void SignatureTypeMapper::changeSignatureByDesc(DataType::FunctionSignature* sig, const datatype::SDataTypeSignature& sigDesc) {
 	m_dataTypeMapper->changeUserTypeByDesc(sig, sigDesc.type);
 	sig->setReturnType(m_dataTypeMapper->getTypeByDesc(sigDesc.returnType));
 	sig->deleteAllParameters();

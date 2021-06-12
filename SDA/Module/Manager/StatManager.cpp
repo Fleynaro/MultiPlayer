@@ -2,10 +2,10 @@
 
 using namespace CE;
 
-StatManager::StatManager(ProgramModule* sda)
+StatManager::StatManager(Project* sda)
 	: AbstractManager(sda)
 {
-	auto bufferDir = getProgramModule()->getDirectory().next("buffers");
+	auto bufferDir = getProject()->getDirectory().next("buffers");
 	bufferDir.createIfNotExists();
 
 	m_collector = new Stat::Function::Collector(bufferDir);

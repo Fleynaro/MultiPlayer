@@ -1,6 +1,6 @@
-#include "Generic.h"
+#include "Helper.h"
 
-using namespace Generic;
+using namespace Helper;
 
 std::vector<std::string> String::Split(const std::string& input, const std::string& regex) {
 	std::regex re(regex);
@@ -52,8 +52,8 @@ std::string String::ToUpper(std::string source)
 
 bool String::Contains(const std::string& str, const std::string& keyword)
 {
-	return Generic::String::ToLower(str)
-		.find(Generic::String::ToLower(keyword)) != std::string::npos;
+	return Helper::String::ToLower(str)
+		.find(Helper::String::ToLower(keyword)) != std::string::npos;
 }
 
 uint64_t String::HexToNumber(std::string source)
@@ -71,36 +71,36 @@ std::string String::NumberToHex(uint64_t number)
 	return stream.str();
 }
 
-bool Generic::String::is_number(const std::string& s)
+bool Helper::String::is_number(const std::string& s)
 {
 	std::string::const_iterator it = s.begin();
 	while (it != s.end() && std::isdigit(*it)) ++it;
 	return !s.empty() && it == s.end();
 }
 
-std::wstring Generic::String::s2ws(const std::string& str)
+std::wstring Helper::String::s2ws(const std::string& str)
 {
 	return std::wstring(str.begin(), str.end());
 }
 
-std::string Generic::String::ws2s(const std::wstring& wstr)
+std::string Helper::String::ws2s(const std::wstring& wstr)
 {
 	return std::string(wstr.begin(), wstr.end());
 }
 
-void Generic::String::ltrim(std::string& s) {
+void Helper::String::ltrim(std::string& s) {
 	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
 		return !std::isspace(ch);
 		}));
 }
 
-void Generic::String::rtrim(std::string& s) {
+void Helper::String::rtrim(std::string& s) {
 	s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) {
 		return !std::isspace(ch);
 		}).base(), s.end());
 }
 
-void Generic::String::replaceSymbolWithin(std::string& source, const char bounder[2], const char from, const char to)
+void Helper::String::replaceSymbolWithin(std::string& source, const char bounder[2], const char from, const char to)
 {
 	int counter = 0;
 	for (int i = 0; i < source.length(); i++) {

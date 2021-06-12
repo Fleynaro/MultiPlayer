@@ -47,12 +47,6 @@ DataTypePtr Structure::Field::getDataType() {
 	return m_type;
 }
 
-Structure::Structure(TypeManager* typeManager, const std::string& name, const std::string& comment)
-	: UserType(name, comment)
-{
-	m_defaultField = new Field(this, "undefined", GetUnit(getTypeManager()->getTypeByName("byte")), -1, -1);
-}
-
 Structure::~Structure() {
 	for (auto it : m_fields)
 		delete it.second;

@@ -1,7 +1,7 @@
 #pragma once
 
 namespace CE {
-	class ProgramModule;
+	class Project;
 
-	void test(CE::ProgramModule* programModule);
+	void test(CE::Project* programModule);
 };

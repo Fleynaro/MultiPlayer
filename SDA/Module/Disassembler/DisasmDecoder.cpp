@@ -73,7 +73,7 @@ void Decoder::doCallback(const ZydisDecodedInstruction& instruction, const std::
 	}
 
 	if (instruction.operand_count == 0) {
-		Instructions::Generic instr(instruction.mnemonic);
+		Instructions::Helper instr(instruction.mnemonic);
 		callback(&instr);
 	}
 	else if (instruction.operand_count <= 2) {

@@ -27,11 +27,11 @@ namespace CE
 				Structure,
 				Class,
 				Typedef,
-				Signature
+				FunctionSignature
 			};
 
-			Type(const std::string& name, const std::string& comment = "")
-				: Descrtiption(name, comment)
+			Type(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
+				: m_typeManager(typeManager), Descrtiption(name, comment)
 			{}
 
 			virtual Group getGroup() = 0;

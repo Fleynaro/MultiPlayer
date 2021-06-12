@@ -14,7 +14,7 @@
 
 using namespace CE;
 
-TypeManager::TypeManager(ProgramModule* module)
+TypeManager::TypeManager(Project* module)
 	: AbstractItemManager(module)
 {
 	m_dataTypeMapper = new DB::DataTypeMapper(this);
@@ -26,6 +26,10 @@ TypeManager::TypeManager(ProgramModule* module)
 TypeManager::~TypeManager() {
 	delete m_dataTypeMapper;
 	delete m_ghidraDataTypeMapper;
+}
+
+TypeManager::Factory TypeManager::getFactory(bool generateId) {
+	return Factory(this, m_ghidraDataTypeMapper, m_dataTypeMapper, generateId);
 }
 
 void TypeManager::addSystemTypes() {
@@ -92,9 +96,10 @@ void TypeManager::addGhidraTypedefs() {
 	DB::Id startId = 100;
 	for (const auto& it : typedefs) {
 		auto type = new DataType::Typedef(this, it.first);
+		type->setTypeManager(this);
 		type->setId(startId);
 		type->setGhidraMapper(m_ghidraDataTypeMapper->m_typedefTypeMapper);
-		type->setRefType(DataType::GetUnit(getTypeById(it.second)));
+		type->setRefType(DataType::GetUnit(findTypeById(it.second)));
 		m_items.insert(std::make_pair(startId, type));
 		startId++;
 	}
@@ -112,64 +117,11 @@ void TypeManager::loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket)
 	m_ghidraDataTypeMapper->load(dataPacket);
 }
 
-DataType::Typedef* TypeManager::createTypedef(const std::string& name, const std::string& desc) {
-	auto type = new DataType::Typedef(this, name, desc);
-	type->setMapper(m_dataTypeMapper->m_typedefTypeMapper);
-	type->setGhidraMapper(m_ghidraDataTypeMapper->m_typedefTypeMapper);
-	type->setId(m_dataTypeMapper->getNextId());
-	getProgramModule()->getTransaction()->markAsNew(type);
-	return type;
+DataType::Type* CE::TypeManager::findTypeById(DB::Id id) {
+	return dynamic_cast<DataType::Type*>(find(id));
 }
 
-DataType::Enum* TypeManager::createEnum(const std::string& name, const std::string& desc) {
-	auto type = new DataType::Enum(this, name, desc);
-	type->setMapper(m_dataTypeMapper->m_enumTypeMapper);
-	type->setGhidraMapper(m_ghidraDataTypeMapper->m_enumTypeMapper);
-	type->setId(m_dataTypeMapper->getNextId());
-	getProgramModule()->getTransaction()->markAsNew(type);
-	return type;
-}
-
-DataType::Structure* TypeManager::createStructure(const std::string& name, const std::string& desc) {
-	auto type = new DataType::Structure(this, name, desc);
-	type->setMapper(m_dataTypeMapper->m_structureTypeMapper);
-	type->setGhidraMapper(m_ghidraDataTypeMapper->m_structureTypeMapper);
-	type->setId(m_dataTypeMapper->getNextId());
-	getProgramModule()->getTransaction()->markAsNew(type);
-	return type;
-}
-
-DataType::Class* TypeManager::createClass(const std::string& name, const std::string& desc) {
-	auto type = new DataType::Class(this, name, desc);
-	type->setMapper(m_dataTypeMapper->m_classTypeMapper);
-	type->setGhidraMapper(m_ghidraDataTypeMapper->m_classTypeMapper);
-	type->setId(m_dataTypeMapper->getNextId());
-	getProgramModule()->getTransaction()->markAsNew(type);
-	return type;
-}
-
-DataType::Signature* TypeManager::createSignature(const std::string& name, const std::string& desc) {
-	auto type = new DataType::Signature(this, name, desc);
-	type->setMapper(m_dataTypeMapper->m_signatureTypeMapper);
-	type->setGhidraMapper(m_ghidraDataTypeMapper->m_signatureTypeMapper);
-	type->setId(m_dataTypeMapper->getNextId());
-	getProgramModule()->getTransaction()->markAsNew(type);
-	return type;
-}
-
-DataType::Type* TypeManager::getDefaultType() {
-	return getTypeById(DataType::SystemType::Byte);
-}
-
-DataType::Type* TypeManager::getDefaultReturnType() {
-	return getTypeById(DataType::SystemType::Void);
-}
-
-DataType::Type* TypeManager::getTypeById(DB::Id id) {
-	return static_cast<DataType::Type*>(find(id));
-}
-
-DataType::Type* TypeManager::getTypeByName(const std::string& typeName)
+DataType::Type* CE::TypeManager::findTypeByName(const std::string& typeName)
 {
 	Iterator it(this);
 	while (it.hasNext()) {
@@ -181,7 +133,7 @@ DataType::Type* TypeManager::getTypeByName(const std::string& typeName)
 	return nullptr;
 }
 
-DataType::Type* TypeManager::getTypeByGhidraId(Ghidra::Id id) {
+DataType::Type* CE::TypeManager::findTypeByGhidraId(Ghidra::Id id) {
 	Iterator it(this);
 	while (it.hasNext()) {
 		auto type = it.next();
@@ -201,3 +153,57 @@ Ghidra::Id TypeManager::getGhidraId(DataType::Type* type) {
 	objHash.addValue(type->getName());
 	return objHash.getHash();
 }
+
+DataType::Typedef* CE::TypeManager::Factory::createTypedef(const std::string& name, const std::string& desc) {
+	auto type = new DataType::Typedef(m_typeManager, name, desc);
+	type->setMapper(m_dataTypeMapper->m_typedefTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_typedefTypeMapper);
+	if(m_generateId)
+		type->setId(m_dataTypeMapper->getNextId());
+	return type;
+}
+
+DataType::Enum* CE::TypeManager::Factory::createEnum(const std::string& name, const std::string& desc) {
+	auto type = new DataType::Enum(m_typeManager, name, desc);
+	type->setMapper(m_dataTypeMapper->m_enumTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_enumTypeMapper);
+	if (m_generateId)
+		type->setId(m_dataTypeMapper->getNextId());
+	return type;
+}
+
+DataType::Structure* CE::TypeManager::Factory::createStructure(const std::string& name, const std::string& desc) {
+	auto type = new DataType::Structure(m_typeManager, name, desc);
+	type->setMapper(m_dataTypeMapper->m_structureTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_structureTypeMapper);
+	if (m_generateId)
+		type->setId(m_dataTypeMapper->getNextId());
+	return type;
+}
+
+DataType::Class* CE::TypeManager::Factory::createClass(const std::string& name, const std::string& desc) {
+	auto type = new DataType::Class(m_typeManager, name, desc);
+	type->setMapper(m_dataTypeMapper->m_classTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_classTypeMapper);
+	if (m_generateId)
+		type->setId(m_dataTypeMapper->getNextId());
+	return type;
+}
+
+DataType::FunctionSignature* CE::TypeManager::Factory::createSignature(DataType::FunctionSignature::CallingConvetion callingConvetion, const std::string& name, const std::string& desc) {
+	auto type = new DataType::FunctionSignature(m_typeManager, name, desc, callingConvetion);
+	type->setMapper(m_typeManager->m_dataTypeMapper->m_signatureTypeMapper);
+	type->setGhidraMapper(m_ghidraDataTypeMapper->m_signatureTypeMapper);
+	if (m_generateId)
+		type->setId(m_dataTypeMapper->getNextId());
+	return type;
+}
+
+DataType::Type* CE::TypeManager::Factory::getDefaultType() {
+	return m_typeManager->findTypeById(DataType::SystemType::Byte);
+}
+
+DataType::Type* CE::TypeManager::Factory::getDefaultReturnType() {
+	return m_typeManager->findTypeById(DataType::SystemType::Void);
+}
+

@@ -66,7 +66,7 @@ namespace CE::Decompiler
 				decompiledBlock.m_pcodeBlock = pcodeBlock;
 				decompiledBlock.m_execCtx = new ExecContext(this, pcodeBlock);
 				decompiledBlock.m_decBlock = newDecBlock;
-				decompiledBlock.m_decBlock->m_name = Generic::String::NumberToHex(pcodeBlock->ID);
+				decompiledBlock.m_decBlock->m_name = Helper::String::NumberToHex(pcodeBlock->ID);
 
 				m_decompiledBlocks[pcodeBlock] = decompiledBlock;
 			}

@@ -15,9 +15,9 @@ void TypedefTypeMapper::loadTypedefs(Database * db) {
 
 	while (query.executeStep())
 	{
-		auto type = getParentMapper()->getManager()->getTypeById(query.getColumn("type_id"));
+		auto type = getParentMapper()->getManager()->findTypeById(query.getColumn("type_id"));
 		if (auto Typedef = dynamic_cast<DataType::Typedef*>(type)) {
-			auto refType = getParentMapper()->getManager()->getTypeById(query.getColumn("ref_type_id"));
+			auto refType = getParentMapper()->getManager()->findTypeById(query.getColumn("ref_type_id"));
 			if (refType != nullptr)
 				Typedef->setRefType(DataType::GetUnit(refType, query.getColumn("pointer_lvl")));
 		}
@@ -26,12 +26,10 @@ void TypedefTypeMapper::loadTypedefs(Database * db) {
 
 IDomainObject* TypedefTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
-	auto type = new DataType::Typedef(
-		getParentMapper()->getManager(),
+	auto type = getParentMapper()->getManager()->getFactory(false).createTypedef(
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
-	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_typedefTypeMapper);
 	return type;
 }
 

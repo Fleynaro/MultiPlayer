@@ -12,13 +12,10 @@ EnumTypeMapper::EnumTypeMapper(DataTypeMapper* parentMapper)
 
 IDomainObject* EnumTypeMapper::doLoad(Database* db, SQLite::Statement& query)
 {
-	auto type = new DataType::Enum(
-		getParentMapper()->getManager(),
+	auto type = getParentMapper()->getManager()->getFactory(false).createEnum(
 		query.getColumn("name"),
 		query.getColumn("desc")
 	);
-	type->setId(query.getColumn("id"));
-	type->setGhidraMapper(getParentMapper()->getManager()->m_ghidraDataTypeMapper->m_enumTypeMapper);
 	loadFieldsForEnum(db, static_cast<DataType::Enum*>(type));
 	return type;
 }

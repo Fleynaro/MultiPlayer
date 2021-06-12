@@ -3,7 +3,7 @@
 #include <Widgets/CodeEditor/CodeEditor.h>
 
 namespace CE {
-	class ProgramModule;
+	class Project;
 };
 
 namespace GUI {
@@ -19,7 +19,7 @@ namespace GUI {
 		Button::StdButton m_decompile_btn;
 		Text::ColoredText m_decInfoText;
 
-		CE::ProgramModule* m_programModule;
+		CE::Project* m_programModule;
 	public:
 		DecompilerDemoWindow()
 			: Window("Decompiler")

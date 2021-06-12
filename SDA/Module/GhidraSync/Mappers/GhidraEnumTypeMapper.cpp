@@ -10,7 +10,7 @@ EnumTypeMapper::EnumTypeMapper(DataTypeMapper* dataTypeMapper)
 
 void EnumTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	for (auto enumDesc : dataPacket->enums) {
-		auto type = m_dataTypeMapper->m_typeManager->getTypeByGhidraId(enumDesc.type.id);
+		auto type = m_dataTypeMapper->m_typeManager->findTypeByGhidraId(enumDesc.type.id);
 		if (type == nullptr)
 			throw std::exception("item not found");
 		if (auto Enum = dynamic_cast<DataType::Enum*>(type)) {

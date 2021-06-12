@@ -13,13 +13,13 @@ TriggerMapper::TriggerMapper(IRepository* repository)
 
 void TriggerMapper::loadAll()
 {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	Statement query(db, "SELECT * FROM sda_triggers");
 	load(&db, query);
 }
 
 Id TriggerMapper::getNextId() {
-	auto& db = getManager()->getProgramModule()->getDB();
+	auto& db = getManager()->getProject()->getDB();
 	return GenerateNextId(&db, "sda_triggers");
 }
 

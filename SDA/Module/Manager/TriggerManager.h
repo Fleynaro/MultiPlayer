@@ -13,15 +13,15 @@ namespace CE
 	public:
 		using Iterator = AbstractIterator<Trigger::AbstractTrigger>;
 
-		TriggerManager(ProgramModule* module);
+		TriggerManager(Project* module);
 
-		Trigger::Function::Trigger* createFunctionTrigger(const std::string& name, const std::string& desc = "");
+		Trigger::Function::Trigger* createFunctionTrigger(const std::string& name, const std::string& desc = "", bool generateId = true);
 
 		void loadTriggers();
 
-		Trigger::AbstractTrigger* getTriggerById(DB::Id id);
+		Trigger::AbstractTrigger* findTriggerById(DB::Id id);
 
-		Trigger::AbstractTrigger* getTriggerByName(const std::string& name);
+		Trigger::AbstractTrigger* findTriggerByName(const std::string& name);
 
 	private:
 		DB::TriggerMapper* m_triggerMapper;

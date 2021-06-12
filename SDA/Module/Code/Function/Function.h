@@ -23,8 +23,8 @@ namespace CE
 		class Function : public DB::DomainObject, public Ghidra::Object, public IDescription
 		{
 		public:
-			Function(/*ProcessModule* processModule, */Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph)
-				: /*m_processModule(processModule), */m_functionSymbol(functionSymbol), m_funcGraph(funcGraph)
+			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph)
+				: m_manager(manager), m_functionSymbol(functionSymbol), m_funcGraph(funcGraph)
 			{}
 
 			Symbol::FunctionSymbol* getFunctionSymbol();
@@ -39,7 +39,7 @@ namespace CE
 
 			void setComment(const std::string& comment) override;
 
-			DataType::ISignature* getSignature();
+			DataType::IFunctionSignature* getSignature();
 
 			int getOffset();
 
