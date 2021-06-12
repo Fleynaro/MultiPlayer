@@ -80,7 +80,7 @@ void SymbolTableMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void SymbolTableMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto memoryArea = static_cast<SymbolTable*>(obj);
+	auto memoryArea = dynamic_cast<SymbolTable*>(obj);
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_mem_areas (mem_area_id, type, size, save_id) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, memoryArea->getId());
 	bind(query, *memoryArea);

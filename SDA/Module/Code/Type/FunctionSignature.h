@@ -5,7 +5,7 @@
 
 namespace CE::DataType
 {
-	class IFunctionSignature
+	class IFunctionSignature : public IUserDefinedType
 	{
 	public:
 		enum CallingConvetion {
@@ -37,7 +37,7 @@ namespace CE::DataType
 		virtual Decompiler::FunctionCallInfo getCallInfo() = 0;
 	};
 
-	class FunctionSignature : public UserType, public IFunctionSignature
+	class FunctionSignature : public UserDefinedType, public IFunctionSignature
 	{
 	public:
 		FunctionSignature(TypeManager* typeManager, const std::string& name, const std::string& comment = "", CallingConvetion callingConvetion = FASTCALL);

@@ -15,11 +15,11 @@ Enum::Group Enum::getGroup() {
 	return Group::Enum;
 }
 
-std::string Enum::getViewValue(void* addr) {
-	auto value = m_fields.find(*(int*)(addr));
-	if (value == m_fields.end())
-		return UserType::getViewValue(addr);
-	return value->second + " (" + UserType::getViewValue(addr) + ")";
+std::string Enum::getViewValue(uint64_t value) {
+	auto it = m_fields.find((int&)(value));
+	if (it == m_fields.end())
+		return UserDefinedType::getViewValue(value);
+	return it->second + " (" + UserDefinedType::getViewValue(value) + ")";
 }
 
 Enum::FieldDict& Enum::getFieldDict() {

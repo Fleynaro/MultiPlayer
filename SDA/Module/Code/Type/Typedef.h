@@ -5,20 +5,20 @@ namespace CE
 {
 	namespace DataType
 	{
-		class Typedef : public UserType
+		class Typedef : public UserDefinedType
 		{
 		public:
 			Typedef(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
-				: UserType(typeManager, name, comment)
+				: UserDefinedType(typeManager, name, comment)
 			{
-				m_refType = GetUnit(new DataType::Byte);
+				m_refType = GetUnit(typeManager->getFactory().getDefaultType());
 			}
 
 			Group getGroup() override;
 
 			int getSize() override;
 
-			std::string getViewValue(void* addr) override;
+			std::string getViewValue(uint64_t value) override;
 
 			void setRefType(DataTypePtr refType);
 

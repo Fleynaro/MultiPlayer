@@ -20,7 +20,7 @@ void StructureTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 }
 
 void StructureTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto type = static_cast<DataType::Structure*>(obj);
+	auto type = dynamic_cast<DataType::Structure*>(obj);
 	ctx->m_dataPacket->structures.push_back(buildDesc(type));
 	m_dataTypeMapper->upsert(ctx, obj);
 }

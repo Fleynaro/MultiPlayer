@@ -16,7 +16,7 @@ namespace CE::Ghidra
 		virtual void setGhidraMapper(IMapper* mapper) {}
 	};
 	
-	class Object : public IObject
+	class Object : virtual public IObject
 	{
 	public:
 		bool doesSyncWithGhidra() override;

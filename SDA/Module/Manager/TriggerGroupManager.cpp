@@ -23,7 +23,7 @@ Trigger::TriggerGroup* TriggerGroupManager::createTriggerGroup(const std::string
 }
 
 Trigger::TriggerGroup* TriggerGroupManager::findTriggerGroupById(DB::Id id) {
-	return static_cast<Trigger::TriggerGroup*>(find(id));
+	return dynamic_cast<Trigger::TriggerGroup*>(find(id));
 }
 
 Trigger::TriggerGroup* TriggerGroupManager::findTriggerGroupByName(const std::string& name) {

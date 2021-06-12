@@ -8,12 +8,12 @@ using namespace CE::DataType;
 using namespace CE::Decompiler;
 
 FunctionSignature::FunctionSignature(TypeManager* typeManager, const std::string& name, const std::string& comment, CallingConvetion callingConvetion)
-	: UserType(typeManager, name, comment), m_callingConvetion(callingConvetion)
+	: UserDefinedType(typeManager, name, comment), m_callingConvetion(callingConvetion)
 {
 	setReturnType(DataType::GetUnit(typeManager->getFactory().getDefaultReturnType()));
 }
 
-Type::Group FunctionSignature::getGroup() {
+AbstractType::Group FunctionSignature::getGroup() {
 	return Group::FunctionSignature;
 }
 

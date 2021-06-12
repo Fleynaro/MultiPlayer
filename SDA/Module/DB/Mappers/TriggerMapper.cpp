@@ -51,7 +51,7 @@ void TriggerMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 }
 
 void TriggerMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto trigger = static_cast<Trigger::AbstractTrigger*>(obj);
+	auto trigger = dynamic_cast<Trigger::AbstractTrigger*>(obj);
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_triggers(trigger_id, type, name, desc) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, trigger->getId());
 	bind(query, *trigger);

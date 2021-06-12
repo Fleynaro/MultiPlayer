@@ -260,7 +260,7 @@ namespace CE::Decompiler::Symbolization
 				// example: *(float*)(param1) where <param1> is <float*>
 				if (sdaSymbolLeaf->getDataType()->isPointer()) {
 					auto g = sdaSymbolLeaf->getDataType()->getGroup();
-					if (g == Type::Group::Structure || g == Type::Group::Class) {
+					if (g == AbstractType::Group::Structure || g == AbstractType::Group::Class) {
 						if (dynamic_cast<ReadValueNode*>(sdaSymbolLeaf->getParentNode())) {
 							// just add offset: *(float*)(param1) -> *(float*)(param1 + 0x0)
 							auto linearExpr = new LinearExpr(new SdaNumberLeaf(0));

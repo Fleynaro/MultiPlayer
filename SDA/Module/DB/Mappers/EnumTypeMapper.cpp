@@ -57,7 +57,7 @@ void EnumTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 
 void EnumTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
-	saveEnumFields(ctx, static_cast<DataType::Enum*>(obj));
+	saveEnumFields(ctx, dynamic_cast<DataType::Enum*>(obj));
 }
 
 void EnumTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)

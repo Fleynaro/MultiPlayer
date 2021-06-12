@@ -108,7 +108,7 @@ void SignatureTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) 
 }
 
 void SignatureTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto signature = static_cast<DataType::FunctionSignature*>(obj);
+	auto signature = dynamic_cast<DataType::FunctionSignature*>(obj);
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_signatures (signature_id, calling_convention, ret_type_id, ret_pointer_lvl) VALUES(?1, ?2, ?3, ?4)");
 	query.bind(1, signature->getId());
 	bind(query, *signature);
@@ -124,13 +124,14 @@ void SignatureTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) 
 	query.bind(1, obj->getId());
 	query.exec();
 
-	auto signature = static_cast<DataType::FunctionSignature*>(obj);
+	auto signature = dynamic_cast<DataType::FunctionSignature*>(obj);
 	removeParameterSymbols(ctx, *signature);
 }
 
 void SignatureTypeMapper::bind(SQLite::Statement& query, DataType::FunctionSignature& sig) {
+	auto retType = dynamic_cast<DB::IDomainObject*>(sig.getReturnType()->getType());
 	query.bind(2, sig.getCallingConvetion());
-	query.bind(3, sig.getReturnType()->getId());
+	query.bind(3, retType->getId());
 	query.bind(4, DataType::GetPointerLevelStr(sig.getReturnType()));
 }
 

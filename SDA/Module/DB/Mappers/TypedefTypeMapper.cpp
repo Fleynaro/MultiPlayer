@@ -40,7 +40,7 @@ void TypedefTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 
 void TypedefTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
-	auto Typedef = static_cast<DataType::Typedef*>(obj);
+	auto Typedef = dynamic_cast<DataType::Typedef*>(obj);
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_typedefs (type_id, ref_type_id, pointer_lvl) VALUES(?1, ?2, ?3)");
 	query.bind(1, Typedef->getId());
 	bind(query, *Typedef);
@@ -58,7 +58,8 @@ void TypedefTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 
 void TypedefTypeMapper::bind(SQLite::Statement& query, CE::DataType::Typedef& type)
 {
-	query.bind(2, type.getRefType()->getId());
+	auto refType = dynamic_cast<DB::IDomainObject*>(type.getRefType()->getType());
+	query.bind(2, refType->getId());
 	query.bind(3, DataType::GetPointerLevelStr(type.getRefType()));
 }
 

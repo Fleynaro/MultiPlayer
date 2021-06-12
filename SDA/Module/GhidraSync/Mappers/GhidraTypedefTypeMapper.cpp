@@ -20,7 +20,7 @@ void TypedefTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 }
 
 void TypedefTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto type = static_cast<DataType::Typedef*>(obj);
+	auto type = dynamic_cast<DataType::Typedef*>(obj);
 	ctx->m_dataPacket->typedefs.push_back(buildDesc(type));
 	m_dataTypeMapper->upsert(ctx, obj);
 }

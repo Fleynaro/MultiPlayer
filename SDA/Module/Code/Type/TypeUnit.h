@@ -5,10 +5,10 @@ namespace CE
 {
 	namespace DataType
 	{
-		class Unit : public Type
+		class Unit : public IType
 		{
 		public:
-			Unit(DataType::Type* type, std::list<int> levels = {});
+			Unit(DataType::IType* type, std::list<int> levels = {});
 
 			Group getGroup() override;
 
@@ -48,21 +48,13 @@ namespace CE
 
 			int getSize() override;
 
-			std::string getViewValue(void* addr) override;
+			std::string getViewValue(uint64_t value) override;
 
-			DataType::Type* getType();
-			
-			DB::Id getId() override;
-
-			void setId(DB::Id id) override;
-
-			DB::IMapper* getMapper() override;
-
-			void setMapper(DB::IMapper* mapper) override;
+			DataType::IType* getType();
 
 			static bool EqualPointerLvls(const std::list<int>& ptrList1, const std::list<int>& ptrList2);
 		private:
-			DataType::Type* m_type;
+			DataType::IType* m_type;
 			std::list<int> m_levels;
 		};
 	};
@@ -71,8 +63,8 @@ namespace CE
 
 	namespace DataType
 	{
-		DataTypePtr GetUnit(DataType::Type* type, const std::list<int>& levels_list);
-		DataTypePtr GetUnit(DataType::Type* type, const std::string& levels = "");
+		DataTypePtr GetUnit(DataType::IType* type, const std::list<int>& levels_list);
+		DataTypePtr GetUnit(DataType::IType* type, const std::string& levels = "");
 		std::string GetPointerLevelStr(DataTypePtr type);
 		std::list<int> ParsePointerLevelsStr(const std::string& str);
 		DataTypePtr CloneUnit(DataTypePtr dataType);

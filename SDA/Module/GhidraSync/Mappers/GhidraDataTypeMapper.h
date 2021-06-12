@@ -35,17 +35,17 @@ namespace CE::Ghidra
 
 		void remove(SyncContext* ctx, IObject* obj) override;
 
-		datatype::SDataType buildDesc(DataType::UserType* type);
+		datatype::SDataType buildDesc(DataType::UserDefinedType* type);
 
 		shared::STypeUnit buildTypeUnitDesc(DataTypePtr type);
 
 		DataTypePtr getTypeByDesc(const shared::STypeUnit& typeUnitDesc);
 
-		void changeUserTypeByDesc(DataType::UserType* type, const datatype::SDataType& typeDesc);
+		void changeUserTypeByDesc(DataType::UserDefinedType* type, const datatype::SDataType& typeDesc);
 
 	private:
 		void createTypeByDescIfNotExists(const datatype::SDataType& typeDesc);
 
-		DataType::UserType* createTypeByDesc(const datatype::SDataType& typeDesc);
+		DataType::UserDefinedType* createTypeByDesc(const datatype::SDataType& typeDesc);
 	};
 };

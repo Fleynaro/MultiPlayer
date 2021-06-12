@@ -216,7 +216,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
         {
             auto type = typeManager->findTypeByName("Screen");
             ASSERT_NE(type, nullptr);
-            ASSERT_EQ(type->getGroup(), DataType::Type::Structure);
+            ASSERT_EQ(type->getGroup(), DataType::AbstractType::Structure);
             if (auto screen = dynamic_cast<DataType::Structure*>(type)) {
                 ASSERT_EQ(screen->getFields().size(), 2);
             }
@@ -226,7 +226,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
         {
             auto type = typeManager->findTypeByName("Entity");
             ASSERT_NE(type, nullptr);
-            ASSERT_EQ(type->getGroup(), DataType::Type::Class);
+            ASSERT_EQ(type->getGroup(), DataType::AbstractType::Class);
             if (auto entity = dynamic_cast<DataType::Class*>(type)) {
                 ASSERT_EQ(entity->getFields().size(), 3);
             }
@@ -236,7 +236,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
         {
             auto type = typeManager->findTypeByName("Ped");
             ASSERT_NE(type, nullptr);
-            ASSERT_EQ(type->getGroup(), DataType::Type::Class);
+            ASSERT_EQ(type->getGroup(), DataType::AbstractType::Class);
             if (auto ped = dynamic_cast<DataType::Class*>(type)) {
                 ASSERT_NE(ped->getBaseClass(), nullptr);
                 ASSERT_EQ(ped->getFields().size(), 2);
@@ -248,10 +248,10 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
         {
             auto type = typeManager->findTypeByName("ObjectType");
             ASSERT_NE(type, nullptr);
-            ASSERT_EQ(type->getGroup(), DataType::Type::Typedef);
+            ASSERT_EQ(type->getGroup(), DataType::AbstractType::Typedef);
             if (auto objType = dynamic_cast<DataType::Typedef*>(type)) {
                 ASSERT_NE(objType->getRefType(), nullptr);
-                ASSERT_EQ(objType->getRefType()->getGroup(), DataType::Type::Enum);
+                ASSERT_EQ(objType->getRefType()->getGroup(), DataType::AbstractType::Enum);
                 if (auto refType = dynamic_cast<DataType::Enum*>(objType->getRefType()->getType())) {
                     ASSERT_EQ(refType->getFieldDict().size(), 3);
                 }

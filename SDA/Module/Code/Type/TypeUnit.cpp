@@ -1,13 +1,12 @@
 #include "TypeUnit.h"
 #include "SystemType.h"
 #include "Typedef.h"
-#include "Utility/Generic.h"
 
 using namespace CE;
 using namespace CE::DataType;
 
-Unit::Unit(DataType::Type* type, std::list<int> levels)
-	: Type("", ""), m_type(type), m_levels(levels)
+Unit::Unit(DataType::IType* type, std::list<int> levels)
+	: m_type(type), m_levels(levels)
 {}
 
 Unit::Group Unit::getGroup() {
@@ -154,28 +153,12 @@ int Unit::getSize() {
 	return mulDim * m_type->getSize();
 }
 
-std::string Unit::getViewValue(void* addr) {
-	return "(" + getDisplayName() + ")0x" + Helper::String::NumberToHex(*(uint64_t*)addr);
+std::string DataType::Unit::getViewValue(uint64_t value) {
+	return "(" + getDisplayName() + ")0x" + Helper::String::NumberToHex(value);
 }
 
-DataType::Type* Unit::getType() {
+DataType::IType* Unit::getType() {
 	return m_type;
-}
-
-DB::Id Unit::getId() {
-	return m_type->getId();
-}
-
-void Unit::setId(DB::Id id) {
-	return m_type->setId(id);
-}
-
-DB::IMapper* Unit::getMapper() {
-	return m_type->getMapper();
-}
-
-void Unit::setMapper(DB::IMapper* mapper) {
-	m_type->setMapper(mapper);
 }
 
 bool CE::DataType::Unit::EqualPointerLvls(const std::list<int>& ptrList1, const std::list<int>& ptrList2) {
@@ -257,11 +240,11 @@ std::string CE::DataType::GetPointerLevelStr(DataTypePtr type) {
 	return result;
 }
 
-DataTypePtr CE::DataType::GetUnit(DataType::Type* type, const std::string& levels) {
+DataTypePtr CE::DataType::GetUnit(DataType::IType* type, const std::string& levels) {
 	auto levels_list = ParsePointerLevelsStr(levels);
 	return GetUnit(type, levels_list);
 }
 
-DataTypePtr CE::DataType::GetUnit(DataType::Type* type, const std::list<int>& levels_list) {
+DataTypePtr CE::DataType::GetUnit(DataType::IType* type, const std::list<int>& levels_list) {
 	return std::make_shared<DataType::Unit>(type, levels_list);
 }

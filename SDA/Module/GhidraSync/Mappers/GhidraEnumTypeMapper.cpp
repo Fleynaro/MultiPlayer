@@ -20,7 +20,7 @@ void EnumTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 }
 
 void EnumTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto type = static_cast<DataType::Enum*>(obj);
+	auto type = dynamic_cast<DataType::Enum*>(obj);
 	ctx->m_dataPacket->enums.push_back(buildDesc(type));
 	m_dataTypeMapper->upsert(ctx, obj);
 }

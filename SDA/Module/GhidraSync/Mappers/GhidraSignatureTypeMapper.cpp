@@ -20,7 +20,7 @@ void SignatureTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 }
 
 void SignatureTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto type = static_cast<DataType::FunctionSignature*>(obj);
+	auto type = dynamic_cast<DataType::FunctionSignature*>(obj);
 	ctx->m_dataPacket->signatures.push_back(buildDesc(type));
 	m_dataTypeMapper->upsert(ctx, obj);
 }

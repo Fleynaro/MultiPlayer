@@ -36,5 +36,5 @@ Trigger::AbstractTrigger* TriggerManager::findTriggerByName(const std::string& n
 }
 
 Trigger::AbstractTrigger* TriggerManager::findTriggerById(DB::Id id) {
-	return (Trigger::AbstractTrigger*)find(id);
+	return dynamic_cast<Trigger::AbstractTrigger*>(find(id));
 }

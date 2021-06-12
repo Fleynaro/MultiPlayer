@@ -50,7 +50,7 @@ namespace CE
 		return *(T*)m_addr;
 	}
 
-	using DereferenceIteratorItemType = std::pair<void*, DataType::Type*>;
+	using DereferenceIteratorItemType = std::pair<void*, DataType::AbstractType*>;
 	class DereferenceIterator : public IIterator<DereferenceIteratorItemType>
 	{
 	public:

@@ -68,7 +68,7 @@ void StructureTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 
 void StructureTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
-	auto structure = static_cast<DataType::Structure*>(obj);
+	auto structure = dynamic_cast<DataType::Structure*>(obj);
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_structures (struct_id, size) VALUES(?1, ?2)");
 	query.bind(1, structure->getId());
 	bind(query, *structure);

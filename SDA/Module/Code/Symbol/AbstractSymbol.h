@@ -32,11 +32,11 @@ namespace CE
 			}
 		};
 
-		class AbstractSymbol : virtual public ISymbol, public DB::DomainObject, public Descrtiption
+		class AbstractSymbol : virtual public ISymbol, public DB::DomainObject, public Description
 		{
 		public:
 			AbstractSymbol(SymbolManager* manager, DataTypePtr dataType, const std::string& name, const std::string& comment = "")
-				: m_manager(manager), m_dataType(dataType), Descrtiption(name, comment)
+				: m_manager(manager), m_dataType(dataType), Description(name, comment)
 			{}
 
 			void setAutoSymbol(bool toggle);

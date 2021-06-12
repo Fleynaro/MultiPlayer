@@ -2,7 +2,6 @@
 #include "GhidraSignatureTypeMapper.h"
 #include <Manager/TypeManager.h>
 #include <Manager/FunctionManager.h>
-#include <Manager/ProcessModuleManager.h>
 
 using namespace CE;
 using namespace CE::Ghidra;
@@ -31,13 +30,13 @@ void markObjectAsSynced(SyncContext* ctx, Function::Function* func) {
 }
 
 void FunctionMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto func = static_cast<Function::Function*>(obj);
+	auto func = dynamic_cast<Function::Function*>(obj);
 	ctx->m_dataPacket->functions.push_back(buildDesc(func));
 	markObjectAsSynced(ctx, func);
 }
 
 void FunctionMapper::remove(SyncContext* ctx, IObject* obj) {
-	auto func = static_cast<Function::Function*>(obj);
+	auto func = dynamic_cast<Function::Function*>(obj);
 	ctx->m_dataPacket->removed_functions.push_back(func->getGhidraId());
 	markObjectAsSynced(ctx, func);
 }

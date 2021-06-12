@@ -75,7 +75,7 @@ void TriggerGroupMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 }
 
 void TriggerGroupMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto group = static_cast<Trigger::TriggerGroup*>(obj);
+	auto group = dynamic_cast<Trigger::TriggerGroup*>(obj);
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_trigger_groups(group_id, name, desc) VALUES(?1, ?2, ?3)");
 	query.bind(1, group->getId());
 	bind(query, *group);
@@ -85,7 +85,7 @@ void TriggerGroupMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 
 void TriggerGroupMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 {
-	auto group = static_cast<Trigger::TriggerGroup*>(obj);
+	auto group = dynamic_cast<Trigger::TriggerGroup*>(obj);
 	Statement query(*ctx->m_db, "DELETE FROM sda_trigger_groups WHERE group_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();

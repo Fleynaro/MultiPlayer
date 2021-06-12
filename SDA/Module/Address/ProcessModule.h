@@ -10,7 +10,7 @@ namespace CE
 
 	class ProcessModuleManager;
 
-	class ProcessModule : public AddressRange, public DB::DomainObject, public Descrtiption
+	class ProcessModule : public AddressRange, public DB::DomainObject, public Description
 	{
 	public:
 		ProcessModule(ProcessModuleManager* manager, HMODULE module, const std::string& name = "", const std::string& comment = "");

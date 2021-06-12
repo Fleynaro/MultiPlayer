@@ -19,7 +19,7 @@ Reader::ArgInfo Reader::readArgument() {
 
 	if (m_argHeader->m_argExtraBits >> (m_curArgIdx - 1) & 0b1) {
 		auto typeShortInfo = getStream().read<BYTE>();
-		argInfo.m_extraData.Group = DataType::Type::Group(typeShortInfo & 0xF);
+		argInfo.m_extraData.Group = DataType::AbstractType::Group(typeShortInfo & 0xF);
 		argInfo.m_extraData.IsString = bool(typeShortInfo >> 4 & 0b1);
 		argInfo.m_extraData.Size = getStream().read<USHORT>();
 		argInfo.m_extraData.Data = getStream().readPtr(argInfo.m_extraData.Size);

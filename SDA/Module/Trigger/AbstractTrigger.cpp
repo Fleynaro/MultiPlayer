@@ -4,7 +4,7 @@ using namespace CE;
 using namespace CE::Trigger;
 
 AbstractTrigger::AbstractTrigger(TriggerManager* triggerManager, const std::string& name, const std::string& comment)
-	: m_manager(triggerManager), Descrtiption(name, comment)
+	: m_manager(triggerManager), Description(name, comment)
 {}
 
 
@@ -13,7 +13,7 @@ TriggerManager* AbstractTrigger::getManager() {
 }
 
 TriggerGroup::TriggerGroup(TriggerGroupManager* triggerGroupManager, const std::string& name, const std::string& comment)
-	: m_manager(triggerGroupManager), Descrtiption(name, comment)
+	: m_manager(triggerGroupManager), Description(name, comment)
 {}
 
 void TriggerGroup::addTrigger(AbstractTrigger* trigger) {

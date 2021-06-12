@@ -33,7 +33,7 @@ void SymbolTableManager::createMainGlobalSymTable(int size) {
 }
 
 SymbolTable* SymbolTableManager::findSymbolTableById(DB::Id id) {
-	return static_cast<SymbolTable*>(find(id));
+	return dynamic_cast<SymbolTable*>(find(id));
 }
 
 Symbol::SymbolTable* SymbolTableManager::getMainGlobalSymTable() {

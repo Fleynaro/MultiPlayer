@@ -1,33 +1,22 @@
 #pragma once
 #include "TypeUnit.h"
 
-namespace CE
+namespace CE::DataType
 {
-	namespace DataType
+	class IUserDefinedType : virtual public IType, virtual public DB::IDomainObject, virtual public Ghidra::IObject
+	{};
+
+	class UserDefinedType : public AbstractType, public DB::DomainObject, public Ghidra::Object, public IUserDefinedType
 	{
-		class UserType : public Type, public Ghidra::Object
-		{
-		public:
-			UserType(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
-				: Type(typeManager, name, comment)
-			{}
+	public:
+		UserDefinedType(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
+			: AbstractType(typeManager, name, comment)
+		{}
 
-			bool isUserDefined() override;
+		bool isUserDefined() override;
 
-			std::string getDisplayName() override;
+		std::string getDisplayName() override;
 
-			Ghidra::Id getGhidraId() override;
-
-			DB::Id getId() override;
-
-			void setId(DB::Id id) override;
-
-			DB::IMapper* getMapper() override;
-
-			void setMapper(DB::IMapper* mapper) override;
-		private:
-			DB::Id m_id;
-			DB::IMapper* m_mapper = nullptr;
-		};
+		Ghidra::Id getGhidraId() override;
 	};
 };

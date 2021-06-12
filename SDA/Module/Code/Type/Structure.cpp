@@ -6,7 +6,7 @@ using namespace CE;
 using namespace CE::DataType;
 
 CE::DataType::Structure::Structure(TypeManager* typeManager, const std::string& name, const std::string& comment)
-	: UserType(typeManager, name, comment)
+	: UserDefinedType(typeManager, name, comment)
 {
 	auto factory = typeManager->getProject()->getSymbolManager()->getFactory(false);
 	m_defaultField = factory.createStructFieldSymbol(-1, -1, this, GetUnit(typeManager->getFactory().getDefaultType()), "undefined");
@@ -18,7 +18,7 @@ Structure::~Structure() {
 	delete m_defaultField;
 }
 
-Type::Group Structure::getGroup() {
+AbstractType::Group Structure::getGroup() {
 	return Group::Structure;
 }
 

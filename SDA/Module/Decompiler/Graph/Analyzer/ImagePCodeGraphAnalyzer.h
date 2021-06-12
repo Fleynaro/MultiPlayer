@@ -34,7 +34,7 @@ namespace CE::Decompiler
 	class ImagePCodeGraphAnalyzer
 	{
 		// it owns raw-structure that can be changed by another during the main pass
-		class RawStructureOwner : public DataType::Type
+		class RawStructureOwner : public DataType::AbstractType
 		{
 		public:
 			class RawStructure
@@ -90,7 +90,7 @@ namespace CE::Decompiler
 			RawStructure* m_rawStructure;
 
 			RawStructureOwner(int id)
-				: m_id(id), DataType::Type("RawStructure")
+				: m_id(id), DataType::AbstractType("RawStructure")
 			{
 				m_rawStructure = new RawStructure(this);
 			}
@@ -171,7 +171,7 @@ namespace CE::Decompiler
 		};
 
 		// it owns a raw-signature that can be changed by another during the main pass (it implements the decorator pattern)
-		class RawSignatureOwner : public DataType::Type, public DataType::IFunctionSignature
+		class RawSignatureOwner : public DataType::AbstractType, public DataType::IFunctionSignature
 		{
 		public:
 			// it have stat info about return value
@@ -201,7 +201,7 @@ namespace CE::Decompiler
 			RawSignature* m_rawSignature;
 
 			RawSignatureOwner()
-				: DataType::Type("RawStructure")
+				: DataType::AbstractType("RawStructure")
 			{
 				m_rawSignature = new RawSignature(this);
 			}

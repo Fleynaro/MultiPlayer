@@ -17,7 +17,7 @@ namespace DB
 		virtual void setMapper(IMapper* mapper) {}
 	};
 
-	class DomainObject : public IDomainObject
+	class DomainObject : virtual public IDomainObject
 	{
 	public:
 		DomainObject(Id id = 0);

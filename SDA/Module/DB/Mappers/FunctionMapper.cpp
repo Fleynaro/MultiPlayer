@@ -1,7 +1,6 @@
 #include "FunctionMapper.h"
 #include <Manager/FunctionManager.h>
-#include <Manager/ProcessModuleManager.h>
-#include <Manager/MemoryAreaManager.h>
+#include <Manager/SymbolTableManager.h>
 #include <Manager/TypeManager.h>
 #include <Manager/SymbolManager.h>
 #include <GhidraSync/Mappers/GhidraFunctionMapper.h>

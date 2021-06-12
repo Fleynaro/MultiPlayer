@@ -5,7 +5,7 @@ namespace CE
 {
 	namespace DataType
 	{
-		class SystemType : public Type
+		class SystemType : public AbstractType, virtual public DB::IDomainObject
 		{
 		public:
 			enum Set
@@ -37,7 +37,7 @@ namespace CE
 			};
 
 			SystemType()
-				: Type(nullptr, "", "")
+				: AbstractType(nullptr, "", "")
 			{}
 
 			DB::Id getId() override {
@@ -104,8 +104,8 @@ namespace CE
 				return Set::Boolean;
 			}
 
-			std::string getViewValue(void* addr) override {
-				return *(bool*)addr ? "true" : "false";
+			std::string getViewValue(uint64_t value) override {
+				return (bool&)value ? "true" : "false";
 			}
 
 			int getSize() override {
@@ -160,8 +160,8 @@ namespace CE
 				return true;
 			}
 
-			std::string getViewValue(void* addr) override {
-				return std::to_string(*(int8_t*)addr);
+			std::string getViewValue(uint64_t value) override {
+				return std::to_string((int8_t&)value);
 			}
 
 			int getSize() override {
@@ -192,8 +192,8 @@ namespace CE
 				return true;
 			}
 
-			std::string getViewValue(void* addr) override {
-				return std::to_string(*(int16_t*)addr);
+			std::string getViewValue(uint64_t value) override {
+				return std::to_string((int16_t&)value);
 			}
 
 			int getSize() override {
@@ -224,8 +224,8 @@ namespace CE
 				return true;
 			}
 
-			std::string getViewValue(void* addr) override {
-				return std::to_string(*(int32_t*)addr);
+			std::string getViewValue(uint64_t value) override {
+				return std::to_string((int32_t&)value);
 			}
 
 			int getSize() override {
@@ -256,8 +256,8 @@ namespace CE
 				return true;
 			}
 
-			std::string getViewValue(void* addr) override {
-				return std::to_string(*(int64_t*)addr);
+			std::string getViewValue(uint64_t value) override {
+				return std::to_string((int64_t&)value);
 			}
 
 			int getSize() override {
@@ -356,12 +356,8 @@ namespace CE
 				return Set::Integer;
 			}
 
-			std::string getViewValue(void* addr) override {
-				return "<"+ SystemType::getViewValue((void*)((std::uintptr_t)addr + 0x8)) +"|"+ SystemType::getViewValue(addr) +">";
-			}
-
 			int getSize() override {
-				return 16;
+				return 8; // need 16, but not supported
 			}
 		};
 
@@ -388,8 +384,8 @@ namespace CE
 				return true;
 			}
 
-			std::string getViewValue(void* addr) override {
-				return std::to_string(*(float*)addr);
+			std::string getViewValue(uint64_t value) override {
+				return std::to_string((float&)value);
 			}
 
 			int getSize() override {
@@ -420,8 +416,8 @@ namespace CE
 				return true;
 			}
 
-			std::string getViewValue(void* addr) override {
-				return std::to_string(*(double*)addr);
+			std::string getViewValue(uint64_t value) override {
+				return std::to_string((double&)value);
 			}
 
 			int getSize() override {

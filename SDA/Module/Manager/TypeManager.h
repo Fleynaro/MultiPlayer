@@ -40,12 +40,12 @@ namespace CE
 
 			DataType::FunctionSignature* createSignature(DataType::FunctionSignature::CallingConvetion callingConvetion, const std::string& name, const std::string& desc = "");
 
-			DataType::Type* getDefaultType();
+			DataType::IType* getDefaultType();
 
-			DataType::Type* getDefaultReturnType();
+			DataType::IType* getDefaultReturnType();
 		};
 
-		using Iterator = AbstractIterator<DataType::Type>;
+		using Iterator = AbstractIterator<DataType::AbstractType>;
 		Ghidra::DataTypeMapper* m_ghidraDataTypeMapper;
 
 		TypeManager(Project* module);
@@ -64,13 +64,13 @@ namespace CE
 
 		void loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
-		DataType::Type* findTypeById(DB::Id id);
+		DataType::IType* findTypeById(DB::Id id);
 
-		DataType::Type* findTypeByName(const std::string& typeName);
+		DataType::IType* findTypeByName(const std::string& typeName);
 
-		DataType::Type* findTypeByGhidraId(Ghidra::Id id);
+		DataType::IType* findTypeByGhidraId(Ghidra::Id id);
 
-		Ghidra::Id getGhidraId(DataType::Type* type);
+		Ghidra::Id getGhidraId(DataType::IType* type);
 	private:
 		DB::DataTypeMapper* m_dataTypeMapper;
 	};

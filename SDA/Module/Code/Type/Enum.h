@@ -5,13 +5,13 @@ namespace CE
 {
 	namespace DataType
 	{
-		class Enum : public UserType
+		class Enum : public UserDefinedType
 		{
 		public:
 			using FieldDict = std::map<int, std::string>;
 
 			Enum(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
-				: UserType(typeManager, name, comment)
+				: UserDefinedType(typeManager, name, comment)
 			{}
 
 			int getSize() override;
@@ -20,7 +20,7 @@ namespace CE
 
 			Group getGroup() override;
 
-			std::string getViewValue(void* addr) override;
+			std::string getViewValue(uint64_t value) override;
 
 			FieldDict& getFieldDict();
 

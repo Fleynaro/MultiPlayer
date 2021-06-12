@@ -25,12 +25,12 @@ void FunctionTriggerMapper::doInsert(TransactionContext* ctx, IDomainObject* obj
 }
 
 void FunctionTriggerMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto tr = static_cast<Trigger::Function::Trigger*>(obj);
+	auto tr = dynamic_cast<Trigger::Function::Trigger*>(obj);
 	saveFiltersForFuncTrigger(ctx, tr);
 }
 
 void FunctionTriggerMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
-	auto tr = static_cast<Trigger::Function::Trigger*>(obj);
+	auto tr = dynamic_cast<Trigger::Function::Trigger*>(obj);
 	//tr->getFilters()->getFilters().clear();
 	saveFiltersForFuncTrigger(ctx, tr);
 }

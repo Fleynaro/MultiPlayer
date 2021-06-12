@@ -117,11 +117,11 @@ void TypeManager::loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket)
 	m_ghidraDataTypeMapper->load(dataPacket);
 }
 
-DataType::Type* CE::TypeManager::findTypeById(DB::Id id) {
-	return dynamic_cast<DataType::Type*>(find(id));
+DataType::IType* CE::TypeManager::findTypeById(DB::Id id) {
+	return dynamic_cast<DataType::AbstractType*>(find(id));
 }
 
-DataType::Type* CE::TypeManager::findTypeByName(const std::string& typeName)
+DataType::IType* CE::TypeManager::findTypeByName(const std::string& typeName)
 {
 	Iterator it(this);
 	while (it.hasNext()) {
@@ -133,7 +133,7 @@ DataType::Type* CE::TypeManager::findTypeByName(const std::string& typeName)
 	return nullptr;
 }
 
-DataType::Type* CE::TypeManager::findTypeByGhidraId(Ghidra::Id id) {
+DataType::IType* CE::TypeManager::findTypeByGhidraId(Ghidra::Id id) {
 	Iterator it(this);
 	while (it.hasNext()) {
 		auto type = it.next();
@@ -144,8 +144,8 @@ DataType::Type* CE::TypeManager::findTypeByGhidraId(Ghidra::Id id) {
 	return nullptr;
 }
 
-Ghidra::Id TypeManager::getGhidraId(DataType::Type* type) {
-	if (auto userType = dynamic_cast<DataType::UserType*>(type)) {
+Ghidra::Id TypeManager::getGhidraId(DataType::IType* type) {
+	if (auto userType = dynamic_cast<DataType::UserDefinedType*>(type)) {
 		return userType->getGhidraId();
 	}
 	
@@ -199,11 +199,11 @@ DataType::FunctionSignature* CE::TypeManager::Factory::createSignature(DataType:
 	return type;
 }
 
-DataType::Type* CE::TypeManager::Factory::getDefaultType() {
+DataType::IType* CE::TypeManager::Factory::getDefaultType() {
 	return m_typeManager->findTypeById(DataType::SystemType::Byte);
 }
 
-DataType::Type* CE::TypeManager::Factory::getDefaultReturnType() {
+DataType::IType* CE::TypeManager::Factory::getDefaultReturnType() {
 	return m_typeManager->findTypeById(DataType::SystemType::Void);
 }
 

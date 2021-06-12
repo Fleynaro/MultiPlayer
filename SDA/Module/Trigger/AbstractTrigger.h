@@ -13,7 +13,7 @@ namespace CE::Trigger
 		FunctionTrigger
 	};
 
-	class AbstractTrigger : public DB::DomainObject, public Descrtiption
+	class AbstractTrigger : public DB::DomainObject, public Description
 	{
 	public:
 		AbstractTrigger(TriggerManager* triggerManager, const std::string& name, const std::string& comment = "");
@@ -32,7 +32,7 @@ namespace CE {
 
 namespace CE::Trigger
 {
-	class TriggerGroup : public DB::DomainObject, public Descrtiption
+	class TriggerGroup : public DB::DomainObject, public Description
 	{
 	public:
 		TriggerGroup(TriggerGroupManager* triggerGroupManager, const std::string& name, const std::string& comment = "");

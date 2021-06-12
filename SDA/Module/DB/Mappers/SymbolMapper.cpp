@@ -78,7 +78,7 @@ void SymbolMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void SymbolMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto symbol = static_cast<AbstractSymbol*>(obj);
+	auto symbol = dynamic_cast<AbstractSymbol*>(obj);
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_symbols (symbol_id, type, name, type_id, pointer_lvl, comment, extra_info, save_id, ghidra_sync_id) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0)");
 	query.bind(1, symbol->getId());
 	bind(query, *symbol);
@@ -95,9 +95,10 @@ void SymbolMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void SymbolMapper::bind(SQLite::Statement& query, AbstractSymbol& symbol) {
+	auto type = dynamic_cast<DB::IDomainObject*>(symbol.getDataType()->getType());
 	query.bind(2, symbol.getType());
 	query.bind(3, symbol.getName());
-	query.bind(4, symbol.getDataType()->getId());
+	query.bind(4, type->getId());
 	query.bind(5, DataType::GetPointerLevelStr(symbol.getDataType()));
 	query.bind(6, symbol.getComment());
 

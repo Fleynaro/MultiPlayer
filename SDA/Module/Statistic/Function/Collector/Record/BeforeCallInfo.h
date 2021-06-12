@@ -35,7 +35,7 @@ namespace CE::Stat::Function::Record::BeforeCallInfo
 			struct {
 				BYTE* Data = nullptr;
 				USHORT Size = 0;
-				DataType::Type::Group Group;
+				DataType::AbstractType::Group Group;
 				bool IsString = false;
 			} m_extraData;
 			bool m_hasXmmValue = false;

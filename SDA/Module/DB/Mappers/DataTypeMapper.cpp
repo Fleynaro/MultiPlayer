@@ -52,19 +52,19 @@ IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int group = query.getColumn("group");
 	switch (group)
 	{
-	case DataType::Type::Group::Typedef:
+	case DataType::AbstractType::Group::Typedef:
 		obj = m_typedefTypeMapper->doLoad(db, query);
 		break;
-	case DataType::Type::Group::Enum:
+	case DataType::AbstractType::Group::Enum:
 		obj = m_enumTypeMapper->doLoad(db, query);
 		break;
-	case DataType::Type::Group::Structure:
+	case DataType::AbstractType::Group::Structure:
 		obj = m_structureTypeMapper->doLoad(db, query);
 		break;
-	case DataType::Type::Group::Class:
+	case DataType::AbstractType::Group::Class:
 		obj = m_classTypeMapper->doLoad(db, query);
 		break;
-	case DataType::Type::Group::FunctionSignature:
+	case DataType::AbstractType::Group::FunctionSignature:
 		obj = m_signatureTypeMapper->doLoad(db, query);
 		break;
 	}
@@ -79,7 +79,7 @@ void DataTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void DataTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto type = static_cast<CE::DataType::Type*>(obj);
+	auto type = dynamic_cast<CE::DataType::UserDefinedType*>(obj);
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_types (id, `group`, name, desc, save_id) VALUES(?1, ?2, ?3, ?4, ?5)");
 	query.bind(1, type->getId());
 	bind(query, *type);
@@ -95,7 +95,7 @@ void DataTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
 	query.exec();
 }
 
-void DataTypeMapper::bind(SQLite::Statement& query, CE::DataType::Type& type)
+void DataTypeMapper::bind(SQLite::Statement& query, CE::DataType::AbstractType& type)
 {
 	query.bind(2, (int)type.getGroup());
 	query.bind(3, type.getName());

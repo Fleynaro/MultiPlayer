@@ -4,7 +4,7 @@
 
 namespace CE::DataType
 {
-	class IStructure
+	class IStructure : public IUserDefinedType
 	{
 	public:
 		using Field = Symbol::StructFieldSymbol;
@@ -39,7 +39,7 @@ namespace CE::DataType
 		virtual bool moveFields(int bitOffset, int bitsCount) = 0;
 	};
 
-	class Structure : public UserType, public IStructure
+	class Structure : public UserDefinedType, public IStructure
 	{
 	public:
 		Structure(TypeManager* typeManager, const std::string& name, const std::string& comment = "");

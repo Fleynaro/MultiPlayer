@@ -42,6 +42,6 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
-		void bind(SQLite::Statement& query, CE::DataType::Type& type);
+		void bind(SQLite::Statement& query, CE::DataType::AbstractType& type);
 	};
 };

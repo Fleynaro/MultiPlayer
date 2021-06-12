@@ -27,10 +27,10 @@ void DataTypeMapper::createTypeByDescIfNotExists(const datatype::SDataType& type
 	}
 }
 
-DataType::UserType* DataTypeMapper::createTypeByDesc(const datatype::SDataType& typeDesc)
+DataType::UserDefinedType* DataTypeMapper::createTypeByDesc(const datatype::SDataType& typeDesc)
 {
-	DataType::UserType* userType = nullptr;
-	switch (typeDesc.group)
+	DataType::UserDefinedType* userType = nullptr;
+	/*switch (typeDesc.group)
 	{
 	case DataTypeGroup::Typedef:
 		userType = m_typeManager->createTypedef(typeDesc.name, typeDesc.comment);
@@ -47,7 +47,7 @@ DataType::UserType* DataTypeMapper::createTypeByDesc(const datatype::SDataType& 
 	case DataTypeGroup::Signature:
 		userType = m_typeManager->createSignature(typeDesc.name, typeDesc.comment);
 		break;
-	}
+	}*/
 	return userType;
 }
 
@@ -79,7 +79,7 @@ void DataTypeMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	m_signatureTypeMapper->load(dataPacket);
 }
 
-void markObjectAsSynced(SyncContext* ctx, DataType::UserType* type) {
+void markObjectAsSynced(SyncContext* ctx, DataType::UserDefinedType* type) {
 	SQLite::Statement query(*ctx->m_db, "UPDATE sda_types SET ghidra_sync_id=?1 WHERE id=?2");
 	query.bind(1, ctx->m_syncId);
 	query.bind(2, type->getId());
@@ -87,17 +87,17 @@ void markObjectAsSynced(SyncContext* ctx, DataType::UserType* type) {
 }
 
 void DataTypeMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto type = static_cast<DataType::UserType*>(obj);
+	auto type = dynamic_cast<DataType::UserDefinedType*>(obj);
 	markObjectAsSynced(ctx, type);
 }
 
 void DataTypeMapper::remove(SyncContext* ctx, IObject* obj) {
-	auto type = static_cast<DataType::UserType*>(obj);
+	auto type = dynamic_cast<DataType::UserDefinedType*>(obj);
 	ctx->m_dataPacket->removed_datatypes.push_back(type->getGhidraId());
 	markObjectAsSynced(ctx, type);
 }
 
-datatype::SDataType DataTypeMapper::buildDesc(DataType::UserType* type) {
+datatype::SDataType DataTypeMapper::buildDesc(DataType::UserDefinedType* type) {
 	datatype::SDataType typeDesc;
 	typeDesc.__set_id(type->getGhidraId());
 	typeDesc.__set_group((datatype::DataTypeGroup::type)type->getGroup());
@@ -107,10 +107,10 @@ datatype::SDataType DataTypeMapper::buildDesc(DataType::UserType* type) {
 	return typeDesc;
 }
 
-shared::STypeUnit DataTypeMapper::buildTypeUnitDesc(DataTypePtr type) {
+shared::STypeUnit DataTypeMapper::buildTypeUnitDesc(DataTypePtr dataType) {
 	shared::STypeUnit typeUnitDesc;
-	typeUnitDesc.__set_typeId(m_typeManager->getGhidraId(type->getType()));
-	for (auto lvl : type->getPointerLevels()) {
+	typeUnitDesc.__set_typeId(m_typeManager->getGhidraId(dataType->getType()));
+	for (auto lvl : dataType->getPointerLevels()) {
 		typeUnitDesc.pointerLvls.push_back((int16_t)lvl);
 	}
 	return typeUnitDesc;
@@ -123,13 +123,12 @@ DataTypePtr DataTypeMapper::getTypeByDesc(const shared::STypeUnit& desc) {
 	}
 	
 	auto type = m_typeManager->findTypeByGhidraId(desc.typeId);
-	if (type == nullptr) {
-		type = m_typeManager->getDefaultType();
-	}
+	if (type == nullptr)
+		type = m_typeManager->getFactory().getDefaultType();
 	return std::make_shared<DataType::Unit>(type, ptr_levels);
 }
 
-void DataTypeMapper::changeUserTypeByDesc(DataType::UserType* type, const datatype::SDataType& typeDesc) {
+void DataTypeMapper::changeUserTypeByDesc(DataType::UserDefinedType* type, const datatype::SDataType& typeDesc) {
 	type->setName(typeDesc.name);
 	if (typeDesc.comment != "{pull}") {
 		type->setComment(typeDesc.comment);

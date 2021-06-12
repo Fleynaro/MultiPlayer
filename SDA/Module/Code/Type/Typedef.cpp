@@ -14,10 +14,10 @@ int Typedef::getSize() {
 	return getRefType()->getSize();
 }
 
-std::string Typedef::getViewValue(void* addr) {
+std::string DataType::Typedef::getViewValue(uint64_t value) {
 	if (getRefType()->getType() == this)
-		return UserType::getViewValue(addr);
-	return getRefType()->getViewValue(addr);
+		return UserDefinedType::getViewValue(value);
+	return getRefType()->getViewValue(value);
 }
 
 void Typedef::setRefType(DataTypePtr refType) {

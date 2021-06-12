@@ -3,7 +3,7 @@
 using namespace CE;
 using namespace CE::DataType;
 
-Type::Group Class::getGroup() {
+AbstractType::Group Class::getGroup() {
 	return Group::Class;
 }
 
@@ -33,11 +33,11 @@ void Class::setBaseClass(Class* base, bool createBaseClassField) {
 
 	if (createBaseClassField) {
 		int baseClassOffset = 0x0;
-		if (m_vtable != nullptr) {
+		/*if (m_vtable != nullptr) {
 			if (m_base != nullptr && m_base->m_vtable == nullptr) {
 				baseClassOffset = 0x8;
 			}
-		}
+		}*/
 		
 		auto oldSize = getSize();
 		if (oldSize < base->getSize()) {
@@ -53,7 +53,7 @@ void Class::setBaseClass(Class* base, bool createBaseClassField) {
 }
 
 Class::MethodIterator::MethodIterator(Class* Class)
-	: m_vtable(Class->getVtable())
+	//: m_vtable(Class->getVtable())
 {
 	m_classes = Class->getClassesInHierarchy();
 	updateIterator();
