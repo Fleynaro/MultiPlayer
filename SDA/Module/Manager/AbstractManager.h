@@ -12,12 +12,18 @@ namespace CE
 		
 		Project* getProject();
 	private:
-		Project* m_programModule;
+		Project* m_project;
 	};
 
 	class AbstractItemManager : public AbstractManager, public DB::IRepository
 	{
+	protected:
+		// exceptions
+		class ItemNotFoundException : public std::exception {
+		public: ItemNotFoundException() : std::exception("item in manager not found") {}
+		};
 	public:
+		// factory
 		class AbstractFactory
 		{
 		protected:
@@ -28,8 +34,9 @@ namespace CE
 			{}
 		};
 
+		// iterator
 		using ItemMapType = std::map<DB::Id, DB::IDomainObject*>;
-		template<typename T = DB::DomainObject>
+		template<typename T = DB::IDomainObject>
 		class AbstractIterator : public IIterator<T*>
 		{
 		public:
@@ -42,7 +49,7 @@ namespace CE
 			}
 
 			T* next() override {
-				return static_cast<T*>((m_iterator++)->second);
+				return dynamic_cast<T*>((m_iterator++)->second);
 			}
 		private:
 			ItemMapType::iterator m_iterator;

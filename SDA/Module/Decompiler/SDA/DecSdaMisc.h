@@ -11,7 +11,7 @@ namespace CE::Decompiler::Symbolization
 	using namespace DataType;
 
 	struct UserSymbolDef {
-		CE::Project* m_programModule;
+		CE::Project* m_project;
 		IFunctionSignature* m_signature = nullptr;
 		CE::Symbol::SymbolTable* m_globalSymbolTable = nullptr;
 		CE::Symbol::SymbolTable* m_stackSymbolTable = nullptr;
@@ -19,7 +19,7 @@ namespace CE::Decompiler::Symbolization
 		int64_t m_startOffset = 0x0;
 
 		UserSymbolDef(CE::Project* programModule = nullptr)
-			: m_programModule(programModule)
+			: m_project(programModule)
 		{}
 	};
 
@@ -27,11 +27,11 @@ namespace CE::Decompiler::Symbolization
 	{
 	public:
 		DataTypeFactory(CE::Project* programModule)
-			: m_programModule(programModule)
+			: m_project(programModule)
 		{}
 
 		DataTypePtr getType(DB::Id id) {
-			return DataType::GetUnit(m_programModule->getTypeManager()->findTypeById(id));
+			return DataType::GetUnit(m_project->getTypeManager()->findTypeById(id));
 		}
 
 		DataTypePtr getDefaultType(int size, bool sign = false, bool floating = false) {
@@ -60,6 +60,6 @@ namespace CE::Decompiler::Symbolization
 			return getType(SystemType::Int64);
 		}
 	private:
-		CE::Project* m_programModule;
+		CE::Project* m_project;
 	};
 };

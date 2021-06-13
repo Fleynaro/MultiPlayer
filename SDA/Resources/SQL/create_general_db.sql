@@ -18,56 +18,62 @@ create table sda_ghidra_sync
     objectsCount    INTEGER
 );
 
+CREATE TABLE "sda_address_spaces" (
+	"as_id"	        INTEGER,
+	"name"	        TEXT,
+	"comment"	    TEXT,
+    "save_id"	    INTEGER,
+	PRIMARY KEY("as_id")
+);
+
+CREATE TABLE "sda_images" (
+	"image_id"	            INTEGER,
+    "type"	                INTEGER,
+	"name"	                TEXT,
+	"comment"	            TEXT,
+    "addr_space_id"         INTEGER,
+    "global_table_id"       INTEGER,
+    "vfunc_call_table_id"   INTEGER,
+    "save_id"	            INTEGER,
+	PRIMARY KEY("image_id")
+);
+
 CREATE TABLE "sda_symbols"
 (
-	"symbol_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
-    "type" INTEGER,
-	"name"	TEXT,
-	"type_id"	INTEGER NOT NULL,
-	"pointer_lvl"	TEXT,
-	"comment"	TEXT,
-    "extra_info" TEXT,
-	"save_id"	INTEGER,
-	"ghidra_sync_id"	INTEGER,
-	"deleted"	INTEGER DEFAULT 0
+	"symbol_id"	            INTEGER PRIMARY KEY AUTOINCREMENT,
+    "type"                  INTEGER,
+	"name"	                TEXT,
+	"type_id"	            INTEGER NOT NULL,
+	"pointer_lvl"	        TEXT,
+	"comment"	            TEXT,
+    "json_extra"            TEXT,
+	"save_id"	            INTEGER,
+	"ghidra_sync_id"	    INTEGER,
+	"deleted"	            INTEGER DEFAULT 0
 );
 
 CREATE TABLE "sda_mem_area_symbols" (
-	"symbol_id"	INTEGER,
-	"mem_area_id"	INTEGER,
-	"offset"	INTEGER,
+	"symbol_id"	        INTEGER,
+	"mem_area_id"	    INTEGER,
+	"offset"	        INTEGER,
 	PRIMARY KEY("mem_area_id","symbol_id","offset")
 );
 
 CREATE TABLE "sda_mem_areas" (
 	"mem_area_id"	INTEGER,
-	"type"	INTEGER,
-    "size"  INTEGER,
-    "save_id"	INTEGER,
-    "deleted"	INTEGER DEFAULT 0,
+	"type"	        INTEGER,
+    "size"          INTEGER,
+    "save_id"	    INTEGER,
+    "deleted"	    INTEGER DEFAULT 0,
 	PRIMARY KEY("mem_area_id")
 );
-
-create table sda_process_modules
-(
-    module_id         INTEGER
-        primary key autoincrement,
-    filename        TEXT,
-    name            TEXT,
-    desc            TEXT
-);
-
-INSERT INTO sda_process_modules VALUES (1, '', 'main', '');
 
 
 create table sda_struct_fields
 (
     struct_id       INTEGER,
-    offset          INTEGER,
-    name            TEXT,
-    type_id         INTEGER not null,
-    pointer_lvl     TEXT,
-    primary key (struct_id, offset)
+    symbol_id       INTEGER,
+    primary key (struct_id, symbol_id)
 );
 
 create table sda_class_methods
@@ -141,27 +147,6 @@ create table sda_functions
     deleted             INTEGER DEFAULT 0
 );
 
-create table sda_func_ranges
-(
-    func_id     INTEGER,
-    order_id   INTEGER,
-    min_offset INTEGER,
-    max_offset INTEGER
-);
-
-create table sda_func_tags
-(
-    tag_id        INTEGER
-        primary key autoincrement,
-    parent_tag_id INTEGER,
-    func_id       INTEGER,
-    name          TEXT,
-    desc          TEXT
-);
-INSERT INTO sda_func_tags (name) VALUES ('get');
-INSERT INTO sda_func_tags (name) VALUES ('set');
-
-
 CREATE TABLE "sda_func_trigger_filters" (
 	"trigger_id"	INTEGER,
 	"filter_id"	    INTEGER,
@@ -170,24 +155,24 @@ CREATE TABLE "sda_func_trigger_filters" (
 );
 
 CREATE TABLE "sda_trigger_group_triggers" (
-	"group_id"	INTEGER,
+	"group_id"	    INTEGER,
 	"trigger_id"	INTEGER
 );
 
 CREATE TABLE "sda_trigger_groups" (
 	"group_id"	INTEGER
         primary key autoincrement,
-	"name"	TEXT,
-	"desc"	TEXT
+	"name"	    TEXT,
+	"desc"	    TEXT
 );
 
 create table sda_triggers
 (
     trigger_id   INTEGER
         primary key autoincrement,
-    type INTEGER,
-    name TEXT,
-    desc TEXT
+    type        INTEGER,
+    name        TEXT,
+    desc        TEXT
 );
 
 create table sda_typedefs
@@ -200,36 +185,15 @@ create table sda_typedefs
 
 create table sda_types
 (
-    id      INTEGER
+    id                  INTEGER
         primary key autoincrement,
     "group" INTEGER,
-    name    TEXT
+    name                TEXT
         unique,
-    desc    TEXT,
+    desc                TEXT,
     save_id             INTEGER,
     ghidra_sync_id      INTEGER,
     deleted             INTEGER DEFAULT 0
 );
 INSERT INTO sda_types (name) VALUES ('reserved');
 UPDATE SQLITE_SEQUENCE SET seq=1000 WHERE name='sda_types';
-
-create table sda_vtable_funcs
-(
-    vtable_id INTEGER,
-    func_id    INTEGER,
-    id        INTEGER,
-    primary key (vtable_id, func_id)
-);
-
-create table sda_vtables
-(
-    id     INTEGER
-        primary key autoincrement,
-    name   TEXT,
-    offset INTEGER,
-    desc   TEXT,
-    save_id             INTEGER,
-    ghidra_sync_id      INTEGER,
-    deleted             INTEGER DEFAULT 0
-);
-

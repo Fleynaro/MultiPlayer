@@ -56,7 +56,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 
 	WarningContainer warningContainer;
 	PCode::DecoderX86 decoder(&m_registerFactoryX86, &warningContainer);
-	PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &m_registerFactoryX86, image);
+	PCodeGraphReferenceSearch graphReferenceSearch(m_project, &m_registerFactoryX86, image);
 
 	ImageAnalyzer imageAnalyzer(image, imageGraph, &decoder, &m_registerFactoryX86, &graphReferenceSearch);
 	imageAnalyzer.start(0x11ea44); //0x9f39d8
@@ -66,7 +66,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 
 	if (false) {
 		auto programGraph = new ProgramGraph(imageGraph);
-		ImagePCodeGraphAnalyzer graphAnalyzer(programGraph, m_programModule, &m_registerFactoryX86, &graphReferenceSearch);
+		ImagePCodeGraphAnalyzer graphAnalyzer(programGraph, m_project, &m_registerFactoryX86, &graphReferenceSearch);
 		graphAnalyzer.start();
 	}
 
@@ -88,13 +88,13 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Image)
 			showDecGraph(decCodeGraph);
 
 		auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
-		auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
+		auto userSymbolDef = Misc::CreateUserSymbolDef(m_project);
 		userSymbolDef.m_signature = m_defSignature;
 		{
 
 		}
 
-		Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
+		Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_project);
 		Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 		sdaBuilding.start();
 		if (showAllInfo) {
@@ -173,7 +173,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	SymbolVarnode* addr = new SymbolVarnode(8);
 	SymbolVarnode* val4 = new SymbolVarnode(4);
 	SymbolVarnode* val8 = new SymbolVarnode(8);
-	auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
+	auto userSymbolDef = Misc::CreateUserSymbolDef(m_project);
 	//userSymbolDef.m_signature = m_defSignature;
 
 	switch (1)
@@ -299,7 +299,7 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	showDecGraph(decCodeGraph);
 
 	auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
-	Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
+	Symbolization::DataTypeFactory dataTypeFactory(userSymbolDef.m_project);
 	Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 	sdaBuilding.start();
 	printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());

@@ -23,14 +23,6 @@ MEMORY_BASIC_INFORMATION Address::getInfo() {
 	return mbi;
 }
 
-Address Address::dereference() {
-	return Address((void*)*(std::uintptr_t*)m_addr);
-}
-
-void Address::addOffset(int offset) {
-	(std::uintptr_t&)m_addr += offset;
-}
-
 void Address::setProtect(ProtectFlags flags, int size) {
 	DWORD new_ = PAGE_NOACCESS;
 	DWORD old_;
@@ -75,78 +67,4 @@ Address::ProtectFlags Address::getProtect() {
 		result |= Execute | Read | Write;
 
 	return (ProtectFlags)result;
-}
-
-void* Address::Dereference(void* addr, int level)
-{
-	for (int i = 0; i < level; i++) {
-		if (!Address(addr).canBeRead())
-			return nullptr;
-		addr = (void*)*(std::uintptr_t*)addr;
-	}
-	return addr;
-}
-
-DereferenceIterator::DereferenceIterator(Address addr, DataTypePtr type)
-	: m_addr(addr), m_curAddr(nullptr), m_type(type)
-{
-	m_levels = m_type->getPointerLevels();
-	m_cur_levels = std::list<int>(m_levels.size(), 0);
-
-	/*if (type->isString()) {
-		m_levels.pop_back();
-		m_levels.push_back(1);
-	}*/
-}
-
-bool DereferenceIterator::hasNext() {
-	if (m_isEnd)
-		return false;
-
-	m_curAddr = dereference();
-	if (!m_curAddr.canBeRead()) {
-		goNext();
-		return hasNext();
-	}
-
-	return true;
-}
-
-DereferenceIteratorItemType DereferenceIterator::next() {
-	auto result = std::make_pair(m_curAddr.getAddress(), m_type->getBaseType());
-	goNext();
-	return result;
-}
-
-void DereferenceIterator::goNext() {
-	auto it = m_cur_levels.rbegin();
-	auto it2 = m_levels.rbegin();
-	while (it != m_cur_levels.rend()) {
-		if (++(*it) < *it2) {
-			break;
-		}
-		*it = 0;
-		it++;
-		it2++;
-	}
-	if (it == m_cur_levels.rend()) {
-		m_isEnd = true;
-	}
-}
-
-Address DereferenceIterator::dereference() {
-	auto it = m_cur_levels.begin();
-	Address addr = m_addr;
-	while (it != std::prev(m_cur_levels.end())) {
-		addr.addOffset(*it * 0x8);
-		if (!addr.canBeRead()) {
-			return Address(nullptr);
-		}
-		addr = addr.dereference();
-		it++;
-	}
-	if (!m_cur_levels.empty()) {
-		addr.addOffset(*it * m_type->getBaseType()->getSize());
-	}
-	return addr;
 }

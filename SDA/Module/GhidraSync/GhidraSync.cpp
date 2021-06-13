@@ -6,7 +6,7 @@ using namespace CE;
 using namespace CE::Ghidra;
 
 Sync::Sync(CE::Project* programModule)
-	: m_programModule(programModule)
+	: m_project(programModule)
 {
 	m_client = new Client;
 	m_dataSyncPacketManagerServiceClient = new packet::DataSyncPacketManagerServiceClient(
@@ -19,7 +19,7 @@ Sync::~Sync() {
 }
 
 Project* Sync::getProject() {
-	return m_programModule;
+	return m_project;
 }
 
 Client* Sync::getClient() {

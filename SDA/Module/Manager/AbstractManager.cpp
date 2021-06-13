@@ -29,7 +29,7 @@ void AbstractItemManager::onChangeAfterCommit(DB::IDomainObject* obj, ChangeType
 
 DB::IDomainObject* AbstractItemManager::find(DB::Id id) {
 	if (m_items.find(id) == m_items.end())
-		return nullptr;
+		throw ItemNotFoundException();
 	return m_items[id];
 }
 
@@ -37,10 +37,10 @@ int AbstractItemManager::getItemsCount() {
 	return (int)m_items.size();
 }
 
-AbstractManager::AbstractManager(Project* programModule)
-	: m_programModule(programModule)
+AbstractManager::AbstractManager(Project* project)
+	: m_project(project)
 {}
 
 Project* AbstractManager::getProject() {
-	return m_programModule;
+	return m_project;
 }

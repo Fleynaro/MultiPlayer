@@ -1,19 +1,18 @@
 #pragma once
 #include <DB/Transaction.h>
-#include <Address/ProcessModule.h>
+#include <Address/AddressSpace.h>
 #include <GhidraSync/GhidraSync.h>
 
 using namespace SQLite;
 
 namespace CE
 {
-	class ProcessModuleManager;
 	class TypeManager;
 	class SymbolManager;
 	class SymbolTableManager;
 	class FunctionManager;
-	class FunctionTagManager;
-	class VtableManager;
+	class AddressSpaceManager;
+	class ImageManager;
 	class TriggerManager;
 	class TriggerGroupManager;
 	class StatManager;
@@ -28,36 +27,52 @@ namespace CE
 
 	class Project
 	{
+		bool m_haveAllManagersBeenLoaded = false;
+		DB::ITransaction* m_transaction = nullptr;
+		SQLite::Database* m_db = nullptr;
+
+		// the directory is an id for a project
+		fs::path m_directory;
+
+		TypeManager* m_typeManager = nullptr;
+		SymbolManager* m_symbolManager = nullptr;
+		SymbolTableManager* m_symbolTableManager = nullptr;
+		FunctionManager* m_functionManager = nullptr;
+		AddressSpaceManager* m_addrSpaceManager = nullptr;
+		ImageManager* m_imageManager = nullptr;
+		TriggerManager* m_triggerManager = nullptr;
+		TriggerGroupManager* m_triggerGroupManager = nullptr;
+		StatManager* m_statManager = nullptr;
+		Ghidra::Sync* m_ghidraSync;
 	public:
-		Project(FS::Directory dir);
+		Project(const fs::path& dir);
 
 		~Project();
 
-		void initTransaction();
-
 		void load();
+
+		void save() {
+			// save data into database
+			m_transaction->commit();
+		}
 
 		void initManagers();
 
-		void createGeneralDataBase();
-
-		void initDataBase(std::string filename);
+		void initDataBase(const fs::path& file);
 
 		SQLite::Database& getDB();
-
-		ProcessModuleManager* getProcessModuleManager();
 
 		TypeManager* getTypeManager();
 
 		SymbolManager* getSymbolManager();
 
-		SymbolTableManager* getMemoryAreaManager();
+		SymbolTableManager* getSymTableManager();
 
 		FunctionManager* getFunctionManager();
 
-		FunctionTagManager* getFunctionTagManager();
+		AddressSpaceManager* getAddrSpaceManager();
 
-		VtableManager* getVTableManager();
+		ImageManager* getImageManager();
 
 		TriggerManager* getTriggerManager();
 
@@ -69,28 +84,15 @@ namespace CE
 
 		DB::ITransaction* getTransaction();
 
-		FS::Directory& getDirectory();
+		const fs::path& getDirectory();
+
+		const fs::path& getImagesDirectory();
 
 		Ghidra::Sync* getGhidraSync();
 
 	private:
-		DB::ITransaction* m_transaction = nullptr;
-		SQLite::Database* m_db = nullptr;
-		FS::Directory m_dir;
+		void initTransaction();
 
-		ProcessModuleManager* m_processModuleManager = nullptr;
-		TypeManager* m_typeManager = nullptr;
-		SymbolManager* m_symbolManager = nullptr;
-		SymbolTableManager* m_memoryAreaManager = nullptr;
-		FunctionManager* m_functionManager = nullptr;
-		VtableManager* m_vtableManager = nullptr;
-		TriggerManager* m_triggerManager = nullptr;
-		TriggerGroupManager* m_triggerGroupManager = nullptr;
-		StatManager* m_statManager = nullptr;
-		Ghidra::Sync* m_ghidraSync;
-
-		bool haveAllManagersBeenLoaded() {
-			return m_typeManager != nullptr;
-		}
+		void createTablesInDatabase();
 	};
 };

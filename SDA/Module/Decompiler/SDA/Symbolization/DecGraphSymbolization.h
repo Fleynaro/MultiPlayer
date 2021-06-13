@@ -5,7 +5,7 @@
 namespace CE::Decompiler::Symbolization
 {
 	static void SymbolizeWithSDA(SdaCodeGraph* sdaCodeGraph, UserSymbolDef& userSymbolDef) {
-		DataTypeFactory dataTypeFactory(userSymbolDef.m_programModule);
+		DataTypeFactory dataTypeFactory(userSymbolDef.m_project);
 		
 		SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
 		sdaBuilding.start();

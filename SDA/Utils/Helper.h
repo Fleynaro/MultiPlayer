@@ -1,16 +1,21 @@
 #pragma once
 
-#include "main.h"
-#include <stdarg.h>
-#include <memory>
-#include <chrono>
-#include <regex>
-#include <cctype>
-#include <sstream>
+#include <main.h>
 
 
 namespace Helper
 {
+	namespace File {
+		// exceptions
+		class FileException : public std::exception {
+		public: FileException(const char* message) : std::exception(message) {}
+		};
+
+		extern void LoadFileIntoBuffer(const fs::path& file, char** buffer, int* size);
+
+		extern void SaveBufferIntoFile(char* buffer, int size, const fs::path& file);
+	};
+
 	namespace String {
 		extern std::vector<std::string> Split(const std::string& input, const std::string& regex);
 		extern void Replace(std::string& source, const std::string& from, const std::string& to);

@@ -55,14 +55,14 @@ IDomainObject* FunctionMapper::doLoad(Database* db, SQLite::Statement& query) {
 	}
 
 	if (stack_mem_area_id) {
-		auto stack_mem_area = getManager()->getProject()->getMemoryAreaManager()->findSymbolTableById(stack_mem_area_id);
+		auto stack_mem_area = getManager()->getProject()->getSymTableManager()->findSymbolTableById(stack_mem_area_id);
 		if (stack_mem_area != nullptr) {
 			function->setStackMemoryArea(stack_mem_area);
 		}
 	}
 
 	if (body_mem_area_id) {
-		auto body_mem_area = getManager()->getProject()->getMemoryAreaManager()->findSymbolTableById(body_mem_area_id);
+		auto body_mem_area = getManager()->getProject()->getSymTableManager()->findSymbolTableById(body_mem_area_id);
 		if (body_mem_area != nullptr) {
 			function->setBodyMemoryArea(body_mem_area);
 		}

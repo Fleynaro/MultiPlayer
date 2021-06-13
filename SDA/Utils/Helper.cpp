@@ -155,3 +155,31 @@ std::string Date::format(std::chrono::system_clock::time_point time_point, std::
 
 	return res;
 }
+
+void File::LoadFileIntoBuffer(const fs::path& file, char** buffer, int* size) {
+	//open file
+	std::ifstream infile(file, std::ios::binary);
+
+	if (!infile.is_open())
+		throw FileException("file not opened");
+
+	//get length of file
+	infile.seekg(0, std::ios::end);
+	*size = (int)infile.tellg();
+	infile.seekg(0, std::ios::beg);
+
+	*buffer = new char[*size];
+
+	//read file
+	infile.read(*buffer, *size);
+}
+
+void File::SaveBufferIntoFile(char* buffer, int size, const fs::path& file) {
+	//open file
+	std::ofstream outfile(file, std::ios::binary);
+
+	if (!outfile.is_open())
+		throw FileException("file not opened");
+
+	outfile.write(buffer, size);
+}

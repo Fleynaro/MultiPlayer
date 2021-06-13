@@ -19,7 +19,7 @@ namespace GUI {
 		Button::StdButton m_decompile_btn;
 		Text::ColoredText m_decInfoText;
 
-		CE::Project* m_programModule;
+		CE::Project* m_project;
 	public:
 		DecompilerDemoWindow()
 			: Window("Decompiler")

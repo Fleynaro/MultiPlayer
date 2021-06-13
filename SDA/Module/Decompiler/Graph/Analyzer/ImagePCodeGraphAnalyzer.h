@@ -503,7 +503,7 @@ namespace CE::Decompiler
 		};
 
 		ProgramGraph* m_programGraph;
-		CE::Project* m_programModule;
+		CE::Project* m_project;
 		AbstractRegisterFactory* m_registerFactory;
 		Symbolization::DataTypeFactory m_dataTypeFactory;
 		PCodeGraphReferenceSearch* m_graphReferenceSearch;
@@ -514,9 +514,9 @@ namespace CE::Decompiler
 		std::map<int64_t, RawSignatureOwner*> m_virtFuncCallOffsetToSig;
 
 		ImagePCodeGraphAnalyzer(ProgramGraph* programGraph, CE::Project* programModule, AbstractRegisterFactory* registerFactory, PCodeGraphReferenceSearch* graphReferenceSearch = nullptr)
-			: m_programGraph(programGraph), m_programModule(programModule), m_registerFactory(registerFactory), m_dataTypeFactory(programModule), m_graphReferenceSearch(graphReferenceSearch)
+			: m_programGraph(programGraph), m_project(programModule), m_registerFactory(registerFactory), m_dataTypeFactory(programModule), m_graphReferenceSearch(graphReferenceSearch)
 		{
-			m_globalSymbolTable = new CE::Symbol::SymbolTable(m_programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
+			m_globalSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
 		}
 
 		/*
@@ -665,8 +665,8 @@ namespace CE::Decompiler
 			// create symbol tables for the func. graph
 			Symbolization::UserSymbolDef userSymbolDef;
 			userSymbolDef.m_globalSymbolTable = m_globalSymbolTable;
-			userSymbolDef.m_stackSymbolTable = new CE::Symbol::SymbolTable(m_programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
-			userSymbolDef.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(m_programModule->getMemoryAreaManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
+			userSymbolDef.m_stackSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
+			userSymbolDef.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
 
 			auto funcOffset = funcGraph->getStartBlock()->getMinOffset() >> 8;
 			auto it = m_funcOffsetToSig.find(funcOffset);

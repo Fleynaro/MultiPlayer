@@ -28,5 +28,9 @@ namespace CE
 		virtual SegmentType defineSegment(int offset) {
 			return NONE_SEGMENT;
 		}
+
+		virtual std::uintptr_t getAddress() {
+			return 0x0;
+		}
 	};
 };

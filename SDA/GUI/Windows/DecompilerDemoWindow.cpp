@@ -43,11 +43,11 @@ FS::Directory getCurrentDir() {
 
 void GUI::DecompilerDemoWindow::initProgram() {
     getCurrentDir().createIfNotExists();
-    m_programModule = new Project(getCurrentDir());
+    m_project = new Project(getCurrentDir());
 
-    m_programModule->initDataBase("database.db");
-    m_programModule->initManagers();
-    m_programModule->load();
+    m_project->initDataBase("database.db");
+    m_project->initManagers();
+    m_project->load();
 }
 
 void GUI::DecompilerDemoWindow::deassembly(const std::string& textCode) {
@@ -168,7 +168,7 @@ void GUI::DecompilerDemoWindow::decompile(const std::string& hexBytesStr)
 
     WarningContainer warningContainer;
     PCode::DecoderX86 decoder(&registerFactoryX86, &warningContainer);
-    PCodeGraphReferenceSearch graphReferenceSearch(m_programModule, &registerFactoryX86, &image);
+    PCodeGraphReferenceSearch graphReferenceSearch(m_project, &registerFactoryX86, &image);
 
     ImageAnalyzer imageAnalyzer(&image, imageGraph, &decoder, &registerFactoryX86, &graphReferenceSearch);
     imageAnalyzer.start(0x0, {}, true);
@@ -188,7 +188,7 @@ void GUI::DecompilerDemoWindow::decompile(const std::string& hexBytesStr)
         decCodeGraph->checkOnSingleParents();
 
         auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
-        auto userSymbolDef = Misc::CreateUserSymbolDef(m_programModule);
+        auto userSymbolDef = Misc::CreateUserSymbolDef(m_project);
         Symbolization::SymbolizeWithSDA(sdaCodeGraph, userSymbolDef);
         Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
 

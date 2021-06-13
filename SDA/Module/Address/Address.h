@@ -7,6 +7,8 @@ namespace CE
 {
 	class Address
 	{
+		void* m_addr;
+
 	public:
 		Address(void* addr)
 			: m_addr(addr)
@@ -22,10 +24,6 @@ namespace CE
 			return m_addr;
 		}
 
-		Address dereference();
-
-		void addOffset(int offset);
-
 		template<typename T>
 		T& get();
 
@@ -39,36 +37,10 @@ namespace CE
 		void setProtect(ProtectFlags flags, int size = 1);
 
 		ProtectFlags getProtect();
-
-		static void* Dereference(void* addr, int level);
-	private:
-		void* m_addr;
 	};
 
 	template<typename T>
 	inline T& Address::get() {
 		return *(T*)m_addr;
 	}
-
-	using DereferenceIteratorItemType = std::pair<void*, DataType::AbstractType*>;
-	class DereferenceIterator : public IIterator<DereferenceIteratorItemType>
-	{
-	public:
-		DereferenceIterator(Address addr, DataTypePtr type);
-
-		bool hasNext() override;
-
-		DereferenceIteratorItemType next() override;
-	private:
-		Address m_addr;
-		Address m_curAddr;
-		DataTypePtr m_type;
-		std::list<int> m_levels;
-		std::list<int> m_cur_levels;
-		bool m_isEnd = false;
-
-		void goNext();
-
-		Address dereference();
-	};
 };

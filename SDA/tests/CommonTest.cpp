@@ -13,13 +13,13 @@ TEST(DataType, Parsing)
 
 TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
 {
-    EXPECT_GE(m_programModule->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 20);
-    auto tr = m_programModule->getTransaction();
-    auto typeManager = m_programModule->getTypeManager();
-    auto symbolManager = m_programModule->getSymbolManager();
-    auto memoryAreaManager = m_programModule->getMemoryAreaManager();
-    auto funcManager = m_programModule->getFunctionManager();
-    auto modulesManager = m_programModule->getProcessModuleManager();
+    EXPECT_GE(m_project->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 20);
+    auto tr = m_project->getTransaction();
+    auto typeManager = m_project->getTypeManager();
+    auto symbolManager = m_project->getSymbolManager();
+    auto memoryAreaManager = m_project->getSymTableManager();
+    auto funcManager = m_project->getFunctionManager();
+    auto modulesManager = m_project->getProcessModuleManager();
     ProcessModule* kernel32;
     ProcessModule* ucrtbase;
     memoryAreaManager->createMainGlobalSymTable(0x1000000);
@@ -41,9 +41,9 @@ TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
 
     //for functions
     {
-        auto tagManager = m_programModule->getFunctionTagManager();
+        auto tagManager = m_project->getFunctionTagManager();
         ASSERT_EQ(funcManager->getItemsCount(), 0);
-        auto module = m_programModule->getProcessModuleManager()->getMainModule();
+        auto module = m_project->getProcessModuleManager()->getMainModule();
 
         auto setRotSig = typeManager->createSignature("setRotSig");
         setRotSig->addParameter("arg1", DataType::GetUnit(typeManager->findTypeByName("int32_t")));
@@ -148,17 +148,17 @@ TEST_F(ProgramModuleFixtureStart, Test_Common_DataBaseCreatedAndFilled)
 
     //for triggers
     {
-        auto trigger1 = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger1");
+        auto trigger1 = m_project->getTriggerManager()->createFunctionTrigger("testTrigger1");
         ASSERT_NE(trigger1, nullptr);
         auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
         auto filter2 = new Trigger::Function::Filter::Cmp::RetValue(0, Trigger::Function::Filter::Cmp::Ge);
         trigger1->getFilters()->addFilter(filter1);
         trigger1->getFilters()->addFilter(filter2);
 
-        auto trigger2 = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger2");
+        auto trigger2 = m_project->getTriggerManager()->createFunctionTrigger("testTrigger2");
         ASSERT_NE(trigger2, nullptr);
 
-        auto trGroup = m_programModule->getTriggerGroupManager()->createTriggerGroup("triggerTestGroup");
+        auto trGroup = m_project->getTriggerGroupManager()->createTriggerGroup("triggerTestGroup");
         trGroup->addTrigger(trigger1);
         trGroup->addTrigger(trigger2);
     }
@@ -176,7 +176,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 {
     //for functions
     {
-        auto funcManager = m_programModule->getFunctionManager();
+        auto funcManager = m_project->getFunctionManager();
         ASSERT_EQ(funcManager->getItemsCount(), 8);
         
         auto func = funcManager->getFunctionAt(&setRot);
@@ -197,9 +197,9 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
     //for symbols & memory areas
     {
-        auto symbolManager = m_programModule->getSymbolManager();
+        auto symbolManager = m_project->getSymbolManager();
         ASSERT_GE(symbolManager->getItemsCount(), 1);
-        auto memoryAreaManager = m_programModule->getMemoryAreaManager();
+        auto memoryAreaManager = m_project->getSymTableManager();
         ASSERT_GE(memoryAreaManager->getItemsCount(), 2);
 
         if (auto testStackFrame = memoryAreaManager->findSymbolTableById(2)) {
@@ -210,7 +210,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
     //for types
     {
-        auto typeManager = m_programModule->getTypeManager();
+        auto typeManager = m_project->getTypeManager();
 
         //for structure
         {
@@ -261,8 +261,8 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
     //for triggers
     {
-        auto trManager = m_programModule->getTriggerManager();
-        auto trGroupManager = m_programModule->getTriggerGroupManager();
+        auto trManager = m_project->getTriggerManager();
+        auto trGroupManager = m_project->getTriggerGroupManager();
         
         //for function trigger
         {
@@ -295,9 +295,9 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
 
 TEST_F(ProgramModuleFixture, Test_Common_FunctionTrigger)
 {
-    auto typeManager = m_programModule->getTypeManager();
-    auto statManager = m_programModule->getStatManager();
-    auto funcManager = m_programModule->getFunctionManager();
+    auto typeManager = m_project->getTypeManager();
+    auto statManager = m_project->getStatManager();
+    auto funcManager = m_project->getFunctionManager();
     
     auto function = funcManager->getFunctionAt(&setRot);
     ASSERT_NE(function, nullptr);
@@ -308,7 +308,7 @@ TEST_F(ProgramModuleFixture, Test_Common_FunctionTrigger)
 
     hook->getDynHook()->enable();
 
-    auto trigger = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger1");
+    auto trigger = m_project->getTriggerManager()->createFunctionTrigger("testTrigger1");
     ASSERT_NE(trigger, nullptr);
     auto filter1 = new Trigger::Function::Filter::Cmp::Argument(1, 1, Trigger::Function::Filter::Cmp::Eq);
     auto filter2 = new Trigger::Function::Filter::Cmp::RetValue(12, Trigger::Function::Filter::Cmp::Eq);
@@ -359,7 +359,7 @@ TEST_F(ProgramModuleFixture, Test_Common_FunctionTrigger)
     //Pointer & array
     function = funcManager->getFunctionAt(&sumArray);
     ASSERT_NE(function, nullptr);
-    trigger = m_programModule->getTriggerManager()->createFunctionTrigger("testTrigger2");
+    trigger = m_project->getTriggerManager()->createFunctionTrigger("testTrigger2");
     trigger->setStatCollectingEnable(true);
     trigger->setTableLogEnable(true);
 
@@ -444,7 +444,7 @@ TEST_F(ProgramModuleFixture, Test_Common_FunctionTrigger)
 #include <Statistic/Function/Analysis/Providers/StringSearchProvider.h>
 TEST_F(ProgramModuleFixture, Test_Common_FunctionStatAnalysis)
 {
-    auto statManager = m_programModule->getStatManager();
+    auto statManager = m_project->getStatManager();
     auto loader = new Stat::Function::BufferLoader(statManager->getCollector()->getBufferManager());
     loader->loadAllBuffers();
     auto provider = new Stat::Function::Analyser::StringSearchProvider("hello");
@@ -465,9 +465,9 @@ TEST_F(ProgramModuleFixture, Test_Common_GhidraSync)
     if (!GHIDRA_TEST)
         return;
     using namespace Ghidra;
-    auto sync = m_programModule->getGhidraSync();
-    auto typeManager = m_programModule->getTypeManager();
-    auto funcManager = m_programModule->getFunctionManager();
+    auto sync = m_project->getGhidraSync();
+    auto typeManager = m_project->getTypeManager();
+    auto funcManager = m_project->getFunctionManager();
     DataType::Structure* screen2d_vtable = nullptr;
 
     //download

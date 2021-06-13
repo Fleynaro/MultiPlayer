@@ -5,6 +5,8 @@
 #include "FunctionManager.h"
 #include "SymbolManager.h"
 #include "SymbolTableManager.h"
+#include "AddressSpaceManager.h"
+#include "ImageManager.h"
 #include "StatManager.h"
 #include "TriggerManager.h"
 #include "TriggerGroupManager.h"

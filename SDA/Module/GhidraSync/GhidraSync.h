@@ -23,7 +23,7 @@ namespace CE::Ghidra
 
 		packet::DataSyncPacketManagerServiceClient* getDataSyncPacketManagerServiceClient();
 	private:
-		CE::Project* m_programModule;
+		CE::Project* m_project;
 		Client* m_client;
 		packet::DataSyncPacketManagerServiceClient* m_dataSyncPacketManagerServiceClient;
 	};

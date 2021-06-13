@@ -75,7 +75,7 @@ void ClassTypeMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 
 void ClassTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj)
 {
-	auto Class = static_cast<DataType::Class*>(obj);
+	auto Class = dynamic_cast<DataType::Class*>(obj);
 
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_classes (struct_id, base_struct_id, vtable_id) VALUES(?1, ?2, ?3)");
 	query.bind(1, Class->getId());

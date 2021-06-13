@@ -16,7 +16,7 @@ namespace CE::Ghidra
 
 		std::list<IObject*>& getObjectsToRemove();
 	private:
-		CE::Project* m_programModule;
+		CE::Project* m_project;
 		std::list<IObject*> m_upsertedObjs;
 		std::list<IObject*> m_removedObjs;
 	};

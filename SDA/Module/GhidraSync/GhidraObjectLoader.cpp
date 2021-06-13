@@ -5,7 +5,7 @@ using namespace CE;
 using namespace CE::Ghidra;
 
 GhidraObjectLoader::GhidraObjectLoader(CE::Project* programModule)
-	: m_programModule(programModule)
+	: m_project(programModule)
 {}
 
 GhidraObjectLoader::~GhidraObjectLoader() {
@@ -19,7 +19,7 @@ void GhidraObjectLoader::analyse() {
 		SELECT id,deleted,sync_id,type FROM (\
 			SELECT def_id,deleted,ghidra_sync_id,1 FROM sda_func_defs\
 		) AS t1 INNER JOIN sda_ghidra_sync AS t2 ON t1.sync_id = t2.sync_id INNER JOIN sda_saves AS t3 ON t2.date < t3.date";
-	SQLite::Statement query(m_programModule->getDB(), query_text);
+	SQLite::Statement query(m_project->getDB(), query_text);
 
 	while (query.executeStep())
 	{

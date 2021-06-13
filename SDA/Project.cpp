@@ -7,22 +7,20 @@
 
 using namespace CE;
 
-Project::Project(FS::Directory dir)
-	: m_dir(dir)
+Project::Project(const fs::path& dir)
+	: m_directory(dir)
 {
 	m_ghidraSync = new Ghidra::Sync(this);
 }
 
 Project::~Project() {
-	if (haveAllManagersBeenLoaded()) {
-		delete m_processModuleManager;
+	if (m_haveAllManagersBeenLoaded) {
 		delete m_functionManager;
 		delete m_statManager;
 		delete m_symbolManager;
-		delete m_memoryAreaManager;
+		delete m_symbolTableManager;
 		delete m_triggerManager;
 		delete m_triggerGroupManager;
-		delete m_vtableManager;
 		delete m_typeManager;
 	}
 	if (m_ghidraSync != nullptr) {
@@ -42,9 +40,11 @@ void Project::load()
 {
 	getTypeManager()->loadBefore();
 	getSymbolManager()->loadSymbols();
-	getMemoryAreaManager()->loadSymTables();
+	getSymTableManager()->loadSymTables();
 	getFunctionManager()->loadFunctions();
 	getTypeManager()->loadAfter();
+	getAddrSpaceManager()->loadAddressSpaces();
+	getImageManager()->loadImages();
 	getTriggerManager()->loadTriggers();
 	getTriggerGroupManager()->loadTriggerGroups();
 }
@@ -54,13 +54,16 @@ void Project::initManagers()
 	m_typeManager = new TypeManager(this);
 	m_functionManager = new FunctionManager(this);
 	m_symbolManager = new SymbolManager(this);
-	m_memoryAreaManager = new SymbolTableManager(this);
+	m_symbolTableManager = new SymbolTableManager(this);
+	m_addrSpaceManager = new AddressSpaceManager(this);
+	m_imageManager = new ImageManager(this);
 	m_triggerManager = new TriggerManager(this);
 	m_triggerGroupManager = new TriggerGroupManager(this);
 	m_statManager = new StatManager(this);
+	m_haveAllManagersBeenLoaded = true;
 }
 
-void Project::createGeneralDataBase()
+void CE::Project::createTablesInDatabase()
 {
 	using namespace SQLite;
 
@@ -74,13 +77,17 @@ void Project::createGeneralDataBase()
 	m_db->exec(query);
 }
 
-void Project::initDataBase(std::string filename)
+void CE::Project::initDataBase(const fs::path& file)
 {
-	auto filedb = FS::File(getDirectory(), filename);
-	bool filedbExisting = filedb.exists();
-	m_db = new SQLite::Database(filedb.getFilename(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+	auto filedb = m_directory / file;
+	bool filedbExisting = fs::exists(filedb);
+
+	// init database
+	m_db = new SQLite::Database(filedb.string(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+	
+	// if data base didn't exist then create tables
 	if (!filedbExisting) {
-		createGeneralDataBase();
+		createTablesInDatabase();
 	}
 
 	initTransaction();
@@ -88,10 +95,6 @@ void Project::initDataBase(std::string filename)
 
 SQLite::Database& Project::getDB() {
 	return *m_db;
-}
-
-ProcessModuleManager* Project::getProcessModuleManager() {
-	return m_processModuleManager;
 }
 
 TypeManager* Project::getTypeManager() {
@@ -102,20 +105,20 @@ SymbolManager* Project::getSymbolManager() {
 	return m_symbolManager;
 }
 
-SymbolTableManager* Project::getMemoryAreaManager() {
-	return m_memoryAreaManager;
+SymbolTableManager* Project::getSymTableManager() {
+	return m_symbolTableManager;
 }
 
 FunctionManager* Project::getFunctionManager() {
 	return m_functionManager;
 }
 
-FunctionTagManager* Project::getFunctionTagManager() {
-	return m_functionManager->getFunctionTagManager();
+AddressSpaceManager* CE::Project::getAddrSpaceManager() {
+	return m_addrSpaceManager;
 }
 
-VtableManager* Project::getVTableManager() {
-	return m_vtableManager;
+ImageManager* CE::Project::getImageManager() {
+	return m_imageManager;
 }
 
 TriggerManager* Project::getTriggerManager() {
@@ -131,15 +134,19 @@ StatManager* Project::getStatManager() {
 }
 
 Symbol::SymbolTable* Project::getGlobalMemoryArea() {
-	return getMemoryAreaManager()->getMainGlobalSymTable();
+	return getSymTableManager()->getMainGlobalSymTable();
 }
 
 DB::ITransaction* Project::getTransaction() {
 	return m_transaction;
 }
 
-FS::Directory& Project::getDirectory() {
-	return m_dir;
+const fs::path& CE::Project::getDirectory() {
+	return m_directory;
+}
+
+const fs::path& CE::Project::getImagesDirectory() {
+	return m_directory / fs::path("images");
 }
 
 Ghidra::Sync* Project::getGhidraSync() {

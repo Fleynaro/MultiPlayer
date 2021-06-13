@@ -32,7 +32,7 @@ Trigger::AbstractTrigger* TriggerManager::findTriggerByName(const std::string& n
 			return tr;
 		}
 	}
-	return nullptr;
+	throw ItemNotFoundException();
 }
 
 Trigger::AbstractTrigger* TriggerManager::findTriggerById(DB::Id id) {

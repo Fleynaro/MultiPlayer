@@ -48,23 +48,12 @@ namespace CE
 
 		// virtual address to file offset
 		int addrToImageOffset(uint64_t addr) override {
-			auto offset = int(addr - m_pImgNtHeaders->OptionalHeader.ImageBase);
+			auto offset = int(addr - getAddress());
 			return toImageOffset(offset);
 		}
 
-		static void LoadPEImage(const std::string& filename, char** buffer, int* size) {
-			//open file
-			std::ifstream infile(filename, std::ios::binary);
-
-			//get length of file
-			infile.seekg(0, std::ios::end);
-			*size = (int)infile.tellg();
-			infile.seekg(0, std::ios::beg);
-
-			*buffer = new char[*size];
-
-			//read file
-			infile.read(*buffer, *size);
+		std::uintptr_t getAddress() override {
+			return m_pImgNtHeaders->OptionalHeader.ImageBase;
 		}
 
 	private:
@@ -89,7 +78,7 @@ namespace CE
 
 			m_pImgNtHeaders = (PIMAGE_NT_HEADERS)(m_data + dos_header.e_lfanew);
 
-			auto signature = (char*)&m_pImgNtHeaders->FunctionSignature;
+			auto signature = (char*)&m_pImgNtHeaders->Signature;
 			if (std::string(signature, 2) != "PE")
 				throw std::exception();
 

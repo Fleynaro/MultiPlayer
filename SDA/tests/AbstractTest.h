@@ -16,16 +16,16 @@ public:
             clear();
         }
         getCurrentDir().createIfNotExists();
-        m_programModule = new Project(getCurrentDir());
+        m_project = new Project(getCurrentDir());
 
-        m_programModule->initDataBase("database.db");
-        m_programModule->initManagers();
-        m_programModule->load();
+        m_project->initDataBase("database.db");
+        m_project->initManagers();
+        m_project->load();
     }
 
     ~ProgramModuleFixtureBase() {
-        if (m_programModule != nullptr)
-            delete m_programModule;
+        if (m_project != nullptr)
+            delete m_project;
     }
 
 
@@ -36,14 +36,14 @@ public:
     }
 
     void clear() {
-        if (m_programModule != nullptr) {
-            delete m_programModule;
-            m_programModule = nullptr;
+        if (m_project != nullptr) {
+            delete m_project;
+            m_project = nullptr;
         }
         getCurrentDir().removeAll();
     }
 
-    CE::Project* m_programModule;
+    CE::Project* m_project;
 };
 
 class ProgramModuleFixture : public ProgramModuleFixtureBase, public ::testing::Test {
