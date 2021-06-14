@@ -14,7 +14,6 @@ namespace CE
 	class AddressSpaceManager;
 	class ImageManager;
 	class TriggerManager;
-	class TriggerGroupManager;
 	class StatManager;
 
 	namespace Ghidra {
@@ -41,7 +40,6 @@ namespace CE
 		AddressSpaceManager* m_addrSpaceManager = nullptr;
 		ImageManager* m_imageManager = nullptr;
 		TriggerManager* m_triggerManager = nullptr;
-		TriggerGroupManager* m_triggerGroupManager = nullptr;
 		StatManager* m_statManager = nullptr;
 		Ghidra::Sync* m_ghidraSync;
 	public:
@@ -75,8 +73,6 @@ namespace CE
 		ImageManager* getImageManager();
 
 		TriggerManager* getTriggerManager();
-
-		TriggerGroupManager* getTriggerGroupManager();
 
 		StatManager* getStatManager();
 

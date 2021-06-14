@@ -1,5 +1,4 @@
 #include "TriggerMapper.h"
-#include "FunctionTriggerMapper.h"
 #include <Manager/TriggerManager.h>
 
 using namespace DB;
@@ -7,9 +6,7 @@ using namespace CE;
 
 TriggerMapper::TriggerMapper(IRepository* repository)
 	: AbstractMapper(repository)
-{
-	m_functionTriggerMapper = new FunctionTriggerMapper(this);
-}
+{}
 
 void TriggerMapper::loadAll()
 {
@@ -30,13 +27,16 @@ TriggerManager* TriggerMapper::getManager()
 
 IDomainObject* TriggerMapper::doLoad(Database* db, SQLite::Statement& query)
 {
-	IDomainObject* obj = nullptr;
-
 	int type = query.getColumn("type");
+	std::string name = query.getColumn("name");
+	std::string comment = query.getColumn("comment");
+
+	IDomainObject* obj = nullptr;
 	switch (type)
 	{
 	case Trigger::FunctionTrigger:
-		obj = m_functionTriggerMapper->doLoad(db, query);
+		obj = getManager()->createFunctionTrigger(name, comment, false);
+		// todo: load filters using BSON, not BitStream. Take the old loading code where there's a recursion (make it according to the example DataTypeMapper!)
 		break;
 	}
 	
@@ -52,9 +52,9 @@ void TriggerMapper::doInsert(TransactionContext* ctx, IDomainObject* obj)
 
 void TriggerMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto trigger = dynamic_cast<Trigger::AbstractTrigger*>(obj);
-	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_triggers(trigger_id, type, name, desc) VALUES(?1, ?2, ?3, ?4)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_triggers(trigger_id, type, name, comment, json_extra) VALUES(?1, ?2, ?3, ?4, ?5)");
 	query.bind(1, trigger->getId());
-	bind(query, *trigger);
+	bind(query, trigger);
 	query.exec();
 }
 
@@ -65,9 +65,11 @@ void TriggerMapper::doRemove(TransactionContext* ctx, IDomainObject* obj)
 	query.exec();
 }
 
-void TriggerMapper::bind(SQLite::Statement& query, Trigger::AbstractTrigger& tr)
+void TriggerMapper::bind(SQLite::Statement& query, Trigger::AbstractTrigger* tr)
 {
-	query.bind(2, tr.getType());
-	query.bind(3, tr.getName());
-	query.bind(4, tr.getComment());
+	query.bind(2, tr->getType());
+	query.bind(3, tr->getName());
+	query.bind(4, tr->getComment());
+
+
 }

@@ -28,8 +28,6 @@ IDomainObject* DB::AddressSpaceMapper::doLoad(Database* db, SQLite::Statement& q
 	int as_id = query.getColumn("as_id_id");
 	std::string name = query.getColumn("name");
 	std::string comment = query.getColumn("comment");
-	/*std::string json_images_str = query.getColumn("json_images");
-	auto json_images = json::parse(json_images_str);*/
 
 	auto addressSpace = getManager()->createAddressSpace(name, comment, false);
 
@@ -59,14 +57,6 @@ void DB::AddressSpaceMapper::doRemove(TransactionContext* ctx, IDomainObject* ob
 }
 
 void DB::AddressSpaceMapper::bind(SQLite::Statement& query, CE::AddressSpace& as) {
-	/*json json_images;
-	for (const auto& pair : as.getImages()) {
-		json json_image;
-		json_image["addr"] = pair.first;
-		json_image["image_id"] = pair.second->getId();
-		json_images.push_back(json_image);
-	}*/
-
 	query.bind(2, as.getName());
 	query.bind(3, as.getComment());
 }

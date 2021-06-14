@@ -1,6 +1,6 @@
 #pragma once
 #include <DB/AbstractMapper.h>
-#include <Code/Type/AbstractType.h>
+#include <Code/Type/Type.h>
 
 namespace CE {
 	class TypeManager;
@@ -8,21 +8,10 @@ namespace CE {
 
 namespace DB
 {
-	class EnumTypeMapper;
-	class StructureTypeMapper;
-	class ClassTypeMapper;
-	class TypedefTypeMapper;
-	class SignatureTypeMapper;
-
 	class DataTypeMapper : public AbstractMapper
 	{
+		bool m_loadBefore = true;
 	public:
-		EnumTypeMapper* m_enumTypeMapper;
-		StructureTypeMapper* m_structureTypeMapper;
-		ClassTypeMapper* m_classTypeMapper;
-		TypedefTypeMapper* m_typedefTypeMapper;
-		SignatureTypeMapper* m_signatureTypeMapper;
-
 		DataTypeMapper(IRepository* repository);
 
 		void loadBefore();
@@ -42,6 +31,14 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
-		void bind(SQLite::Statement& query, CE::DataType::AbstractType& type);
+		DataTypePtr loadDataTypeJson(json json_dataType);
+
+		json createDataTypeJson(DataTypePtr dataType);
+
+		void loadExtraJson(CE::DataType::UserDefinedType* userDefType, json json_extra);
+
+		json createExtraJson(CE::DataType::UserDefinedType* userDefType);
+
+		void bind(SQLite::Statement& query, CE::DataType::UserDefinedType* userDefType);
 	};
 };

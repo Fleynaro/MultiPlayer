@@ -12,14 +12,13 @@ SymbolTableMapper::SymbolTableMapper(IRepository* repository)
 
 void SymbolTableMapper::loadAll() {
 	auto& db = getManager()->getProject()->getDB();
-	Statement query(db, "SELECT * FROM sda_mem_areas");
+	Statement query(db, "SELECT * FROM sda_symbol_tables");
 	load(&db, query);
-	loadSymbolsForAllSymTables(&db);
 }
 
 Id SymbolTableMapper::getNextId() {
 	auto& db = getManager()->getProject()->getDB();
-	return GenerateNextId(&db, "sda_mem_areas");
+	return GenerateNextId(&db, "sda_symbol_tables");
 }
 
 SymbolTableManager* SymbolTableMapper::getManager() {
@@ -27,52 +26,26 @@ SymbolTableManager* SymbolTableMapper::getManager() {
 }
 
 IDomainObject* SymbolTableMapper::doLoad(Database* db, SQLite::Statement& query) {
-	int mem_area_id = query.getColumn("mem_area_id");
+	int sym_table_id = query.getColumn("sym_table_id");
 	auto type = (SymbolTable::SymbolTableType)(int)query.getColumn("type");
 	int size = query.getColumn("size");
+	std::string json_symbols_str = query.getColumn("json_symbols");
+	auto json_symbols = json::parse(json_symbols_str);
 
-	auto memoryArea = new SymbolTable(getManager(), type, size);
-	memoryArea->setId(mem_area_id);
-	return memoryArea;
-}
+	// create a symbol table
+	auto symTable = getManager()->getFactory(false).createSymbolTable(type, size);
 
-void SymbolTableMapper::loadSymbolsForAllSymTables(Database* db) {
-	SQLite::Statement query(*db, "SELECT * FROM sda_mem_area_symbols");
-	
-	while (query.executeStep())
-	{
-		int symbol_id = query.getColumn("symbol_id");
-		int mem_area_id = query.getColumn("mem_area_id");
-		int64_t offset = query.getColumn("offset");
+	// load symbols for the symbol table
+	for (const auto& json_symbol : json_symbols) {
+		auto symbol_id = json_symbol["sym_id"].get<DB::Id>();
+		auto offset = json_symbol["offset"].get<int64_t>();
 
-		auto memoryArea = getManager()->findSymbolTableById(mem_area_id);
-		if (memoryArea == nullptr)
-			continue;
 		auto symbol = getManager()->getProject()->getSymbolManager()->findSymbolById(symbol_id);
-		memoryArea->addSymbol(symbol, offset);
-		if (auto memSymbol = dynamic_cast<AbstractMemorySymbol*>(symbol))
-			memSymbol->setOffset(offset);
-	}
-}
-
-void SymbolTableMapper::saveSymbolsForSymTable(TransactionContext* ctx, SymbolTable* memoryArea) {
-	{
-		SQLite::Statement query(*ctx->m_db, "DELETE FROM sda_mem_area_symbols WHERE mem_area_id=?1");
-		query.bind(1, memoryArea->getId());
-		query.exec();
+		symTable->addSymbol(symbol, offset);
 	}
 
-	{
-		for (auto& it : memoryArea->getSymbols()) {
-			auto symbol = it.second;
-			auto offset = it.first;
-			SQLite::Statement query(*ctx->m_db, "INSERT INTO sda_mem_area_symbols (symbol_id, mem_area_id, offset) VALUES(?1, ?2, ?3)");
-			query.bind(1, symbol->getId());
-			query.bind(2, memoryArea->getId());
-			query.bind(3, offset);
-			query.exec();
-		}
-	}
+	symTable->setId(sym_table_id);
+	return symTable;
 }
 
 void SymbolTableMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
@@ -80,24 +53,33 @@ void SymbolTableMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void SymbolTableMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto memoryArea = dynamic_cast<SymbolTable*>(obj);
-	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_mem_areas (mem_area_id, type, size, save_id) VALUES(?1, ?2, ?3, ?4)");
-	query.bind(1, memoryArea->getId());
-	bind(query, *memoryArea);
+	auto symTable = dynamic_cast<SymbolTable*>(obj);
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_symbol_tables (sym_table_id, type, size, json_symbols, save_id) VALUES(?1, ?2, ?3, ?4, ?5)");
+	query.bind(1, symTable->getId());
+	bind(query, symTable);
 	query.bind(4, ctx->m_saveId);
 	query.exec();
-	saveSymbolsForSymTable(ctx, memoryArea);
 }
 
 void SymbolTableMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
 	std::string action_query_text =
-		ctx->m_notDelete ? "UPDATE sda_mem_areas SET deleted=1" : "DELETE FROM sda_mem_areas";
-	Statement query(*ctx->m_db, action_query_text + " WHERE mem_area_id=?1");
+		ctx->m_notDelete ? "UPDATE sda_symbol_tables SET deleted=1" : "DELETE FROM sda_symbol_tables";
+	Statement query(*ctx->m_db, action_query_text + " WHERE sym_table_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }
 
-void SymbolTableMapper::bind(SQLite::Statement& query, SymbolTable& memoryArea) {
-	query.bind(2, memoryArea.getType());
-	query.bind(3, memoryArea.getSize());
+void SymbolTableMapper::bind(SQLite::Statement& query, SymbolTable* symbolTable) {
+	json json_symbols;
+	for (auto& pair : symbolTable->getSymbols()) {
+		json json_symbol;
+		auto symbol = pair.second;
+		json_symbol["sym_id"] = symbol->getId();
+		json_symbol["offset"] = pair.first;
+		json_symbols.push_back(json_symbol);
+	}
+	
+	query.bind(2, symbolTable->getType());
+	query.bind(3, symbolTable->getSize());
+	query.bind(4, json_symbols.dump());
 }

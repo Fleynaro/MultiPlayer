@@ -32,7 +32,7 @@ void EnumTypeMapper::remove(SyncContext* ctx, IObject* obj) {
 datatype::SDataTypeEnum EnumTypeMapper::buildDesc(DataType::Enum* Enum) {
 	datatype::SDataTypeEnum enumDesc;
 	enumDesc.__set_type(m_dataTypeMapper->buildDesc(Enum));
-	for (auto& field : Enum->getFieldDict()) {
+	for (auto& field : Enum->getFields()) {
 		datatype::SDataTypeEnumField enumFieldDesc;
 		enumFieldDesc.__set_name(field.second);
 		enumFieldDesc.__set_value(field.first);

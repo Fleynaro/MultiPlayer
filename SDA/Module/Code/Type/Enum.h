@@ -8,7 +8,7 @@ namespace CE
 		class Enum : public UserDefinedType
 		{
 		public:
-			using FieldDict = std::map<int, std::string>;
+			using FieldMapType = std::map<int, std::string>;
 
 			Enum(TypeManager* typeManager, const std::string& name, const std::string& comment = "")
 				: UserDefinedType(typeManager, name, comment)
@@ -22,7 +22,7 @@ namespace CE
 
 			std::string getViewValue(uint64_t value) override;
 
-			FieldDict& getFieldDict();
+			FieldMapType& getFields();
 
 			bool removeField(int value);
 
@@ -30,7 +30,7 @@ namespace CE
 
 			void deleteAll();
 		private:
-			FieldDict m_fields;
+			FieldMapType m_fields;
 			int m_size = 4;
 		};
 	};

@@ -64,26 +64,5 @@ namespace DB
 		virtual void doRemove(TransactionContext* ctx, IDomainObject* obj) = 0;
 	};
 
-	class ChildAbstractMapper : public IMapper
-	{
-	public:
-		ChildAbstractMapper(IMapper* parentMapper);
-
-		virtual IDomainObject* doLoad(Database* db, Statement& query) = 0;
-
-		void insert(TransactionContext* ctx, IDomainObject* obj);
-
-		void update(TransactionContext* ctx, IDomainObject* obj);
-
-		void remove(TransactionContext* ctx, IDomainObject* obj);
-
-		IRepository* getRepository() override;
-	protected:
-		virtual void doInsert(TransactionContext* ctx, IDomainObject* obj) = 0;
-		virtual void doUpdate(TransactionContext* ctx, IDomainObject* obj) = 0;
-		virtual void doRemove(TransactionContext* ctx, IDomainObject* obj) = 0;
-		IMapper* m_parentMapper;
-	};
-
 	Id GenerateNextId(Database* db, const std::string& tableName);
 };

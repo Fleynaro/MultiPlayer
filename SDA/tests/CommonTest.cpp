@@ -253,7 +253,7 @@ TEST_F(ProgramModuleFixture, Test_Common_DataBaseLoaded)
                 ASSERT_NE(objType->getRefType(), nullptr);
                 ASSERT_EQ(objType->getRefType()->getGroup(), DataType::AbstractType::Enum);
                 if (auto refType = dynamic_cast<DataType::Enum*>(objType->getRefType()->getType())) {
-                    ASSERT_EQ(refType->getFieldDict().size(), 3);
+                    ASSERT_EQ(refType->getFields().size(), 3);
                 }
             }
         }

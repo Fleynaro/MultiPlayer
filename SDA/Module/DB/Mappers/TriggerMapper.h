@@ -11,13 +11,9 @@ namespace CE {
 
 namespace DB
 {
-	class FunctionTriggerMapper;
-
 	class TriggerMapper : public AbstractMapper
 	{
 	public:
-		FunctionTriggerMapper* m_functionTriggerMapper;
-
 		TriggerMapper(IRepository* repository);
 
 		void loadAll();
@@ -35,6 +31,6 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
-		void bind(SQLite::Statement& query, CE::Trigger::AbstractTrigger& tr);
+		void bind(SQLite::Statement& query, CE::Trigger::AbstractTrigger* tr);
 	};
 };

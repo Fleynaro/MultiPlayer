@@ -13,38 +13,15 @@ namespace CE
 	public:
 		using Iterator = AbstractIterator<AddressSpace>;
 
-		AddressSpaceManager(Project* project)
-			: AbstractItemManager(project)
-		{
-			m_imageMapper = new DB::AddressSpaceMapper(this);
-		}
+		AddressSpaceManager(Project* project);
 
-		AddressSpace* createAddressSpace(const std::string& name, const std::string& desc = "", bool generateId = true) {
-			auto addressSpace = new AddressSpace(name, desc);
-			addressSpace->setMapper(m_imageMapper);
-			if (generateId)
-				addressSpace->setId(m_imageMapper->getNextId());
-			return addressSpace;
-		}
+		AddressSpace* createAddressSpace(const std::string& name, const std::string& desc = "", bool generateId = true);
 
-		void loadAddressSpaces() {
-			m_imageMapper->loadAll();
-		}
+		void loadAddressSpaces();
 
-		AddressSpace* findAddressSpaceById(DB::Id id) {
-			return dynamic_cast<AddressSpace*>(find(id));
-		}
+		AddressSpace* findAddressSpaceById(DB::Id id);
 
-		AddressSpace* findAddressSpaceByName(const std::string& name) {
-			Iterator it(this);
-			while (it.hasNext()) {
-				auto item = it.next();
-				if (item->getName() == name) {
-					return item;
-				}
-			}
-			throw ItemNotFoundException();
-		}
+		AddressSpace* findAddressSpaceByName(const std::string& name);
 
 	private:
 		DB::AddressSpaceMapper* m_imageMapper;

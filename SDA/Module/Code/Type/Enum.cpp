@@ -22,7 +22,7 @@ std::string Enum::getViewValue(uint64_t value) {
 	return it->second + " (" + UserDefinedType::getViewValue(value) + ")";
 }
 
-Enum::FieldDict& Enum::getFieldDict() {
+Enum::FieldMapType& Enum::getFields() {
 	return m_fields;
 }
 

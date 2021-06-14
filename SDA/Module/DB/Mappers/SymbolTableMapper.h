@@ -1,6 +1,6 @@
 #pragma once
 #include <DB/AbstractMapper.h>
-#include <Code/Symbol/MemoryArea/MemoryArea.h>
+#include <Code/Symbol/SymbolTable/SymbolTable.h>
 
 namespace CE {
 	class SymbolTableManager;
@@ -21,10 +21,6 @@ namespace DB
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
-		void loadSymbolsForAllSymTables(Database* db);
-
-		void saveSymbolsForSymTable(TransactionContext* ctx, CE::Symbol::SymbolTable* memoryArea);
-
 		void doInsert(TransactionContext* ctx, IDomainObject* obj) override;
 
 		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;
@@ -32,6 +28,6 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
-		void bind(SQLite::Statement& query, CE::Symbol::SymbolTable& memoryArea);
+		void bind(SQLite::Statement& query, CE::Symbol::SymbolTable* memoryArea);
 	};
 };

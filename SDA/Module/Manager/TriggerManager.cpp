@@ -1,6 +1,5 @@
 #include "TriggerManager.h"
 #include <DB/Mappers/TriggerMapper.h>
-#include <DB/Mappers/FunctionTriggerMapper.h>
 
 using namespace CE;
 
@@ -12,7 +11,7 @@ TriggerManager::TriggerManager(Project* module)
 
 Trigger::Function::Trigger* TriggerManager::createFunctionTrigger(const std::string& name, const std::string& desc, bool generateId) {
 	auto trigger = new Trigger::Function::Trigger(this, name, desc);
-	trigger->setMapper(m_triggerMapper->m_functionTriggerMapper);
+	trigger->setMapper(m_triggerMapper);
 	if(generateId)
 		trigger->setId(m_triggerMapper->getNextId());
 	return trigger;

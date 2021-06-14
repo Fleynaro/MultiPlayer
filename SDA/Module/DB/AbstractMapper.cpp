@@ -60,25 +60,3 @@ DB::Id DB::GenerateNextId(Database* db, const std::string& tableName) {
 	return 1;
 }
 
-DB::ChildAbstractMapper::ChildAbstractMapper(IMapper* parentMapper)
-	: m_parentMapper(parentMapper)
-{}
-
-void DB::ChildAbstractMapper::insert(TransactionContext* ctx, IDomainObject* obj) {
-	m_parentMapper->insert(ctx, obj);
-	doInsert(ctx, obj);
-}
-
-void DB::ChildAbstractMapper::update(TransactionContext* ctx, IDomainObject* obj) {
-	m_parentMapper->update(ctx, obj);
-	doUpdate(ctx, obj);
-}
-
-void DB::ChildAbstractMapper::remove(TransactionContext* ctx, IDomainObject* obj) {
-	m_parentMapper->remove(ctx, obj);
-	doRemove(ctx, obj);
-}
-
-DB::IRepository* DB::ChildAbstractMapper::getRepository() {
-	return m_parentMapper->getRepository();
-}

@@ -1,10 +1,6 @@
 #pragma once
 #include "TypeManager.h"
-#include <DB/Mappers/TypedefTypeMapper.h>
-#include <DB/Mappers/StructureTypeMapper.h>
-#include <DB/Mappers/ClassTypeMapper.h>
-#include <DB/Mappers/EnumTypeMapper.h>
-#include <DB/Mappers/SignatureTypeMapper.h>
+#include <DB/Mappers/DataTypeMapper.h>
 #include <GhidraSync/Mappers/GhidraTypedefTypeMapper.h>
 #include <GhidraSync/Mappers/GhidraStructureTypeMapper.h>
 #include <GhidraSync/Mappers/GhidraClassTypeMapper.h>
@@ -156,7 +152,7 @@ Ghidra::Id TypeManager::getGhidraId(DataType::IType* type) {
 
 DataType::Typedef* CE::TypeManager::Factory::createTypedef(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Typedef(m_typeManager, name, desc);
-	type->setMapper(m_dataTypeMapper->m_typedefTypeMapper);
+	type->setMapper(m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_typedefTypeMapper);
 	if(m_generateId)
 		type->setId(m_dataTypeMapper->getNextId());
@@ -165,7 +161,7 @@ DataType::Typedef* CE::TypeManager::Factory::createTypedef(const std::string& na
 
 DataType::Enum* CE::TypeManager::Factory::createEnum(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Enum(m_typeManager, name, desc);
-	type->setMapper(m_dataTypeMapper->m_enumTypeMapper);
+	type->setMapper(m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_enumTypeMapper);
 	if (m_generateId)
 		type->setId(m_dataTypeMapper->getNextId());
@@ -174,7 +170,7 @@ DataType::Enum* CE::TypeManager::Factory::createEnum(const std::string& name, co
 
 DataType::Structure* CE::TypeManager::Factory::createStructure(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Structure(m_typeManager, name, desc);
-	type->setMapper(m_dataTypeMapper->m_structureTypeMapper);
+	type->setMapper(m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_structureTypeMapper);
 	if (m_generateId)
 		type->setId(m_dataTypeMapper->getNextId());
@@ -183,7 +179,7 @@ DataType::Structure* CE::TypeManager::Factory::createStructure(const std::string
 
 DataType::Class* CE::TypeManager::Factory::createClass(const std::string& name, const std::string& desc) {
 	auto type = new DataType::Class(m_typeManager, name, desc);
-	type->setMapper(m_dataTypeMapper->m_classTypeMapper);
+	type->setMapper(m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_classTypeMapper);
 	if (m_generateId)
 		type->setId(m_dataTypeMapper->getNextId());
@@ -192,7 +188,7 @@ DataType::Class* CE::TypeManager::Factory::createClass(const std::string& name, 
 
 DataType::FunctionSignature* CE::TypeManager::Factory::createSignature(DataType::FunctionSignature::CallingConvetion callingConvetion, const std::string& name, const std::string& desc) {
 	auto type = new DataType::FunctionSignature(m_typeManager, name, desc, callingConvetion);
-	type->setMapper(m_typeManager->m_dataTypeMapper->m_signatureTypeMapper);
+	type->setMapper(m_typeManager->m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_signatureTypeMapper);
 	if (m_generateId)
 		type->setId(m_dataTypeMapper->getNextId());

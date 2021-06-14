@@ -125,10 +125,6 @@ TriggerManager* Project::getTriggerManager() {
 	return m_triggerManager;
 }
 
-TriggerGroupManager* Project::getTriggerGroupManager() {
-	return m_triggerGroupManager;
-}
-
 StatManager* Project::getStatManager() {
 	return m_statManager;
 }
