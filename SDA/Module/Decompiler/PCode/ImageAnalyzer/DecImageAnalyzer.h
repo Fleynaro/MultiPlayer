@@ -2,7 +2,7 @@
 #include <Module/Image/PEImage.h>
 #include "../../Graph/DecPCodeGraph.h"
 #include "../Decoders/DecPCodeDecoderX86.h"
-#include <Code/Symbol/MemoryArea/MemoryArea.h>
+#include <Code/Symbol/SymbolTable/SymbolTable.h>
 #include <Manager/TypeManager.h>
 
 namespace CE::Decompiler
@@ -115,7 +115,7 @@ namespace CE::Decompiler
 			: m_image(image), m_imageGraph(imageGraph), m_decoder(decoder), m_registerFactory(registerFactory), m_graphReferenceSearch(graphReferenceSearch)
 		{}
 
-		void start(int startOffset, const std::map<int64_t, PCode::Instruction*>& offsetToInstruction = {}, bool onceFunc = false) {
+		void start(int startOffset, bool onceFunc = false) {
 			std::set<int64_t> visitedOffsets;
 			std::list<int> nextOffsetsToVisitLater = { startOffset };
 			std::list<std::pair<FunctionPCodeGraph*, std::list<int>>> nonVirtFuncOffsetsForGraphs;
@@ -135,7 +135,7 @@ namespace CE::Decompiler
 				if (block == nullptr) {
 					auto startBlock = m_imageGraph->createBlock(startInstrOffset);
 					funcGraph->setStartBlock(startBlock);
-					createPCodeBlocksAtOffset(startInstrOffset, funcGraph, offsetToInstruction);
+					createPCodeBlocksAtOffset(startInstrOffset, funcGraph);
 					offsetsToFuncGraphs[(int)(startInstrOffset >> 8)] = funcGraph;
 					
 					if (!onceFunc) {
@@ -188,11 +188,10 @@ namespace CE::Decompiler
 				for (auto refBlock : block->m_blocksReferencedTo) {
 					auto lastInstr = refBlock->getLastInstruction();
 					if (PCode::Instruction::IsBranching(lastInstr->m_id)) {
-						// replace JMP with CALL
-						lastInstr->m_id = PCode::InstructionId::CALL;
-						// add RET
-						auto retInstr = new Instruction(PCode::InstructionId::RETURN, nullptr, nullptr, nullptr, (int)(lastInstr->getFirstInstrOffsetInNextOrigInstr() >> 8), 1, 0);
-						refBlock->getInstructions().push_back(retInstr);
+						m_decoder->m_instrPool->modifyInstruction(lastInstr, InstructionPool::MODIFICATOR_JMP_CALL);
+						// after modification add new RET instr into ref. block
+						auto lastInsertedInstr = &lastInstr->m_origInstruction->m_pcodeInstructions.rbegin()->second;
+						refBlock->getInstructions().push_back(lastInsertedInstr);
 					}
 					refBlock->removeNextBlock(block);
 				}
@@ -208,7 +207,7 @@ namespace CE::Decompiler
 		}
 
 		// fill {funcGraph} with PCode blocks
-		void createPCodeBlocksAtOffset(int64_t startInstrOffset, FunctionPCodeGraph* funcGraph, std::map<int64_t, PCode::Instruction*> offsetToInstruction) {
+		void createPCodeBlocksAtOffset(int64_t startInstrOffset, FunctionPCodeGraph* funcGraph) {
 			std::set<int64_t> visitedOffsets;
 			std::list<int64_t> nextOffsetsToVisitLater;
 			
@@ -224,21 +223,19 @@ namespace CE::Decompiler
 					curBlock = m_imageGraph->getBlockAtOffset(offset, false);
 					if (curBlock != nullptr) {
 						// try to get an instruction by the offset
-						auto it = offsetToInstruction.find(offset);
-						if (it != offsetToInstruction.end()) {
-							instr = it->second;
+						try {
+							instr = m_decoder->m_instrPool->getInstructionAt(offset);
 						}
-						else {
+						catch (const InstructionPool::InstructionNotFoundException& ex) {
+							// if no instruction at the offset then decode the location
 							if (byteOffset < m_image->getSize()) {
 								m_decoder->decode(m_image->getData() + m_image->toImageOffset(byteOffset), byteOffset, m_image->getSize());
-								for (auto instr : m_decoder->getDecodedPCodeInstructions()) {
-									offsetToInstruction[instr->getOffset()] = instr;
-								}
 							}
 
-							it = offsetToInstruction.find(offset);
-							if (it != offsetToInstruction.end()) {
-								instr = it->second;
+							try {
+								instr = m_decoder->m_instrPool->getInstructionAt(offset);
+							}
+							catch (const InstructionPool::InstructionNotFoundException& ex) {
 							}
 						}
 
@@ -268,8 +265,16 @@ namespace CE::Decompiler
 				curBlock->getInstructions().push_back(instr);
 				// calculate offset of the next instruction
 				auto nextInstrOffset = instr->getOffset() + 1;
-				auto it2 = offsetToInstruction.find(nextInstrOffset);
-				if (it2 == offsetToInstruction.end() || byteOffset != it2->second->getOriginalInstructionOffset())
+				bool needChangeNextInstrOffset = false;
+				try {
+					auto instr = m_decoder->m_instrPool->getInstructionAt(nextInstrOffset);
+					if (byteOffset != instr->m_origInstruction->m_offset)
+						needChangeNextInstrOffset = true;
+				}
+				catch (const InstructionPool::InstructionNotFoundException& ex) {
+					needChangeNextInstrOffset = true;
+				}
+				if (needChangeNextInstrOffset)
 					nextInstrOffset = instr->getFirstInstrOffsetInNextOrigInstr();
 				// extend size of the current block
 				curBlock->setMaxOffset(nextInstrOffset);
@@ -294,7 +299,7 @@ namespace CE::Decompiler
 
 					if (targetOffset == -1 || m_image->defineSegment((int)(targetOffset >> 8)) != IImage::CODE_SEGMENT) {
 						offset = -1;
-						m_decoder->getWarningContainer()->addWarning("rva "+ std::to_string(targetOffset >> 8) +" is not correct in the jump instruction "+ instr->m_originalView +" (at 0x"+ Helper::String::NumberToHex(instr->getOriginalInstructionOffset()) +")");
+						m_decoder->getWarningContainer()->addWarning("rva "+ std::to_string(targetOffset >> 8) +" is not correct in the jump instruction "+ instr->m_origInstruction->m_originalView +" (at 0x"+ Helper::String::NumberToHex(instr->m_origInstruction->m_offset) +")");
 						continue;
 					}
 

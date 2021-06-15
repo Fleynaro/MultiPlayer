@@ -35,6 +35,7 @@ CREATE TABLE "sda_images" (
     "addr_space_id"         INTEGER,
     "global_table_id"       INTEGER,
     "vfunc_call_table_id"   INTEGER,
+    "json_instr_pool"       TEXT,
     "save_id"	            INTEGER,
     "deleted"	            INTEGER DEFAULT 0
 	PRIMARY KEY("image_id")

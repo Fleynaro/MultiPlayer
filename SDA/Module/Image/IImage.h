@@ -3,6 +3,7 @@
 
 namespace CE
 {
+	// raw image that can manipualtes with bytes, no symbols or other high-level things
 	class IImage {
 	public:
 		enum SegmentType {

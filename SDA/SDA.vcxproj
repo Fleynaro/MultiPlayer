@@ -390,6 +390,7 @@
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphModification.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphUselessLineOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphViewOptimization.h" />
+    <ClInclude Include="Module\Decompiler\PCode\DecPCodeInstructionPool.h" />
     <ClInclude Include="Module\Decompiler\PCode\ImageAnalyzer\DecImageAnalyzer.h" />
     <ClInclude Include="Module\Decompiler\PCode\Decompiler\DecExecContext.h" />
     <ClInclude Include="Module\Image\IImage.h" />

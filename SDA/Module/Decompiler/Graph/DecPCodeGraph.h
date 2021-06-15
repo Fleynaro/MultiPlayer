@@ -98,11 +98,11 @@ namespace CE::Decompiler
 
 			ZyanU64 runtime_address = (ZyanU64)addr;
 			for (auto instr : m_instructions) {
-				std::string prefix = tabStr + "0x" + Helper::String::NumberToHex(runtime_address + instr->getOriginalInstructionOffset());
-				if (!instr->m_originalView.empty())
-					result += prefix + " " + instr->m_originalView + "\n";
+				std::string prefix = tabStr + "0x" + Helper::String::NumberToHex(runtime_address + instr->m_origInstruction->m_offset);
+				if (!instr->m_origInstruction->m_originalView.empty())
+					result += prefix + " " + instr->m_origInstruction->m_originalView + "\n";
 				if (pcode) {
-					prefix += ":" + std::to_string(instr->getOrderId()) + "(" + Helper::String::NumberToHex(instr->getOffset()) + ")";
+					prefix += ":" + std::to_string(instr->m_orderId) + "(" + Helper::String::NumberToHex(instr->getOffset()) + ")";
 					result += "\t" + prefix + " " + instr->printDebug();
 					if (instr->m_id == PCode::InstructionId::UNKNOWN)
 						result += " <------------------------------------------------ ";

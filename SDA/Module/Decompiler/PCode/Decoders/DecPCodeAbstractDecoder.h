@@ -1,5 +1,6 @@
 #pragma once
 #include "../DecRegisterFactory.h"
+#include "../DecPCodeInstructionPool.h"
 #include "../../DecWarningContainer.h"
 
 namespace CE::Decompiler::PCode
@@ -7,15 +8,16 @@ namespace CE::Decompiler::PCode
 	class AbstractDecoder : public IWarningGenerator
 	{
 	public:
-		AbstractDecoder(WarningContainer* warningContainer)
-			: m_warningContainer(warningContainer)
+		InstructionPool* m_instrPool;
+
+		AbstractDecoder(InstructionPool* instrPool, WarningContainer* warningContainer)
+			: m_instrPool(instrPool), m_warningContainer(warningContainer)
 		{}
 
 		void decode(void* addr, int offset, int maxSize = 0x0) {
 			m_addr = addr;
-			m_curOffset = offset;
+			m_curOrigInstr = nullptr;
 			m_curOrderId = 0x0;
-			m_curInstrLength = 0x0;
 			m_maxSize = maxSize;
 			clear();
 			tryDecode(addr, offset);
@@ -35,8 +37,8 @@ namespace CE::Decompiler::PCode
 			}
 		}
 
-		int getInstructionLength() {
-			return m_curInstrLength;
+		Instruction::OriginalInstruction* getOrigInstruction() {
+			return m_curOrigInstr;
 		}
 
 		WarningContainer* getWarningContainer() override {
@@ -46,9 +48,8 @@ namespace CE::Decompiler::PCode
 		WarningContainer* m_warningContainer;
 		std::list<Instruction*> m_result;
 		void* m_addr = nullptr;
-		int m_curOffset = 0x0;
+		Instruction::OriginalInstruction* m_curOrigInstr;
 		int m_curOrderId = 0;
-		int m_curInstrLength = 0x0;
 		int m_maxSize = 0x0;
 
 		virtual void tryDecode(void* addr, int offset) = 0;

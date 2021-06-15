@@ -28,6 +28,6 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
-		void bind(SQLite::Statement& query, CE::ImageDecorator& imageDec);
+		void bind(SQLite::Statement& query, CE::ImageDecorator* imageDec);
 	};
 };

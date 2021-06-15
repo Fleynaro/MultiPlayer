@@ -133,10 +133,10 @@ public:
 		int offset = 0;
 		while (offset < bytes.size()) {
 			decoder.decode(bytes.data() + offset, offset, (int)bytes.size());
-			if (decoder.getInstructionLength() == 0)
+			if (!decoder.getOrigInstruction())
 				break;
 			decodedInstructions.insert(decodedInstructions.end(), decoder.getDecodedPCodeInstructions().begin(), decoder.getDecodedPCodeInstructions().end());
-			offset += decoder.getInstructionLength();
+			offset += decoder.getOrigInstruction()->m_length;
 		}
 		return decodedInstructions;
 	}

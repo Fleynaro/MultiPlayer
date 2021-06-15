@@ -285,46 +285,37 @@ namespace CE::Decompiler::PCode
 	// PCode instruction (e.g. result = SUM op1, op2)
 	class Instruction
 	{
-		int m_originalInstructionOffset;
-		int m_originalInstructionLength;
-		int m_orderId;
 	public:
+		struct OriginalInstruction {
+			int64_t m_offset;
+			int m_length;
+			std::map<int, Instruction> m_pcodeInstructions;
+			std::string m_originalView;
+
+			OriginalInstruction(int64_t offset, int length)
+				: m_offset(offset), m_length(length)
+			{}
+		};
+
 		InstructionId m_id;
 		Varnode* m_input0; // the first operand
 		Varnode* m_input1; // the second operand 
 		Varnode* m_output; // the result
-		std::string m_originalView;
+		OriginalInstruction* m_origInstruction;
+		int m_orderId;
 		
-		Instruction(InstructionId id, Varnode* input0, Varnode* input1, Varnode* output, int originalInstructionOffset=0, int originalInstructionLength=0, int orderId=0)
-			: m_id(id), m_input0(input0), m_input1(input1), m_output(output), m_originalInstructionOffset(originalInstructionOffset), m_originalInstructionLength(originalInstructionLength), m_orderId(orderId)
+		Instruction(InstructionId id, Varnode* input0, Varnode* input1, Varnode* output, OriginalInstruction* origInstruction, int orderId=0)
+			: m_id(id), m_input0(input0), m_input1(input1), m_output(output), m_origInstruction(origInstruction), m_orderId(orderId)
 		{}
-
-		void setInfo(int originalInstructionOffset, int originalInstructionLength, int orderId) {
-			m_originalInstructionOffset = originalInstructionOffset;
-			m_originalInstructionLength = originalInstructionLength;
-			m_orderId = orderId;
-		}
-
-		int getOriginalInstructionOffset() {
-			return m_originalInstructionOffset;
-		}
-
-		int getOriginalInstructionLength() {
-			return m_originalInstructionLength;
-		}
-
-		int getOrderId() {
-			return m_orderId;
-		}
 
 		// get long offset which consist of original offset and pCode instruction order number: origOffset{24} | order{8}
 		int64_t getOffset() {
-			return ((int64_t)m_originalInstructionOffset << 8) | m_orderId;
+			return (m_origInstruction->m_offset << 8) | m_orderId;
 		}
 
 		// get long offset of the next instruction following this
 		int64_t getFirstInstrOffsetInNextOrigInstr() {
-			return ((int64_t)m_originalInstructionOffset + m_originalInstructionLength) << 8;
+			return (m_origInstruction->m_offset + m_origInstruction->m_length) << 8;
 		}
 
 		std::string printDebug() {

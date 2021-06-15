@@ -2,6 +2,7 @@
 #include <Image/IImage.h>
 #include <DB/DomainObject.h>
 #include <Utils/Description.h>
+#include <Decompiler/PCode/DecPCodeInstructionPool.h>
 
 #include <Image/PEImage.h>
 
@@ -10,6 +11,7 @@ namespace CE
 	class AddressSpace;
 	class ImageManager;
 
+	// it is a symbolized image that decorates a raw image and can manipulate with high-level things (symbols)
 	class ImageDecorator : public DB::DomainObject, public Description, public IImage
 	{
 	public:
@@ -24,6 +26,7 @@ namespace CE
 		IMAGE_TYPE m_type;
 		Symbol::SymbolTable* m_globalSymbolTable;
 		Symbol::SymbolTable* m_vfuncCallSymbolTable;
+		Decompiler::PCode::InstructionPool m_instrPool;
 		
 	public:
 		ImageDecorator(ImageManager* imageManager, AddressSpace* addressSpace, IMAGE_TYPE type, Symbol::SymbolTable* globalSymbolTable, Symbol::SymbolTable* vfuncCallSymbolTable, const std::string& name, const std::string& comment = "")
@@ -69,6 +72,10 @@ namespace CE
 
 		Symbol::SymbolTable* getVFuncCallSymbolTable() {
 			return m_vfuncCallSymbolTable;
+		}
+
+		Decompiler::PCode::InstructionPool* getInstrPool() {
+			return &m_instrPool;
 		}
 
 		const fs::path& getFile() {
