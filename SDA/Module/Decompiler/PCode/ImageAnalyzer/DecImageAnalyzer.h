@@ -2,7 +2,7 @@
 #include <Module/Image/PEImage.h>
 #include "../../Graph/DecPCodeGraph.h"
 #include "../Decoders/DecPCodeDecoderX86.h"
-#include <Code/Symbol/MemoryArea/MemoryArea.h>
+#include <Code/Symbol/SymbolTable/SymbolTable.h>
 #include <Manager/TypeManager.h>
 
 namespace CE::Decompiler
@@ -191,7 +191,7 @@ namespace CE::Decompiler
 						// replace JMP with CALL
 						lastInstr->m_id = PCode::InstructionId::CALL;
 						// add RET
-						auto retInstr = new Instruction(PCode::InstructionId::RETURN, nullptr, nullptr, nullptr, (int)(lastInstr->getFirstInstrOffsetInNextOrigInstr() >> 8), 1, 0);
+						auto retInstr = m_decoder->m_instrPool->createInstruction(PCode::InstructionId::RETURN, nullptr, nullptr, nullptr, lastInstr->m_origInstruction, 1);
 						refBlock->getInstructions().push_back(retInstr);
 					}
 					refBlock->removeNextBlock(block);
@@ -269,7 +269,7 @@ namespace CE::Decompiler
 				// calculate offset of the next instruction
 				auto nextInstrOffset = instr->getOffset() + 1;
 				auto it2 = offsetToInstruction.find(nextInstrOffset);
-				if (it2 == offsetToInstruction.end() || byteOffset != it2->second->getOriginalInstructionOffset())
+				if (it2 == offsetToInstruction.end() || byteOffset != it2->second->m_origInstruction->m_offset)
 					nextInstrOffset = instr->getFirstInstrOffsetInNextOrigInstr();
 				// extend size of the current block
 				curBlock->setMaxOffset(nextInstrOffset);
@@ -294,7 +294,7 @@ namespace CE::Decompiler
 
 					if (targetOffset == -1 || m_image->defineSegment((int)(targetOffset >> 8)) != IImage::CODE_SEGMENT) {
 						offset = -1;
-						m_decoder->getWarningContainer()->addWarning("rva "+ std::to_string(targetOffset >> 8) +" is not correct in the jump instruction "+ instr->m_originalView +" (at 0x"+ Helper::String::NumberToHex(instr->getOriginalInstructionOffset()) +")");
+						m_decoder->getWarningContainer()->addWarning("rva "+ std::to_string(targetOffset >> 8) +" is not correct in the jump instruction "+ instr->m_origInstruction->m_originalView +" (at 0x"+ Helper::String::NumberToHex(instr->m_origInstruction->m_offset) +")");
 						continue;
 					}
 

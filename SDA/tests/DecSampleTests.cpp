@@ -284,7 +284,9 @@ TEST_F(ProgramModuleFixtureDecComponent, Test_Symbolization)
 	std::map<int64_t, PCode::Instruction*> offsetToInstruction;
 	int i = 0;
 	for (auto instr : instructions) {
-		instr->setInfo(i++, 1, 0);
+		instr->m_origInstruction->m_offset = 1;
+		instr->m_origInstruction->m_length = 0;
+		instr->m_orderId = i++;
 		offsetToInstruction[instr->getOffset()] = instr;
 	}
 	imageAnalyzer.start(0, offsetToInstruction, true);
