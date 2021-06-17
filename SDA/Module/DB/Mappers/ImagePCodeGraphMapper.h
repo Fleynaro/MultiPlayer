@@ -1,23 +1,25 @@
 #pragma once
 #include <DB/AbstractMapper.h>
-#include <Image/ImageDecorator.h>
+#include <Decompiler/Graph/DecPCodeGraph.h>
 
 namespace CE {
-	class ImageManager;
+	class ImagePCodeGraphManager;
 };
 
 namespace DB
 {
-	class ImageMapper : public AbstractMapper
+	class ImagePCodeGraphMapper : public AbstractMapper
 	{
 	public:
-		ImageMapper(IRepository* repository);
+		ImagePCodeGraphMapper(IRepository* repository)
+			: AbstractMapper(repository)
+		{}
 
 		void loadAll();
 
 		Id getNextId() override;
 
-		CE::ImageManager* getManager();
+		CE::ImagePCodeGraphManager* getManager();
 	protected:
 		IDomainObject* doLoad(Database* db, SQLite::Statement& query) override;
 
@@ -26,8 +28,8 @@ namespace DB
 		void doUpdate(TransactionContext* ctx, IDomainObject* obj) override;
 
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
-		
+
 	private:
-		void bind(SQLite::Statement& query, CE::ImageDecorator* imageDec);
+		void bind(SQLite::Statement& query, Decompiler::ImagePCodeGraph* imgPCodeGraph);
 	};
 };

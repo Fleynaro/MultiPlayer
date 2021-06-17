@@ -37,20 +37,8 @@ int Function::Function::getOffset() {
 	return m_functionSymbol->getOffset();
 }
 
-Symbol::SymbolTable* Function::Function::getStackMemoryArea() {
+Symbol::SymbolTable* Function::Function::getStackSymbolTable() {
 	return m_stackSymbolTable;
-}
-
-void Function::Function::setStackMemoryArea(Symbol::SymbolTable* stackMemoryArea) {
-	m_stackSymbolTable = stackMemoryArea;
-}
-
-Symbol::SymbolTable* Function::Function::getBodyMemoryArea() {
-	return m_bodyMemoryArea;
-}
-
-void Function::Function::setBodyMemoryArea(Symbol::SymbolTable* bodyMemoryArea) {
-	m_bodyMemoryArea = bodyMemoryArea;
 }
 
 CE::Trigger::Function::Hook* Function::Function::getHook() {
@@ -65,21 +53,9 @@ void Function::Function::createHook() {
 	m_hook = new CE::Trigger::Function::Hook(this);
 }
 
-void Function::Function::setExported(bool toggle) {
-	m_exported = toggle;
-}
-
-bool Function::Function::isExported() {
-	return m_exported;
-}
-
 Ghidra::Id Function::Function::getGhidraId()
 {
 	return (Ghidra::Id)getOffset();
-}
-
-ProcessModule* Function::Function::getProcessModule() {
-	return m_processModule;
 }
 
 FunctionManager* Function::Function::getManager() {

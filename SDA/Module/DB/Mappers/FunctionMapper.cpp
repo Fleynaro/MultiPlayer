@@ -142,7 +142,7 @@ void FunctionMapper::bind(SQLite::Statement& query, CE::Function::Function& def)
 	query.bind(2, def.getFunctionSymbol()->getId());
 	query.bind(3, def.getSignature()->getId());
 	query.bind(4, def.getProcessModule()->getId());
-	query.bind(5, def.getStackMemoryArea() ? def.getStackMemoryArea()->getId() : 0);
+	query.bind(5, def.getStackSymbolTable() ? def.getStackSymbolTable()->getId() : 0);
 	query.bind(6, def.getBodyMemoryArea() ? def.getBodyMemoryArea()->getId() : 0);
 	query.bind(7, def.isExported());
 }

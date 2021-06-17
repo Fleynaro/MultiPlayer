@@ -34,8 +34,9 @@ CREATE TABLE "sda_images" (
 	"comment"	            TEXT,
     "addr_space_id"         INTEGER,
     "global_table_id"       INTEGER,
+    "func_body_table_id"    INTEGER,
     "vfunc_call_table_id"   INTEGER,
-    "json_instr_pool"       TEXT,
+    "img_pcode_graph_id"    INTEGER,
     "save_id"	            INTEGER,
     "deleted"	            INTEGER DEFAULT 0
 	PRIMARY KEY("image_id")
@@ -65,26 +66,29 @@ CREATE TABLE "sda_symbol_tables" (
 	PRIMARY KEY("sym_table_id")
 );
 
+CREATE TABLE "sda_img_pcode_graphs" (
+	"graph_id"	            INTEGER,
+    "json_instr_pool"       TEXT,
+    "save_id"	            INTEGER,
+    "deleted"	            INTEGER DEFAULT 0
+	PRIMARY KEY("graph_id")
+);
+
 create table sda_functions
 (
-    func_id  INTEGER
-        primary key autoincrement,
-    func_symbol_id  INTEGER
-        unique,
-    signature_id        INTEGER,
-    module_id           INTEGER,
-    stack_sym_table_id   INTEGER DEFAULT 0,
-    body_sym_table_id    INTEGER DEFAULT 0,
-    exported            INTEGER,
-    save_id             INTEGER,
-    ghidra_sync_id      INTEGER,
-    deleted             INTEGER DEFAULT 0
+    func_id                 INTEGER primary key autoincrement,
+    func_symbol_id          INTEGER,
+    stack_sym_table_id      INTEGER DEFAULT 0,
+    body_sym_table_id       INTEGER DEFAULT 0,
+    json_pcode_graph        TEXT,
+    save_id                 INTEGER,
+    ghidra_sync_id          INTEGER,
+    deleted                 INTEGER DEFAULT 0
 );
 
 create table sda_triggers
 (
-    trigger_id      INTEGER
-        primary key autoincrement,
+    trigger_id      INTEGER primary key autoincrement,
     type            INTEGER,
     name            TEXT,
     comment         TEXT,

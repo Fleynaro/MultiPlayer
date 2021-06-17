@@ -3,6 +3,7 @@
 #include <DB/DomainObject.h>
 #include <Utils/Description.h>
 #include <Decompiler/PCode/DecPCodeInstructionPool.h>
+#include <Decompiler/Graph/DecPCodeGraph.h>
 
 #include <Image/PEImage.h>
 
@@ -25,12 +26,30 @@ namespace CE
 		IImage* m_image = nullptr;
 		IMAGE_TYPE m_type;
 		Symbol::SymbolTable* m_globalSymbolTable;
+		Symbol::SymbolTable* m_funcBodySymbolTable;
 		Symbol::SymbolTable* m_vfuncCallSymbolTable;
-		Decompiler::PCode::InstructionPool m_instrPool;
+		Decompiler::ImagePCodeGraph* m_imagePCodeGraph;
 		
 	public:
-		ImageDecorator(ImageManager* imageManager, AddressSpace* addressSpace, IMAGE_TYPE type, Symbol::SymbolTable* globalSymbolTable, Symbol::SymbolTable* vfuncCallSymbolTable, const std::string& name, const std::string& comment = "")
-			: m_imageManager(imageManager), m_addressSpace(addressSpace), m_type(type), m_globalSymbolTable(globalSymbolTable), m_vfuncCallSymbolTable(vfuncCallSymbolTable), Description(name, comment)
+		ImageDecorator(
+			ImageManager* imageManager,
+			AddressSpace* addressSpace,
+			IMAGE_TYPE type,
+			Symbol::SymbolTable* globalSymbolTable,
+			Symbol::SymbolTable* funcBodySymbolTable,
+			Symbol::SymbolTable* vfuncCallSymbolTable,
+			Decompiler::ImagePCodeGraph* imagePCodeGraph,
+			const std::string& name,
+			const std::string& comment = "")
+			:
+			m_imageManager(imageManager),
+			m_addressSpace(addressSpace),
+			m_type(type),
+			m_globalSymbolTable(globalSymbolTable),
+			m_funcBodySymbolTable(funcBodySymbolTable),
+			m_vfuncCallSymbolTable(vfuncCallSymbolTable),
+			m_imagePCodeGraph(imagePCodeGraph),
+			Description(name, comment)
 		{}
 
 		~ImageDecorator() {
@@ -70,12 +89,16 @@ namespace CE
 			return m_globalSymbolTable;
 		}
 
+		Symbol::SymbolTable* getFuncBodySymbolTable() {
+			return m_funcBodySymbolTable;
+		}
+
 		Symbol::SymbolTable* getVFuncCallSymbolTable() {
 			return m_vfuncCallSymbolTable;
 		}
 
-		Decompiler::PCode::InstructionPool* getInstrPool() {
-			return &m_instrPool;
+		Decompiler::ImagePCodeGraph* getPCodeGraph() {
+			return m_imagePCodeGraph;
 		}
 
 		const fs::path& getFile() {

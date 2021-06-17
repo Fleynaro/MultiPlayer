@@ -1,7 +1,5 @@
 #include "FunctionManager.h"
-#include "MemoryAreaManager.h"
 #include "TypeManager.h"
-#include "SymbolManager.h"
 #include <DB/Mappers/FunctionMapper.h>
 #include <GhidraSync/Mappers/GhidraFunctionMapper.h>
 
@@ -44,14 +42,5 @@ Function::Function* CE::FunctionManager::findFunctionByGhidraId(Ghidra::Id id)
 		}
 	}
 	return nullptr;
-}
-
-Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, bool generateId) {
-	auto func = new Function::Function(m_functionManager, functionSymbol, funcGraph);
-	func->setMapper(m_funcMapper);
-	func->setGhidraMapper(m_ghidraFunctionMapper);
-	if (generateId)
-		func->setId(m_funcMapper->getNextId());
-	return func;
 }
 

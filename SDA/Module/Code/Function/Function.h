@@ -16,15 +16,14 @@ namespace CE
 	};
 
 	class FunctionManager;
-	class ProcessModule;
 
 	namespace Function
 	{
 		class Function : public DB::DomainObject, public Ghidra::Object, public IDescription
 		{
 		public:
-			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph)
-				: m_manager(manager), m_functionSymbol(functionSymbol), m_funcGraph(funcGraph)
+			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, Symbol::SymbolTable* stackSymbolTable)
+				: m_manager(manager), m_functionSymbol(functionSymbol), m_funcGraph(funcGraph), m_stackSymbolTable(stackSymbolTable)
 			{}
 
 			Symbol::FunctionSymbol* getFunctionSymbol();
@@ -43,13 +42,7 @@ namespace CE
 
 			int getOffset();
 
-			Symbol::SymbolTable* getStackMemoryArea();
-
-			void setStackMemoryArea(Symbol::SymbolTable* stackMemoryArea);
-
-			Symbol::SymbolTable* getBodyMemoryArea();
-
-			void setBodyMemoryArea(Symbol::SymbolTable* bodyMemoryArea);
+			Symbol::SymbolTable* getStackSymbolTable();
 
 			Trigger::Function::Hook* getHook();
 
@@ -57,24 +50,15 @@ namespace CE
 
 			void createHook();
 
-			void setExported(bool toggle);
-
-			bool isExported();
-
 			Ghidra::Id getGhidraId() override;
-
-			ProcessModule* getProcessModule();
 
 			FunctionManager* getManager();
 		private:
-			ProcessModule* m_processModule;
 			Decompiler::FunctionPCodeGraph* m_funcGraph;
 			Symbol::FunctionSymbol* m_functionSymbol;
-			Symbol::SymbolTable* m_stackSymbolTable = nullptr;
-			Symbol::SymbolTable* m_bodyMemoryArea = nullptr;
+			Symbol::SymbolTable* m_stackSymbolTable;
 			Trigger::Function::Hook* m_hook = nullptr;
 			FunctionManager* m_manager;
-			bool m_exported = false;
 		};
 	};
 };

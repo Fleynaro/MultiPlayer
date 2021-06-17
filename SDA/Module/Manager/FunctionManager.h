@@ -25,7 +25,14 @@ namespace CE
 				: m_functionManager(functionManager), m_ghidraFunctionMapper(ghidraFunctionMapper), m_funcMapper(funcMapper), AbstractFactory(generateId)
 			{}
 
-			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, bool generateId = true);
+			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, Symbol::SymbolTable* stackSymbolTable) {
+				auto func = new Function::Function(m_functionManager, functionSymbol, funcGraph, stackSymbolTable);
+				func->setMapper(m_funcMapper);
+				func->setGhidraMapper(m_ghidraFunctionMapper);
+				if (m_generateId)
+					func->setId(m_funcMapper->getNextId());
+				return func;
+			}
 		};
 
 		using Iterator = AbstractIterator<Function::Function>;

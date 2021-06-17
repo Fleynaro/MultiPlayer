@@ -14,13 +14,15 @@ Project::Project(const fs::path& dir)
 }
 
 Project::~Project() {
-	if (m_haveAllManagersBeenLoaded) {
+	if (m_allManagersHaveBeenLoaded) {
+		delete m_addrSpaceManager;
+		delete m_imageManager;
+		delete m_imagePCodeGraphManager;
 		delete m_functionManager;
 		delete m_statManager;
 		delete m_symbolManager;
 		delete m_symbolTableManager;
 		delete m_triggerManager;
-		delete m_triggerGroupManager;
 		delete m_typeManager;
 	}
 	if (m_ghidraSync != nullptr) {
@@ -41,12 +43,12 @@ void Project::load()
 	getTypeManager()->loadBefore();
 	getSymbolManager()->loadSymbols();
 	getSymTableManager()->loadSymTables();
-	getFunctionManager()->loadFunctions();
-	getTypeManager()->loadAfter();
+	getImagePCodeGraphManager()->loadImagePCodeGraphs();
 	getAddrSpaceManager()->loadAddressSpaces();
 	getImageManager()->loadImages();
+	getFunctionManager()->loadFunctions();
+	getTypeManager()->loadAfter();
 	getTriggerManager()->loadTriggers();
-	getTriggerGroupManager()->loadTriggerGroups();
 }
 
 void Project::initManagers()
@@ -58,9 +60,8 @@ void Project::initManagers()
 	m_addrSpaceManager = new AddressSpaceManager(this);
 	m_imageManager = new ImageManager(this);
 	m_triggerManager = new TriggerManager(this);
-	m_triggerGroupManager = new TriggerGroupManager(this);
 	m_statManager = new StatManager(this);
-	m_haveAllManagersBeenLoaded = true;
+	m_allManagersHaveBeenLoaded = true;
 }
 
 void CE::Project::createTablesInDatabase()
@@ -107,6 +108,10 @@ SymbolManager* Project::getSymbolManager() {
 
 SymbolTableManager* Project::getSymTableManager() {
 	return m_symbolTableManager;
+}
+
+ImagePCodeGraphManager* getImagePCodeGraphManager() {
+	return m_imagePCodeGraphManager;
 }
 
 FunctionManager* Project::getFunctionManager() {
