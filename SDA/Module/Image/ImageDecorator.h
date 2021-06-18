@@ -4,6 +4,7 @@
 #include <Utils/Description.h>
 #include <Decompiler/PCode/DecPCodeInstructionPool.h>
 #include <Decompiler/Graph/DecPCodeGraph.h>
+#include <Code/Type/FunctionSignature.h>
 
 #include <Image/PEImage.h>
 
@@ -27,7 +28,9 @@ namespace CE
 		IMAGE_TYPE m_type;
 		Symbol::SymbolTable* m_globalSymbolTable;
 		Symbol::SymbolTable* m_funcBodySymbolTable;
-		Decompiler::ImagePCodeGraph* m_imagePCodeGraph;
+		InstructionPool m_instrPool;
+		Decompiler::ImagePCodeGraph m_imagePCodeGraph;
+		std::map<int64_t, CE::DataType::IFunctionSignature*> m_vfunc_calls;
 		
 	public:
 		ImageDecorator(
@@ -36,7 +39,6 @@ namespace CE
 			IMAGE_TYPE type,
 			Symbol::SymbolTable* globalSymbolTable,
 			Symbol::SymbolTable* funcBodySymbolTable,
-			Decompiler::ImagePCodeGraph* imagePCodeGraph,
 			const std::string& name,
 			const std::string& comment = "")
 			:
@@ -45,7 +47,6 @@ namespace CE
 			m_type(type),
 			m_globalSymbolTable(globalSymbolTable),
 			m_funcBodySymbolTable(funcBodySymbolTable),
-			m_imagePCodeGraph(imagePCodeGraph),
 			Description(name, comment)
 		{}
 
@@ -90,8 +91,16 @@ namespace CE
 			return m_funcBodySymbolTable;
 		}
 
+		InstructionPool* getInstrPool() {
+			return &m_instrPool;
+		}
+
 		Decompiler::ImagePCodeGraph* getPCodeGraph() {
-			return m_imagePCodeGraph;
+			return &m_imagePCodeGraph;
+		}
+
+		auto& getVirtFuncCalls() {
+			return m_vfunc_calls;
 		}
 
 		const fs::path& getFile() {

@@ -17,7 +17,6 @@ Project::~Project() {
 	if (m_allManagersHaveBeenLoaded) {
 		delete m_addrSpaceManager;
 		delete m_imageManager;
-		delete m_imagePCodeGraphManager;
 		delete m_functionManager;
 		delete m_statManager;
 		delete m_symbolManager;
@@ -43,7 +42,6 @@ void Project::load()
 	getTypeManager()->loadBefore();
 	getSymbolManager()->loadSymbols();
 	getSymTableManager()->loadSymTables();
-	getImagePCodeGraphManager()->loadImagePCodeGraphs();
 	getAddrSpaceManager()->loadAddressSpaces();
 	getImageManager()->loadImages();
 	getFunctionManager()->loadFunctions();
@@ -108,10 +106,6 @@ SymbolManager* Project::getSymbolManager() {
 
 SymbolTableManager* Project::getSymTableManager() {
 	return m_symbolTableManager;
-}
-
-ImagePCodeGraphManager* getImagePCodeGraphManager() {
-	return m_imagePCodeGraphManager;
 }
 
 FunctionManager* Project::getFunctionManager() {

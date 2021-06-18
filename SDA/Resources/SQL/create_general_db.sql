@@ -35,7 +35,9 @@ CREATE TABLE "sda_images" (
     "addr_space_id"         INTEGER,
     "global_table_id"       INTEGER,
     "func_body_table_id"    INTEGER,
-    "img_pcode_graph_id"    INTEGER,
+    "json_instr_pool"       TEXT,
+    "json_vfunc_calls"      TEXT,
+    "json_func_graphs"      TEXT,
     "save_id"	            INTEGER,
     "deleted"	            INTEGER DEFAULT 0
 	PRIMARY KEY("image_id")
@@ -63,16 +65,6 @@ CREATE TABLE "sda_symbol_tables" (
     "save_id"	    INTEGER,
     "deleted"	    INTEGER DEFAULT 0,
 	PRIMARY KEY("sym_table_id")
-);
-
-CREATE TABLE "sda_img_pcode_graphs" (
-	"graph_id"	            INTEGER,
-    "json_instr_pool"       TEXT,
-    "json_vfunc_calls"      TEXT,
-    "json_func_graphs"      TEXT,
-    "save_id"	            INTEGER,
-    "deleted"	            INTEGER DEFAULT 0
-	PRIMARY KEY("graph_id")
 );
 
 create table sda_functions

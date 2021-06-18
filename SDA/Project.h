@@ -10,7 +10,6 @@ namespace CE
 	class TypeManager;
 	class SymbolManager;
 	class SymbolTableManager;
-	class ImagePCodeGraphManager;
 	class FunctionManager;
 	class AddressSpaceManager;
 	class ImageManager;
@@ -37,7 +36,6 @@ namespace CE
 		TypeManager* m_typeManager = nullptr;
 		SymbolManager* m_symbolManager = nullptr;
 		SymbolTableManager* m_symbolTableManager = nullptr;
-		ImagePCodeGraphManager* m_imagePCodeGraphManager = nullptr;
 		FunctionManager* m_functionManager = nullptr;
 		AddressSpaceManager* m_addrSpaceManager = nullptr;
 		ImageManager* m_imageManager = nullptr;
@@ -67,8 +65,6 @@ namespace CE
 		SymbolManager* getSymbolManager();
 
 		SymbolTableManager* getSymTableManager();
-
-		ImagePCodeGraphManager* getImagePCodeGraphManager();
 
 		FunctionManager* getFunctionManager();
 

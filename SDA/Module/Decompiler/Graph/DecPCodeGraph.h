@@ -1,9 +1,6 @@
 #pragma once
-#include <DB/DomainObject.h>
 #include "../PCode/DecPCode.h"
 #include "../PCode/DecPCodeConstValueCalc.h"
-#include <Decompiler/PCode/DecPCodeInstructionPool.h>
-#include <Code/Type/FunctionSignature.h>
 
 namespace CE::Decompiler
 {
@@ -209,27 +206,17 @@ namespace CE::Decompiler
 	};
 
 	// pcode graph (consisted of NON-connected function graphs in final state) for a whole program
-	class ImagePCodeGraph : public DB::DomainObject
+	class ImagePCodeGraph
 	{
 		std::list<FunctionPCodeGraph> m_funcGraphList;
 		std::list<FunctionPCodeGraph*> m_headFuncGraphs;
 		std::map<int64_t, PCodeBlock> m_blocks;
-		InstructionPool m_instrPool;
-		std::map<int64_t, CE::DataType::IFunctionSignature*> m_vfunc_calls;
 	public:
 		// exceptions
 		class BlockNotFoundException : public std::exception {};
 
 		ImagePCodeGraph()
 		{}
-
-		InstructionPool* getInstrPool() {
-			return &m_instrPool;
-		}
-
-		auto& getVirtFuncCalls() {
-			return m_vfunc_calls;
-		}
 
 		FunctionPCodeGraph* createFunctionGraph() {
 			m_funcGraphList.push_back(FunctionPCodeGraph(this));
