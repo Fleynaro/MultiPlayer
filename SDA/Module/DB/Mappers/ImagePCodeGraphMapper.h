@@ -30,6 +30,12 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
+		void decodePCodeBlock(CE::Decompiler::PCodeBlock* block);
+
+		void loadFuncPCodeGraphJson(const json& json_func_graph, CE::Decompiler::FunctionPCodeGraph* funcGraph);
+
+		json createFuncPCodeGraphJson(CE::Decompiler::FunctionPCodeGraph* funcPCodeGraph);
+
 		void bind(SQLite::Statement& query, Decompiler::ImagePCodeGraph* imgPCodeGraph);
 	};
 };

@@ -130,6 +130,7 @@
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -151,6 +152,7 @@
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -175,6 +177,7 @@
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\gtest\include;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -201,6 +204,7 @@
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\gtest\include;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -225,6 +229,7 @@
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(ProjectDir)Module\GhidraSync\Ghidra\include;$(ProjectDir)Vendor\Thrift\src;$(ProjectDir)Vendor\Thrift\src\thrift\windows;$(ProjectDir)Vendor\ZydisDisassembler;$(ProjectDir)Vendor\SQliteCpp;$(ProjectDir)Vendor\imgui;$(ProjectDir)Vendor\gtest\include;$(ProjectDir)..\Shared\SDA;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -520,7 +525,7 @@
     <ClInclude Include="Module\Trigger\FunctionTriggerHook.h" />
     <ClInclude Include="Module\Trigger\FunctionTriggerTableLog.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="SpeedTest.h" />
+    <ClInclude Include="Utils\SpeedTest.h" />
     <ClInclude Include="tests\AbstractTest.h" />
     <ClInclude Include="tests\CommonTest.h" />
     <ClInclude Include="tests\DecSampleTests.h" />
@@ -592,7 +597,6 @@
     <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Status.h" />
     <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Utils.h" />
     <ClInclude Include="Vendor\ZydisDisassembler\Zydis\Zydis.h" />
-    <ClInclude Include="WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SDA.rc" />

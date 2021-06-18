@@ -3,6 +3,7 @@
 #include "../PCode/DecPCode.h"
 #include "../PCode/DecPCodeConstValueCalc.h"
 #include <Decompiler/PCode/DecPCodeInstructionPool.h>
+#include <Code/Type/FunctionSignature.h>
 
 namespace CE::Decompiler
 {
@@ -21,6 +22,7 @@ namespace CE::Decompiler
 		int ID = 0;
 		int m_level = 0;
 		std::list<PCodeBlock*> m_blocksReferencedTo;
+		FunctionPCodeGraph* m_funcPCodeGraph = nullptr;
 
 		PCodeBlock() = default;
 
@@ -130,31 +132,57 @@ namespace CE::Decompiler
 		ImagePCodeGraph* m_imagePCodeGraph;
 		PCodeBlock* m_startBlock = nullptr;
 		std::set<PCodeBlock*> m_blocks;
-		std::list<FunctionPCodeGraph*> m_nonVirtFuncCalls;
-		std::list<FunctionPCodeGraph*> m_virtFuncCalls;
+		std::set<FunctionPCodeGraph*> m_refFuncCalls;
+		std::set<FunctionPCodeGraph*> m_nonVirtFuncCalls;
+		std::set<FunctionPCodeGraph*> m_virtFuncCalls;
 		std::map<PCode::Instruction*, DataValue> m_constValues;
 	public:
-		// head is a function that has not parents (main/all virtual functions)
-		bool m_isHead = true;
-
 		FunctionPCodeGraph(ImagePCodeGraph* imagePCodeGraph)
 			: m_imagePCodeGraph(imagePCodeGraph)
 		{}
+
+		ImagePCodeGraph* getImagePCodeGraph() {
+			return m_imagePCodeGraph;
+		}
 
 		void setStartBlock(PCodeBlock* block) {
 			m_startBlock = block;
 		}
 
-		auto& getNonVirtFuncCalls() {
+		// head is a function that has not parents (main/all virtual functions)
+		bool isHead() {
+			return m_refFuncCalls.empty();
+		}
+
+		auto getRefFuncCalls() {
+			return m_refFuncCalls;
+		}
+
+		auto getNonVirtFuncCalls() {
 			return m_nonVirtFuncCalls;
 		}
 
-		auto& getVirtFuncCalls() {
+		auto getVirtFuncCalls() {
 			return m_virtFuncCalls;
 		}
 
-		auto& getBlocks() {
+		void addNonVirtFuncCall(FunctionPCodeGraph* funcGraph) {
+			m_nonVirtFuncCalls.insert(funcGraph);
+			funcGraph->m_refFuncCalls.insert(this);
+		}
+
+		void addVirtFuncCall(FunctionPCodeGraph* funcGraph) {
+			m_virtFuncCalls.insert(funcGraph);
+			funcGraph->m_refFuncCalls.insert(this);
+		}
+
+		const auto& getBlocks() {
 			return m_blocks;
+		}
+
+		void addBlock(PCodeBlock* block) {
+			m_blocks.insert(block);
+			block->m_funcPCodeGraph = this;
 		}
 
 		PCodeBlock* getStartBlock() {
@@ -183,11 +211,14 @@ namespace CE::Decompiler
 	// pcode graph (consisted of NON-connected function graphs in final state) for a whole program
 	class ImagePCodeGraph : public DB::DomainObject
 	{
-		std::list<FunctionPCodeGraph*> m_funcGraphList;
+		std::list<FunctionPCodeGraph> m_funcGraphList;
 		std::list<FunctionPCodeGraph*> m_headFuncGraphs;
 		std::map<int64_t, PCodeBlock> m_blocks;
 		InstructionPool m_instrPool;
+		std::map<int64_t, CE::DataType::IFunctionSignature*> m_vfunc_calls;
 	public:
+		// exceptions
+		class BlockNotFoundException : public std::exception {};
 
 		ImagePCodeGraph()
 		{}
@@ -196,19 +227,26 @@ namespace CE::Decompiler
 			return &m_instrPool;
 		}
 
-		FunctionPCodeGraph* createFunctionGraph() {
-			auto graph = new FunctionPCodeGraph(this);
-			m_funcGraphList.push_back(graph);
-			return graph;
+		auto& getVirtFuncCalls() {
+			return m_vfunc_calls;
 		}
 
-		PCodeBlock* createBlock(int64_t offset) {
-			m_blocks.insert(std::make_pair(offset, PCodeBlock(offset, offset)));
-			auto newBlock = &m_blocks[offset];
+		FunctionPCodeGraph* createFunctionGraph() {
+			m_funcGraphList.push_back(FunctionPCodeGraph(this));
+			return &*m_funcGraphList.rbegin();
+		}
+
+		PCodeBlock* createBlock(int64_t minOffset, int64_t maxOffset) {
+			m_blocks.insert(std::make_pair(minOffset, PCodeBlock(minOffset, maxOffset)));
+			auto newBlock = &m_blocks[minOffset];
 			return newBlock;
 		}
 
-		auto& getHeadFuncGraphs() {
+		PCodeBlock* createBlock(int64_t offset) {
+			return createBlock(offset, offset);
+		}
+
+		const auto& getHeadFuncGraphs() {
 			return m_headFuncGraphs;
 		}
 
@@ -217,7 +255,7 @@ namespace CE::Decompiler
 		}
 
 		FunctionPCodeGraph* getEntryFunctionGraph() {
-			return *m_funcGraphList.begin();
+			return &*m_funcGraphList.begin();
 		}
 
 		PCodeBlock* getBlockAtOffset(int64_t offset, bool halfInterval = true) {
@@ -228,7 +266,20 @@ namespace CE::Decompiler
 					return &it->second;
 				}
 			}
-			return nullptr;
+			throw BlockNotFoundException();
+		}
+
+		FunctionPCodeGraph* getFuncGraphAt(int64_t offset, bool halfInterval = true) {
+			auto block = getBlockAtOffset(offset, halfInterval);
+			return block->m_funcPCodeGraph;
+		}
+
+		// add all head functions into the list HeadFuncGraphs
+		void fillHeadFuncGraphs() {
+			for (auto& funcGraph : getFunctionGraphList()) {
+				if (funcGraph.isHead())
+					m_headFuncGraphs.push_back(&funcGraph);
+			}
 		}
 	};
 };

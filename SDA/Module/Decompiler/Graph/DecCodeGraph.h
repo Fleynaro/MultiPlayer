@@ -7,8 +7,8 @@ namespace CE::Decompiler
 	class DecompiledCodeGraph
 	{
 	public:
-		DecompiledCodeGraph(FunctionPCodeGraph* asmGraph)
-			: m_funcGraph(asmGraph)
+		DecompiledCodeGraph(FunctionPCodeGraph* funcGraph)
+			: m_funcGraph(funcGraph)
 		{}
 
 		~DecompiledCodeGraph() {

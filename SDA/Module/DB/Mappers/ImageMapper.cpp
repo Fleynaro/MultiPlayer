@@ -35,17 +35,15 @@ IDomainObject* DB::ImageMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int addr_space_id = query.getColumn("addr_space_id");
 	int global_table_id = query.getColumn("global_table_id");
 	int func_body_table_id = query.getColumn("func_body_table_id");
-	int vfunc_call_table_id = query.getColumn("vfunc_call_table_id");
 	int img_pcode_graph_id = query.getColumn("img_pcode_graph_id");
 	
 	auto project = getManager()->getProject();
 	auto addrSpace = project->getAddrSpaceManager()->findAddressSpaceById(addr_space_id);
 	auto globalSymTable = project->getSymTableManager()->findSymbolTableById(global_table_id);
 	auto funcBodySymTable = project->getSymTableManager()->findSymbolTableById(func_body_table_id);
-	auto vfuncCallSymTable = project->getSymTableManager()->findSymbolTableById(vfunc_call_table_id);
 	auto imgPCodeGraph = project->getImagePCodeGraphManager()->findImagePCodeGraphById(img_pcode_graph_id);
 
-	auto image = getManager()->createImage(addrSpace, type, globalSymTable, funcBodySymTable, vfuncCallSymTable, imgPCodeGraph, name, comment, false);
+	auto image = getManager()->createImage(addrSpace, type, globalSymTable, funcBodySymTable, imgPCodeGraph, name, comment, false);
 	image->load();
 
 	// add the image to its addr. space
@@ -61,10 +59,10 @@ void DB::ImageMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 
 void DB::ImageMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto imageDec = dynamic_cast<ImageDecorator*>(obj);
-	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_images (image_id, type, name, comment, addr_space_id, global_table_id, func_body_table_id, vfunc_call_table_id, img_pcode_graph_id, save_id) VALUES(?1, ?2, ?3, ?4, ?5, ?6,? 7, ?8, ?9, ?10)");
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_images (image_id, type, name, comment, addr_space_id, global_table_id, func_body_table_id, img_pcode_graph_id, save_id) VALUES(?1, ?2, ?3, ?4, ?5, ?6,? 7, ?8, ?9)");
 	query.bind(1, imageDec->getId());
 	bind(query, imageDec);
-	query.bind(10, ctx->m_saveId);
+	query.bind(9, ctx->m_saveId);
 	query.exec();
 }
 
@@ -83,6 +81,5 @@ void DB::ImageMapper::bind(SQLite::Statement& query, CE::ImageDecorator* imageDe
 	query.bind(5, imageDec->getAddressSpace()->getId());
 	query.bind(6, imageDec->getGlobalSymbolTable()->getId());
 	query.bind(7, imageDec->getFuncBodySymbolTable()->getId());
-	query.bind(8, imageDec->getVFuncCallSymbolTable()->getId());
-	query.bind(9, imageDec->getPCodeGraph()->getId());
+	query.bind(8, imageDec->getPCodeGraph()->getId());
 }

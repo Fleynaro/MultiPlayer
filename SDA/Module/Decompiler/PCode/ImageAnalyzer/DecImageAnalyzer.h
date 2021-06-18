@@ -131,13 +131,19 @@ namespace CE::Decompiler
 				nextOffsetsToVisitLater.pop_back();
 
 				auto funcGraph = m_imageGraph->createFunctionGraph();
-				auto block = m_imageGraph->getBlockAtOffset(startInstrOffset);
-				if (block == nullptr) {
+				try {
+					auto block = m_imageGraph->getBlockAtOffset(startInstrOffset);
+					// if the function call references to a block of the existing graph
+					funcGraph->setStartBlock(block);
+					offsetsToFuncGraphs[(int)(startInstrOffset >> 8)] = funcGraph;
+					blocksToReconnect.push_back(block);
+				}
+				catch (const ImagePCodeGraph::BlockNotFoundException& ex) {
 					auto startBlock = m_imageGraph->createBlock(startInstrOffset);
 					funcGraph->setStartBlock(startBlock);
 					createPCodeBlocksAtOffset(startInstrOffset, funcGraph);
 					offsetsToFuncGraphs[(int)(startInstrOffset >> 8)] = funcGraph;
-					
+
 					if (!onceFunc) {
 						std::list<int> nonVirtFuncOffsets;
 						std::list<int> otherOffsets;
@@ -147,12 +153,6 @@ namespace CE::Decompiler
 						nextOffsetsToVisitLater.insert(nextOffsetsToVisitLater.end(), otherOffsets.begin(), otherOffsets.end());
 						nonVirtFuncOffsetsForGraphs.push_back(std::make_pair(funcGraph, nonVirtFuncOffsets));
 					}
-				}
-				else {
-					// if the function call references to a block of the existing graph
-					funcGraph->setStartBlock(block);
-					offsetsToFuncGraphs[(int)(startInstrOffset >> 8)] = funcGraph;
-					blocksToReconnect.push_back(block);
 				}
 			}
 
@@ -164,19 +164,13 @@ namespace CE::Decompiler
 					auto it = offsetsToFuncGraphs.find(offset);
 					if (it != offsetsToFuncGraphs.end()) {
 						auto otherGraph = it->second;
-						otherGraph->m_isHead = false;
-						graph->getNonVirtFuncCalls().push_back(otherGraph);
+						graph->addNonVirtFuncCall(otherGraph);
 					}
 				}
 			}
 
-			// add all head functions into the list
-			for (auto funcGraph : m_imageGraph->getFunctionGraphList()) {
-				if(funcGraph->m_isHead)
-					m_imageGraph->getHeadFuncGraphs().push_back(funcGraph);
-			}
-
 			// other
+			m_imageGraph->fillHeadFuncGraphs();
 			reconnectBlocksAndReplaceJmpByCall(blocksToReconnect);
 			prepareFuncGraphs();
 		}
@@ -201,8 +195,8 @@ namespace CE::Decompiler
 
 		// calculate levels and gather PCode blocks for each function graph
 		void prepareFuncGraphs() {
-			for (auto funcGraph : m_imageGraph->getFunctionGraphList()) {
-				PrepareFuncGraph(funcGraph);
+			for (auto& funcGraph : m_imageGraph->getFunctionGraphList()) {
+				PrepareFuncGraph(&funcGraph);
 			}
 		}
 
@@ -219,9 +213,10 @@ namespace CE::Decompiler
 				PCodeBlock* curBlock = nullptr;
 
 				if (offset != -1 && visitedOffsets.find(offset) == visitedOffsets.end()) {
-					// any offset have to be assoicated with some existing block
-					curBlock = m_imageGraph->getBlockAtOffset(offset, false);
-					if (curBlock != nullptr) {
+					try {
+						// any offset have to be assoicated with some existing block
+						curBlock = m_imageGraph->getBlockAtOffset(offset, false);
+
 						// try to get an instruction by the offset
 						try {
 							instr = m_decoder->m_instrPool->getInstructionAt(offset);
@@ -238,9 +233,9 @@ namespace CE::Decompiler
 							catch (const InstructionPool::InstructionNotFoundException& ex) {
 							}
 						}
-
 						visitedOffsets.insert(offset);
 					}
+					catch (const ImagePCodeGraph::BlockNotFoundException& ex) {}
 				}
 
 				if (instr == nullptr) {
@@ -305,8 +300,8 @@ namespace CE::Decompiler
 
 					// far block
 					PCodeBlock* nextFarBlock = nullptr;
-					auto alreadyExistingBlock = m_imageGraph->getBlockAtOffset(targetOffset);
-					if (alreadyExistingBlock != nullptr) {
+					try {
+						auto alreadyExistingBlock = m_imageGraph->getBlockAtOffset(targetOffset);
 						// split the already existing block into 2 non-empty blocks 
 						if (targetOffset > alreadyExistingBlock->getMinOffset() && targetOffset < alreadyExistingBlock->getMaxOffset() - 1) {
 							auto block1 = alreadyExistingBlock;
@@ -325,7 +320,7 @@ namespace CE::Decompiler
 							block2->setMaxOffset(alreadyExistingBlock->getMaxOffset());
 							block1->setMaxOffset(targetOffset);
 
-							if(block1->getNextNearBlock())
+							if (block1->getNextNearBlock())
 								block2->setNextNearBlock(block1->getNextNearBlock());
 							if (block1->getNextFarBlock())
 								block2->setNextFarBlock(block1->getNextFarBlock());
@@ -337,7 +332,7 @@ namespace CE::Decompiler
 						}
 						curBlock->setNextFarBlock(alreadyExistingBlock);
 					}
-					else {
+					catch (const ImagePCodeGraph::BlockNotFoundException& ex) {
 						nextFarBlock = m_imageGraph->createBlock(targetOffset);
 						curBlock->setNextFarBlock(nextFarBlock);
 					}
@@ -345,6 +340,13 @@ namespace CE::Decompiler
 					// near block
 					PCodeBlock* nextNearBlock = nullptr;
 					if (instr->m_id == PCode::InstructionId::CBRANCH) {
+						try {
+
+						}
+						catch (const ImagePCodeGraph::BlockNotFoundException& ex) {
+
+						}
+
 						if (m_imageGraph->getBlockAtOffset(nextInstrOffset) == nullptr) {
 							nextNearBlock = m_imageGraph->createBlock(nextInstrOffset);
 							curBlock->setNextNearBlock(nextNearBlock);
@@ -368,9 +370,12 @@ namespace CE::Decompiler
 				else {
 					// calculate the next offset
 					if (instr->m_id != PCode::InstructionId::RETURN) {
-						auto nextBlock = m_imageGraph->getBlockAtOffset(nextInstrOffset, false);
-						if (curBlock != nextBlock)
-							curBlock->setNextNearBlock(nextBlock);
+						try {
+							auto nextBlock = m_imageGraph->getBlockAtOffset(nextInstrOffset, false);
+							if (curBlock != nextBlock)
+								curBlock->setNextNearBlock(nextBlock);
+						}
+						catch (const ImagePCodeGraph::BlockNotFoundException& ex) {}
 						offset = nextInstrOffset;
 					}
 					else {
@@ -388,7 +393,9 @@ namespace CE::Decompiler
 
 			std::set<PCodeBlock*> blocks;
 			GatherPCodeBlocks(funcGraph->getStartBlock(), blocks);
-			funcGraph->getBlocks() = blocks;
+			for (auto block : blocks) {
+				funcGraph->addBlock(block);
+			}
 		}
 
 		// pass pcode graph and calculate max distance from root to each node (pcode block)

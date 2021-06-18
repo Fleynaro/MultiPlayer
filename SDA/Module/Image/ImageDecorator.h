@@ -27,7 +27,6 @@ namespace CE
 		IMAGE_TYPE m_type;
 		Symbol::SymbolTable* m_globalSymbolTable;
 		Symbol::SymbolTable* m_funcBodySymbolTable;
-		Symbol::SymbolTable* m_vfuncCallSymbolTable;
 		Decompiler::ImagePCodeGraph* m_imagePCodeGraph;
 		
 	public:
@@ -37,7 +36,6 @@ namespace CE
 			IMAGE_TYPE type,
 			Symbol::SymbolTable* globalSymbolTable,
 			Symbol::SymbolTable* funcBodySymbolTable,
-			Symbol::SymbolTable* vfuncCallSymbolTable,
 			Decompiler::ImagePCodeGraph* imagePCodeGraph,
 			const std::string& name,
 			const std::string& comment = "")
@@ -47,7 +45,6 @@ namespace CE
 			m_type(type),
 			m_globalSymbolTable(globalSymbolTable),
 			m_funcBodySymbolTable(funcBodySymbolTable),
-			m_vfuncCallSymbolTable(vfuncCallSymbolTable),
 			m_imagePCodeGraph(imagePCodeGraph),
 			Description(name, comment)
 		{}
@@ -91,10 +88,6 @@ namespace CE
 
 		Symbol::SymbolTable* getFuncBodySymbolTable() {
 			return m_funcBodySymbolTable;
-		}
-
-		Symbol::SymbolTable* getVFuncCallSymbolTable() {
-			return m_vfuncCallSymbolTable;
 		}
 
 		Decompiler::ImagePCodeGraph* getPCodeGraph() {
