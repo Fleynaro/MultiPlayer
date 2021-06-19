@@ -493,6 +493,7 @@
     <ClInclude Include="Module\Manager\ImageManager.h" />
     <ClInclude Include="Module\Manager\Managers.h" />
     <ClInclude Include="Module\Manager\SymbolTableManager.h" />
+    <ClInclude Include="Program.h" />
     <ClInclude Include="Project.h" />
     <ClInclude Include="Module\Manager\StatManager.h" />
     <ClInclude Include="Module\Manager\SymbolManager.h" />

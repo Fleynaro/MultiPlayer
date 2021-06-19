@@ -129,7 +129,7 @@ namespace CE
 		}
 
 		auto& getVirtFuncCalls() {
-			return m_vfunc_calls;
+			return *m_vfunc_calls;
 		}
 
 		ImageDecorator* getParentImage() {

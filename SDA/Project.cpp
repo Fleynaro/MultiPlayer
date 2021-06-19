@@ -1,4 +1,5 @@
 #include "Project.h"
+#include <Program.h>
 #include <GhidraSync/GhidraSync.h>
 #include <Utils/Resource.h>
 
@@ -6,12 +7,6 @@
 #include <Manager/Managers.h>
 
 using namespace CE;
-
-Project::Project(const fs::path& dir)
-	: m_directory(dir)
-{
-	m_ghidraSync = new Ghidra::Sync(this);
-}
 
 Project::~Project() {
 	if (m_allManagersHaveBeenLoaded) {
@@ -31,6 +26,14 @@ Project::~Project() {
 		delete m_transaction;
 	if (m_db != nullptr)
 		delete m_db;
+}
+
+ProjectManager* CE::Project::getProjectManager() {
+	return m_projectManager;
+}
+
+Program* CE::Project::getProgram() {
+	return m_projectManager->getProgram();
 }
 
 void Project::initTransaction() {
@@ -148,3 +151,38 @@ Ghidra::Sync* Project::getGhidraSync() {
 	return m_ghidraSync;
 }
 
+Program* CE::ProjectManager::getProgram() {
+	return m_program;
+}
+
+const fs::path& CE::ProjectManager::getProjectsFile() {
+	return m_program->getExecutableDirectory() / fs::path("projects.json");
+}
+
+void CE::ProjectManager::load() {
+	std::ifstream file(getProjectsFile());
+	if (!file.is_open())
+		throw std::logic_error("");
+	std::string content;
+	file >> content;
+	auto json_project_entries = json::parse(content);
+	for (const auto& json_project_entry : json_project_entries) {
+		ProjectEntry projectEntry;
+		projectEntry.m_dir = json_project_entry["path"].get<std::string>();
+		m_projectEntries.push_back(projectEntry);
+	}
+}
+
+void CE::ProjectManager::save() {
+	json json_project_entries;
+	for (auto& prjEntry : m_projectEntries) {
+		json json_project_entry;
+		json_project_entry["path"] = prjEntry.m_dir.string();
+		json_project_entries.push_back(json_project_entry);
+	}
+	std::ofstream file(getProjectsFile());
+	if (!file.is_open())
+		throw std::logic_error("");
+	auto content = json_project_entries.dump();
+	file << content;
+}

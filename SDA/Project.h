@@ -7,6 +7,10 @@ using namespace SQLite;
 
 namespace CE
 {
+	class Program;
+	class ProjectManager;
+
+	// managers
 	class TypeManager;
 	class SymbolManager;
 	class SymbolTableManager;
@@ -26,6 +30,8 @@ namespace CE
 
 	class Project
 	{
+		ProjectManager* m_projectManager;
+
 		bool m_allManagersHaveBeenLoaded = false;
 		DB::ITransaction* m_transaction = nullptr;
 		SQLite::Database* m_db = nullptr;
@@ -43,9 +49,17 @@ namespace CE
 		StatManager* m_statManager = nullptr;
 		Ghidra::Sync* m_ghidraSync;
 	public:
-		Project(const fs::path& dir);
+		Project(ProjectManager* projectManager, const fs::path& dir)
+			: m_projectManager(projectManager), m_directory(dir)
+		{
+			m_ghidraSync = new Ghidra::Sync(this);
+		}
 
 		~Project();
+
+		ProjectManager* getProjectManager();
+
+		Program* getProgram();
 
 		void load();
 
@@ -90,5 +104,46 @@ namespace CE
 		void initTransaction();
 
 		void createTablesInDatabase();
+	};
+
+	class ProjectManager
+	{
+	public:
+		struct ProjectEntry
+		{
+			fs::path m_dir;
+		};
+
+	private:
+		Program* m_program;
+		std::list<ProjectEntry> m_projectEntries;
+
+	public:
+		ProjectManager(Program* program)
+			: m_program(program)
+		{}
+
+		Program* getProgram();
+
+		const fs::path& getProjectsFile();
+
+		Project* loadProject(const fs::path& dir) {
+			return new Project(this, dir);
+		}
+
+		Project* createProject(const fs::path& dir) {
+			ProjectEntry projectEntry;
+			projectEntry.m_dir = dir;
+			m_projectEntries.push_back(projectEntry);
+			return new Project(this, dir);
+		}
+
+		const auto& getProjectEntries() {
+			return m_projectEntries;
+		}
+
+		void load();
+
+		void save();
 	};
 };
