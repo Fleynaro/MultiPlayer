@@ -2,6 +2,7 @@
 #include <GhidraSync/GhidraObject.h>
 #include "../Type/FunctionSignature.h"
 #include "../Symbol/Symbol.h"
+#include <Image/ImageDecorator.h>
 
 namespace CE
 {
@@ -22,11 +23,13 @@ namespace CE
 		class Function : public DB::DomainObject, public Ghidra::Object, public IDescription
 		{
 		public:
-			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, Symbol::SymbolTable* stackSymbolTable)
-				: m_manager(manager), m_functionSymbol(functionSymbol), m_funcGraph(funcGraph), m_stackSymbolTable(stackSymbolTable)
+			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable)
+				: m_manager(manager), m_functionSymbol(functionSymbol), m_imageDec(imageDec), m_stackSymbolTable(stackSymbolTable)
 			{}
 
 			Symbol::FunctionSymbol* getFunctionSymbol();
+
+			ImageDecorator* getImage();
 
 			Decompiler::FunctionPCodeGraph* getFuncGraph();
 
@@ -40,7 +43,7 @@ namespace CE
 
 			DataType::IFunctionSignature* getSignature();
 
-			int getOffset();
+			int64_t getOffset();
 
 			Symbol::SymbolTable* getStackSymbolTable();
 
@@ -54,7 +57,7 @@ namespace CE
 
 			FunctionManager* getManager();
 		private:
-			Decompiler::FunctionPCodeGraph* m_funcGraph;
+			ImageDecorator* m_imageDec;
 			Symbol::FunctionSymbol* m_functionSymbol;
 			Symbol::SymbolTable* m_stackSymbolTable;
 			Trigger::Function::Hook* m_hook = nullptr;

@@ -25,11 +25,11 @@ namespace CE
 				: m_functionManager(functionManager), m_ghidraFunctionMapper(ghidraFunctionMapper), m_funcMapper(funcMapper), AbstractFactory(generateId)
 			{}
 
-			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, Symbol::SymbolTable* stackSymbolTable);
+			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable);
 
-			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph);
+			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec);
 
-			Function::Function* createFunction(int64_t offset, DataTypePtr type, Decompiler::FunctionPCodeGraph* funcGraph, const std::string& name, const std::string& comment = "");
+			Function::Function* createFunction(int64_t offset, DataTypePtr type, ImageDecorator* imageDec, const std::string& name, const std::string& comment = "");
 		};
 
 		using Iterator = AbstractIterator<Function::Function>;

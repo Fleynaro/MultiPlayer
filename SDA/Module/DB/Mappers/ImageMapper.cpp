@@ -30,6 +30,7 @@ CE::ImageManager* DB::ImageMapper::getManager() {
 
 IDomainObject* DB::ImageMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int image_id = query.getColumn("image_id");
+	int parent_image_id = query.getColumn("parent_image_id");
 	auto type = (CE::ImageDecorator::IMAGE_TYPE)(int)query.getColumn("type");
 	//std::uintptr_t addr = (int64_t)query.getColumn("addr");
 	std::string name = query.getColumn("name");
@@ -45,51 +46,61 @@ IDomainObject* DB::ImageMapper::doLoad(Database* db, SQLite::Statement& query) {
 	std::string json_func_graphs_str = query.getColumn("json_func_graphs");
 	auto json_func_graphs = json::parse(json_func_graphs_str);
 	
+	ImageDecorator* image = nullptr;
 	auto project = getManager()->getProject();
 	auto addrSpace = project->getAddrSpaceManager()->findAddressSpaceById(addr_space_id);
-	auto globalSymTable = project->getSymTableManager()->findSymbolTableById(global_table_id);
-	auto funcBodySymTable = project->getSymTableManager()->findSymbolTableById(func_body_table_id);
 
-	auto image = getManager()->createImage(addrSpace, type, globalSymTable, funcBodySymTable, name, comment, false);
-	image->load();
-	auto imgPCodeGraph = image->getPCodeGraph();
+	if (parent_image_id != 0)
+	{
+		auto parentImage = getManager()->findImageById(parent_image_id);
+		image = getManager()->createImageFromParent(addrSpace, parentImage, name, comment, false);
+		image->load();
+	}
+	else {
+		auto globalSymTable = project->getSymTableManager()->findSymbolTableById(global_table_id);
+		auto funcBodySymTable = project->getSymTableManager()->findSymbolTableById(func_body_table_id);
 
-	// load modified instructions for instr. pool
-	for (const auto& json_mod_instr : json_instr_pool["mod_instructions"]) {
-		auto offset = json_mod_instr["offset"].get<int64_t>();
-		auto mod = json_mod_instr["mod"].get<Decompiler::PCode::InstructionPool::MODIFICATOR>();
-		image->getInstrPool()->m_modifiedInstructions[offset] = mod;
-	}
-	// load virtual func. calls
-	for (const auto& json_vfunc_call : json_vfunc_calls) {
-		auto offset = json_vfunc_call["offset"].get<int64_t>();
-		auto sig_id = json_vfunc_call["sig_id"].get<DB::Id>();
-		auto funcSig = dynamic_cast<DataType::IFunctionSignature*>(getManager()->getProject()->getTypeManager()->findTypeById(sig_id));
-		image->getVirtFuncCalls()[offset] = funcSig;
-	}
-	// load pcode func. graphs
-	for (const auto& json_func_graph : json_func_graphs) {
-		auto funcGraph = imgPCodeGraph->createFunctionGraph();
-		loadFuncPCodeGraphJson(json_func_graph, funcGraph, image);
-	}
-	// load pcode func. graph connections
-	for (const auto& json_func_graph : json_func_graphs) {
-		auto start_block = json_func_graph["start_block"].get<int64_t>();
-		auto funcGraph = imgPCodeGraph->getFuncGraphAt(start_block);
-		// load non-virt func calls
-		for (const auto& json_nv_func : json_func_graph["nv_func_calls"]) {
-			auto nonVirtFuncOffset = json_nv_func.get<int64_t>();
-			auto otherFuncGraph = imgPCodeGraph->getFuncGraphAt(nonVirtFuncOffset);
-			funcGraph->addNonVirtFuncCall(otherFuncGraph);
+		image = getManager()->createImage(addrSpace, type, globalSymTable, funcBodySymTable, name, comment, false);
+		image->load();
+		auto imgPCodeGraph = image->getPCodeGraph();
+
+		// load modified instructions for instr. pool
+		for (const auto& json_mod_instr : json_instr_pool["mod_instructions"]) {
+			auto offset = json_mod_instr["offset"].get<int64_t>();
+			auto mod = json_mod_instr["mod"].get<Decompiler::PCode::InstructionPool::MODIFICATOR>();
+			image->getInstrPool()->m_modifiedInstructions[offset] = mod;
 		}
-		// load virt func calls
-		for (const auto& json_v_func : json_func_graph["v_func_calls"]) {
-			auto virtFuncOffset = json_v_func.get<int64_t>();
-			auto otherFuncGraph = imgPCodeGraph->getFuncGraphAt(virtFuncOffset);
-			funcGraph->addVirtFuncCall(otherFuncGraph);
+		// load virtual func. calls
+		for (const auto& json_vfunc_call : json_vfunc_calls) {
+			auto offset = json_vfunc_call["offset"].get<int64_t>();
+			auto sig_id = json_vfunc_call["sig_id"].get<DB::Id>();
+			auto funcSig = dynamic_cast<DataType::IFunctionSignature*>(getManager()->getProject()->getTypeManager()->findTypeById(sig_id));
+			image->getVirtFuncCalls()[offset] = funcSig;
 		}
+		// load pcode func. graphs
+		for (const auto& json_func_graph : json_func_graphs) {
+			auto funcGraph = imgPCodeGraph->createFunctionGraph();
+			loadFuncPCodeGraphJson(json_func_graph, funcGraph, image);
+		}
+		// load pcode func. graph connections
+		for (const auto& json_func_graph : json_func_graphs) {
+			auto start_block = json_func_graph["start_block"].get<int64_t>();
+			auto funcGraph = imgPCodeGraph->getFuncGraphAt(start_block);
+			// load non-virt func calls
+			for (const auto& json_nv_func : json_func_graph["nv_func_calls"]) {
+				auto nonVirtFuncOffset = json_nv_func.get<int64_t>();
+				auto otherFuncGraph = imgPCodeGraph->getFuncGraphAt(nonVirtFuncOffset);
+				funcGraph->addNonVirtFuncCall(otherFuncGraph);
+			}
+			// load virt func calls
+			for (const auto& json_v_func : json_func_graph["v_func_calls"]) {
+				auto virtFuncOffset = json_v_func.get<int64_t>();
+				auto otherFuncGraph = imgPCodeGraph->getFuncGraphAt(virtFuncOffset);
+				funcGraph->addVirtFuncCall(otherFuncGraph);
+			}
+		}
+		imgPCodeGraph->fillHeadFuncGraphs();
 	}
-	imgPCodeGraph->fillHeadFuncGraphs();
 
 	// add the image to its addr. space
 	addrSpace->getImages()[image->getAddress()] = image;
@@ -105,10 +116,10 @@ void DB::ImageMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 void DB::ImageMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto imageDec = dynamic_cast<ImageDecorator*>(obj);
 	SQLite::Statement query(*ctx->m_db,
-		"REPLACE INTO sda_images (image_id, type, name, comment, addr_space_id, global_table_id, func_body_table_id, json_instr_pool, json_vfunc_calls, json_func_graphs, save_id) VALUES(?1, ?2, ?3, ?4, ?5, ?6,? 7, ?8, ?9, ?10, ?11)");
+		"REPLACE INTO sda_images (image_id, parent_image_id, type, name, comment, addr_space_id, global_table_id, func_body_table_id, json_instr_pool, json_vfunc_calls, json_func_graphs, save_id) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)");
 	query.bind(1, imageDec->getId());
 	bind(query, imageDec);
-	query.bind(11, ctx->m_saveId);
+	query.bind(12, ctx->m_saveId);
 	query.exec();
 }
 
@@ -237,13 +248,14 @@ void DB::ImageMapper::bind(SQLite::Statement& query, CE::ImageDecorator* imageDe
 		json_func_graphs.push_back(json_func_graph);
 	}
 	
-	query.bind(2, imageDec->getType());
-	query.bind(3, imageDec->getName());
-	query.bind(4, imageDec->getComment());
-	query.bind(5, imageDec->getAddressSpace()->getId());
-	query.bind(6, imageDec->getGlobalSymbolTable()->getId());
-	query.bind(7, imageDec->getFuncBodySymbolTable()->getId());
-	query.bind(8, json_instr_pool.dump());
-	query.bind(9, json_vfunc_calls.dump());
-	query.bind(10, json_func_graphs.dump());
+	query.bind(2, imageDec->getParentImage() ? imageDec->getParentImage()->getId() : 0);
+	query.bind(3, imageDec->getType());
+	query.bind(4, imageDec->getName());
+	query.bind(5, imageDec->getComment());
+	query.bind(6, imageDec->getAddressSpace()->getId());
+	query.bind(7, imageDec->getGlobalSymbolTable()->getId());
+	query.bind(8, imageDec->getFuncBodySymbolTable()->getId());
+	query.bind(9, json_instr_pool.dump());
+	query.bind(10, json_vfunc_calls.dump());
+	query.bind(11, json_func_graphs.dump());
 }

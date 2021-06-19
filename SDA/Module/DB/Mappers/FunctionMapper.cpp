@@ -3,7 +3,7 @@
 #include <Manager/SymbolTableManager.h>
 #include <Manager/TypeManager.h>
 #include <Manager/SymbolManager.h>
-#include <Manager/ImagePCodeGraphManager.h>
+#include <Manager/ImageManager.h>
 #include <GhidraSync/Mappers/GhidraFunctionMapper.h>
 
 using namespace DB;
@@ -32,14 +32,13 @@ IDomainObject* FunctionMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int func_id = query.getColumn("func_id");
 	int func_symbol_id = query.getColumn("func_symbol_id");
 	int stack_sym_table_id = query.getColumn("stack_sym_table_id");
-	int img_graph_id = query.getColumn("img_graph_id");
+	int image_id = query.getColumn("image_id");
 
 	auto funcSymbol = dynamic_cast<Symbol::FunctionSymbol*>(getManager()->getProject()->getSymbolManager()->findSymbolById(func_symbol_id));
 	auto stackSymTable = getManager()->getProject()->getSymTableManager()->findSymbolTableById(stack_sym_table_id);
-	auto imagePCodeGraph = getManager()->getProject()->getImagePCodeGraphManager()->findImagePCodeGraphById(img_graph_id);
-	auto funcGraph = imagePCodeGraph->getFuncGraphAt(funcSymbol->getOffset());
+	auto image = getManager()->getProject()->getImageManager()->findImageById(image_id);
 
-	auto function = getManager()->getFactory(false).createFunction(funcSymbol, funcGraph, stackSymTable);
+	auto function = getManager()->getFactory(false).createFunction(funcSymbol, image, stackSymTable);
 	
 	funcSymbol->setFunction(function);
 	function->setId(func_id);
@@ -54,7 +53,7 @@ void FunctionMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 void FunctionMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	auto func = dynamic_cast<CE::Function::Function*>(obj);
 
-	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_functions (func_id, func_symbol_id, stack_sym_table_id, img_graph_id, save_id, ghidra_sync_id)\
+	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_functions (func_id, func_symbol_id, stack_sym_table_id, image_id, save_id, ghidra_sync_id)\
 				VALUES(?1, ?2, ?3, ?4, ?5, 0)");
 	query.bind(1, func->getId());
 	bind(query, func);
@@ -73,5 +72,5 @@ void FunctionMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
 void FunctionMapper::bind(SQLite::Statement& query, CE::Function::Function* func) {
 	query.bind(2, func->getFunctionSymbol()->getId());
 	query.bind(3, func->getStackSymbolTable()->getId());
-	query.bind(4, func->getFuncGraph()->getImagePCodeGraph()->getId());
+	query.bind(4, func->getImage()->getId());
 }

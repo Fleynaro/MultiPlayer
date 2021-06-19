@@ -1,7 +1,6 @@
 #include "Function.h"
 #include "Module/Trigger/FunctionTrigger.h"
 #include <Manager/FunctionManager.h>
-#include <Address/ProcessModule.h>
 
 using namespace CE;
 
@@ -9,8 +8,12 @@ Symbol::FunctionSymbol* Function::Function::getFunctionSymbol() {
 	return m_functionSymbol;
 }
 
+ImageDecorator* CE::Function::Function::getImage() {
+	return m_imageDec;
+}
+
 Decompiler::FunctionPCodeGraph* Function::Function::getFuncGraph() {
-	return m_funcGraph;
+	return m_imageDec->getPCodeGraph()->getFuncGraphAt(getOffset());
 }
 
 const std::string Function::Function::getName() {
@@ -33,7 +36,7 @@ DataType::IFunctionSignature* Function::Function::getSignature() {
 	return m_functionSymbol->getSignature();
 }
 
-int Function::Function::getOffset() {
+int64_t CE::Function::Function::getOffset() {
 	return m_functionSymbol->getOffset();
 }
 

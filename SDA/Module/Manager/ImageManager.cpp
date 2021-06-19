@@ -25,6 +25,14 @@ ImageDecorator* CE::ImageManager::createImage(AddressSpace* addressSpace, ImageD
 	return createImage(addressSpace, type, globalSymbolTable, funcBodySymbolTable, name, comment, generateId);
 }
 
+ImageDecorator* CE::ImageManager::createImageFromParent(AddressSpace* addressSpace, ImageDecorator* parentImageDec, const std::string& name, const std::string& comment, bool generateId) {
+	auto imageDec = new ImageDecorator(this, addressSpace, parentImageDec, name, comment);
+	imageDec->setMapper(m_imageMapper);
+	if (generateId)
+		imageDec->setId(m_imageMapper->getNextId());
+	return imageDec;
+}
+
 void CE::ImageManager::loadImages() {
 	m_imageMapper->loadAll();
 }

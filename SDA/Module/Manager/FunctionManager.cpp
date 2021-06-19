@@ -46,8 +46,8 @@ Function::Function* CE::FunctionManager::findFunctionByGhidraId(Ghidra::Id id)
 	return nullptr;
 }
 
-Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph, Symbol::SymbolTable* stackSymbolTable) {
-	auto func = new Function::Function(m_functionManager, functionSymbol, funcGraph, stackSymbolTable);
+Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable) {
+	auto func = new Function::Function(m_functionManager, functionSymbol, imageDec, stackSymbolTable);
 	func->setMapper(m_funcMapper);
 	func->setGhidraMapper(m_ghidraFunctionMapper);
 	if (m_generateId)
@@ -55,14 +55,14 @@ Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::Functio
 	return func;
 }
 
-Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, Decompiler::FunctionPCodeGraph* funcGraph) {
+Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec) {
 	auto factory = m_functionManager->getProject()->getSymTableManager()->getFactory();
 	auto stackSymbolTable = factory.createSymbolTable(Symbol::SymbolTable::STACK_SPACE, 0x100000000);
-	return createFunction(functionSymbol, funcGraph, stackSymbolTable);
+	return createFunction(functionSymbol, imageDec, stackSymbolTable);
 }
 
-Function::Function* CE::FunctionManager::Factory::createFunction(int64_t offset, DataTypePtr type, Decompiler::FunctionPCodeGraph* funcGraph, const std::string& name, const std::string& comment) {
+Function::Function* CE::FunctionManager::Factory::createFunction(int64_t offset, DataTypePtr type, ImageDecorator* imageDec, const std::string& name, const std::string& comment) {
 	auto factory = m_functionManager->getProject()->getSymbolManager()->getFactory();
 	auto functionSymbol = factory.createFunctionSymbol(offset, type, name, comment);
-	return createFunction(functionSymbol, funcGraph);
+	return createFunction(functionSymbol, imageDec);
 }

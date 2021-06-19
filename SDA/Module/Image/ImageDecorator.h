@@ -28,9 +28,11 @@ namespace CE
 		IMAGE_TYPE m_type;
 		Symbol::SymbolTable* m_globalSymbolTable;
 		Symbol::SymbolTable* m_funcBodySymbolTable;
-		InstructionPool m_instrPool;
-		Decompiler::ImagePCodeGraph m_imagePCodeGraph;
-		std::map<int64_t, CE::DataType::IFunctionSignature*> m_vfunc_calls;
+		Decompiler::InstructionPool* m_instrPool;
+		Decompiler::ImagePCodeGraph* m_imagePCodeGraph;
+		std::map<int64_t, CE::DataType::IFunctionSignature*>* m_vfunc_calls;
+		// need for making a clone that based on its parent image but haved own raw-image
+		ImageDecorator* m_parentImageDec = nullptr;
 		
 	public:
 		ImageDecorator(
@@ -48,12 +50,39 @@ namespace CE
 			m_globalSymbolTable(globalSymbolTable),
 			m_funcBodySymbolTable(funcBodySymbolTable),
 			Description(name, comment)
-		{}
+		{
+			m_instrPool = new Decompiler::InstructionPool();
+			m_imagePCodeGraph = new Decompiler::ImagePCodeGraph();
+			m_vfunc_calls = new std::map<int64_t, CE::DataType::IFunctionSignature*>();
+		}
+
+		ImageDecorator(ImageManager* imageManager, AddressSpace* addressSpace, ImageDecorator* parentImageDec, const std::string& name, const std::string& comment = "")
+			: ImageDecorator(
+				imageManager,
+				addressSpace,
+				parentImageDec->m_type,
+				parentImageDec->m_globalSymbolTable,
+				parentImageDec->m_funcBodySymbolTable,
+				name,
+				comment
+			)
+		{
+			m_instrPool = parentImageDec->m_instrPool;
+			m_imagePCodeGraph = parentImageDec->m_imagePCodeGraph;
+			m_vfunc_calls = parentImageDec->m_vfunc_calls;
+			m_parentImageDec = parentImageDec;
+		}
 
 		~ImageDecorator() {
 			if (m_image) {
 				delete m_image->getData();
 				delete m_image;
+			}
+
+			if (!m_parentImageDec) {
+				delete m_instrPool;
+				delete m_imagePCodeGraph;
+				delete m_vfunc_calls;
 			}
 		}
 
@@ -91,16 +120,20 @@ namespace CE
 			return m_funcBodySymbolTable;
 		}
 
-		InstructionPool* getInstrPool() {
-			return &m_instrPool;
+		Decompiler::InstructionPool* getInstrPool() {
+			return m_instrPool;
 		}
 
 		Decompiler::ImagePCodeGraph* getPCodeGraph() {
-			return &m_imagePCodeGraph;
+			return m_imagePCodeGraph;
 		}
 
 		auto& getVirtFuncCalls() {
 			return m_vfunc_calls;
+		}
+
+		ImageDecorator* getParentImage() {
+			return m_parentImageDec;
 		}
 
 		const fs::path& getFile() {

@@ -29,6 +29,7 @@ CREATE TABLE "sda_address_spaces" (
 
 CREATE TABLE "sda_images" (
 	"image_id"	            INTEGER,
+    "parent_image_id"       INTEGER,
     "type"	                INTEGER,
 	"name"	                TEXT,
 	"comment"	            TEXT,
@@ -72,7 +73,7 @@ create table sda_functions
     func_id                 INTEGER primary key autoincrement,
     func_symbol_id          INTEGER,
     stack_sym_table_id      INTEGER DEFAULT 0,
-    img_graph_id            INTEGER,
+    image_id                INTEGER,
     save_id                 INTEGER,
     ghidra_sync_id          INTEGER,
     deleted                 INTEGER DEFAULT 0
