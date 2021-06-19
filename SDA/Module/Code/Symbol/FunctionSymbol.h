@@ -9,9 +9,11 @@ namespace CE::Symbol
 {
 	class FunctionSymbol : public GlobalVarSymbol
 	{
+		DataType::IFunctionSignature* m_funcSignature;
+		Function::Function* m_function;
 	public:
-		FunctionSymbol(SymbolManager* manager, int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "")
-			: GlobalVarSymbol(manager, offset, type, name, comment)
+		FunctionSymbol(SymbolManager* manager, int64_t offset, DataType::IFunctionSignature* funcSignature, const std::string& name, const std::string& comment = "")
+			: m_funcSignature(funcSignature), GlobalVarSymbol(manager, offset, DataType::GetUnit(funcSignature), name, comment)
 		{}
 
 		Type getType() override {
@@ -27,14 +29,11 @@ namespace CE::Symbol
 		}
 
 		DataType::IFunctionSignature* getSignature() {
-			return dynamic_cast<DataType::IFunctionSignature*>(getDataType()->getType());
+			return m_funcSignature;
 		}
 
 		void setFunction(Function::Function* function) {
 			m_function = function;
 		}
-
-	private:
-		Function::Function* m_function;
 	};
 };

@@ -17,12 +17,12 @@ namespace CE
 
 	class AbstractItemManager : public AbstractManager, public DB::IRepository
 	{
-	protected:
+	public:
 		// exceptions
 		class ItemNotFoundException : public std::exception {
 		public: ItemNotFoundException() : std::exception("item in manager not found") {}
 		};
-	public:
+
 		// factory
 		class AbstractFactory
 		{

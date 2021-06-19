@@ -1,6 +1,8 @@
 #pragma once
 //SDA
 #include <Program.h>
+#include <Project.h>
+#include <Manager/Managers.h>
 
 //gtest
 #define _DEBUG
@@ -9,50 +11,50 @@
 
 using namespace CE;
 
-class ProgramModuleFixtureBase {
-public:
-    ProgramModuleFixtureBase(bool isClear = false) {
-        if (isClear) {
-            clear();
-        }
-        getCurrentDir().createIfNotExists();
-        m_project = new Project(getCurrentDir());
+class ProgramFixture : public ::testing::Test
+{
+    bool m_isClear = false;
 
-        m_project->initDataBase("database.db");
-        m_project->initManagers();
+protected:
+    CE::Program* m_program;
+    CE::Project* m_project;
+
+    DB::ITransaction* m_tr;
+    CE::TypeManager* m_typeManager;
+    CE::SymbolManager* m_symManager;
+    CE::SymbolTableManager* m_symTabManger;
+    CE::FunctionManager* m_funcManager;
+public:
+    ProgramFixture()
+    {
+        m_program = new Program;
+    }
+
+    ~ProgramFixture() {
+        delete m_program;
+        delete m_project;
+    }
+
+    void createProject(const fs::path& dir) {
+        m_project = m_program->getProjectManager()->createProject(m_program->getExecutableDirectory() / dir);
+        initProject();
+    }
+
+    void loadProject(const fs::path& dir) {
+        m_project = m_program->getProjectManager()->loadProject(m_program->getExecutableDirectory() / dir);
+        initProject();
         m_project->load();
     }
 
-    ~ProgramModuleFixtureBase() {
-        if (m_project != nullptr)
-            delete m_project;
-    }
+    void initProject() {
+        m_project->initDataBase("database.db");
+        m_project->initManagers();
 
-
-    FS::Directory getCurrentDir() {
-        char filename[MAX_PATH];
-        GetModuleFileName(NULL, filename, MAX_PATH);
-        return FS::File(filename).getDirectory().next("test");
-    }
-
-    void clear() {
-        if (m_project != nullptr) {
-            delete m_project;
-            m_project = nullptr;
-        }
-        getCurrentDir().removeAll();
-    }
-
-    CE::Project* m_project;
-};
-
-class ProgramModuleFixture : public ProgramModuleFixtureBase, public ::testing::Test {
-public:
-    ProgramModuleFixture(bool isClear = false)
-        : ProgramModuleFixtureBase(isClear)
-    {}
-
-    ~ProgramModuleFixture() {
-
+        // for being short
+        m_tr = m_project->getTransaction();
+        m_typeManager = m_project->getTypeManager();
+        m_symManager = m_project->getSymbolManager();
+        m_symTabManger = m_project->getSymTableManager();
+        m_funcManager = m_project->getFunctionManager();
     }
 };

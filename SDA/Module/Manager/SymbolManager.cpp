@@ -34,8 +34,8 @@ Symbol::StructFieldSymbol* SymbolManager::Factory::createStructFieldSymbol(int a
 	return symbol;
 }
 
-Symbol::FunctionSymbol* SymbolManager::Factory::createFunctionSymbol(int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "") {
-	auto symbol = new Symbol::FunctionSymbol(m_symbolManager, offset, type, name, comment);
+Symbol::FunctionSymbol* SymbolManager::Factory::createFunctionSymbol(int64_t offset, DataType::IFunctionSignature* funcSignature, const std::string& name, const std::string& comment = "") {
+	auto symbol = new Symbol::FunctionSymbol(m_symbolManager, offset, funcSignature, name, comment);
 	bind(symbol);
 	return symbol;
 }

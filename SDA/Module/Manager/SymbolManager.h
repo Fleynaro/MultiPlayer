@@ -25,7 +25,7 @@ namespace CE
 
 			Symbol::StructFieldSymbol* createStructFieldSymbol(int absBitOffset, int bitSize, DataType::IStructure* structure, DataTypePtr type, const std::string& name, const std::string& comment = "");
 
-			Symbol::FunctionSymbol* createFunctionSymbol(int64_t offset, DataTypePtr type, const std::string& name, const std::string& comment = "");
+			Symbol::FunctionSymbol* createFunctionSymbol(int64_t offset, DataType::IFunctionSignature* funcSignature, const std::string& name, const std::string& comment = "");
 
 			Symbol::LocalInstrVarSymbol* createLocalInstrVarSymbol(DataTypePtr type, const std::string& name, const std::string& comment = "");
 

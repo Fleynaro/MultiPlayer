@@ -61,8 +61,9 @@ Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::Functio
 	return createFunction(functionSymbol, imageDec, stackSymbolTable);
 }
 
-Function::Function* CE::FunctionManager::Factory::createFunction(int64_t offset, DataTypePtr type, ImageDecorator* imageDec, const std::string& name, const std::string& comment) {
+Function::Function* CE::FunctionManager::Factory::createFunction(int64_t offset, DataType::IFunctionSignature* funcSignature, ImageDecorator* imageDec, const std::string& name, const std::string& comment) {
 	auto factory = m_functionManager->getProject()->getSymbolManager()->getFactory();
-	auto functionSymbol = factory.createFunctionSymbol(offset, type, name, comment);
+	auto functionSymbol = factory.createFunctionSymbol(offset, funcSignature, name, comment);
+	imageDec->getGlobalSymbolTable()->addSymbol(functionSymbol, offset);
 	return createFunction(functionSymbol, imageDec);
 }

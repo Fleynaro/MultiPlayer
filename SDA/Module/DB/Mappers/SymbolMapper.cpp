@@ -34,9 +34,13 @@ IDomainObject* SymbolMapper::doLoad(Database* db, SQLite::Statement& query) {
 	std::string json_extra_str = query.getColumn("json_extra");
 	auto json_extra = json::parse(json_extra_str);
 
-	auto dataType = getManager()->getProject()->getTypeManager()->findTypeById(query.getColumn("type_id"));
-	if (dataType == nullptr)
+	DataType::IType* dataType;
+	try {
+		dataType = getManager()->getProject()->getTypeManager()->findTypeById(query.getColumn("type_id"));
+	}
+	catch (const AbstractItemManager::ItemNotFoundException& ex) {
 		dataType = getManager()->getProject()->getTypeManager()->getFactory().getDefaultType();
+	}
 	auto dataTypeUnit = DataType::GetUnit(dataType, query.getColumn("pointer_lvl"));
 
 	AbstractSymbol* symbol = nullptr;
@@ -45,7 +49,8 @@ IDomainObject* SymbolMapper::doLoad(Database* db, SQLite::Statement& query) {
 	{
 	case FUNCTION:
 		auto offset = json_extra["offset"].get<int64_t>();
-		symbol = factory.createFunctionSymbol(offset, dataTypeUnit, name, comment);
+		auto funcSig = dynamic_cast<DataType::IFunctionSignature*>(dataType);
+		symbol = factory.createFunctionSymbol(offset, funcSig, name, comment);
 		break;
 	case GLOBAL_VAR:
 		auto offset = json_extra["offset"].get<int64_t>();

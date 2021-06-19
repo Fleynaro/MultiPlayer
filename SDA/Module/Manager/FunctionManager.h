@@ -29,7 +29,7 @@ namespace CE
 
 			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec);
 
-			Function::Function* createFunction(int64_t offset, DataTypePtr type, ImageDecorator* imageDec, const std::string& name, const std::string& comment = "");
+			Function::Function* createFunction(int64_t offset, DataType::IFunctionSignature* funcSignature, ImageDecorator* imageDec, const std::string& name, const std::string& comment = "");
 		};
 
 		using Iterator = AbstractIterator<Function::Function>;
@@ -39,7 +39,7 @@ namespace CE
 
 		~FunctionManager();
 
-		Factory getFactory(bool generateId);
+		Factory getFactory(bool generateId = true);
 
 		void loadFunctions();
 

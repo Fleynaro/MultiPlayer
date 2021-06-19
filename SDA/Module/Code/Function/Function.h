@@ -25,7 +25,9 @@ namespace CE
 		public:
 			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable)
 				: m_manager(manager), m_functionSymbol(functionSymbol), m_imageDec(imageDec), m_stackSymbolTable(stackSymbolTable)
-			{}
+			{
+				functionSymbol->setFunction(this);
+			}
 
 			Symbol::FunctionSymbol* getFunctionSymbol();
 
