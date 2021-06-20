@@ -27,8 +27,6 @@ namespace CE::Ghidra
 	private:
 		CE::FunctionManager* m_functionManager;
 		DataTypeMapper* m_dataTypeMapper;
-		
-		AddressRangeList getRangesFromDesc(const std::vector<function::SFunctionRange>& rangeDescs);
 
 		void changeFunctionByDesc(Function* function, const function::SFunction& funcDesc);
 

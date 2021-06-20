@@ -272,7 +272,7 @@
     <ClCompile Include="Module\Assembler\Assembler.cpp" />
     <ClCompile Include="Module\Address\Address.cpp" />
     <ClCompile Include="Module\Decompiler\Graph\Analyzer\ImagePCodeGraphAnalyzer.cpp" />
-    <ClCompile Include="Module\Decompiler\PCode\Decompiler\Decompiler.cpp" />
+    <ClCompile Include="Module\Decompiler\PCode\Decompiler\PrimaryDecompiler.cpp" />
     <ClCompile Include="Module\Decompiler\DecStorage.cpp" />
     <ClCompile Include="Module\Decompiler\PCode\Decompiler\DecExecContext.cpp" />
     <ClCompile Include="Module\Decompiler\PCode\Decompiler\PCodeInterpreter.cpp" />
@@ -379,7 +379,7 @@
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewOptimization.h" />
     <ClInclude Include="Module\Decompiler\LinearView\DecLinearViewSimpleOutput.h" />
     <ClInclude Include="Module\Decompiler\Optimization\Graph\DecGraphParAssignmentCreator.h" />
-    <ClInclude Include="Module\Decompiler\PCode\Decompiler\Decompiler.h" />
+    <ClInclude Include="Module\Decompiler\PCode\Decompiler\PrimaryDecompiler.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprCompositeCondOptimization.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConcatAndSubpieceBuilding.h" />
     <ClInclude Include="Module\Decompiler\Optimization\ExprTree\ExprConstCalculating.h" />

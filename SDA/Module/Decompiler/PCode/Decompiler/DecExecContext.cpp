@@ -1,5 +1,5 @@
 #include "DecExecContext.h"
-#include "Decompiler.h"
+#include "PrimaryDecompiler.h"
 
 using namespace CE::Decompiler;
 

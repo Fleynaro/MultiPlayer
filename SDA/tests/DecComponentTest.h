@@ -12,6 +12,7 @@ public:
 	PCode::Instruction::OriginalInstruction* m_origInstr;
 
 	ProgramDecCompFixture() {
+		createProject("test");
 		m_origInstr = m_instrPool.createOrigInstruction(0, 1);
 	}
 

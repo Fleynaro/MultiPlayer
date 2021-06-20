@@ -1,5 +1,5 @@
 #include "PCodeInterpreter.h"
-#include "Decompiler.h"
+#include "PrimaryDecompiler.h"
 
 using namespace CE::Decompiler;
 using namespace CE::Decompiler::PCode;

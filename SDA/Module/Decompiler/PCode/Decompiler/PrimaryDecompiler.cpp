@@ -1,4 +1,4 @@
-#include "Decompiler.h"
+#include "PrimaryDecompiler.h"
 
 using namespace CE;
 using namespace CE::Decompiler;

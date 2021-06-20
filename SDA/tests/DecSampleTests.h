@@ -14,8 +14,8 @@ public:
 		int m_testId;
 		IImage* m_image;
 		int m_imageOffset = 0;
-		Symbolization::SymbolContext m_symbolCtx;
-		std::map<int64_t, FunctionSignature*> m_functions;
+		SymbolContext m_symbolCtx;
+		std::map<int64_t, IFunctionSignature*> m_functions;
 		bool m_enabled = true;
 		bool m_symbolization = true;
 		bool m_showAllCode = false;
@@ -41,6 +41,7 @@ public:
 
 	ProgramDecSampleTestFixture()
 	{
+		createProject("test");
 		initSampleTestHashes();
 		initSampleTest();
 	}
@@ -60,7 +61,9 @@ public:
 		test->m_testId = testId;
 		test->m_image = image;
 		test->m_imageOffset = offset;
-		test->m_symbolCtx = Misc::CreateUserSymbolDef(m_project);
+		test->m_symbolCtx.m_globalSymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::GLOBAL_SPACE, 0x10000000);
+		test->m_symbolCtx.m_funcBodySymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::GLOBAL_SPACE, 0x10000000);
+		test->m_symbolCtx.m_stackSymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::STACK_SPACE, 0x10000000);
 		test->m_symbolCtx.m_signature = m_defSignature;
 		m_sampleTests.push_back(test);
 		return test;

@@ -82,6 +82,7 @@ namespace CE::Decompiler
 			}
 			m_decompiledGraph->sortBlocksByLevel();
 
+			// end
 			onFinal();
 		}
 
@@ -89,6 +90,7 @@ namespace CE::Decompiler
 			return m_registerFactory;
 		}
 
+		// called when a function call appears during decompiling
 		FunctionCallInfo requestFunctionCallInfo(ExecContext* ctx, PCode::Instruction* instr) {
 			int funcOffset = 0;
 			auto& constValues = m_decompiledGraph->getFuncGraph()->getConstValues();
@@ -99,10 +101,10 @@ namespace CE::Decompiler
 		}
 
 	protected:
+		// called when a function call appears during decompiling
 		virtual FunctionCallInfo requestFunctionCallInfo(ExecContext* ctx, PCode::Instruction* instr, int dstLocOffset) = 0;
 
-		virtual void onFinal() {
-		}
+		virtual void onFinal() {}
 
 	private:
 		void interpreteGraph(PCodeBlock* pcodeBlock, int versionOfDecompiling = 1) {
@@ -126,7 +128,8 @@ namespace CE::Decompiler
 				auto hasAlreadyDecompiled = blockInfo.m_isDecompiled;
 				blockInfo.m_isDecompiled = true;
 				blockInfo.m_versionOfDecompiling = versionOfDecompiling;
-
+				
+				// go to the next blocks to deompile them
 				for (auto nextPCodeBlock : pcodeBlock->getNextBlocks()) {
 					auto nextDecBlockInfo = m_decompiledBlocks[nextPCodeBlock];
 

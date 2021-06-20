@@ -40,6 +40,8 @@ namespace CE
 
 			DataType::FunctionSignature* createSignature(DataType::FunctionSignature::CallingConvetion callingConvetion, const std::string& name, const std::string& desc = "");
 
+			DataType::FunctionSignature* createSignature(const std::string& name, const std::string& desc = "");
+
 			DataType::IType* getDefaultType();
 
 			DataType::IType* getDefaultReturnType();

@@ -207,14 +207,14 @@ TEST_F(ProgramDecCompFixture, Test_Symbolization)
 	auto imageGraph = new ImagePCodeGraph;
 	WarningContainer warningContainer;
 	PCode::DecoderX86 decoder(&m_registerFactoryX86, &m_instrPool, &warningContainer);
+	
 	ImageAnalyzer imageAnalyzer(new SimpleBufferImage(nullptr, 0), imageGraph, &decoder, &m_registerFactoryX86);
-
 	imageAnalyzer.start(0, true);
 
-	auto graph = *imageGraph->getFunctionGraphList().begin();
+	auto graph = &*imageGraph->getFunctionGraphList().begin();
 
-	auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return m_defSignature->getCallInfo(); };
-	auto decompiler = new CE::Decompiler::Decompiler(graph, funcCallInfoCallback, m_defSignature->getCallInfo().getReturnInfo(), &m_registerFactoryX86);
+	auto funcCallInfoCallback = [&](PCode::Instruction* instr, int offset) { return m_defSignature->getCallInfo(); };
+	auto decompiler = new CE::Decompiler::Decompiler(graph, funcCallInfoCallback, func->getSignature()->getCallInfo().getReturnInfo(), &m_registerFactoryX86);
 	decompiler->start();
 
 	auto decCodeGraph = decompiler->getDecGraph();
@@ -226,8 +226,8 @@ TEST_F(ProgramDecCompFixture, Test_Symbolization)
 	printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 	showDecGraph(sdaCodeGraph->getDecGraph());
 
-	Symbolization::SdaDataTypesCalculater sdaDataTypesCalculating(sdaCodeGraph, symbolCtx.m_signature, m_project);
-	sdaDataTypesCalculating.start();
+	Symbolization::SdaDataTypesCalculater sdaDataTypesCalculater(sdaCodeGraph, symbolCtx.m_signature, m_project);
+	sdaDataTypesCalculater.start();
 	printf(Misc::ShowAllSymbols(sdaCodeGraph).c_str());
 	showDecGraph(sdaCodeGraph->getDecGraph());
 

@@ -195,6 +195,10 @@ DataType::FunctionSignature* CE::TypeManager::Factory::createSignature(DataType:
 	return type;
 }
 
+DataType::FunctionSignature* CE::TypeManager::Factory::createSignature(const std::string& name, const std::string& desc) {
+	return createSignature(DataType::FunctionSignature::FASTCALL, name, desc);
+}
+
 DataType::IType* CE::TypeManager::Factory::getDefaultType() {
 	return m_typeManager->findTypeById(DataType::SystemType::Byte);
 }
