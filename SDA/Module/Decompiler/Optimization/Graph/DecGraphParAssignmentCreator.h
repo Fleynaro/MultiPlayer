@@ -5,8 +5,6 @@
 
 namespace CE::Decompiler::Optimization
 {
-	using namespace PrimaryTree;
-	
 	// Iterate over all exprs in dec. graph and find localVar to create par. assignments
 	class GraphParAssignmentCreator : public GraphModification
 	{
@@ -37,7 +35,7 @@ namespace CE::Decompiler::Optimization
 		}
 	private:
 		
-		void findAllLocalVarsAndGatherParentOpNodes(Block::BlockTopNode* topNode) {
+		void findAllLocalVarsAndGatherParentOpNodes(DecBlock::BlockTopNode* topNode) {
 			std::list<ExprTree::SymbolLeaf*> symbolLeafs;
 			GatherSymbolLeafsFromNode(topNode->getNode(), symbolLeafs);
 			for (auto symbolLeaf : symbolLeafs) {

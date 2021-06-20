@@ -14,7 +14,7 @@ Id RetValue::getId() {
 bool RetValue::checkFilterAfter(CE::Hook::DynHook* hook) {
 	using namespace CE::DataType;
 
-	auto function = (CE::Function::Function*)hook->getUserPtr();
+	auto function = (CE::Function*)hook->getUserPtr();
 	auto type = function->getSignature()->getReturnType();
 	return cmp(
 		GetReturnValue(type, hook),

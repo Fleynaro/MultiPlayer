@@ -51,7 +51,7 @@ void FunctionMapper::doInsert(TransactionContext* ctx, IDomainObject* obj) {
 }
 
 void FunctionMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
-	auto func = dynamic_cast<CE::Function::Function*>(obj);
+	auto func = dynamic_cast<CE::Function*>(obj);
 
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_functions (func_id, func_symbol_id, stack_sym_table_id, image_id, save_id, ghidra_sync_id)\
 				VALUES(?1, ?2, ?3, ?4, ?5, 0)");
@@ -69,7 +69,7 @@ void FunctionMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
 	query.exec();
 }
 
-void FunctionMapper::bind(SQLite::Statement& query, CE::Function::Function* func) {
+void FunctionMapper::bind(SQLite::Statement& query, CE::Function* func) {
 	query.bind(2, func->getFunctionSymbol()->getId());
 	query.bind(3, func->getStackSymbolTable()->getId());
 	query.bind(4, func->getImage()->getId());

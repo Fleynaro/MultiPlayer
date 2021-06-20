@@ -16,16 +16,16 @@ namespace CE::DataType
 	class Class : public Structure
 	{
 	public:
-		using MethodListType = std::list<Function::Function*>;
+		using MethodListType = std::list<Function*>;
 
-		class MethodIterator : public IIterator<Function::Function*>
+		class MethodIterator : public IIterator<Function*>
 		{
 		public:
 			MethodIterator(Class* Class);
 
 			bool hasNext() override;
 
-			Function::Function* next() override;
+			Function* next() override;
 		private:
 			std::list<Class*> m_classes;
 			MethodListType::iterator m_iterator;
@@ -43,7 +43,7 @@ namespace CE::DataType
 
 		MethodListType& getMethods();
 
-		void addMethod(Function::Function* method);
+		void addMethod(Function* method);
 
 		std::list<Class*> getClassesInHierarchy();
 

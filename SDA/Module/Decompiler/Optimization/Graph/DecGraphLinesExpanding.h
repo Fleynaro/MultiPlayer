@@ -3,8 +3,6 @@
 
 namespace CE::Decompiler::Optimization
 {
-	using namespace PrimaryTree;
-
 	/*
 		Before (parallel assignments):
 			localVar1 = 1
@@ -29,7 +27,7 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 	private:
-		void processBlock(Block* block) {
+		void processBlock(DecBlock* block) {
 			auto newSeqLines = block->getSymbolParallelAssignmentLines();
 			block->getSymbolParallelAssignmentLines().clear();
 

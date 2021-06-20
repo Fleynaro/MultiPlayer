@@ -22,8 +22,8 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
     auto testAddrSpace = m_project->getAddrSpaceManager()->createAddressSpace("testAddrSpace");
 
     // create the image decorator
-    auto testImageDec = m_project->getImageManager()->createImage(testAddrSpace, ImageDecorator::IMAGE_PE, "testImageSpace");
-    fs::copy_file(m_program->getExecutableDirectory() / "test_images/img1.exe", m_program->getExecutableDirectory() / "testAddrSpace/testImageSpace.exe");
+    auto testImageDec = m_project->getImageManager()->createImage(testAddrSpace, ImageDecorator::IMAGE_PE, "testImage");
+    fs::copy_file(m_program->getExecutableDirectory() / "test_images/img1.exe", m_program->getExecutableDirectory() / "testAddrSpace/testImage.exe");
     testImageDec->load();
 
     // check raw-image
@@ -79,7 +79,7 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
     }
 
     // create the test function 1
-    Function::Function* testFunc1;
+    Function* testFunc1;
     {
         // create the function graph
         auto testFunc1_graph = testImageDec->getPCodeGraph()->createFunctionGraph();
@@ -96,17 +96,17 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
         // create the function signature
         auto testFunc1_sig = m_typeManager->getFactory().createSignature(DataType::IFunctionSignature::FASTCALL, "testFunc1_sig");
         testFunc1_sig->addParameter("value", DataType::GetUnit(m_typeManager->findTypeById(DataType::SystemType::Int32)));
-        testFunc1_sig->addParameter("fValue", DataType::GetUnit(m_typeManager->findTypeByName("float")));
-        testFunc1_sig->addParameter("array", DataType::GetUnit(m_typeManager->findTypeByName("int32_t"), "*[3][2]"));
-        testFunc1_sig->addParameter("pStr", DataType::GetUnit(m_typeManager->findTypeByName("char"), "*"));
-        testFunc1_sig->setReturnType(DataType::GetUnit(m_typeManager->findTypeByName("int64_t")));
+        testFunc1_sig->addParameter("fValue", findType("float"));
+        testFunc1_sig->addParameter("array", findType("int32_t"));
+        testFunc1_sig->addParameter("pStr", findType("char", "*"));
+        testFunc1_sig->setReturnType(findType("int64_t"));
 
         // create the function itself
         testFunc1 = m_funcManager->getFactory().createFunction(0x1000, testFunc1_sig, testImageDec, "testFunc1");
     }
 
     // create the test function 2
-    Function::Function* testFunc2;
+    Function* testFunc2;
     {
         // create the function graph
         auto testFunc2_graph = testImageDec->getPCodeGraph()->createFunctionGraph();
@@ -118,15 +118,15 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
 
         // create the function signature
         auto testFunc2_sig = m_typeManager->getFactory().createSignature(DataType::IFunctionSignature::FASTCALL, "testFunc2_sig");
-        testFunc2_sig->addParameter("pEntity", DataType::GetUnit(m_typeManager->findTypeByName("Entity"), "*"));
-        testFunc2_sig->addParameter("screen", DataType::GetUnit(m_typeManager->findTypeByName("Screen")));
+        testFunc2_sig->addParameter("pEntity", findType("Entity", "*"));
+        testFunc2_sig->addParameter("screen", findType("Screen"));
 
         // create the function itself
         testFunc2 = m_funcManager->getFactory().createFunction(0x2000, testFunc2_sig, testImageDec, "testFunc2");
 
         // create a local var
         {
-            auto stackVar_0x10 = m_symManager->getFactory().createLocalStackVarSymbol(0x10, DataType::GetUnit(m_typeManager->findTypeByName("int32_t")), "stackVar_0x10");
+            auto stackVar_0x10 = m_symManager->getFactory().createLocalStackVarSymbol(0x10, findType("int32_t"), "stackVar_0x10");
             testFunc2->getStackSymbolTable()->addSymbol(stackVar_0x10, 0x10);
         }
     }
@@ -197,7 +197,7 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
     {
         ASSERT_EQ(m_funcManager->getItemsCount(), 2);
 
-        auto testFunc1_symbol = dynamic_cast<Symbol::FunctionSymbol*>(testImageDec->getGlobalSymbolTable()->getSymbolAt(0x1000).second);
+        auto testFunc1_symbol = dynamic_cast<CE::Symbol::FunctionSymbol*>(testImageDec->getGlobalSymbolTable()->getSymbolAt(0x1000).second);
         ASSERT_NE(testFunc1_symbol, nullptr);
         auto testFunc1 = testFunc1_symbol->getFunction();
 
@@ -215,7 +215,7 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
         ASSERT_EQ(testFunc1->getFuncGraph()->getNonVirtFuncCalls().size(), 1);
 
         // func. stack
-        auto testFunc1_localVar = dynamic_cast<Symbol::LocalStackVarSymbol*>(testFunc1->getStackSymbolTable()->getSymbolAt(0x10).second);
+        auto testFunc1_localVar = dynamic_cast<CE::Symbol::LocalStackVarSymbol*>(testFunc1->getStackSymbolTable()->getSymbolAt(0x10).second);
         ASSERT_NE(testFunc1_localVar, nullptr);
     }
 }

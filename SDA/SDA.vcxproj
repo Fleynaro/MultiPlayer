@@ -333,6 +333,7 @@
     <ClCompile Include="Module\Trigger\FunctionTriggerHook.cpp" />
     <ClCompile Include="Module\Trigger\FunctionTriggerTableLog.cpp" />
     <ClCompile Include="tests\CommonTest.cpp" />
+    <ClCompile Include="tests\DecComponentTest.cpp" />
     <ClCompile Include="tests\DecSampleTests.cpp" />
     <ClCompile Include="Utils\Helper.cpp" />
     <ClCompile Include="Utils\BitStream.cpp" />
@@ -410,7 +411,6 @@
     <ClInclude Include="Module\Decompiler\PCode\DecPCodeConstValueCalc.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecPCode.h" />
     <ClInclude Include="Module\Decompiler\DecStorage.h" />
-    <ClInclude Include="Module\Decompiler\DecTest.h" />
     <ClInclude Include="Module\Decompiler\DecTopNode.h" />
     <ClInclude Include="Module\Decompiler\PCode\Decoders\DecPCodeDecoderX86.h" />
     <ClInclude Include="Module\Decompiler\ExprTree\ExprTree.h" />
@@ -427,7 +427,6 @@
     <ClInclude Include="Module\Decompiler\Optimization\ExprOptimization.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecPCodeVirtualMachine.h" />
     <ClInclude Include="Module\Decompiler\Graph\DecCodeGraphBlock.h" />
-    <ClInclude Include="Module\Decompiler\SDA\AutoSdaSymbol.h" />
     <ClInclude Include="Module\Decompiler\PCode\DecRegisterFactory.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSda.h" />
     <ClInclude Include="Module\Decompiler\SDA\ExprTree\ExprTreeSdaFunction.h" />
@@ -443,7 +442,6 @@
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\SdaGoarBuilder.h" />
     <ClInclude Include="Module\Decompiler\SDA\Symbolization\DecGraphSymbolization.h" />
     <ClInclude Include="Module\Decompiler\DecSymbol.h" />
-    <ClInclude Include="Module\Decompiler\SDA\DecSdaMisc.h" />
     <ClInclude Include="Module\Disassembler\DisasmDecoder.h" />
     <ClInclude Include="Module\Disassembler\DisasmInstructions.h" />
     <ClInclude Include="Module\Disassembler\DisasmOperand.h" />
@@ -522,6 +520,7 @@
     <ClInclude Include="Module\Trigger\FunctionTriggerHook.h" />
     <ClInclude Include="Module\Trigger\FunctionTriggerTableLog.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="tests\DecComponentTest.h" />
     <ClInclude Include="Utils\SpeedTest.h" />
     <ClInclude Include="tests\AbstractTest.h" />
     <ClInclude Include="tests\CommonTest.h" />

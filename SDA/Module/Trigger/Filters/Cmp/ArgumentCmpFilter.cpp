@@ -14,7 +14,7 @@ Id Argument::getId() {
 bool Argument::checkFilterBefore(CE::Hook::DynHook* hook) {
 	using namespace CE::DataType;
 
-	auto function = (CE::Function::Function*)hook->getUserPtr();
+	auto function = (CE::Function*)hook->getUserPtr();
 	auto& argList = function->getSignature()->getParameters();
 	if (m_argId > argList.size())
 		return false;

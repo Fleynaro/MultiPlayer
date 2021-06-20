@@ -90,8 +90,6 @@ namespace CE
 
 		StatManager* getStatManager();
 
-		Symbol::SymbolTable* getGlobalMemoryArea();
-
 		DB::ITransaction* getTransaction();
 
 		const fs::path& getDirectory();

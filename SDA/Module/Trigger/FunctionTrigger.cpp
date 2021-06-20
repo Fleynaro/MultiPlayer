@@ -74,7 +74,7 @@ bool Trigger::isNotExecute() {
 	return m_notExecute;
 }
 
-void Trigger::addFunction(CE::Function::Function* function) {
+void Trigger::addFunction(CE::Function* function) {
 	m_functions.push_back(function);
 }
 
@@ -121,7 +121,7 @@ void Trigger::setActiveState(bool state) {
 
 bool CE::Trigger::Function::callback_before(CE::Hook::DynHook* hook)
 {
-	auto func = (CE::Function::Function*)hook->getUserPtr();
+	auto func = (CE::Function*)hook->getUserPtr();
 	bool exectute = true;
 	for (auto trigger : func->getHook()->getActiveTriggers()) {
 		exectute &= trigger->actionBefore(hook);
@@ -161,7 +161,7 @@ bool CE::Trigger::Function::callback_before(CE::Hook::DynHook* hook)
 
 void CE::Trigger::Function::callback_after(CE::Hook::DynHook* hook)
 {
-	auto func = (CE::Function::Function*)hook->getUserPtr();
+	auto func = (CE::Function*)hook->getUserPtr();
 	for (auto trigger : func->getHook()->getActiveTriggers()) {
 		trigger->actionAfter(hook);
 	}

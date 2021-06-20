@@ -12,32 +12,14 @@ SymbolTableManager::SymbolTableManager(Project* module)
 
 void SymbolTableManager::loadSymTables() {
 	m_symbolTableMapper->loadAll();
-
-	//find the first global memory area and set it
-	Iterator it(this);
-	while (it.hasNext()) {
-		auto memoryArea = it.next();
-		if (memoryArea->getType() == SymbolTable::GLOBAL_SPACE) {
-			m_globalSymbolTable = memoryArea;
-			break;
-		}
-	}
 }
 
 SymbolTableManager::Factory CE::SymbolTableManager::getFactory(bool generateId) {
 	return Factory(this, m_symbolTableMapper, generateId);
 }
 
-void SymbolTableManager::createMainGlobalSymTable(int size) {
-	m_globalSymbolTable = getFactory().createSymbolTable(SymbolTable::GLOBAL_SPACE, size);
-}
-
 SymbolTable* SymbolTableManager::findSymbolTableById(DB::Id id) {
 	return dynamic_cast<SymbolTable*>(find(id));
-}
-
-Symbol::SymbolTable* SymbolTableManager::getMainGlobalSymTable() {
-	return m_globalSymbolTable;
 }
 
 Symbol::SymbolTable* CE::SymbolTableManager::Factory::createSymbolTable(Symbol::SymbolTable::SymbolTableType type, int size) {

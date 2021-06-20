@@ -8,13 +8,13 @@ namespace CE::Trigger::Function
 	class Hook
 	{
 	public:
-		Hook(CE::Function::Function* function);
+		Hook(CE::Function* function);
 
 		std::list<Trigger*>& getActiveTriggers();
 
 		CE::Hook::DynHook* getDynHook();
 
-		CE::Function::Function* getFunctionDef();
+		CE::Function* getFunctionDef();
 
 		void addActiveTrigger(Trigger* trigger);
 

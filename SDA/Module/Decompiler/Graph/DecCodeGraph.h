@@ -29,11 +29,11 @@ namespace CE::Decompiler
 			return m_funcGraph;
 		}
 
-		PrimaryTree::Block* getStartBlock() {
+		DecBlock* getStartBlock() {
 			return *getDecompiledBlocks().begin();
 		}
 
-		std::list<PrimaryTree::Block*>& getDecompiledBlocks() {
+		std::list<DecBlock*>& getDecompiledBlocks() {
 			return m_decompiledBlocks;
 		}
 
@@ -41,7 +41,7 @@ namespace CE::Decompiler
 			return m_symbols;
 		}
 
-		void removeDecompiledBlock(PrimaryTree::Block* decBlock) {
+		void removeDecompiledBlock(DecBlock* decBlock) {
 			m_decompiledBlocks.remove(decBlock);
 			m_removedDecompiledBlocks.push_back(decBlock);
 			decBlock->disconnect();
@@ -62,7 +62,7 @@ namespace CE::Decompiler
 		}
 
 		void sortBlocksByLevel() {
-			m_decompiledBlocks.sort([](PrimaryTree::Block* a, PrimaryTree::Block* b) {
+			m_decompiledBlocks.sort([](DecBlock* a, DecBlock* b) {
 				return a->m_level < b->m_level;
 				});
 		}
@@ -91,12 +91,12 @@ namespace CE::Decompiler
 			for (const auto decBlock : getDecompiledBlocks()) {
 				decBlock->m_level = 0;
 			}
-			std::list<PrimaryTree::Block*> path;
+			std::list<DecBlock*> path;
 			DecompiledCodeGraph::CalculateLevelsForDecBlocks(getStartBlock(), path);
 		}
 
 		// calculate count of lines(height) for each block beginining from lower blocks (need as some score for linearization)
-		static int CalculateHeightForDecBlocks(PrimaryTree::Block* block) {
+		static int CalculateHeightForDecBlocks(DecBlock* block) {
 			int height = 0;
 			for (auto nextBlock : block->getNextBlocks()) {
 				if (nextBlock->m_level > block->m_level) { // to avoid loops
@@ -109,12 +109,12 @@ namespace CE::Decompiler
 		}
 	private:
 		FunctionPCodeGraph* m_funcGraph;
-		std::list<PrimaryTree::Block*> m_decompiledBlocks;
-		std::list<PrimaryTree::Block*> m_removedDecompiledBlocks;
+		std::list<DecBlock*> m_decompiledBlocks;
+		std::list<DecBlock*> m_removedDecompiledBlocks;
 		std::list<Symbol::Symbol*> m_symbols;
 
 		// pass decompiled graph and calculate max distance from the root to each node (dec block). Similarly to asm graph!
-		static void CalculateLevelsForDecBlocks(PrimaryTree::Block* block, std::list<PrimaryTree::Block*>& path) {
+		static void CalculateLevelsForDecBlocks(DecBlock* block, std::list<DecBlock*>& path) {
 			if (block == nullptr)
 				return;
 

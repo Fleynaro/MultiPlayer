@@ -7,28 +7,28 @@ namespace CE::Decompiler::LinearView
 	{
 	public:
 		struct Loop {
-			PrimaryTree::Block* m_startBlock;
-			PrimaryTree::Block* m_endBlock;
-			std::set<PrimaryTree::Block*> m_blocks;
+			DecBlock* m_startBlock;
+			DecBlock* m_endBlock;
+			std::set<DecBlock*> m_blocks;
 
-			Loop(PrimaryTree::Block* startBlock, PrimaryTree::Block* endBlock)
+			Loop(DecBlock* startBlock, DecBlock* endBlock)
 				: m_startBlock(startBlock), m_endBlock(endBlock)
 			{}
 		};
 
 		struct Cycle {
-			PrimaryTree::Block* m_startBlock;
-			PrimaryTree::Block* m_endBlock;
-			std::set<PrimaryTree::Block*> m_blocks;
+			DecBlock* m_startBlock;
+			DecBlock* m_endBlock;
+			std::set<DecBlock*> m_blocks;
 
-			Cycle(PrimaryTree::Block* startBlock = nullptr, PrimaryTree::Block* endBlock = nullptr)
+			Cycle(DecBlock* startBlock = nullptr, DecBlock* endBlock = nullptr)
 				: m_startBlock(startBlock), m_endBlock(endBlock)
 			{}
 		};
 
 		struct VisitedBlockInfo {
 			int m_enterCount = 0;
-			std::list<PrimaryTree::Block*> m_passedBlocks;
+			std::list<DecBlock*> m_passedBlocks;
 		};
 
 		Converter(DecompiledCodeGraph* decCodeGraph)
@@ -37,13 +37,13 @@ namespace CE::Decompiler::LinearView
 
 		void start() {
 			auto startBlock = m_decCodeGraph->getStartBlock();
-			std::map<PrimaryTree::Block*, VisitedBlockInfo> visitedBlocks;
-			std::list<PrimaryTree::Block*> passedBlocks;
+			std::map<DecBlock*, VisitedBlockInfo> visitedBlocks;
+			std::list<DecBlock*> passedBlocks;
 			findAllLoops(startBlock, visitedBlocks, passedBlocks);
 
 			m_blockList = new BlockList;
-			std::set<PrimaryTree::Block*> usedBlocks;
-			std::set<PrimaryTree::Block*> createdCycleBlocks;
+			std::set<DecBlock*> usedBlocks;
+			std::set<DecBlock*> createdCycleBlocks;
 			convert(m_blockList, startBlock, usedBlocks, createdCycleBlocks);
 
 			for (auto it : m_goto) {
@@ -66,13 +66,13 @@ namespace CE::Decompiler::LinearView
 		}
 	private:
 		DecompiledCodeGraph* m_decCodeGraph;
-		std::map<PrimaryTree::Block*, Loop> m_loops;
-		std::map<PrimaryTree::Block*, Cycle> m_cycles;
-		std::list<std::pair<BlockList*, PrimaryTree::Block*>> m_goto;
+		std::map<DecBlock*, Loop> m_loops;
+		std::map<DecBlock*, Cycle> m_cycles;
+		std::list<std::pair<BlockList*, DecBlock*>> m_goto;
 		BlockList* m_blockList;
 
-		void convert(BlockList* blockList, PrimaryTree::Block* decBlock, std::set<PrimaryTree::Block*>& usedBlocks, std::set<PrimaryTree::Block*>& createdCycleBlocks) {
-			std::list<std::pair<BlockList*, PrimaryTree::Block*>> nextBlocksToFill;
+		void convert(BlockList* blockList, DecBlock* decBlock, std::set<DecBlock*>& usedBlocks, std::set<DecBlock*>& createdCycleBlocks) {
+			std::list<std::pair<BlockList*, DecBlock*>> nextBlocksToFill;
 			
 			auto curDecBlock = decBlock;
 			while (curDecBlock != nullptr) {
@@ -80,7 +80,7 @@ namespace CE::Decompiler::LinearView
 					m_goto.push_back(std::make_pair(blockList, curDecBlock));
 					break;
 				}
-				PrimaryTree::Block* nextBlock = nullptr;
+				DecBlock* nextBlock = nullptr;
 
 				if (curDecBlock->isCycle() && createdCycleBlocks.count(curDecBlock) == 0) {
 					createdCycleBlocks.insert(curDecBlock);
@@ -184,7 +184,7 @@ namespace CE::Decompiler::LinearView
 			}
 		}
 
-		void findAllLoops(PrimaryTree::Block* block, std::map<PrimaryTree::Block*, VisitedBlockInfo>& visitedBlocks, std::list<PrimaryTree::Block*>& passedBlocks) {	
+		void findAllLoops(DecBlock* block, std::map<DecBlock*, VisitedBlockInfo>& visitedBlocks, std::list<DecBlock*>& passedBlocks) {	
 			bool goNext = true;
 			auto refHighBlocksCount = block->getRefHighBlocksCount();
 			if (refHighBlocksCount >= 2) {
@@ -202,7 +202,7 @@ namespace CE::Decompiler::LinearView
 				blocks.insert(blocks.end(), passedBlocks.begin(), passedBlocks.end());
 
 				if (visitedBlock.m_enterCount >= 2) {
-					blocks.sort([](const PrimaryTree::Block* block1, const PrimaryTree::Block* block2) {
+					blocks.sort([](const DecBlock* block1, const DecBlock* block2) {
 						return block1->m_level < block2->m_level && block1 != block2; //todo: here there are some issues
 						});
 
@@ -236,7 +236,7 @@ namespace CE::Decompiler::LinearView
 			if (goNext) {
 				passedBlocks.push_back(block);
 
-				PrimaryTree::Block* startCycleBlock = nullptr;
+				DecBlock* startCycleBlock = nullptr;
 				for (auto nextBlock : block->getNextBlocks()) {
 					if (nextBlock->m_level <= block->m_level) {
 						startCycleBlock = nextBlock;

@@ -7,12 +7,10 @@ namespace CE::Decompiler
 	class PCodeBlock;
 };
 
-namespace CE::Decompiler::PrimaryTree
+namespace CE::Decompiler
 {
-	class Block;
-
 	// Decompiled block which contains the abstract tree
-	class Block
+	class DecBlock
 	{
 	public:
 		// here are top nodes which are roots of expression trees
@@ -21,9 +19,9 @@ namespace CE::Decompiler::PrimaryTree
 		class BlockTopNode : public TopNode
 		{
 		public:
-			Block* m_block;
+			DecBlock* m_block;
 
-			BlockTopNode(Block* block, ExprTree::INode* node = nullptr)
+			BlockTopNode(DecBlock* block, ExprTree::INode* node = nullptr)
 				: m_block(block), TopNode(node)
 			{}
 		};
@@ -32,7 +30,7 @@ namespace CE::Decompiler::PrimaryTree
 		class JumpTopNode : public BlockTopNode
 		{
 		public:
-			JumpTopNode(Block* block)
+			JumpTopNode(DecBlock* block)
 				: BlockTopNode(block)
 			{}
 
@@ -49,7 +47,7 @@ namespace CE::Decompiler::PrimaryTree
 		class ReturnTopNode : public BlockTopNode
 		{
 		public:
-			ReturnTopNode(Block* block)
+			ReturnTopNode(DecBlock* block)
 				: BlockTopNode(block)
 			{}
 		};
@@ -58,11 +56,11 @@ namespace CE::Decompiler::PrimaryTree
 		class SeqAssignmentLine : public BlockTopNode // consequent
 		{
 		public:
-			SeqAssignmentLine(Block* block, ExprTree::AssignmentNode* assignmentNode)
+			SeqAssignmentLine(DecBlock* block, ExprTree::AssignmentNode* assignmentNode)
 				: BlockTopNode(block, assignmentNode)
 			{}
 
-			SeqAssignmentLine(Block* block, ExprTree::INode* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
+			SeqAssignmentLine(DecBlock* block, ExprTree::INode* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
 				: SeqAssignmentLine(block, new ExprTree::AssignmentNode(dstNode, srcNode, instr))
 			{}
 
@@ -84,7 +82,7 @@ namespace CE::Decompiler::PrimaryTree
 				return getAssignmentNode()->getSrcNode();
 			}
 
-			SeqAssignmentLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
+			SeqAssignmentLine* clone(DecBlock* block, ExprTree::NodeCloneContext* ctx) {
 				return new SeqAssignmentLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
 			}
 		};
@@ -93,11 +91,11 @@ namespace CE::Decompiler::PrimaryTree
 		class SymbolParallelAssignmentLine : public SeqAssignmentLine // parallel
 		{
 		public:
-			SymbolParallelAssignmentLine(Block* block, ExprTree::AssignmentNode* assignmentNode)
+			SymbolParallelAssignmentLine(DecBlock* block, ExprTree::AssignmentNode* assignmentNode)
 				: SeqAssignmentLine(block, assignmentNode)
 			{}
 
-			SymbolParallelAssignmentLine(Block* block, ExprTree::SymbolLeaf* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
+			SymbolParallelAssignmentLine(DecBlock* block, ExprTree::SymbolLeaf* dstNode, ExprTree::INode* srcNode, PCode::Instruction* instr)
 				: SeqAssignmentLine(block, dstNode, srcNode, instr)
 			{}
 
@@ -109,7 +107,7 @@ namespace CE::Decompiler::PrimaryTree
 				return dynamic_cast<ExprTree::SymbolLeaf*>(getDstNode());
 			}
 
-			SymbolParallelAssignmentLine* clone(Block* block, ExprTree::NodeCloneContext* ctx) {
+			SymbolParallelAssignmentLine* clone(DecBlock* block, ExprTree::NodeCloneContext* ctx) {
 				return new SymbolParallelAssignmentLine(block, dynamic_cast<ExprTree::AssignmentNode*>(getNode()->clone(ctx)));
 			}
 		};
@@ -119,9 +117,9 @@ namespace CE::Decompiler::PrimaryTree
 		int m_level = 0;
 		PCodeBlock* m_pcodeBlock;
 	private:
-		std::list<Block*> m_blocksReferencedTo;
-		Block* m_nextNearBlock = nullptr;
-		Block* m_nextFarBlock = nullptr;
+		std::list<DecBlock*> m_blocksReferencedTo;
+		DecBlock* m_nextNearBlock = nullptr;
+		DecBlock* m_nextFarBlock = nullptr;
 		std::list<SeqAssignmentLine*> m_seqLines;
 		std::list<SymbolParallelAssignmentLine*> m_symbolParallelAssignmentLines; // temporary list, empty in the end of graph optimization
 		JumpTopNode* m_noJmpCond;
@@ -129,13 +127,13 @@ namespace CE::Decompiler::PrimaryTree
 		int m_maxHeight = 0;
 		DecompiledCodeGraph* m_decompiledGraph;
 
-		Block(DecompiledCodeGraph* decompiledGraph, PCodeBlock* pcodeBlock, int level)
+		DecBlock(DecompiledCodeGraph* decompiledGraph, PCodeBlock* pcodeBlock, int level)
 			: m_decompiledGraph(decompiledGraph), m_pcodeBlock(pcodeBlock), m_level(level)
 		{
 			m_noJmpCond = new JumpTopNode(this);
 		}
 
-		~Block() {
+		~DecBlock() {
 			clearCode();
 
 			for (auto line : m_symbolParallelAssignmentLines) {
@@ -170,11 +168,11 @@ namespace CE::Decompiler::PrimaryTree
 			m_nextNearBlock = m_nextFarBlock = nullptr;
 		}
 
-		void removeRefBlock(Block* block) {
+		void removeRefBlock(DecBlock* block) {
 			m_blocksReferencedTo.remove(block);
 		}
 
-		void setNextNearBlock(Block* nextBlock) {
+		void setNextNearBlock(DecBlock* nextBlock) {
 			if (nextBlock) {
 				nextBlock->removeRefBlock(m_nextNearBlock);
 				nextBlock->m_blocksReferencedTo.push_back(this);
@@ -182,7 +180,7 @@ namespace CE::Decompiler::PrimaryTree
 			m_nextNearBlock = nextBlock;
 		}
 
-		void setNextFarBlock(Block* nextBlock) {
+		void setNextFarBlock(DecBlock* nextBlock) {
 			if (nextBlock) {
 				nextBlock->removeRefBlock(m_nextFarBlock);
 				nextBlock->m_blocksReferencedTo.push_back(this);
@@ -190,20 +188,20 @@ namespace CE::Decompiler::PrimaryTree
 			m_nextFarBlock = nextBlock;
 		}
 
-		Block* getNextNearBlock() {
+		DecBlock* getNextNearBlock() {
 			return m_nextNearBlock;
 		}
 
-		Block* getNextFarBlock() {
+		DecBlock* getNextFarBlock() {
 			return m_nextFarBlock;
 		}
 
-		std::list<Block*>& getBlocksReferencedTo() {
+		std::list<DecBlock*>& getBlocksReferencedTo() {
 			return m_blocksReferencedTo;
 		}
 
-		std::list<Block*> getNextBlocks() {
-			std::list<Block*> nextBlocks;
+		std::list<DecBlock*> getNextBlocks() {
+			std::list<DecBlock*> nextBlocks;
 			if (m_nextFarBlock) {
 				nextBlocks.push_back(m_nextFarBlock);
 			}
@@ -213,7 +211,7 @@ namespace CE::Decompiler::PrimaryTree
 			return nextBlocks;
 		}
 
-		Block* getNextBlock() {
+		DecBlock* getNextBlock() {
 			if (m_nextFarBlock) {
 				return m_nextFarBlock;
 			}
@@ -340,22 +338,22 @@ namespace CE::Decompiler::PrimaryTree
 	};
 
 	// Block in which the control flow end (the last instruction of these blocks is RET).
-	class EndBlock : public Block
+	class EndDecBlock : public DecBlock
 	{
 		ReturnTopNode* m_returnNode = nullptr; // operator return where the result is
 	public:
-		EndBlock(DecompiledCodeGraph* decompiledGraph, PCodeBlock* pcodeBlock, int level)
-			: Block(decompiledGraph, pcodeBlock, level)
+		EndDecBlock(DecompiledCodeGraph* decompiledGraph, PCodeBlock* pcodeBlock, int level)
+			: DecBlock(decompiledGraph, pcodeBlock, level)
 		{
 			m_returnNode = new ReturnTopNode(this);
 		}
 
-		~EndBlock() {
+		~EndDecBlock() {
 			delete m_returnNode;
 		}
 
 		std::list<BlockTopNode*> getAllTopNodes() override {
-			auto list = Block::getAllTopNodes();
+			auto list = DecBlock::getAllTopNodes();
 			if (getReturnNode()) {
 				list.push_back(m_returnNode);
 			}
@@ -374,7 +372,7 @@ namespace CE::Decompiler::PrimaryTree
 		}
 
 		void cloneAllExpr() override {
-			Block::cloneAllExpr();
+			DecBlock::cloneAllExpr();
 			if (getReturnNode())
 				setReturnNode(getReturnNode()->clone());
 		}

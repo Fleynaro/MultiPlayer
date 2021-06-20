@@ -4,8 +4,6 @@
 
 namespace CE::Decompiler::Optimization
 {
-	using namespace PrimaryTree;
-
 	//optimizing the graph to be more understanding by human intelligence
 	class GraphViewOptimization : public GraphModification
 	{
@@ -20,7 +18,7 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 	private:
-		void processBlock(Block* block) {
+		void processBlock(DecBlock* block) {
 			//replacing confused nodes in conditions with more short ones (e.g. if {localVar1 = localVar2 + 1} then for node {localVar2 + 1} need to be replaced with {localVar1})
 			if (block->getNoJumpCondition()) {
 				std::map<HS::Value, Symbol::LocalVariable*> nodeHashTolocalVar;
@@ -30,7 +28,7 @@ namespace CE::Decompiler::Optimization
 		}
 
 		//gather localVars that store nodes according to the filter
-		void gatherLocalVarsDependedOnItselfFromBlock(Block* block, std::map<HS::Value, Symbol::LocalVariable*>& nodeHashTolocalVar) {
+		void gatherLocalVarsDependedOnItselfFromBlock(DecBlock* block, std::map<HS::Value, Symbol::LocalVariable*>& nodeHashTolocalVar) {
 			for (auto symbolAssignmentLine : block->getSymbolParallelAssignmentLines()) {
 				// finding something like {localVar1 = localVar2 + 1}
 				if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbolLeaf()->m_symbol)) {

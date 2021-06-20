@@ -30,11 +30,11 @@ void FunctionManager::loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dat
 	m_ghidraFunctionMapper->load(dataPacket);
 }
 
-Function::Function* CE::FunctionManager::findFunctionById(DB::Id id) {
-	return dynamic_cast<Function::Function*>(find(id));
+Function* CE::FunctionManager::findFunctionById(DB::Id id) {
+	return dynamic_cast<Function*>(find(id));
 }
 
-Function::Function* CE::FunctionManager::findFunctionByGhidraId(Ghidra::Id id)
+Function* CE::FunctionManager::findFunctionByGhidraId(Ghidra::Id id)
 {
 	Iterator it(this);
 	while (it.hasNext()) {
@@ -46,8 +46,8 @@ Function::Function* CE::FunctionManager::findFunctionByGhidraId(Ghidra::Id id)
 	return nullptr;
 }
 
-Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable) {
-	auto func = new Function::Function(m_functionManager, functionSymbol, imageDec, stackSymbolTable);
+Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable) {
+	auto func = new Function(m_functionManager, functionSymbol, imageDec, stackSymbolTable);
 	func->setMapper(m_funcMapper);
 	func->setGhidraMapper(m_ghidraFunctionMapper);
 	if (m_generateId)
@@ -55,13 +55,13 @@ Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::Functio
 	return func;
 }
 
-Function::Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec) {
+Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec) {
 	auto factory = m_functionManager->getProject()->getSymTableManager()->getFactory();
 	auto stackSymbolTable = factory.createSymbolTable(Symbol::SymbolTable::STACK_SPACE, 0x100000000);
 	return createFunction(functionSymbol, imageDec, stackSymbolTable);
 }
 
-Function::Function* CE::FunctionManager::Factory::createFunction(int64_t offset, DataType::IFunctionSignature* funcSignature, ImageDecorator* imageDec, const std::string& name, const std::string& comment) {
+Function* CE::FunctionManager::Factory::createFunction(int64_t offset, DataType::IFunctionSignature* funcSignature, ImageDecorator* imageDec, const std::string& name, const std::string& comment) {
 	auto factory = m_functionManager->getProject()->getSymbolManager()->getFactory();
 	auto functionSymbol = factory.createFunctionSymbol(offset, funcSignature, name, comment);
 	imageDec->getGlobalSymbolTable()->addSymbol(functionSymbol, offset);

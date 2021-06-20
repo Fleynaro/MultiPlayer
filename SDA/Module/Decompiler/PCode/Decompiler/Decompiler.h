@@ -9,7 +9,7 @@ namespace CE::Decompiler
 	protected:
 		struct DecompiledBlockInfo {
 			PCodeBlock* m_pcodeBlock = nullptr;
-			PrimaryTree::Block* m_decBlock = nullptr;
+			DecBlock* m_decBlock = nullptr;
 			ExecContext* m_execCtx = nullptr;
 			int m_enterCount = 0;
 			int m_versionOfDecompiling = 0;
@@ -54,12 +54,12 @@ namespace CE::Decompiler
 		void start() {
 			// prepare
 			for (auto pcodeBlock : m_decompiledGraph->getFuncGraph()->getBlocks()) {
-				PrimaryTree::Block* newDecBlock;
+				DecBlock* newDecBlock;
 				if (!pcodeBlock->getNextNearBlock() && !pcodeBlock->getNextFarBlock()) {
-					newDecBlock = new PrimaryTree::EndBlock(m_decompiledGraph, pcodeBlock, pcodeBlock->m_level);
+					newDecBlock = new EndDecBlock(m_decompiledGraph, pcodeBlock, pcodeBlock->m_level);
 				}
 				else {
-					newDecBlock = new PrimaryTree::Block(m_decompiledGraph, pcodeBlock, pcodeBlock->m_level);
+					newDecBlock = new DecBlock(m_decompiledGraph, pcodeBlock, pcodeBlock->m_level);
 				}
 
 				DecompiledBlockInfo decompiledBlock;

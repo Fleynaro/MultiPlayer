@@ -1,5 +1,5 @@
 #pragma once
-#include "DecSdaMisc.h"
+#include "SdaCodeGraph.h"
 #include "../Optimization/Graph/DecGraphModification.h"
 
 namespace CE::Decompiler

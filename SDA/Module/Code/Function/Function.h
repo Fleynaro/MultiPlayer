@@ -18,52 +18,66 @@ namespace CE
 
 	class FunctionManager;
 
-	namespace Function
+	struct SymbolContext {
+		IFunctionSignature* m_signature;
+		CE::Symbol::SymbolTable* m_globalSymbolTable;
+		CE::Symbol::SymbolTable* m_stackSymbolTable;
+		CE::Symbol::SymbolTable* m_funcBodySymbolTable;
+		int64_t m_startOffset = 0;
+	};
+
+	class Function : public DB::DomainObject, public Ghidra::Object, public IDescription
 	{
-		class Function : public DB::DomainObject, public Ghidra::Object, public IDescription
+	public:
+		Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable)
+			: m_manager(manager), m_functionSymbol(functionSymbol), m_imageDec(imageDec), m_stackSymbolTable(stackSymbolTable)
 		{
-		public:
-			Function(FunctionManager* manager, Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable)
-				: m_manager(manager), m_functionSymbol(functionSymbol), m_imageDec(imageDec), m_stackSymbolTable(stackSymbolTable)
-			{
-				functionSymbol->setFunction(this);
-			}
+			functionSymbol->setFunction(this);
+		}
 
-			Symbol::FunctionSymbol* getFunctionSymbol();
+		SymbolContext getSymbolContext() {
+			SymbolContext symbolCtx;
+			symbolCtx.m_signature = getSignature();
+			symbolCtx.m_globalSymbolTable = m_imageDec->getGlobalSymbolTable();
+			symbolCtx.m_funcBodySymbolTable = m_imageDec->getFuncBodySymbolTable();
+			symbolCtx.m_stackSymbolTable = m_stackSymbolTable;
+			return symbolCtx;
+		}
 
-			ImageDecorator* getImage();
+		Symbol::FunctionSymbol* getFunctionSymbol();
 
-			Decompiler::FunctionPCodeGraph* getFuncGraph();
+		ImageDecorator* getImage();
 
-			const std::string getName() override;
+		Decompiler::FunctionPCodeGraph* getFuncGraph();
 
-			const std::string getComment() override;
+		const std::string getName() override;
 
-			void setName(const std::string& name) override;
+		const std::string getComment() override;
 
-			void setComment(const std::string& comment) override;
+		void setName(const std::string& name) override;
 
-			DataType::IFunctionSignature* getSignature();
+		void setComment(const std::string& comment) override;
 
-			int64_t getOffset();
+		DataType::IFunctionSignature* getSignature();
 
-			Symbol::SymbolTable* getStackSymbolTable();
+		int64_t getOffset();
 
-			Trigger::Function::Hook* getHook();
+		Symbol::SymbolTable* getStackSymbolTable();
 
-			bool hasHook();
+		Trigger::Function::Hook* getHook();
 
-			void createHook();
+		bool hasHook();
 
-			Ghidra::Id getGhidraId() override;
+		void createHook();
 
-			FunctionManager* getManager();
-		private:
-			ImageDecorator* m_imageDec;
-			Symbol::FunctionSymbol* m_functionSymbol;
-			Symbol::SymbolTable* m_stackSymbolTable;
-			Trigger::Function::Hook* m_hook = nullptr;
-			FunctionManager* m_manager;
-		};
+		Ghidra::Id getGhidraId() override;
+
+		FunctionManager* getManager();
+	private:
+		ImageDecorator* m_imageDec;
+		Symbol::FunctionSymbol* m_functionSymbol;
+		Symbol::SymbolTable* m_stackSymbolTable;
+		Trigger::Function::Hook* m_hook = nullptr;
+		FunctionManager* m_manager;
 	};
 };

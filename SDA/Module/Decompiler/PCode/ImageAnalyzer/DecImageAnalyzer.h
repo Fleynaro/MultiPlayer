@@ -13,7 +13,7 @@ namespace CE::Decompiler
 		AbstractRegisterFactory* m_registerFactory;
 		IImage* m_image;
 		Symbolization::DataTypeFactory m_dataTypeFactory;
-		Symbolization::UserSymbolDef m_userSymbolDef;
+		Symbolization::SymbolContext m_symbolCtx;
 	public:
 		struct VTable {
 			int64_t m_offset;
@@ -24,16 +24,16 @@ namespace CE::Decompiler
 		PCodeGraphReferenceSearch(CE::Project* programModule, AbstractRegisterFactory* registerFactory, IImage* image)
 			: m_project(programModule), m_registerFactory(registerFactory), m_image(image), m_dataTypeFactory(programModule)
 		{
-			m_userSymbolDef = Symbolization::UserSymbolDef(m_project);
-			m_userSymbolDef.m_globalSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
-			m_userSymbolDef.m_stackSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
-			m_userSymbolDef.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
+			m_symbolCtx = Symbolization::SymbolContext(m_project);
+			m_symbolCtx.m_globalSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
+			m_symbolCtx.m_stackSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
+			m_symbolCtx.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
 		}
 
 		~PCodeGraphReferenceSearch() {
-			delete m_userSymbolDef.m_globalSymbolTable;
-			delete m_userSymbolDef.m_stackSymbolTable;
-			delete m_userSymbolDef.m_funcBodySymbolTable;
+			delete m_symbolCtx.m_globalSymbolTable;
+			delete m_symbolCtx.m_stackSymbolTable;
+			delete m_symbolCtx.m_funcBodySymbolTable;
 		}
 
 		void findNewFunctionOffsets(FunctionPCodeGraph* funcGraph, std::list<int>& nonVirtFuncOffsets, std::list<int>& otherOffsets) {
@@ -43,7 +43,7 @@ namespace CE::Decompiler
 
 			auto decCodeGraph = decompiler.getDecGraph();
 			auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
-			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &m_userSymbolDef, &m_dataTypeFactory);
+			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &m_symbolCtx, &m_dataTypeFactory);
 			sdaBuilding.start();
 
 			for (auto symbol : sdaBuilding.getNewAutoSymbols()) {

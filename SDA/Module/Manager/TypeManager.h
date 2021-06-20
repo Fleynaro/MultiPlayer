@@ -64,6 +64,36 @@ namespace CE
 
 		void loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
+		DataTypePtr getType(DB::Id id) {
+			return DataType::GetUnit(findTypeById(id));
+		}
+
+		DataTypePtr getDefaultType(int size, bool sign = false, bool floating = false) {
+			if (floating) {
+				if (size == 0x4)
+					return getType(SystemType::Float);
+				if (size == 0x8)
+					return getType(SystemType::Double);
+			}
+			if (size == 0x0)
+				return getType(SystemType::Void);
+			if (size == 0x1)
+				return getType(sign ? SystemType::Char : SystemType::Byte);
+			if (size == 0x2)
+				return getType(sign ? SystemType::Int16 : SystemType::UInt16);
+			if (size == 0x4)
+				return getType(sign ? SystemType::Int32 : SystemType::UInt32);
+			if (size == 0x8)
+				return getType(sign ? SystemType::Int64 : SystemType::UInt64);
+			return nullptr;
+		}
+
+		DataTypePtr calcDataTypeForNumber(uint64_t value) {
+			if ((value & ~uint64_t(0xFFFFFFFF)) == (uint64_t)0x0)
+				return getType(SystemType::Int32);
+			return getType(SystemType::Int64);
+		}
+
 		DataType::IType* findTypeById(DB::Id id);
 
 		DataType::IType* findTypeByName(const std::string& typeName);

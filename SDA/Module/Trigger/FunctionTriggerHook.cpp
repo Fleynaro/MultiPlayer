@@ -3,7 +3,7 @@
 
 using namespace CE::Trigger::Function;
 
-Hook::Hook(CE::Function::Function* function)
+Hook::Hook(CE::Function* function)
 {
 	m_hook = CE::Hook::DynHook(function->getAddress(), &callback_before, &callback_after);
 	m_hook.setMethod(new CE::Hook::Method::Method2<TriggerState>(&m_hook));
@@ -19,8 +19,8 @@ CE::Hook::DynHook* Hook::getDynHook() {
 	return &m_hook;
 }
 
-CE::Function::Function* Hook::getFunctionDef() {
-	return static_cast<CE::Function::Function*>(getDynHook()->getUserPtr());
+CE::Function* Hook::getFunctionDef() {
+	return static_cast<CE::Function*>(getDynHook()->getUserPtr());
 }
 
 void Hook::addActiveTrigger(Trigger* trigger) {

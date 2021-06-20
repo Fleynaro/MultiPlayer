@@ -4,8 +4,6 @@
 
 namespace CE::Decompiler::Optimization
 {
-	using namespace PrimaryTree;
-
 	class GraphExprOptimization : public GraphModification
 	{
 	public:
@@ -14,13 +12,13 @@ namespace CE::Decompiler::Optimization
 		{}
 
 		void start() override {
-			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
+			passAllTopNodes([&](DecBlock::BlockTopNode* topNode) {
 				optimize(topNode);
 				});
 		}
 	private:
 		// optimize expression on the specified {topNode}
-		void optimize(PrimaryTree::Block::BlockTopNode* topNode) {
+		void optimize(DecBlock::BlockTopNode* topNode) {
 			INode::UpdateDebugInfo(topNode->getNode());
 			ExprOptimization exprOptimization(topNode);
 			exprOptimization.start();

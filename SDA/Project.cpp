@@ -131,10 +131,6 @@ StatManager* Project::getStatManager() {
 	return m_statManager;
 }
 
-Symbol::SymbolTable* Project::getGlobalMemoryArea() {
-	return getSymTableManager()->getMainGlobalSymTable();
-}
-
 DB::ITransaction* Project::getTransaction() {
 	return m_transaction;
 }

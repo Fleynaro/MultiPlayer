@@ -1,6 +1,5 @@
 #pragma once
 #include "../Graph/DecCodeGraph.h"
-#include "AutoSdaSymbol.h"
 #include "ExprTree/ExprTreeSda.h"
 #include "../ExprTree/ExprTree.h"
 

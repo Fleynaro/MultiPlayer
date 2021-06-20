@@ -353,7 +353,7 @@ void InstructionInterpreter::execute(Instruction* instr) {
 
 	case InstructionId::RETURN:
 	{
-		if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(m_block)) {
+		if (auto endBlock = dynamic_cast<EndDecBlock*>(m_block)) {
 			auto& retInfo = m_decompiler->m_returnInfo;
 			if (retInfo.m_storage.getType() != Storage::STORAGE_NONE) {
 				auto dstRegister = m_decompiler->getRegisterFactory()->createRegister(retInfo.m_storage.getRegisterId(), retInfo.m_size, retInfo.m_storage.getOffset());

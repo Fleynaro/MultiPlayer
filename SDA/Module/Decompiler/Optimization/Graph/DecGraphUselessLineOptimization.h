@@ -3,8 +3,6 @@
 
 namespace CE::Decompiler::Optimization
 {
-	using namespace PrimaryTree;
-
 	// Removing seq. assignments lines with unknown register
 	class GraphUselessLineDeleting : public GraphModification
 	{
@@ -19,7 +17,7 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 	private:
-		void processBlock(Block* block) {
+		void processBlock(DecBlock* block) {
 			for (auto seqLine : block->getSeqAssignmentLines()) {
 				if (auto symbolLeaf = dynamic_cast<SymbolLeaf*>(seqLine->getDstNode()))
 					if (dynamic_cast<Symbol::AbstractVariable*>(symbolLeaf->m_symbol))

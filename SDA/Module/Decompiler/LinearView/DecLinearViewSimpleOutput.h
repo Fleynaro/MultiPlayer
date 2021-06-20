@@ -78,7 +78,7 @@ namespace CE::Decompiler
 					showBlockCode(asmBlock, block, tabStr);
 				}
 
-				if (auto endBlock = dynamic_cast<PrimaryTree::EndBlock*>(decBlock)) {
+				if (auto endBlock = dynamic_cast<EndDecBlock*>(decBlock)) {
 					if (endBlock->getReturnNode() != nullptr) {
 						m_textCode += tabStr +"return "+ endBlock->getReturnNode()->printDebug() +"\n";
 					}

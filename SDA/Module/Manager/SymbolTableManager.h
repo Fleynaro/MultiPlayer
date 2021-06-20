@@ -31,14 +31,9 @@ namespace CE
 
 		Factory getFactory(bool generateId = true);
 
-		void createMainGlobalSymTable(int size);
-
 		Symbol::SymbolTable* findSymbolTableById(DB::Id id);
 
-		Symbol::SymbolTable* getMainGlobalSymTable();
-
 	private:
-		Symbol::SymbolTable* m_globalSymbolTable = nullptr;
 		DB::SymbolTableMapper* m_symbolTableMapper;
 	};
 };

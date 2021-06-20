@@ -1,6 +1,5 @@
 #pragma once
 #include "PCode/DecPCode.h"
-#include <Utility/Generic.h>
 #include <Utils/HashSerialization.h>
 
 namespace CE::Decompiler {

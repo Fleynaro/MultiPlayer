@@ -31,7 +31,7 @@ namespace CE::Trigger::Function
 
 		bool isNotExecute();
 
-		void addFunction(CE::Function::Function* function);
+		void addFunction(CE::Function* function);
 
 		void start();
 
@@ -41,7 +41,7 @@ namespace CE::Trigger::Function
 
 		Filter::AbstractCompositeFilter* getFilters();
 
-		std::list<CE::Function::Function*>& getFunctions() {
+		std::list<CE::Function*>& getFunctions() {
 			return m_functions;
 		}
 
@@ -56,7 +56,7 @@ namespace CE::Trigger::Function
 	private:
 		TableLog* m_tableLog = nullptr;
 		Filter::AbstractCompositeFilter* m_compositeFilter;
-		std::list<CE::Function::Function*> m_functions;
+		std::list<CE::Function*> m_functions;
 		bool m_notExecute = false;
 		bool m_isActive = false;
 

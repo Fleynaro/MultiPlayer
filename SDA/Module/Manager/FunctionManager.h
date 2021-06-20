@@ -25,14 +25,14 @@ namespace CE
 				: m_functionManager(functionManager), m_ghidraFunctionMapper(ghidraFunctionMapper), m_funcMapper(funcMapper), AbstractFactory(generateId)
 			{}
 
-			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable);
+			Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable);
 
-			Function::Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec);
+			Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec);
 
-			Function::Function* createFunction(int64_t offset, DataType::IFunctionSignature* funcSignature, ImageDecorator* imageDec, const std::string& name, const std::string& comment = "");
+			Function* createFunction(int64_t offset, DataType::IFunctionSignature* funcSignature, ImageDecorator* imageDec, const std::string& name, const std::string& comment = "");
 		};
 
-		using Iterator = AbstractIterator<Function::Function>;
+		using Iterator = AbstractIterator<Function>;
 		Ghidra::FunctionMapper* m_ghidraFunctionMapper;
 
 		FunctionManager(Project* module);
@@ -45,9 +45,9 @@ namespace CE
 
 		void loadFunctionsFrom(ghidra::packet::SDataFullSyncPacket* dataPacket);
 
-		Function::Function* findFunctionById(DB::Id id);
+		Function* findFunctionById(DB::Id id);
 
-		Function::Function* findFunctionByGhidraId(Ghidra::Id id);
+		Function* findFunctionByGhidraId(Ghidra::Id id);
 	private:
 		DB::FunctionMapper* m_funcMapper;
 	};

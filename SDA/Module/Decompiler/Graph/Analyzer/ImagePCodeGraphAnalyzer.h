@@ -10,7 +10,7 @@ namespace CE::Decompiler
 	public:
 		struct FuncGraphInfo {
 			SdaCodeGraph* m_sdaFuncGraph;
-			Symbolization::UserSymbolDef m_userSymbolDef;
+			Symbolization::SymbolContext m_symbolCtx;
 		};
 
 	private:
@@ -189,7 +189,7 @@ namespace CE::Decompiler
 			public:
 				ReturnValueStatInfo m_retValStatInfo;
 				std::list<RawSignatureOwner*> m_owners;
-				std::list<Function::Function*> m_functions;
+				std::list<Function*> m_functions;
 				
 				RawSignature(RawSignatureOwner* owner)
 					: DataType::FunctionSignature("raw-signature")
@@ -546,7 +546,7 @@ namespace CE::Decompiler
 		}
 
 	private:
-		std::list<Function::Function*> m_newFunctions;
+		std::list<Function*> m_newFunctions;
 		bool m_nextPassRequired = false;
 
 		// need call after pass "to define return values"
@@ -592,7 +592,7 @@ namespace CE::Decompiler
 			ExecContext execContext(&decompiler);
 			for (auto& pair : decompiler.m_decompiledBlocks) {
 				auto& decBlockInfo = pair.second;
-				if (auto block = dynamic_cast<PrimaryTree::EndBlock*>(decBlockInfo.m_decBlock)) {
+				if (auto block = dynamic_cast<EndDecBlock*>(decBlockInfo.m_decBlock)) {
 					execContext.join(decBlockInfo.m_execCtx);
 				}
 			}
@@ -663,7 +663,7 @@ namespace CE::Decompiler
 			auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
 
 			// create symbol tables for the func. graph
-			Symbolization::UserSymbolDef userSymbolDef;
+			Symbolization::SymbolContext userSymbolDef;
 			userSymbolDef.m_globalSymbolTable = m_globalSymbolTable;
 			userSymbolDef.m_stackSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
 			userSymbolDef.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
@@ -677,7 +677,7 @@ namespace CE::Decompiler
 
 			ProgramGraph::FuncGraphInfo funcGraphInfo;
 			funcGraphInfo.m_sdaFuncGraph = sdaCodeGraph;
-			funcGraphInfo.m_userSymbolDef = userSymbolDef;
+			funcGraphInfo.m_symbolCtx = userSymbolDef;
 			m_programGraph->getSdaFuncGraphs().insert(std::pair(funcGraph, funcGraphInfo));
 
 			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &m_dataTypeFactory);
@@ -753,7 +753,7 @@ namespace CE::Decompiler
 				m_funcOffsetToSig[funcOffset] = rawSignature;
 				auto funcSymbol = new CE::Symbol::FunctionSymbol(funcOffset, DataType::GetUnit(rawSignature), "func");
 				m_globalSymbolTable->addSymbol(funcSymbol, funcOffset);
-				auto function = new Function::Function(funcSymbol, funcGraph);
+				auto function = new Function(funcSymbol, funcGraph);
 				rawSignature->m_rawSignature->m_functions.push_back(function);
 				m_newFunctions.push_back(function);
 			}

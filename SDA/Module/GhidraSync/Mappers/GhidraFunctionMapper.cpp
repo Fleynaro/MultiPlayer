@@ -22,7 +22,7 @@ void FunctionMapper::load(packet::SDataFullSyncPacket* dataPacket) {
 	}
 }
 
-void markObjectAsSynced(SyncContext* ctx, Function::Function* func) {
+void markObjectAsSynced(SyncContext* ctx, Function* func) {
 	SQLite::Statement query(*ctx->m_db, "UPDATE sda_func_defs SET ghidra_sync_id=?1 WHERE def_id=?2");
 	query.bind(1, ctx->m_syncId);
 	query.bind(2, func->getId());
@@ -30,13 +30,13 @@ void markObjectAsSynced(SyncContext* ctx, Function::Function* func) {
 }
 
 void FunctionMapper::upsert(SyncContext* ctx, IObject* obj) {
-	auto func = dynamic_cast<Function::Function*>(obj);
+	auto func = dynamic_cast<Function*>(obj);
 	ctx->m_dataPacket->functions.push_back(buildDesc(func));
 	markObjectAsSynced(ctx, func);
 }
 
 void FunctionMapper::remove(SyncContext* ctx, IObject* obj) {
-	auto func = dynamic_cast<Function::Function*>(obj);
+	auto func = dynamic_cast<Function*>(obj);
 	ctx->m_dataPacket->removed_functions.push_back(func->getGhidraId());
 	markObjectAsSynced(ctx, func);
 }
@@ -52,7 +52,7 @@ AddressRangeList FunctionMapper::getRangesFromDesc(const std::vector<function::S
 	return ranges;
 }
 
-void FunctionMapper::changeFunctionByDesc(Function::Function* function, const function::SFunction& funcDesc) {
+void FunctionMapper::changeFunctionByDesc(Function* function, const function::SFunction& funcDesc) {
 	function->setName(funcDesc.name);
 	function->setComment(funcDesc.comment);
 	function->getAddressRangeList().clear();
@@ -60,7 +60,7 @@ void FunctionMapper::changeFunctionByDesc(Function::Function* function, const fu
 	m_dataTypeMapper->m_signatureTypeMapper->changeSignatureByDesc(function->getSignature(), funcDesc.signature);
 }
 
-function::SFunction FunctionMapper::buildDesc(Function::Function* function) {
+function::SFunction FunctionMapper::buildDesc(Function* function) {
 	function::SFunction funcDesc;
 	funcDesc.__set_id(function->getGhidraId());
 

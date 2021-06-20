@@ -38,6 +38,6 @@ namespace CE::Stat::Function::Record
 		CE::Trigger::Function::Trigger* m_trigger;
 		CE::Hook::DynHook* m_hook;
 
-		CE::Function::Function* getFunctionDef();
+		CE::Function* getFunctionDef();
 	};
 };

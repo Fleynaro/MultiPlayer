@@ -12,7 +12,7 @@ namespace CE::Decompiler::PCode
 	class InstructionInterpreter
 	{
 	public:
-		InstructionInterpreter(AbstractPrimaryDecompiler* decompiler, PrimaryTree::Block* block, ExecContext* ctx)
+		InstructionInterpreter(AbstractPrimaryDecompiler* decompiler, DecBlock* block, ExecContext* ctx)
 			: m_decompiler(decompiler), m_block(block), m_ctx(ctx)
 		{}
 
@@ -31,7 +31,7 @@ namespace CE::Decompiler::PCode
 		ExprTree::SymbolLeaf* createMemSymbol(ExprTree::ReadValueNode* readValueNode, PCode::Instruction* instr = nullptr);
 	private:
 		AbstractPrimaryDecompiler* m_decompiler;
-		PrimaryTree::Block* m_block;
+		DecBlock* m_block;
 		ExecContext* m_ctx;
 		Instruction* m_instr;
 	};

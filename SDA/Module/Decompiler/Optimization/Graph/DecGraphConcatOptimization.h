@@ -11,7 +11,7 @@ namespace CE::Decompiler::Optimization
 		{}
 
 		void start() override {
-			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
+			passAllTopNodes([&](DecBlock::BlockTopNode* topNode) {
 				auto node = topNode->getNode();
 				INode::UpdateDebugInfo(node);
 				findConcat(node);

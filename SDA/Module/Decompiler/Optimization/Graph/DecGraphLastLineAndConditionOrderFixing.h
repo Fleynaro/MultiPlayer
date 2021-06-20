@@ -4,8 +4,6 @@
 
 namespace CE::Decompiler::Optimization
 {
-	using namespace PrimaryTree;
-
 	// Replace in conditions: {localVar + 1} = > {localVar} (localVar used in last assignments as increment: localVar = {localVar + 1})
 	class GraphLastLineAndConditionOrderFixing : public GraphModification
 	{
@@ -22,14 +20,14 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 	private:
-		void processBlock(Block* block) {
+		void processBlock(DecBlock* block) {
 			std::map<HS::Value, Symbol::LocalVariable*> localVars;
 			gatherLocalVarsDependedOnItselfFromBlock(block, localVars);
 			doSingleFix(block->getNoJumpCondition(), localVars);
 		}
 
 		//gather localVars located in something like this: localVar = localVar + 1
-		void gatherLocalVarsDependedOnItselfFromBlock(Block* block, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
+		void gatherLocalVarsDependedOnItselfFromBlock(DecBlock* block, std::map<HS::Value, Symbol::LocalVariable*>& localVars) {
 			for (auto symbolAssignmentLine : block->getSymbolParallelAssignmentLines()) {
 				if (auto localVar = dynamic_cast<Symbol::LocalVariable*>(symbolAssignmentLine->getDstSymbolLeaf()->m_symbol)) {
 					//if localVar expressed through itself (e.g. localVar = {localVar + 1})

@@ -30,8 +30,8 @@ namespace CE::Ghidra
 		
 		AddressRangeList getRangesFromDesc(const std::vector<function::SFunctionRange>& rangeDescs);
 
-		void changeFunctionByDesc(Function::Function* function, const function::SFunction& funcDesc);
+		void changeFunctionByDesc(Function* function, const function::SFunction& funcDesc);
 
-		function::SFunction buildDesc(Function::Function* function);
+		function::SFunction buildDesc(Function* function);
 	};
 };

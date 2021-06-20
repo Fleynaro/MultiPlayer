@@ -6,22 +6,23 @@ namespace CE::Decompiler::Symbolization
 	// Transformation from untyped raw graph to typed one (creating sda nodes)
 	class SdaBuilding : public SdaGraphModification
 	{
-		UserSymbolDef* m_userSymbolDef;
-		DataTypeFactory* m_dataTypeFactory;
+		SymbolContext* m_symbolCtx;
+		Project* m_project;
 		FunctionSignature::CallingConvetion m_callingConvention;
 		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols; //for cache purposes
 		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols; //stackVar1
 		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
 		std::set<CE::Symbol::ISymbol*> m_newAutoSymbols; // auto-created symbols which are not defined by user (e.g. funcVar1)
 		std::set<CE::Symbol::ISymbol*> m_userDefinedSymbols; // defined by user (e.g. playerObj)
+		SymbolManager::Factory m_symbolFactory;
 	public:
 
-		SdaBuilding(SdaCodeGraph* sdaCodeGraph, UserSymbolDef* userSymbolDef, DataTypeFactory* dataTypeFactory, FunctionSignature::CallingConvetion callingConvention = FunctionSignature::FASTCALL)
-			: SdaGraphModification(sdaCodeGraph), m_userSymbolDef(userSymbolDef), m_dataTypeFactory(dataTypeFactory), m_callingConvention(callingConvention)
+		SdaBuilding(SdaCodeGraph* sdaCodeGraph, SymbolContext* symbolCtx, Project* project, FunctionSignature::CallingConvetion callingConvention = FunctionSignature::FASTCALL)
+			: SdaGraphModification(sdaCodeGraph), m_symbolCtx(symbolCtx), m_project(project), m_callingConvention(callingConvention), m_symbolFactory(m_project->getSymbolManager()->getFactory())
 		{}
 
 		void start() override {
-			passAllTopNodes([&](PrimaryTree::Block::BlockTopNode* topNode) {
+			passAllTopNodes([&](DecBlock::BlockTopNode* topNode) {
 				auto node = topNode->getNode();
 				INode::UpdateDebugInfo(node);
 				buildSdaNodesAndReplace(node);
@@ -60,14 +61,14 @@ namespace CE::Decompiler::Symbolization
 
 		// build high-level sda analog of low-level number leaf
 		SdaNumberLeaf* buildSdaNumberLeaf(NumberLeaf* numberLeaf) {
-			auto dataType = m_dataTypeFactory->calcDataTypeForNumber(numberLeaf->getValue());
+			auto dataType = m_project->getTypeManager()->calcDataTypeForNumber(numberLeaf->getValue());
 			auto sdaNumberLeaf = new SdaNumberLeaf(numberLeaf->getValue(), dataType);
 			return sdaNumberLeaf;
 		}
 
 		// build high-level sda analog of low-level read value node
 		SdaReadValueNode* buildReadValueNode(ReadValueNode* readValueNode) {
-			auto dataType = m_dataTypeFactory->getDefaultType(readValueNode->getSize());
+			auto dataType = m_project->getTypeManager()->getDefaultType(readValueNode->getSize());
 			return new SdaReadValueNode(readValueNode, dataType);
 		}
 
@@ -215,11 +216,11 @@ namespace CE::Decompiler::Symbolization
 				}
 			}
 
-			if (dynamic_cast<Block::JumpTopNode*>(node->getParentNode()))
+			if (dynamic_cast<DecBlock::JumpTopNode*>(node->getParentNode()))
 				return;
 
 			//otherwise create generic sda node
-			auto sdaNode = new SdaGenericNode(node, m_dataTypeFactory->getDefaultType(node->getSize(), false, node->isFloatingPoint()));
+			auto sdaNode = new SdaGenericNode(node, m_project->getTypeManager()->getDefaultType(node->getSize(), false, node->isFloatingPoint()));
 			node->replaceWith(sdaNode);
 			node->addParentNode(sdaNode);
 		}
@@ -233,10 +234,10 @@ namespace CE::Decompiler::Symbolization
 				auto& reg = regSymbol->m_register;
 				int paramIdx = 0;
 
-				if (m_userSymbolDef->m_signature) {
-					paramIdx = m_userSymbolDef->m_signature->getCallInfo().findIndex(reg, offset);
+				if (m_symbolCtx->m_signature) {
+					paramIdx = m_symbolCtx->m_signature->getCallInfo().findIndex(reg, offset);
 					if (paramIdx > 0) {
-						auto& funcParams = m_userSymbolDef->m_signature->getParameters();
+						auto& funcParams = m_symbolCtx->m_signature->getParameters();
 						if (paramIdx <= funcParams.size()) {
 							//USER-DEFINED func. parameter
 							auto sdaSymbol = funcParams[paramIdx - 1];
@@ -254,7 +255,8 @@ namespace CE::Decompiler::Symbolization
 
 				if (paramIdx > 0) {
 					//auto func. parameter
-					auto funcParamSymbol = new CE::Symbol::FuncParameterSymbol(paramIdx, m_userSymbolDef->m_signature, m_dataTypeFactory->getDefaultType(size), "param" + std::to_string(paramIdx));
+					auto defType = m_project->getTypeManager()->getDefaultType(size);
+					auto funcParamSymbol = m_symbolFactory.createFuncParameterSymbol(paramIdx, m_symbolCtx->m_signature, defType, "param" + std::to_string(paramIdx));
 					funcParamSymbol->setAutoSymbol(true);
 					storeSdaSymbolIfMem(funcParamSymbol, symbol, offset);
 					return funcParamSymbol;
@@ -264,7 +266,7 @@ namespace CE::Decompiler::Symbolization
 				bool isStackPointer = (reg.getType() == Register::Type::StackPointer);
 				if (isStackPointer || reg.getType() == Register::Type::InstructionPointer) {
 					//try to find USER-DEFINED symbol in mem. area
-					auto symTable = isStackPointer ? m_userSymbolDef->m_stackSymbolTable : m_userSymbolDef->m_globalSymbolTable;
+					auto symTable = isStackPointer ? m_symbolCtx->m_stackSymbolTable : m_symbolCtx->m_globalSymbolTable;
 					auto symbolPair = symTable->getSymbolAt(offset);
 					if (symbolPair.second != nullptr) {
 						offset -= symbolPair.first;
@@ -274,12 +276,14 @@ namespace CE::Decompiler::Symbolization
 					}
 
 					CE::Symbol::AbstractSymbol* sdaSymbol = nullptr;
-					auto dataType = m_dataTypeFactory->getDefaultType(size);
+					auto dataType = m_project->getTypeManager()->getDefaultType(size);
 					if (isStackPointer) {
-						sdaSymbol = new CE::Symbol::LocalStackVarSymbol(offset, dataType, "stack_0x" + Helper::String::NumberToHex((uint32_t)-offset));
+						auto name = "stack_0x" + Helper::String::NumberToHex((uint32_t)-offset);
+						sdaSymbol = m_symbolFactory.createLocalStackVarSymbol(offset, dataType, name);
 					}
 					else {
-						sdaSymbol = new CE::Symbol::GlobalVarSymbol(offset, dataType, "global_0x" + Helper::String::NumberToHex(offset));
+						auto name = "global_0x" + Helper::String::NumberToHex(offset);
+						sdaSymbol = m_symbolFactory.createGlobalVarSymbol(offset, dataType, name);
 					}
 					m_newAutoSymbols.insert(sdaSymbol);
 					storeSdaSymbolIfMem(sdaSymbol, symbol, offset);
@@ -287,7 +291,8 @@ namespace CE::Decompiler::Symbolization
 				}
 				
 				//NOT-MEMORY symbol (unknown registers)
-				auto sdaSymbol = new CE::Symbol::LocalInstrVarSymbol(m_dataTypeFactory->getDefaultType(size), "in_" + reg.printDebug());
+				auto defType = m_project->getTypeManager()->getDefaultType(size);
+				auto sdaSymbol = m_symbolFactory.createLocalInstrVarSymbol(defType, "in_" + reg.printDebug());
 				sdaSymbol->setAutoSymbol(true);
 				m_newAutoSymbols.insert(sdaSymbol);
 				return sdaSymbol;
@@ -302,7 +307,7 @@ namespace CE::Decompiler::Symbolization
 
 				if (!instrOffsets.empty()) {
 					for (auto instrOffset : instrOffsets) {
-						auto symbolPair = m_userSymbolDef->m_funcBodySymbolTable->getSymbolAt(instrOffset);
+						auto symbolPair = m_symbolCtx->m_funcBodySymbolTable->getSymbolAt(instrOffset);
 						if (symbolPair.second != nullptr) {
 							auto sdaSymbol = symbolPair.second;
 							m_userDefinedSymbols.insert(sdaSymbol);
@@ -319,7 +324,11 @@ namespace CE::Decompiler::Symbolization
 					suffix = "mem";
 				else if (dynamic_cast<Symbol::FunctionResultVar*>(symbol))
 					suffix = "func";
-				auto sdaSymbol = new CE::Symbol::LocalInstrVarSymbol(m_dataTypeFactory->getDefaultType(size), suffix + "Var" + Helper::String::NumberToHex(symbolWithId->getId()));
+
+				auto defType = m_project->getTypeManager()->getDefaultType(size);
+				auto name = suffix + "Var" + Helper::String::NumberToHex(symbolWithId->getId());
+
+				auto sdaSymbol = m_symbolFactory.createLocalInstrVarSymbol(defType, name);
 				sdaSymbol->setAutoSymbol(true);
 				sdaSymbol->m_instrOffsets = instrOffsets;
 				m_newAutoSymbols.insert(sdaSymbol);
@@ -369,11 +378,11 @@ namespace CE::Decompiler::Symbolization
 		}
 
 		int64_t toGlobalOffset(int64_t offset) {
-			return m_userSymbolDef->m_startOffset + offset;
+			return m_symbolCtx->m_startOffset + offset;
 		}
 
 		int64_t toLocalOffset(int64_t offset) {
-			return offset - m_userSymbolDef->m_startOffset;
+			return offset - m_symbolCtx->m_startOffset;
 		}
 	};
 };

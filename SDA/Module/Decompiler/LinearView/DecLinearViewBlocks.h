@@ -28,11 +28,11 @@ namespace CE::Decompiler::LinearView
 	public:
 		int m_backOrderId = 0;
 		int m_linearLevel = 0;
-		PrimaryTree::Block* m_decBlock;
+		DecBlock* m_decBlock;
 		BlockList* m_blockList = nullptr;
 		std::list<BlockList*> m_refBlockLists;
 
-		Block(PrimaryTree::Block* decBlock)
+		Block(Block* decBlock)
 			: m_decBlock(decBlock)
 		{}
 
@@ -88,7 +88,7 @@ namespace CE::Decompiler::LinearView
 			return m_blocks;
 		}
 
-		Block* findBlock(PrimaryTree::Block* decBlock);
+		Block* findBlock(DecBlock* decBlock);
 
 		bool hasGoto();
 
@@ -122,7 +122,7 @@ namespace CE::Decompiler::LinearView
 		BlockList* m_elseBranch;
 		ExprTree::AbstractCondition* m_cond;
 
-		Condition(PrimaryTree::Block* decBlock)
+		Condition(DecBlock* decBlock)
 			: Block(decBlock)
 		{
 			m_mainBranch = new BlockList(this);
@@ -154,7 +154,7 @@ namespace CE::Decompiler::LinearView
 		bool m_isDoWhileCycle;
 		bool m_isInfinite;
 
-		WhileCycle(PrimaryTree::Block* decBlock, bool isDoWhileCycle = false, bool isInfinite = false)
+		WhileCycle(DecBlock* decBlock, bool isDoWhileCycle = false, bool isInfinite = false)
 			: Block(decBlock), m_isDoWhileCycle(isDoWhileCycle), m_isInfinite(isInfinite)
 		{
 			m_mainBranch = new BlockList(this);

@@ -4,13 +4,11 @@
 
 namespace CE::Decompiler::Symbolization
 {
-	static void SymbolizeWithSDA(SdaCodeGraph* sdaCodeGraph, UserSymbolDef& userSymbolDef) {
-		DataTypeFactory dataTypeFactory(userSymbolDef.m_project);
-		
-		SdaBuilding sdaBuilding(sdaCodeGraph, &userSymbolDef, &dataTypeFactory);
+	static void SymbolizeWithSDA(SdaCodeGraph* sdaCodeGraph, SymbolContext& symbolContext, Project* project) {
+		SdaBuilding sdaBuilding(sdaCodeGraph, &symbolContext, project);
 		sdaBuilding.start();
 
-		SdaDataTypesCalculater sdaDataTypesCalculating(sdaCodeGraph, userSymbolDef.m_signature, &dataTypeFactory);
+		SdaDataTypesCalculater sdaDataTypesCalculating(sdaCodeGraph, symbolContext.m_signature, project);
 		sdaDataTypesCalculating.start();
 	}
 };

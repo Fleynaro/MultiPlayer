@@ -11,7 +11,7 @@ Class::MethodListType& CE::DataType::Class::getMethods() {
 	return m_methods;
 }
 
-void Class::addMethod(Function::Function* method) {
+void Class::addMethod(Function* method) {
 	getMethods().push_back(method);
 }
 
@@ -69,7 +69,7 @@ bool Class::MethodIterator::hasNext() {
 	return true;
 }
 
-Function::Function* Class::MethodIterator::next() {
+Function* Class::MethodIterator::next() {
 	//vtable...
 
 	if (m_iterator == m_end) {

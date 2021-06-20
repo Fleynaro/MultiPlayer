@@ -1,5 +1,4 @@
 #pragma once
-#include "../DecSdaMisc.h"
 
 namespace CE::Decompiler::Symbolization
 {
@@ -7,13 +6,13 @@ namespace CE::Decompiler::Symbolization
 	//Fields of class objects or Array
 	class SdaGoarBuilding
 	{
-		DataTypeFactory* m_dataTypeFactory;
+		Project* m_project;
 		ISdaNode* m_baseSdaNode;
 		int64_t m_bitOffset;
 		std::list<ISdaNode*> m_sdaTerms; // the array index terms: players + {idx * 0x1000} + {idx2 * 0x2000}
 	public:
-		SdaGoarBuilding(DataTypeFactory* dataTypeFactory, UnknownLocation* unknownLocation)
-			: m_dataTypeFactory(dataTypeFactory), m_baseSdaNode(unknownLocation->getBaseSdaNode()), m_bitOffset(unknownLocation->getConstTermValue() * 0x8)
+		SdaGoarBuilding(UnknownLocation* unknownLocation, Project* project)
+			: m_baseSdaNode(unknownLocation->getBaseSdaNode()), m_project(project), m_bitOffset(unknownLocation->getConstTermValue() * 0x8)
 		{
 			for (auto term : unknownLocation->getArrTerms()) {
 				m_sdaTerms.push_back(term.m_node);
@@ -40,7 +39,8 @@ namespace CE::Decompiler::Symbolization
 				//if we have remaining either the offset or the array index terms
 				if (resultBitOffset != 0x0 || !m_sdaTerms.empty()) {
 					//remaining offset and terms (maybe only in case of node being as LinearExpr)
-					auto linearExpr = new LinearExpr(resultBitOffset / 0x8);
+					auto numberType = m_project->getTypeManager()->getDefaultType(0x8);
+					auto linearExpr = new LinearExpr(new SdaNumberLeaf(resultBitOffset / 0x8, numberType));
 					linearExpr->addTerm(resultSdaNode);
 					for (auto castTerm : m_sdaTerms) {
 						linearExpr->addTerm(castTerm);
@@ -142,8 +142,8 @@ namespace CE::Decompiler::Symbolization
 				auto constIndex = bitOffset / arrItemBitSize;
 				if (constIndex != 0x0 || !indexNode) {
 					bitOffset = bitOffset % arrItemBitSize;
-					auto constIndexNode = new SdaNumberLeaf(uint64_t(constIndex));
-					constIndexNode->setDataType(m_dataTypeFactory->getDefaultType(indexSize)); //need?
+					auto numberType = m_project->getTypeManager()->getDefaultType(indexSize); //need?
+					auto constIndexNode = new SdaNumberLeaf(uint64_t(constIndex), numberType);
 
 					//players[idx + idx2 * 2] -> players[idx + idx2 * 2 + 0x1000]
 					if (indexNode) {

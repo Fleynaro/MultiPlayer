@@ -120,7 +120,7 @@ namespace CE::Decompiler::Optimization
 			}
 		};
 		
-		std::map<PrimaryTree::Block*, MemoryContext> m_memoryContexts;
+		std::map<DecBlock*, MemoryContext> m_memoryContexts;
 		std::list<SdaSymbolLeaf*> m_removedSymbolLeafs;
 	public:
 		SdaGraphMemoryOptimization(SdaCodeGraph* sdaCodeGraph)
@@ -158,7 +158,7 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		void optimizeBlock(PrimaryTree::Block* block, MemoryContext* memCtx) {
+		void optimizeBlock(DecBlock* block, MemoryContext* memCtx) {
 			for (auto& memVarInfo : memCtx->m_memVars) {
 				ISdaNode* newNode = nullptr;
 				auto memSnapshot = memVarInfo.m_memSnapshot;
@@ -207,7 +207,7 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		ISdaNode* getSnapshotValue(PrimaryTree::Block* block, MemoryContext* memCtx, MemoryContext::MemSnapshot* memSnapshot, int lastUsedMemLocIdx) {
+		ISdaNode* getSnapshotValue(DecBlock* block, MemoryContext* memCtx, MemoryContext::MemSnapshot* memSnapshot, int lastUsedMemLocIdx) {
 			if (memSnapshot->m_snapshotValue) {
 				if (auto locSnapshotValue = dynamic_cast<ILocatable*>(memSnapshot->m_snapshotValue->getNode())) {
 					try {
@@ -244,7 +244,7 @@ namespace CE::Decompiler::Optimization
 			return nullptr;
 		}
 
-		std::pair<PrimaryTree::Block*, MemoryContext::MemSnapshot*> findBlockAndMemSnapshotByMemVar(Symbol::MemoryVariable* memVar) {
+		std::pair<DecBlock*, MemoryContext::MemSnapshot*> findBlockAndMemSnapshotByMemVar(Symbol::MemoryVariable* memVar) {
 			for (auto block : m_sdaCodeGraph->getDecGraph()->getDecompiledBlocks()) {
 				auto& memVarToMemLocation = m_memoryContexts[block].m_memVarSnapshots;
 				auto it = memVarToMemLocation.find(memVar);
@@ -256,7 +256,7 @@ namespace CE::Decompiler::Optimization
 		}
 
 		//finalBlock can be reached if go to it over path(from startBlock) that doesn't contain changes of the memory location
-		bool canBlockBeReachedThroughLocation(PrimaryTree::Block* startBlock, PrimaryTree::Block* finalBlock, MemLocation* memLoc) {
+		bool canBlockBeReachedThroughLocation(DecBlock* startBlock, DecBlock* finalBlock, MemLocation* memLoc) {
 			BlockFlowIterator blockFlowIterator(startBlock);
 			while (blockFlowIterator.hasNext()) {
 				blockFlowIterator.m_considerLoop = false;
@@ -274,7 +274,7 @@ namespace CE::Decompiler::Optimization
 			return false;
 		}
 
-		ISdaNode* findValueNodeInBlocksAbove(PrimaryTree::Block* startBlock, MemLocation* memLoc) {
+		ISdaNode* findValueNodeInBlocksAbove(DecBlock* startBlock, MemLocation* memLoc) {
 			BlockFlowIterator blockFlowIterator(startBlock);
 			while (blockFlowIterator.hasNext()) {
 				blockFlowIterator.m_considerLoop = false;
@@ -296,10 +296,10 @@ namespace CE::Decompiler::Optimization
 		// for the specified block it fill the memory context by some values during simulation of execution
 		class MemoryContextInitializer
 		{
-			PrimaryTree::Block* m_block;
+			DecBlock* m_block;
 			MemoryContext* m_memCtx; // it has to be filled
 		public:
-			MemoryContextInitializer(PrimaryTree::Block* block, MemoryContext* memCtx)
+			MemoryContextInitializer(DecBlock* block, MemoryContext* memCtx)
 				: m_block(block), m_memCtx(memCtx)
 			{}
 

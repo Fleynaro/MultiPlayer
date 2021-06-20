@@ -3,8 +3,6 @@
 
 namespace CE::Decompiler::Optimization
 {
-	using namespace PrimaryTree;
-
 	//Transforming sequance of simple blocks to single complex block with complex condition(&&, ||) for jump
 	class GraphCondBlockOptimization : public GraphModification
 	{
@@ -32,7 +30,7 @@ namespace CE::Decompiler::Optimization
 			}
 		}
 
-		void optimizeConditionDecBlock(Block* block) {
+		void optimizeConditionDecBlock(DecBlock* block) {
 			if (!block->isCondition())
 				return;
 			auto delta = block->getNextNearBlock()->m_level - block->m_level;
@@ -42,7 +40,7 @@ namespace CE::Decompiler::Optimization
 			block->getNoJumpCondition()->inverse();
 		}
 
-		Block* joinCondition(Block* block) {
+		DecBlock* joinCondition(DecBlock* block) {
 			if (!block->isCondition())
 				return nullptr;
 
@@ -51,7 +49,7 @@ namespace CE::Decompiler::Optimization
 			if (!removedBlock->hasNoCode() || !removedBlock->isCondition() || removedBlock->getRefBlocksCount() != 1)
 				return nullptr;
 
-			Block* targetBlock = nullptr;
+			DecBlock* targetBlock = nullptr;
 			auto removedBlockNoJmpCond = removedBlock->getNoJumpCondition();
 			if (removedBlock->getNextNearBlock() == mutualBlock) {
 				targetBlock = removedBlock->getNextFarBlock();

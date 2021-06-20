@@ -3,7 +3,7 @@
 using namespace CE::Decompiler;
 using namespace CE::Decompiler::LinearView;
 
-Block* BlockList::findBlock(PrimaryTree::Block* decBlock) {
+Block* BlockList::findBlock(DecBlock* decBlock) {
 	for (auto it : m_blocks) {
 		if (it->m_decBlock == decBlock) {
 			return it;
