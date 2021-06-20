@@ -1,16 +1,11 @@
 #pragma once
 #include <GhidraSync/GhidraObject.h>
-#include "../Type/FunctionSignature.h"
-#include "../Symbol/Symbol.h"
+#include <Code/Type/FunctionSignature.h>
+#include <Code/Symbol/Symbol.h>
 #include <Image/ImageDecorator.h>
 
 namespace CE
 {
-	namespace Trigger::Function
-	{
-		class Hook;
-	};
-
 	namespace Decompiler
 	{
 		class FunctionPCodeGraph;
@@ -19,7 +14,7 @@ namespace CE
 	class FunctionManager;
 
 	struct SymbolContext {
-		IFunctionSignature* m_signature;
+		DataType::IFunctionSignature* m_signature;
 		CE::Symbol::SymbolTable* m_globalSymbolTable;
 		CE::Symbol::SymbolTable* m_stackSymbolTable;
 		CE::Symbol::SymbolTable* m_funcBodySymbolTable;
@@ -64,12 +59,6 @@ namespace CE
 
 		Symbol::SymbolTable* getStackSymbolTable();
 
-		Trigger::Function::Hook* getHook();
-
-		bool hasHook();
-
-		void createHook();
-
 		Ghidra::Id getGhidraId() override;
 
 		FunctionManager* getManager();
@@ -77,7 +66,6 @@ namespace CE
 		ImageDecorator* m_imageDec;
 		Symbol::FunctionSymbol* m_functionSymbol;
 		Symbol::SymbolTable* m_stackSymbolTable;
-		Trigger::Function::Hook* m_hook = nullptr;
 		FunctionManager* m_manager;
 	};
 };

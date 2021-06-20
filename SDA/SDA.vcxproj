@@ -245,6 +245,7 @@
   <ItemGroup>
     <ClCompile Include="GUI\Windows\DecompilerDemoWindow.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Module\Address\AddressSpace.cpp" />
     <ClCompile Include="Module\Code\Function\Function.cpp" />
     <ClCompile Include="Module\Code\Symbol\AbstractSymbol.cpp" />
     <ClCompile Include="Module\Code\Symbol\FuncParameterSymbol.cpp" />
@@ -304,11 +305,13 @@
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraSignatureTypeMapper.cpp" />
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraStructureTypeMapper.cpp" />
     <ClCompile Include="Module\GhidraSync\Mappers\GhidraTypedefTypeMapper.cpp" />
+    <ClCompile Include="Module\Image\ImageDecorator.cpp" />
     <ClCompile Include="Module\Manager\AbstractManager.cpp" />
     <ClCompile Include="Module\Manager\AddressSpaceManager.cpp" />
     <ClCompile Include="Module\Manager\FunctionManager.cpp" />
     <ClCompile Include="Module\Manager\ImageManager.cpp" />
     <ClCompile Include="Module\Manager\SymbolTableManager.cpp" />
+    <ClCompile Include="Program.cpp" />
     <ClCompile Include="Project.cpp" />
     <ClCompile Include="Module\Manager\StatManager.cpp" />
     <ClCompile Include="Module\Manager\SymbolManager.cpp" />

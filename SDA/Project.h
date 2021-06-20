@@ -17,8 +17,6 @@ namespace CE
 	class FunctionManager;
 	class AddressSpaceManager;
 	class ImageManager;
-	class TriggerManager;
-	class StatManager;
 
 	namespace Ghidra {
 		class Client;
@@ -45,8 +43,6 @@ namespace CE
 		FunctionManager* m_functionManager = nullptr;
 		AddressSpaceManager* m_addrSpaceManager = nullptr;
 		ImageManager* m_imageManager = nullptr;
-		TriggerManager* m_triggerManager = nullptr;
-		StatManager* m_statManager = nullptr;
 		Ghidra::Sync* m_ghidraSync;
 	public:
 		Project(ProjectManager* projectManager, const fs::path& dir)
@@ -85,10 +81,6 @@ namespace CE
 		AddressSpaceManager* getAddrSpaceManager();
 
 		ImageManager* getImageManager();
-
-		TriggerManager* getTriggerManager();
-
-		StatManager* getStatManager();
 
 		DB::ITransaction* getTransaction();
 

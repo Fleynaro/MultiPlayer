@@ -13,10 +13,8 @@ Project::~Project() {
 		delete m_addrSpaceManager;
 		delete m_imageManager;
 		delete m_functionManager;
-		delete m_statManager;
 		delete m_symbolManager;
 		delete m_symbolTableManager;
-		delete m_triggerManager;
 		delete m_typeManager;
 	}
 	if (m_ghidraSync != nullptr) {
@@ -49,7 +47,6 @@ void Project::load()
 	getImageManager()->loadImages();
 	getFunctionManager()->loadFunctions();
 	getTypeManager()->loadAfter();
-	getTriggerManager()->loadTriggers();
 }
 
 void Project::initManagers()
@@ -60,8 +57,6 @@ void Project::initManagers()
 	m_symbolTableManager = new SymbolTableManager(this);
 	m_addrSpaceManager = new AddressSpaceManager(this);
 	m_imageManager = new ImageManager(this);
-	m_triggerManager = new TriggerManager(this);
-	m_statManager = new StatManager(this);
 	m_allManagersHaveBeenLoaded = true;
 }
 
@@ -121,14 +116,6 @@ AddressSpaceManager* CE::Project::getAddrSpaceManager() {
 
 ImageManager* CE::Project::getImageManager() {
 	return m_imageManager;
-}
-
-TriggerManager* Project::getTriggerManager() {
-	return m_triggerManager;
-}
-
-StatManager* Project::getStatManager() {
-	return m_statManager;
 }
 
 DB::ITransaction* Project::getTransaction() {

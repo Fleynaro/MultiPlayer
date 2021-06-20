@@ -25,15 +25,7 @@ namespace CE::Symbol
 			return FUNC_PARAMETER;
 		}
 
-		Decompiler::Storage getStorage() override {
-			auto paramIdx = getParamIdx();
-			for (auto& paramInfo : m_signature->getCallInfo().getParamInfos()) {
-				if (paramIdx == paramInfo.getIndex()) {
-					return paramInfo.m_storage;
-				}
-			}
-			return Decompiler::Storage();
-		}
+		Decompiler::Storage getStorage() override;
 
 		void setFuncSignature(DataType::IFunctionSignature* signature) {
 			m_signature = signature;

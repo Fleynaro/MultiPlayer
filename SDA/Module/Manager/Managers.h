@@ -7,5 +7,3 @@
 #include "SymbolTableManager.h"
 #include "AddressSpaceManager.h"
 #include "ImageManager.h"
-#include "StatManager.h"
-#include "TriggerManager.h"

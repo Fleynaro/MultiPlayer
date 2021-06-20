@@ -4,6 +4,12 @@
 using namespace CE;
 using namespace CE::DataType;
 
+CE::DataType::Typedef::Typedef(TypeManager* typeManager, const std::string& name, const std::string& comment)
+	: UserDefinedType(typeManager, name, comment)
+{
+	m_refType = GetUnit(typeManager->getFactory().getDefaultType());
+}
+
 Typedef::Group Typedef::getGroup() {
 	return Group::Typedef;
 }

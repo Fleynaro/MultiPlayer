@@ -1,4 +1,5 @@
 #include <Program.h>
+#include <Project.h>
 #include "DecompilerDemoWindow.h"
 #include <asmtk/asmtk.h>
 
@@ -35,15 +36,9 @@ std::string dumpCode(const uint8_t* buf, size_t size) {
     return result;
 }
 
-FS::Directory getCurrentDir() {
-    char filename[MAX_PATH];
-    GetModuleFileName(NULL, filename, MAX_PATH);
-    return FS::File(filename).getDirectory().next("test");
-}
-
 void GUI::DecompilerDemoWindow::initProgram() {
-    getCurrentDir().createIfNotExists();
-    m_project = new Project(getCurrentDir());
+    m_program = new Program;
+    m_project = m_program->getProjectManager()->createProject("demo");
 
     m_project->initDataBase("database.db");
     m_project->initManagers();
@@ -167,37 +162,15 @@ void GUI::DecompilerDemoWindow::decompile(const std::string& hexBytesStr)
     RegisterFactoryX86 registerFactoryX86;
 
     WarningContainer warningContainer;
-    PCode::DecoderX86 decoder(&registerFactoryX86, &warningContainer);
+    InstructionPool instrPool;
+    PCode::DecoderX86 decoder(&registerFactoryX86, &instrPool, &warningContainer);
     PCodeGraphReferenceSearch graphReferenceSearch(m_project, &registerFactoryX86, &image);
 
     ImageAnalyzer imageAnalyzer(&image, imageGraph, &decoder, &registerFactoryX86, &graphReferenceSearch);
-    imageAnalyzer.start(0x0, {}, true);
+    imageAnalyzer.start(0x0, true);
     if (warningContainer.hasAnything()) {
         m_decInfoText.setText(warningContainer.getAllMessages());
     }
 
-    for (auto graph : imageGraph->getFunctionGraphList())
-    {
-        auto decCodeGraph = new DecompiledCodeGraph(graph);
-
-       /* auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
-        auto decompiler = new CE::Decompiler::Decompiler(decCodeGraph, &registerFactoryX86, ReturnInfo(), funcCallInfoCallback);
-        decompiler->start();*/
-        
-        //Optimization::ProcessDecompiledGraph(clonedDecCodeGraph);
-        decCodeGraph->checkOnSingleParents();
-
-        auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
-        auto userSymbolDef = Misc::CreateUserSymbolDef(m_project);
-        Symbolization::SymbolizeWithSDA(sdaCodeGraph, userSymbolDef);
-        Optimization::MakeFinalGraphOptimization(sdaCodeGraph);
-
-        auto allSymbolsStr = Misc::ShowAllSymbols(sdaCodeGraph);
-        LinearViewSimpleOutput output(Misc::BuildBlockList(sdaCodeGraph->getDecGraph()), sdaCodeGraph->getDecGraph());
-        output.setMinInfoToShow();
-        output.generate();
-
-        auto resultTextCode = allSymbolsStr + "\n" + output.getTextCode();
-        m_decCodeEditor->getEditor().SetText(resultTextCode);
-    }
+    // continue...
 }

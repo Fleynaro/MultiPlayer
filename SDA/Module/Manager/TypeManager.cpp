@@ -9,6 +9,7 @@
 #include <Utils/ObjectHash.h>
 
 using namespace CE;
+using namespace CE::DataType;
 
 TypeManager::TypeManager(Project* module)
 	: AbstractItemManager(module)
@@ -111,6 +112,36 @@ void TypeManager::loadAfter() {
 
 void TypeManager::loadTypesFrom(ghidra::packet::SDataFullSyncPacket* dataPacket) {
 	m_ghidraDataTypeMapper->load(dataPacket);
+}
+
+DataTypePtr CE::TypeManager::getType(DB::Id id) {
+	return DataType::GetUnit(findTypeById(id));
+}
+
+DataTypePtr CE::TypeManager::getDefaultType(int size, bool sign, bool floating) {
+	if (floating) {
+		if (size == 0x4)
+			return getType(SystemType::Float);
+		if (size == 0x8)
+			return getType(SystemType::Double);
+	}
+	if (size == 0x0)
+		return getType(SystemType::Void);
+	if (size == 0x1)
+		return getType(sign ? SystemType::Char : SystemType::Byte);
+	if (size == 0x2)
+		return getType(sign ? SystemType::Int16 : SystemType::UInt16);
+	if (size == 0x4)
+		return getType(sign ? SystemType::Int32 : SystemType::UInt32);
+	if (size == 0x8)
+		return getType(sign ? SystemType::Int64 : SystemType::UInt64);
+	return nullptr;
+}
+
+DataTypePtr CE::TypeManager::calcDataTypeForNumber(uint64_t value) {
+	if ((value & ~uint64_t(0xFFFFFFFF)) == (uint64_t)0x0)
+		return getType(SystemType::Int32);
+	return getType(SystemType::Int64);
 }
 
 DataType::IType* CE::TypeManager::findTypeById(DB::Id id) {

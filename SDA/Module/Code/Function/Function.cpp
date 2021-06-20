@@ -1,5 +1,4 @@
 #include "Function.h"
-#include "Module/Trigger/FunctionTrigger.h"
 #include <Manager/FunctionManager.h>
 
 using namespace CE;
@@ -42,18 +41,6 @@ int64_t CE::Function::getOffset() {
 
 Symbol::SymbolTable* Function::getStackSymbolTable() {
 	return m_stackSymbolTable;
-}
-
-CE::Trigger::Function::Hook* Function::getHook() {
-	return m_hook;
-}
-
-bool Function::hasHook() {
-	return m_hook != nullptr;
-}
-
-void Function::createHook() {
-	m_hook = new CE::Trigger::Function::Hook(this);
 }
 
 Ghidra::Id Function::getGhidraId()

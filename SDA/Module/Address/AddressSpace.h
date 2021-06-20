@@ -23,14 +23,12 @@ namespace CE
 			: m_addrSpaceManager(addrSpaceManager), Description(name, comment)
 		{}
 
-		const fs::path& getImagesDirectory() {
-			return getAddrSpaceManager()->getProject()->getImagesDirectory() / fs::path(getName());
-		}
+		const fs::path& getImagesDirectory();
 
 		auto& getImages() {
 			return m_images;
 		}
-
+		
 		ImageDecorator* getImageAt(std::uintptr_t addr) {
 			auto it = std::prev(m_images.upper_bound(addr));
 			if (it != m_images.end()) {

@@ -1,6 +1,7 @@
 #pragma once
 #include <GUI.h>
 #include <Widgets/CodeEditor/CodeEditor.h>
+#include <Program.h>
 
 namespace CE {
 	class Project;
@@ -19,6 +20,7 @@ namespace GUI {
 		Button::StdButton m_decompile_btn;
 		Text::ColoredText m_decInfoText;
 
+		CE::Program* m_program;
 		CE::Project* m_project;
 	public:
 		DecompilerDemoWindow()

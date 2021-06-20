@@ -9,10 +9,7 @@ namespace CE
 	{
 		ProjectManager* m_projectManager;
 	public:
-		Program()
-		{
-			m_projectManager = new ProjectManager(this);
-		}
+		Program();
 
 		const fs::path& getExecutableDirectory() {
 			return fs::path();
