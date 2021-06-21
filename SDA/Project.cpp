@@ -71,7 +71,13 @@ void CE::Project::createTablesInDatabase()
 		return;
 	}
 	auto query = res.getData();
-	m_db->exec(query);
+
+	try {
+		m_db->exec(query);
+	}
+	catch (SQLite::Exception e) {
+		std::cout << "!!! createTablesInDatabase error: " << std::string(e.what());
+	}
 }
 
 void CE::Project::initDataBase(const fs::path& file)

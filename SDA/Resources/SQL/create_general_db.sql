@@ -1,7 +1,6 @@
 create table sda_saves
 (
-    save_id         INTEGER
-        primary key autoincrement,
+    save_id         INTEGER primary key autoincrement,
     date            INTEGER,
     insertsCount    INTEGER,
     updatesCount    INTEGER,
@@ -10,24 +9,25 @@ create table sda_saves
 
 create table sda_ghidra_sync
 (
-    sync_id         INTEGER
-        primary key autoincrement,
+    sync_id         INTEGER primary key autoincrement,
     date            INTEGER,
     type            INTEGER,
     comment         TEXT,
     objectsCount    INTEGER
 );
 
-CREATE TABLE "sda_address_spaces" (
+CREATE TABLE "sda_address_spaces"
+(
 	"as_id"	        INTEGER,
 	"name"	        TEXT,
 	"comment"	    TEXT,
     "save_id"	    INTEGER,
-    "deleted"	    INTEGER DEFAULT 0
+    "deleted"	    INTEGER DEFAULT 0,
 	PRIMARY KEY("as_id")
 );
 
-CREATE TABLE "sda_images" (
+CREATE TABLE "sda_images"
+(
 	"image_id"	            INTEGER,
     "parent_image_id"       INTEGER,
     "type"	                INTEGER,
@@ -40,7 +40,7 @@ CREATE TABLE "sda_images" (
     "json_vfunc_calls"      TEXT,
     "json_func_graphs"      TEXT,
     "save_id"	            INTEGER,
-    "deleted"	            INTEGER DEFAULT 0
+    "deleted"	            INTEGER DEFAULT 0,
 	PRIMARY KEY("image_id")
 );
 
@@ -58,7 +58,8 @@ CREATE TABLE "sda_symbols"
 	"deleted"	            INTEGER DEFAULT 0
 );
 
-CREATE TABLE "sda_symbol_tables" (
+CREATE TABLE "sda_symbol_tables"
+(
 	"sym_table_id"	INTEGER,
 	"type"	        INTEGER,
     "json_symbols"  TEXT,
@@ -91,11 +92,9 @@ create table sda_triggers
 
 create table sda_types
 (
-    type_id             INTEGER
-        primary key autoincrement,
-    "group" INTEGER,
-    name                TEXT
-        unique,
+    type_id             INTEGER  primary key autoincrement,
+    "group"             INTEGER,
+    name                TEXT unique,
     comment             TEXT,
     json_extra          TEXT,
     save_id             INTEGER,

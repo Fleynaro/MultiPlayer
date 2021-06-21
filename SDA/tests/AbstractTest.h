@@ -37,12 +37,15 @@ public:
 
 protected:
     void createProject(const fs::path& dir) {
-        m_project = m_program->getProjectManager()->createProject(m_program->getExecutableDirectory() / dir);
+        auto prj_dir = m_program->getExecutableDirectory() / dir;
+        fs::remove_all(prj_dir);
+        m_project = m_program->getProjectManager()->createProject(prj_dir);
         initProject();
     }
 
     void loadProject(const fs::path& dir) {
-        m_project = m_program->getProjectManager()->loadProject(m_program->getExecutableDirectory() / dir);
+        auto prj_dir = m_program->getExecutableDirectory() / dir;
+        m_project = m_program->getProjectManager()->loadProject(prj_dir);
         initProject();
         m_project->load();
     }

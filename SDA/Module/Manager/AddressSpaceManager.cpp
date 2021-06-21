@@ -11,6 +11,9 @@ CE::AddressSpaceManager::AddressSpaceManager(Project* project)
 
 AddressSpace* CE::AddressSpaceManager::createAddressSpace(const std::string& name, const std::string& desc, bool generateId) {
 	auto addressSpace = new AddressSpace(this, name, desc);
+	if (!fs::exists(addressSpace->getImagesDirectory()))
+		fs::create_directory(addressSpace->getImagesDirectory());
+
 	addressSpace->setMapper(m_imageMapper);
 	if (generateId)
 		addressSpace->setId(m_imageMapper->getNextId());

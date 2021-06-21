@@ -124,7 +124,13 @@ namespace CE
 			ProjectEntry projectEntry;
 			projectEntry.m_dir = dir;
 			m_projectEntries.push_back(projectEntry);
-			return new Project(this, dir);
+
+			auto project = new Project(this, dir);
+			if (!fs::exists(project->getDirectory()))
+				fs::create_directory(project->getDirectory());
+			if (!fs::exists(project->getImagesDirectory()))
+				fs::create_directory(project->getImagesDirectory());
+			return project;
 		}
 
 		const auto& getProjectEntries() {

@@ -28,9 +28,10 @@ namespace CE
 		{
 		protected:
 			bool m_generateId;
+			bool m_markAsNew;
 
-			AbstractFactory(bool generateId)
-				: m_generateId(generateId)
+			AbstractFactory(bool generateId, bool markAsNew)
+				: m_generateId(generateId), m_markAsNew(markAsNew)
 			{}
 		};
 

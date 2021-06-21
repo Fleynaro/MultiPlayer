@@ -16,19 +16,18 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
     createProject("test");
 
     // check count of tables
-    EXPECT_EQ(m_project->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 9);
+    EXPECT_EQ(m_project->getDB().execAndGet("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").getInt(), 9 + 1);
 
     // create the address space
     auto testAddrSpace = m_project->getAddrSpaceManager()->createAddressSpace("testAddrSpace");
 
     // create the image decorator
     auto testImageDec = m_project->getImageManager()->createImage(testAddrSpace, ImageDecorator::IMAGE_PE, "testImage");
-    fs::copy_file(m_program->getExecutableDirectory() / "test_images/img1.exe", m_program->getExecutableDirectory() / "testAddrSpace/testImage.exe");
+    fs::copy_file(m_program->getExecutableDirectory() / "test_images" / "img1.exe", testImageDec->getFile());
     testImageDec->load();
 
     // check raw-image
     ASSERT_EQ(testImageDec->getAddress(), 0x140000000);
-    ASSERT_EQ(testImageDec->getSize(), 0x63000);
 
     // create data types
     {
