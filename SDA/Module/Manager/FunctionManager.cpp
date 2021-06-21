@@ -57,7 +57,7 @@ Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* f
 
 Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec) {
 	auto factory = m_functionManager->getProject()->getSymTableManager()->getFactory();
-	auto stackSymbolTable = factory.createSymbolTable(Symbol::SymbolTable::STACK_SPACE, 0x100000000);
+	auto stackSymbolTable = factory.createSymbolTable(Symbol::SymbolTable::STACK_SPACE);
 	return createFunction(functionSymbol, imageDec, stackSymbolTable);
 }
 

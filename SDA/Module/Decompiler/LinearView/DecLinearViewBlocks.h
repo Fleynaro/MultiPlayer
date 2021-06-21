@@ -32,7 +32,7 @@ namespace CE::Decompiler::LinearView
 		BlockList* m_blockList = nullptr;
 		std::list<BlockList*> m_refBlockLists;
 
-		Block(Block* decBlock)
+		Block(DecBlock* decBlock)
 			: m_decBlock(decBlock)
 		{}
 

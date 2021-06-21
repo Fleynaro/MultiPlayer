@@ -23,7 +23,7 @@ namespace CE
 			: m_addrSpaceManager(addrSpaceManager), Description(name, comment)
 		{}
 
-		const fs::path& getImagesDirectory();
+		fs::path getImagesDirectory();
 
 		auto& getImages() {
 			return m_images;

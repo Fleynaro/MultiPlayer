@@ -14,6 +14,22 @@ namespace CE
 
 			bool isUserDefined() override;
 
+			bool isSystem() override {
+				return m_type->isSystem();
+			}
+
+			bool isSigned() override {
+				return m_type->isSigned();
+			}
+
+			IType* getBaseType(bool refType = true, bool dereferencedType = true) override {
+				return m_type->getBaseType(refType, dereferencedType);
+			}
+
+			TypeManager* getTypeManager() override {
+				return m_type->getTypeManager();
+			}
+
 			bool isFloatingPoint();
 
 			int getPointerLvl();

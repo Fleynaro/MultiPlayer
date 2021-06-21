@@ -1,5 +1,4 @@
 #pragma once
-#include "../AutoSdaSymbol.h"
 #include "ExprTreeSdaNode.h"
 #include <Code/Symbol/Symbol.h>
 

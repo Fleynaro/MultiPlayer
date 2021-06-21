@@ -118,7 +118,6 @@ void DB::DataTypeMapper::loadExtraJson(CE::DataType::UserDefinedType* userDefTyp
 		for (const auto& json_field : json_extra["fields"]) {
 			auto name = json_field["name"].get<std::string>();
 			auto value = json_field["value"].get<int>();
-			auto name = json_field["name"].get<std::string>();
 			Enum->addField(name, value);
 		}
 	}

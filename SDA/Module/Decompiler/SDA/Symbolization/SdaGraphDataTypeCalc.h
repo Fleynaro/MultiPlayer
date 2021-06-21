@@ -1,5 +1,5 @@
 #pragma once
-#include "../SdaGraphModification.h"
+#include <Decompiler/SDA/SdaGraphModification.h>
 #include "SdaGoarBuilder.h"
 
 namespace CE::Decompiler::Symbolization
@@ -7,10 +7,10 @@ namespace CE::Decompiler::Symbolization
 	//Calculating data types for all nodes and building GOAR structures
 	class SdaDataTypesCalculater : public SdaGraphModification
 	{
-		IFunctionSignature* m_signature;
+		DataType::IFunctionSignature* m_signature;
 		Project* m_project;
 	public:
-		SdaDataTypesCalculater(SdaCodeGraph* sdaCodeGraph, IFunctionSignature* signature, Project* project)
+		SdaDataTypesCalculater(SdaCodeGraph* sdaCodeGraph, DataType::IFunctionSignature* signature, Project* project)
 			: SdaGraphModification(sdaCodeGraph), m_signature(signature), m_project(project)
 		{}
 
@@ -220,7 +220,7 @@ namespace CE::Decompiler::Symbolization
 				}
 				else if (auto condNode = dynamic_cast<AbstractCondition*>(sdaGenNode->getNode())) {
 					// any condition returns BOOLEAN value
-					auto boolType = m_project->getTypeManager()->getType(SystemType::Bool);
+					auto boolType = m_project->getTypeManager()->getType(DataType::SystemType::Bool);
 					sdaGenNode->setDataType(boolType);
 				}
 			}
@@ -260,7 +260,7 @@ namespace CE::Decompiler::Symbolization
 				// example: *(float*)(param1) where <param1> is <float*>
 				if (sdaSymbolLeaf->getDataType()->isPointer()) {
 					auto g = sdaSymbolLeaf->getDataType()->getGroup();
-					if (g == AbstractType::Group::Structure || g == AbstractType::Group::Class) {
+					if (g == DataType::AbstractType::Structure || g == DataType::AbstractType::Class) {
 						if (dynamic_cast<ReadValueNode*>(sdaSymbolLeaf->getParentNode())) {
 							// just add offset: *(float*)(param1) -> *(float*)(param1 + 0x0)
 							auto linearExpr = new LinearExpr(new SdaNumberLeaf(0));
@@ -375,8 +375,8 @@ namespace CE::Decompiler::Symbolization
 		bool isExplicitCast(DataTypePtr fromType, DataTypePtr toType) {
 			auto fromBaseType = fromType->getBaseType();
 			auto toBaseType = toType->getBaseType();
-			if (auto fromSysType = dynamic_cast<SystemType*>(fromBaseType)) {
-				if (auto toSysType = dynamic_cast<SystemType*>(toBaseType)) {
+			if (auto fromSysType = dynamic_cast<DataType::SystemType*>(fromBaseType)) {
+				if (auto toSysType = dynamic_cast<DataType::SystemType*>(toBaseType)) {
 					if (fromSysType->isSigned() != toSysType->isSigned())
 						return true;
 					if (fromBaseType->getSize() > toBaseType->getSize())
@@ -389,7 +389,7 @@ namespace CE::Decompiler::Symbolization
 				return false;
 			if (fromBaseType != toBaseType)
 				return true;
-			return !Unit::EqualPointerLvls(ptrList1, ptrList2);
+			return !DataType::Unit::EqualPointerLvls(ptrList1, ptrList2);
 		}
 
 		// calculate result data type for two operands
@@ -397,7 +397,7 @@ namespace CE::Decompiler::Symbolization
 			auto priority1 = opType1->getConversionPriority();
 			auto priority2 = opType2->getConversionPriority();
 			if (priority1 == 0 && priority2 == 0)
-				return m_project->getTypeManager()->getType(SystemType::Int32);
+				return m_project->getTypeManager()->getType(DataType::SystemType::Int32);
 			if (priority2 > priority1)
 				return opType2;
 			return opType1;

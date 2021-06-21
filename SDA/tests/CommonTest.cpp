@@ -143,7 +143,7 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
     }
 }
 
-TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
+TEST_F(ProgramFixture, Test_Common_DataBaseLoaded)
 {
     loadProject("test");
 
@@ -224,7 +224,6 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
 int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
     
-    Hook::init();
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
 

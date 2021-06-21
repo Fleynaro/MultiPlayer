@@ -61,9 +61,9 @@ public:
 		test->m_testId = testId;
 		test->m_image = image;
 		test->m_imageOffset = offset;
-		test->m_symbolCtx.m_globalSymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::GLOBAL_SPACE, 0x10000000);
-		test->m_symbolCtx.m_funcBodySymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::GLOBAL_SPACE, 0x10000000);
-		test->m_symbolCtx.m_stackSymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::STACK_SPACE, 0x10000000);
+		test->m_symbolCtx.m_globalSymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::GLOBAL_SPACE);
+		test->m_symbolCtx.m_funcBodySymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::GLOBAL_SPACE);
+		test->m_symbolCtx.m_stackSymbolTable = m_symTabManger->getFactory().createSymbolTable(CE::Symbol::SymbolTable::STACK_SPACE);
 		test->m_symbolCtx.m_signature = m_defSignature;
 		m_sampleTests.push_back(test);
 		return test;

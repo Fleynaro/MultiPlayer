@@ -3,8 +3,8 @@
 using namespace CE;
 using namespace CE::Symbol;
 
-SymbolTable::SymbolTable(SymbolTableManager* manager, SymbolTableType type, int size)
-	: m_manager(manager), m_type(type), m_size(size)
+CE::Symbol::SymbolTable::SymbolTable(SymbolTableManager* manager, SymbolTableType type)
+	: m_manager(manager), m_type(type)
 {}
 
 SymbolTableManager* SymbolTable::getManager() {
@@ -13,10 +13,6 @@ SymbolTableManager* SymbolTable::getManager() {
 
 SymbolTable::SymbolTableType SymbolTable::getType() {
 	return m_type;
-}
-
-int SymbolTable::getSize() {
-	return m_size;
 }
 
 void SymbolTable::addSymbol(AbstractSymbol* symbol, int64_t offset) {

@@ -22,8 +22,8 @@ SymbolTable* SymbolTableManager::findSymbolTableById(DB::Id id) {
 	return dynamic_cast<SymbolTable*>(find(id));
 }
 
-Symbol::SymbolTable* CE::SymbolTableManager::Factory::createSymbolTable(Symbol::SymbolTable::SymbolTableType type, int size) {
-	auto symbol = new SymbolTable(m_symbolTableManager, type, size);
+Symbol::SymbolTable* CE::SymbolTableManager::Factory::createSymbolTable(Symbol::SymbolTable::SymbolTableType type) {
+	auto symbol = new SymbolTable(m_symbolTableManager, type);
 	symbol->setMapper(m_symbolTableMapper);
 	if (m_generateId)
 		symbol->setId(m_symbolTableMapper->getNextId());

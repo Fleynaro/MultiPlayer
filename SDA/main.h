@@ -23,6 +23,7 @@
 #include <chrono>
 #include <regex>
 #include <cctype>
+#include <inttypes.h>
 
 // windows
 #include <winsock2.h>
@@ -31,9 +32,12 @@
 #include <d3d11.h>
 
 // extends the standart library
-#include <Utils/Helper.h>
 #include <Vendor/json/json.hpp>
+#include <magic_enum.hpp>
 
 // namespaces
 using json = nlohmann::json;
 namespace fs = std::filesystem;
+
+// extends the standart library
+#include <Utils/Helper.h>

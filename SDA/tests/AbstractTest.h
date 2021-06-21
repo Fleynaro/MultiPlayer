@@ -73,7 +73,7 @@ protected:
 #include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>
 #include <Decompiler/PCode/DecPCodeConstValueCalc.h>
 #include <Decompiler/PCode/ImageAnalyzer/DecImageAnalyzer.h>
-#include <Decompiler/Graph/Analyzer/ImagePCodeGraphAnalyzer.h>
+//#include <Decompiler/Graph/Analyzer/ImagePCodeGraphAnalyzer.h>
 #include <Decompiler/DecMisc.h>
 #include <Module/Image/SimpleBufferImage.h>
 #include <Module/Image/VectorBufferImage.h>

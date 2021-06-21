@@ -2,8 +2,8 @@
 #include <Module/Image/PEImage.h>
 #include "../../Graph/DecPCodeGraph.h"
 #include "../Decoders/DecPCodeDecoderX86.h"
-#include <Code/Symbol/SymbolTable/SymbolTable.h>
 #include <Manager/TypeManager.h>
+#include <Manager/SymbolTableManager.h>
 
 namespace CE::Decompiler
 {
@@ -12,8 +12,7 @@ namespace CE::Decompiler
 		CE::Project* m_project;
 		AbstractRegisterFactory* m_registerFactory;
 		IImage* m_image;
-		Symbolization::DataTypeFactory m_dataTypeFactory;
-		Symbolization::SymbolContext m_symbolCtx;
+		SymbolContext m_symbolCtx;
 	public:
 		struct VTable {
 			int64_t m_offset;
@@ -21,13 +20,14 @@ namespace CE::Decompiler
 		};
 		std::list<VTable> m_vtables;
 
-		PCodeGraphReferenceSearch(CE::Project* programModule, AbstractRegisterFactory* registerFactory, IImage* image)
-			: m_project(programModule), m_registerFactory(registerFactory), m_image(image), m_dataTypeFactory(programModule)
+		PCodeGraphReferenceSearch(CE::Project* project, AbstractRegisterFactory* registerFactory, IImage* image)
+			: m_project(project), m_registerFactory(registerFactory), m_image(image)
 		{
-			m_symbolCtx = Symbolization::SymbolContext(m_project);
-			m_symbolCtx.m_globalSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
-			m_symbolCtx.m_stackSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
-			m_symbolCtx.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);
+			auto factory = m_project->getSymTableManager()->getFactory(false);
+			m_symbolCtx.m_signature = nullptr;
+			m_symbolCtx.m_globalSymbolTable = factory.createSymbolTable(CE::Symbol::SymbolTable::GLOBAL_SPACE);
+			m_symbolCtx.m_stackSymbolTable = factory.createSymbolTable(CE::Symbol::SymbolTable::STACK_SPACE);
+			m_symbolCtx.m_funcBodySymbolTable = factory.createSymbolTable(CE::Symbol::SymbolTable::GLOBAL_SPACE);
 		}
 
 		~PCodeGraphReferenceSearch() {
@@ -37,13 +37,13 @@ namespace CE::Decompiler
 		}
 
 		void findNewFunctionOffsets(FunctionPCodeGraph* funcGraph, std::list<int>& nonVirtFuncOffsets, std::list<int>& otherOffsets) {
-			auto funcCallInfoCallback = [&](int offset, ExprTree::INode* dst) { return FunctionCallInfo({}); };
+			auto funcCallInfoCallback = [&](PCode::Instruction* instr, int offset) { return FunctionCallInfo({}); };
 			auto decompiler = CE::Decompiler::Decompiler(funcGraph, funcCallInfoCallback, ReturnInfo(), m_registerFactory);
 			decompiler.start();
 
 			auto decCodeGraph = decompiler.getDecGraph();
 			auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
-			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &m_symbolCtx, &m_dataTypeFactory);
+			Symbolization::SdaBuilding sdaBuilding(sdaCodeGraph, &m_symbolCtx, m_project);
 			sdaBuilding.start();
 
 			for (auto symbol : sdaBuilding.getNewAutoSymbols()) {
@@ -138,7 +138,7 @@ namespace CE::Decompiler
 					offsetsToFuncGraphs[(int)(startInstrOffset >> 8)] = funcGraph;
 					blocksToReconnect.push_back(block);
 				}
-				catch (const ImagePCodeGraph::BlockNotFoundException& ex) {
+				catch (ImagePCodeGraph::BlockNotFoundException ex) {
 					auto startBlock = m_imageGraph->createBlock(startInstrOffset);
 					funcGraph->setStartBlock(startBlock);
 					createPCodeBlocksAtOffset(startInstrOffset, funcGraph);
@@ -221,7 +221,7 @@ namespace CE::Decompiler
 						try {
 							instr = m_decoder->m_instrPool->getInstructionAt(offset);
 						}
-						catch (const InstructionPool::InstructionNotFoundException& ex) {
+						catch (InstructionPool::InstructionNotFoundException ex) {
 							// if no instruction at the offset then decode the location
 							if (byteOffset < m_image->getSize()) {
 								m_decoder->decode(m_image->getData() + m_image->toImageOffset(byteOffset), byteOffset, m_image->getSize());
@@ -230,12 +230,12 @@ namespace CE::Decompiler
 							try {
 								instr = m_decoder->m_instrPool->getInstructionAt(offset);
 							}
-							catch (const InstructionPool::InstructionNotFoundException& ex) {
+							catch (InstructionPool::InstructionNotFoundException ex) {
 							}
 						}
 						visitedOffsets.insert(offset);
 					}
-					catch (const ImagePCodeGraph::BlockNotFoundException& ex) {}
+					catch (ImagePCodeGraph::BlockNotFoundException ex) {}
 				}
 
 				if (instr == nullptr) {
@@ -266,7 +266,7 @@ namespace CE::Decompiler
 					if (byteOffset != instr->m_origInstruction->m_offset)
 						needChangeNextInstrOffset = true;
 				}
-				catch (const InstructionPool::InstructionNotFoundException& ex) {
+				catch (InstructionPool::InstructionNotFoundException ex) {
 					needChangeNextInstrOffset = true;
 				}
 				if (needChangeNextInstrOffset)
@@ -332,7 +332,7 @@ namespace CE::Decompiler
 						}
 						curBlock->setNextFarBlock(alreadyExistingBlock);
 					}
-					catch (const ImagePCodeGraph::BlockNotFoundException& ex) {
+					catch (ImagePCodeGraph::BlockNotFoundException ex) {
 						nextFarBlock = m_imageGraph->createBlock(targetOffset);
 						curBlock->setNextFarBlock(nextFarBlock);
 					}
@@ -343,7 +343,7 @@ namespace CE::Decompiler
 						try {
 
 						}
-						catch (const ImagePCodeGraph::BlockNotFoundException& ex) {
+						catch (ImagePCodeGraph::BlockNotFoundException ex) {
 
 						}
 
@@ -375,7 +375,7 @@ namespace CE::Decompiler
 							if (curBlock != nextBlock)
 								curBlock->setNextNearBlock(nextBlock);
 						}
-						catch (const ImagePCodeGraph::BlockNotFoundException& ex) {}
+						catch (ImagePCodeGraph::BlockNotFoundException ex) {}
 						offset = nextInstrOffset;
 					}
 					else {

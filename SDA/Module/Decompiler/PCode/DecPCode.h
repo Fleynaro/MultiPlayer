@@ -1,8 +1,6 @@
 #pragma once
 #include <main.h>
-#include <inttypes.h>
-#include "../DecMask.h"
-#include <magic_enum.hpp>
+#include <Decompiler/DecMask.h>
 
 //for debug x86
 #include <Zycore/Format.h>
@@ -147,6 +145,8 @@ namespace CE::Decompiler::PCode
 	public:
 		Register m_register;
 
+		RegisterVarnode() = default;
+
 		RegisterVarnode(Register reg)
 			: m_register(reg)
 		{}
@@ -171,6 +171,8 @@ namespace CE::Decompiler::PCode
 		uint64_t m_value;
 		int m_size;
 
+		ConstantVarnode() = default;
+
 		ConstantVarnode(uint64_t value, int size)
 			: m_value(value), m_size(size)
 		{}
@@ -189,6 +191,8 @@ namespace CE::Decompiler::PCode
 	{
 	public:
 		int m_size;
+
+		SymbolVarnode() = default;
 
 		SymbolVarnode(int size)
 			: m_size(size)
@@ -292,6 +296,8 @@ namespace CE::Decompiler::PCode
 			std::map<int, Instruction> m_pcodeInstructions;
 			std::string m_originalView;
 
+			OriginalInstruction() = default;
+
 			OriginalInstruction(int64_t offset, int length)
 				: m_offset(offset), m_length(length)
 			{}
@@ -303,6 +309,8 @@ namespace CE::Decompiler::PCode
 		Varnode* m_output; // the result
 		OriginalInstruction* m_origInstruction;
 		int m_orderId;
+
+		Instruction() = default;
 		
 		Instruction(InstructionId id, Varnode* input0, Varnode* input1, Varnode* output, OriginalInstruction* origInstruction, int orderId=0)
 			: m_id(id), m_input0(input0), m_input1(input1), m_output(output), m_origInstruction(origInstruction), m_orderId(orderId)

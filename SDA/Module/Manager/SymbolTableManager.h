@@ -20,7 +20,7 @@ namespace CE
 				: m_symbolTableManager(symbolTableManager), m_symbolTableMapper(symbolTableMapper), AbstractFactory(generateId)
 			{}
 
-			Symbol::SymbolTable* createSymbolTable(Symbol::SymbolTable::SymbolTableType type, int size);
+			Symbol::SymbolTable* createSymbolTable(Symbol::SymbolTable::SymbolTableType type);
 		};
 
 		using Iterator = AbstractIterator<Symbol::SymbolTable>;

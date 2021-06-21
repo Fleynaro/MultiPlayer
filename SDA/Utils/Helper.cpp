@@ -156,7 +156,9 @@ std::string Date::format(std::chrono::system_clock::time_point time_point, std::
 	return res;
 }
 
-void File::LoadFileIntoBuffer(const fs::path& file, char** buffer, int* size) {
+Helper::File::FileException::FileException(const char* message) : std::exception(message) {}
+
+void Helper::File::LoadFileIntoBuffer(const fs::path& file, char** buffer, int* size) {
 	//open file
 	std::ifstream infile(file, std::ios::binary);
 
@@ -174,7 +176,7 @@ void File::LoadFileIntoBuffer(const fs::path& file, char** buffer, int* size) {
 	infile.read(*buffer, *size);
 }
 
-void File::SaveBufferIntoFile(char* buffer, int size, const fs::path& file) {
+void Helper::File::SaveBufferIntoFile(char* buffer, int size, const fs::path& file) {
 	//open file
 	std::ofstream outfile(file, std::ios::binary);
 

@@ -38,7 +38,7 @@ IDomainObject* SymbolMapper::doLoad(Database* db, SQLite::Statement& query) {
 	try {
 		dataType = getManager()->getProject()->getTypeManager()->findTypeById(query.getColumn("type_id"));
 	}
-	catch (const AbstractItemManager::ItemNotFoundException& ex) {
+	catch (AbstractItemManager::ItemNotFoundException ex) {
 		dataType = getManager()->getProject()->getTypeManager()->getFactory().getDefaultType();
 	}
 	auto dataTypeUnit = DataType::GetUnit(dataType, query.getColumn("pointer_lvl"));
@@ -47,31 +47,37 @@ IDomainObject* SymbolMapper::doLoad(Database* db, SQLite::Statement& query) {
 	auto factory = getManager()->getFactory(false);
 	switch (type)
 	{
-	case FUNCTION:
+	case FUNCTION: {
 		auto offset = json_extra["offset"].get<int64_t>();
 		auto funcSig = dynamic_cast<DataType::IFunctionSignature*>(dataType);
 		symbol = factory.createFunctionSymbol(offset, funcSig, name, comment);
 		break;
-	case GLOBAL_VAR:
+	}
+	case GLOBAL_VAR: {
 		auto offset = json_extra["offset"].get<int64_t>();
 		symbol = factory.createGlobalVarSymbol(offset, dataTypeUnit, name, comment);
 		break;
-	case LOCAL_INSTR_VAR:
+	}
+	case LOCAL_INSTR_VAR: {
 		symbol = factory.createLocalInstrVarSymbol(dataTypeUnit, name, comment);
 		break;
-	case LOCAL_STACK_VAR:
+	}
+	case LOCAL_STACK_VAR: {
 		auto offset = json_extra["offset"].get<int64_t>();
 		symbol = factory.createLocalStackVarSymbol(offset, dataTypeUnit, name, comment);
 		break;
-	case FUNC_PARAMETER:
+	}
+	case FUNC_PARAMETER: {
 		auto paramIdx = json_extra["param_idx"].get<int>();
 		symbol = factory.createFuncParameterSymbol(paramIdx, nullptr, dataTypeUnit, name, comment);
 		break;
-	case STRUCT_FIELD:
+	}
+	case STRUCT_FIELD: {
 		auto absBitOffset = json_extra["abs_bit_offset"].get<int>();
 		auto bitSize = json_extra["bit_size"].get<int>();
 		symbol = factory.createStructFieldSymbol(absBitOffset, bitSize, nullptr, dataTypeUnit, name, comment);
 		break;
+	}
 	}
 
 	symbol->setId(symbol_id);

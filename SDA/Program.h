@@ -11,8 +11,10 @@ namespace CE
 	public:
 		Program();
 
-		const fs::path& getExecutableDirectory() {
-			return fs::path();
+		fs::path getExecutableDirectory() {
+			char filename[MAX_PATH];
+			GetModuleFileName(NULL, filename, MAX_PATH);
+			return fs::path(filename).parent_path();
 		}
 
 		ProjectManager* getProjectManager() {

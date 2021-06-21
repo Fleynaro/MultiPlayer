@@ -1,5 +1,5 @@
 #include "GhidraSyncCommitment.h"
-#include <Manager/ProgramModule.h>
+#include <Project.h>
 
 using namespace CE;
 using namespace CE::Ghidra;

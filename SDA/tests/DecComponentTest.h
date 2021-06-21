@@ -55,7 +55,7 @@ public:
 	// show const values calculated by the virtual machine
 	void showConstValues(std::map<PCode::Instruction*, DataValue> constValues) {
 		for (auto pair : constValues) {
-			printf("%s -> %i", pair.first->printDebug().c_str(), pair.second);
+			printf("%s -> %ll", pair.first->printDebug().c_str(), pair.second);
 		}
 	}
 

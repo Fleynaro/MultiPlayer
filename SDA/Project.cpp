@@ -126,7 +126,7 @@ const fs::path& CE::Project::getDirectory() {
 	return m_directory;
 }
 
-const fs::path& CE::Project::getImagesDirectory() {
+fs::path CE::Project::getImagesDirectory() {
 	return m_directory / fs::path("images");
 }
 

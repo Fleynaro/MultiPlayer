@@ -22,20 +22,11 @@ namespace CE::Decompiler::PCode
 		InstructionPool()
 		{}
 
-		RegisterVarnode* createRegisterVarnode(Register reg) {
-			m_registerVarnodes.push_back(RegisterVarnode(reg));
-			return &*m_registerVarnodes.rbegin();
-		}
+		RegisterVarnode* createRegisterVarnode(Register reg);
 
-		ConstantVarnode* createConstantVarnode(uint64_t value, int size) {
-			m_constantVarnodes.push_back(ConstantVarnode(value, size));
-			return &*m_constantVarnodes.rbegin();
-		}
+		ConstantVarnode* createConstantVarnode(uint64_t value, int size);
 
-		SymbolVarnode* createSymbolVarnode(int size) {
-			m_symbolVarnodes.push_back(SymbolVarnode(size));
-			return &*m_symbolVarnodes.rbegin();
-		}
+		SymbolVarnode* createSymbolVarnode(int size);
 
 		Instruction::OriginalInstruction* createOrigInstruction(int64_t offset, int length) {
 			m_origInstructions[offset] = Instruction::OriginalInstruction(offset, length);
@@ -53,30 +44,9 @@ namespace CE::Decompiler::PCode
 			return &origInstr->m_pcodeInstructions[orderId];
 		}
 
-		void modifyInstruction(Instruction* instr, MODIFICATOR mod) {
-			switch (mod)
-			{
-			case MODIFICATOR_JMP_CALL:
-				// replace JMP with CALL and add RET
-				instr->m_id = PCode::InstructionId::CALL;
-				createInstruction(PCode::InstructionId::RETURN, nullptr, nullptr, nullptr, instr->m_origInstruction, 1);
-				break;
-			}
-			m_modifiedInstructions[instr->getOffset()] = mod;
-		}
+		void modifyInstruction(Instruction* instr, MODIFICATOR mod);
 
 		// get pcode instruction at a complex offset (offset + order)
-		Instruction* getInstructionAt(int64_t instrOffset) {
-			auto byteOffset = instrOffset >> 8;
-			auto instrOrder = instrOffset & 0xFF;
-			auto it = m_origInstructions.find(byteOffset);
-			if (it == m_origInstructions.end())
-				throw InstructionNotFoundException();
-			auto origInstr = &it->second;
-			auto it2 = origInstr->m_pcodeInstructions.find(byteOffset);
-			if (it2 == origInstr->m_pcodeInstructions.end())
-				throw InstructionNotFoundException();
-			return &it2->second;
-		}
+		Instruction* getInstructionAt(int64_t instrOffset);
 	};
 };

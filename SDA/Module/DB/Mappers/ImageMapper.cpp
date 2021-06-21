@@ -4,6 +4,7 @@
 #include <Manager/SymbolTableManager.h>
 #include <Manager/TypeManager.h>
 #include <Decompiler/PCode/Decoders/DecPCodeDecoderX86.h>
+#include <Decompiler/Graph/DecPCodeGraph.h>
 
 using namespace DB;
 using namespace CE;

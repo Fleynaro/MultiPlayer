@@ -1,5 +1,8 @@
 #pragma once
-#include "../SdaGraphModification.h"
+#include <Decompiler/SDA/SdaGraphModification.h>
+#include <Code/Function/Function.h>
+#include <Manager/SymbolManager.h>
+#include <Manager/TypeManager.h>
 
 namespace CE::Decompiler::Symbolization
 {
@@ -8,7 +11,7 @@ namespace CE::Decompiler::Symbolization
 	{
 		SymbolContext* m_symbolCtx;
 		Project* m_project;
-		FunctionSignature::CallingConvetion m_callingConvention;
+		DataType::IFunctionSignature::CallingConvetion m_callingConvention;
 		std::map<Symbol::Symbol*, SdaSymbolLeaf*> m_replacedSymbols; //for cache purposes
 		std::map<int64_t, CE::Symbol::ISymbol*> m_stackToSymbols; //stackVar1
 		std::map<int64_t, CE::Symbol::ISymbol*> m_globalToSymbols; //globalVar1
@@ -17,7 +20,7 @@ namespace CE::Decompiler::Symbolization
 		SymbolManager::Factory m_symbolFactory;
 	public:
 
-		SdaBuilding(SdaCodeGraph* sdaCodeGraph, SymbolContext* symbolCtx, Project* project, FunctionSignature::CallingConvetion callingConvention = FunctionSignature::FASTCALL)
+		SdaBuilding(SdaCodeGraph* sdaCodeGraph, SymbolContext* symbolCtx, Project* project, DataType::IFunctionSignature::CallingConvetion callingConvention = DataType::IFunctionSignature::FASTCALL)
 			: SdaGraphModification(sdaCodeGraph), m_symbolCtx(symbolCtx), m_project(project), m_callingConvention(callingConvention), m_symbolFactory(m_project->getSymbolManager()->getFactory())
 		{}
 
@@ -248,7 +251,7 @@ namespace CE::Decompiler::Symbolization
 					}
 				}
 				else {
-					if (m_callingConvention == FunctionSignature::FASTCALL) {
+					if (m_callingConvention == DataType::IFunctionSignature::FASTCALL) {
 						paramIdx = GetIndex_FASTCALL(reg, offset);
 					}
 				}

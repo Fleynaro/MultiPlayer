@@ -61,7 +61,6 @@ CREATE TABLE "sda_symbols"
 CREATE TABLE "sda_symbol_tables" (
 	"sym_table_id"	INTEGER,
 	"type"	        INTEGER,
-    "size"          INTEGER,
     "json_symbols"  TEXT,
     "save_id"	    INTEGER,
     "deleted"	    INTEGER DEFAULT 0,

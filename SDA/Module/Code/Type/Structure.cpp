@@ -90,7 +90,7 @@ void Structure::addField(Field* field) {
 }
 
 bool Structure::removeField(Field* field) {
-	removeField(field->getAbsBitOffset());
+	return removeField(field->getAbsBitOffset());
 }
 
 bool Structure::removeField(int bitOffset) {

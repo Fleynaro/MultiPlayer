@@ -1,5 +1,4 @@
 #pragma once
-
 #include <main.h>
 
 
@@ -8,7 +7,7 @@ namespace Helper
 	namespace File {
 		// exceptions
 		class FileException : public std::exception {
-		public: FileException(const char* message) : std::exception(message) {}
+		public: FileException(const char* message);
 		};
 
 		extern void LoadFileIntoBuffer(const fs::path& file, char** buffer, int* size);

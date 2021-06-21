@@ -57,3 +57,24 @@ int64_t Storage::getOffset() {
 int ParameterInfo::getIndex() {
 	return m_index;
 }
+
+int CE::Decompiler::GetIndex_FASTCALL(PCode::Register reg, int64_t offset) {
+	if (reg.getType() == PCode::Register::Type::StackPointer) {
+		return (int)offset / 0x8 - 5 + 1;
+	}
+	static std::map<PCode::RegisterId, int> regToParamId = {
+		std::pair(ZYDIS_REGISTER_RCX, 1),
+		std::pair(ZYDIS_REGISTER_ZMM0, 1),
+		std::pair(ZYDIS_REGISTER_RDX, 2),
+		std::pair(ZYDIS_REGISTER_ZMM1, 2),
+		std::pair(ZYDIS_REGISTER_R8, 3),
+		std::pair(ZYDIS_REGISTER_ZMM2, 3),
+		std::pair(ZYDIS_REGISTER_R9, 4),
+		std::pair(ZYDIS_REGISTER_ZMM3, 4),
+	};
+	auto it = regToParamId.find(reg.getId());
+	if (it != regToParamId.end()) {
+		return it->second;
+	}
+	return -1;
+}

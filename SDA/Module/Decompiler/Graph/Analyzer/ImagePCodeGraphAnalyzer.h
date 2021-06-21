@@ -10,7 +10,7 @@ namespace CE::Decompiler
 	public:
 		struct FuncGraphInfo {
 			SdaCodeGraph* m_sdaFuncGraph;
-			Symbolization::SymbolContext m_symbolCtx;
+			SymbolContext m_symbolCtx;
 		};
 
 	private:
@@ -663,7 +663,7 @@ namespace CE::Decompiler
 			auto sdaCodeGraph = new SdaCodeGraph(decCodeGraph);
 
 			// create symbol tables for the func. graph
-			Symbolization::SymbolContext userSymbolDef;
+			SymbolContext userSymbolDef;
 			userSymbolDef.m_globalSymbolTable = m_globalSymbolTable;
 			userSymbolDef.m_stackSymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::STACK_SPACE, 100000);
 			userSymbolDef.m_funcBodySymbolTable = new CE::Symbol::SymbolTable(m_project->getSymTableManager(), CE::Symbol::SymbolTable::GLOBAL_SPACE, 100000);

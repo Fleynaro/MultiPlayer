@@ -1,6 +1,5 @@
 #pragma once
 #include <DB/Transaction.h>
-#include <Address/AddressSpace.h>
 #include <GhidraSync/GhidraSync.h>
 
 using namespace SQLite;
@@ -86,7 +85,7 @@ namespace CE
 
 		const fs::path& getDirectory();
 
-		const fs::path& getImagesDirectory();
+		fs::path getImagesDirectory();
 
 		Ghidra::Sync* getGhidraSync();
 

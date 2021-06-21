@@ -31,9 +31,9 @@ namespace DB
 		void doRemove(TransactionContext* ctx, IDomainObject* obj) override;
 
 	private:
-		DataTypePtr loadDataTypeJson(json json_dataType);
+		CE::DataTypePtr loadDataTypeJson(json json_dataType);
 
-		json createDataTypeJson(DataTypePtr dataType);
+		json createDataTypeJson(CE::DataTypePtr dataType);
 
 		void loadExtraJson(CE::DataType::UserDefinedType* userDefType, json json_extra);
 

@@ -2,14 +2,20 @@
 #include <Image/IImage.h>
 #include <DB/DomainObject.h>
 #include <Utils/Description.h>
-#include <Decompiler/PCode/DecPCodeInstructionPool.h>
-#include <Decompiler/Graph/DecPCodeGraph.h>
 #include <Code/Type/FunctionSignature.h>
+#include <Code/Symbol/SymbolTable/SymbolTable.h>
 
 namespace CE
 {
 	class AddressSpace;
 	class ImageManager;
+
+	namespace Decompiler {
+		namespace PCode {
+			class InstructionPool;
+		};
+		class ImagePCodeGraph;
+	};
 
 	// it is a symbolized image that decorates a raw image and can manipulate with high-level things (symbols)
 	class ImageDecorator : public DB::DomainObject, public Description, public IImage
@@ -26,7 +32,7 @@ namespace CE
 		IMAGE_TYPE m_type;
 		Symbol::SymbolTable* m_globalSymbolTable;
 		Symbol::SymbolTable* m_funcBodySymbolTable;
-		Decompiler::InstructionPool* m_instrPool;
+		Decompiler::PCode::InstructionPool* m_instrPool;
 		Decompiler::ImagePCodeGraph* m_imagePCodeGraph;
 		std::map<int64_t, CE::DataType::IFunctionSignature*>* m_vfunc_calls;
 		// need for making a clone that based on its parent image but haved own raw-image
@@ -44,89 +50,44 @@ namespace CE
 
 		ImageDecorator(ImageManager* imageManager, AddressSpace* addressSpace, ImageDecorator* parentImageDec, const std::string& name, const std::string& comment = "");
 
-		~ImageDecorator() {
-			if (m_image) {
-				delete m_image->getData();
-				delete m_image;
-			}
-
-			if (!m_parentImageDec) {
-				delete m_instrPool;
-				delete m_imagePCodeGraph;
-				delete m_vfunc_calls;
-			}
-		}
+		~ImageDecorator();
 
 		void load();
 
-		void save() {
-			Helper::File::SaveBufferIntoFile((char*)m_image->getData(), m_image->getSize(), getFile());
-		}
+		void save();
 
-		ImageManager* getImageManager() {
-			return m_imageManager;
-		}
+		ImageManager* getImageManager();
 
-		AddressSpace* getAddressSpace() {
-			return m_addressSpace;
-		}
+		AddressSpace* getAddressSpace();
 
-		IMAGE_TYPE getType() {
-			return m_type;
-		}
+		IMAGE_TYPE getType();
 
-		Symbol::SymbolTable* getGlobalSymbolTable() {
-			return m_globalSymbolTable;
-		}
+		Symbol::SymbolTable* getGlobalSymbolTable();
 
-		Symbol::SymbolTable* getFuncBodySymbolTable() {
-			return m_funcBodySymbolTable;
-		}
+		Symbol::SymbolTable* getFuncBodySymbolTable();
 
-		Decompiler::InstructionPool* getInstrPool() {
-			return m_instrPool;
-		}
+		Decompiler::PCode::InstructionPool* getInstrPool();
 
-		Decompiler::ImagePCodeGraph* getPCodeGraph() {
-			return m_imagePCodeGraph;
-		}
+		Decompiler::ImagePCodeGraph* getPCodeGraph();
 
-		auto& getVirtFuncCalls() {
-			return *m_vfunc_calls;
-		}
+		std::map<int64_t, CE::DataType::IFunctionSignature*>& getVirtFuncCalls();
 
-		ImageDecorator* getParentImage() {
-			return m_parentImageDec;
-		}
+		ImageDecorator* getParentImage();
 
-		const fs::path& getFile();
+		fs::path getFile();
 
-		byte* getData() override {
-			return m_image->getData();
-		}
+		byte* getData() override;
 
-		int getSize() override {
-			return m_image->getSize();
-		}
+		int getSize() override;
 
-		int getOffsetOfEntryPoint() override {
-			return m_image->getOffsetOfEntryPoint();
-		}
+		int getOffsetOfEntryPoint() override;
 
-		SegmentType defineSegment(int offset) override {
-			return m_image->defineSegment(offset);
-		}
+		SegmentType defineSegment(int offset) override;
 
-		int toImageOffset(int offset) override {
-			return m_image->toImageOffset(offset);
-		}
+		int toImageOffset(int offset) override;
 
-		int addrToImageOffset(uint64_t addr) override {
-			return m_image->addrToImageOffset(addr);
-		}
+		int addrToImageOffset(uint64_t addr) override;
 
-		std::uintptr_t getAddress() override {
-			return m_image->getAddress();
-		}
+		std::uintptr_t getAddress() override;
 	};
 };
