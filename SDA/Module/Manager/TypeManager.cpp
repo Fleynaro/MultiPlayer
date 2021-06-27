@@ -25,8 +25,8 @@ TypeManager::~TypeManager() {
 	delete m_ghidraDataTypeMapper;
 }
 
-TypeManager::Factory TypeManager::getFactory(bool generateId) {
-	return Factory(this, m_ghidraDataTypeMapper, m_dataTypeMapper, generateId);
+TypeManager::Factory TypeManager::getFactory(bool markAsNew) {
+	return Factory(this, m_ghidraDataTypeMapper, m_dataTypeMapper, markAsNew);
 }
 
 void TypeManager::addSystemTypes() {
@@ -185,8 +185,8 @@ DataType::Typedef* CE::TypeManager::Factory::createTypedef(const std::string& na
 	auto type = new DataType::Typedef(m_typeManager, name, desc);
 	type->setMapper(m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_typedefTypeMapper);
-	if(m_generateId)
-		type->setId(m_dataTypeMapper->getNextId());
+	if (m_markAsNew)
+		m_typeManager->getProject()->getTransaction()->markAsNew(type);
 	return type;
 }
 
@@ -194,8 +194,8 @@ DataType::Enum* CE::TypeManager::Factory::createEnum(const std::string& name, co
 	auto type = new DataType::Enum(m_typeManager, name, desc);
 	type->setMapper(m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_enumTypeMapper);
-	if (m_generateId)
-		type->setId(m_dataTypeMapper->getNextId());
+	if (m_markAsNew)
+		m_typeManager->getProject()->getTransaction()->markAsNew(type);
 	return type;
 }
 
@@ -203,8 +203,8 @@ DataType::Structure* CE::TypeManager::Factory::createStructure(const std::string
 	auto type = new DataType::Structure(m_typeManager, name, desc);
 	type->setMapper(m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_structureTypeMapper);
-	if (m_generateId)
-		type->setId(m_dataTypeMapper->getNextId());
+	if (m_markAsNew)
+		m_typeManager->getProject()->getTransaction()->markAsNew(type);
 	return type;
 }
 
@@ -212,8 +212,8 @@ DataType::Class* CE::TypeManager::Factory::createClass(const std::string& name, 
 	auto type = new DataType::Class(m_typeManager, name, desc);
 	type->setMapper(m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_classTypeMapper);
-	if (m_generateId)
-		type->setId(m_dataTypeMapper->getNextId());
+	if (m_markAsNew)
+		m_typeManager->getProject()->getTransaction()->markAsNew(type);
 	return type;
 }
 
@@ -221,8 +221,8 @@ DataType::FunctionSignature* CE::TypeManager::Factory::createSignature(DataType:
 	auto type = new DataType::FunctionSignature(m_typeManager, name, desc, callingConvetion);
 	type->setMapper(m_typeManager->m_dataTypeMapper);
 	type->setGhidraMapper(m_ghidraDataTypeMapper->m_signatureTypeMapper);
-	if (m_generateId)
-		type->setId(m_dataTypeMapper->getNextId());
+	if (m_markAsNew)
+		m_typeManager->getProject()->getTransaction()->markAsNew(type);
 	return type;
 }
 

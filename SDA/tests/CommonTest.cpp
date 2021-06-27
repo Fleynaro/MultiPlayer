@@ -85,7 +85,7 @@ TEST_F(ProgramFixture, Test_Common_DataBaseCreatedAndFilled)
         {
             auto block1 = testImageDec->getPCodeGraph()->createBlock(0x1000, 0x1200);
             testFunc1_graph->addBlock(block1);
-            auto block2 = testImageDec->getPCodeGraph()->createBlock(0x1000, 0x1200);
+            auto block2 = testImageDec->getPCodeGraph()->createBlock(0x1200, 0x1400);
             testFunc1_graph->addBlock(block2);
 
             block1->setNextFarBlock(block2);
@@ -150,7 +150,7 @@ TEST_F(ProgramFixture, Test_Common_DataBaseLoaded)
     auto testAddrSpace = m_project->getAddrSpaceManager()->findAddressSpaceByName("testAddrSpace");
 
     // load the image decorator
-    auto testImageDec = m_project->getImageManager()->findImageByName("testImageSpace");
+    auto testImageDec = m_project->getImageManager()->findImageByName("testImage");
 
     // check raw-image
     ASSERT_EQ(testImageDec->getAddress(), 0x140000000);
@@ -172,14 +172,14 @@ TEST_F(ProgramFixture, Test_Common_DataBaseLoaded)
             auto type = m_typeManager->findTypeByName("Entity");
             ASSERT_NE(type, nullptr);
             ASSERT_EQ(type->getGroup(), DataType::AbstractType::Structure);
-            if (auto entity = dynamic_cast<DataType::Class*>(type)) {
+            if (auto entity = dynamic_cast<DataType::Structure*>(type)) {
                 ASSERT_EQ(entity->getFields().size(), 3);
             }
         }
 
         // for typedef & enumeration
         {
-            auto type = m_typeManager->findTypeByName("EntityType");
+            auto type = m_typeManager->findTypeByName("MyEntityType");
             ASSERT_NE(type, nullptr);
             ASSERT_EQ(type->getGroup(), DataType::AbstractType::Typedef);
             if (auto objType = dynamic_cast<DataType::Typedef*>(type)) {
@@ -196,26 +196,36 @@ TEST_F(ProgramFixture, Test_Common_DataBaseLoaded)
     {
         ASSERT_EQ(m_funcManager->getItemsCount(), 2);
 
-        auto testFunc1_symbol = dynamic_cast<CE::Symbol::FunctionSymbol*>(testImageDec->getGlobalSymbolTable()->getSymbolAt(0x1000).second);
-        ASSERT_NE(testFunc1_symbol, nullptr);
-        auto testFunc1 = testFunc1_symbol->getFunction();
-
-        // check func. signature
+        // func 1
         {
-            ASSERT_EQ(testFunc1->getSignature()->getParameters().size(), 4);
-            // check data type for the param 3
-            auto testFunc1_param3 = testFunc1->getSignature()->getParameters()[3];
-            ASSERT_EQ(testFunc1_param3->getDataType()->getName(), "char");
-            ASSERT_EQ(testFunc1_param3->getDataType()->getPointerLevels().size(), 1);
+            auto testFunc1_symbol = dynamic_cast<CE::Symbol::FunctionSymbol*>(testImageDec->getGlobalSymbolTable()->getSymbolAt(0x1000).second);
+            ASSERT_NE(testFunc1_symbol, nullptr);
+            auto testFunc1 = testFunc1_symbol->getFunction();
+
+            // check func. signature
+            {
+                ASSERT_EQ(testFunc1->getSignature()->getParameters().size(), 4);
+                // check data type for the param 3
+                auto testFunc1_param3 = testFunc1->getSignature()->getParameters()[3];
+                ASSERT_EQ(testFunc1_param3->getDataType()->getName(), "char");
+                ASSERT_EQ(testFunc1_param3->getDataType()->getPointerLevels().size(), 1);
+            }
+
+            // func. graph
+            ASSERT_EQ(testFunc1->getFuncGraph()->getBlocks().size(), 2);
+            ASSERT_EQ(testFunc1->getFuncGraph()->getNonVirtFuncCalls().size(), 1);
         }
 
-        // func. graph
-        ASSERT_EQ(testFunc1->getFuncGraph()->getBlocks().size(), 2);
-        ASSERT_EQ(testFunc1->getFuncGraph()->getNonVirtFuncCalls().size(), 1);
+        // func 2
+        {
+            auto testFunc2_symbol = dynamic_cast<CE::Symbol::FunctionSymbol*>(testImageDec->getGlobalSymbolTable()->getSymbolAt(0x2000).second);
+            ASSERT_NE(testFunc2_symbol, nullptr);
+            auto testFunc2 = testFunc2_symbol->getFunction();
 
-        // func. stack
-        auto testFunc1_localVar = dynamic_cast<CE::Symbol::LocalStackVarSymbol*>(testFunc1->getStackSymbolTable()->getSymbolAt(0x10).second);
-        ASSERT_NE(testFunc1_localVar, nullptr);
+            // func. stack
+            auto testFunc2_localVar = dynamic_cast<CE::Symbol::LocalStackVarSymbol*>(testFunc2->getStackSymbolTable()->getSymbolAt(0x10).second);
+            ASSERT_NE(testFunc2_localVar, nullptr);
+        }
     }
 }
 

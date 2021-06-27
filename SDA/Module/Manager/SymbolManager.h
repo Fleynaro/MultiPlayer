@@ -17,8 +17,8 @@ namespace CE
 			SymbolManager* m_symbolManager;
 			DB::SymbolMapper* m_symbolMapper;
 		public:
-			Factory(SymbolManager* symbolManager, DB::SymbolMapper* symbolMapper, bool generateId)
-				: m_symbolManager(symbolManager), m_symbolMapper(symbolMapper), AbstractFactory(generateId)
+			Factory(SymbolManager* symbolManager, DB::SymbolMapper* symbolMapper, bool markAsNew)
+				: m_symbolManager(symbolManager), m_symbolMapper(symbolMapper), AbstractFactory(markAsNew)
 			{}
 
 			Symbol::FuncParameterSymbol* createFuncParameterSymbol(int paramIdx, DataType::IFunctionSignature* signature, DataTypePtr type, const std::string& name, const std::string& comment = "");
@@ -40,7 +40,7 @@ namespace CE
 		
 		SymbolManager(Project* module);
 
-		Factory getFactory(bool generateId = true);
+		Factory getFactory(bool markAsNew = true);
 
 		void loadSymbols();
 

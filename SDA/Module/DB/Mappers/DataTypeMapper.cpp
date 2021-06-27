@@ -13,13 +13,13 @@ DataTypeMapper::DataTypeMapper(IRepository* repository)
 
 void DataTypeMapper::loadBefore() {
 	auto& db = getManager()->getProject()->getDB();
-	Statement query(db, "SELECT * FROM sda_types WHERE id >= 1000 AND deleted = 0");
+	Statement query(db, "SELECT * FROM sda_types WHERE type_id >= 1000 AND deleted = 0");
 	load(&db, query);
 }
 
 void DataTypeMapper::loadAfter() {
 	auto& db = getManager()->getProject()->getDB();
-	Statement query(db, "SELECT type_id, json_extra FROM sda_types WHERE id >= 1000 AND deleted = 0");
+	Statement query(db, "SELECT type_id, json_extra FROM sda_types WHERE type_id >= 1000 AND deleted = 0");
 	while (query.executeStep())
 	{
 		int type_id = query.getColumn("type_id");
@@ -67,7 +67,7 @@ IDomainObject* DataTypeMapper::doLoad(Database* db, SQLite::Statement& query) {
 	}
 
 	if (obj != nullptr)
-		obj->setId(query.getColumn("id"));
+		obj->setId(query.getColumn("type_id"));
 	return obj;
 }
 
@@ -80,14 +80,14 @@ void DataTypeMapper::doUpdate(TransactionContext* ctx, IDomainObject* obj) {
 	SQLite::Statement query(*ctx->m_db, "REPLACE INTO sda_types (type_id, `group`, name, comment, json_extra, save_id, ghidra_sync_id) VALUES(?1, ?2, ?3, ?4, ?5, ?6, 0)");
 	query.bind(1, type->getId());
 	bind(query, type);
-	query.bind(5, ctx->m_saveId);
+	query.bind(6, ctx->m_saveId);
 	query.exec();
 }
 
 void DataTypeMapper::doRemove(TransactionContext* ctx, IDomainObject* obj) {
 	std::string action_query_text =
 		ctx->m_notDelete ? "UPDATE sda_types SET deleted=1" : "DELETE FROM sda_types";
-	Statement query(*ctx->m_db, action_query_text + " WHERE id=?1");
+	Statement query(*ctx->m_db, action_query_text + " WHERE type_id=?1");
 	query.bind(1, obj->getId());
 	query.exec();
 }

@@ -15,7 +15,7 @@ namespace CE
 
 		AddressSpaceManager(Project* project);
 
-		AddressSpace* createAddressSpace(const std::string& name, const std::string& desc = "", bool generateId = true);
+		AddressSpace* createAddressSpace(const std::string& name, const std::string& desc = "", bool markAsNew = true);
 
 		void loadAddressSpaces();
 

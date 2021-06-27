@@ -16,8 +16,8 @@ namespace CE
 			SymbolTableManager* m_symbolTableManager;
 			DB::SymbolTableMapper* m_symbolTableMapper;
 		public:
-			Factory(SymbolTableManager* symbolTableManager, DB::SymbolTableMapper* symbolTableMapper, bool generateId)
-				: m_symbolTableManager(symbolTableManager), m_symbolTableMapper(symbolTableMapper), AbstractFactory(generateId)
+			Factory(SymbolTableManager* symbolTableManager, DB::SymbolTableMapper* symbolTableMapper, bool markAsNew)
+				: m_symbolTableManager(symbolTableManager), m_symbolTableMapper(symbolTableMapper), AbstractFactory(markAsNew)
 			{}
 
 			Symbol::SymbolTable* createSymbolTable(Symbol::SymbolTable::SymbolTableType type);
@@ -29,7 +29,7 @@ namespace CE
 
 		void loadSymTables();
 
-		Factory getFactory(bool generateId = true);
+		Factory getFactory(bool markAsNew = true);
 
 		Symbol::SymbolTable* findSymbolTableById(DB::Id id);
 

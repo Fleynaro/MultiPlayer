@@ -9,14 +9,15 @@ CE::AddressSpaceManager::AddressSpaceManager(Project* project)
 	m_imageMapper = new DB::AddressSpaceMapper(this);
 }
 
-AddressSpace* CE::AddressSpaceManager::createAddressSpace(const std::string& name, const std::string& desc, bool generateId) {
+AddressSpace* CE::AddressSpaceManager::createAddressSpace(const std::string& name, const std::string& desc, bool markAsNew) {
 	auto addressSpace = new AddressSpace(this, name, desc);
 	if (!fs::exists(addressSpace->getImagesDirectory()))
 		fs::create_directory(addressSpace->getImagesDirectory());
 
 	addressSpace->setMapper(m_imageMapper);
-	if (generateId)
-		addressSpace->setId(m_imageMapper->getNextId());
+	if (markAsNew) {
+		getProject()->getTransaction()->markAsNew(addressSpace);
+	}
 	return addressSpace;
 }
 

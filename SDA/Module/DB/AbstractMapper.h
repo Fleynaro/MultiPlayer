@@ -35,6 +35,7 @@ namespace DB
 		virtual void update(TransactionContext* ctx, IDomainObject* obj) = 0;
 		virtual void remove(TransactionContext* ctx, IDomainObject* obj) = 0;
 		virtual IRepository* getRepository() = 0;
+		virtual Id getNextId() = 0;
 	};
 
 	class AbstractMapper : public IMapper
@@ -43,8 +44,6 @@ namespace DB
 		IRepository* m_repository;
 
 		AbstractMapper(IRepository* repository = nullptr);
-
-		virtual Id getNextId() = 0;
 
 		void load(Database* db, Statement& query);
 

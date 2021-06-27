@@ -18,8 +18,8 @@ Symbol::AbstractSymbol* CE::SymbolManager::findSymbolById(DB::Id id) {
 	return dynamic_cast<Symbol::AbstractSymbol*>(find(id));
 }
 
-SymbolManager::Factory SymbolManager::getFactory(bool generateId) {
-	return Factory(this, m_symbolMapper, generateId);
+SymbolManager::Factory SymbolManager::getFactory(bool markAsNew) {
+	return Factory(this, m_symbolMapper, markAsNew);
 }
 
 Symbol::FuncParameterSymbol* SymbolManager::Factory::createFuncParameterSymbol(int paramIdx, DataType::IFunctionSignature* signature, DataTypePtr type, const std::string& name, const std::string& comment) {
@@ -60,6 +60,6 @@ Symbol::LocalStackVarSymbol* SymbolManager::Factory::createLocalStackVarSymbol(i
 
 void SymbolManager::Factory::bind(Symbol::AbstractSymbol* symbol) {
 	symbol->setMapper(m_symbolMapper);
-	if(m_generateId)
-		symbol->setId(m_symbolMapper->getNextId());
+	if (m_markAsNew)
+		m_symbolManager->getProject()->getTransaction()->markAsNew(symbol);
 }

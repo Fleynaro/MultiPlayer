@@ -21,8 +21,8 @@ namespace CE
 			Ghidra::FunctionMapper* m_ghidraFunctionMapper;
 			DB::FunctionMapper* m_funcMapper;
 		public:
-			Factory(FunctionManager* functionManager, Ghidra::FunctionMapper* ghidraFunctionMapper, DB::FunctionMapper* funcMapper, bool generateId)
-				: m_functionManager(functionManager), m_ghidraFunctionMapper(ghidraFunctionMapper), m_funcMapper(funcMapper), AbstractFactory(generateId)
+			Factory(FunctionManager* functionManager, Ghidra::FunctionMapper* ghidraFunctionMapper, DB::FunctionMapper* funcMapper, bool markAsNew)
+				: m_functionManager(functionManager), m_ghidraFunctionMapper(ghidraFunctionMapper), m_funcMapper(funcMapper), AbstractFactory(markAsNew)
 			{}
 
 			Function* createFunction(Symbol::FunctionSymbol* functionSymbol, ImageDecorator* imageDec, Symbol::SymbolTable* stackSymbolTable);
@@ -39,7 +39,7 @@ namespace CE
 
 		~FunctionManager();
 
-		Factory getFactory(bool generateId = true);
+		Factory getFactory(bool markAsNew = true);
 
 		void loadFunctions();
 

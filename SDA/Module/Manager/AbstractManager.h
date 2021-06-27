@@ -27,11 +27,10 @@ namespace CE
 		class AbstractFactory
 		{
 		protected:
-			bool m_generateId;
 			bool m_markAsNew;
 
-			AbstractFactory(bool generateId, bool markAsNew)
-				: m_generateId(generateId), m_markAsNew(markAsNew)
+			AbstractFactory(bool markAsNew)
+				: m_markAsNew(markAsNew)
 			{}
 		};
 

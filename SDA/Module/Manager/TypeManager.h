@@ -26,8 +26,8 @@ namespace CE
 			Ghidra::DataTypeMapper* m_ghidraDataTypeMapper;
 			DB::DataTypeMapper* m_dataTypeMapper;
 		public:
-			Factory(TypeManager* typeManager, Ghidra::DataTypeMapper* ghidraDataTypeMapper, DB::DataTypeMapper* dataTypeMapper, bool generateId)
-				: m_typeManager(typeManager), m_ghidraDataTypeMapper(ghidraDataTypeMapper), m_dataTypeMapper(dataTypeMapper), AbstractFactory(generateId)
+			Factory(TypeManager* typeManager, Ghidra::DataTypeMapper* ghidraDataTypeMapper, DB::DataTypeMapper* dataTypeMapper, bool markAsNew)
+				: m_typeManager(typeManager), m_ghidraDataTypeMapper(ghidraDataTypeMapper), m_dataTypeMapper(dataTypeMapper), AbstractFactory(markAsNew)
 			{}
 
 			DataType::Typedef* createTypedef(const std::string& name, const std::string& desc = "");
@@ -54,7 +54,7 @@ namespace CE
 
 		~TypeManager();
 
-		Factory getFactory(bool generateId = true);
+		Factory getFactory(bool markAsNew = true);
 
 		void addSystemTypes();
 

@@ -10,26 +10,29 @@ CE::ImageManager::ImageManager(Project* project)
 	m_imageMapper = new DB::ImageMapper(this);
 }
 
-ImageDecorator* CE::ImageManager::createImage(AddressSpace* addressSpace, ImageDecorator::IMAGE_TYPE type, Symbol::SymbolTable* globalSymbolTable, Symbol::SymbolTable* funcBodySymbolTable, const std::string& name, const std::string& comment, bool generateId) {
+ImageDecorator* CE::ImageManager::createImage(AddressSpace* addressSpace, ImageDecorator::IMAGE_TYPE type, Symbol::SymbolTable* globalSymbolTable, Symbol::SymbolTable* funcBodySymbolTable, const std::string& name, const std::string& comment, bool markAsNew) {
 	auto imageDec = new ImageDecorator(this, addressSpace, type, globalSymbolTable, funcBodySymbolTable, name, comment);
 	imageDec->setMapper(m_imageMapper);
-	if (generateId)
-		imageDec->setId(m_imageMapper->getNextId());
+	if (markAsNew) {
+		getProject()->getTransaction()->markAsNew(imageDec);
+	}
 	return imageDec;
 }
 
-ImageDecorator* CE::ImageManager::createImage(AddressSpace* addressSpace, ImageDecorator::IMAGE_TYPE type, const std::string& name, const std::string& comment, bool generateId) {
+ImageDecorator* CE::ImageManager::createImage(AddressSpace* addressSpace, ImageDecorator::IMAGE_TYPE type, const std::string& name, const std::string& comment, bool markAsNew) {
 	auto factory = getProject()->getSymTableManager()->getFactory();
 	auto globalSymbolTable = factory.createSymbolTable(Symbol::SymbolTable::GLOBAL_SPACE);
 	auto funcBodySymbolTable = factory.createSymbolTable(Symbol::SymbolTable::GLOBAL_SPACE);
-	return createImage(addressSpace, type, globalSymbolTable, funcBodySymbolTable, name, comment, generateId);
+	return createImage(addressSpace, type, globalSymbolTable, funcBodySymbolTable, name, comment, markAsNew);
 }
 
-ImageDecorator* CE::ImageManager::createImageFromParent(AddressSpace* addressSpace, ImageDecorator* parentImageDec, const std::string& name, const std::string& comment, bool generateId) {
+ImageDecorator* CE::ImageManager::createImageFromParent(AddressSpace* addressSpace, ImageDecorator* parentImageDec, const std::string& name, const std::string& comment, bool markAsNew) {
 	auto imageDec = new ImageDecorator(this, addressSpace, parentImageDec, name, comment);
 	imageDec->setMapper(m_imageMapper);
-	if (generateId)
+	if (markAsNew) {
 		imageDec->setId(m_imageMapper->getNextId());
+		getProject()->getTransaction()->markAsNew(imageDec);
+	}
 	return imageDec;
 }
 

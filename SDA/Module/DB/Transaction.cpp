@@ -11,6 +11,8 @@ void DB::Transaction::markAsNew(IDomainObject* obj) {
 	m_insertedObjs.remove(obj);
 	m_insertedObjs.push_back(obj);
 
+	obj->setId(obj->getMapper()->getNextId());
+
 	if (obj->getMapper()->getRepository() != nullptr)
 		obj->getMapper()->getRepository()->onChangeBeforeCommit(obj, IRepository::Inserted);
 }

@@ -14,8 +14,8 @@ void SymbolTableManager::loadSymTables() {
 	m_symbolTableMapper->loadAll();
 }
 
-SymbolTableManager::Factory CE::SymbolTableManager::getFactory(bool generateId) {
-	return Factory(this, m_symbolTableMapper, generateId);
+SymbolTableManager::Factory CE::SymbolTableManager::getFactory(bool markAsNew) {
+	return Factory(this, m_symbolTableMapper, markAsNew);
 }
 
 SymbolTable* SymbolTableManager::findSymbolTableById(DB::Id id) {
@@ -25,7 +25,7 @@ SymbolTable* SymbolTableManager::findSymbolTableById(DB::Id id) {
 Symbol::SymbolTable* CE::SymbolTableManager::Factory::createSymbolTable(Symbol::SymbolTable::SymbolTableType type) {
 	auto symbol = new SymbolTable(m_symbolTableManager, type);
 	symbol->setMapper(m_symbolTableMapper);
-	if (m_generateId)
-		symbol->setId(m_symbolTableMapper->getNextId());
+	if (m_markAsNew)
+		m_symbolTableManager->getProject()->getTransaction()->markAsNew(symbol);
 	return symbol;
 }

@@ -25,7 +25,7 @@ CE::AddressSpaceManager* DB::AddressSpaceMapper::getManager() {
 }
 
 IDomainObject* DB::AddressSpaceMapper::doLoad(Database* db, SQLite::Statement& query) {
-	int as_id = query.getColumn("as_id_id");
+	int as_id = query.getColumn("as_id");
 	std::string name = query.getColumn("name");
 	std::string comment = query.getColumn("comment");
 

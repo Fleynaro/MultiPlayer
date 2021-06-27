@@ -19,6 +19,7 @@ namespace DB
 	public:
 		Transaction(Database* db);
 
+		// add to inserted obj. list generating a new id for {obj}
 		void markAsNew(IDomainObject* obj) override;
 
 		void markAsDirty(IDomainObject* obj) override;

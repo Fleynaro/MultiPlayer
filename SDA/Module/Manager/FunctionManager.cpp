@@ -18,8 +18,8 @@ FunctionManager::~FunctionManager() {
 	delete m_ghidraFunctionMapper;
 }
 
-FunctionManager::Factory FunctionManager::getFactory(bool generateId) {
-	return Factory(this, m_ghidraFunctionMapper, m_funcMapper, generateId);
+FunctionManager::Factory FunctionManager::getFactory(bool markAsNew) {
+	return Factory(this, m_ghidraFunctionMapper, m_funcMapper, markAsNew);
 }
 
 void FunctionManager::loadFunctions() {
@@ -50,8 +50,8 @@ Function* CE::FunctionManager::Factory::createFunction(Symbol::FunctionSymbol* f
 	auto func = new Function(m_functionManager, functionSymbol, imageDec, stackSymbolTable);
 	func->setMapper(m_funcMapper);
 	func->setGhidraMapper(m_ghidraFunctionMapper);
-	if (m_generateId)
-		func->setId(m_funcMapper->getNextId());
+	if(m_markAsNew)
+		m_functionManager->getProject()->getTransaction()->markAsNew(func);
 	return func;
 }
 

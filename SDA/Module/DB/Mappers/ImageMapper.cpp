@@ -39,7 +39,6 @@ IDomainObject* DB::ImageMapper::doLoad(Database* db, SQLite::Statement& query) {
 	int addr_space_id = query.getColumn("addr_space_id");
 	int global_table_id = query.getColumn("global_table_id");
 	int func_body_table_id = query.getColumn("func_body_table_id");
-	int img_pcode_graph_id = query.getColumn("img_pcode_graph_id");
 	std::string json_instr_pool_str = query.getColumn("json_instr_pool");
 	auto json_instr_pool = json::parse(json_instr_pool_str);
 	std::string json_vfunc_calls_str = query.getColumn("json_vfunc_calls");
@@ -167,12 +166,12 @@ void DB::ImageMapper::loadFuncPCodeGraphJson(const json& json_func_graph, CE::De
 		auto min_offset = json_pcode_block["min_offset"].get<int64_t>();
 		auto block = imgPCodeGraph->getBlockAtOffset(min_offset);
 
-		if (!json_pcode_block["next_near_block"].is_null()) {
+		if (json_pcode_block.contains("next_near_block")) {
 			auto next_near_block = json_pcode_block["next_near_block"].get<int64_t>();
 			auto nextNearBlock = imgPCodeGraph->getBlockAtOffset(next_near_block);
 			block->setNextNearBlock(nextNearBlock);
 		}
-		if (!json_pcode_block["next_far_block"].is_null()) {
+		if (json_pcode_block.contains("next_far_block")) {
 			auto next_far_block = json_pcode_block["next_far_block"].get<int64_t>();
 			auto nextFarBlock = imgPCodeGraph->getBlockAtOffset(next_far_block);
 			block->setNextNearBlock(nextFarBlock);
