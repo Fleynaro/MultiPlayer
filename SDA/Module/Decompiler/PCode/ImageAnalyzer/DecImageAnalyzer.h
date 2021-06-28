@@ -341,13 +341,9 @@ namespace CE::Decompiler
 					PCodeBlock* nextNearBlock = nullptr;
 					if (instr->m_id == PCode::InstructionId::CBRANCH) {
 						try {
-
+							m_imageGraph->getBlockAtOffset(nextInstrOffset);
 						}
 						catch (ImagePCodeGraph::BlockNotFoundException ex) {
-
-						}
-
-						if (m_imageGraph->getBlockAtOffset(nextInstrOffset) == nullptr) {
 							nextNearBlock = m_imageGraph->createBlock(nextInstrOffset);
 							curBlock->setNextNearBlock(nextNearBlock);
 						}

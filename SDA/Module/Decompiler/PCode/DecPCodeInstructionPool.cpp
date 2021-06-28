@@ -21,7 +21,7 @@ Instruction* InstructionPool::getInstructionAt(int64_t instrOffset) {
 	if (it == m_origInstructions.end())
 		throw InstructionNotFoundException();
 	auto origInstr = &it->second;
-	auto it2 = origInstr->m_pcodeInstructions.find(byteOffset);
+	auto it2 = origInstr->m_pcodeInstructions.find(instrOrder);
 	if (it2 == origInstr->m_pcodeInstructions.end())
 		throw InstructionNotFoundException();
 	return &it2->second;

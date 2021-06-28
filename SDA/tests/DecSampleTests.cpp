@@ -134,7 +134,7 @@ void ProgramDecSampleTestFixture::initSampleTest()
 		test = createSampleTest(102, { 0x89, 0xC8, 0x89, 0xD3, 0x83, 0xF8, 0x00, 0x7D, 0x02, 0xF7, 0xD8, 0x83, 0xFB, 0x00, 0x7D, 0x02, 0xF7, 0xDB, 0x39, 0xD8, 0x7D, 0x01, 0x93, 0x83, 0xFB, 0x00, 0x74, 0x04, 0x29, 0xD8, 0xEB, 0xF2, 0x89, 0x04, 0x24, 0x89, 0x1C, 0x24 });
 		test->m_enabled = true;
 		test->m_showFinalResult = true;
-		//test->enableAllAndShowAll();
+		test->enableAllAndShowAll();
 		sig = test->m_symbolCtx.m_signature = m_typeManager->getFactory().createSignature("test102");
 		sig->addParameter("a", findType("int32_t", ""));
 		sig->addParameter("b", findType("int32_t", ""));
@@ -365,8 +365,6 @@ bool ProgramDecSampleTestFixture::checkHash(int type, std::list<std::pair<int, H
 
 TEST_F(ProgramDecSampleTestFixture, Test_Dec_Samples)
 {
-	createProject("test");
-
 	std::list<std::pair<int, HS::Value>> sampleTestHashes;
 	bool testFail = false;
 

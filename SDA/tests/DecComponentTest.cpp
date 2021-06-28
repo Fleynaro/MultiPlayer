@@ -107,6 +107,13 @@ TEST_F(ProgramDecCompFixture, Test_Symbolization)
 	switch (1)
 	{
 	case 1: {
+		/*
+			struct Player {
+				float[3] pos;
+				int id;
+			}
+		*/
+
 		SymbolVarnode* playerPos[] = { new SymbolVarnode(4), new SymbolVarnode(4), new SymbolVarnode(4) };
 		SymbolVarnode* playerId = new SymbolVarnode(4);
 		auto offset = 0.5f;
