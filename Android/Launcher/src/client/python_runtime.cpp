@@ -268,14 +268,6 @@ void initialize() {
         } else {
             append_console("[warning] Configured Python site-packages directory is missing.");
         }
-        try {
-            py::module_::import("encodings.idna");
-            append_console("[info] Python IDNA codec initialized.");
-        } catch (const py::error_already_set& error) {
-            const std::string message = "[python] Could not initialize IDNA codec: " + std::string(error.what());
-            append_console(message);
-            launcher::diagnostics::log(L"ERROR", L"Python", wide_from_utf8(message));
-        }
         append_console("[info] Python runtime initialized.");
 
         // Keep the interpreter available to script worker threads after this
