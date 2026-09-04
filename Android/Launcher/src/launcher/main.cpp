@@ -1,3 +1,4 @@
+#include "common/config.h"
 #include "common/diagnostics.h"
 #include "common/remote_library.h"
 
@@ -53,9 +54,11 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     if (launcher_directory.empty()) {
         return ERROR_PATH_NOT_FOUND;
     }
+    const auto settings = launcher::config::load(launcher_directory);
     wchar_t install_buffer[MAX_PATH]{};
     const DWORD length = GetEnvironmentVariableW(L"GTA_5_INSTALL_DIR", install_buffer, MAX_PATH);
-    if (length == 0) {
+    std::filesystem::path install_directory = settings.game_install_directory;
+    if (install_directory.empty() && length == 0) {
         const DWORD error = GetLastError();
         launcher::diagnostics::show_error(
             L"Launcher", L"The GTA_5_INSTALL_DIR environment variable is missing or empty.",
@@ -63,12 +66,14 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
             error == ERROR_ENVVAR_NOT_FOUND ? ERROR_ENVVAR_NOT_FOUND : ERROR_INVALID_DATA);
         return error == ERROR_ENVVAR_NOT_FOUND ? ERROR_ENVVAR_NOT_FOUND : ERROR_INVALID_DATA;
     }
-    if (length >= MAX_PATH) {
+    if (install_directory.empty() && length >= MAX_PATH) {
         launcher::diagnostics::show_error(L"Launcher", L"GTA_5_INSTALL_DIR is too long for this launcher.",
                                           L"Use a shorter GTA V installation path.");
         return ERROR_BUFFER_OVERFLOW;
     }
-    const std::filesystem::path install_directory = install_buffer;
+    if (install_directory.empty()) {
+        install_directory = install_buffer;
+    }
     const auto game_launcher = install_directory / L"GTAVLauncher.exe";
     const auto bootstrap = launcher_directory / L"Bootstrap.dll";
     std::error_code filesystem_error;

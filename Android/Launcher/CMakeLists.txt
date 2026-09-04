@@ -20,7 +20,8 @@ target_include_directories(LauncherCommon INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/
 target_compile_definitions(LauncherCommon INTERFACE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(LauncherCommon INTERFACE minhook::minhook)
 
-add_executable(Launcher WIN32 src/launcher/main.cpp src/common/remote_library.cpp src/common/diagnostics.cpp)
+add_executable(Launcher WIN32 src/launcher/main.cpp src/common/remote_library.cpp src/common/diagnostics.cpp
+    src/common/config.cpp)
 target_link_libraries(Launcher PRIVATE LauncherCommon)
 
 add_library(Bootstrap SHARED src/bootstrap/dllmain.cpp src/common/remote_library.cpp src/common/diagnostics.cpp)
@@ -28,7 +29,7 @@ target_link_libraries(Bootstrap PRIVATE LauncherCommon)
 set_target_properties(Bootstrap PROPERTIES OUTPUT_NAME "Bootstrap")
 
 add_library(Client SHARED src/client/dllmain.cpp src/client/pattern_scanner.cpp src/client/game_hooks.cpp src/client/d3d11_overlay.cpp
-    src/client/python_runtime.cpp src/common/diagnostics.cpp)
+    src/client/python_runtime.cpp src/common/diagnostics.cpp src/common/config.cpp)
 target_link_libraries(Client PRIVATE LauncherCommon d3d11 dxgi)
 target_link_libraries(Client PRIVATE imgui::imgui)
 target_link_libraries(Client PRIVATE pybind11::embed Python3::Python)
@@ -42,3 +43,4 @@ endif()
 
 install(TARGETS Launcher Bootstrap Client RUNTIME DESTINATION . LIBRARY DESTINATION .)
 install(DIRECTORY scripts/ DESTINATION scripts PATTERN "__pycache__" EXCLUDE)
+install(FILES Launcher.ini DESTINATION .)

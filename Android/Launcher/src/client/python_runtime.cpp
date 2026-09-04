@@ -1,12 +1,10 @@
 #include "client/python_runtime.h"
 
 #include "client/game_hooks.h"
+#include "common/config.h"
 #include "common/diagnostics.h"
 
 #include <Python.h>
-#include <pybind11/embed.h>
-#include <pybind11/pybind11.h>
-
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -15,6 +13,8 @@
 #include <fstream>
 #include <future>
 #include <mutex>
+#include <pybind11/embed.h>
+#include <pybind11/pybind11.h>
 #include <queue>
 #include <sstream>
 #include <stdexcept>
@@ -117,9 +117,7 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
         std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
     });
     auto player = module.def_submodule("player", "PLAYER natives");
-    player.def("ped", []() -> int {
-        return static_cast<int>(call_game("PLAYER_GET_PED", {0}).at(0));
-    });
+    player.def("ped", []() -> int { return static_cast<int>(call_game("PLAYER_GET_PED", {0}).at(0)); });
     auto entity_module = module.def_submodule("entity", "ENTITY natives");
     entity_module.def("exists", [](const int entity) {
         validate_entity(entity);
@@ -143,43 +141,47 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
         validate_coordinate(coordinates.y, "y");
         validate_coordinate(coordinates.z, "z");
         call_game("ENTITY_SET_COORDS", {static_cast<std::uint64_t>(entity), float_bits(coordinates.x),
-                                          float_bits(coordinates.y), float_bits(coordinates.z), 0, 0, 0, 1});
+                                        float_bits(coordinates.y), float_bits(coordinates.z), 0, 0, 0, 1});
     });
     auto ped = module.def_submodule("ped", "PED natives");
-    ped.def("create", [](const int ped_type, const std::uint32_t model_hash, const Vec3 coordinates,
-                          const float heading, const bool is_network, const bool this_script_check) {
-        if (ped_type < 0 || ped_type > 32) {
-            throw std::invalid_argument("ped type must be between 0 and 32");
-        }
-        validate_model_hash(model_hash);
-        validate_coordinate(coordinates.x, "x");
-        validate_coordinate(coordinates.y, "y");
-        validate_coordinate(coordinates.z, "z");
-        validate_coordinate(heading, "heading");
-        return static_cast<int>(call_game(
-                                  "PED_CREATE",
-                                  {static_cast<std::uint64_t>(ped_type), model_hash, float_bits(coordinates.x),
-                                   float_bits(coordinates.y), float_bits(coordinates.z), float_bits(heading),
-                                   is_network ? 1U : 0U, this_script_check ? 1U : 0U})
-                                  .at(0));
-    }, py::arg("ped_type"), py::arg("model_hash"), py::arg("coordinates"), py::arg("heading") = 0.0F,
-           py::arg("is_network") = true, py::arg("this_script_check") = true);
+    ped.def(
+        "create",
+        [](const int ped_type, const std::uint32_t model_hash, const Vec3 coordinates, const float heading,
+           const bool is_network, const bool this_script_check) {
+            if (ped_type < 0 || ped_type > 32) {
+                throw std::invalid_argument("ped type must be between 0 and 32");
+            }
+            validate_model_hash(model_hash);
+            validate_coordinate(coordinates.x, "x");
+            validate_coordinate(coordinates.y, "y");
+            validate_coordinate(coordinates.z, "z");
+            validate_coordinate(heading, "heading");
+            return static_cast<int>(
+                call_game("PED_CREATE", {static_cast<std::uint64_t>(ped_type), model_hash, float_bits(coordinates.x),
+                                         float_bits(coordinates.y), float_bits(coordinates.z), float_bits(heading),
+                                         is_network ? 1U : 0U, this_script_check ? 1U : 0U})
+                    .at(0));
+        },
+        py::arg("ped_type"), py::arg("model_hash"), py::arg("coordinates"), py::arg("heading") = 0.0F,
+        py::arg("is_network") = true, py::arg("this_script_check") = true);
     auto vehicle = module.def_submodule("vehicle", "VEHICLE natives");
-    vehicle.def("create", [](const std::uint32_t model_hash, const Vec3 coordinates, const float heading,
-                              const bool is_network, const bool this_script_check) {
-        validate_model_hash(model_hash);
-        validate_coordinate(coordinates.x, "x");
-        validate_coordinate(coordinates.y, "y");
-        validate_coordinate(coordinates.z, "z");
-        validate_coordinate(heading, "heading");
-        return static_cast<int>(call_game(
-                                  "VEHICLE_CREATE",
-                                  {model_hash, float_bits(coordinates.x), float_bits(coordinates.y),
-                                   float_bits(coordinates.z), float_bits(heading), is_network ? 1U : 0U,
-                                   this_script_check ? 1U : 0U})
-                                  .at(0));
-    }, py::arg("model_hash"), py::arg("coordinates"), py::arg("heading") = 0.0F,
-           py::arg("is_network") = true, py::arg("this_script_check") = true);
+    vehicle.def(
+        "create",
+        [](const std::uint32_t model_hash, const Vec3 coordinates, const float heading, const bool is_network,
+           const bool this_script_check) {
+            validate_model_hash(model_hash);
+            validate_coordinate(coordinates.x, "x");
+            validate_coordinate(coordinates.y, "y");
+            validate_coordinate(coordinates.z, "z");
+            validate_coordinate(heading, "heading");
+            return static_cast<int>(
+                call_game("VEHICLE_CREATE",
+                          {model_hash, float_bits(coordinates.x), float_bits(coordinates.y), float_bits(coordinates.z),
+                           float_bits(heading), is_network ? 1U : 0U, this_script_check ? 1U : 0U})
+                    .at(0));
+        },
+        py::arg("model_hash"), py::arg("coordinates"), py::arg("heading") = 0.0F, py::arg("is_network") = true,
+        py::arg("this_script_check") = true);
 }
 
 void execute_script(const std::filesystem::path script) {
@@ -221,21 +223,22 @@ void initialize() {
         GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                            reinterpret_cast<LPCWSTR>(&initialize), &client_module);
         const DWORD length = GetModuleFileNameW(client_module, module_path, MAX_PATH);
-        const auto runtime_directory = length == 0 ? std::filesystem::current_path()
-                                                   : std::filesystem::path(module_path).parent_path();
-        scripts_directory = runtime_directory / "scripts";
+        const auto runtime_directory =
+            length == 0 ? std::filesystem::current_path() : std::filesystem::path(module_path).parent_path();
+        const auto settings = launcher::config::load(runtime_directory);
+        scripts_directory = settings.scripts_directory;
         std::error_code error;
         std::filesystem::create_directories(scripts_directory, error);
         if (error) {
             launcher::diagnostics::log(L"ERROR", L"Python", L"Cannot create scripts directory.");
         }
         py::initialize_interpreter();
-        const auto venv_site_packages = runtime_directory / ".venv" / "Lib" / "site-packages";
+        const auto venv_site_packages = settings.site_packages_directory;
         if (std::filesystem::is_directory(venv_site_packages)) {
             py::module_::import("sys").attr("path").attr("insert")(0, venv_site_packages.string());
-            append_console("[info] Added runtime/.venv/Lib/site-packages to sys.path.");
+            append_console("[info] Added configured Python site-packages to sys.path.");
         } else {
-            append_console("[warning] runtime/.venv is missing; install the documented Python environment.");
+            append_console("[warning] Configured Python site-packages directory is missing.");
         }
         append_console("[info] Python runtime initialized.");
     });
@@ -337,8 +340,12 @@ void stop() {
     append_console("[info] Stop requested. Python code must return from the current call.");
 }
 
-bool running() { return runtime_running.load(); }
-std::string active_script() { return current_script_name; }
+bool running() {
+    return runtime_running.load();
+}
+std::string active_script() {
+    return current_script_name;
+}
 std::vector<std::string> console_lines() {
     std::lock_guard lock(state_mutex);
     return output;

@@ -32,7 +32,8 @@ does not run the game during a build or installation step.
 - The overlay hooks the Direct3D 11 swap-chain `Present` method and displays
   the process id, renderer, and installed hook count. `F4` toggles the window.
 - The client embeds CPython, exposes a validated `gta` pybind11 module, and
-  loads user scripts from `runtime/scripts`. Native requests are marshalled to
+  loads user scripts from the configured `ScriptsDirectory` (default:
+  `runtime/scripts`). Native requests are marshalled to
   the game thread and use handlers captured by the build 1.41 registration
   hook; unavailable handlers fail as Python exceptions.
 - The overlay provides a Python script selector, run/stop controls, and a
@@ -40,6 +41,18 @@ does not run the game during a build or installation step.
 
 The renderer hook is installed before game signature scanning so GTA V cannot
 create its swap chain while client initialization is still scanning.
+
+## Runtime configuration
+
+`Launcher.ini` is installed beside `Launcher.exe`, `Bootstrap.dll`, and
+`Client.dll`. It contains English comments for every available parameter.
+`Python/ScriptsDirectory` selects the directory containing `.py` files and may
+be absolute or relative to the runtime directory. `Python/SitePackagesDirectory`
+controls the additional Python package directory and defaults to
+`.venv/Lib/site-packages` when commented out. `Launcher/GameInstallDirectory`
+can replace `GTA_5_INSTALL_DIR`; when it is commented out, the environment
+variable remains the fallback. Missing optional values use these defaults and
+are recorded in `GtaLauncher.log`.
 
 Pattern misses are non-fatal and are reflected by the installed hook count.
 This avoids terminating the game when Rockstar changes a signature, but a
