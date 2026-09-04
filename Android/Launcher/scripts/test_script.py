@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-import debugpy
-
 import gta
 from gta import entity, player
 
 
 def main() -> None:
     gta.log("Python runtime started")
-    debugpy.listen(("127.0.0.1", 5678))
-    gta.log("debugpy is listening on 127.0.0.1:5678")
     ped = player.ped()
     gta.log(f"Player ped handle: {ped}")
     gta.log(f"Player health: {entity.health(ped)}")
+    gta.log(
+        f"Player coordinates: {entity.coords(ped).x} {entity.coords(ped).y} {entity.coords(ped).z}"
+    )
 
 
 if __name__ == "__main__":

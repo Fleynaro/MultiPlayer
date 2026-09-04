@@ -331,10 +331,17 @@ void pump_game_thread() {
             hash = 0xAF35D0D2583051B0ULL;
             result_count = 1;
         } else {
+            launcher::diagnostics::log(L"ERROR", L"Python",
+                                       L"Unknown native operation requested: " + wide_from_utf8(request->operation));
             throw std::invalid_argument("unknown native operation: " + request->operation);
         }
+        launcher::diagnostics::log(L"INFO", L"Python",
+                                   L"Dispatching native operation '" + wide_from_utf8(request->operation) +
+                                       L"' to the GTA game thread.");
         request->completion.set_value(game::invoke_native(hash, request->arguments, result_count));
     } catch (...) {
+        launcher::diagnostics::log(L"ERROR", L"Python",
+                                   L"Native operation failed: " + wide_from_utf8(request->operation));
         request->completion.set_exception(std::current_exception());
     }
 }

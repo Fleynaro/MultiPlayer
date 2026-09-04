@@ -47,6 +47,8 @@ launcher icon as its application icon.
   `runtime/scripts`). Native requests are marshalled to
   the game thread and use handlers captured by the build 1.41 registration
   hook; unavailable handlers fail as Python exceptions.
+- Native calls use `hashes_ver141.json` beside `Client.dll` to translate
+  static native hashes to build-specific hashes before handler lookup.
 - The overlay provides a Python script selector, run/stop controls, and a
   bounded console. `scripts/gta.pyi` is the strict typing contract for scripts.
 
@@ -113,8 +115,10 @@ bootstrap, and client events share one file when the three binaries are kept in
 the same runtime directory. If that directory is not writable, logging falls
 back to `%TEMP%\GtaLauncher.log`. The log includes timestamps, process IDs,
 severity, component names, hook and signature results, injection stages, and
-renderer initialization events. Each diagnostic includes a required or
-recommended recovery action.
+renderer initialization events. Game hook diagnostics additionally include
+resolved target addresses, MinHook status codes, every native registration
+hash/handler pair, native invocation hashes, and the registered-handler count.
+Each diagnostic includes a required or recommended recovery action.
 
 `Launcher.exe`, `Bootstrap.dll`, and `Client.dll` install an unhandled exception
 handler. A fatal Windows exception or C++ `std::terminate` writes a timestamped

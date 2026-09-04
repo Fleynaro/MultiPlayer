@@ -10,6 +10,12 @@
 #include <array>
 #include <atomic>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iterator>
+#include <regex>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -47,6 +53,56 @@ std::atomic_size_t failed_hooks = 0;
 thread_local const char* executing_script = nullptr;
 RegisterNative original_register_native = nullptr;
 std::unordered_map<std::uint64_t, void*> native_handlers;
+std::unordered_map<std::uint64_t, std::uint64_t> native_hash_mapping;
+
+std::wstring hex_value(const std::uintptr_t value) {
+    std::wostringstream stream;
+    stream << L"0x" << std::hex << std::uppercase << value;
+    return stream.str();
+}
+
+std::wstring native_hash(const std::uint64_t hash) {
+    return hex_value(static_cast<std::uintptr_t>(hash));
+}
+
+std::filesystem::path client_directory() {
+    wchar_t module_path[MAX_PATH]{};
+    HMODULE module = nullptr;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                       reinterpret_cast<LPCWSTR>(&install), &module);
+    const DWORD length = GetModuleFileNameW(module, module_path, MAX_PATH);
+    return length == 0 ? std::filesystem::current_path() : std::filesystem::path(module_path).parent_path();
+}
+
+void load_native_hash_mapping() {
+    const auto mapping_file = client_directory() / L"hashes_ver141.json";
+    std::ifstream input(mapping_file);
+    if (!input.is_open()) {
+        launcher::diagnostics::log(L"WARNING", L"GameHooks",
+                                   L"Native hash mapping file could not be opened: " + mapping_file.wstring() +
+                                       L". Native calls will use their original hashes.");
+        return;
+    }
+
+    const std::string content((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    const std::regex pair_pattern(R"REGEX(\[\s*"0x([0-9A-Fa-f]+)"\s*,\s*"0x([0-9A-Fa-f]+)"\s*\])REGEX");
+    std::size_t parsed_pairs = 0;
+    for (std::sregex_iterator it(content.begin(), content.end(), pair_pattern), end; it != end; ++it) {
+        try {
+            const auto old_hash = std::stoull((*it)[1].str(), nullptr, 16);
+            const auto new_hash = std::stoull((*it)[2].str(), nullptr, 16);
+            native_hash_mapping[old_hash] = new_hash;
+            ++parsed_pairs;
+        } catch (const std::exception& error) {
+            (void)error;
+            launcher::diagnostics::log(L"WARNING", L"GameHooks",
+                                       L"Invalid native hash mapping entry in hashes_ver141.json.");
+        }
+    }
+    launcher::diagnostics::log(L"INFO", L"GameHooks",
+                               L"Loaded native hash mapping: file='" + mapping_file.wstring() + L"', pairs=" +
+                                   std::to_wstring(parsed_pairs) + L".");
+}
 
 constexpr std::array<const char*, 10> enabled_scripts = {"building_controller",
                                                          "initial",
@@ -98,11 +154,23 @@ int __fastcall execute_script_hook(void* context) {
 }
 
 void __fastcall register_native_hook(void* table, const std::uint64_t hash, void* handler) {
+    const auto existing = native_handlers.find(hash);
+    const std::wstring previous_handler =
+        existing == native_handlers.end() ? L"none" : hex_value(reinterpret_cast<std::uintptr_t>(existing->second));
     if (handler != nullptr) {
         native_handlers[hash] = handler;
     }
+    launcher::diagnostics::log(
+        L"INFO", L"GameHooks",
+        L"RegisterNative called: table=" + hex_value(reinterpret_cast<std::uintptr_t>(table)) + L", hash=" +
+            native_hash(hash) + L", handler=" + hex_value(reinterpret_cast<std::uintptr_t>(handler)) + L", previous=" +
+            previous_handler + L", registered_handlers=" + std::to_wstring(native_handlers.size()) + L".");
     if (original_register_native != nullptr) {
         original_register_native(table, hash, handler);
+    } else {
+        launcher::diagnostics::log(
+            L"ERROR", L"GameHooks",
+            L"RegisterNative handler has no original function. The game registration call was not forwarded.");
     }
 }
 
@@ -139,9 +207,14 @@ bool install_hook(const std::wstring_view hook_name, const std::uintptr_t target
     // Creates and enables one MinHook detour without modifying state on failure.
     if (target == 0) {
         ++missing_patterns;
-        launcher::diagnostics::log(L"WARNING", L"GameHooks", L"Hook target was not found: " + std::wstring(hook_name));
+        launcher::diagnostics::log(L"WARNING", L"GameHooks",
+                                   L"Hook target was not found: name='" + std::wstring(hook_name) + L"', detour=" +
+                                       hex_value(reinterpret_cast<std::uintptr_t>(detour)) + L".");
         return false;
     }
+    launcher::diagnostics::log(L"INFO", L"GameHooks",
+                               L"Creating hook: name='" + std::wstring(hook_name) + L"', target=" + hex_value(target) +
+                                   L", detour=" + hex_value(reinterpret_cast<std::uintptr_t>(detour)) + L".");
     const MH_STATUS create_status = MH_CreateHook(reinterpret_cast<void*>(target), detour, original);
     const MH_STATUS enable_status =
         create_status == MH_OK ? MH_EnableHook(reinterpret_cast<void*>(target)) : create_status;
@@ -150,13 +223,16 @@ bool install_hook(const std::wstring_view hook_name, const std::uintptr_t target
         launcher::diagnostics::log(L"ERROR", L"GameHooks",
                                    L"MinHook failed for hook '" + std::wstring(hook_name) + L"'. Status: " +
                                        std::to_wstring(static_cast<int>(enable_status)) + L", target address: " +
-                                       std::to_wstring(target));
+                                       hex_value(target) + L", create status: " +
+                                       std::to_wstring(static_cast<int>(create_status)) + L".");
         return false;
     }
     ++installed_hooks;
-    launcher::diagnostics::log(L"INFO", L"GameHooks",
-                               L"Hook installed: '" + std::wstring(hook_name) + L"', target address: " +
-                                   std::to_wstring(target));
+    launcher::diagnostics::log(
+        L"INFO", L"GameHooks",
+        L"Hook installed: '" + std::wstring(hook_name) + L"', target address: " + hex_value(target) + L", original=" +
+            hex_value(original != nullptr && *original != nullptr ? reinterpret_cast<std::uintptr_t>(*original) : 0) +
+            L".");
     return true;
 }
 
@@ -173,10 +249,16 @@ void install_suppressed(const std::wstring_view hook_name, HMODULE module, const
                                        (rip_target ? L"yes" : L"no") + L".");
         return;
     }
+    const auto raw_target = target;
     target += adjustment;
     if (rip_target) {
         target = memory::rip_relative(target, 1, 5);
     }
+    launcher::diagnostics::log(L"INFO", L"GameHooks",
+                               L"Resolved optional hook: name='" + std::wstring(hook_name) + L"', raw_match=" +
+                                   hex_value(raw_target) + L", final_target=" + hex_value(target) + L", adjustment=" +
+                                   std::to_wstring(adjustment) + L", RIP-relative=" + (rip_target ? L"yes" : L"no") +
+                                   L".");
     install_hook(hook_name, target, reinterpret_cast<void*>(&suppress_void_hook), nullptr);
 }
 
@@ -190,6 +272,11 @@ void install() {
                                           L"Start the client through Bootstrap.dll inside GTA5.exe.");
         return;
     }
+    launcher::diagnostics::log(L"INFO", L"GameHooks",
+                               L"Starting game hook installation: module=" +
+                                   hex_value(reinterpret_cast<std::uintptr_t>(game)) + L", existing_handlers=" +
+                                   std::to_wstring(native_handlers.size()) + L".");
+    load_native_hash_mapping();
     const MH_STATUS min_hook_status = MH_Initialize();
     if (min_hook_status != MH_OK && min_hook_status != MH_ERROR_ALREADY_INITIALIZED) {
         launcher::diagnostics::show_error(L"Client", L"MinHook could not be initialized.",
@@ -205,12 +292,22 @@ void install() {
 
     const auto register_native = memory::find_pattern(game, "48 BA 9C 13 0A F4 62 B1 FF D0 48 8B CB E8 ?? ?? ?? ??");
     if (register_native != 0) {
-        install_hook(L"RegisterNative", memory::rip_relative(register_native, 4, 8),
-                     reinterpret_cast<void*>(&register_native_hook),
+        // The legacy scanner used '*??' to return the address of the call's
+        // displacement. This scanner returns the beginning of the signature,
+        // so resolve the E8 call at byte 13 explicitly.
+        constexpr std::size_t register_native_call_offset = 13;
+        const auto register_native_call = register_native + register_native_call_offset;
+        const auto register_native_target = memory::rip_relative(register_native_call, 1, 5);
+        launcher::diagnostics::log(L"INFO", L"GameHooks",
+                                   L"RegisterNative signature matched at " + hex_value(register_native) + L"; call=" +
+                                       hex_value(register_native_call) + L"; resolved target=" +
+                                       hex_value(register_native_target) + L".");
+        install_hook(L"RegisterNative", register_native_target, reinterpret_cast<void*>(&register_native_hook),
                      reinterpret_cast<void**>(&original_register_native));
     } else {
         ++missing_patterns;
-        launcher::diagnostics::log(L"WARNING", L"GameHooks", L"Native registration signature was not found.");
+        launcher::diagnostics::log(L"WARNING", L"GameHooks",
+                                   L"Native registration signature was not found; no native handlers can be captured.");
     }
 
     const auto peds = memory::find_pattern(game, "85 D2 0F 88 BA 00 00 00 B8 01 00 00 00 75");
@@ -249,7 +346,8 @@ void install() {
     launcher::diagnostics::log(
         L"INFO", L"GameHooks",
         L"Game hook installation finished. Installed: " + std::to_wstring(installed_hooks.load()) + L", missing: " +
-            std::to_wstring(missing_patterns.load()) + L", failed: " + std::to_wstring(failed_hooks.load()) + L".");
+            std::to_wstring(missing_patterns.load()) + L", failed: " + std::to_wstring(failed_hooks.load()) +
+            L", registered native handlers: " + std::to_wstring(native_handlers.size()) + L".");
 }
 
 void remove() {
@@ -273,13 +371,32 @@ const char* current_script() {
 
 std::vector<std::uint64_t> invoke_native(const std::uint64_t hash, const std::vector<std::uint64_t>& arguments,
                                          const std::size_t result_count) {
+    const auto mapping = native_hash_mapping.find(hash);
+    const std::uint64_t runtime_hash = mapping == native_hash_mapping.end() ? hash : mapping->second;
+    launcher::diagnostics::log(L"INFO", L"GameHooks",
+                               L"Native invoke requested: static_hash=" + native_hash(hash) + L", runtime_hash=" +
+                                   native_hash(runtime_hash) + L", mapped=" +
+                                   (mapping == native_hash_mapping.end() ? L"no" : L"yes") + L", arguments=" +
+                                   std::to_wstring(arguments.size()) + L", results=" + std::to_wstring(result_count) +
+                                   L", registered_handlers=" + std::to_wstring(native_handlers.size()) + L".");
     if (arguments.size() > 32 || result_count > 3) {
+        launcher::diagnostics::log(L"ERROR", L"GameHooks",
+                                   L"Native invoke rejected by ABI limits: hash=" + native_hash(hash) + L".");
         throw std::invalid_argument("native argument or result count exceeds the GTA script ABI limit");
     }
-    const auto handler = native_handlers.find(hash);
+    const auto handler = native_handlers.find(runtime_hash);
     if (handler == native_handlers.end() || handler->second == nullptr) {
-        throw std::runtime_error("native handler is not registered for the current GTA build");
+        launcher::diagnostics::log(L"ERROR", L"GameHooks",
+                                   L"Native handler not found: static_hash=" + native_hash(hash) + L", runtime_hash=" +
+                                       native_hash(runtime_hash) + L", registered_handlers=" +
+                                       std::to_wstring(native_handlers.size()) + L", register_hook_original=" +
+                                       hex_value(reinterpret_cast<std::uintptr_t>(original_register_native)) + L".");
+        throw std::runtime_error("native handler is not registered for the current GTA build; hash=" +
+                                 std::to_string(hash));
     }
+    launcher::diagnostics::log(L"INFO", L"GameHooks",
+                               L"Native handler found: hash=" + native_hash(hash) + L", handler=" +
+                                   hex_value(reinterpret_cast<std::uintptr_t>(handler->second)) + L".");
     NativeStack returns{};
     NativeStack args{};
     std::copy(arguments.begin(), arguments.end(), std::begin(args.data));
