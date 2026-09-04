@@ -2,6 +2,7 @@
 #include "client/game_hooks.h"
 #include "common/diagnostics.h"
 
+#include <MinHook.h>
 #include <Windows.h>
 #include <cwchar>
 
@@ -10,13 +11,20 @@ namespace {
 HMODULE client_module = nullptr;
 
 DWORD WINAPI initialize_client(void*) {
-    // Waits for GTA V startup before touching game memory or Direct3D.
-    launcher::diagnostics::log(L"INFO", L"Client", L"Client initialization worker started; waiting for GTA V startup.");
-    Sleep(1500);
-    launcher::diagnostics::log(L"INFO", L"Client", L"Installing game hooks.");
-    client::game::install();
+    // Install the renderer hook before scanning game signatures so GTA V cannot
+    // create its swap chain before Present interception is active.
+    launcher::diagnostics::log(L"INFO", L"Client", L"Client initialization worker started.");
+    const MH_STATUS min_hook_status = MH_Initialize();
+    if (min_hook_status != MH_OK && min_hook_status != MH_ERROR_ALREADY_INITIALIZED) {
+        launcher::diagnostics::show_error(L"Client", L"MinHook could not be initialized.",
+                                          L"Use the x64 client build and remove conflicting hook libraries.");
+        return 0;
+    }
+    launcher::diagnostics::log(L"INFO", L"Client", L"MinHook initialized.");
     launcher::diagnostics::log(L"INFO", L"Client", L"Installing Direct3D 11 overlay hook.");
     client::overlay::install();
+    launcher::diagnostics::log(L"INFO", L"Client", L"Installing game hooks.");
+    client::game::install();
     launcher::diagnostics::log(L"INFO", L"Client", L"Client initialization worker completed.");
     return 0;
 }

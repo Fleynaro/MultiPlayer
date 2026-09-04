@@ -32,6 +32,9 @@ does not run the game during a build or installation step.
 - The overlay hooks the Direct3D 11 swap-chain `Present` method and displays
   the process id, renderer, and installed hook count. `F4` toggles the window.
 
+The renderer hook is installed before game signature scanning so GTA V cannot
+create its swap chain while client initialization is still scanning.
+
 Pattern misses are non-fatal and are reflected by the installed hook count.
 This avoids terminating the game when Rockstar changes a signature, but a
 different game build is not considered supported until its signatures have

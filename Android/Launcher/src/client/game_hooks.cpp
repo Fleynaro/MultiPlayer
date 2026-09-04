@@ -159,7 +159,8 @@ void install() {
                                           L"Start the client through Bootstrap.dll inside GTA5.exe.");
         return;
     }
-    if (MH_Initialize() != MH_OK) {
+    const MH_STATUS min_hook_status = MH_Initialize();
+    if (min_hook_status != MH_OK && min_hook_status != MH_ERROR_ALREADY_INITIALIZED) {
         launcher::diagnostics::show_error(L"Client", L"MinHook could not be initialized.",
                                           L"Use the x64 client build and remove conflicting hook libraries.");
         return;
