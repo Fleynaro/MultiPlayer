@@ -1,7 +1,10 @@
 #include "client/pattern_scanner.h"
 
+#include "common/diagnostics.h"
+
 #include <Psapi.h>
 #include <charconv>
+#include <string>
 #include <vector>
 
 namespace client::memory {
@@ -40,6 +43,7 @@ std::vector<int> parse_signature(const std::string_view signature) {
 std::uintptr_t find_pattern(const HMODULE module, const std::string_view signature) {
     // Searches executable PE sections without reading non-code or unmapped memory.
     if (module == nullptr) {
+        launcher::diagnostics::log(L"WARNING", L"PatternScanner", L"Pattern scan skipped because the module is null.");
         return 0;
     }
     const auto* base = reinterpret_cast<const std::byte*>(module);
@@ -47,6 +51,10 @@ std::uintptr_t find_pattern(const HMODULE module, const std::string_view signatu
         reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + reinterpret_cast<const IMAGE_DOS_HEADER*>(base)->e_lfanew);
     const auto* section = IMAGE_FIRST_SECTION(headers);
     const auto pattern = parse_signature(signature);
+    if (pattern.empty()) {
+        launcher::diagnostics::log(L"ERROR", L"PatternScanner", L"Pattern parsing produced an empty signature.");
+        return 0;
+    }
     for (WORD index = 0; index < headers->FileHeader.NumberOfSections; ++index) {
         if ((section[index].Characteristics & IMAGE_SCN_MEM_EXECUTE) == 0) {
             continue;
@@ -62,10 +70,17 @@ std::uintptr_t find_pattern(const HMODULE module, const std::string_view signatu
                 }
             }
             if (matches) {
-                return reinterpret_cast<std::uintptr_t>(start + offset);
+                const auto address = reinterpret_cast<std::uintptr_t>(start + offset);
+                launcher::diagnostics::log(L"INFO", L"PatternScanner",
+                                           L"Executable signature matched at address " + std::to_wstring(address) +
+                                               L": " + std::wstring(signature.begin(), signature.end()));
+                return address;
             }
         }
     }
+    launcher::diagnostics::log(L"WARNING", L"PatternScanner",
+                               L"Executable signature was not found: " +
+                                   std::wstring(signature.begin(), signature.end()));
     return 0;
 }
 

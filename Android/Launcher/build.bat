@@ -1,0 +1,92 @@
+@echo off
+setlocal EnableExtensions EnableDelayedExpansion
+
+rem Build the standalone GTA launcher and install a clean runtime bundle.
+set "SCRIPT_DIR=%~dp0"
+if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+set "BUILD_DIR=%SCRIPT_DIR%\build"
+set "RUNTIME_DIR=%SCRIPT_DIR%\runtime"
+
+rem Use the caller-provided vcpkg installation or the standard local installation.
+if not defined VCPKG_ROOT if exist "C:\dev\vcpkg\scripts\buildsystems\vcpkg.cmake" set "VCPKG_ROOT=C:\dev\vcpkg"
+if not defined VCPKG_ROOT (
+    echo ERROR: VCPKG_ROOT is not set.
+    echo Set VCPKG_ROOT to the vcpkg directory and run this script again.
+    exit /b 1
+)
+if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" (
+    echo ERROR: The vcpkg toolchain was not found at "%VCPKG_ROOT%".
+    echo Install vcpkg or correct VCPKG_ROOT.
+    exit /b 1
+)
+
+rem Initialize the Microsoft x64 compiler environment when cl.exe is unavailable.
+if not defined DevEnvDir (
+    set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+    if exist "!VSWHERE!" for /f "usebackq delims=" %%V in (`"!VSWHERE!" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_INSTALL=%%V"
+    if defined VS_INSTALL set "VS_DEV_CMD=!VS_INSTALL!\Common7\Tools\VsDevCmd.bat"
+    if not defined VS_DEV_CMD if exist "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" set "VS_DEV_CMD=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat"
+    if not defined VS_DEV_CMD if exist "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat" set "VS_DEV_CMD=C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+    if not defined VS_DEV_CMD (
+        echo ERROR: No Visual Studio installation with the MSVC x64 workload was found.
+        echo Install the Desktop development with C++ workload and Windows SDK.
+        exit /b 1
+    )
+    call "!VS_DEV_CMD!" -arch=x64 -host_arch=x64
+    if errorlevel 1 (
+        echo ERROR: Visual Studio compiler environment initialization failed.
+        exit /b 1
+    )
+)
+
+where cmake >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: cmake was not found in PATH.
+    echo Install CMake and Ninja, then run this script from a Developer Command Prompt.
+    exit /b 1
+)
+where ninja >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: ninja was not found in PATH.
+    echo Install Ninja and run this script from a Developer Command Prompt.
+    exit /b 1
+)
+
+echo Configuring the x64 static-vcpkg build...
+rem Remove stale CMake cache files so the script cannot reuse another compiler or triplet.
+if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
+cmake -S "%SCRIPT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_CXX_COMPILER=cl
+if errorlevel 1 (
+    echo ERROR: CMake configuration failed.
+    exit /b 1
+)
+
+echo Building Launcher.exe, Bootstrap.dll, and Client.dll...
+cmake --build "%BUILD_DIR%" --config Release
+if errorlevel 1 (
+    echo ERROR: The C++ build failed.
+    exit /b 1
+)
+
+if exist "%RUNTIME_DIR%" rmdir /s /q "%RUNTIME_DIR%"
+echo Installing the clean runtime bundle to "%RUNTIME_DIR%"...
+cmake --install "%BUILD_DIR%" --config Release --prefix "%RUNTIME_DIR%"
+if errorlevel 1 (
+    echo ERROR: Runtime installation failed.
+    exit /b 1
+)
+
+if not exist "%RUNTIME_DIR%\Launcher.exe" goto :missing_output
+if not exist "%RUNTIME_DIR%\Bootstrap.dll" goto :missing_output
+if not exist "%RUNTIME_DIR%\Client.dll" goto :missing_output
+
+echo.
+echo Build completed successfully.
+echo Runtime files are in:
+echo   %RUNTIME_DIR%
+exit /b 0
+
+:missing_output
+echo ERROR: One or more runtime files are missing after installation.
+echo Expected Launcher.exe, Bootstrap.dll, and Client.dll in "%RUNTIME_DIR%".
+exit /b 1

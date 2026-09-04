@@ -1,13 +1,18 @@
 #include "common/remote_library.h"
 
+#include "common/diagnostics.h"
+
 #include <string>
 
 namespace launcher::process {
 
 bool inject_library(const HANDLE process, const std::wstring_view library_path) {
     // Injects a DLL by writing its path into the target and running LoadLibraryW there.
+    launcher::diagnostics::log(L"INFO", L"Injection", L"Starting remote DLL injection: " + std::wstring(library_path));
     if (process == nullptr || library_path.empty()) {
         SetLastError(ERROR_INVALID_PARAMETER);
+        launcher::diagnostics::log(L"ERROR", L"Injection", L"Invalid process handle or empty library path.",
+                                   ERROR_INVALID_PARAMETER);
         return false;
     }
 
@@ -15,6 +20,7 @@ bool inject_library(const HANDLE process, const std::wstring_view library_path) 
     void* remote_path = VirtualAllocEx(process, nullptr, bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (remote_path == nullptr) {
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        launcher::diagnostics::log(L"ERROR", L"Injection", L"VirtualAllocEx failed.", ERROR_NOT_ENOUGH_MEMORY);
         return false;
     }
 
@@ -24,6 +30,7 @@ bool inject_library(const HANDLE process, const std::wstring_view library_path) 
         const DWORD error = copied ? ERROR_PARTIAL_COPY : GetLastError();
         VirtualFreeEx(process, remote_path, 0, MEM_RELEASE);
         SetLastError(error);
+        launcher::diagnostics::log(L"ERROR", L"Injection", L"WriteProcessMemory failed.", error);
         return false;
     }
     const auto load_library =
@@ -34,26 +41,38 @@ bool inject_library(const HANDLE process, const std::wstring_view library_path) 
     }
 
     bool success = false;
+    DWORD failure_error = ERROR_SUCCESS;
     if (thread != nullptr) {
         const DWORD wait_result = WaitForSingleObject(thread, 15'000);
         if (wait_result == WAIT_TIMEOUT) {
-            SetLastError(ERROR_TIMEOUT);
+            failure_error = ERROR_TIMEOUT;
+            SetLastError(failure_error);
+        } else if (wait_result == WAIT_FAILED) {
+            failure_error = GetLastError();
         }
         success = wait_result == WAIT_OBJECT_0;
         DWORD exit_code = 0;
         if (success && GetExitCodeThread(thread, &exit_code) == FALSE) {
-            SetLastError(GetLastError());
+            failure_error = GetLastError();
+            SetLastError(failure_error);
             success = false;
         } else if (success && exit_code == 0) {
             // LoadLibraryW returns NULL when a dependency, architecture, or DllMain check fails.
-            SetLastError(ERROR_DLL_INIT_FAILED);
+            failure_error = ERROR_DLL_INIT_FAILED;
+            SetLastError(failure_error);
             success = false;
         }
         CloseHandle(thread);
     } else {
-        SetLastError(ERROR_PROC_NOT_FOUND);
+        failure_error = ERROR_PROC_NOT_FOUND;
+        SetLastError(failure_error);
+        launcher::diagnostics::log(L"ERROR", L"Injection", L"CreateRemoteThread could not be created.",
+                                   ERROR_PROC_NOT_FOUND);
     }
     VirtualFreeEx(process, remote_path, 0, MEM_RELEASE);
+    launcher::diagnostics::log(success ? L"INFO" : L"ERROR", L"Injection",
+                               success ? L"Remote DLL injection completed." : L"Remote DLL injection failed.",
+                               success ? ERROR_SUCCESS : failure_error);
     return success;
 }
 

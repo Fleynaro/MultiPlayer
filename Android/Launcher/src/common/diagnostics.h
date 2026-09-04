@@ -5,6 +5,10 @@
 
 namespace launcher::diagnostics {
 
+// Writes a timestamped English runtime event to GtaLauncher.log and the debugger.
+void log(std::wstring_view level, std::wstring_view component, std::wstring_view message,
+         DWORD error_code = ERROR_SUCCESS);
+
 // Converts a Win32 error code into a readable English message.
 [[nodiscard]] std::wstring win32_message(DWORD error_code);
 

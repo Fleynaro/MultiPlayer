@@ -42,6 +42,7 @@ void initialize_imgui(IDXGISwapChain* swap_chain) {
                                           L"Update the client for the active GTA V renderer configuration.");
         return;
     }
+    launcher::diagnostics::log(L"INFO", L"Overlay", L"Initializing ImGui from the first valid DXGI swap chain.");
     game_window = description.OutputWindow;
     if (FAILED(swap_chain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&device)))) {
         launcher::diagnostics::show_error(
@@ -64,6 +65,8 @@ void initialize_imgui(IDXGISwapChain* swap_chain) {
         return;
     }
     initialized = render_target != nullptr;
+    launcher::diagnostics::log(initialized ? L"INFO" : L"ERROR", L"Overlay",
+                               initialized ? L"Direct3D 11 overlay initialized." : L"Render target creation failed.");
 }
 
 HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sync_interval, const UINT flags) {
@@ -74,6 +77,8 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
     const bool toggle_pressed = (GetAsyncKeyState(VK_F4) & 0x8000) != 0;
     if (toggle_pressed && !previous_toggle_state) {
         visible = !visible;
+        launcher::diagnostics::log(L"INFO", L"Overlay",
+                                   visible ? L"Overlay shown with F4." : L"Overlay hidden with F4.");
     }
     previous_toggle_state = toggle_pressed;
 
@@ -136,6 +141,7 @@ void install() {
                                           GetLastError());
         return;
     }
+    launcher::diagnostics::log(L"INFO", L"Overlay", L"d3d11.dll is available; installing device creation hook.");
     auto* exported = GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
     if (exported == nullptr ||
         MH_CreateHook(exported, reinterpret_cast<void*>(&create_device_hook),
@@ -146,6 +152,7 @@ void install() {
         return;
     }
     installed = true;
+    launcher::diagnostics::log(L"INFO", L"Overlay", L"Direct3D 11 device creation hook installed.");
 }
 
 void remove() {
@@ -169,6 +176,7 @@ void remove() {
         device->Release();
     }
     installed = false;
+    launcher::diagnostics::log(L"INFO", L"Overlay", L"Direct3D 11 overlay removed.");
 }
 
 } // namespace client::overlay

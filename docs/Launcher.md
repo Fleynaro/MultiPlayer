@@ -50,14 +50,24 @@ cmake --install build --config Release --prefix runtime
 Run the copy from `runtime`, not from a stale directory containing binaries
 from the previous dynamic MinHook build.
 
+For a one-click MSVC build, run `Android/Launcher/build.bat`.
+It configures the static vcpkg triplet, builds the project, removes the old
+`runtime-static` directory, and installs a clean runtime bundle there.
+
 Dependencies are declared in `Android/Launcher/vcpkg.json` and are provided by
 vcpkg: MinHook and ImGui with Win32/DirectX 11 backends.
 
 ## Diagnostics and recovery
 
 All launcher, bootstrap, and client failures use English modal diagnostics and
-also write the same context to the debugger output. Each diagnostic includes a
-required or recommended recovery action.
+also write the same context to the debugger output and to `GtaLauncher.log`.
+The log is appended beside the binary that produced the event, so launcher,
+bootstrap, and client events share one file when the three binaries are kept in
+the same runtime directory. If that directory is not writable, logging falls
+back to `%TEMP%\GtaLauncher.log`. The log includes timestamps, process IDs,
+severity, component names, hook and signature results, injection stages, and
+renderer initialization events. Each diagnostic includes a required or
+recommended recovery action.
 
 - If `GTA_5_INSTALL_DIR` is missing, set it to the directory that directly
   contains `GTAVLauncher.exe`, then restart `Launcher.exe`.

@@ -40,6 +40,9 @@ BOOL WINAPI create_process_hook(LPCWSTR application_name, LPWSTR command_line, L
                                              ? std::wstring_view(application_name)
                                              : std::wstring_view(command_line != nullptr ? command_line : L"");
     const bool is_game = launcher::process::is_executable_name(executable, L"GTA5.exe");
+    launcher::diagnostics::log(L"INFO", L"Bootstrap",
+                               is_game ? L"Intercepted GTA5.exe process creation (Unicode path)."
+                                       : L"Intercepted non-game process creation (Unicode path).");
     const DWORD flags = is_game ? creation_flags | CREATE_SUSPENDED : creation_flags;
     if (!original_create_process(application_name, command_line, process_attributes, thread_attributes, inherit_handles,
                                  flags, environment, current_directory, startup_info, process_information)) {
@@ -83,6 +86,7 @@ BOOL WINAPI create_process_hook(LPCWSTR application_name, LPWSTR command_line, L
         SetLastError(ERROR_DLL_INIT_FAILED);
         return FALSE;
     }
+    launcher::diagnostics::log(L"INFO", L"Bootstrap", L"Client.dll injection into GTA5.exe succeeded.");
     if (ResumeThread(process_information->hThread) == static_cast<DWORD>(-1)) {
         const DWORD error = GetLastError();
         launcher::diagnostics::show_error(L"Bootstrap", L"The GTA5.exe main thread could not be resumed.",
@@ -108,6 +112,9 @@ BOOL WINAPI create_process_a_hook(LPCSTR application_name, LPSTR command_line, L
     const auto slash = command_name.find_last_of("\\/");
     const auto file_name = command_name.substr(slash == std::string::npos ? 0 : slash + 1);
     const bool is_game = _stricmp(file_name.c_str(), "GTA5.exe") == 0;
+    launcher::diagnostics::log(L"INFO", L"Bootstrap",
+                               is_game ? L"Intercepted GTA5.exe process creation (ANSI path)."
+                                       : L"Intercepted non-game process creation (ANSI path).");
     const DWORD flags = is_game ? creation_flags | CREATE_SUSPENDED : creation_flags;
     if (!original_create_process_a(application_name, command_line, process_attributes, thread_attributes,
                                    inherit_handles, flags, environment, current_directory, startup_info,
@@ -147,6 +154,7 @@ BOOL APIENTRY DllMain(const HMODULE module, const DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         module_handle = module;
         DisableThreadLibraryCalls(module);
+        launcher::diagnostics::log(L"INFO", L"Bootstrap", L"Bootstrap.dll attached to the launcher process.");
         if (MH_Initialize() != MH_OK ||
             MH_CreateHookApi(L"kernel32.dll", "CreateProcessA", &create_process_a_hook,
                              reinterpret_cast<void**>(&original_create_process_a)) != MH_OK ||
@@ -159,6 +167,7 @@ BOOL APIENTRY DllMain(const HMODULE module, const DWORD reason, LPVOID) {
             MH_Uninitialize();
             return FALSE;
         }
+        launcher::diagnostics::log(L"INFO", L"Bootstrap", L"CreateProcessA/CreateProcessW hooks installed.");
     }
     return TRUE;
 }

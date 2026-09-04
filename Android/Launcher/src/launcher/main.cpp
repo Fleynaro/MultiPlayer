@@ -47,6 +47,7 @@ bool enable_debug_privilege() {
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     // Starts the two-stage injection chain after validating every required local file.
+    launcher::diagnostics::log(L"INFO", L"Launcher", L"Launcher startup began.");
     enable_debug_privilege();
     const auto launcher_directory = module_directory();
     if (launcher_directory.empty()) {
@@ -86,6 +87,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         return ERROR_FILE_NOT_FOUND;
     }
 
+    launcher::diagnostics::log(L"INFO", L"Launcher",
+                               L"Validated GTA_5_INSTALL_DIR, GTAVLauncher.exe, and Bootstrap.dll.");
+
     std::wstring command_line = L"\"" + game_launcher.wstring() + L"\"";
     STARTUPINFOW startup{.cb = sizeof(startup)};
     PROCESS_INFORMATION process{};
@@ -97,6 +101,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
             L"Close existing GTA V processes and verify that the installation is accessible.", error);
         return static_cast<int>(error);
     }
+    launcher::diagnostics::log(L"INFO", L"Launcher", L"GTAVLauncher.exe started suspended.");
 
     const bool injected = launcher::process::inject_library(process.hProcess, bootstrap.wstring());
     if (!injected) {
@@ -107,6 +112,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
                                           L"and keep Bootstrap.dll beside Launcher.exe.",
                                           error);
     } else {
+        launcher::diagnostics::log(L"INFO", L"Launcher", L"Bootstrap.dll injection succeeded.");
         if (ResumeThread(process.hThread) == static_cast<DWORD>(-1)) {
             launcher::diagnostics::show_error(
                 L"Launcher", L"The GTA V launcher thread could not be resumed.",
@@ -117,6 +123,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
             CloseHandle(process.hProcess);
             return ERROR_OPERATION_ABORTED;
         }
+        launcher::diagnostics::log(L"INFO", L"Launcher", L"GTAVLauncher.exe resumed successfully.");
     }
     CloseHandle(process.hThread);
     CloseHandle(process.hProcess);
