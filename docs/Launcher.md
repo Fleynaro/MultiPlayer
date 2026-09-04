@@ -58,7 +58,9 @@ create its swap chain while client initialization is still scanning.
 `Launcher.ini` is installed beside `Launcher.exe`, `Bootstrap.dll`, and
 `Client.dll`. It contains English comments for every available parameter.
 `Python/ScriptsDirectory` selects the directory containing `.py` files and may
-be absolute or relative to the runtime directory. `Python/SitePackagesDirectory`
+be absolute or relative to the runtime directory. The built-in default is
+`scripts`; `GTA_5_PYTHON_SCRIPT_DIR`, when defined and non-empty, overrides both
+the `.ini` value and the default. `Python/SitePackagesDirectory`
 controls the additional Python package directory and defaults to
 `.venv/Lib/site-packages` when commented out. `Launcher/GameInstallDirectory`
 can replace `GTA_5_INSTALL_DIR`; when it is commented out, the environment

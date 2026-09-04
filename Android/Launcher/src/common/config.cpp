@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <cerrno>
 #include <cwchar>
+#include <optional>
 #include <string>
 
 namespace launcher::config {
@@ -15,6 +16,32 @@ std::wstring read_value(const std::filesystem::path& file, const wchar_t* sectio
     std::wstring value(32768, L'\0');
     const DWORD length = GetPrivateProfileStringW(section, key, default_value, value.data(),
                                                   static_cast<DWORD>(value.size()), file.c_str());
+    value.resize(length);
+    return value;
+}
+
+std::optional<std::wstring> read_environment_value(const wchar_t* variable) {
+    const DWORD required_size = GetEnvironmentVariableW(variable, nullptr, 0);
+    if (required_size == 0) {
+        const DWORD error_code = GetLastError();
+        if (error_code != ERROR_ENVVAR_NOT_FOUND) {
+            diagnostics::log(L"WARNING", L"Config",
+                             L"Could not read environment variable " + std::wstring(variable) + L".", error_code);
+        }
+        return std::nullopt;
+    }
+
+    std::wstring value(required_size, L'\0');
+    const DWORD length = GetEnvironmentVariableW(variable, value.data(), required_size);
+    if (length == 0) {
+        const DWORD error_code = GetLastError();
+        if (error_code == ERROR_SUCCESS) {
+            return std::wstring{};
+        }
+        diagnostics::log(L"WARNING", L"Config", L"Could not read environment variable " + std::wstring(variable) + L".",
+                         error_code);
+        return std::nullopt;
+    }
     value.resize(length);
     return value;
 }
@@ -41,12 +68,20 @@ float read_float(const std::filesystem::path& file, const wchar_t* section, cons
 
 Settings load(const std::filesystem::path& runtime_directory) {
     const auto config_file = runtime_directory / L"Launcher.ini";
+    const std::wstring configured_scripts_directory =
+        read_value(config_file, L"Python", L"ScriptsDirectory", L"scripts");
+    const std::optional<std::wstring> environment_scripts_directory =
+        read_environment_value(L"GTA_5_PYTHON_SCRIPT_DIR");
+    const bool using_environment_scripts_directory =
+        environment_scripts_directory.has_value() && !environment_scripts_directory->empty();
+    const std::wstring scripts_directory =
+        using_environment_scripts_directory ? *environment_scripts_directory : configured_scripts_directory;
+
     Settings settings{
         .runtime_directory = runtime_directory,
         .config_file = config_file,
         .game_install_directory = {},
-        .scripts_directory =
-            resolve_path(runtime_directory, read_value(config_file, L"Python", L"ScriptsDirectory", L"scripts")),
+        .scripts_directory = resolve_path(runtime_directory, scripts_directory),
         .site_packages_directory =
             resolve_path(runtime_directory,
                          read_value(config_file, L"Python", L"SitePackagesDirectory", L".venv\\Lib\\site-packages")),
@@ -69,7 +104,10 @@ Settings load(const std::filesystem::path& runtime_directory) {
     } else {
         diagnostics::log(L"INFO", L"Config", L"Launcher.ini loaded from the runtime directory.");
     }
-    diagnostics::log(L"INFO", L"Config", L"Python scripts directory: " + settings.scripts_directory.wstring());
+    diagnostics::log(L"INFO", L"Config",
+                     L"Python scripts directory: " + settings.scripts_directory.wstring() +
+                         (using_environment_scripts_directory ? L" (from GTA_5_PYTHON_SCRIPT_DIR)."
+                                                              : L" (from Launcher.ini or default scripts)."));
     diagnostics::log(L"INFO", L"Config", L"GUI settings loaded from Launcher.ini.");
     return settings;
 }
