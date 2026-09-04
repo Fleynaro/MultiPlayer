@@ -50,3 +50,7 @@ build-*/
 runtime/
 runtime-*/
 dist/
+
+#python
+__pycache__/
+.venv/
