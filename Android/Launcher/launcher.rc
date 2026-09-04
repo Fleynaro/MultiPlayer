@@ -1,0 +1,6 @@
+#include <windows.h>
+
+#define IDI_LAUNCHER 101
+
+IDI_LAUNCHER ICON "resources/Launcher.ico"
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "resources/Launcher.manifest"

@@ -9,6 +9,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(WIN32)
+    enable_language(RC)
+endif()
+
 find_package(minhook CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 set(PYBIND11_FINDPYTHON ON)
@@ -21,8 +25,11 @@ target_compile_definitions(LauncherCommon INTERFACE UNICODE _UNICODE WIN32_LEAN_
 target_link_libraries(LauncherCommon INTERFACE minhook::minhook)
 
 add_executable(Launcher WIN32 src/launcher/main.cpp src/common/remote_library.cpp src/common/diagnostics.cpp
-    src/common/config.cpp)
+    src/common/config.cpp launcher.rc)
 target_link_libraries(Launcher PRIVATE LauncherCommon)
+if(MSVC)
+    target_link_options(Launcher PRIVATE "/MANIFEST:NO")
+endif()
 
 add_library(Bootstrap SHARED src/bootstrap/dllmain.cpp src/common/remote_library.cpp src/common/diagnostics.cpp)
 target_link_libraries(Bootstrap PRIVATE LauncherCommon)

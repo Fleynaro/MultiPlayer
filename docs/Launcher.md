@@ -21,6 +21,12 @@ Launcher.exe
 launcher and both DLLs are expected in the same output directory. The launcher
 does not run the game during a build or installation step.
 
+`Launcher.exe` embeds a Windows application manifest that requests the
+`requireAdministrator` execution level. Windows therefore displays the UAC
+prompt automatically when the launcher is started, and the launcher process
+always runs elevated after approval. The executable also embeds the project
+launcher icon as its application icon.
+
 ## Client behavior
 
 - Script execution is filtered using the script name at offset `0xD0`.
@@ -109,9 +115,10 @@ recommended recovery action.
   three main binaries in the same output directory. MinHook is linked
   statically through the `x64-windows-static` vcpkg triplet, so no separate
   `minhook.x64.dll` is required.
-- If process creation or injection fails, run the launcher as administrator,
+- If process creation or injection fails, approve the launcher's UAC prompt,
   close existing GTA V processes, and disable conflicting overlays/security
-  tools.
+  tools. If no prompt appears, rebuild `Launcher.exe` so its embedded manifest
+  is up to date.
 - If no signatures are found, use the supported GTA V build 1.41 x64 binary.
   A partial signature match is reported as a warning and should not be treated
   as full compatibility.
