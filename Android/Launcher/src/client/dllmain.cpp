@@ -1,5 +1,6 @@
 #include "client/d3d11_overlay.h"
 #include "client/game_hooks.h"
+#include "client/python_runtime.h"
 #include "common/diagnostics.h"
 
 #include <MinHook.h>
@@ -25,6 +26,8 @@ DWORD WINAPI initialize_client(void*) {
     client::overlay::install();
     launcher::diagnostics::log(L"INFO", L"Client", L"Installing game hooks.");
     client::game::install();
+    launcher::diagnostics::log(L"INFO", L"Client", L"Initializing embedded Python runtime.");
+    client::python::initialize();
     launcher::diagnostics::log(L"INFO", L"Client", L"Client initialization worker completed.");
     return 0;
 }
@@ -45,6 +48,9 @@ BOOL APIENTRY DllMain(const HMODULE module, const DWORD reason, LPVOID) {
             SetLastError(error);
             return FALSE;
         }
+    }
+    if (reason == DLL_PROCESS_DETACH) {
+        client::python::shutdown();
     }
     return TRUE;
 }

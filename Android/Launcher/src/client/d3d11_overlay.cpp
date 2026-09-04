@@ -1,6 +1,7 @@
 #include "client/d3d11_overlay.h"
 
 #include "client/game_hooks.h"
+#include "client/python_runtime.h"
 #include "common/diagnostics.h"
 
 #include <MinHook.h>
@@ -12,6 +13,8 @@
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
+#include <string>
+#include <vector>
 
 namespace client::overlay {
 
@@ -33,6 +36,7 @@ bool initialized = false;
 bool visible = true;
 bool previous_toggle_state = false;
 std::atomic_bool installed = false;
+int selected_script = 0;
 
 void initialize_imgui(IDXGISwapChain* swap_chain) {
     // Creates the ImGui context and render target from the first valid game swap chain.
@@ -86,13 +90,48 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-        ImGui::SetNextWindowSize(ImVec2(430.0F, 190.0F), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(620.0F, 420.0F), ImGuiCond_FirstUseEver);
         ImGui::Begin("GTA Launcher", &visible, ImGuiWindowFlags_NoCollapse);
-        ImGui::TextUnformatted("Standalone client DLL");
+        ImGui::TextUnformatted("GTA V Python scripting");
         ImGui::Separator();
         ImGui::Text("Process: GTA5.exe (PID %lu)", GetCurrentProcessId());
         ImGui::Text("Game hooks installed: %zu", game::installed_count());
         ImGui::Text("Renderer: Direct3D 11");
+        const auto available_scripts = python::scripts();
+        std::vector<std::string> script_names;
+        std::vector<const char*> names;
+        script_names.reserve(available_scripts.size());
+        names.reserve(available_scripts.size());
+        for (const auto& script : available_scripts) {
+            script_names.push_back(script.filename().string());
+            names.push_back(script_names.back().c_str());
+        }
+        if (selected_script >= static_cast<int>(names.size())) {
+            selected_script = 0;
+        }
+        if (!names.empty()) {
+            ImGui::Combo("Script", &selected_script, names.data(), static_cast<int>(names.size()));
+            if (ImGui::Button("Run script") && !python::running()) {
+                static_cast<void>(python::run(available_scripts[static_cast<std::size_t>(selected_script)]));
+            }
+        } else {
+            ImGui::TextUnformatted("No .py files found in scripts\\.");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Stop")) {
+            python::stop();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Clear console")) {
+            python::clear_console();
+        }
+        ImGui::Text("Status: %s", python::running() ? python::active_script().c_str() : "idle");
+        ImGui::Separator();
+        ImGui::BeginChild("Python console", ImVec2(0.0F, 180.0F), true);
+        for (const auto& line : python::console_lines()) {
+            ImGui::TextUnformatted(line.c_str());
+        }
+        ImGui::EndChild();
         ImGui::TextUnformatted("F4 toggles this window");
         ImGui::End();
         ImGui::Render();

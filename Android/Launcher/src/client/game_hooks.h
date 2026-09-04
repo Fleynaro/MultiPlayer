@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <string>
+#include <vector>
 
 namespace client::game {
 
@@ -15,5 +18,10 @@ void remove();
 
 // Returns the name of the script currently executing on the game thread.
 [[nodiscard]] const char* current_script();
+
+// Executes a registered GTA native on the game thread using the script context ABI.
+[[nodiscard]] std::vector<std::uint64_t> invoke_native(std::uint64_t hash,
+                                                       const std::vector<std::uint64_t>& arguments,
+                                                       std::size_t result_count);
 
 } // namespace client::game

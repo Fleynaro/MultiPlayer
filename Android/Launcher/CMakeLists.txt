@@ -11,6 +11,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(minhook CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+set(PYBIND11_FINDPYTHON ON)
+find_package(Python3 COMPONENTS Interpreter Development.Embed REQUIRED)
+find_package(pybind11 CONFIG REQUIRED)
 
 add_library(LauncherCommon INTERFACE)
 target_include_directories(LauncherCommon INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -25,9 +28,11 @@ target_link_libraries(Bootstrap PRIVATE LauncherCommon)
 set_target_properties(Bootstrap PROPERTIES OUTPUT_NAME "Bootstrap")
 
 add_library(Client SHARED src/client/dllmain.cpp src/client/pattern_scanner.cpp src/client/game_hooks.cpp src/client/d3d11_overlay.cpp
-    src/common/diagnostics.cpp)
+    src/client/python_runtime.cpp src/common/diagnostics.cpp)
 target_link_libraries(Client PRIVATE LauncherCommon d3d11 dxgi)
 target_link_libraries(Client PRIVATE imgui::imgui)
+target_link_libraries(Client PRIVATE pybind11::embed Python3::Python)
+target_compile_definitions(Client PRIVATE PY_SSIZE_T_CLEAN)
 set_target_properties(Client PROPERTIES OUTPUT_NAME "Client")
 
 if(MSVC)
@@ -36,3 +41,4 @@ if(MSVC)
 endif()
 
 install(TARGETS Launcher Bootstrap Client RUNTIME DESTINATION . LIBRARY DESTINATION .)
+install(DIRECTORY scripts/ DESTINATION scripts PATTERN "__pycache__" EXCLUDE)

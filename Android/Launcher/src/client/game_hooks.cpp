@@ -1,14 +1,19 @@
 #include "client/game_hooks.h"
 
 #include "client/pattern_scanner.h"
+#include "client/python_runtime.h"
 #include "common/diagnostics.h"
 
 #include <MinHook.h>
 #include <Windows.h>
 #include <array>
+#include <algorithm>
 #include <atomic>
 #include <cstring>
+#include <stdexcept>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace client::game {
 
@@ -19,6 +24,19 @@ using SpawnPeds = std::uintptr_t(__fastcall*)(std::uintptr_t, int, std::uintptr_
 using SpawnVehicle = std::uintptr_t(__fastcall*)(std::uintptr_t, float*, std::uintptr_t, bool, bool, unsigned char);
 using VoidFunction = void(__fastcall*)();
 using SpecialSkillFunction = std::uintptr_t(__fastcall*)(int);
+using RegisterNative = void(__fastcall*)(void*, std::uint64_t, void*);
+
+struct NativeStack {
+    std::uint64_t data[32]{};
+};
+
+struct NativeContext {
+    NativeStack* returns;
+    std::uint32_t argument_count;
+    NativeStack* arguments;
+    std::uint32_t data_count;
+    std::uint64_t reserved[24]{};
+};
 
 ExecuteScript original_execute_script = nullptr;
 SpawnPeds original_spawn_peds = nullptr;
@@ -27,6 +45,8 @@ std::atomic_size_t installed_hooks = 0;
 std::atomic_size_t missing_patterns = 0;
 std::atomic_size_t failed_hooks = 0;
 thread_local const char* executing_script = nullptr;
+RegisterNative original_register_native = nullptr;
+std::unordered_map<std::uint64_t, void*> native_handlers;
 
 constexpr std::array<const char*, 10> enabled_scripts = {"building_controller",
                                                          "initial",
@@ -65,6 +85,7 @@ int __fastcall execute_script_hook(void* context) {
     // Suppresses disabled single-player scripts while preserving allowed scripts.
     const char* name = script_name(context);
     executing_script = name;
+    python::pump_game_thread();
     if (name != nullptr && !is_enabled_script(name)) {
         const std::wstring script(name, name + std::strlen(name));
         launcher::diagnostics::log(L"INFO", L"GameHooks", L"Suppressed disabled script: " + script);
@@ -74,6 +95,15 @@ int __fastcall execute_script_hook(void* context) {
     const int result = original_execute_script(context);
     executing_script = nullptr;
     return result;
+}
+
+void __fastcall register_native_hook(void* table, const std::uint64_t hash, void* handler) {
+    if (handler != nullptr) {
+        native_handlers[hash] = handler;
+    }
+    if (original_register_native != nullptr) {
+        original_register_native(table, hash, handler);
+    }
 }
 
 std::uintptr_t __fastcall spawn_peds_hook(const std::uintptr_t first, const int mode, const std::uintptr_t third,
@@ -172,6 +202,16 @@ void install() {
     install_hook(L"ExecuteScript", script, reinterpret_cast<void*>(&execute_script_hook),
                  reinterpret_cast<void**>(&original_execute_script));
 
+    const auto register_native = memory::find_pattern(
+        game, "48 BA 9C 13 0A F4 62 B1 FF D0 48 8B CB E8 ?? ?? ?? ??");
+    if (register_native != 0) {
+        install_hook(L"RegisterNative", memory::rip_relative(register_native, 4, 8),
+                     reinterpret_cast<void*>(&register_native_hook), reinterpret_cast<void**>(&original_register_native));
+    } else {
+        ++missing_patterns;
+        launcher::diagnostics::log(L"WARNING", L"GameHooks", L"Native registration signature was not found.");
+    }
+
     const auto peds = memory::find_pattern(game, "85 D2 0F 88 BA 00 00 00 B8 01 00 00 00 75");
     install_hook(L"SpawnPeds", peds, reinterpret_cast<void*>(&spawn_peds_hook),
                  reinterpret_cast<void**>(&original_spawn_peds));
@@ -228,6 +268,24 @@ std::size_t installed_count() {
 const char* current_script() {
     // Returns the script currently being executed on this game thread, if known.
     return executing_script;
+}
+
+std::vector<std::uint64_t> invoke_native(const std::uint64_t hash, const std::vector<std::uint64_t>& arguments,
+                                         const std::size_t result_count) {
+    if (arguments.size() > 32 || result_count > 3) {
+        throw std::invalid_argument("native argument or result count exceeds the GTA script ABI limit");
+    }
+    const auto handler = native_handlers.find(hash);
+    if (handler == native_handlers.end() || handler->second == nullptr) {
+        throw std::runtime_error("native handler is not registered for the current GTA build");
+    }
+    NativeStack returns{};
+    NativeStack args{};
+    std::copy(arguments.begin(), arguments.end(), std::begin(args.data));
+    NativeContext context{&returns, static_cast<std::uint32_t>(arguments.size()), &args, 0, {}};
+    using Handler = void(__fastcall*)(NativeContext*);
+    reinterpret_cast<Handler>(handler->second)(&context);
+    return std::vector<std::uint64_t>(returns.data, returns.data + result_count);
 }
 
 } // namespace client::game

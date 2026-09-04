@@ -55,7 +55,7 @@ if errorlevel 1 (
 echo Configuring the x64 static-vcpkg build...
 rem Remove stale CMake cache files so the script cannot reuse another compiler or triplet.
 if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
-cmake -S "%SCRIPT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_CXX_COMPILER=cl
+cmake -S "%SCRIPT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_CXX_COMPILER=cl -DPython3_EXECUTABLE="%BUILD_DIR%\vcpkg_installed\x64-windows-static\tools\python3\python.exe" -DPython3_INCLUDE_DIR="%BUILD_DIR%\vcpkg_installed\x64-windows-static\include\python3.12" -DPython3_LIBRARY="%BUILD_DIR%\vcpkg_installed\x64-windows-static\lib\python312.lib"
 if errorlevel 1 (
     echo ERROR: CMake configuration failed.
     exit /b 1
@@ -74,6 +74,20 @@ cmake --install "%BUILD_DIR%" --config Release --prefix "%RUNTIME_DIR%"
 if errorlevel 1 (
     echo ERROR: Runtime installation failed.
     exit /b 1
+)
+
+if not exist "%RUNTIME_DIR%\.venv\Scripts\python.exe" (
+    where py >nul 2>&1
+    if errorlevel 1 (
+        echo WARNING: Python launcher was not found; create runtime\.venv with CPython 3.12 manually.
+    ) else (
+        py -3.12 -m venv "%RUNTIME_DIR%\.venv"
+        if errorlevel 1 echo WARNING: Could not create runtime\.venv with CPython 3.12.
+    )
+)
+if exist "%RUNTIME_DIR%\.venv\Scripts\python.exe" (
+    "%RUNTIME_DIR%\.venv\Scripts\python.exe" -m pip install -r "%SCRIPT_DIR%\requirements.txt"
+    if errorlevel 1 echo WARNING: debugpy installation failed; install requirements.txt manually.
 )
 
 if not exist "%RUNTIME_DIR%\Launcher.exe" goto :missing_output

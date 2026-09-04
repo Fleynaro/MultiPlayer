@@ -31,6 +31,12 @@ does not run the game during a build or installation step.
   signatures.
 - The overlay hooks the Direct3D 11 swap-chain `Present` method and displays
   the process id, renderer, and installed hook count. `F4` toggles the window.
+- The client embeds CPython, exposes a validated `gta` pybind11 module, and
+  loads user scripts from `runtime/scripts`. Native requests are marshalled to
+  the game thread and use handlers captured by the build 1.41 registration
+  hook; unavailable handlers fail as Python exceptions.
+- The overlay provides a Python script selector, run/stop controls, and a
+  bounded console. `scripts/gta.pyi` is the strict typing contract for scripts.
 
 The renderer hook is installed before game signature scanning so GTA V cannot
 create its swap chain while client initialization is still scanning.
@@ -58,7 +64,13 @@ It configures the static vcpkg triplet, builds the project, removes the old
 `runtime-static` directory, and installs a clean runtime bundle there.
 
 Dependencies are declared in `Android/Launcher/vcpkg.json` and are provided by
-vcpkg: MinHook and ImGui with Win32/DirectX 11 backends.
+vcpkg: MinHook, pybind11, and ImGui with Win32/DirectX 11 backends. CMake also
+requires the matching CPython development package. For the planned Python 3.12
+setup, create `runtime/.venv` with `python -m venv runtime/.venv` and install
+the pinned dependency from `Android/Launcher/requirements.txt` into that
+environment. The client adds `runtime/.venv/Lib/site-packages` to `sys.path`.
+The example listens on `127.0.0.1:5678`; use
+`Android/Launcher/.vscode/launch.json` to attach.
 
 ## Diagnostics and recovery
 
