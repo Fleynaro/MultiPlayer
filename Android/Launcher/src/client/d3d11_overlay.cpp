@@ -146,6 +146,8 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
     previous_toggle_state = toggle_pressed;
 
     if (initialized && visible) {
+        // Draw ImGui's software cursor while the overlay is open, even when GTA V hides its own cursor.
+        ImGui::GetIO().MouseDrawCursor = true;
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
@@ -197,6 +199,9 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
         ImGui::Render();
         context->OMSetRenderTargets(1, &render_target, nullptr);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    } else if (initialized) {
+        // Do not leave an ImGui cursor requested while the overlay is hidden.
+        ImGui::GetIO().MouseDrawCursor = false;
     }
     return original_present(swap_chain, sync_interval, flags);
 }

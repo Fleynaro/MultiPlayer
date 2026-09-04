@@ -39,8 +39,9 @@ launcher icon as its application icon.
   the process id, renderer, and installed hook count. `F4` toggles the window.
   The UI scales from the game window DPI and framebuffer resolution, enables
   ImGui keyboard navigation, and forwards Win32 mouse/keyboard messages to
-  ImGui; captured messages are blocked from reaching the game while the
-  overlay is interacting with them.
+  ImGui; while the overlay is open, ImGui draws its own software cursor even
+  when the in-game cursor is hidden. Captured messages are blocked from
+  reaching the game while the overlay is interacting with them.
 - The client embeds CPython, exposes a validated `gta` pybind11 module, and
   loads user scripts from the configured `ScriptsDirectory` (default:
   `runtime/scripts`). Native requests are marshalled to
