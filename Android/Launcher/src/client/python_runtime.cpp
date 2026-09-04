@@ -306,9 +306,14 @@ void pump_game_thread() {
 }
 
 std::vector<std::filesystem::path> scripts() {
+    // The overlay can render before the client initialization worker finishes.
+    // Initialize lazily so the first UI frame still sees the configured folder.
+    initialize();
     std::vector<std::filesystem::path> result;
     std::error_code error;
     if (!std::filesystem::exists(scripts_directory, error)) {
+        launcher::diagnostics::log(L"WARNING", L"Python", L"Scripts directory does not exist: " +
+                                                              scripts_directory.wstring());
         return result;
     }
     for (const auto& entry : std::filesystem::directory_iterator(scripts_directory, error)) {
@@ -316,6 +321,8 @@ std::vector<std::filesystem::path> scripts() {
             result.push_back(entry.path());
         }
     }
+    launcher::diagnostics::log(L"INFO", L"Python",
+                               L"Discovered Python scripts: " + std::to_wstring(result.size()));
     std::sort(result.begin(), result.end());
     return result;
 }
