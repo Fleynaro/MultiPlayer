@@ -2,10 +2,12 @@
 
 #include "client/game_hooks.h"
 #include "client/python_runtime.h"
+#include "common/config.h"
 #include "common/diagnostics.h"
 
 #include <MinHook.h>
 #include <Windows.h>
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <d3d11.h>
@@ -15,6 +17,9 @@
 #include <imgui_impl_win32.h>
 #include <string>
 #include <vector>
+
+// The ImGui Win32 backend intentionally leaves this declaration disabled in its public header.
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param);
 
 namespace client::overlay {
 
@@ -32,11 +37,29 @@ ID3D11Device* device = nullptr;
 ID3D11DeviceContext* context = nullptr;
 ID3D11RenderTargetView* render_target = nullptr;
 HWND game_window = nullptr;
+WNDPROC original_wnd_proc = nullptr;
 bool initialized = false;
 bool visible = true;
 bool previous_toggle_state = false;
+float ui_scale = 1.0F;
+launcher::config::GuiSettings gui_settings;
 std::atomic_bool installed = false;
 int selected_script = 0;
+
+LRESULT CALLBACK overlay_wnd_proc(const HWND window, const UINT message, const WPARAM w_param, const LPARAM l_param) {
+    // Forward window messages to ImGui first so keyboard navigation and mouse controls work in the game window.
+    if (initialized && window == game_window) {
+        const LRESULT imgui_result = ImGui_ImplWin32_WndProcHandler(window, message, w_param, l_param);
+        const ImGuiIO& io = ImGui::GetIO();
+        const bool keyboard_message = message >= WM_KEYFIRST && message <= WM_KEYLAST;
+        const bool mouse_message = message >= WM_MOUSEFIRST && message <= WM_MOUSELAST;
+        if (visible && (imgui_result != 0 || (keyboard_message && io.WantCaptureKeyboard) ||
+                        (mouse_message && io.WantCaptureMouse))) {
+            return 0;
+        }
+    }
+    return CallWindowProcW(original_wnd_proc, window, message, w_param, l_param);
+}
 
 void initialize_imgui(IDXGISwapChain* swap_chain) {
     // Creates the ImGui context and render target from the first valid game swap chain.
@@ -48,6 +71,21 @@ void initialize_imgui(IDXGISwapChain* swap_chain) {
     }
     launcher::diagnostics::log(L"INFO", L"Overlay", L"Initializing ImGui from the first valid DXGI swap chain.");
     game_window = description.OutputWindow;
+    HMODULE client_module = nullptr;
+    wchar_t module_path[MAX_PATH]{};
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           reinterpret_cast<LPCWSTR>(&initialize_imgui), &client_module) != 0 &&
+        GetModuleFileNameW(client_module, module_path, MAX_PATH) != 0) {
+        gui_settings = launcher::config::load(std::filesystem::path(module_path).parent_path()).gui;
+    } else {
+        launcher::diagnostics::log(L"WARNING", L"Overlay",
+                                   L"Client module path is unavailable; GUI defaults are used.");
+    }
+    const UINT dpi = GetDpiForWindow(game_window);
+    const float dpi_scale = static_cast<float>(dpi) / 96.0F;
+    const float resolution_scale = static_cast<float>(description.BufferDesc.Width) / 1920.0F;
+    ui_scale = gui_settings.scale > 0.0F ? gui_settings.scale : (std::max)({1.0F, dpi_scale, resolution_scale});
+    ui_scale = (std::min)(ui_scale, 3.0F);
     if (FAILED(swap_chain->GetDevice(__uuidof(ID3D11Device), reinterpret_cast<void**>(&device)))) {
         launcher::diagnostics::show_error(
             L"Client", L"The Direct3D 11 device could not be retrieved.",
@@ -62,6 +100,10 @@ void initialize_imgui(IDXGISwapChain* swap_chain) {
     }
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.FontGlobalScale = ui_scale;
+    ImGui::GetStyle().ScaleAllSizes(ui_scale);
     if (!ImGui_ImplWin32_Init(game_window) || !ImGui_ImplDX11_Init(device, context)) {
         launcher::diagnostics::show_error(
             L"Client", L"ImGui could not initialize its Win32 or Direct3D 11 backend.",
@@ -69,6 +111,23 @@ void initialize_imgui(IDXGISwapChain* swap_chain) {
         return;
     }
     initialized = render_target != nullptr;
+    if (initialized) {
+        SetLastError(ERROR_SUCCESS);
+        original_wnd_proc = reinterpret_cast<WNDPROC>(
+            SetWindowLongPtrW(game_window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&overlay_wnd_proc)));
+        if (original_wnd_proc == nullptr && GetLastError() != ERROR_SUCCESS) {
+            launcher::diagnostics::show_error(
+                L"Client", L"The game window procedure could not be hooked for ImGui input.",
+                L"Run the game with a standard Win32 window and disable window-hooking software.", GetLastError());
+            ImGui_ImplDX11_Shutdown();
+            ImGui_ImplWin32_Shutdown();
+            ImGui::DestroyContext();
+            initialized = false;
+            return;
+        }
+        launcher::diagnostics::log(L"INFO", L"Overlay",
+                                   L"ImGui input enabled; UI scale is " + std::to_wstring(ui_scale) + L"x.");
+    }
     launcher::diagnostics::log(initialized ? L"INFO" : L"ERROR", L"Overlay",
                                initialized ? L"Direct3D 11 overlay initialized." : L"Render target creation failed.");
 }
@@ -90,7 +149,8 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-        ImGui::SetNextWindowSize(ImVec2(620.0F, 420.0F), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(gui_settings.window_width * ui_scale, gui_settings.window_height * ui_scale),
+                                 ImGuiCond_FirstUseEver);
         ImGui::Begin("GTA Launcher", &visible, ImGuiWindowFlags_NoCollapse);
         ImGui::TextUnformatted("GTA V Python scripting");
         ImGui::Separator();
@@ -127,7 +187,7 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
         }
         ImGui::Text("Status: %s", python::running() ? python::active_script().c_str() : "idle");
         ImGui::Separator();
-        ImGui::BeginChild("Python console", ImVec2(0.0F, 180.0F), true);
+        ImGui::BeginChild("Python console", ImVec2(0.0F, gui_settings.console_height * ui_scale), true);
         for (const auto& line : python::console_lines()) {
             ImGui::TextUnformatted(line.c_str());
         }
@@ -201,6 +261,10 @@ void remove() {
     }
     MH_DisableHook(MH_ALL_HOOKS);
     if (initialized) {
+        if (original_wnd_proc != nullptr) {
+            SetWindowLongPtrW(game_window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(original_wnd_proc));
+            original_wnd_proc = nullptr;
+        }
         ImGui_ImplDX11_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();

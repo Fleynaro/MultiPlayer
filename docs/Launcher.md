@@ -31,6 +31,10 @@ does not run the game during a build or installation step.
   signatures.
 - The overlay hooks the Direct3D 11 swap-chain `Present` method and displays
   the process id, renderer, and installed hook count. `F4` toggles the window.
+  The UI scales from the game window DPI and framebuffer resolution, enables
+  ImGui keyboard navigation, and forwards Win32 mouse/keyboard messages to
+  ImGui; captured messages are blocked from reaching the game while the
+  overlay is interacting with them.
 - The client embeds CPython, exposes a validated `gta` pybind11 module, and
   loads user scripts from the configured `ScriptsDirectory` (default:
   `runtime/scripts`). Native requests are marshalled to
@@ -51,8 +55,10 @@ be absolute or relative to the runtime directory. `Python/SitePackagesDirectory`
 controls the additional Python package directory and defaults to
 `.venv/Lib/site-packages` when commented out. `Launcher/GameInstallDirectory`
 can replace `GTA_5_INSTALL_DIR`; when it is commented out, the environment
-variable remains the fallback. Missing optional values use these defaults and
-are recorded in `GtaLauncher.log`.
+variable remains the fallback. `GUI/Scale` overrides automatic DPI and
+resolution scaling when greater than zero; `GUI/WindowWidth`,
+`GUI/WindowHeight`, and `GUI/ConsoleHeight` control the initial overlay layout.
+Missing optional values use these defaults and are recorded in `GtaLauncher.log`.
 
 Pattern misses are non-fatal and are reflected by the installed hook count.
 This avoids terminating the game when Rockstar changes a signature, but a

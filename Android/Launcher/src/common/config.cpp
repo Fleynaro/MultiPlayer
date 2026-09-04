@@ -3,6 +3,8 @@
 #include "common/diagnostics.h"
 
 #include <Windows.h>
+#include <cerrno>
+#include <cwchar>
 #include <string>
 
 namespace launcher::config {
@@ -22,6 +24,19 @@ std::filesystem::path resolve_path(const std::filesystem::path& runtime_director
     return configured.is_absolute() ? configured : runtime_directory / configured;
 }
 
+float read_float(const std::filesystem::path& file, const wchar_t* section, const wchar_t* key,
+                 const float default_value, const float minimum, const float maximum) {
+    const std::wstring text = read_value(file, section, key, std::to_wstring(default_value).c_str());
+    wchar_t* end = nullptr;
+    errno = 0;
+    const float value = std::wcstof(text.c_str(), &end);
+    if (text.empty() || end == text.c_str() || *end != L'\0' || errno == ERANGE || value < minimum || value > maximum) {
+        diagnostics::log(L"WARNING", L"Config", L"Invalid " + std::wstring(key) + L" value; using the default.");
+        return default_value;
+    }
+    return value;
+}
+
 } // namespace
 
 Settings load(const std::filesystem::path& runtime_directory) {
@@ -35,6 +50,13 @@ Settings load(const std::filesystem::path& runtime_directory) {
         .site_packages_directory =
             resolve_path(runtime_directory,
                          read_value(config_file, L"Python", L"SitePackagesDirectory", L".venv\\Lib\\site-packages")),
+        .gui =
+            {
+                .scale = read_float(config_file, L"GUI", L"Scale", 0.0F, 0.0F, 4.0F),
+                .window_width = read_float(config_file, L"GUI", L"WindowWidth", 620.0F, 320.0F, 3840.0F),
+                .window_height = read_float(config_file, L"GUI", L"WindowHeight", 420.0F, 240.0F, 2160.0F),
+                .console_height = read_float(config_file, L"GUI", L"ConsoleHeight", 180.0F, 80.0F, 1600.0F),
+            },
     };
 
     const std::wstring game_directory = read_value(config_file, L"Launcher", L"GameInstallDirectory", L"");
@@ -48,6 +70,7 @@ Settings load(const std::filesystem::path& runtime_directory) {
         diagnostics::log(L"INFO", L"Config", L"Launcher.ini loaded from the runtime directory.");
     }
     diagnostics::log(L"INFO", L"Config", L"Python scripts directory: " + settings.scripts_directory.wstring());
+    diagnostics::log(L"INFO", L"Config", L"GUI settings loaded from Launcher.ini.");
     return settings;
 }
 
