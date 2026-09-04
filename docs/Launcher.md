@@ -86,7 +86,11 @@ from the previous dynamic MinHook build.
 
 For a one-click MSVC build, run `Android/Launcher/build.bat`.
 It configures the static vcpkg triplet, builds the project, removes the old
-`runtime-static` directory, and installs a clean runtime bundle there.
+`runtime` directory, and installs a clean runtime bundle there. Before removing
+the directory, it enumerates every `GTA5.exe` and `GTAVLauncher.exe` process
+and forcibly ends each process tree so loaded runtime DLLs can be replaced. If
+Windows denies access, run the script as Administrator or close the game
+processes manually.
 
 Dependencies are declared in `Android/Launcher/vcpkg.json` and are provided by
 vcpkg: MinHook, pybind11, and ImGui with Win32/DirectX 11 backends. CMake also

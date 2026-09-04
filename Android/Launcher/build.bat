@@ -68,6 +68,17 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem GTA V keeps the injected DLLs loaded until both the game and launcher exit.
+rem Use Win32_Process.Terminate instead of taskkill because GTA can expose a
+rem stale PID to taskkill while the process is still holding runtime DLLs.
+echo Closing GTA V processes that may lock runtime DLLs...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$names = @('GTA5.exe', 'GTAVLauncher.exe'); $processes = @(Get-CimInstance Win32_Process | Where-Object { $names -contains $_.Name } | Sort-Object @{Expression = { if ($_.Name -eq 'GTAVLauncher.exe') { 0 } else { 1 } }}); foreach ($process in $processes) { Write-Host ('Closing ' + $process.Name + ' with PID ' + $process.ProcessId + '...'); try { $result = Invoke-CimMethod -InputObject $process -MethodName Terminate -ErrorAction Stop; if ($result.ReturnValue -ne 0) { Write-Error ('Win32_Process.Terminate failed for PID ' + $process.ProcessId + ' with code ' + $result.ReturnValue); exit 1 } } catch { Write-Error ('Could not close PID ' + $process.ProcessId + ': ' + $_.Exception.Message); exit 1 } }; Start-Sleep -Milliseconds 500; $remaining = @(Get-Process -Name 'GTA5', 'GTAVLauncher' -ErrorAction SilentlyContinue); if ($remaining.Count -gt 0) { $remaining | ForEach-Object { Write-Error ('Process is still running: ' + $_.ProcessName + ' with PID ' + $_.Id) }; exit 1 }"
+if errorlevel 1 (
+    echo ERROR: GTA V processes could not be closed.
+    echo Run this script as Administrator and close any external process supervisors.
+    exit /b 1
+)
+
 if exist "%RUNTIME_DIR%" rmdir /s /q "%RUNTIME_DIR%"
 echo Installing the clean runtime bundle to "%RUNTIME_DIR%"...
 cmake --install "%BUILD_DIR%" --config Release --prefix "%RUNTIME_DIR%"
