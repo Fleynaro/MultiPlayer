@@ -54,3 +54,5 @@ dist/
 #python
 __pycache__/
 .venv/
+
+vcpkg_*/
