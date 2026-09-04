@@ -6,8 +6,8 @@
 
 #include <MinHook.h>
 #include <Windows.h>
-#include <array>
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cstring>
 #include <stdexcept>
@@ -110,7 +110,7 @@ std::uintptr_t __fastcall spawn_peds_hook(const std::uintptr_t first, const int 
                                           const int flags) {
     // Blocks the single-player ped spawn mode used by the documented implementation.
     if (mode == 4 && flags == 1) {
-        launcher::diagnostics::log(L"INFO", L"GameHooks", L"Suppressed single-player ped spawn request.");
+        // launcher::diagnostics::log(L"INFO", L"GameHooks", L"Suppressed single-player ped spawn request.");
         return 1;
     }
     return original_spawn_peds(first, mode, third, flags);
@@ -120,7 +120,8 @@ std::uintptr_t __fastcall spawn_vehicle_hook(const std::uintptr_t first, float* 
                                              const bool fourth, const bool fifth, const unsigned char flags) {
     // Blocks vehicle_gen_controller traffic while preserving other vehicle creation calls.
     if (executing_script != nullptr && _stricmp(executing_script, "vehicle_gen_controller") == 0) {
-        launcher::diagnostics::log(L"INFO", L"GameHooks", L"Suppressed vehicle_gen_controller vehicle spawn request.");
+        // launcher::diagnostics::log(L"INFO", L"GameHooks", L"Suppressed vehicle_gen_controller vehicle spawn
+        // request.");
         return 0;
     }
     return original_spawn_vehicle(first, position, third, fourth, fifth, flags);
@@ -202,11 +203,11 @@ void install() {
     install_hook(L"ExecuteScript", script, reinterpret_cast<void*>(&execute_script_hook),
                  reinterpret_cast<void**>(&original_execute_script));
 
-    const auto register_native = memory::find_pattern(
-        game, "48 BA 9C 13 0A F4 62 B1 FF D0 48 8B CB E8 ?? ?? ?? ??");
+    const auto register_native = memory::find_pattern(game, "48 BA 9C 13 0A F4 62 B1 FF D0 48 8B CB E8 ?? ?? ?? ??");
     if (register_native != 0) {
         install_hook(L"RegisterNative", memory::rip_relative(register_native, 4, 8),
-                     reinterpret_cast<void*>(&register_native_hook), reinterpret_cast<void**>(&original_register_native));
+                     reinterpret_cast<void*>(&register_native_hook),
+                     reinterpret_cast<void**>(&original_register_native));
     } else {
         ++missing_patterns;
         launcher::diagnostics::log(L"WARNING", L"GameHooks", L"Native registration signature was not found.");
