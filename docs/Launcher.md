@@ -1,0 +1,75 @@
+# Android/Launcher
+
+`Android/Launcher` is an independent x64 C++20 project. It does not include or
+link against the historical `MultiPlayer`, `Injector`, or `GTAV_Loader`
+projects. The implementation uses the documented architecture as a reference
+and keeps the GTA V build boundary explicit: the game signatures currently
+target build 1.41.
+
+## Runtime chain
+
+```text
+Launcher.exe
+  -> GTAVLauncher.exe (suspended)
+     -> Bootstrap.dll
+        -> GTA5.exe (suspended)
+           -> Client.dll
+              -> pattern hooks + Direct3D 11/ImGui overlay
+```
+
+`GTA_5_INSTALL_DIR` selects the directory containing `GTAVLauncher.exe`. The
+launcher and both DLLs are expected in the same output directory. The launcher
+does not run the game during a build or installation step.
+
+## Client behavior
+
+- Script execution is filtered using the script name at offset `0xD0`.
+- The same allow-list used by the documented multiplayer module remains
+  enabled; other listed single-player scripts are suppressed.
+- Ped/vehicle startup spawning, fire dispatch, distant fake vehicles, special
+  skill, wanted and police update paths are suppressed using build 1.41 byte
+  signatures.
+- The overlay hooks the Direct3D 11 swap-chain `Present` method and displays
+  the process id, renderer, and installed hook count. `F4` toggles the window.
+
+Pattern misses are non-fatal and are reflected by the installed hook count.
+This avoids terminating the game when Rockstar changes a signature, but a
+different game build is not considered supported until its signatures have
+been reviewed and updated.
+
+## Build
+
+From a VS Developer PowerShell with `VCPKG_ROOT` set:
+
+```powershell
+cmake --preset ninja-msvc
+cmake --build build --config Release
+cmake --install build --config Release --prefix runtime
+```
+
+Run the copy from `runtime`, not from a stale directory containing binaries
+from the previous dynamic MinHook build.
+
+Dependencies are declared in `Android/Launcher/vcpkg.json` and are provided by
+vcpkg: MinHook and ImGui with Win32/DirectX 11 backends.
+
+## Diagnostics and recovery
+
+All launcher, bootstrap, and client failures use English modal diagnostics and
+also write the same context to the debugger output. Each diagnostic includes a
+required or recommended recovery action.
+
+- If `GTA_5_INSTALL_DIR` is missing, set it to the directory that directly
+  contains `GTAVLauncher.exe`, then restart `Launcher.exe`.
+- If `Bootstrap.dll` or `Client.dll` is missing, build the project and keep all
+  three main binaries in the same output directory. MinHook is linked
+  statically through the `x64-windows-static` vcpkg triplet, so no separate
+  `minhook.x64.dll` is required.
+- If process creation or injection fails, run the launcher as administrator,
+  close existing GTA V processes, and disable conflicting overlays/security
+  tools.
+- If no signatures are found, use the supported GTA V build 1.41 x64 binary.
+  A partial signature match is reported as a warning and should not be treated
+  as full compatibility.
+- If Direct3D or ImGui initialization fails, use Direct3D 11 and ensure the
+  vcpkg ImGui backends match the built `Client.dll`.
