@@ -46,4 +46,5 @@ gen-*/
 .gradle/
 gradle/
 build/
+build-*/
 dist/
