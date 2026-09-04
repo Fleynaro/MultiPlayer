@@ -5,6 +5,7 @@
 #include "common/diagnostics.h"
 
 #include <Python.h>
+#include <Windows.h>
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -18,6 +19,7 @@
 #include <queue>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 #include <thread>
 
 namespace py = pybind11;
@@ -48,6 +50,21 @@ std::atomic_bool runtime_running = false;
 std::atomic_bool stop_requested = false;
 std::once_flag python_once;
 
+std::wstring wide_from_utf8(const std::string_view value) {
+    if (value.empty()) {
+        return {};
+    }
+    const int length =
+        MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value.data(), static_cast<int>(value.size()), nullptr, 0);
+    if (length <= 0) {
+        return L"<UTF-8 conversion failed>";
+    }
+    std::wstring result(static_cast<std::size_t>(length), L'\0');
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value.data(), static_cast<int>(value.size()), result.data(),
+                        length);
+    return result;
+}
+
 std::uint64_t float_bits(const float value) {
     return static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(value));
 }
@@ -57,6 +74,7 @@ float bits_float(const std::uint64_t value) {
 }
 
 void append_console(std::string line) {
+    launcher::diagnostics::log(L"INFO", L"Python", wide_from_utf8(line));
     std::lock_guard lock(state_mutex);
     output.push_back(std::move(line));
     if (output.size() > 500) {
@@ -185,11 +203,15 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
 }
 
 void execute_script(const std::filesystem::path script) {
+    launcher::diagnostics::log(L"INFO", L"Python", L"Starting script: " + script.wstring());
     try {
+        launcher::diagnostics::log(L"INFO", L"Python", L"Waiting for the Python GIL.");
         py::gil_scoped_acquire gil;
+        launcher::diagnostics::log(L"INFO", L"Python", L"Python GIL acquired.");
         py::dict globals;
         globals["__name__"] = "__main__";
         globals["__file__"] = script.string();
+        launcher::diagnostics::log(L"INFO", L"Python", L"Importing Python sys module.");
         auto sys = py::module_::import("sys");
         auto make_stream = [](const char* channel) {
             py::object stream = py::module_::import("types").attr("SimpleNamespace")();
@@ -204,14 +226,20 @@ void execute_script(const std::filesystem::path script) {
         };
         sys.attr("stdout") = make_stream("stdout");
         sys.attr("stderr") = make_stream("stderr");
+        launcher::diagnostics::log(L"INFO", L"Python", L"Evaluating script file.");
         py::eval_file(script.string(), globals);
         append_console("[info] Script completed: " + script.filename().string());
     } catch (const py::error_already_set& error) {
-        append_console("[python] " + std::string(error.what()));
+        const std::string message = "[python] " + std::string(error.what());
+        append_console(message);
+        launcher::diagnostics::log(L"ERROR", L"Python", wide_from_utf8(message));
     } catch (const std::exception& error) {
-        append_console("[runtime] " + std::string(error.what()));
+        const std::string message = "[runtime] " + std::string(error.what());
+        append_console(message);
+        launcher::diagnostics::log(L"ERROR", L"Python", wide_from_utf8(message));
     }
     runtime_running = false;
+    launcher::diagnostics::log(L"INFO", L"Python", L"Script worker stopped: " + script.wstring());
 }
 
 } // namespace
@@ -240,7 +268,21 @@ void initialize() {
         } else {
             append_console("[warning] Configured Python site-packages directory is missing.");
         }
+        try {
+            py::module_::import("encodings.idna");
+            append_console("[info] Python IDNA codec initialized.");
+        } catch (const py::error_already_set& error) {
+            const std::string message = "[python] Could not initialize IDNA codec: " + std::string(error.what());
+            append_console(message);
+            launcher::diagnostics::log(L"ERROR", L"Python", wide_from_utf8(message));
+        }
         append_console("[info] Python runtime initialized.");
+
+        // Keep the interpreter available to script worker threads after this
+        // initialization thread exits. A scope guard would reacquire the GIL
+        // at the end of this callback and block every later script worker.
+        PyEval_SaveThread();
+        launcher::diagnostics::log(L"INFO", L"Python", L"Python GIL released for script workers.");
     });
 }
 
@@ -328,16 +370,32 @@ std::vector<std::filesystem::path> scripts() {
 }
 
 bool run(const std::filesystem::path& script) {
-    if (runtime_running || script.extension() != ".py" || script.parent_path() != scripts_directory) {
+    if (runtime_running) {
+        append_console("[warning] A Python script is already running.");
+        launcher::diagnostics::log(L"WARNING", L"Python", L"Run request rejected because another script is active.");
         return false;
     }
-    if (!std::filesystem::is_regular_file(script)) {
+    std::error_code error;
+    const auto normalized_script = std::filesystem::weakly_canonical(script, error);
+    const auto normalized_directory = std::filesystem::weakly_canonical(scripts_directory, error);
+    if (error || normalized_script.extension() != ".py" || normalized_script.parent_path() != normalized_directory) {
+        append_console("[error] The selected script is outside the configured scripts directory.");
+        launcher::diagnostics::log(L"ERROR", L"Python",
+                                   L"Run request rejected for invalid script path: " + script.wstring());
         return false;
+    }
+    if (!std::filesystem::is_regular_file(normalized_script, error) || error) {
+        append_console("[error] The selected Python script does not exist or is not a regular file.");
+        launcher::diagnostics::log(L"ERROR", L"Python", L"Script file is unavailable: " + normalized_script.wstring());
+        return false;
+    }
+    if (worker.joinable()) {
+        worker.join();
     }
     stop_requested = false;
-    current_script_name = script.filename().string();
+    current_script_name = normalized_script.filename().string();
     runtime_running = true;
-    worker = std::thread(execute_script, script);
+    worker = std::thread(execute_script, normalized_script);
     append_console("[info] Running: " + current_script_name);
     return true;
 }
