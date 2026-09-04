@@ -25,18 +25,20 @@ target_compile_definitions(LauncherCommon INTERFACE UNICODE _UNICODE WIN32_LEAN_
 target_link_libraries(LauncherCommon INTERFACE minhook::minhook)
 
 add_executable(Launcher WIN32 src/launcher/main.cpp src/common/remote_library.cpp src/common/diagnostics.cpp
+    src/common/crash_handler.cpp
     src/common/config.cpp launcher.rc)
 target_link_libraries(Launcher PRIVATE LauncherCommon)
 if(MSVC)
     target_link_options(Launcher PRIVATE "/MANIFEST:NO")
 endif()
 
-add_library(Bootstrap SHARED src/bootstrap/dllmain.cpp src/common/remote_library.cpp src/common/diagnostics.cpp)
+add_library(Bootstrap SHARED src/bootstrap/dllmain.cpp src/common/remote_library.cpp src/common/diagnostics.cpp
+    src/common/crash_handler.cpp)
 target_link_libraries(Bootstrap PRIVATE LauncherCommon)
 set_target_properties(Bootstrap PROPERTIES OUTPUT_NAME "Bootstrap")
 
 add_library(Client SHARED src/client/dllmain.cpp src/client/pattern_scanner.cpp src/client/game_hooks.cpp src/client/d3d11_overlay.cpp
-    src/client/python_runtime.cpp src/common/diagnostics.cpp src/common/config.cpp)
+    src/client/python_runtime.cpp src/common/diagnostics.cpp src/common/crash_handler.cpp src/common/config.cpp)
 target_link_libraries(Client PRIVATE LauncherCommon d3d11 dxgi)
 target_link_libraries(Client PRIVATE imgui::imgui)
 target_link_libraries(Client PRIVATE pybind11::embed Python3::Python)

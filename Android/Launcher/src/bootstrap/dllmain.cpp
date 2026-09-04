@@ -1,3 +1,4 @@
+#include "common/crash_handler.h"
 #include "common/diagnostics.h"
 #include "common/remote_library.h"
 
@@ -154,6 +155,7 @@ BOOL APIENTRY DllMain(const HMODULE module, const DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         module_handle = module;
         DisableThreadLibraryCalls(module);
+        launcher::crash_handler::install(L"Bootstrap");
         launcher::diagnostics::log(L"INFO", L"Bootstrap", L"Bootstrap.dll attached to the launcher process.");
         if (MH_Initialize() != MH_OK ||
             MH_CreateHookApi(L"kernel32.dll", "CreateProcessA", &create_process_a_hook,

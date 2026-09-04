@@ -116,6 +116,14 @@ severity, component names, hook and signature results, injection stages, and
 renderer initialization events. Each diagnostic includes a required or
 recommended recovery action.
 
+`Launcher.exe`, `Bootstrap.dll`, and `Client.dll` install an unhandled exception
+handler. A fatal Windows exception or C++ `std::terminate` writes a timestamped
+`GtaLauncher-*.dmp` file into a `CrashDumps` directory beside the process
+executable and appends one short `FATAL` entry to `GtaLauncher.log`. The dump
+contains thread information, unloaded modules, data sections, and indirectly
+referenced memory. If dump creation fails, the log records the Windows error;
+the crash is still allowed to terminate normally.
+
 - If `GTA_5_INSTALL_DIR` is missing, set it to the directory that directly
   contains `GTAVLauncher.exe`, then restart `Launcher.exe`.
 - If `Bootstrap.dll` or `Client.dll` is missing, build the project and keep all

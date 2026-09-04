@@ -1,4 +1,5 @@
 #include "common/config.h"
+#include "common/crash_handler.h"
 #include "common/diagnostics.h"
 #include "common/remote_library.h"
 
@@ -48,6 +49,7 @@ bool enable_debug_privilege() {
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     // Starts the two-stage injection chain after validating every required local file.
+    launcher::crash_handler::install(L"Launcher");
     launcher::diagnostics::log(L"INFO", L"Launcher", L"Launcher startup began.");
     enable_debug_privilege();
     const auto launcher_directory = module_directory();

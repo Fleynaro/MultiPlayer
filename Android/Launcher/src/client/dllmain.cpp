@@ -1,6 +1,7 @@
 #include "client/d3d11_overlay.h"
 #include "client/game_hooks.h"
 #include "client/python_runtime.h"
+#include "common/crash_handler.h"
 #include "common/diagnostics.h"
 
 #include <MinHook.h>
@@ -39,6 +40,7 @@ BOOL APIENTRY DllMain(const HMODULE module, const DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         client_module = module;
         DisableThreadLibraryCalls(module);
+        launcher::crash_handler::install(L"Client");
         launcher::diagnostics::log(L"INFO", L"Client", L"Client.dll attached to GTA5.exe.");
         if (QueueUserWorkItem(initialize_client, nullptr, WT_EXECUTEDEFAULT) == FALSE) {
             const DWORD error = GetLastError();
