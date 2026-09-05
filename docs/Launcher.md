@@ -122,11 +122,23 @@ Each diagnostic includes a required or recommended recovery action.
 
 `Launcher.exe`, `Bootstrap.dll`, and `Client.dll` install an unhandled exception
 handler. A fatal Windows exception or C++ `std::terminate` writes a timestamped
-`GtaLauncher-*.dmp` file into a `CrashDumps` directory beside the process
-executable and appends one short `FATAL` entry to `GtaLauncher.log`. The dump
+`GtaLauncher-*.dmp` file into a `CrashDumps` directory beside the binary that
+installed the handler and appends one short `FATAL` entry to `GtaLauncher.log`.
+The dump
 contains thread information, unloaded modules, data sections, and indirectly
 referenced memory. If dump creation fails, the log records the Windows error;
 the crash is still allowed to terminate normally.
+
+Fatal log entries include the decoded exception name, faulting thread, faulting
+module and offset, and for access violations the operation and target address.
+
+The crash handler also installs a vectored exception registration that
+reasserts the last-chance handler if game code or security software replaces
+the process-wide unhandled exception filter, plus C runtime handlers for
+invalid parameters and pure virtual calls.
+Bootstrap additionally monitors every injected `GTA5.exe` process and records
+its exit code in `GtaLauncher.log`; this captures fail-fast and explicit
+process termination cases where Windows does not dispatch a catchable exception.
 
 - If `GTA_5_INSTALL_DIR` is missing, set it to the directory that directly
   contains `GTAVLauncher.exe`, then restart `Launcher.exe`.

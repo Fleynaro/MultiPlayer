@@ -6,6 +6,7 @@
 #include <Windows.h>
 #include <cwchar>
 #include <filesystem>
+#include <new>
 #include <string>
 
 namespace {
@@ -17,6 +18,55 @@ using CreateProcessAFunction = BOOL(WINAPI*)(LPCSTR, LPSTR, LPSECURITY_ATTRIBUTE
 CreateProcessWFunction original_create_process = nullptr;
 CreateProcessAFunction original_create_process_a = nullptr;
 HMODULE module_handle = nullptr;
+
+struct ProcessExitMonitor {
+    HANDLE process = nullptr;
+    DWORD process_id = 0;
+    HANDLE wait = nullptr;
+};
+
+VOID CALLBACK game_exit_callback(void* context, BOOLEAN) {
+    auto* monitor = static_cast<ProcessExitMonitor*>(context);
+    DWORD exit_code = STILL_ACTIVE;
+    if (GetExitCodeProcess(monitor->process, &exit_code) != FALSE) {
+        launcher::diagnostics::log(exit_code == 0 ? L"INFO" : L"FATAL", L"Bootstrap",
+                                   L"GTA5.exe exited (PID " + std::to_wstring(monitor->process_id) +
+                                       L") with exit code " + std::to_wstring(exit_code) + L".",
+                                   exit_code == 0 ? ERROR_SUCCESS : exit_code);
+    } else {
+        launcher::diagnostics::log(L"ERROR", L"Bootstrap",
+                                   L"GTA5.exe exit code could not be read (PID " +
+                                       std::to_wstring(monitor->process_id) + L").",
+                                   GetLastError());
+    }
+    CloseHandle(monitor->process);
+    // WT_EXECUTEONLYONCE unregisters the callback after it returns. The wait
+    // handle can be closed here without waiting for the callback again.
+    CloseHandle(monitor->wait);
+    delete monitor;
+}
+
+bool monitor_game_process(const HANDLE process, const DWORD process_id) {
+    auto* monitor = new (std::nothrow) ProcessExitMonitor{nullptr, process_id, nullptr};
+    if (monitor == nullptr || DuplicateHandle(GetCurrentProcess(), process, GetCurrentProcess(), &monitor->process,
+                                              SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, 0) == FALSE) {
+        delete monitor;
+        launcher::diagnostics::log(L"ERROR", L"Bootstrap", L"Could not duplicate GTA5.exe handle for exit monitoring.",
+                                   GetLastError());
+        return false;
+    }
+    if (RegisterWaitForSingleObject(&monitor->wait, monitor->process, game_exit_callback, monitor, INFINITE,
+                                    WT_EXECUTEONLYONCE) == FALSE) {
+        const DWORD error = GetLastError();
+        CloseHandle(monitor->process);
+        delete monitor;
+        launcher::diagnostics::log(L"ERROR", L"Bootstrap", L"Could not register GTA5.exe exit monitor.", error);
+        return false;
+    }
+    launcher::diagnostics::log(L"INFO", L"Bootstrap",
+                               L"Monitoring GTA5.exe termination (PID " + std::to_wstring(process_id) + L").");
+    return true;
+}
 
 std::filesystem::path module_directory() {
     // Returns the directory containing Bootstrap.dll for locating Client.dll.
@@ -88,6 +138,7 @@ BOOL WINAPI create_process_hook(LPCWSTR application_name, LPWSTR command_line, L
         return FALSE;
     }
     launcher::diagnostics::log(L"INFO", L"Bootstrap", L"Client.dll injection into GTA5.exe succeeded.");
+    monitor_game_process(process_information->hProcess, GetProcessId(process_information->hProcess));
     if (ResumeThread(process_information->hThread) == static_cast<DWORD>(-1)) {
         const DWORD error = GetLastError();
         launcher::diagnostics::show_error(L"Bootstrap", L"The GTA5.exe main thread could not be resumed.",
@@ -138,6 +189,7 @@ BOOL WINAPI create_process_a_hook(LPCSTR application_name, LPSTR command_line, L
         TerminateProcess(process_information->hProcess, ERROR_DLL_INIT_FAILED);
         return FALSE;
     }
+    monitor_game_process(process_information->hProcess, GetProcessId(process_information->hProcess));
     if (ResumeThread(process_information->hThread) == static_cast<DWORD>(-1)) {
         launcher::diagnostics::show_error(L"Bootstrap", L"The GTA5.exe main thread could not be resumed.",
                                           L"Close debuggers and process protection software, then try again.",
