@@ -117,7 +117,7 @@ def main(output: Path, pyi: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(lines), encoding="utf-8")
 
-    pyi_lines = ['"""Strictly typed public API exposed by the Client.dll Python module."""', "", "from typing import Final", "", "", "class Vector3:", "    x: float", "    y: float", "    z: float", "", "    def __init__(self, x: float, y: float, z: float) -> None: ...", "", "", "Entity: Final = int", "Ped: Final = int", "Vehicle: Final = int", "Object: Final = int", "Pickup: Final = int", "Blip: Final = int", "Hash: Final = int", "", "", "def log(message: str, /) -> None: ...", "def wait(milliseconds: int, /) -> None: ...", ""]
+    pyi_lines = ['"""Strictly typed public API exposed by the Client.dll Python module."""', "", "from typing import Final", "", "", "class Vector3:", "    x: float", "    y: float", "    z: float", "", "    def __init__(self, x: float, y: float, z: float) -> None: ...", "", "", "Entity: Final = int", "Ped: Final = int", "Vehicle: Final = int", "Object: Final = int", "Pickup: Final = int", "Blip: Final = int", "Hash: Final = int", "", "", "def log(message: str, /) -> None: ...", "def wait(milliseconds: int, /) -> None: ...", "def stop_requested() -> bool: ...", ""]
     current = None
     for g, original, pyname, _, argc, kind, parameters, parameter_types, description in specs:
         if g != current:

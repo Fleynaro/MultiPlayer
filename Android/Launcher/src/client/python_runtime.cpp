@@ -279,6 +279,7 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
     });
+    module.def("stop_requested", [] { return stop_requested.load(); });
     module.def_submodule("player", "PLAYER natives");
     module.def_submodule("entity", "ENTITY natives");
     module.def_submodule("ped", "PED natives");

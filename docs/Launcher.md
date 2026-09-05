@@ -51,6 +51,15 @@ launcher icon as its application icon.
   static native hashes to build-specific hashes before handler lookup.
 - The overlay provides a Python script selector, run/stop controls, and a
   bounded console. `scripts/gta.pyi` is the strict typing contract for scripts.
+- `scripts/agent_server.py` provides a localhost HTTP bridge for external agents.
+  Run it from the overlay first; it starts `ThreadingHTTPServer` on a dedicated
+  thread at `127.0.0.1:8765`. The API accepts `POST /run?path=script.py` and
+  executes the selected script with `runpy.run_path`. The JSON response contains
+  `ok`, `path`, `stdout`, `stderr`, and `error`; scripts must be direct `.py`
+  children of the configured scripts directory.
+- During embedded Python initialization, the launcher registers the active
+  CPython prefix and `DLLs` directories with the Windows DLL loader. This is
+  required for standard-library extension modules such as `_socket.pyd`.
 
 The renderer hook is installed before game signature scanning so GTA V cannot
 create its swap chain while client initialization is still scanning.
