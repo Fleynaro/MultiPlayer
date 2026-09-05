@@ -1,7 +1,5 @@
 """Strictly typed public API exposed by the Client.dll Python module."""
 
-from typing import Final
-
 class Vector3:
     x: float
     y: float
@@ -9,13 +7,13 @@ class Vector3:
 
     def __init__(self, x: float, y: float, z: float) -> None: ...
 
-Entity: Final = int
-Ped: Final = int
-Vehicle: Final = int
-Object: Final = int
-Pickup: Final = int
-Blip: Final = int
-Hash: Final = int
+Entity = int
+Ped = int
+Vehicle = int
+Object = int
+Pickup = int
+Blip = int
+Hash = int
 
 def log(message: str, /) -> None: ...
 def wait(milliseconds: int, /) -> None: ...
