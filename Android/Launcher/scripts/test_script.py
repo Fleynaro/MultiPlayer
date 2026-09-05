@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import gta
 from gta import entity, player
 
 
 def main() -> None:
-    gta.log("Python runtime started")
+    print("Python runtime started")
     ped = player.get_player_ped(-1)
-    gta.log(f"Player ped handle: {ped}")
-    gta.log(f"Player health: {entity.get_entity_health(ped)}")
-    gta.log(
+    print(f"Player ped handle: {ped}")
+    print(f"Player health: {entity.get_entity_health(ped)}")
+    print(
         f"Player coordinates: {entity.get_entity_coords(ped, False).x} {entity.get_entity_coords(ped, False).y} {entity.get_entity_coords(ped, False).z}"
     )
 

@@ -10,7 +10,6 @@ struct GuiSettings {
     float scale = 0.0F;
     float window_width = 620.0F;
     float window_height = 420.0F;
-    float console_height = 180.0F;
 };
 
 struct Settings {

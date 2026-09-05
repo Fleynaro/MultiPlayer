@@ -194,12 +194,13 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
             ImGui::TextUnformatted("Status: idle");
         }
         ImGui::Separator();
-        ImGui::BeginChild("Python console", ImVec2(0.0F, gui_settings.console_height * ui_scale), true);
+        ImGui::TextUnformatted("F4 toggles this window");
+        ImGui::Separator();
+        ImGui::BeginChild("Python console", ImVec2(0.0F, -1.0F), true);
         for (const auto& line : python::console_lines()) {
             ImGui::TextUnformatted(line.c_str());
         }
         ImGui::EndChild();
-        ImGui::TextUnformatted("F4 toggles this window");
         ImGui::End();
         ImGui::Render();
         context->OMSetRenderTargets(1, &render_target, nullptr);

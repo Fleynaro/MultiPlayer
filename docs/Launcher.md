@@ -50,7 +50,8 @@ launcher icon as its application icon.
 - Native calls use `hashes_ver141.json` beside `Client.dll` to translate
   static native hashes to build-specific hashes before handler lookup.
 - The overlay provides a Python script selector, run/stop controls, and a
-  bounded console. Each `Run script` action starts an independent worker and
+  bounded console. Python `print()` output from stdout and stderr is routed to
+  the console and to `GtaLauncher.log`. Each `Run script` action starts an independent worker and
   does not block on other running scripts, so long-lived servers and test
   scripts can coexist. `Stop` requests shutdown for all active scripts.
   `scripts/gta.pyi` is the strict typing contract for scripts.
@@ -80,7 +81,8 @@ controls the additional Python package directory and defaults to
 can replace `GTA_5_INSTALL_DIR`; when it is commented out, the environment
 variable remains the fallback. `GUI/Scale` overrides automatic DPI and
 resolution scaling when greater than zero; `GUI/WindowWidth`,
-`GUI/WindowHeight`, and `GUI/ConsoleHeight` control the initial overlay layout.
+`GUI/WindowHeight` controls the initial overlay layout. The Python console
+  occupies the remaining vertical space and stays attached to the bottom edge.
 `Python/AutoStartScripts` is an optional semicolon-separated list of direct `.py`
 children of `ScriptsDirectory`. These scripts start automatically after embedded
 Python initialization and may run concurrently, which is suitable for long-lived

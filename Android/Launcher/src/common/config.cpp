@@ -115,7 +115,6 @@ Settings load(const std::filesystem::path& runtime_directory) {
                 .scale = read_float(config_file, L"GUI", L"Scale", 0.0F, 0.0F, 4.0F),
                 .window_width = read_float(config_file, L"GUI", L"WindowWidth", 620.0F, 320.0F, 3840.0F),
                 .window_height = read_float(config_file, L"GUI", L"WindowHeight", 420.0F, 240.0F, 2160.0F),
-                .console_height = read_float(config_file, L"GUI", L"ConsoleHeight", 180.0F, 80.0F, 1600.0F),
             },
     };
 

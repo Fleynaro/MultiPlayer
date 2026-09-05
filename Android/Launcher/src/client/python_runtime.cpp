@@ -51,6 +51,9 @@ std::atomic_bool runtime_running = false;
 std::atomic_uint running_script_count = 0;
 std::atomic_bool stop_requested = false;
 std::once_flag python_once;
+// Python streams are global, so thread-local buffers keep concurrent workers isolated.
+thread_local std::string stdout_buffer;
+thread_local std::string stderr_buffer;
 
 std::wstring wide_from_utf8(const std::string_view value) {
     if (value.empty()) {
@@ -75,13 +78,56 @@ float bits_float(const std::uint64_t value) {
     return std::bit_cast<float>(static_cast<std::uint32_t>(value));
 }
 
-void append_console(std::string line) {
-    launcher::diagnostics::log(L"INFO", L"Python", wide_from_utf8(line));
+void append_console(std::string line, const std::wstring_view level = L"INFO") {
+    launcher::diagnostics::log(level, L"Python", wide_from_utf8(line));
     std::lock_guard lock(state_mutex);
     output.push_back(std::move(line));
     if (output.size() > 500) {
         output.erase(output.begin(), output.begin() + 100);
     }
+}
+
+std::string& output_buffer(const std::string_view channel) {
+    return channel == "stderr" ? stderr_buffer : stdout_buffer;
+}
+
+void flush_output(const std::string_view channel) {
+    auto& buffer = output_buffer(channel);
+    if (buffer.empty()) {
+        return;
+    }
+    append_console("[" + std::string(channel) + "] " + std::move(buffer), channel == "stderr" ? L"ERROR" : L"INFO");
+    buffer.clear();
+}
+
+void append_python_output(const std::string_view channel, const std::string_view text) {
+    auto& buffer = output_buffer(channel);
+    buffer.append(text);
+    std::size_t newline = std::string::npos;
+    while ((newline = buffer.find('\n')) != std::string::npos) {
+        std::string line = buffer.substr(0, newline);
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        append_console("[" + std::string(channel) + "] " + std::move(line), channel == "stderr" ? L"ERROR" : L"INFO");
+        buffer.erase(0, newline + 1);
+    }
+}
+
+py::object make_output_stream(const char* channel) {
+    py::object stream = py::module_::import("types").attr("SimpleNamespace")();
+    stream.attr("write") = py::cpp_function([channel](const std::string& text) {
+        append_python_output(channel, text);
+        return text.size();
+    });
+    stream.attr("flush") = py::cpp_function([channel] { flush_output(channel); });
+    return stream;
+}
+
+void install_output_streams() {
+    auto sys = py::module_::import("sys");
+    sys.attr("stdout") = make_output_stream("stdout");
+    sys.attr("stderr") = make_output_stream("stderr");
 }
 
 std::vector<std::uint64_t> call_game(std::string operation, std::vector<std::uint64_t> arguments) {
@@ -274,12 +320,6 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
         .def_readwrite("x", &Vec3::x)
         .def_readwrite("y", &Vec3::y)
         .def_readwrite("z", &Vec3::z);
-    module.def("log", [](const std::string& message) {
-        if (message.size() > 4096) {
-            throw std::invalid_argument("log message is limited to 4096 characters");
-        }
-        append_console("[script] " + message);
-    });
     module.def("wait", [](const int milliseconds) {
         if (milliseconds < 0 || milliseconds > 600000) {
             throw std::invalid_argument("wait milliseconds must be between 0 and 600000");
@@ -303,29 +343,18 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
 void execute_script(const std::filesystem::path script) {
     launcher::diagnostics::log(L"INFO", L"Python", L"Starting script: " + script.wstring());
     try {
+        stdout_buffer.clear();
+        stderr_buffer.clear();
         launcher::diagnostics::log(L"INFO", L"Python", L"Waiting for the Python GIL.");
         py::gil_scoped_acquire gil;
         launcher::diagnostics::log(L"INFO", L"Python", L"Python GIL acquired.");
         py::dict globals;
         globals["__name__"] = "__main__";
         globals["__file__"] = script.string();
-        launcher::diagnostics::log(L"INFO", L"Python", L"Importing Python sys module.");
-        auto sys = py::module_::import("sys");
-        auto make_stream = [](const char* channel) {
-            py::object stream = py::module_::import("types").attr("SimpleNamespace")();
-            stream.attr("write") = py::cpp_function([channel](const std::string& text) {
-                if (!text.empty() && text != "\n") {
-                    append_console(std::string("[") + channel + "] " + text);
-                }
-                return text.size();
-            });
-            stream.attr("flush") = py::cpp_function([] {});
-            return stream;
-        };
-        sys.attr("stdout") = make_stream("stdout");
-        sys.attr("stderr") = make_stream("stderr");
         launcher::diagnostics::log(L"INFO", L"Python", L"Evaluating script file.");
         py::eval_file(script.string(), globals);
+        flush_output("stdout");
+        flush_output("stderr");
         append_console("[info] Script completed: " + script.filename().string());
     } catch (const py::error_already_set& error) {
         const std::string message = "[python] " + std::string(error.what());
@@ -336,6 +365,8 @@ void execute_script(const std::filesystem::path script) {
         append_console(message);
         launcher::diagnostics::log(L"ERROR", L"Python", wide_from_utf8(message));
     }
+    flush_output("stdout");
+    flush_output("stderr");
     const auto remaining_scripts = running_script_count.fetch_sub(1) - 1;
     runtime_running = remaining_scripts != 0;
     launcher::diagnostics::log(L"INFO", L"Python", L"Script worker stopped: " + script.wstring());
@@ -399,6 +430,7 @@ void initialize() {
         } else {
             append_console("[warning] Configured Python site-packages directory is missing.");
         }
+        install_output_streams();
         append_console("[info] Python runtime initialized.");
 
         // Keep the interpreter available to script worker threads after this

@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import json
 import runpy
+import sys
 import threading
 from contextlib import redirect_stderr, redirect_stdout
 from http import HTTPStatus
@@ -37,13 +38,33 @@ def _resolve_script(raw_path: str) -> Path:
 
 def _run_script(raw_path: str) -> dict[str, object]:
     """Execute one script and return everything it wrote to stdout and stderr."""
+
+    class Tee:
+        def __init__(self, *streams):
+            self.streams = streams
+
+        def write(self, data):
+            for stream in self.streams:
+                stream.write(data)
+            return len(data)
+
+        def flush(self):
+            for stream in self.streams:
+                stream.flush()
+
     script = _resolve_script(raw_path)
     stdout = io.StringIO()
     stderr = io.StringIO()
-    with RUN_LOCK, redirect_stdout(stdout), redirect_stderr(stderr):
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    with (
+        RUN_LOCK,
+        redirect_stdout(Tee(stdout, original_stdout)),
+        redirect_stderr(Tee(stderr, original_stderr)),
+    ):
         try:
             runpy.run_path(str(script), run_name="__main__")
-        except Exception as error:  # Return script failures to the caller as JSON.
+        except Exception as error:
             return {
                 "ok": False,
                 "path": str(script),
@@ -103,7 +124,7 @@ class AgentRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, format: str, *args: object) -> None:
-        gta.log("[agent-server] " + (format % args))
+        print("[agent-server] " + (format % args))
 
 
 def main() -> None:
