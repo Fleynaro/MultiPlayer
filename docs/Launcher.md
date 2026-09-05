@@ -108,7 +108,11 @@ processes manually.
 
 Dependencies are declared in `Android/Launcher/vcpkg.json` and are provided by
 vcpkg: MinHook, pybind11, and ImGui with Win32/DirectX 11 backends. CMake also
-requires the matching CPython development package. For the planned Python 3.12
+requires a shared CPython 3.12 development installation with `Include_libs`
+enabled. CPython must not be linked from the static `x64-windows-static`
+triplet because extension modules such as `_socket.pyd` require
+`python312.dll`. The build script selects the installed CPython development
+root and copies its runtime DLL beside `Client.dll`. For the planned Python 3.12
 setup, create `runtime/.venv` with `python -m venv runtime/.venv` and install
 the pinned dependency from `Android/Launcher/requirements.txt` into that
 environment. The client adds `runtime/.venv/Lib/site-packages` to `sys.path`.

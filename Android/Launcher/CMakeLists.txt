@@ -16,6 +16,12 @@ endif()
 find_package(minhook CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 set(PYBIND11_FINDPYTHON ON)
+set(GTA_PYTHON_ROOT "" CACHE PATH "Root of a shared CPython 3.12 development installation")
+if(GTA_PYTHON_ROOT)
+    set(Python3_EXECUTABLE "${GTA_PYTHON_ROOT}/python.exe" CACHE FILEPATH "CPython executable" FORCE)
+    set(Python3_INCLUDE_DIR "${GTA_PYTHON_ROOT}/include" CACHE PATH "CPython headers" FORCE)
+    set(Python3_LIBRARY "${GTA_PYTHON_ROOT}/libs/python312.lib" CACHE FILEPATH "CPython import library" FORCE)
+endif()
 find_package(Python3 COMPONENTS Interpreter Development.Embed REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
@@ -41,7 +47,11 @@ add_library(Client SHARED src/client/dllmain.cpp src/client/pattern_scanner.cpp 
     src/client/python_runtime.cpp src/common/diagnostics.cpp src/common/crash_handler.cpp src/common/config.cpp)
 target_link_libraries(Client PRIVATE LauncherCommon d3d11 dxgi)
 target_link_libraries(Client PRIVATE imgui::imgui)
-target_link_libraries(Client PRIVATE pybind11::embed Python3::Python)
+# Link against the shared CPython import library explicitly. pybind11::embed
+# would select the static vcpkg Python target from the global static triplet,
+# which cannot load extension modules such as _socket.pyd.
+target_include_directories(Client BEFORE PRIVATE "${Python3_INCLUDE_DIR}")
+target_link_libraries(Client PRIVATE pybind11::headers "${Python3_LIBRARY}")
 target_compile_definitions(Client PRIVATE PY_SSIZE_T_CLEAN)
 set_target_properties(Client PROPERTIES OUTPUT_NAME "Client")
 
@@ -51,6 +61,9 @@ if(MSVC)
 endif()
 
 install(TARGETS Launcher Bootstrap Client RUNTIME DESTINATION . LIBRARY DESTINATION .)
+if(Python3_RUNTIME_LIBRARY_RELEASE)
+    install(FILES "${Python3_RUNTIME_LIBRARY_RELEASE}" DESTINATION .)
+endif()
 install(DIRECTORY scripts/ DESTINATION scripts PATTERN "__pycache__" EXCLUDE)
 install(FILES Launcher.ini DESTINATION .)
 install(FILES hashes_ver141.json DESTINATION .)

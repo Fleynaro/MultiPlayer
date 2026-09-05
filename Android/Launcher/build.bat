@@ -55,7 +55,24 @@ if errorlevel 1 (
 echo Configuring the x64 static-vcpkg build...
 rem Remove stale CMake cache files so the script cannot reuse another compiler or triplet.
 if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
-cmake -S "%SCRIPT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_CXX_COMPILER=cl -DPython3_EXECUTABLE="%BUILD_DIR%\vcpkg_installed\x64-windows-static\tools\python3\python.exe" -DPython3_INCLUDE_DIR="%BUILD_DIR%\vcpkg_installed\x64-windows-static\include\python3.12" -DPython3_LIBRARY="%BUILD_DIR%\vcpkg_installed\x64-windows-static\lib\python312.lib"
+where py >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: CPython 3.12 launcher was not found.
+    echo Install CPython 3.12 with the Include_libs development files enabled.
+    exit /b 1
+)
+for /f "usebackq delims=" %%P in (`py -3.12 -c "import sys; print(sys.prefix)"`) do set "PYTHON_ROOT=%%P"
+if not exist "!PYTHON_ROOT!\include\Python.h" (
+    echo ERROR: CPython development headers were not found in "!PYTHON_ROOT!".
+    echo Repair CPython 3.12 and enable Include_libs.
+    exit /b 1
+)
+if not exist "!PYTHON_ROOT!\libs\python312.lib" (
+    echo ERROR: CPython shared import library was not found in "!PYTHON_ROOT!\libs".
+    echo Repair CPython 3.12 and enable Include_libs.
+    exit /b 1
+)
+cmake -S "%SCRIPT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_CXX_COMPILER=cl -DGTA_PYTHON_ROOT="!PYTHON_ROOT!"
 if errorlevel 1 (
     echo ERROR: CMake configuration failed.
     exit /b 1
