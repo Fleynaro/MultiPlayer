@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "GTA Launcher: Run Current File",
+            "type": "process",
+            "command": "curl.exe",
+            "args": [
+                "--request",
+                "POST",
+                "--get",
+                "--data-urlencode",
+                "path=${file}",
+                "http://127.0.0.1:8766/run"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}
