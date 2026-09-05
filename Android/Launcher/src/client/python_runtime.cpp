@@ -48,7 +48,7 @@ std::filesystem::path scripts_directory;
 std::string current_script_name;
 std::vector<std::thread> workers;
 std::atomic_bool runtime_running = false;
-std::atomic_uint active_script_count = 0;
+std::atomic_uint running_script_count = 0;
 std::atomic_bool stop_requested = false;
 std::once_flag python_once;
 
@@ -222,7 +222,13 @@ void bind_generated_natives(py::module_& module) {
                 type_offset = separator == std::string_view::npos ? spec.parameter_types.size() : separator + 1;
             }
             const auto result_count = spec.result == "void" ? 0U : spec.result == "vector" ? 3U : 1U;
-            const auto result = call_game("NATIVE_" + std::string(spec.original), std::move(native_arguments));
+            std::vector<std::uint64_t> result;
+            {
+                // Native execution waits for the game thread. Keep that wait
+                // from blocking unrelated Python script workers.
+                py::gil_scoped_release release;
+                result = call_game("NATIVE_" + std::string(spec.original), std::move(native_arguments));
+            }
             if (result.size() != result_count) {
                 throw std::runtime_error("native returned an invalid result count");
             }
@@ -278,6 +284,7 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
         if (milliseconds < 0 || milliseconds > 600000) {
             throw std::invalid_argument("wait milliseconds must be between 0 and 600000");
         }
+        py::gil_scoped_release release;
         std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
     });
     module.def("stop_requested", [] { return stop_requested.load(); });
@@ -329,18 +336,12 @@ void execute_script(const std::filesystem::path script) {
         append_console(message);
         launcher::diagnostics::log(L"ERROR", L"Python", wide_from_utf8(message));
     }
-    if (active_script_count.fetch_sub(1) == 1) {
-        runtime_running = false;
-    }
+    const auto remaining_scripts = running_script_count.fetch_sub(1) - 1;
+    runtime_running = remaining_scripts != 0;
     launcher::diagnostics::log(L"INFO", L"Python", L"Script worker stopped: " + script.wstring());
 }
 
-bool launch_script(const std::filesystem::path& script, const bool reject_when_busy) {
-    if (reject_when_busy && runtime_running) {
-        append_console("[warning] A Python script is already running.");
-        launcher::diagnostics::log(L"WARNING", L"Python", L"Run request rejected because another script is active.");
-        return false;
-    }
+bool launch_script(const std::filesystem::path& script) {
     std::error_code error;
     const auto normalized_script = std::filesystem::weakly_canonical(script, error);
     const auto normalized_directory = std::filesystem::weakly_canonical(scripts_directory, error);
@@ -355,9 +356,17 @@ bool launch_script(const std::filesystem::path& script, const bool reject_when_b
         launcher::diagnostics::log(L"ERROR", L"Python", L"Script file is unavailable: " + normalized_script.wstring());
         return false;
     }
-    current_script_name = normalized_script.filename().string();
-    stop_requested = false;
-    active_script_count.fetch_add(1);
+    {
+        std::lock_guard lock(state_mutex);
+        current_script_name = normalized_script.filename().string();
+    }
+    // A new run after all previous workers have stopped starts a fresh stop epoch.
+    // Do not clear the flag while another worker is still active: that would make
+    // Stop ineffective for the already running scripts.
+    if (running_script_count.load() == 0) {
+        stop_requested = false;
+    }
+    running_script_count.fetch_add(1);
     runtime_running = true;
     workers.emplace_back(execute_script, normalized_script);
     append_console("[info] Running: " + current_script_name);
@@ -399,7 +408,7 @@ void initialize() {
         launcher::diagnostics::log(L"INFO", L"Python", L"Python GIL released for script workers.");
         for (const auto& script : settings.auto_start_scripts) {
             launcher::diagnostics::log(L"INFO", L"Python", L"Starting configured script: " + script.wstring());
-            static_cast<void>(launch_script(script, false));
+            static_cast<void>(launch_script(script));
         }
     });
 }
@@ -420,7 +429,7 @@ void shutdown() {
         }
     }
     workers.clear();
-    active_script_count = 0;
+    running_script_count = 0;
     runtime_running = false;
     if (Py_IsInitialized()) {
         py::finalize_interpreter();
@@ -497,7 +506,7 @@ bool run(const std::filesystem::path& script) {
         }
         workers.clear();
     }
-    return launch_script(script, true);
+    return launch_script(script);
 }
 
 void stop() {
@@ -509,7 +518,11 @@ bool running() {
     return runtime_running.load();
 }
 std::string active_script() {
+    std::lock_guard lock(state_mutex);
     return current_script_name;
+}
+unsigned int active_script_count() {
+    return running_script_count.load();
 }
 std::vector<std::string> console_lines() {
     std::lock_guard lock(state_mutex);

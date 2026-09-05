@@ -15,6 +15,7 @@ void pump_game_thread();
 [[nodiscard]] bool run(const std::filesystem::path& script);
 void stop();
 [[nodiscard]] bool running();
+[[nodiscard]] unsigned int active_script_count();
 [[nodiscard]] std::string active_script();
 [[nodiscard]] std::vector<std::string> console_lines();
 void clear_console();

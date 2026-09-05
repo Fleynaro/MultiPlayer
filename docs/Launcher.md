@@ -50,7 +50,10 @@ launcher icon as its application icon.
 - Native calls use `hashes_ver141.json` beside `Client.dll` to translate
   static native hashes to build-specific hashes before handler lookup.
 - The overlay provides a Python script selector, run/stop controls, and a
-  bounded console. `scripts/gta.pyi` is the strict typing contract for scripts.
+  bounded console. Each `Run script` action starts an independent worker and
+  does not block on other running scripts, so long-lived servers and test
+  scripts can coexist. `Stop` requests shutdown for all active scripts.
+  `scripts/gta.pyi` is the strict typing contract for scripts.
 - `scripts/agent_server.py` provides a localhost HTTP bridge for external agents.
   It can be started from the overlay or configured for automatic startup; it starts `ThreadingHTTPServer` on a dedicated
   thread at `127.0.0.1:8765`. The API accepts `POST /run?path=script.py` and

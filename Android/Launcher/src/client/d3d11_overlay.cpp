@@ -173,7 +173,7 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
         }
         if (!names.empty()) {
             ImGui::Combo("Script", &selected_script, names.data(), static_cast<int>(names.size()));
-            if (ImGui::Button("Run script") && !python::running()) {
+            if (ImGui::Button("Run script")) {
                 static_cast<void>(python::run(available_scripts[static_cast<std::size_t>(selected_script)]));
             }
         } else {
@@ -187,7 +187,12 @@ HRESULT STDMETHODCALLTYPE present_hook(IDXGISwapChain* swap_chain, const UINT sy
         if (ImGui::Button("Clear console")) {
             python::clear_console();
         }
-        ImGui::Text("Status: %s", python::running() ? python::active_script().c_str() : "idle");
+        if (python::running()) {
+            ImGui::Text("Status: %u script(s) running; latest: %s", python::active_script_count(),
+                        python::active_script().c_str());
+        } else {
+            ImGui::TextUnformatted("Status: idle");
+        }
         ImGui::Separator();
         ImGui::BeginChild("Python console", ImVec2(0.0F, gui_settings.console_height * ui_scale), true);
         for (const auto& line : python::console_lines()) {
