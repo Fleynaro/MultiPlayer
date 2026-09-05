@@ -61,6 +61,11 @@ launcher icon as its application icon.
   executes the selected script with `runpy.run_path`. The JSON response contains
   `ok`, `path`, `stdout`, `stderr`, and `error`; scripts must be direct `.py`
   children of the configured scripts directory.
+  From Windows PowerShell, run a script through the agent server with:
+
+  ```powershell
+  Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8765/run?path=test_script.py" | ConvertTo-Json -Depth 5
+  ```
 - During embedded Python initialization, the launcher registers the active
   CPython prefix and `DLLs` directories with the Windows DLL loader. This is
   required for standard-library extension modules such as `_socket.pyd`.
