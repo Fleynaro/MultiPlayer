@@ -12,7 +12,7 @@ def main() -> None:
     gta.log(f"Player ped handle: {ped}")
     gta.log(f"Player health: {entity.get_entity_health(ped)}")
     gta.log(
-        f"Player coordinates: {entity.get_entity_coords(ped).x} {entity.get_entity_coords(ped).y} {entity.get_entity_coords(ped).z}"
+        f"Player coordinates: {entity.get_entity_coords(ped, False).x} {entity.get_entity_coords(ped, False).y} {entity.get_entity_coords(ped, False).z}"
     )
 
 
