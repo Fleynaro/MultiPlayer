@@ -13,10 +13,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+import debugpy
 import gta
 
 HOST = "127.0.0.1"
-PORT = 8765
+PORT = 8766
+DEBUG_PORT = 5679
 SCRIPTS_DIRECTORY = Path(__file__).resolve().parent
 RUN_LOCK = threading.Lock()
 
@@ -129,6 +131,7 @@ class AgentRequestHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     """Run the HTTP server until the embedded runtime requests a stop."""
+    debugpy.listen((HOST, DEBUG_PORT))
     server = ThreadingHTTPServer((HOST, PORT), AgentRequestHandler)
     server_thread = threading.Thread(
         target=server.serve_forever, name="GtaAgentHttpServer", daemon=True
