@@ -3,6 +3,7 @@
 #include "client/game_hooks.h"
 #include "common/config.h"
 #include "common/diagnostics.h"
+#include "native_bindings.h"
 
 #include <Python.h>
 #include <Windows.h>
@@ -115,6 +116,150 @@ void validate_model_hash(const std::uint32_t hash) {
     }
 }
 
+std::uint64_t native_argument(const py::handle value, std::vector<std::string>& string_storage) {
+    if (py::isinstance<py::bool_>(value)) {
+        return py::cast<bool>(value) ? 1U : 0U;
+    }
+    if (py::isinstance<py::int_>(value)) {
+        const auto integer = py::cast<std::int64_t>(value);
+        if (integer < 0) {
+            return static_cast<std::uint64_t>(integer);
+        }
+        return static_cast<std::uint64_t>(integer);
+    }
+    if (py::isinstance<py::float_>(value)) {
+        const auto number = py::cast<float>(value);
+        if (!std::isfinite(number)) {
+            throw std::invalid_argument("native float arguments must be finite");
+        }
+        return float_bits(number);
+    }
+    if (py::isinstance<py::str>(value)) {
+        string_storage.push_back(py::cast<std::string>(value));
+        return reinterpret_cast<std::uint64_t>(string_storage.back().c_str());
+    }
+    if (py::isinstance<Vec3>(value)) {
+        const auto vector = py::cast<Vec3>(value);
+        validate_coordinate(vector.x, "x");
+        validate_coordinate(vector.y, "y");
+        validate_coordinate(vector.z, "z");
+        throw std::invalid_argument("Vector3 arguments are not supported by this native signature");
+    }
+    throw py::type_error("native arguments must be bool, int, float, or str");
+}
+
+void validate_native_argument(const py::handle value, const std::string_view type) {
+    const bool pointer = type.ends_with('*');
+    const auto base_type = pointer ? type.substr(0, type.size() - 1) : type;
+    if (base_type == "bool" && !py::isinstance<py::bool_>(value)) {
+        throw py::type_error("native boolean arguments must be bool");
+    }
+    if ((base_type == "int" || base_type == "Hash" || base_type == "Entity" || base_type == "Ped" ||
+         base_type == "Vehicle" || base_type == "Object" || base_type == "Pickup" || base_type == "Blip") &&
+        !py::isinstance<py::int_>(value)) {
+        throw py::type_error("native handle and integer arguments must be int");
+    }
+    if ((base_type == "Entity" || base_type == "Ped" || base_type == "Vehicle" || base_type == "Object" ||
+         base_type == "Pickup" || base_type == "Blip") &&
+        py::cast<std::int64_t>(value) <= 0) {
+        throw std::invalid_argument("native handles must be positive");
+    }
+    if (base_type == "str" && !py::isinstance<py::str>(value)) {
+        throw py::type_error("native text arguments must be str");
+    }
+    if (base_type == "Vector3" && !py::isinstance<Vec3>(value)) {
+        throw py::type_error("native vector arguments must be gta.Vector3");
+    }
+    if (base_type == "float" && !py::isinstance<py::float_>(value) && !py::isinstance<py::int_>(value)) {
+        throw py::type_error("native floating-point arguments must be float or int");
+    }
+}
+
+void bind_generated_natives(py::module_& module) {
+    for (const auto& spec : generated_natives) {
+        auto group = module.attr(spec.group.data());
+        group.attr(spec.python_name.data()) = py::cpp_function([spec](const py::args& arguments) -> py::object {
+            if (arguments.size() != spec.argc) {
+                throw py::type_error(std::string(spec.original) + " expects " + std::to_string(spec.argc) +
+                                     " positional arguments, got " + std::to_string(arguments.size()));
+            }
+            std::vector<std::string> string_storage;
+            string_storage.reserve(arguments.size());
+            std::vector<std::uint64_t> native_arguments;
+            native_arguments.reserve(arguments.size());
+            std::vector<std::uint64_t> pointer_storage;
+            pointer_storage.resize(arguments.size());
+            std::vector<Vec3> vector_pointer_storage(arguments.size());
+            std::vector<std::string_view> parameter_types;
+            for (std::size_t begin = 0, end = 0; begin < spec.parameter_types.size(); begin = end + 1) {
+                end = spec.parameter_types.find(',', begin);
+                parameter_types.push_back(spec.parameter_types.substr(
+                    begin, end == std::string_view::npos ? std::string_view::npos : end - begin));
+                if (end == std::string_view::npos)
+                    break;
+            }
+            std::size_t type_offset = 0;
+            for (std::size_t index = 0; index < arguments.size(); ++index) {
+                const auto argument = arguments[index];
+                const auto separator = spec.parameter_types.find(',', type_offset);
+                const auto type = spec.parameter_types.substr(type_offset, separator == std::string_view::npos
+                                                                               ? std::string_view::npos
+                                                                               : separator - type_offset);
+                validate_native_argument(argument, type);
+                if (type.ends_with('*')) {
+                    const auto base_type = type.substr(0, type.size() - 1);
+                    if (base_type == "Vector3") {
+                        vector_pointer_storage[index] = py::cast<Vec3>(argument);
+                        native_arguments.push_back(reinterpret_cast<std::uint64_t>(&vector_pointer_storage[index]));
+                    } else {
+                        pointer_storage[index] = native_argument(argument, string_storage);
+                        native_arguments.push_back(reinterpret_cast<std::uint64_t>(&pointer_storage[index]));
+                    }
+                } else {
+                    native_arguments.push_back(native_argument(argument, string_storage));
+                }
+                type_offset = separator == std::string_view::npos ? spec.parameter_types.size() : separator + 1;
+            }
+            const auto result_count = spec.result == "void" ? 0U : spec.result == "vector" ? 3U : 1U;
+            const auto result = call_game("NATIVE_" + std::string(spec.original), std::move(native_arguments));
+            if (result.size() != result_count) {
+                throw std::runtime_error("native returned an invalid result count");
+            }
+            std::vector<py::object> values;
+            if (spec.result == "void")
+                values.push_back(py::none());
+            else if (spec.result == "bool")
+                values.push_back(py::bool_(result[0] != 0));
+            else if (spec.result == "float")
+                values.push_back(py::float_(bits_float(result[0])));
+            else if (spec.result == "vector")
+                values.push_back(py::cast(Vec3{bits_float(result[0]), bits_float(result[1]), bits_float(result[2])}));
+            else if (spec.result == "string")
+                values.push_back(py::str(reinterpret_cast<const char*>(result[0])));
+            else
+                values.push_back(py::int_(result[0]));
+            for (std::size_t index = 0; index < parameter_types.size(); ++index) {
+                const auto type = parameter_types[index];
+                if (!type.ends_with('*'))
+                    continue;
+                const auto base_type = type.substr(0, type.size() - 1);
+                if (base_type == "Vector3")
+                    values.push_back(py::cast(vector_pointer_storage[index]));
+                else if (base_type == "float")
+                    values.push_back(py::float_(bits_float(pointer_storage[index])));
+                else
+                    values.push_back(py::int_(pointer_storage[index]));
+            }
+            if (values.size() == 1)
+                return values.front();
+            py::tuple tuple(values.size());
+            for (std::size_t index = 0; index < values.size(); ++index)
+                tuple[index] = values[index];
+            return tuple;
+        });
+    }
+}
+
 PYBIND11_EMBEDDED_MODULE(gta, module) {
     module.doc() = "Validated GTA V native bridge";
     py::class_<Vec3>(module, "Vector3")
@@ -134,72 +279,16 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
     });
-    auto player = module.def_submodule("player", "PLAYER natives");
-    player.def("ped", []() -> int { return static_cast<int>(call_game("PLAYER_GET_PED", {0}).at(0)); });
-    auto entity_module = module.def_submodule("entity", "ENTITY natives");
-    entity_module.def("exists", [](const int entity) {
-        validate_entity(entity);
-        return call_game("ENTITY_EXISTS", {static_cast<std::uint64_t>(entity)}).at(0) != 0;
-    });
-    entity_module.def("health", [](const int entity) -> int {
-        validate_entity(entity);
-        return static_cast<int>(call_game("ENTITY_HEALTH", {static_cast<std::uint64_t>(entity)}).at(0));
-    });
-    entity_module.def("coords", [](const int entity) {
-        validate_entity(entity);
-        const auto result = call_game("ENTITY_COORDS", {static_cast<std::uint64_t>(entity)});
-        if (result.size() != 3) {
-            throw std::runtime_error("native returned an invalid coordinate result");
-        }
-        return Vec3{bits_float(result[0]), bits_float(result[1]), bits_float(result[2])};
-    });
-    entity_module.def("set_coords", [](const int entity, const Vec3 coordinates) {
-        validate_entity(entity);
-        validate_coordinate(coordinates.x, "x");
-        validate_coordinate(coordinates.y, "y");
-        validate_coordinate(coordinates.z, "z");
-        call_game("ENTITY_SET_COORDS", {static_cast<std::uint64_t>(entity), float_bits(coordinates.x),
-                                        float_bits(coordinates.y), float_bits(coordinates.z), 0, 0, 0, 1});
-    });
-    auto ped = module.def_submodule("ped", "PED natives");
-    ped.def(
-        "create",
-        [](const int ped_type, const std::uint32_t model_hash, const Vec3 coordinates, const float heading,
-           const bool is_network, const bool this_script_check) {
-            if (ped_type < 0 || ped_type > 32) {
-                throw std::invalid_argument("ped type must be between 0 and 32");
-            }
-            validate_model_hash(model_hash);
-            validate_coordinate(coordinates.x, "x");
-            validate_coordinate(coordinates.y, "y");
-            validate_coordinate(coordinates.z, "z");
-            validate_coordinate(heading, "heading");
-            return static_cast<int>(
-                call_game("PED_CREATE", {static_cast<std::uint64_t>(ped_type), model_hash, float_bits(coordinates.x),
-                                         float_bits(coordinates.y), float_bits(coordinates.z), float_bits(heading),
-                                         is_network ? 1U : 0U, this_script_check ? 1U : 0U})
-                    .at(0));
-        },
-        py::arg("ped_type"), py::arg("model_hash"), py::arg("coordinates"), py::arg("heading") = 0.0F,
-        py::arg("is_network") = true, py::arg("this_script_check") = true);
-    auto vehicle = module.def_submodule("vehicle", "VEHICLE natives");
-    vehicle.def(
-        "create",
-        [](const std::uint32_t model_hash, const Vec3 coordinates, const float heading, const bool is_network,
-           const bool this_script_check) {
-            validate_model_hash(model_hash);
-            validate_coordinate(coordinates.x, "x");
-            validate_coordinate(coordinates.y, "y");
-            validate_coordinate(coordinates.z, "z");
-            validate_coordinate(heading, "heading");
-            return static_cast<int>(
-                call_game("VEHICLE_CREATE",
-                          {model_hash, float_bits(coordinates.x), float_bits(coordinates.y), float_bits(coordinates.z),
-                           float_bits(heading), is_network ? 1U : 0U, this_script_check ? 1U : 0U})
-                    .at(0));
-        },
-        py::arg("model_hash"), py::arg("coordinates"), py::arg("heading") = 0.0F, py::arg("is_network") = true,
-        py::arg("this_script_check") = true);
+    module.def_submodule("player", "PLAYER natives");
+    module.def_submodule("entity", "ENTITY natives");
+    module.def_submodule("ped", "PED natives");
+    module.def_submodule("vehicle", "VEHICLE natives");
+    module.def_submodule("object", "OBJECT natives");
+    module.def_submodule("task", "TASK natives");
+    module.def_submodule("weapon", "WEAPON natives");
+    module.def_submodule("world", "STREAMING, INTERIOR, FIRE, WATER, and ZONE natives");
+    module.def_submodule("hud", "HUD natives");
+    bind_generated_natives(module);
 }
 
 void execute_script(const std::filesystem::path script) {
@@ -310,26 +399,15 @@ void pump_game_thread() {
     try {
         std::uint64_t hash = 0;
         std::size_t result_count = 0;
-        if (request->operation == "PLAYER_GET_PED") {
-            hash = 0x43A66C31C68491C0ULL;
-            result_count = 1;
-        } else if (request->operation == "ENTITY_EXISTS") {
-            hash = 0x7239B21A38F536BAULL;
-            result_count = 1;
-        } else if (request->operation == "ENTITY_HEALTH") {
-            hash = 0xEEF059FAD016D209ULL;
-            result_count = 1;
-        } else if (request->operation == "ENTITY_COORDS") {
-            hash = 0x3FEF770D40960D5AULL;
-            result_count = 3;
-        } else if (request->operation == "ENTITY_SET_COORDS") {
-            hash = 0x06843DA7060A026BULL;
-        } else if (request->operation == "PED_CREATE") {
-            hash = 0xD49F9B0955C367DEULL;
-            result_count = 1;
-        } else if (request->operation == "VEHICLE_CREATE") {
-            hash = 0xAF35D0D2583051B0ULL;
-            result_count = 1;
+        if (request->operation.rfind("NATIVE_", 0) == 0) {
+            const auto name = request->operation.substr(7);
+            const auto native = std::find_if(generated_natives.begin(), generated_natives.end(),
+                                             [&name](const auto& item) { return item.original == name; });
+            if (native == generated_natives.end()) {
+                throw std::invalid_argument("unknown generated native: " + name);
+            }
+            hash = native->hash;
+            result_count = native->result == "void" ? 0U : native->result == "vector" ? 3U : 1U;
         } else {
             launcher::diagnostics::log(L"ERROR", L"Python",
                                        L"Unknown native operation requested: " + wide_from_utf8(request->operation));

@@ -8,11 +8,11 @@ from gta import entity, player
 
 def main() -> None:
     gta.log("Python runtime started")
-    ped = player.ped()
+    ped = player.get_player_ped(-1)
     gta.log(f"Player ped handle: {ped}")
-    gta.log(f"Player health: {entity.health(ped)}")
+    gta.log(f"Player health: {entity.get_entity_health(ped)}")
     gta.log(
-        f"Player coordinates: {entity.coords(ped).x} {entity.coords(ped).y} {entity.coords(ped).z}"
+        f"Player coordinates: {entity.get_entity_coords(ped).x} {entity.get_entity_coords(ped).y} {entity.get_entity_coords(ped).z}"
     )
 
 
