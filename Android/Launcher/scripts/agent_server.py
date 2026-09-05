@@ -48,7 +48,9 @@ def _client_module_directory() -> Path:
     module_handle = get_module_handle("Client.dll")
     if not module_handle:
         error_code = ctypes.get_last_error()
-        raise RuntimeError(f"cannot find loaded Client.dll (Windows error {error_code})")
+        raise RuntimeError(
+            f"cannot find loaded Client.dll (Windows error {error_code})"
+        )
 
     get_module_file_name = kernel32.GetModuleFileNameW
     get_module_file_name.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_uint32]
@@ -57,7 +59,9 @@ def _client_module_directory() -> Path:
     length = get_module_file_name(module_handle, buffer, len(buffer))
     if length == 0:
         error_code = ctypes.get_last_error()
-        raise RuntimeError(f"cannot resolve Client.dll path (Windows error {error_code})")
+        raise RuntimeError(
+            f"cannot resolve Client.dll path (Windows error {error_code})"
+        )
     if length >= len(buffer) - 1:
         raise RuntimeError("Client.dll path is too long to resolve safely")
     return Path(buffer.value).resolve().parent
@@ -156,17 +160,21 @@ class AgentRequestHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     """Run the HTTP server until the embedded runtime requests a stop."""
-    # The embedded interpreter's sys.executable is Launcher.exe, which cannot
-    # start debugpy's external adapter. Use the runtime venv interpreter instead.
-    runtime_directory = _client_module_directory()
-    debugpy_python = runtime_directory / ".venv" / "Scripts" / "python.exe"
-    if not debugpy_python.is_file():
-        raise RuntimeError(
-            f"debugpy adapter interpreter is missing: {debugpy_python}. "
-            "Create runtime\\.venv and install requirements.txt."
-        )
-    debugpy.configure(python=str(debugpy_python))
-    debugpy.listen((HOST, DEBUG_PORT))
+    try:
+        # The embedded interpreter's sys.executable is Launcher.exe, which cannot
+        # start debugpy's external adapter. Use the runtime venv interpreter instead.
+        runtime_directory = _client_module_directory()
+        debugpy_python = runtime_directory / ".venv" / "Scripts" / "python.exe"
+        if not debugpy_python.is_file():
+            raise RuntimeError(
+                f"debugpy adapter interpreter is missing: {debugpy_python}. "
+                "Create runtime\\.venv and install requirements.txt."
+            )
+        debugpy.configure(python=str(debugpy_python))
+        debugpy.listen((HOST, DEBUG_PORT))
+        print(f"Agent debugpy listening on {HOST}:{DEBUG_PORT}")
+    except Exception as error:
+        print(f"Failed to start debugpy: {error}")
     server = ThreadingHTTPServer((HOST, PORT), AgentRequestHandler)
     server_thread = threading.Thread(
         target=server.serve_forever, name="GtaAgentHttpServer", daemon=True
