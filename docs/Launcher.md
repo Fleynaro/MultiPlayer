@@ -94,6 +94,13 @@ Python initialization and may run concurrently, which is suitable for long-lived
 agent servers. Invalid or missing entries are logged and skipped.
 Missing optional values use these defaults and are recorded in `GtaLauncher.log`.
 
+`agent_server.py` locates the loaded `Client.dll` with the Windows module API and
+starts the debugpy adapter with `.venv/Scripts/python.exe` beside that DLL. This
+is required because the embedded interpreter reports `Launcher.exe` as
+`sys.executable`, which cannot execute debugpy's adapter module. Install the
+pinned dependency into that runtime virtual environment before starting the
+agent server; the scripts directory may be located elsewhere.
+
 Pattern misses are non-fatal and are reflected by the installed hook count.
 This avoids terminating the game when Rockstar changes a signature, but a
 different game build is not considered supported until its signatures have
@@ -130,8 +137,8 @@ root and copies its runtime DLL beside `Client.dll`. For the planned Python 3.12
 setup, create `runtime/.venv` with `python -m venv runtime/.venv` and install
 the pinned dependency from `Android/Launcher/requirements.txt` into that
 environment. The client adds `runtime/.venv/Lib/site-packages` to `sys.path`.
-The example listens on `127.0.0.1:5679`; use
-`Android/Launcher/.vscode/launch.json` to attach.
+The example listens on `127.0.0.1:5679`; use the repository-level
+`.vscode/launch.json` to attach.
 
 ## Diagnostics and recovery
 
