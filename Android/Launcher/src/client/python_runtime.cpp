@@ -36,6 +36,8 @@ struct Vec3 {
 
 struct NativeRequest {
     std::string operation;
+    std::uint64_t hash = 0;
+    std::size_t result_count = 0;
     std::vector<std::uint64_t> arguments;
     std::promise<std::vector<std::uint64_t>> completion;
 };
@@ -130,12 +132,15 @@ void install_output_streams() {
     sys.attr("stderr") = make_output_stream("stderr");
 }
 
-std::vector<std::uint64_t> call_game(std::string operation, std::vector<std::uint64_t> arguments) {
+std::vector<std::uint64_t> call_game(std::string operation, std::vector<std::uint64_t> arguments,
+                                     const std::uint64_t hash = 0, const std::size_t result_count = 0) {
     if (!runtime_running) {
         throw std::runtime_error("Python runtime is not running");
     }
     auto request = std::make_unique<NativeRequest>();
     request->operation = std::move(operation);
+    request->hash = hash;
+    request->result_count = result_count;
     request->arguments = std::move(arguments);
     auto future = request->completion.get_future();
     {
@@ -164,6 +169,9 @@ void validate_model_hash(const std::uint32_t hash) {
 }
 
 std::uint64_t native_argument(const py::handle value, std::vector<std::string>& string_storage) {
+    if (value.is_none()) {
+        return 0;
+    }
     if (py::isinstance<py::bool_>(value)) {
         return py::cast<bool>(value) ? 1U : 0U;
     }
@@ -193,6 +201,58 @@ std::uint64_t native_argument(const py::handle value, std::vector<std::string>& 
         throw std::invalid_argument("Vector3 arguments are not supported by this native signature");
     }
     throw py::type_error("native arguments must be bool, int, float, or str");
+}
+
+std::uint64_t native_hash_argument(const py::handle value) {
+    if (!py::isinstance<py::int_>(value)) {
+        throw py::type_error("native hash must be an integer");
+    }
+    try {
+        return py::cast<std::uint64_t>(value);
+    } catch (const py::cast_error&) {
+        throw py::value_error("native hash must be an unsigned 64-bit integer");
+    }
+}
+
+py::object invoke_dynamic_native(const py::handle hash_value, const py::handle arguments_value) {
+    const auto hash = native_hash_argument(hash_value);
+    if (!py::isinstance<py::list>(arguments_value) && !py::isinstance<py::tuple>(arguments_value)) {
+        throw py::type_error("native arguments must be a list or tuple");
+    }
+    const py::sequence arguments = py::reinterpret_borrow<py::sequence>(arguments_value);
+    if (arguments.size() > 32) {
+        throw py::value_error("native argument count must not exceed 32");
+    }
+
+    // Keep pointed-to values alive until the game-thread call has completed.
+    std::vector<std::string> string_storage;
+    string_storage.reserve(arguments.size());
+    std::vector<Vec3> vector_storage(arguments.size());
+    std::vector<std::uint64_t> native_arguments;
+    native_arguments.reserve(arguments.size());
+    for (std::size_t index = 0; index < arguments.size(); ++index) {
+        const auto argument = arguments[index];
+        if (py::isinstance<Vec3>(argument)) {
+            vector_storage[index] = py::cast<Vec3>(argument);
+            validate_coordinate(vector_storage[index].x, "x");
+            validate_coordinate(vector_storage[index].y, "y");
+            validate_coordinate(vector_storage[index].z, "z");
+            native_arguments.push_back(reinterpret_cast<std::uint64_t>(&vector_storage[index]));
+        } else {
+            native_arguments.push_back(native_argument(argument, string_storage));
+        }
+    }
+
+    std::vector<std::uint64_t> result;
+    {
+        // Native execution waits for the game thread, not the Python worker.
+        py::gil_scoped_release release;
+        result = call_game("NATIVE_DYNAMIC", std::move(native_arguments), hash, 1);
+    }
+    if (result.size() != 1) {
+        throw std::runtime_error("dynamic native returned an invalid result count");
+    }
+    return py::int_(result.front());
 }
 
 void validate_native_argument(const py::handle value, const std::string_view type) {
@@ -328,6 +388,8 @@ PYBIND11_EMBEDDED_MODULE(gta, module) {
         std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
     });
     module.def("stop_requested", [] { return stop_requested.load(); });
+    module.def("invoke_native", &invoke_dynamic_native, py::arg("hash"), py::arg("arguments"),
+               "Invoke a native by hash using raw 64-bit ABI values.");
     module.def_submodule("player", "PLAYER natives");
     module.def_submodule("entity", "ENTITY natives");
     module.def_submodule("ped", "PED natives");
@@ -481,7 +543,10 @@ void pump_game_thread() {
     try {
         std::uint64_t hash = 0;
         std::size_t result_count = 0;
-        if (request->operation.rfind("NATIVE_", 0) == 0) {
+        if (request->operation == "NATIVE_DYNAMIC") {
+            hash = request->hash;
+            result_count = request->result_count;
+        } else if (request->operation.rfind("NATIVE_", 0) == 0) {
             const auto name = request->operation.substr(7);
             const auto native = std::find_if(generated_natives.begin(), generated_natives.end(),
                                              [&name](const auto& item) { return item.original == name; });

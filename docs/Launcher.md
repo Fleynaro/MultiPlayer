@@ -55,6 +55,15 @@ launcher icon as its application icon.
   does not block on other running scripts, so long-lived servers and test
   scripts can coexist. `Stop` requests shutdown for all active scripts.
   `scripts/gta.pyi` is the strict typing contract for scripts.
+- `gta.invoke_native(hash, arguments)` invokes any registered native without a
+  generated binding. `hash` is an unsigned 64-bit native hash and `arguments`
+  is a list of up to 32 `bool`, `int`, `float`, `str`, `None`, or `gta.Vector3`
+  values. Integers are passed as raw ABI words, floats as IEEE-754 single-
+  precision bits, strings as native C-string pointers, and `Vector3` values as
+  pointers to three floats. The function returns the first raw 64-bit result
+  slot; callers must know the native's argument and result ABI because the
+  signature is not available dynamically. `None` and void-native results are
+  represented by zero.
 - `scripts/agent_server.py` provides a localhost HTTP bridge for external agents.
   It can be started from the overlay or configured for automatic startup; it starts `ThreadingHTTPServer` on a dedicated
   thread at `127.0.0.1:8766`. The API accepts `POST /run?path=script.py` and

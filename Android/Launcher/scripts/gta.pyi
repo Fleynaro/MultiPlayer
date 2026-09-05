@@ -1,5 +1,7 @@
 """Strictly typed public API exposed by the Client.dll Python module."""
 
+from typing import Any
+
 class Vector3:
     x: float
     y: float
@@ -17,6 +19,7 @@ Hash = int
 
 def wait(milliseconds: int, /) -> None: ...
 def stop_requested() -> bool: ...
+def invoke_native(hash: Hash, arguments: list[Any], /) -> Any: ...
 
 class _EntityNatives:
     """APPLY_FORCE_TO_ENTITY: Provides the apply force to entity native operation."""
