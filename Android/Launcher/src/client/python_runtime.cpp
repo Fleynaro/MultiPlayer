@@ -46,8 +46,9 @@ std::queue<std::unique_ptr<NativeRequest>> requests;
 std::vector<std::string> output;
 std::filesystem::path scripts_directory;
 std::string current_script_name;
-std::thread worker;
+std::vector<std::thread> workers;
 std::atomic_bool runtime_running = false;
+std::atomic_uint active_script_count = 0;
 std::atomic_bool stop_requested = false;
 std::once_flag python_once;
 
@@ -328,8 +329,39 @@ void execute_script(const std::filesystem::path script) {
         append_console(message);
         launcher::diagnostics::log(L"ERROR", L"Python", wide_from_utf8(message));
     }
-    runtime_running = false;
+    if (active_script_count.fetch_sub(1) == 1) {
+        runtime_running = false;
+    }
     launcher::diagnostics::log(L"INFO", L"Python", L"Script worker stopped: " + script.wstring());
+}
+
+bool launch_script(const std::filesystem::path& script, const bool reject_when_busy) {
+    if (reject_when_busy && runtime_running) {
+        append_console("[warning] A Python script is already running.");
+        launcher::diagnostics::log(L"WARNING", L"Python", L"Run request rejected because another script is active.");
+        return false;
+    }
+    std::error_code error;
+    const auto normalized_script = std::filesystem::weakly_canonical(script, error);
+    const auto normalized_directory = std::filesystem::weakly_canonical(scripts_directory, error);
+    if (error || normalized_script.extension() != ".py" || normalized_script.parent_path() != normalized_directory) {
+        append_console("[error] The selected script is outside the configured scripts directory.");
+        launcher::diagnostics::log(L"ERROR", L"Python",
+                                   L"Run request rejected for invalid script path: " + script.wstring());
+        return false;
+    }
+    if (!std::filesystem::is_regular_file(normalized_script, error) || error) {
+        append_console("[error] The selected Python script does not exist or is not a regular file.");
+        launcher::diagnostics::log(L"ERROR", L"Python", L"Script file is unavailable: " + normalized_script.wstring());
+        return false;
+    }
+    current_script_name = normalized_script.filename().string();
+    stop_requested = false;
+    active_script_count.fetch_add(1);
+    runtime_running = true;
+    workers.emplace_back(execute_script, normalized_script);
+    append_console("[info] Running: " + current_script_name);
+    return true;
 }
 
 } // namespace
@@ -365,6 +397,10 @@ void initialize() {
         // at the end of this callback and block every later script worker.
         PyEval_SaveThread();
         launcher::diagnostics::log(L"INFO", L"Python", L"Python GIL released for script workers.");
+        for (const auto& script : settings.auto_start_scripts) {
+            launcher::diagnostics::log(L"INFO", L"Python", L"Starting configured script: " + script.wstring());
+            static_cast<void>(launch_script(script, false));
+        }
     });
 }
 
@@ -378,9 +414,13 @@ void shutdown() {
             requests.pop();
         }
     }
-    if (worker.joinable()) {
-        worker.join();
+    for (auto& script_worker : workers) {
+        if (script_worker.joinable()) {
+            script_worker.join();
+        }
     }
+    workers.clear();
+    active_script_count = 0;
     runtime_running = false;
     if (Py_IsInitialized()) {
         py::finalize_interpreter();
@@ -448,34 +488,16 @@ std::vector<std::filesystem::path> scripts() {
 }
 
 bool run(const std::filesystem::path& script) {
-    if (runtime_running) {
-        append_console("[warning] A Python script is already running.");
-        launcher::diagnostics::log(L"WARNING", L"Python", L"Run request rejected because another script is active.");
-        return false;
+    initialize();
+    if (!runtime_running) {
+        for (auto& script_worker : workers) {
+            if (script_worker.joinable()) {
+                script_worker.join();
+            }
+        }
+        workers.clear();
     }
-    std::error_code error;
-    const auto normalized_script = std::filesystem::weakly_canonical(script, error);
-    const auto normalized_directory = std::filesystem::weakly_canonical(scripts_directory, error);
-    if (error || normalized_script.extension() != ".py" || normalized_script.parent_path() != normalized_directory) {
-        append_console("[error] The selected script is outside the configured scripts directory.");
-        launcher::diagnostics::log(L"ERROR", L"Python",
-                                   L"Run request rejected for invalid script path: " + script.wstring());
-        return false;
-    }
-    if (!std::filesystem::is_regular_file(normalized_script, error) || error) {
-        append_console("[error] The selected Python script does not exist or is not a regular file.");
-        launcher::diagnostics::log(L"ERROR", L"Python", L"Script file is unavailable: " + normalized_script.wstring());
-        return false;
-    }
-    if (worker.joinable()) {
-        worker.join();
-    }
-    stop_requested = false;
-    current_script_name = normalized_script.filename().string();
-    runtime_running = true;
-    worker = std::thread(execute_script, normalized_script);
-    append_console("[info] Running: " + current_script_name);
-    return true;
+    return launch_script(script, true);
 }
 
 void stop() {

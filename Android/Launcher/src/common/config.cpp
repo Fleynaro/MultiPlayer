@@ -7,6 +7,7 @@
 #include <cwchar>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace launcher::config {
 namespace {
@@ -64,6 +65,27 @@ float read_float(const std::filesystem::path& file, const wchar_t* section, cons
     return value;
 }
 
+std::vector<std::filesystem::path> read_script_list(const std::filesystem::path& scripts_directory,
+                                                    const std::wstring& value) {
+    std::vector<std::filesystem::path> scripts;
+    std::size_t begin = 0;
+    while (begin <= value.size()) {
+        const std::size_t end = value.find(L';', begin);
+        std::wstring item = value.substr(begin, end == std::wstring::npos ? std::wstring::npos : end - begin);
+        const auto first = item.find_first_not_of(L" \t");
+        const auto last = item.find_last_not_of(L" \t");
+        if (first != std::wstring::npos) {
+            item = item.substr(first, last - first + 1);
+            scripts.push_back(scripts_directory / item);
+        }
+        if (end == std::wstring::npos) {
+            break;
+        }
+        begin = end + 1;
+    }
+    return scripts;
+}
+
 } // namespace
 
 Settings load(const std::filesystem::path& runtime_directory) {
@@ -76,15 +98,18 @@ Settings load(const std::filesystem::path& runtime_directory) {
         environment_scripts_directory.has_value() && !environment_scripts_directory->empty();
     const std::wstring scripts_directory =
         using_environment_scripts_directory ? *environment_scripts_directory : configured_scripts_directory;
+    const auto resolved_scripts_directory = resolve_path(runtime_directory, scripts_directory);
 
     Settings settings{
         .runtime_directory = runtime_directory,
         .config_file = config_file,
         .game_install_directory = {},
-        .scripts_directory = resolve_path(runtime_directory, scripts_directory),
+        .scripts_directory = resolved_scripts_directory,
         .site_packages_directory =
             resolve_path(runtime_directory,
                          read_value(config_file, L"Python", L"SitePackagesDirectory", L".venv\\Lib\\site-packages")),
+        .auto_start_scripts =
+            read_script_list(resolved_scripts_directory, read_value(config_file, L"Python", L"AutoStartScripts", L"")),
         .gui =
             {
                 .scale = read_float(config_file, L"GUI", L"Scale", 0.0F, 0.0F, 4.0F),

@@ -52,7 +52,7 @@ launcher icon as its application icon.
 - The overlay provides a Python script selector, run/stop controls, and a
   bounded console. `scripts/gta.pyi` is the strict typing contract for scripts.
 - `scripts/agent_server.py` provides a localhost HTTP bridge for external agents.
-  Run it from the overlay first; it starts `ThreadingHTTPServer` on a dedicated
+  It can be started from the overlay or configured for automatic startup; it starts `ThreadingHTTPServer` on a dedicated
   thread at `127.0.0.1:8765`. The API accepts `POST /run?path=script.py` and
   executes the selected script with `runpy.run_path`. The JSON response contains
   `ok`, `path`, `stdout`, `stderr`, and `error`; scripts must be direct `.py`
@@ -78,6 +78,10 @@ can replace `GTA_5_INSTALL_DIR`; when it is commented out, the environment
 variable remains the fallback. `GUI/Scale` overrides automatic DPI and
 resolution scaling when greater than zero; `GUI/WindowWidth`,
 `GUI/WindowHeight`, and `GUI/ConsoleHeight` control the initial overlay layout.
+`Python/AutoStartScripts` is an optional semicolon-separated list of direct `.py`
+children of `ScriptsDirectory`. These scripts start automatically after embedded
+Python initialization and may run concurrently, which is suitable for long-lived
+agent servers. Invalid or missing entries are logged and skipped.
 Missing optional values use these defaults and are recorded in `GtaLauncher.log`.
 
 Pattern misses are non-fatal and are reflected by the installed hook count.

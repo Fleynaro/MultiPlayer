@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <vector>
 
 namespace launcher::config {
 
@@ -18,6 +19,7 @@ struct Settings {
     std::filesystem::path game_install_directory;
     std::filesystem::path scripts_directory;
     std::filesystem::path site_packages_directory;
+    std::vector<std::filesystem::path> auto_start_scripts;
     GuiSettings gui;
 };
 
